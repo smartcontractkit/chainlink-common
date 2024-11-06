@@ -27,8 +27,8 @@ func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string,
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}
 
-	step := sdk.Step[SignedReport]{Definition: def}
-	return SignedReportCapFromStep(w, step)
+	step := &sdk.Step[SignedReport]{Definition: def}
+	return SignedReportWrapper(step.AddTo(w))
 }
 
 type IdenticalConsensusInput[T any] struct {

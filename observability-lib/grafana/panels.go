@@ -112,7 +112,7 @@ type Panel struct {
 	tablePanelBuilder      *table.PanelBuilder
 	logPanelBuilder        *logs.PanelBuilder
 	heatmapBuilder         *heatmap.PanelBuilder
-	alertBuilder           *alerting.RuleBuilder
+	alertBuilders          []*alerting.RuleBuilder
 }
 
 // panel defaults
@@ -226,7 +226,7 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 
 type TimeSeriesPanelOptions struct {
 	*PanelOptions
-	AlertOptions      *AlertOptions
+	AlertsOptions     []AlertOptions
 	FillOpacity       float64
 	ScaleDistribution common.ScaleDistribution
 	LegendOptions     *LegendOptions
@@ -235,10 +235,6 @@ type TimeSeriesPanelOptions struct {
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	setDefaults(options.PanelOptions)
-
-	if options.FillOpacity == 0 {
-		options.FillOpacity = 2
-	}
 
 	if options.ScaleDistribution == "" {
 		options.ScaleDistribution = common.ScaleDistributionLinear
@@ -291,17 +287,22 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			timeSeriesPanelBuilder: newPanel,
-			alertBuilder:           NewAlertRule(options.AlertOptions),
+	var alertBuilders []*alerting.RuleBuilder
+	if options.AlertsOptions != nil && len(options.AlertsOptions) > 0 {
+		for _, alert := range options.AlertsOptions {
+			// this is used as an internal mechanism to set the panel title in the alert to associate panelId with alert
+			alert.PanelTitle = options.Title
+			// if name is provided use it, otherwise use panel title
+			if alert.Title == "" {
+				alert.Title = options.Title
+			}
+			alertBuilders = append(alertBuilders, NewAlertRule(&alert))
 		}
 	}
 
 	return &Panel{
 		timeSeriesPanelBuilder: newPanel,
+		alertBuilders:          alertBuilders,
 	}
 }
 
@@ -398,6 +399,7 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 
 type LogPanelOptions struct {
 	*PanelOptions
+	PrettifyJSON bool
 }
 
 func NewLogPanel(options *LogPanelOptions) *Panel {
@@ -409,7 +411,8 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		Description(options.Description).
 		Span(options.Span).
 		Height(options.Height).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		PrettifyLogMessage(options.PrettifyJSON)
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)

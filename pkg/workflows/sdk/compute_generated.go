@@ -4,6 +4,7 @@ package sdk
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -26,6 +27,76 @@ func (input Compute1Inputs[I0]) ToSteps() StepInputs {
 }
 
 func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(Runtime, I0) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0) (O, error) {
+		return compute(r, i0)
+	}
+	return Compute1WithConfig[I0, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute1WithConfig[I0 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute1Inputs[I0], compute func(Runtime, C, I0) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime1Inputs[I0]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime1Inputs[I0]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute1WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute1WithMetadata[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(Runtime, I0, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -55,7 +126,7 @@ func Compute1[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1I
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0)
+		output, err := compute(runtime, inputs.Arg0, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -96,6 +167,76 @@ func (input Compute2Inputs[I0, I1]) ToSteps() StepInputs {
 }
 
 func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input Compute2Inputs[I0, I1], compute func(Runtime, I0, I1) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1) (O, error) {
+		return compute(r, i0, i1)
+	}
+	return Compute2WithConfig[I0, I1, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute2WithConfig[I0 any, I1 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute2Inputs[I0, I1], compute func(Runtime, C, I0, I1) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime2Inputs[I0, I1]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime2Inputs[I0, I1]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute2WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute2WithMetadata[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input Compute2Inputs[I0, I1], compute func(Runtime, I0, I1, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -125,7 +266,7 @@ func Compute2[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input C
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -169,6 +310,76 @@ func (input Compute3Inputs[I0, I1, I2]) ToSteps() StepInputs {
 }
 
 func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string, input Compute3Inputs[I0, I1, I2], compute func(Runtime, I0, I1, I2) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2) (O, error) {
+		return compute(r, i0, i1, i2)
+	}
+	return Compute3WithConfig[I0, I1, I2, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute3WithConfig[I0 any, I1 any, I2 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute3Inputs[I0, I1, I2], compute func(Runtime, C, I0, I1, I2) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime3Inputs[I0, I1, I2]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime3Inputs[I0, I1, I2]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute3WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute3WithMetadata[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string, input Compute3Inputs[I0, I1, I2], compute func(Runtime, I0, I1, I2, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -198,7 +409,7 @@ func Compute3[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string,
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -245,6 +456,76 @@ func (input Compute4Inputs[I0, I1, I2, I3]) ToSteps() StepInputs {
 }
 
 func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref string, input Compute4Inputs[I0, I1, I2, I3], compute func(Runtime, I0, I1, I2, I3) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3) (O, error) {
+		return compute(r, i0, i1, i2, i3)
+	}
+	return Compute4WithConfig[I0, I1, I2, I3, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute4WithConfig[I0 any, I1 any, I2 any, I3 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute4Inputs[I0, I1, I2, I3], compute func(Runtime, C, I0, I1, I2, I3) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime4Inputs[I0, I1, I2, I3]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime4Inputs[I0, I1, I2, I3]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute4WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute4WithMetadata[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref string, input Compute4Inputs[I0, I1, I2, I3], compute func(Runtime, I0, I1, I2, I3, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -274,7 +555,7 @@ func Compute4[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -324,6 +605,76 @@ func (input Compute5Inputs[I0, I1, I2, I3, I4]) ToSteps() StepInputs {
 }
 
 func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFactory, ref string, input Compute5Inputs[I0, I1, I2, I3, I4], compute func(Runtime, I0, I1, I2, I3, I4) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3, i4 I4) (O, error) {
+		return compute(r, i0, i1, i2, i3, i4)
+	}
+	return Compute5WithConfig[I0, I1, I2, I3, I4, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute5WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute5Inputs[I0, I1, I2, I3, I4], compute func(Runtime, C, I0, I1, I2, I3, I4) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime5Inputs[I0, I1, I2, I3, I4]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime5Inputs[I0, I1, I2, I3, I4]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute5WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute5WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFactory, ref string, input Compute5Inputs[I0, I1, I2, I3, I4], compute func(Runtime, I0, I1, I2, I3, I4, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -353,7 +704,7 @@ func Compute5[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFact
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -406,6 +757,76 @@ func (input Compute6Inputs[I0, I1, I2, I3, I4, I5]) ToSteps() StepInputs {
 }
 
 func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *WorkflowSpecFactory, ref string, input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(Runtime, I0, I1, I2, I3, I4, I5) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3, i4 I4, i5 I5) (O, error) {
+		return compute(r, i0, i1, i2, i3, i4, i5)
+	}
+	return Compute6WithConfig[I0, I1, I2, I3, I4, I5, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute6WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(Runtime, C, I0, I1, I2, I3, I4, I5) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime6Inputs[I0, I1, I2, I3, I4, I5]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime6Inputs[I0, I1, I2, I3, I4, I5]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute6WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute6WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *WorkflowSpecFactory, ref string, input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(Runtime, I0, I1, I2, I3, I4, I5, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -435,7 +856,7 @@ func Compute6[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *Workflow
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -491,6 +912,76 @@ func (input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6]) ToSteps() StepInputs {
 }
 
 func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *WorkflowSpecFactory, ref string, input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3, i4 I4, i5 I5, i6 I6) (O, error) {
+		return compute(r, i0, i1, i2, i3, i4, i5, i6)
+	}
+	return Compute7WithConfig[I0, I1, I2, I3, I4, I5, I6, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute7WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(Runtime, C, I0, I1, I2, I3, I4, I5, I6) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime7Inputs[I0, I1, I2, I3, I4, I5, I6]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime7Inputs[I0, I1, I2, I3, I4, I5, I6]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute7WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute7WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *WorkflowSpecFactory, ref string, input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -520,7 +1011,7 @@ func Compute7[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -579,6 +1070,76 @@ func (input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]) ToSteps() StepInputs
 }
 
 func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any](w *WorkflowSpecFactory, ref string, input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3, i4 I4, i5 I5, i6 I6, i7 I7) (O, error) {
+		return compute(r, i0, i1, i2, i3, i4, i5, i6, i7)
+	}
+	return Compute8WithConfig[I0, I1, I2, I3, I4, I5, I6, I7, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute8WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(Runtime, C, I0, I1, I2, I3, I4, I5, I6, I7) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime8Inputs[I0, I1, I2, I3, I4, I5, I6, I7]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute8WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute8WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any](w *WorkflowSpecFactory, ref string, input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -608,7 +1169,7 @@ func Compute8[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O 
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -670,6 +1231,76 @@ func (input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]) ToSteps() StepIn
 }
 
 func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any](w *WorkflowSpecFactory, ref string, input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, I8) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3, i4 I4, i5 I5, i6 I6, i7 I7, i8 I8) (O, error) {
+		return compute(r, i0, i1, i2, i3, i4, i5, i6, i7, i8)
+	}
+	return Compute9WithConfig[I0, I1, I2, I3, I4, I5, I6, I7, I8, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute9WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(Runtime, C, I0, I1, I2, I3, I4, I5, I6, I7, I8) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute9WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute9WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any](w *WorkflowSpecFactory, ref string, input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, I8, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -699,7 +1330,7 @@ func Compute9[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -764,6 +1395,76 @@ func (input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]) ToSteps() S
 }
 
 func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any](w *WorkflowSpecFactory, ref string, input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9) (O, error)) ComputeOutputCap[O] {
+	adaptedComputeFunc := func(r Runtime, _ struct{}, i0 I0, i1 I1, i2 I2, i3 I3, i4 I4, i5 I5, i6 I6, i7 I7, i8 I8, i9 I9) (O, error) {
+		return compute(r, i0, i1, i2, i3, i4, i5, i6, i7, i8, i9)
+	}
+	return Compute10WithConfig[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
+}
+
+func Compute10WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(Runtime, C, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9) (O, error)) ComputeOutputCap[O] {
+	cm, err := config.ToMap()
+	if err != nil {
+		w.AddErr(fmt.Errorf("could not convert config for compute step %s to config: %w", ref, err))
+		return nil
+	}
+
+	def := StepDefinition{
+		ID:             "custom_compute@1.0.0",
+		Ref:            ref,
+		Inputs:         input.ToSteps(),
+		Config:         cm,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		var conf C
+		if request.Config != nil {
+			err = request.Config.UnwrapTo(&conf)
+			if err != nil {
+				return capabilities.CapabilityResponse{}, err
+			}
+		}
+
+		output, err := compute(runtime, conf, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8, inputs.Arg9)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute10WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute10WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any](w *WorkflowSpecFactory, ref string, input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
 		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
@@ -793,7 +1494,7 @@ func Compute10[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8, inputs.Arg9)
+		output, err := compute(runtime, inputs.Arg0, inputs.Arg1, inputs.Arg2, inputs.Arg3, inputs.Arg4, inputs.Arg5, inputs.Arg6, inputs.Arg7, inputs.Arg8, inputs.Arg9, request.Metadata)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}

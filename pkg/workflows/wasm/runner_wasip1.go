@@ -1,17 +1,12 @@
 package wasm
 
 import (
-	"encoding/binary"
-	"errors"
-	"fmt"
 	"os"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -39,7 +34,7 @@ func NewRunner() *Runner {
 
 			return &Runtime{
 				logger:  l,
-				fetchFn: createFetchFn(sdkConfig, l),
+				fetchFn: createFetchFn(sdkConfig, l, fetch),
 				emitFn:  createEmitFn(sdkConfig, l, emit),
 			}
 		},
@@ -75,66 +70,6 @@ func sendResponseFn(response *wasmpb.Response) {
 	}
 
 	os.Exit(code)
-}
-
-// createFetchFn injects dependencies and creates a fetch function that can be used by the WASM
-// binary.
-func createFetchFn(
-	sdkConfig *RuntimeConfig,
-	l logger.Logger,
-) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
-	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
-		headerspb, err := values.NewMap(req.Headers)
-		if err != nil {
-			return sdk.FetchResponse{}, fmt.Errorf("failed to create headers map: %w", err)
-		}
-
-		b, err := proto.Marshal(&wasmpb.FetchRequest{
-			Id:        *sdkConfig.RequestID,
-			Url:       req.URL,
-			Method:    req.Method,
-			Headers:   values.ProtoMap(headerspb),
-			Body:      req.Body,
-			TimeoutMs: req.TimeoutMs,
-		})
-		if err != nil {
-			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
-		}
-		reqptr, reqptrlen := bufferToPointerLen(b)
-
-		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _ := bufferToPointerLen(respBuffer)
-
-		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _ := bufferToPointerLen(resplenBuffer)
-
-		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
-		if errno != 0 {
-			return sdk.FetchResponse{}, errors.New("failed to execute fetch")
-		}
-
-		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
-		response := &wasmpb.FetchResponse{}
-		err = proto.Unmarshal(respBuffer[:responseSize], response)
-		if err != nil {
-			return sdk.FetchResponse{}, fmt.Errorf("failed to unmarshal fetch response: %w", err)
-		}
-
-		fields := response.Headers.GetFields()
-		headersResp := make(map[string]any, len(fields))
-		for k, v := range fields {
-			headersResp[k] = v
-		}
-
-		return sdk.FetchResponse{
-			ExecutionError: response.ExecutionError,
-			ErrorMessage:   response.ErrorMessage,
-			StatusCode:     uint8(response.StatusCode),
-			Headers:        headersResp,
-			Body:           response.Body,
-		}, nil
-	}
-	return fetchFn
 }
 
 type wasmWriteSyncer struct{}

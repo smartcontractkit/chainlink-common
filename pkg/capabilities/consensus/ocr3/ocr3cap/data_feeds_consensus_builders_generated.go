@@ -4,7 +4,7 @@ package ocr3cap
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	streams "github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
@@ -18,13 +18,24 @@ func (cfg DataFeedsConsensusConfig) New(w *sdk.WorkflowSpecFactory, ref string, 
 			"aggregation_method": cfg.AggregationMethod,
 			"encoder":            cfg.Encoder,
 			"encoder_config":     cfg.EncoderConfig,
+			"key_id":             cfg.KeyId,
 			"report_id":          cfg.ReportId,
 		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}
 
 	step := sdk.Step[SignedReport]{Definition: def}
-	return SignedReportCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return SignedReportWrapper(raw)
+}
+
+// FeedValueWrapper allows access to field from an sdk.CapDefinition[FeedValue]
+func FeedValueWrapper(raw sdk.CapDefinition[FeedValue]) FeedValueCap {
+	wrapped, ok := raw.(FeedValueCap)
+	if ok {
+		return wrapped
+	}
+	return &feedValueCap{CapDefinition: raw}
 }
 
 type FeedValueCap interface {
@@ -35,25 +46,23 @@ type FeedValueCap interface {
 	private()
 }
 
-// FeedValueCapFromStep should only be called from generated code to assure type safety
-func FeedValueCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[FeedValue]) FeedValueCap {
-	raw := step.AddTo(w)
-	return &feedValue{CapDefinition: raw}
-}
-
-type feedValue struct {
+type feedValueCap struct {
 	sdk.CapDefinition[FeedValue]
 }
 
-func (*feedValue) private() {}
-func (c *feedValue) Deviation() sdk.CapDefinition[string] {
+func (*feedValueCap) private() {}
+func (c *feedValueCap) Deviation() sdk.CapDefinition[string] {
 	return sdk.AccessField[FeedValue, string](c.CapDefinition, "deviation")
 }
-func (c *feedValue) Heartbeat() sdk.CapDefinition[uint64] {
+func (c *feedValueCap) Heartbeat() sdk.CapDefinition[uint64] {
 	return sdk.AccessField[FeedValue, uint64](c.CapDefinition, "heartbeat")
 }
-func (c *feedValue) RemappedID() sdk.CapDefinition[string] {
+func (c *feedValueCap) RemappedID() sdk.CapDefinition[string] {
 	return sdk.AccessField[FeedValue, string](c.CapDefinition, "remappedID")
+}
+
+func ConstantFeedValue(value FeedValue) FeedValueCap {
+	return &feedValueCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewFeedValueFromFields(

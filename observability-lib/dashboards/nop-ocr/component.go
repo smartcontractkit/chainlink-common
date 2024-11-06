@@ -16,7 +16,7 @@ type Props struct {
 	OCRVersion        string              // OCRVersion is the version of the OCR (ocr, ocr2, ocr3)
 }
 
-func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+func NewDashboard(props *Props) (*grafana.Observability, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")
 	}

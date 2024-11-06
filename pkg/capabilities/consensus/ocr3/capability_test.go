@@ -68,62 +68,80 @@ func TestOCR3Capability_Schema(t *testing.T) {
 }
 
 func TestOCR3Capability(t *testing.T) {
-	n := time.Now()
-	fc := clockwork.NewFakeClockAt(n)
-	lggr := logger.Test(t)
-
-	ctx := tests.Context(t)
-
-	s := requests.NewStore()
-
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
-	require.NoError(t, cp.Start(ctx))
-
-	config, err := values.NewMap(
-		map[string]any{
-			"aggregation_method": "data_feeds",
-			"aggregation_config": map[string]any{},
-			"encoder_config":     map[string]any{},
-			"encoder":            "evm",
-			"report_id":          "ffff",
+	cases := []struct {
+		name              string
+		aggregationMethod string
+	}{
+		{
+			name:              "success - aggregation_method data_feeds",
+			aggregationMethod: "data_feeds",
 		},
-	)
-	require.NoError(t, err)
-
-	ethUsdValStr := "1.123456"
-	ethUsdValue, err := decimal.NewFromString(ethUsdValStr)
-	require.NoError(t, err)
-	observationKey := "ETH_USD"
-	obs := []any{map[string]any{observationKey: ethUsdValue}}
-	inputs, err := values.NewMap(map[string]any{"observations": obs})
-	require.NoError(t, err)
-
-	executeReq := capabilities.CapabilityRequest{
-		Metadata: capabilities.RequestMetadata{
-			WorkflowID:          workflowTestID,
-			WorkflowExecutionID: workflowExecutionTestID,
+		{
+			name:              "success - aggregation_method reduce",
+			aggregationMethod: "reduce",
 		},
-		Config: config,
-		Inputs: inputs,
 	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			n := time.Now()
+			fc := clockwork.NewFakeClockAt(n)
+			lggr := logger.Test(t)
 
-	respCh := executeAsync(ctx, executeReq, cp.Execute)
+			ctx := tests.Context(t)
 
-	obsv, err := values.NewList(obs)
-	require.NoError(t, err)
+			s := requests.NewStore()
 
-	// Mock the oracle returning a response
-	mresp, err := values.NewMap(map[string]any{"observations": obsv})
-	cp.reqHandler.SendResponse(ctx, requests.Response{
-		Value:               mresp,
-		WorkflowExecutionID: workflowExecutionTestID,
-	})
-	require.NoError(t, err)
+			cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+			require.NoError(t, cp.Start(ctx))
 
-	resp := <-respCh
-	assert.Nil(t, resp.Err)
+			config, err := values.NewMap(
+				map[string]any{
+					"aggregation_method": tt.aggregationMethod,
+					"aggregation_config": map[string]any{},
+					"encoder_config":     map[string]any{},
+					"encoder":            "evm",
+					"report_id":          "ffff",
+					"key_id":             "evm",
+				},
+			)
+			require.NoError(t, err)
 
-	assert.Equal(t, mresp, resp.Value)
+			ethUsdValStr := "1.123456"
+			ethUsdValue, err := decimal.NewFromString(ethUsdValStr)
+			require.NoError(t, err)
+			observationKey := "ETH_USD"
+			obs := []any{map[string]any{observationKey: ethUsdValue}}
+			inputs, err := values.NewMap(map[string]any{"observations": obs})
+			require.NoError(t, err)
+
+			executeReq := capabilities.CapabilityRequest{
+				Metadata: capabilities.RequestMetadata{
+					WorkflowID:          workflowTestID,
+					WorkflowExecutionID: workflowExecutionTestID,
+				},
+				Config: config,
+				Inputs: inputs,
+			}
+
+			respCh := executeAsync(ctx, executeReq, cp.Execute)
+
+			obsv, err := values.NewList(obs)
+			require.NoError(t, err)
+
+			// Mock the oracle returning a response
+			mresp, err := values.NewMap(map[string]any{"observations": obsv})
+			cp.reqHandler.SendResponse(ctx, requests.Response{
+				Value:               mresp,
+				WorkflowExecutionID: workflowExecutionTestID,
+			})
+			require.NoError(t, err)
+
+			resp := <-respCh
+			assert.Nil(t, resp.Err)
+
+			assert.Equal(t, mresp, resp.Value)
+		})
+	}
 }
 
 func TestOCR3Capability_Eviction(t *testing.T) {
@@ -147,6 +165,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)
@@ -214,6 +233,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 			"request_timeout_ms": 10000,
 		},
 	)
@@ -279,6 +299,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 		"encoder":            "",
 		"encoder_config":     map[string]any{},
 		"report_id":          "000f",
+		"key_id":             "evm",
 	})
 	require.NoError(t, err)
 
@@ -325,6 +346,7 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 			"encoder":            "",
 			"encoder_config":     map[string]any{},
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 		})
 		require.NoError(t, err)
 
@@ -337,6 +359,7 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 		config, err := values.NewMap(map[string]any{
 			"aggregation_method": "data_feeds",
 			"report_id":          "aaaa",
+			"key_id":             "evm",
 		})
 		require.NoError(t, err)
 
@@ -353,12 +376,29 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 			"encoder":            "",
 			"encoder_config":     map[string]any{},
 			"report_id":          "aa",
+			"key_id":             "evm",
 		})
 		require.NoError(t, err)
 
 		c, err := o.ValidateConfig(config)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "does not match pattern") // taken from the error json schema error message
+		require.Nil(t, c)
+	})
+
+	t.Run("InvalidConfig no key_id", func(t *testing.T) {
+		config, err := values.NewMap(map[string]any{
+			"aggregation_method": "data_feeds",
+			"aggregation_config": map[string]any{},
+			"encoder":            "",
+			"encoder_config":     map[string]any{},
+			"report_id":          "aaaa",
+		})
+		require.NoError(t, err)
+
+		c, err := o.ValidateConfig(config)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "missing properties: 'key_id'") // taken from the error json schema error message
 		require.Nil(t, c)
 	})
 }
@@ -382,6 +422,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "ffff",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)
@@ -441,6 +482,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 			"encoder_config":     map[string]any{},
 			"encoder":            "evm",
 			"report_id":          "ffff",
+			"key_id":             "evm",
 		},
 	)
 	require.NoError(t, err)

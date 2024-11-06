@@ -24,6 +24,7 @@ func TestGenerateFile(t *testing.T) {
 		Name:              "Core Node Dashboard",
 		Platform:          grafana.TypePlatformDocker,
 		MetricsDataSource: grafana.NewDataSource("Prometheus", "1"),
+		LogsDataSource:    grafana.NewDataSource("Loki", "2"),
 		Tested:            true,
 	})
 	if err != nil {
@@ -58,12 +59,13 @@ func TestNewDashboard(t *testing.T) {
 			Name:              "Core Node Dashboard",
 			Platform:          grafana.TypePlatformDocker,
 			MetricsDataSource: grafana.NewDataSource("Prometheus", "1"),
+			LogsDataSource:    grafana.NewDataSource("Loki", "2"),
 			Tested:            true,
 		})
 		if err != nil {
 			t.Errorf("Error creating dashboard: %v", err)
 		}
-		require.IsType(t, grafana.Dashboard{}, *testDashboard)
+		require.IsType(t, grafana.Observability{}, *testDashboard)
 		require.Equal(t, "Core Node Dashboard", *testDashboard.Dashboard.Title)
 		json, errJSON := testDashboard.GenerateJSON()
 		if errJSON != nil {

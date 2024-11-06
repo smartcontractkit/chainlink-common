@@ -6,11 +6,58 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
+// EncoderWrapper allows access to field from an sdk.CapDefinition[Encoder]
+func EncoderWrapper(raw sdk.CapDefinition[Encoder]) EncoderCap {
+	wrapped, ok := raw.(EncoderCap)
+	if ok {
+		return wrapped
+	}
+	return EncoderCap(raw)
+}
+
 type EncoderCap sdk.CapDefinition[Encoder]
+
+// EncoderConfigWrapper allows access to field from an sdk.CapDefinition[EncoderConfig]
+func EncoderConfigWrapper(raw sdk.CapDefinition[EncoderConfig]) EncoderConfigCap {
+	wrapped, ok := raw.(EncoderConfigCap)
+	if ok {
+		return wrapped
+	}
+	return EncoderConfigCap(raw)
+}
 
 type EncoderConfigCap sdk.CapDefinition[EncoderConfig]
 
+// KeyIdWrapper allows access to field from an sdk.CapDefinition[KeyId]
+func KeyIdWrapper(raw sdk.CapDefinition[KeyId]) KeyIdCap {
+	wrapped, ok := raw.(KeyIdCap)
+	if ok {
+		return wrapped
+	}
+	return KeyIdCap(raw)
+}
+
+type KeyIdCap sdk.CapDefinition[KeyId]
+
+// ReportIdWrapper allows access to field from an sdk.CapDefinition[ReportId]
+func ReportIdWrapper(raw sdk.CapDefinition[ReportId]) ReportIdCap {
+	wrapped, ok := raw.(ReportIdCap)
+	if ok {
+		return wrapped
+	}
+	return ReportIdCap(raw)
+}
+
 type ReportIdCap sdk.CapDefinition[ReportId]
+
+// SignedReportWrapper allows access to field from an sdk.CapDefinition[SignedReport]
+func SignedReportWrapper(raw sdk.CapDefinition[SignedReport]) SignedReportCap {
+	wrapped, ok := raw.(SignedReportCap)
+	if ok {
+		return wrapped
+	}
+	return &signedReportCap{CapDefinition: raw}
+}
 
 type SignedReportCap interface {
 	sdk.CapDefinition[SignedReport]
@@ -21,28 +68,26 @@ type SignedReportCap interface {
 	private()
 }
 
-// SignedReportCapFromStep should only be called from generated code to assure type safety
-func SignedReportCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[SignedReport]) SignedReportCap {
-	raw := step.AddTo(w)
-	return &signedReport{CapDefinition: raw}
-}
-
-type signedReport struct {
+type signedReportCap struct {
 	sdk.CapDefinition[SignedReport]
 }
 
-func (*signedReport) private() {}
-func (c *signedReport) Context() sdk.CapDefinition[[]uint8] {
+func (*signedReportCap) private() {}
+func (c *signedReportCap) Context() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[SignedReport, []uint8](c.CapDefinition, "Context")
 }
-func (c *signedReport) ID() sdk.CapDefinition[[]uint8] {
+func (c *signedReportCap) ID() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[SignedReport, []uint8](c.CapDefinition, "ID")
 }
-func (c *signedReport) Report() sdk.CapDefinition[[]uint8] {
+func (c *signedReportCap) Report() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[SignedReport, []uint8](c.CapDefinition, "Report")
 }
-func (c *signedReport) Signatures() sdk.CapDefinition[[][]uint8] {
+func (c *signedReportCap) Signatures() sdk.CapDefinition[[][]uint8] {
 	return sdk.AccessField[SignedReport, [][]uint8](c.CapDefinition, "Signatures")
+}
+
+func ConstantSignedReport(value SignedReport) SignedReportCap {
+	return &signedReportCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewSignedReportFromFields(

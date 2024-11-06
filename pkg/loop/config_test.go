@@ -187,6 +187,35 @@ func TestGetMap(t *testing.T) {
 	}
 }
 
+func TestGetMap(t *testing.T) {
+	os.Setenv("TEST_PREFIX_KEY1", "value1")
+	os.Setenv("TEST_PREFIX_KEY2", "value2")
+	os.Setenv("OTHER_KEY", "othervalue")
+
+	defer func() {
+		os.Unsetenv("TEST_PREFIX_KEY1")
+		os.Unsetenv("TEST_PREFIX_KEY2")
+		os.Unsetenv("OTHER_KEY")
+	}()
+
+	result := getMap("TEST_PREFIX_")
+
+	expected := map[string]string{
+		"KEY1": "value1",
+		"KEY2": "value2",
+	}
+
+	if len(result) != len(expected) {
+		t.Errorf("Expected map length %d, got %d", len(expected), len(result))
+	}
+
+	for k, v := range expected {
+		if result[k] != v {
+			t.Errorf("Expected key %s to have value %s, but got %s", k, v, result[k])
+		}
+	}
+}
+
 func TestManagedGRPCClientConfig(t *testing.T) {
 	t.Parallel()
 

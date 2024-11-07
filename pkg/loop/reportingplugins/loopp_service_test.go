@@ -50,39 +50,42 @@ func TestLOOPPService(t *testing.T) {
 		{Plugin: reportingplugins.PluginServiceName},
 	}
 	for _, ts := range tests {
-		looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-			return NewHelperProcessCommand(ts.Plugin)
-		},
-			core.ReportingPluginServiceConfig{},
-			nettest.MockConn{},
-			pipelinetest.PipelineRunner,
-			telemetrytest.Telemetry,
-			errorlogtest.ErrorLog,
-			keyvaluestoretest.KeyValueStore{},
-			relayersettest.RelayerSet{})
-		hook := looppSvc.XXXTestHook()
-		servicetest.Run(t, looppSvc)
+		t.Run(ts.Plugin, func(t *testing.T) {
+			t.Parallel()
+			looppSvc := reportingplugins.NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+				return NewHelperProcessCommand(ts.Plugin)
+			},
+				core.ReportingPluginServiceConfig{},
+				nettest.MockConn{},
+				pipelinetest.PipelineRunner,
+				telemetrytest.Telemetry,
+				errorlogtest.ErrorLog,
+				keyvaluestoretest.KeyValueStore{},
+				relayersettest.RelayerSet{})
+			hook := looppSvc.XXXTestHook()
+			servicetest.Run(t, looppSvc)
 
-		t.Run("control", func(t *testing.T) {
-			reportingplugintest.RunFactory(t, looppSvc)
-		})
+			t.Run("control", func(t *testing.T) {
+				reportingplugintest.RunFactory(t, looppSvc)
+			})
 
-		t.Run("Kill", func(t *testing.T) {
-			hook.Kill()
+			t.Run("Kill", func(t *testing.T) {
+				hook.Kill()
 
-			// wait for relaunch
-			time.Sleep(2 * goplugin.KeepAliveTickDuration)
+				// wait for relaunch
+				time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-			reportingplugintest.RunFactory(t, looppSvc)
-		})
+				reportingplugintest.RunFactory(t, looppSvc)
+			})
 
-		t.Run("Reset", func(t *testing.T) {
-			hook.Reset()
+			t.Run("Reset", func(t *testing.T) {
+				hook.Reset()
 
-			// wait for relaunch
-			time.Sleep(2 * goplugin.KeepAliveTickDuration)
+				// wait for relaunch
+				time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-			reportingplugintest.RunFactory(t, looppSvc)
+				reportingplugintest.RunFactory(t, looppSvc)
+			})
 		})
 	}
 }

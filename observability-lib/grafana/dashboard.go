@@ -3,6 +3,7 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -16,20 +17,20 @@ const (
 	TypePlatformDocker     TypePlatform = "docker"
 )
 
-type Dashboard struct {
+type Observability struct {
 	Dashboard            *dashboard.Dashboard
 	Alerts               []alerting.Rule
 	ContactPoints        []alerting.ContactPoint
 	NotificationPolicies []alerting.NotificationPolicy
 }
 
-func (db *Dashboard) GenerateJSON() ([]byte, error) {
-	dashboardJSON, err := json.MarshalIndent(db, "", "  ")
+func (o *Observability) GenerateJSON() ([]byte, error) {
+	output, err := json.MarshalIndent(o, "", "  ")
 	if err != nil {
 		return nil, err
 	}
 
-	return dashboardJSON, nil
+	return output, nil
 }
 
 type DeployOptions struct {
@@ -42,7 +43,7 @@ type DeployOptions struct {
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
 	for _, a := range alerts {
-		if a.Title == alert.Title {
+		if reflect.DeepEqual(a, alert) {
 			return true
 		}
 	}
@@ -58,38 +59,35 @@ func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
 	return nil
 }
 
-func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
+func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	grafanaClient := api.NewClient(
 		options.GrafanaURL,
 		options.GrafanaToken,
 	)
 
-	folder, errFolder := grafanaClient.FindOrCreateFolder(options.FolderName)
-	if errFolder != nil {
-		return errFolder
-	}
-
-	newDashboard, _, errPostDashboard := grafanaClient.PostDashboard(api.PostDashboardRequest{
-		Dashboard: db.Dashboard,
-		Overwrite: true,
-		FolderID:  int(folder.ID),
-	})
-	if errPostDashboard != nil {
-		return errPostDashboard
-	}
-
-	// Create alerts for the dashboard
-	if options.EnableAlerts && db.Alerts != nil && len(db.Alerts) > 0 {
-		// Get alert rules for the dashboard
-		alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
-		if errGetAlertRules != nil {
-			return errGetAlertRules
+	if options.FolderName != "" {
+		folder, errFolder := grafanaClient.FindOrCreateFolder(options.FolderName)
+		if errFolder != nil {
+			return errFolder
+		}
+		newDashboard, _, errPostDashboard := grafanaClient.PostDashboard(api.PostDashboardRequest{
+			Dashboard: o.Dashboard,
+			Overwrite: true,
+			FolderID:  int(folder.ID),
+		})
+		if errPostDashboard != nil {
+			return errPostDashboard
 		}
 
-		// delete alert rules for the dashboard
-		for _, rule := range alertsRule {
-			// delete alert rule only if it won't be created again from code
-			if !alertRuleExist(db.Alerts, rule) {
+		if !options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
+			// Get alert rules for the dashboard
+			alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
+			if errGetAlertRules != nil {
+				return errGetAlertRules
+			}
+
+			// delete existing alert rules for the dashboard if alerts are disabled
+			for _, rule := range alertsRule {
 				_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
 				if errDeleteAlertRule != nil {
 					return errDeleteAlertRule
@@ -97,30 +95,52 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 			}
 		}
 
-		// Create alert rules for the dashboard
-		for _, alert := range db.Alerts {
-			alert.RuleGroup = *db.Dashboard.Title
-			alert.FolderUID = folder.UID
-			alert.Annotations["__dashboardUid__"] = *newDashboard.UID
-
-			panelId := panelIDByTitle(db.Dashboard, alert.Title)
-			if panelId != "" {
-				alert.Annotations["__panelId__"] = panelIDByTitle(db.Dashboard, alert.Title)
+		// Create alerts for the dashboard
+		if options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
+			// Get alert rules for the dashboard
+			alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
+			if errGetAlertRules != nil {
+				return errGetAlertRules
 			}
-			if alertRuleExist(alertsRule, alert) {
-				// update alert rule if it already exists
-				alertToUpdate := getAlertRuleByTitle(alertsRule, alert.Title)
-				if alertToUpdate != nil {
-					_, _, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
-					if errPutAlertRule != nil {
-						return errPutAlertRule
+
+			// delete alert rules for the dashboard
+			for _, rule := range alertsRule {
+				// delete alert rule only if it won't be created again from code
+				if !alertRuleExist(o.Alerts, rule) {
+					_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
+					if errDeleteAlertRule != nil {
+						return errDeleteAlertRule
 					}
 				}
-			} else {
-				// create alert rule if it doesn't exist
-				_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
-				if errPostAlertRule != nil {
-					return errPostAlertRule
+			}
+
+			// Create alert rules for the dashboard
+			for _, alert := range o.Alerts {
+				alert.RuleGroup = *o.Dashboard.Title
+				alert.FolderUID = folder.UID
+				alert.Annotations["__dashboardUid__"] = *newDashboard.UID
+
+				panelId := panelIDByTitle(o.Dashboard, alert.Annotations["panel_title"])
+				// we can clean it up as it was only used to get the panelId
+				delete(alert.Annotations, "panel_title")
+				if panelId != "" {
+					alert.Annotations["__panelId__"] = panelId
+				}
+				if alertRuleExist(alertsRule, alert) {
+					// update alert rule if it already exists
+					alertToUpdate := getAlertRuleByTitle(alertsRule, alert.Title)
+					if alertToUpdate != nil {
+						_, _, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
+						if errPutAlertRule != nil {
+							return errPutAlertRule
+						}
+					}
+				} else {
+					// create alert rule if it doesn't exist
+					_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
+					if errPostAlertRule != nil {
+						return errPostAlertRule
+					}
 				}
 			}
 		}
@@ -143,8 +163,8 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 	}
 
 	// Create contact points for the alerts
-	if db.ContactPoints != nil && len(db.ContactPoints) > 0 {
-		for _, contactPoint := range db.ContactPoints {
+	if o.ContactPoints != nil && len(o.ContactPoints) > 0 {
+		for _, contactPoint := range o.ContactPoints {
 			errCreateOrUpdateContactPoint := grafanaClient.CreateOrUpdateContactPoint(contactPoint)
 			if errCreateOrUpdateContactPoint != nil {
 				return errCreateOrUpdateContactPoint
@@ -153,8 +173,8 @@ func (db *Dashboard) DeployToGrafana(options *DeployOptions) error {
 	}
 
 	// Create notification policies for the alerts
-	if db.NotificationPolicies != nil && len(db.NotificationPolicies) > 0 {
-		for _, notificationPolicy := range db.NotificationPolicies {
+	if o.NotificationPolicies != nil && len(o.NotificationPolicies) > 0 {
+		for _, notificationPolicy := range o.NotificationPolicies {
 			errAddNestedPolicy := grafanaClient.AddNestedPolicy(notificationPolicy)
 			if errAddNestedPolicy != nil {
 				return errAddNestedPolicy

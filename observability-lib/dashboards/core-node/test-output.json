@@ -5891,6 +5891,7 @@
     {
       "annotations": {
         "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"C\" }}%",
+        "panel_title": "Health Avg by Service over 15m",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "Uptime less than 90% over last 15 minutes on one component in a Node"
       },
@@ -5971,16 +5972,199 @@
       "folderUID": "",
       "for": "15m",
       "labels": {
+        "severity": "info"
+      },
+      "noDataState": "NoData",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Health Avg by Service is less than 90%"
+    },
+    {
+      "annotations": {
+        "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"C\" }}%",
+        "panel_title": "Health Avg by Service over 15m",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Uptime less than 70% over last 15 minutes on one component in a Node"
+      },
+      "condition": "D",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "health{}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "$B * 100",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "math"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    70,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "C",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "D",
+            "type": "threshold"
+          },
+          "refId": "D",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
         "severity": "warning"
       },
       "noDataState": "NoData",
       "orgID": 0,
       "ruleGroup": "",
-      "title": "Health Avg by Service over 15m"
+      "title": "Health Avg by Service is less than 70%"
+    },
+    {
+      "annotations": {
+        "description": "Component {{ index $labels \"service_id\" }} uptime in the last 15m is {{ index $values \"C\" }}%",
+        "panel_title": "Health Avg by Service over 15m",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Uptime less than 50% over last 15 minutes on one component in a Node"
+      },
+      "condition": "D",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "health{}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "$B * 100",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "math"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    50,
+                    0
+                  ],
+                  "type": "lt"
+                }
+              }
+            ],
+            "expression": "C",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "D",
+            "type": "threshold"
+          },
+          "refId": "D",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "15m",
+      "labels": {
+        "severity": "critical"
+      },
+      "noDataState": "NoData",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "Health Avg by Service is less than 50%"
     },
     {
       "annotations": {
         "description": "ETH Balance critically low at {{ index $values \"A\" }} on {{ index $labels \"instance\" }}",
+        "panel_title": "ETH Balance",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "ETH Balance is lower than threshold"
       },
@@ -6042,6 +6226,7 @@
     {
       "annotations": {
         "description": "Solana Balance critically low at {{ index $values \"A\" }} on {{ index $labels \"instance\" }}",
+        "panel_title": "SOL Balance",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "Solana Balance is lower than threshold"
       },
@@ -6103,6 +6288,7 @@
     {
       "annotations": {
         "description": "{{ index $labels \"instance\" }} on ChainID {{ index $labels \"ChainID\" }} has received {{ index $values \"A\" }} heads over 10 minutes.",
+        "panel_title": "Head Tracker Heads Received Rate",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "No Headers Received"
       },

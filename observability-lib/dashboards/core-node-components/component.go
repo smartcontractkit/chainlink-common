@@ -9,7 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
-func NewDashboard(props *Props) (*grafana.Dashboard, error) {
+func NewDashboard(props *Props) (*grafana.Observability, error) {
 	if props.Name == "" {
 		return nil, fmt.Errorf("Name is required")
 	}

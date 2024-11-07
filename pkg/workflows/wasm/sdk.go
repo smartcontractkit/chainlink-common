@@ -109,8 +109,9 @@ func createEmitFn(
 
 		// Marshal the message and labels into a protobuf message
 		b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-			Message: msg,
-			Labels:  values.ProtoMap(vm),
+			RequestId: *sdkConfig.RequestID,
+			Message:   msg,
+			Labels:    values.ProtoMap(vm),
 		})
 		if err != nil {
 			return err
@@ -176,6 +177,13 @@ func createFetchFn(
 			Headers:   values.ProtoMap(headerspb),
 			Body:      req.Body,
 			TimeoutMs: req.TimeoutMs,
+
+			Metadata: &wasmpb.FetchRequestMetadata{
+				WorkflowId:          sdkConfig.Metadata.WorkflowID,
+				WorkflowName:        sdkConfig.Metadata.WorkflowName,
+				WorkflowOwner:       sdkConfig.Metadata.WorkflowOwner,
+				WorkflowExecutionId: sdkConfig.Metadata.WorkflowExecutionID,
+			},
 		})
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)

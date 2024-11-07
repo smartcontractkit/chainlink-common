@@ -12,7 +12,7 @@ type config struct {
 	ReportID          string      `mapstructure:"report_id" json:"report_id" jsonschema:"required,pattern=^[a-f0-9]{4}$"`
 	RequestTimeoutMS  int64       `mapstructure:"request_timeout_ms" json:"request_timeout_ms"`
 
-	KeyID string `mapstructure:"key_id" json:"key_id"`
+	KeyID string `mapstructure:"key_id" json:"key_id,omitempty" jsonschema:"required"`
 }
 
 type inputs struct {

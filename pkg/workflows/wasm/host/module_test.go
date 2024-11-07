@@ -13,17 +13,18 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
 type mockMessageEmitter struct {
-	e      func(string, map[string]string) error
+	e      func(context.Context, string, map[string]string) error
 	labels map[string]string
 }
 
-func (m *mockMessageEmitter) Emit(msg string) error {
-	return m.e(msg, m.labels)
+func (m *mockMessageEmitter) Emit(ctx context.Context, msg string) error {
+	return m.e(ctx, msg, m.labels)
 }
 
 func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) custmsg.MessageEmitter {
@@ -40,7 +41,7 @@ func (m *mockMessageEmitter) Labels() map[string]string {
 	return m.labels
 }
 
-func newMockMessageEmitter(e func(string, map[string]string) error) custmsg.MessageEmitter {
+func newMockMessageEmitter(e func(context.Context, string, map[string]string) error) custmsg.MessageEmitter {
 	return &mockMessageEmitter{e: e}
 }
 
@@ -48,14 +49,31 @@ func newMockMessageEmitter(e func(string, map[string]string) error) custmsg.Mess
 // access functions are injected as mocks.
 func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		ctxKey := "key"
+		ctxValue := "test-value"
+		ctx := tests.Context(t)
+		ctx = context.WithValue(ctx, ctxKey, "test-value")
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+		reqId := "random-id"
+		err := store.add(
+			reqId,
+			&RequestData{ctx: func() context.Context { return ctx }})
+		require.NoError(t, err)
 		emitFn := createEmitFn(
 			logger.Test(t),
-			newMockMessageEmitter(func(_ string, _ map[string]string) error {
+			store,
+			newMockMessageEmitter(func(ctx context.Context, _ string, _ map[string]string) error {
+				v := ctx.Value(ctxKey)
+				assert.Equal(t, ctxValue, v)
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-					Message: "hello, world",
+					RequestId: reqId,
+					Message:   "hello, world",
 					Labels: &pb.Map{
 						Fields: map[string]*pb.Value{
 							"foo": {
@@ -81,9 +99,14 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("success without labels", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
 		emitFn := createEmitFn(
 			logger.Test(t),
-			newMockMessageEmitter(func(_ string, _ map[string]string) error {
+			store,
+			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -103,6 +126,10 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("successfully write error to memory on failure to read", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
 		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 			Error: &wasmpb.Error{
 				Message: assert.AnError.Error(),
@@ -112,6 +139,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
+			store,
 			nil,
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
@@ -130,6 +158,14 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("failure to emit writes error to memory", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
+		reqId := "random-id"
+		store.add(reqId, &RequestData{
+			ctx: func() context.Context { return tests.Context(t) },
+		})
 		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 			Error: &wasmpb.Error{
 				Message: assert.AnError.Error(),
@@ -139,11 +175,14 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			newMockMessageEmitter(func(_ string, _ map[string]string) error {
+			store,
+			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return assert.AnError
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
+				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
+					RequestId: reqId,
+				})
 				assert.NoError(t, err)
 				return b, nil
 			}),
@@ -161,6 +200,10 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("bad read failure to unmarshal protos", func(t *testing.T) {
+		store := &store{
+			m:  make(map[string]*RequestData),
+			mu: sync.RWMutex{},
+		}
 		badData := []byte("not proto bufs")
 		msg := &wasmpb.EmitMessageRequest{}
 		marshallErr := proto.Unmarshal(badData, msg)
@@ -175,6 +218,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
+			store,
 			nil,
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return badData, nil
@@ -203,9 +247,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
-				return fn(context.Background())
-			},
+			ctx: func() context.Context { return tests.Context(t) },
 		}
 
 		fetchFn := createFetchFn(
@@ -348,54 +390,6 @@ func TestCreateFetchFn(t *testing.T) {
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
-	t.Run("NOK-fetch_fails_stored_ctx_is_nil", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
-
-		// we add the request data to the store so that the fetch function can find it
-		store.m[testID] = &RequestData{
-			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
-				return fn(nil)
-			},
-		}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: testID,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				// the error is handled and written to the buffer
-				resp := &wasmpb.FetchResponse{}
-				err := proto.Unmarshal(src, resp)
-				require.NoError(t, err)
-				expectedErr := "context is nil"
-				assert.Equal(t, expectedErr, resp.ErrorMessage)
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
-				},
-				MaxFetchRequests: 1,
-			},
-			store,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
 	t.Run("NOK-fetch_returns_an_error", func(t *testing.T) {
 		store := &store{
 			m:  make(map[string]*RequestData),
@@ -404,9 +398,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
-				return fn(context.Background())
-			},
+			ctx: func() context.Context { return tests.Context(t) },
 		}
 
 		fetchFn := createFetchFn(
@@ -452,9 +444,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
-				return fn(context.Background())
-			},
+			ctx: func() context.Context { return tests.Context(t) },
 		}
 
 		fetchFn := createFetchFn(
@@ -493,9 +483,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			callWithCtx: func(fn func(context.Context) (*wasmpb.FetchResponse, error)) (*wasmpb.FetchResponse, error) {
-				return fn(context.Background())
-			},
+			ctx: func() context.Context { return tests.Context(t) },
 		}
 
 		fetchFn := createFetchFn(
@@ -651,8 +639,10 @@ func Test_toValidatedLabels(t *testing.T) {
 
 func Test_toEmissible(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		reqID := "random-id"
 		msg := &wasmpb.EmitMessageRequest{
-			Message: "hello, world",
+			RequestId: reqID,
+			Message:   "hello, world",
 			Labels: &pb.Map{
 				Fields: map[string]*pb.Value{
 					"test": {
@@ -667,14 +657,15 @@ func Test_toEmissible(t *testing.T) {
 		b, err := proto.Marshal(msg)
 		assert.NoError(t, err)
 
-		gotMsg, gotLabels, err := toEmissible(b)
+		rid, gotMsg, gotLabels, err := toEmissible(b)
 		assert.NoError(t, err)
 		assert.Equal(t, "hello, world", gotMsg)
 		assert.Equal(t, map[string]string{"test": "value"}, gotLabels)
+		assert.Equal(t, reqID, rid)
 	})
 
 	t.Run("fails with bad message", func(t *testing.T) {
-		_, _, err := toEmissible([]byte("not proto bufs"))
+		_, _, _, err := toEmissible([]byte("not proto bufs"))
 		assert.Error(t, err)
 	})
 }

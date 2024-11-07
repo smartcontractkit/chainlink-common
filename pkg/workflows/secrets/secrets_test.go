@@ -3,6 +3,8 @@ package secrets
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -190,4 +192,86 @@ func TestEncryptDecrypt(t *testing.T) {
 		assert.ErrorContains(t, err, "cannot find secrets blob")
 	})
 
+}
+
+func TestValidateEncryptedSecrets(t *testing.T) {
+	// Helper function to generate a valid base64 encoded string
+	validBase64 := func(input string) string {
+		return base64.StdEncoding.EncodeToString([]byte(input))
+	}
+
+	// Define a key for testing
+	keyFromMetadata := [32]byte{1, 2, 3}
+
+	// Valid JSON input with matching workflow owner
+	validInput := map[string]interface{}{
+		"encryptedSecrets": map[string]string{
+			"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": validBase64("secret1"),
+		},
+		"metadata": map[string]interface{}{
+			"workflowOwner": "correctOwner",
+			"nodePublicEncryptionKeys": map[string]string{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": hex.EncodeToString(keyFromMetadata[:]),
+			},
+		},
+	}
+
+	// Serialize the valid input
+	validData, _ := json.Marshal(validInput)
+
+	// Define test cases
+	tests := []struct {
+		name                 string
+		inputData            []byte
+		encryptionPublicKeys map[string][32]byte
+		workflowOwner        string
+		shouldError          bool
+	}{
+		{
+			name:          "Valid input",
+			inputData:     validData,
+			workflowOwner: "correctOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			shouldError: false,
+		},
+		{
+			name:          "Invalid base64 encoded secret",
+			inputData:     []byte(`{"encryptedSecrets": {"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": "invalid-base64!"}}`),
+			workflowOwner: "correctOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			shouldError: true,
+		},
+		{
+			name:          "Missing public key",
+			inputData:     validData,
+			workflowOwner: "correctOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"some-other-id": {1, 2, 3},
+			},
+			shouldError: true,
+		},
+		{
+			name:          "Mismatched workflow owner",
+			inputData:     validData,
+			workflowOwner: "incorrectOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			shouldError: true,
+		},
+	}
+
+	// Run the test cases
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateEncryptedSecrets(test.inputData, test.encryptionPublicKeys, test.workflowOwner)
+			if (err != nil) != test.shouldError {
+				t.Errorf("Expected error: %v, got: %v", test.shouldError, err != nil)
+			}
+		})
+	}
 }

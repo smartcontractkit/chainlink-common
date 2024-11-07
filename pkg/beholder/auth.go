@@ -1,6 +1,9 @@
 package beholder
 
-import "fmt"
+import (
+	"crypto/ed25519"
+	"fmt"
+)
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
 var authHeaderKey = "X-Beholder-Node-Auth-Token"
@@ -14,9 +17,9 @@ var authHeaderVersion = "1"
 // <version>:<public_key_hex>:<signature_hex>
 //
 // where the byte value of <public_key_hex> is what's being signed
-func BuildAuthHeaders(signer func([]byte) []byte, pubKey []byte) map[string]string {
+func BuildAuthHeaders(privKey ed25519.PrivateKey, pubKey ed25519.PublicKey) map[string]string {
 	messageBytes := pubKey
-	signature := signer(messageBytes)
+	signature := ed25519.Sign(privKey, messageBytes)
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 
 	return map[string]string{authHeaderKey: headerValue}

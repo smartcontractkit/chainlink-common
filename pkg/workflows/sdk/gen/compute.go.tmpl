@@ -70,13 +70,13 @@ func Compute{{.}}WithConfig[{{range  RangeNum .}}I{{.}} any, {{ end }}O any, C a
             return capabilities.CapabilityResponse{}, err
         }
 
-	var conf C
-	if request.Config != nil {
-		err = request.Config.UnwrapTo(&conf)
-		if err != nil {
-		    return capabilities.CapabilityResponse{}, err
-		}
-	}
+        var conf C
+        if request.Config != nil {
+            err = request.Config.UnwrapTo(&conf)
+            if err != nil {
+                return capabilities.CapabilityResponse{}, err
+            }
+        }
 
         output, err := compute(runtime, conf, {{range RangeNum . }}inputs.Arg{{.}},{{ end }})
         if err != nil {
@@ -97,5 +97,57 @@ func Compute{{.}}WithConfig[{{range  RangeNum .}}I{{.}} any, {{ end }}O any, C a
     }
     w.fns[ref] = capFn
     return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
+}
+
+// Compute{{.}}WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
+func Compute{{.}}WithMetadata[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSpecFactory, ref string, input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}], compute func(Runtime, {{range RangeNum . }}I{{.}},{{ end }} capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
+    def := StepDefinition{
+		ID:     "custom_compute@1.0.0",
+		Ref:    ref,
+		Inputs: input.ToSteps(),
+		Config: map[string]any{
+			"config": "$(ENV.config)",
+			"binary": "$(ENV.binary)",
+		},
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}
+
+	capFn := func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+		var inputs runtime{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]
+		if err := request.Inputs.UnwrapTo(&inputs); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// verify against any schema by marshalling and unmarshalling
+		ji, err := json.Marshal(inputs)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		// use a temp variable to unmarshal to avoid type loss if the inputs has an any in it
+		var tmp runtime{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]
+		if err := json.Unmarshal(ji, &tmp); err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		output, err := compute(runtime, {{range RangeNum . }}inputs.Arg{{.}},{{ end }} request.Metadata)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		computeOutput := ComputeOutput[O]{Value: output}
+		wrapped, err := values.CreateMapFromStruct(computeOutput)
+		if err != nil {
+			return capabilities.CapabilityResponse{}, err
+		}
+
+		return capabilities.CapabilityResponse{Value: wrapped}, nil
+	}
+
+	if w.fns == nil {
+		w.fns = map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error){}
+	}
+	w.fns[ref] = capFn
+	return &computeOutputCap[O]{(&Step[ComputeOutput[O]]{Definition: def}).AddTo(w)}
 }
 {{- end }}

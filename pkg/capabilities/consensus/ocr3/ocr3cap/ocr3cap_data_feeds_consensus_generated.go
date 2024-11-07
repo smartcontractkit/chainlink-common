@@ -36,6 +36,9 @@ type DataFeedsConsensusConfig struct {
 	// EncoderConfig corresponds to the JSON schema field "encoder_config".
 	EncoderConfig EncoderConfig `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 
+	// KeyId corresponds to the JSON schema field "key_id".
+	KeyId KeyId `json:"key_id" yaml:"key_id" mapstructure:"key_id"`
+
 	// ReportId corresponds to the JSON schema field "report_id".
 	ReportId ReportId `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
 }
@@ -116,6 +119,9 @@ func (j *DataFeedsConsensusConfig) UnmarshalJSON(b []byte) error {
 	}
 	if _, ok := raw["encoder_config"]; raw != nil && !ok {
 		return fmt.Errorf("field encoder_config in DataFeedsConsensusConfig: required")
+	}
+	if _, ok := raw["key_id"]; raw != nil && !ok {
+		return fmt.Errorf("field key_id in DataFeedsConsensusConfig: required")
 	}
 	if _, ok := raw["report_id"]; raw != nil && !ok {
 		return fmt.Errorf("field report_id in DataFeedsConsensusConfig: required")

@@ -95,14 +95,13 @@ func engine(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Workflows Running",
+			Title:       "Workflows Running by Node",
 			Description: "",
 			Span:        8,
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `sum(platform_engine_workflow_count{` + p.QueryFilters + `}) by (workflowOwner, workflowName)`,
-					Legend: "{{ workflowOwner }} - {{ workflowName }}",
+					Expr: `sum(platform_engine_workflow_count) by (container_id)`,
 				},
 			},
 		},
@@ -119,7 +118,7 @@ func engine(p *Props) []*grafana.Panel {
 				NoDataState: alerting.RuleNoDataStateOK,
 				Query: []grafana.RuleQuery{
 					{
-						Expr:       `platform_engine_workflow_count{` + p.AlertsFilters + `}`,
+						Expr:       `sum(platform_engine_workflow_count{` + p.AlertsFilters + `}) by (container_id)`,
 						RefID:      "A",
 						Datasource: p.MetricsDataSource.UID,
 					},

@@ -157,7 +157,8 @@ func RegisterToWorkflowRequestToProto(req capabilities.RegisterToWorkflowRequest
 
 	return &RegisterToWorkflowRequest{
 		Metadata: &RegistrationMetadata{
-			WorkflowId: req.Metadata.WorkflowID,
+			WorkflowId:  req.Metadata.WorkflowID,
+			ReferenceId: req.Metadata.ReferenceID,
 		},
 		Config: values.ProtoMap(config),
 	}
@@ -179,7 +180,8 @@ func RegisterToWorkflowRequestFromProto(req *RegisterToWorkflowRequest) (capabil
 
 	return capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowId,
+			WorkflowID:  req.Metadata.WorkflowId,
+			ReferenceID: req.Metadata.ReferenceId,
 		},
 		Config: config,
 	}, nil
@@ -193,7 +195,8 @@ func UnregisterFromWorkflowRequestToProto(req capabilities.UnregisterFromWorkflo
 
 	return &UnregisterFromWorkflowRequest{
 		Metadata: &RegistrationMetadata{
-			WorkflowId: req.Metadata.WorkflowID,
+			WorkflowId:  req.Metadata.WorkflowID,
+			ReferenceId: req.Metadata.ReferenceID,
 		},
 		Config: values.ProtoMap(config),
 	}
@@ -215,7 +218,8 @@ func UnregisterFromWorkflowRequestFromProto(req *UnregisterFromWorkflowRequest) 
 
 	return capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowId,
+			WorkflowID:  req.Metadata.WorkflowId,
+			ReferenceID: req.Metadata.ReferenceId,
 		},
 		Config: config,
 	}, nil

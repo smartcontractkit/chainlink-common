@@ -71,6 +71,7 @@ type RequestMetadata struct {
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
+	ReferenceID   string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.

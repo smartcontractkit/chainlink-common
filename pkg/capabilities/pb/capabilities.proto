@@ -80,6 +80,7 @@ message CapabilityResponse {
 
 message RegistrationMetadata {
   string workflow_id = 1;
+  string reference_id = 2;
 }
 
 message RegisterToWorkflowRequest {

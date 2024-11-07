@@ -17,7 +17,8 @@ var authHeaderVersion = "1"
 // <version>:<public_key_hex>:<signature_hex>
 //
 // where the byte value of <public_key_hex> is what's being signed
-func BuildAuthHeaders(privKey ed25519.PrivateKey, pubKey ed25519.PublicKey) map[string]string {
+func BuildAuthHeaders(privKey ed25519.PrivateKey) map[string]string {
+	pubKey := privKey.Public().(ed25519.PublicKey)
 	messageBytes := pubKey
 	signature := ed25519.Sign(privKey, messageBytes)
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)

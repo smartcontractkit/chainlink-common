@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1730924800137,
+  "lastUpdate": 1730986993315,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6090,6 +6090,48 @@ window.BENCHMARK_DATA = {
             "value": 28613,
             "unit": "ns/op",
             "extra": "42397 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "25e45ecd73ba518f955995dd3aef97d1318cee17",
+          "message": "Fix codec wrapper modifier config unmarshall and add tests (#922)",
+          "timestamp": "2024-11-07T14:42:05+01:00",
+          "tree_id": "4f4623ce99c0a6cc6f2e3dbc6f081ee45f00f564",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/25e45ecd73ba518f955995dd3aef97d1318cee17"
+        },
+        "date": 1730986992102,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 448.9,
+            "unit": "ns/op",
+            "extra": "2678180 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.2,
+            "unit": "ns/op",
+            "extra": "2235960 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28289,
+            "unit": "ns/op",
+            "extra": "42418 times\n4 procs"
           }
         ]
       }

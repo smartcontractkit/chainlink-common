@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -126,7 +127,33 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
+func NewModuleAndSerialize(modCfg *ModuleConfig, binary []byte, loc string, opts ...func(*ModuleConfig)) (*Module, error) {
+	m, err := NewModule(modCfg, binary, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := m.module.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = os.WriteFile(loc, s, 0644); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func NewModuleFromSerialized(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+	return newModule(modCfg, binary, wasmtime.NewModuleDeserialize, opts...)
+}
+
 func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+	return newModule(modCfg, binary, wasmtime.NewModule, opts...)
+}
+
+func newModule(modCfg *ModuleConfig, binary []byte, create func(*wasmtime.Engine, []byte) (*wasmtime.Module, error), opts ...func(*ModuleConfig)) (*Module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -180,7 +207,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		binary = decompedBinary
 	}
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := create(engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}

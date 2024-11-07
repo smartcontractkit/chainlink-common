@@ -240,22 +240,22 @@ func engine(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  p.MetricsDataSource.Name,
-			Title:       "Workflow Execution Latency",
+			Title:       "Workflow Execution Latency | Status: completed",
 			Description: "",
 			Span:        8,
 			Height:      8,
 			Unit:        "ms",
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_workflow_time{` + p.QueryFilters + `}`,
+					Expr:   `platform_engine_workflow_time{` + `status="completed",` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},
 		},
 		AlertsOptions: []grafana.AlertOptions{
 			{
-				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Latency",
-				Summary:     "Workflow Execution latency is high",
+				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Completed Latency",
+				Summary:     "Workflow Execution Completed latency is high",
 				Description: `{{ index $labels "job" }}/{{ index $labels "workflowID" }} workflow latency is {{ index $values "B" }}ms`,
 				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
 				For:         "5m",
@@ -266,6 +266,120 @@ func engine(p *Props) []*grafana.Panel {
 				Query: []grafana.RuleQuery{
 					{
 						Expr:       `platform_engine_workflow_time{` + p.AlertsFilters + `}`,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "C",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ReduceExpression: &grafana.ReduceExpression{
+							Expression: "A",
+							Reducer:    expr.TypeReduceReducerMean,
+						},
+					},
+					{
+						RefID: "C",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "B",
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{900000},
+								Type:   grafana.TypeThresholdTypeGt,
+							},
+						},
+					},
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Execution Latency | Status: Early Exit",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `platform_engine_workflow_time{` + `status="completed_early_exit",` + p.QueryFilters + `}`,
+					Legend: "",
+				},
+			},
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
+				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Completed Early Latency",
+				Summary:     "Workflow Execution Early Exit latency is high",
+				Description: `{{ index $labels "job" }}/{{ index $labels "workflowID" }} workflow latency is {{ index $values "B" }}ms`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "5m",
+				Tags: map[string]string{
+					"severity": "critical",
+				},
+				NoDataState: alerting.RuleNoDataStateOK,
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `platform_engine_workflow_time{` + `status="completed_early_exit",` + p.AlertsFilters + `}`,
+						RefID:      "A",
+						Datasource: p.MetricsDataSource.UID,
+					},
+				},
+				QueryRefCondition: "C",
+				Condition: []grafana.ConditionQuery{
+					{
+						RefID: "B",
+						ReduceExpression: &grafana.ReduceExpression{
+							Expression: "A",
+							Reducer:    expr.TypeReduceReducerMean,
+						},
+					},
+					{
+						RefID: "C",
+						ThresholdExpression: &grafana.ThresholdExpression{
+							Expression: "B",
+							ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+								Params: []float64{900000},
+								Type:   grafana.TypeThresholdTypeGt,
+							},
+						},
+					},
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Execution Latency | Status: Errored",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `platform_engine_workflow_time{` + `status="errored",` + p.QueryFilters + `}`,
+					Legend: "",
+				},
+			},
+		},
+		AlertsOptions: []grafana.AlertOptions{
+			{
+				Title:       p.AlertsTitlePrefix + "[Engine] Workflow Execution Errored Latency",
+				Summary:     "Workflow Execution Errored latency is high",
+				Description: `{{ index $labels "job" }}/{{ index $labels "workflowID" }} workflow latency is {{ index $values "B" }}ms`,
+				RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+				For:         "5m",
+				Tags: map[string]string{
+					"severity": "critical",
+				},
+				NoDataState: alerting.RuleNoDataStateOK,
+				Query: []grafana.RuleQuery{
+					{
+						Expr:       `platform_engine_workflow_time{` + `status="errored",` + p.AlertsFilters + `}`,
 						RefID:      "A",
 						Datasource: p.MetricsDataSource.UID,
 					},

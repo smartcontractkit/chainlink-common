@@ -36,6 +36,22 @@ func NewDashboard(props *Props) (*grafana.Observability, error) {
 	builder.AddRow("Registry Syncer")
 	builder.AddPanel(registrySyncer(props)...)
 
+	builder.AddRow("Logs")
+	builder.AddPanel(grafana.NewLogPanel(&grafana.LogPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: props.LogsDataSource.Name,
+			Title:      "Logs",
+			Span:       24,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `{domain="keystone"}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
 	if props.SlackChannel != "" && props.SlackWebhookURL != "" {
 		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{
 			Name: "keystone-slack",

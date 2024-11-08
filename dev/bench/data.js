@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731014909508,
+  "lastUpdate": 1731061631727,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6174,6 +6174,48 @@ window.BENCHMARK_DATA = {
             "value": 28247,
             "unit": "ns/op",
             "extra": "42463 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1531008bdec9c034f02131383b62ef80b51aaeec",
+          "message": "Add key id field to consensus wrappers (#923)",
+          "timestamp": "2024-11-08T10:26:17Z",
+          "tree_id": "3e9d71670de0c72d585bd02e51e9ddbace563517",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1531008bdec9c034f02131383b62ef80b51aaeec"
+        },
+        "date": 1731061631003,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 444.7,
+            "unit": "ns/op",
+            "extra": "2546547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 504.2,
+            "unit": "ns/op",
+            "extra": "2387876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28287,
+            "unit": "ns/op",
+            "extra": "42466 times\n4 procs"
           }
         ]
       }

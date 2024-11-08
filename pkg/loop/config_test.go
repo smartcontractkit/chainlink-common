@@ -128,6 +128,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TelemetryCACertFile:         "foo/bar",
 		TelemetryAttributes:         OtelAttributes{"foo": "bar", "baz": "42"},
 		TelemetryTraceSampleRatio:   0.42,
+		TelemetryAuthHeaders:        map[string]string{"header-key": "header-value"},
+		TelemetryAuthPubKeyHex:      "pub-key-hex",
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -152,6 +154,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "0.42", got[envTelemetryTraceSampleRatio])
 	assert.Equal(t, "bar", got[envTelemetryAttribute+"foo"])
 	assert.Equal(t, "42", got[envTelemetryAttribute+"baz"])
+	assert.Equal(t, "header-value", got[envTelemetryAuthHeader+"header-key"])
+	assert.Equal(t, "pub-key-hex", got[envTelemetryAuthPubKeyHex])
 }
 
 func TestGetMap(t *testing.T) {

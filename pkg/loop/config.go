@@ -26,6 +26,8 @@ const (
 	envTelemetryCACertFile       = "CL_TELEMETRY_CA_CERT_FILE"
 	envTelemetryAttribute        = "CL_TELEMETRY_ATTRIBUTE_"
 	envTelemetryTraceSampleRatio = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryAuthHeader       = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthPubKeyHex    = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -47,6 +49,8 @@ type EnvConfig struct {
 	TelemetryCACertFile         string
 	TelemetryAttributes         OtelAttributes
 	TelemetryTraceSampleRatio   float64
+	TelemetryAuthHeaders        map[string]string
+	TelemetryAuthPubKeyHex      string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -77,6 +81,11 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	for k, v := range e.TelemetryAttributes {
 		add(envTelemetryAttribute+k, v)
 	}
+
+	for k, v := range e.TelemetryAuthHeaders {
+		add(envTelemetryAuthHeader+k, v)
+	}
+	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
 
 	return
 }
@@ -124,6 +133,8 @@ func (e *EnvConfig) parse() error {
 		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
 		e.TelemetryAttributes = getMap(envTelemetryAttribute)
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
+		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
+		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
 	}
 	return nil
 }

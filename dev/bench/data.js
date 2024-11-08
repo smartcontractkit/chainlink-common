@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731076749068,
+  "lastUpdate": 1731086320536,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6258,6 +6258,48 @@ window.BENCHMARK_DATA = {
             "value": 28346,
             "unit": "ns/op",
             "extra": "42482 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4ae4553ff99a6e26fff032c0b5dde82fbc357910",
+          "message": "Improve getMapsFromPath to handle ptrs to array/slice and map cleanup (#926)\n\n* Improve getMapsFromPath to handle ptrs to array/slice and add a test\r\n\r\n* minor improvement",
+          "timestamp": "2024-11-08T18:17:39+01:00",
+          "tree_id": "70ab7b7f29d9fabf27bd75073d7006e0e7ce8f36",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4ae4553ff99a6e26fff032c0b5dde82fbc357910"
+        },
+        "date": 1731086319419,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 444.4,
+            "unit": "ns/op",
+            "extra": "2503801 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508.8,
+            "unit": "ns/op",
+            "extra": "2347791 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28263,
+            "unit": "ns/op",
+            "extra": "42571 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731086320536,
+  "lastUpdate": 1731098697431,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6300,6 +6300,48 @@ window.BENCHMARK_DATA = {
             "value": 28263,
             "unit": "ns/op",
             "extra": "42571 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177086174+4of9@users.noreply.github.com",
+            "name": "4of9",
+            "username": "4of9"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "914b88b62cf277f057d396275a29131a27879057",
+          "message": "Beholder CSA Authentication (#877)\n\n* Rename getAttributes to getMap\r\n\r\n* Fix getMap\r\n\r\n* Add Authenticator to Beholder\r\n\r\n* Use Authenticator in Beholder\r\n\r\n* Add Authenticator to Beholder global\r\n\r\n* Use Authenticator Headers in LOOP\r\n\r\n* Add authenticator to HTTP client\r\n\r\n* Fix config test\r\n\r\n* Add pub key getter to authenticator\r\n\r\n* Set CSA pub key on Otel resource\r\n\r\n* Add noop value to authenticator\r\n\r\n* Move auth tests to beholder package, unexport new auth\r\n\r\n* Simplify auth header approach\r\n\r\n* Remove duplicate test\r\n\r\n* Use ed25519 keys instead of signer\r\n\r\n* Remove pub key from args\r\n\r\n---------\r\n\r\nCo-authored-by: nanchano <nicolas.anchano@smartcontract.com>\r\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>\r\nCo-authored-by: Geert G <117188496+cll-gg@users.noreply.github.com>",
+          "timestamp": "2024-11-08T15:43:52-05:00",
+          "tree_id": "4cc4684dfe5f72e91c1600388a73f48b63b86aeb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/914b88b62cf277f057d396275a29131a27879057"
+        },
+        "date": 1731098696208,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 443.4,
+            "unit": "ns/op",
+            "extra": "2502715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.4,
+            "unit": "ns/op",
+            "extra": "2191346 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28235,
+            "unit": "ns/op",
+            "extra": "42360 times\n4 procs"
           }
         ]
       }

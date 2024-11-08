@@ -15,13 +15,14 @@ type mercuryRemoteAggregator struct {
 	allowedSigners        [][]byte
 	minRequiredSignatures int
 	previousLatestReports map[datastreams.FeedID]datastreams.FeedReport
+	capID                 string
 	lggr                  logger.Logger
 }
 
 // This aggregator is used by TriggerSubscriber to aggregate trigger events from multiple remote nodes.
 // NOTE: Once Mercury supports parallel composition (and thus guarantee identical sets of reports),
 // this will be replaced by the default MODE aggregator.
-func NewMercuryRemoteAggregator(codec datastreams.ReportCodec, allowedSigners [][]byte, minRequiredSignatures int, lggr logger.Logger) *mercuryRemoteAggregator {
+func NewMercuryRemoteAggregator(codec datastreams.ReportCodec, allowedSigners [][]byte, minRequiredSignatures int, capID string, lggr logger.Logger) *mercuryRemoteAggregator {
 	if allowedSigners == nil {
 		allowedSigners = [][]byte{}
 	}
@@ -30,6 +31,7 @@ func NewMercuryRemoteAggregator(codec datastreams.ReportCodec, allowedSigners []
 		allowedSigners:        allowedSigners,
 		minRequiredSignatures: minRequiredSignatures,
 		previousLatestReports: make(map[datastreams.FeedID]datastreams.FeedReport),
+		capID:                 capID,
 		lggr:                  lggr,
 	}
 }
@@ -91,5 +93,5 @@ func (a *mercuryRemoteAggregator) Aggregate(triggerEventID string, responses [][
 		Signers:               a.allowedSigners,
 		MinRequiredSignatures: a.minRequiredSignatures,
 	}
-	return wrapReports(reportList, triggerEventID, latestGlobalTs, meta)
+	return wrapReports(reportList, triggerEventID, latestGlobalTs, meta, a.capID)
 }

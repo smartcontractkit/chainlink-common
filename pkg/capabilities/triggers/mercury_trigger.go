@@ -16,18 +16,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-const triggerID = "streams-trigger@1.0.0"
-
-var capInfo = capabilities.MustNewCapabilityInfo(
-	triggerID,
-	capabilities.CapabilityTypeTrigger,
-	"Streams Trigger",
+const (
+	defaultCapabilityName     = "streams-trigger"
+	defaultCapabilityVersion  = "1.0.0"
+	defaultTickerResolutionMs = 1000
+	// TODO pending capabilities configuration implementation - this should be configurable with a sensible default
+	defaultSendChannelBufferSize = 1000
 )
-
-const defaultTickerResolutionMs = 1000
-
-// TODO pending capabilities configuration implementation - this should be configurable with a sensible default
-const defaultSendChannelBufferSize = 1000
 
 // This Trigger Service allows for the registration and deregistration of triggers. You can also send reports to the service.
 type MercuryTriggerService struct {
@@ -54,9 +49,23 @@ type subscriber struct {
 // Mercury Trigger will send events to each subscriber every MaxFrequencyMs (configurable per subscriber).
 // Event generation happens whenever local unix time is a multiple of tickerResolutionMs. Therefore,
 // all subscribers' MaxFrequencyMs values need to be a multiple of tickerResolutionMs.
-func NewMercuryTriggerService(tickerResolutionMs int64, lggr logger.Logger) *MercuryTriggerService {
+func NewMercuryTriggerService(tickerResolutionMs int64, capName string, capVersion string, lggr logger.Logger) (*MercuryTriggerService, error) {
 	if tickerResolutionMs == 0 {
 		tickerResolutionMs = defaultTickerResolutionMs
+	}
+	if capName == "" {
+		capName = defaultCapabilityName
+	}
+	if capVersion == "" {
+		capVersion = defaultCapabilityVersion
+	}
+	capInfo, err := capabilities.NewCapabilityInfo(
+		capName+"@"+capVersion,
+		capabilities.CapabilityTypeTrigger,
+		"Streams Trigger",
+	)
+	if err != nil {
+		return nil, err
 	}
 	return &MercuryTriggerService{
 		CapabilityInfo:     capInfo,
@@ -64,7 +73,7 @@ func NewMercuryTriggerService(tickerResolutionMs int64, lggr logger.Logger) *Mer
 		subscribers:        make(map[string]*subscriber),
 		latestReports:      make(map[datastreams.FeedID]datastreams.FeedReport),
 		stopCh:             make(services.StopChan),
-		lggr:               logger.Named(lggr, "MercuryTriggerService")}
+		lggr:               logger.Named(lggr, "MercuryTriggerService")}, nil
 }
 
 func (o *MercuryTriggerService) SetMetaOverride(meta datastreams.Metadata) {
@@ -95,7 +104,7 @@ func (o *MercuryTriggerService) RegisterTrigger(ctx context.Context, req capabil
 
 	// If triggerId is already registered, return an error
 	if _, ok := o.subscribers[req.TriggerID]; ok {
-		return nil, fmt.Errorf("triggerId %s already registered", triggerID)
+		return nil, fmt.Errorf("triggerId %s already registered", o.ID)
 	}
 
 	if int64(config.MaxFrequencyMs)%o.tickerResolutionMs != 0 {
@@ -133,7 +142,7 @@ func (o *MercuryTriggerService) UnregisterTrigger(ctx context.Context, req capab
 
 	subscriber, ok := o.subscribers[req.TriggerID]
 	if !ok {
-		return fmt.Errorf("triggerId %s not registered", triggerID)
+		return fmt.Errorf("triggerId %s not registered", o.ID)
 	}
 	close(subscriber.ch)
 	delete(o.subscribers, req.TriggerID)
@@ -186,7 +195,7 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 
 			// use 32-byte-padded timestamp as EventID (human-readable)
 			eventID := fmt.Sprintf("streams_%024s", strconv.FormatInt(timestamp, 10))
-			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, o.metaOverride)
+			capabilityResponse, err := wrapReports(reportList, eventID, timestamp, o.metaOverride, o.ID)
 			if err != nil {
 				o.lggr.Errorw("error wrapping reports", "err", err)
 				continue
@@ -202,7 +211,7 @@ func (o *MercuryTriggerService) process(timestamp int64) {
 	}
 }
 
-func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp int64, meta datastreams.Metadata) (capabilities.TriggerResponse, error) {
+func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp int64, meta datastreams.Metadata, capID string) (capabilities.TriggerResponse, error) {
 	out := datastreams.StreamsTriggerEvent{
 		Payload:   reportList,
 		Metadata:  meta,
@@ -216,7 +225,7 @@ func wrapReports(reportList []datastreams.FeedReport, eventID string, timestamp 
 	// Create a new TriggerRegistrationResponse with the MercuryTriggerEvent
 	return capabilities.TriggerResponse{
 		Event: capabilities.TriggerEvent{
-			TriggerType: triggerID,
+			TriggerType: capID,
 			ID:          eventID,
 			Outputs:     outputsv,
 		},

@@ -11,6 +11,7 @@ type IdenticalConsensusConfig[T any] struct {
 	Encoder       Encoder
 	EncoderConfig EncoderConfig
 	ReportID      ReportId
+	KeyID         KeyId
 }
 
 func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string, input IdenticalConsensusInput[T]) SignedReportCap {
@@ -23,6 +24,7 @@ func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string,
 			"encoder_config":     c.EncoderConfig,
 			"aggregation_method": "identical",
 			"report_id":          c.ReportID,
+			"key_id":             c.KeyID,
 		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}

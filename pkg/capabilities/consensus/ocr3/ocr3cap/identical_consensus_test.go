@@ -26,6 +26,7 @@ func TestIdenticalConsensus(t *testing.T) {
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
 		ReportID:      "0001",
+		KeyID:         "evm",
 	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{
 		Observation:   trigger,
 		Encoder:       "evm",
@@ -71,6 +72,7 @@ func TestIdenticalConsensus(t *testing.T) {
 					"encoder_config":     map[string]any{},
 					"aggregation_method": "identical",
 					"report_id":          "0001",
+					"key_id":             "evm",
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},

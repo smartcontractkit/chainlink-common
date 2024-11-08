@@ -344,7 +344,8 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 
 				// cleanup empty values for non path keys
 				for k, v := range m {
-					if k != p && reflect.ValueOf(v).IsValid() && reflect.ValueOf(v).IsZero() {
+					valueOfV := reflect.ValueOf(v)
+					if k != p && valueOfV.IsValid() && valueOfV.IsZero() {
 						delete(m, k)
 					}
 				}

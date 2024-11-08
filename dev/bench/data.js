@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731061631727,
+  "lastUpdate": 1731076749068,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6216,6 +6216,48 @@ window.BENCHMARK_DATA = {
             "value": 28287,
             "unit": "ns/op",
             "extra": "42466 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44ef01dbdeff940b342a8693cbfadb795f4ee1ca",
+          "message": "[KS-507] Make Streams Trigger ID (name+version) configurable (#925)",
+          "timestamp": "2024-11-08T06:38:08-08:00",
+          "tree_id": "e5f2aad53a6bf6eb38e94d51d8068019fc9fd1bb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/44ef01dbdeff940b342a8693cbfadb795f4ee1ca"
+        },
+        "date": 1731076747858,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.4,
+            "unit": "ns/op",
+            "extra": "2712001 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508.5,
+            "unit": "ns/op",
+            "extra": "2357679 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28346,
+            "unit": "ns/op",
+            "extra": "42482 times\n4 procs"
           }
         ]
       }

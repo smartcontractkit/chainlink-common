@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/assert"
@@ -130,6 +131,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TelemetryTraceSampleRatio:   0.42,
 		TelemetryAuthHeaders:        map[string]string{"header-key": "header-value"},
 		TelemetryAuthPubKeyHex:      "pub-key-hex",
+		EmitterBatchProcessor:       true,
+		EmitterExportTimeout:        1 * time.Second,
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -156,6 +159,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "42", got[envTelemetryAttribute+"baz"])
 	assert.Equal(t, "header-value", got[envTelemetryAuthHeader+"header-key"])
 	assert.Equal(t, "pub-key-hex", got[envTelemetryAuthPubKeyHex])
+	assert.Equal(t, "true", got[envTelemetryEmitterBatchProcessor])
+	assert.Equal(t, "1s", got[envTelemetryEmitterExportTimeout])
 }
 
 func TestGetMap(t *testing.T) {

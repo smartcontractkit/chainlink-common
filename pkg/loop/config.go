@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -20,14 +21,16 @@ const (
 	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
 	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
 
-	envTelemetryEnabled          = "CL_TELEMETRY_ENABLED"
-	envTelemetryEndpoint         = "CL_TELEMETRY_ENDPOINT"
-	envTelemetryInsecureConn     = "CL_TELEMETRY_INSECURE_CONNECTION"
-	envTelemetryCACertFile       = "CL_TELEMETRY_CA_CERT_FILE"
-	envTelemetryAttribute        = "CL_TELEMETRY_ATTRIBUTE_"
-	envTelemetryTraceSampleRatio = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
-	envTelemetryAuthHeader       = "CL_TELEMETRY_AUTH_HEADER"
-	envTelemetryAuthPubKeyHex    = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryEnabled               = "CL_TELEMETRY_ENABLED"
+	envTelemetryEndpoint              = "CL_TELEMETRY_ENDPOINT"
+	envTelemetryInsecureConn          = "CL_TELEMETRY_INSECURE_CONNECTION"
+	envTelemetryCACertFile            = "CL_TELEMETRY_CA_CERT_FILE"
+	envTelemetryAttribute             = "CL_TELEMETRY_ATTRIBUTE_"
+	envTelemetryTraceSampleRatio      = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryAuthHeader            = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthPubKeyHex         = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryEmitterBatchProcessor = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
+	envTelemetryEmitterExportTimeout  = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -51,6 +54,8 @@ type EnvConfig struct {
 	TelemetryTraceSampleRatio   float64
 	TelemetryAuthHeaders        map[string]string
 	TelemetryAuthPubKeyHex      string
+	EmitterBatchProcessor       bool
+	EmitterExportTimeout        time.Duration
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -86,6 +91,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		add(envTelemetryAuthHeader+k, v)
 	}
 	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
+	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.EmitterBatchProcessor))
+	add(envTelemetryEmitterExportTimeout, e.EmitterExportTimeout.String())
 
 	return
 }

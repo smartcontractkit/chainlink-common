@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731098697431,
+  "lastUpdate": 1731111817942,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6342,6 +6342,48 @@ window.BENCHMARK_DATA = {
             "value": 28235,
             "unit": "ns/op",
             "extra": "42360 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "af894848b3b461c607ee310cb488d3e449e6b55c",
+          "message": "Enable batching for beholder emitter in LOOP Server (#927)\n\n* Enable batching for beholder emitter in LOOP Server\r\n\r\n* Rename config fields",
+          "timestamp": "2024-11-08T19:22:40-05:00",
+          "tree_id": "0eab23082134547df14532a18a2420189f47668d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/af894848b3b461c607ee310cb488d3e449e6b55c"
+        },
+        "date": 1731111817218,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 443.5,
+            "unit": "ns/op",
+            "extra": "2681552 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 526,
+            "unit": "ns/op",
+            "extra": "2310855 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28257,
+            "unit": "ns/op",
+            "extra": "41635 times\n4 procs"
           }
         ]
       }

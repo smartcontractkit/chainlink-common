@@ -123,16 +123,16 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TracingTLSCertPath:     "some/path",
 		TracingAttributes:      map[string]string{"key": "value"},
 
-		TelemetryEnabled:            true,
-		TelemetryEndpoint:           "example.com/beholder",
-		TelemetryInsecureConnection: true,
-		TelemetryCACertFile:         "foo/bar",
-		TelemetryAttributes:         OtelAttributes{"foo": "bar", "baz": "42"},
-		TelemetryTraceSampleRatio:   0.42,
-		TelemetryAuthHeaders:        map[string]string{"header-key": "header-value"},
-		TelemetryAuthPubKeyHex:      "pub-key-hex",
-		EmitterBatchProcessor:       true,
-		EmitterExportTimeout:        1 * time.Second,
+		TelemetryEnabled:               true,
+		TelemetryEndpoint:              "example.com/beholder",
+		TelemetryInsecureConnection:    true,
+		TelemetryCACertFile:            "foo/bar",
+		TelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
+		TelemetryTraceSampleRatio:      0.42,
+		TelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
+		TelemetryAuthPubKeyHex:         "pub-key-hex",
+		TelemetryEmitterBatchProcessor: true,
+		TelemetryEmitterExportTimeout:  1 * time.Second,
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {

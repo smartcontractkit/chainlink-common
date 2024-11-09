@@ -46,16 +46,16 @@ type EnvConfig struct {
 	TracingTLSCertPath     string
 	TracingAttributes      map[string]string
 
-	TelemetryEnabled            bool
-	TelemetryEndpoint           string
-	TelemetryInsecureConnection bool
-	TelemetryCACertFile         string
-	TelemetryAttributes         OtelAttributes
-	TelemetryTraceSampleRatio   float64
-	TelemetryAuthHeaders        map[string]string
-	TelemetryAuthPubKeyHex      string
-	EmitterBatchProcessor       bool
-	EmitterExportTimeout        time.Duration
+	TelemetryEnabled               bool
+	TelemetryEndpoint              string
+	TelemetryInsecureConnection    bool
+	TelemetryCACertFile            string
+	TelemetryAttributes            OtelAttributes
+	TelemetryTraceSampleRatio      float64
+	TelemetryAuthHeaders           map[string]string
+	TelemetryAuthPubKeyHex         string
+	TelemetryEmitterBatchProcessor bool
+	TelemetryEmitterExportTimeout  time.Duration
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -91,8 +91,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		add(envTelemetryAuthHeader+k, v)
 	}
 	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
-	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.EmitterBatchProcessor))
-	add(envTelemetryEmitterExportTimeout, e.EmitterExportTimeout.String())
+	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.TelemetryEmitterBatchProcessor))
+	add(envTelemetryEmitterExportTimeout, e.TelemetryEmitterExportTimeout.String())
 
 	return
 }

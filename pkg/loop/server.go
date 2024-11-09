@@ -99,6 +99,8 @@ func (s *Server) start() error {
 			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
 			AuthHeaders:              envCfg.TelemetryAuthHeaders,
 			AuthPublicKeyHex:         envCfg.TelemetryAuthPubKeyHex,
+			EmitterBatchProcessor:    envCfg.TelemetryEmitterBatchProcessor,
+			EmitterExportTimeout:     envCfg.TelemetryEmitterExportTimeout,
 		}
 
 		if tracingConfig.Enabled {

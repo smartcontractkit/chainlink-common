@@ -18,7 +18,7 @@ import (
 
 const (
 	defaultCapabilityName     = "streams-trigger"
-	defaultCapabilityVersion  = "1.0.0"
+	defaultCapabilityVersion  = "1.1.0"
 	defaultTickerResolutionMs = 1000
 	// TODO pending capabilities configuration implementation - this should be configurable with a sensible default
 	defaultSendChannelBufferSize = 1000

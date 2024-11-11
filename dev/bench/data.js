@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731111817942,
+  "lastUpdate": 1731318468018,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6384,6 +6384,48 @@ window.BENCHMARK_DATA = {
             "value": 28257,
             "unit": "ns/op",
             "extra": "41635 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c172120302b50e5208a639221f498191da0d3c4",
+          "message": "[fix] Marshal state deterministically (#928)",
+          "timestamp": "2024-11-11T09:46:48Z",
+          "tree_id": "26a8c0d4e28be628b25fc1975e82e4d3568f3de4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9c172120302b50e5208a639221f498191da0d3c4"
+        },
+        "date": 1731318467212,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 444.7,
+            "unit": "ns/op",
+            "extra": "2557333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 505.1,
+            "unit": "ns/op",
+            "extra": "2377052 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28271,
+            "unit": "ns/op",
+            "extra": "42429 times\n4 procs"
           }
         ]
       }

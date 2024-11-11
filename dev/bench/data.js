@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731318468018,
+  "lastUpdate": 1731321958368,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6426,6 +6426,48 @@ window.BENCHMARK_DATA = {
             "value": 28271,
             "unit": "ns/op",
             "extra": "42429 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d37df61b04c3ecf8fe6881be5b185f208d1516f4",
+          "message": "Apply timeout to host functions (#929)",
+          "timestamp": "2024-11-11T10:45:04Z",
+          "tree_id": "75614b74d2519709af6bdffea185cae4b6f030df",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d37df61b04c3ecf8fe6881be5b185f208d1516f4"
+        },
+        "date": 1731321957855,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 445.3,
+            "unit": "ns/op",
+            "extra": "2374700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.5,
+            "unit": "ns/op",
+            "extra": "1975903 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28283,
+            "unit": "ns/op",
+            "extra": "42538 times\n4 procs"
           }
         ]
       }

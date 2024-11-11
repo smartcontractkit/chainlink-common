@@ -71,7 +71,7 @@ func (r *store) delete(id string) {
 
 var (
 	defaultTickInterval     = 100 * time.Millisecond
-	defaultTimeout          = 10 * time.Second
+	defaultTimeout          = 30 * time.Second
 	defaultMinMemoryMBs     = 128
 	DefaultInitialFuel      = uint64(100_000_000)
 	defaultMaxFetchRequests = 5

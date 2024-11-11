@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731321958368,
+  "lastUpdate": 1731350839561,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6468,6 +6468,48 @@ window.BENCHMARK_DATA = {
             "value": 28283,
             "unit": "ns/op",
             "extra": "42538 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c61aebee0af93db7bf5a951d51724e4f0930049b",
+          "message": "Default to version 1.1.0 of Streams Trigger (#932)",
+          "timestamp": "2024-11-11T11:46:21-07:00",
+          "tree_id": "e91bec43e386e8d6f04a46495cdb80cc65b74aaf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c61aebee0af93db7bf5a951d51724e4f0930049b"
+        },
+        "date": 1731350838857,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.6,
+            "unit": "ns/op",
+            "extra": "2548206 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 505.6,
+            "unit": "ns/op",
+            "extra": "2374068 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28412,
+            "unit": "ns/op",
+            "extra": "42486 times\n4 procs"
           }
         ]
       }

@@ -71,7 +71,7 @@ func (r *store) delete(id string) {
 
 var (
 	defaultTickInterval     = 100 * time.Millisecond
-	defaultTimeout          = 2 * time.Second
+	defaultTimeout          = 10 * time.Second
 	defaultMinMemoryMBs     = 128
 	DefaultInitialFuel      = uint64(100_000_000)
 	defaultMaxFetchRequests = 5
@@ -286,6 +286,9 @@ func (m *Module) Close() {
 }
 
 func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
+	defer cancel()
+
 	if request == nil {
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
@@ -295,7 +298,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	}
 
 	// we add the request context to the store to make it available to the Fetch fn
-	err := m.requestStore.add(request.Id, &RequestData{ctx: func() context.Context { return ctx }})
+	err := m.requestStore.add(request.Id, &RequestData{ctx: func() context.Context { return ctxWithTimeout }})
 	if err != nil {
 		return nil, fmt.Errorf("error adding ctx to the store: %w", err)
 	}

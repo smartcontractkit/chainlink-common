@@ -27,6 +27,7 @@ func TestReduceConsensus(t *testing.T) {
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
 		ReportID:      "0001",
+		KeyID:         "evm",
 		AggregationConfig: aggregators.ReduceAggConfig{
 			Fields: []aggregators.AggregationField{
 				{
@@ -103,6 +104,7 @@ func TestReduceConsensus(t *testing.T) {
 					"encoder_config":     map[string]any{},
 					"report_id":          "0001",
 					"aggregation_method": "reduce",
+					"key_id":             "evm",
 					"aggregation_config": map[string]any{
 						"outputFieldName": "Reports",
 						"reportFormat":    "array",

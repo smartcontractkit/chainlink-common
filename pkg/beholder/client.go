@@ -93,6 +93,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+		otlploggrpc.WithHeaders(cfg.AuthHeaders),
 	}
 	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -242,6 +243,21 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Add csa public key resource attribute
+	csaPublicKeyHex := "not-configured"
+	if len(cfg.AuthPublicKeyHex) > 0 {
+		csaPublicKeyHex = cfg.AuthPublicKeyHex
+	}
+	csaPublicKeyAttr := attribute.String("csa_public_key", csaPublicKeyHex)
+	resource, err = sdkresource.Merge(
+		sdkresource.NewSchemaless(csaPublicKeyAttr),
+		resource,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Add custom resource attributes
 	resource, err = sdkresource.Merge(
 		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
@@ -282,6 +298,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlptracegrpc.WithHeaders(config.AuthHeaders),
 	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -318,6 +335,7 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
+		otlpmetricgrpc.WithHeaders(config.AuthHeaders),
 	}
 	if config.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK

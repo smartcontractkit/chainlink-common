@@ -58,6 +58,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	opts := []otlploghttp.Option{
 		tlsConfigOption,
 		otlploghttp.WithEndpoint(cfg.OtelExporterHTTPEndpoint),
+		otlploghttp.WithHeaders(cfg.AuthHeaders),
 	}
 	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -164,6 +165,7 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	exporterOpts := []otlptracehttp.Option{
 		tlsConfigOption,
 		otlptracehttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
+		otlptracehttp.WithHeaders(config.AuthHeaders),
 	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -205,6 +207,7 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 	opts := []otlpmetrichttp.Option{
 		tlsConfigOption,
 		otlpmetrichttp.WithEndpoint(config.OtelExporterHTTPEndpoint),
+		otlpmetrichttp.WithHeaders(config.AuthHeaders),
 	}
 	if config.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK

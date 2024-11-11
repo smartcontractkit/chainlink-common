@@ -240,7 +240,10 @@ func Test_Compute_Emit(t *testing.T) {
 	}
 
 	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
+		ctxKey := "key"
 		ctx := tests.Context(t)
+		ctxValue := "test-value"
+		ctx = context.WithValue(ctx, ctxKey, ctxValue)
 		m, err := NewModule(&ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
@@ -248,7 +251,9 @@ func Test_Compute_Emit(t *testing.T) {
 			Labeler: newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
 				t.Helper()
 
-				assert.Equal(t, ctx, gotCtx)
+				v := ctx.Value(ctxKey)
+				assert.Equal(t, ctxValue, v)
+
 				assert.Equal(t, "testing emit", msg)
 				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
 				assert.Equal(t, "workflow-id", kvs["workflow_id"])
@@ -857,7 +862,8 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	d := 1 * time.Millisecond
+	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()

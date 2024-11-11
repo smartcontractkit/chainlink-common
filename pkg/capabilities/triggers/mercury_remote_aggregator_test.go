@@ -16,6 +16,7 @@ const (
 	eventID    = "ev_id_1"
 	rawReport1 = "abcd"
 	rawReport2 = "efgh"
+	capID      = "streams-trigger@3.2.1"
 )
 
 type testMercuryCodec struct {
@@ -36,7 +37,7 @@ func (c testMercuryCodec) Wrap(reports []datastreams.FeedReport) (values.Value, 
 }
 
 func TestMercuryRemoteAggregator(t *testing.T) {
-	agg := NewMercuryRemoteAggregator(testMercuryCodec{}, nil, 0, logger.Nop())
+	agg := NewMercuryRemoteAggregator(testMercuryCodec{}, nil, 0, capID, logger.Nop())
 	signatures := [][]byte{{1, 2, 3}}
 
 	feed1Old := datastreams.FeedReport{
@@ -99,7 +100,7 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 }
 
 func getRawResponse(t *testing.T, reports []datastreams.FeedReport, timestamp int64) []byte {
-	resp, err := wrapReports(reports, eventID, timestamp, datastreams.Metadata{})
+	resp, err := wrapReports(reports, eventID, timestamp, datastreams.Metadata{}, capID)
 	require.NoError(t, err)
 	rawResp, err := pb.MarshalTriggerResponse(resp)
 	require.NoError(t, err)

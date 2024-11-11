@@ -35,6 +35,10 @@ type Config struct {
 	LogBatchProcessor bool
 	// Retry config for shared log exporter, used by Emitter and Logger
 	LogRetryConfig *RetryConfig
+
+	// Auth
+	AuthPublicKeyHex string
+	AuthHeaders      map[string]string
 }
 
 type RetryConfig struct {

@@ -159,7 +159,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 	if err != nil {
 		return nil, fmt.Errorf("aggregate state wrapmap error: %s", err.Error())
 	}
-	stateBytes, err := proto.Marshal(values.ProtoMap(stateValuesMap))
+	stateBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(values.ProtoMap(stateValuesMap))
 	if err != nil {
 		return nil, fmt.Errorf("aggregate state proto marshal error: %s", err.Error())
 	}

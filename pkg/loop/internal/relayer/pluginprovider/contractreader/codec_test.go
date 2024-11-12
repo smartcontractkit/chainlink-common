@@ -95,6 +95,7 @@ func TestCodecClient(t *testing.T) {
 
 type fakeCodecInterfaceTester struct {
 	interfaceTesterBase
+	interfacetests.TestSelectionSupport
 	impl types.Codec
 }
 

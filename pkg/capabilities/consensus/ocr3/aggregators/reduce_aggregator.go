@@ -190,15 +190,15 @@ func (a *reduceAggregator) initializeCurrentState(lggr logger.Logger, previousOu
 
 	if previousOutcome != nil {
 		pb := &pb.Map{}
-		proto.Unmarshal(previousOutcome.Metadata, pb)
+		err := proto.Unmarshal(previousOutcome.Metadata, pb)
+		if err != nil {
+			return nil, fmt.Errorf("initializeCurrentState Unmarshal error: %w", err)
+		}
 		mv, err := values.FromMapValueProto(pb)
 		if err != nil {
-			return nil, fmt.Errorf("initializeCurrentState FromMapValueProto error: %s", err.Error())
+			return nil, fmt.Errorf("initializeCurrentState FromMapValueProto error: %w", err)
 		}
-		err = mv.UnwrapTo(currentState)
-		if err != nil {
-			return nil, fmt.Errorf("initializeCurrentState FromMapValueProto error: %s", err.Error())
-		}
+		currentState = mv.Underlying
 	}
 
 	zeroValue := values.NewDecimal(decimal.Zero)

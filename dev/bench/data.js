@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731411211519,
+  "lastUpdate": 1731420569244,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6552,6 +6552,48 @@ window.BENCHMARK_DATA = {
             "value": 28252,
             "unit": "ns/op",
             "extra": "42397 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "pablolagreca@hotmail.com",
+            "name": "pablolagreca",
+            "username": "pablolagreca"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e2daed34ef6738ccce1362f53384460550e5bea",
+          "message": "BCFR-967 - Basic support for method writing and reading - Add logic to enable/disable test cases for chain components common test suite (#829)\n\n* BCFR-967 - Basic support for method writing and reading - Add logic to enable/disable test cases for chain components common test suites\r\n\r\n* improving test cases IDs and grouping them\r\n\r\n---------\r\n\r\nCo-authored-by: Pablo La Greca <pablo.lagreca@msartcontract.com>\r\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2024-11-12T11:08:26-03:00",
+          "tree_id": "2cd041b68e24fea9c586609bbd0e3ab31a34d54d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0e2daed34ef6738ccce1362f53384460550e5bea"
+        },
+        "date": 1731420568736,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 447,
+            "unit": "ns/op",
+            "extra": "2686521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 503.4,
+            "unit": "ns/op",
+            "extra": "2384342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28336,
+            "unit": "ns/op",
+            "extra": "42453 times\n4 procs"
           }
         ]
       }

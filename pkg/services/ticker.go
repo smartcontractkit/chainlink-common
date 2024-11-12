@@ -12,6 +12,7 @@ const DefaultJitter timeutil.JitterPct = 0.1
 // NewTicker returns a new timeutil.Ticker configured to:
 // - fire the first tick immediately
 // - apply DefaultJitter to each period
+// Ticker.Stop should be called to prevent goroutine leaks.
 func NewTicker(period time.Duration) *timeutil.Ticker {
 	return TickerConfig{JitterPct: DefaultJitter}.NewTicker(period)
 }
@@ -23,6 +24,8 @@ type TickerConfig struct {
 	JitterPct timeutil.JitterPct
 }
 
+// NewTicker returns a new timeutil.Ticker for the given configuration.
+// Ticker.Stop should be called to prevent goroutine leaks.
 func (c TickerConfig) NewTicker(period time.Duration) *timeutil.Ticker {
 	first := true
 	return timeutil.NewTicker(func() time.Duration {

@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ContractReader_GetLatestValue_FullMethodName       = "/loop.ContractReader/GetLatestValue"
-	ContractReader_BatchGetLatestValues_FullMethodName = "/loop.ContractReader/BatchGetLatestValues"
-	ContractReader_QueryKey_FullMethodName             = "/loop.ContractReader/QueryKey"
-	ContractReader_Bind_FullMethodName                 = "/loop.ContractReader/Bind"
-	ContractReader_Unbind_FullMethodName               = "/loop.ContractReader/Unbind"
+	ContractReader_GetLatestValue_FullMethodName             = "/loop.ContractReader/GetLatestValue"
+	ContractReader_GetLatestValueWithHeadData_FullMethodName = "/loop.ContractReader/GetLatestValueWithHeadData"
+	ContractReader_BatchGetLatestValues_FullMethodName       = "/loop.ContractReader/BatchGetLatestValues"
+	ContractReader_QueryKey_FullMethodName                   = "/loop.ContractReader/QueryKey"
+	ContractReader_Bind_FullMethodName                       = "/loop.ContractReader/Bind"
+	ContractReader_Unbind_FullMethodName                     = "/loop.ContractReader/Unbind"
 )
 
 // ContractReaderClient is the client API for ContractReader service.
@@ -32,6 +33,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ContractReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
+	GetLatestValueWithHeadData(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueWithHeadDataReply, error)
 	BatchGetLatestValues(ctx context.Context, in *BatchGetLatestValuesRequest, opts ...grpc.CallOption) (*BatchGetLatestValuesReply, error)
 	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -49,6 +51,15 @@ func NewContractReaderClient(cc grpc.ClientConnInterface) ContractReaderClient {
 func (c *contractReaderClient) GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error) {
 	out := new(GetLatestValueReply)
 	err := c.cc.Invoke(ctx, ContractReader_GetLatestValue_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *contractReaderClient) GetLatestValueWithHeadData(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueWithHeadDataReply, error) {
+	out := new(GetLatestValueWithHeadDataReply)
+	err := c.cc.Invoke(ctx, ContractReader_GetLatestValueWithHeadData_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +107,7 @@ func (c *contractReaderClient) Unbind(ctx context.Context, in *UnbindRequest, op
 // for forward compatibility
 type ContractReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
+	GetLatestValueWithHeadData(context.Context, *GetLatestValueRequest) (*GetLatestValueWithHeadDataReply, error)
 	BatchGetLatestValues(context.Context, *BatchGetLatestValuesRequest) (*BatchGetLatestValuesReply, error)
 	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
@@ -109,6 +121,9 @@ type UnimplementedContractReaderServer struct {
 
 func (UnimplementedContractReaderServer) GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValue not implemented")
+}
+func (UnimplementedContractReaderServer) GetLatestValueWithHeadData(context.Context, *GetLatestValueRequest) (*GetLatestValueWithHeadDataReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestValueWithHeadData not implemented")
 }
 func (UnimplementedContractReaderServer) BatchGetLatestValues(context.Context, *BatchGetLatestValuesRequest) (*BatchGetLatestValuesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchGetLatestValues not implemented")
@@ -149,6 +164,24 @@ func _ContractReader_GetLatestValue_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ContractReaderServer).GetLatestValue(ctx, req.(*GetLatestValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ContractReader_GetLatestValueWithHeadData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ContractReaderServer).GetLatestValueWithHeadData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ContractReader_GetLatestValueWithHeadData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ContractReaderServer).GetLatestValueWithHeadData(ctx, req.(*GetLatestValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -235,6 +268,10 @@ var ContractReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestValue",
 			Handler:    _ContractReader_GetLatestValue_Handler,
+		},
+		{
+			MethodName: "GetLatestValueWithHeadData",
+			Handler:    _ContractReader_GetLatestValueWithHeadData_Handler,
 		},
 		{
 			MethodName: "BatchGetLatestValues",

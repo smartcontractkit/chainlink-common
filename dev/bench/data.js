@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731514513990,
+  "lastUpdate": 1731519622272,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6762,6 +6762,48 @@ window.BENCHMARK_DATA = {
             "value": 28364,
             "unit": "ns/op",
             "extra": "42350 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c220622d97884f7cd02d908ca380ebb398736e32",
+          "message": "fix(observability-lib): updating alert rules + deleting associated alerts when deleting dashboard (#937)",
+          "timestamp": "2024-11-13T18:39:07+01:00",
+          "tree_id": "1d3dc39d4cc882344042e7f4f3ac4b6ea595a0cc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c220622d97884f7cd02d908ca380ebb398736e32"
+        },
+        "date": 1731519620883,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 443.4,
+            "unit": "ns/op",
+            "extra": "2663725 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.6,
+            "unit": "ns/op",
+            "extra": "2220656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28359,
+            "unit": "ns/op",
+            "extra": "42235 times\n4 procs"
           }
         ]
       }

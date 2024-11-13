@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731499971191,
+  "lastUpdate": 1731507839046,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6636,6 +6636,48 @@ window.BENCHMARK_DATA = {
             "value": 28355,
             "unit": "ns/op",
             "extra": "42342 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8a7a997a03710e7a80d883a5aa822cb097bd5492",
+          "message": "remove test to unbreak core (#936)",
+          "timestamp": "2024-11-13T14:22:56Z",
+          "tree_id": "4a8bf7fd411e1a7e33d2b67ac8ede3f0b4af1f92",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8a7a997a03710e7a80d883a5aa822cb097bd5492"
+        },
+        "date": 1731507838490,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 444.5,
+            "unit": "ns/op",
+            "extra": "2428928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 502,
+            "unit": "ns/op",
+            "extra": "2369332 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28628,
+            "unit": "ns/op",
+            "extra": "42361 times\n4 procs"
           }
         ]
       }

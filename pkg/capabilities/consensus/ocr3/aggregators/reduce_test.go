@@ -1165,6 +1165,63 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 	})
 }
 
+func TestAggregateDeviation(t *testing.T) {
+	fields := []aggregators.AggregationField{
+		{
+			InputKey:        "Timestamp",
+			OutputKey:       "Time",
+			Method:          "median",
+			DeviationString: "30",
+			DeviationType:   "absolute",
+		},
+	}
+	extraConfig := map[string]any{
+		"reportFormat": "array",
+	}
+
+	config := getConfigReduceAggregator(t, fields, extraConfig)
+	agg, err := aggregators.NewReduceAggregator(*config)
+	require.NoError(t, err)
+
+	pb := &pb.Map{}
+
+	// 1st round
+	mockValueFirstRound, err := values.WrapMap(map[string]any{
+		"Timestamp": decimal.NewFromInt(35),
+	})
+	require.NoError(t, err)
+
+	firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+	require.NoError(t, err)
+	require.Equal(t, true, firstOutcome.ShouldReport)
+
+	// validate metadata
+	proto.Unmarshal(firstOutcome.Metadata, pb)
+	vmap, err := values.FromMapValueProto(pb)
+	require.NoError(t, err)
+	state, err := vmap.Unwrap()
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(35)}), state)
+
+	// 2nd round
+	mockValueSecondRound, err := values.WrapMap(map[string]any{
+		"Timestamp": decimal.NewFromInt(10),
+	})
+	require.NoError(t, err)
+
+	secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+	require.NoError(t, err)
+	require.Equal(t, false, secondOutcome.ShouldReport)
+
+	// validate metadata
+	proto.Unmarshal(secondOutcome.Metadata, pb)
+	vmap, err = values.FromMapValueProto(pb)
+	require.NoError(t, err)
+	state, err = vmap.Unwrap()
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(35)}), state)
+}
+
 func getConfigReduceAggregator(t *testing.T, fields []aggregators.AggregationField, override map[string]any) *values.Map {
 	unwrappedConfig := map[string]any{
 		"fields":          fields,

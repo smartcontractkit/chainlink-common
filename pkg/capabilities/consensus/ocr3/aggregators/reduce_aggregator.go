@@ -117,7 +117,9 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			lggr.Debugw("checked deviation", "key", field.OutputKey, "deviationType", field.DeviationType, "currentDeviation", currDeviation.String(), "targetDeviation", field.Deviation.String(), "shouldReport", shouldReport)
 		}
 
-		(*currentState)[field.OutputKey] = singleValue
+		if shouldReport {
+			(*currentState)[field.OutputKey] = singleValue
+		}
 		if len(field.OutputKey) > 0 {
 			report[field.OutputKey] = singleValue
 		} else {

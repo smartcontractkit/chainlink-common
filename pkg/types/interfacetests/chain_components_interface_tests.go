@@ -22,6 +22,7 @@ const (
 	ContractReaderGetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue = "Get latest value without arguments and with primitive return as a values.Value"
 	ContractReaderGetLatestValueNoArgumentsAndSliceReturnAsValueDotValue      = "Get latest value without arguments and with slice return as a values.Value"
 	ContractReaderGetLatestValue                                              = "Gets the latest value"
+	ContractReaderGetLatestValueWithHeadData                                  = "Gets the latest value with head data"
 	ContractReaderGetLatestValueWithPrimitiveReturn                           = "Get latest value without arguments and with primitive return"
 	ContractReaderGetLatestValueBasedOnConfidenceLevel                        = "Get latest value based on confidence level"
 	ContractReaderGetLatestValueFromMultipleContractsNamesSameFunction        = "Get latest value allows multiple contract names to have the same function "
@@ -216,6 +217,40 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				params.I = 2
 				actual = &TestStruct{}
 				require.NoError(t, cr.GetLatestValue(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual))
+				assert.Equal(t, &secondItem, actual)
+			},
+		},
+		{
+			Name: ContractReaderGetLatestValueWithHeadData,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				firstItem := CreateTestStruct(0, tester)
+
+				contracts := tester.GetBindings(t)
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+
+				secondItem := CreateTestStruct(1, tester)
+
+				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+
+				actual := &TestStruct{}
+				params := &LatestParams{I: 1}
+				headData, err := cr.GetLatestValueWithHeadData(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual)
+				require.NoError(t, err)
+				require.NotNil(t, headData)
+				assert.Equal(t, &firstItem, actual)
+
+				params.I = 2
+				actual = &TestStruct{}
+				headData, err = cr.GetLatestValueWithHeadData(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual)
+				require.NoError(t, err)
+				require.NotNil(t, headData)
 				assert.Equal(t, &secondItem, actual)
 			},
 		},

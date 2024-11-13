@@ -183,7 +183,7 @@
         "id": 4,
         "targets": [
           {
-            "expr": "platform_engine_workflow_errors_total{env=~\"${env}\", cluster=~\"${cluster}\"}",
+            "expr": "platform_engine_workflow_errors{env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
             "legendFormat": "",
             "refId": ""

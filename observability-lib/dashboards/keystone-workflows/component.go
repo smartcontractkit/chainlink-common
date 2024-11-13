@@ -246,7 +246,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_workflow_errors_total{` + p.QueryFilters + `}`,
+					Expr:   `platform_engine_workflow_errors{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},
@@ -433,7 +433,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_engine_capabilities_count_total{` + p.QueryFilters + `}`,
+					Expr:   `platform_engine_capabilities_count{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},
@@ -455,7 +455,7 @@ func registrySyncer(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr:   `platform_registrysyncer_sync_failures_total{` + p.QueryFilters + `}`,
+					Expr:   `platform_registrysyncer_sync_failures{` + p.QueryFilters + `}`,
 					Legend: "",
 				},
 			},

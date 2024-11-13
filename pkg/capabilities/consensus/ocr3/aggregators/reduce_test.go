@@ -37,6 +37,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 			shouldReport        bool
 			expectedState       any
 			expectedOutcome     map[string]any
+			previousOutcome     func(t *testing.T) *types.AggregationOutcome
 		}{
 			{
 				name: "aggregate on int64 median",
@@ -209,6 +210,63 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				},
 				expectedState: map[string]any{
 					"Price": big.NewInt(100),
+				},
+			},
+			{
+				name: "aggregate with previous outcome",
+				fields: []aggregators.AggregationField{
+					{
+						InputKey:  "FeedID",
+						OutputKey: "FeedID",
+						Method:    "mode",
+					},
+					{
+						InputKey:        "BenchmarkPrice",
+						OutputKey:       "Price",
+						Method:          "median",
+						DeviationString: "10",
+						DeviationType:   "percent",
+					},
+					{
+						InputKey:        "Timestamp",
+						OutputKey:       "Timestamp",
+						Method:          "median",
+						DeviationString: "100",
+						DeviationType:   "absolute",
+					},
+				},
+				extraConfig: map[string]any{},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.WrapMap(map[string]any{
+						"FeedID":         idABytes[:],
+						"BenchmarkPrice": int64(100),
+						"Timestamp":      12341414929,
+					})
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
+				},
+				shouldReport: true,
+				expectedOutcome: map[string]any{
+					"Reports": []any{
+						map[string]any{
+							"FeedID":    idABytes[:],
+							"Timestamp": int64(12341414929),
+							"Price":     int64(100),
+						},
+					},
+				},
+				expectedState: map[string]any{
+					"FeedID":    idABytes[:],
+					"Timestamp": int64(12341414929),
+					"Price":     int64(100),
+				},
+				previousOutcome: func(t *testing.T) *types.AggregationOutcome {
+					m, err := values.NewMap(map[string]any{})
+					require.NoError(t, err)
+					pm := values.Proto(m)
+					bm, err := proto.Marshal(pm)
+					require.NoError(t, err)
+					return &types.AggregationOutcome{Metadata: bm}
 				},
 			},
 			{
@@ -468,12 +526,19 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				require.NoError(t, err)
 
 				pb := &pb.Map{}
-				outcome, err := agg.Aggregate(logger.Nop(), nil, tt.observationsFactory(), 1)
+
+				var po *types.AggregationOutcome
+				if tt.previousOutcome != nil {
+					po = tt.previousOutcome(t)
+				}
+
+				outcome, err := agg.Aggregate(logger.Nop(), po, tt.observationsFactory(), 1)
 				require.NoError(t, err)
 				require.Equal(t, tt.shouldReport, outcome.ShouldReport)
 
 				// validate metadata
-				proto.Unmarshal(outcome.Metadata, pb)
+				err = proto.Unmarshal(outcome.Metadata, pb)
+				require.NoError(t, err)
 				vmap, err := values.FromMapValueProto(pb)
 				require.NoError(t, err)
 				state, err := vmap.Unwrap()
@@ -515,22 +580,6 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				extraConfig: map[string]any{},
 				observationsFactory: func() map[commontypes.OracleID][]values.Value {
 					return map[commontypes.OracleID][]values.Value{}
-				},
-			},
-			{
-				name:            "empty previous outcome",
-				previousOutcome: &types.AggregationOutcome{},
-				fields: []aggregators.AggregationField{
-					{
-						Method:    "median",
-						OutputKey: "Price",
-					},
-				},
-				extraConfig: map[string]any{},
-				observationsFactory: func() map[commontypes.OracleID][]values.Value {
-					mockValue, err := values.Wrap(int64(100))
-					require.NoError(t, err)
-					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
 				},
 			},
 			{

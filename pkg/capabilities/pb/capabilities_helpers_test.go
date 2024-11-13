@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	testWorkflowID  = "test-id-1"
-	testConfigKey   = "test-key"
-	testConfigValue = "test-value"
-	testInputsKey   = "input-key"
-	testInputsValue = "input-value"
-	testError       = "test-error"
-	anyReferenceID  = "anything"
+	testWorkflowID    = "test-id-1"
+	testConfigKey     = "test-key"
+	testConfigValue   = "test-value"
+	testInputsKey     = "input-key"
+	testInputsValue   = "input-value"
+	testError         = "test-error"
+	anyReferenceID    = "anything"
+	testWorkflowOwner = "testowner"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -124,7 +125,7 @@ func TestRegisterToWorkflowRequestToProto(t *testing.T) {
 	req := capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID:    testWorkflowID,
-			WorkflowOwner: "0xaa",
+			WorkflowOwner: testWorkflowOwner,
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -132,6 +133,7 @@ func TestRegisterToWorkflowRequestToProto(t *testing.T) {
 	}
 	pr := pb.RegisterToWorkflowRequestToProto(req)
 	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
+	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
 
 	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
 }
@@ -144,7 +146,9 @@ func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
 
 	pr := &pb.RegisterToWorkflowRequest{
 		Metadata: &pb.RegistrationMetadata{
-			WorkflowId: testWorkflowID,
+			WorkflowId:    testWorkflowID,
+			ReferenceId:   anyReferenceID,
+			WorkflowOwner: testWorkflowOwner,
 		},
 		Config: values.ProtoMap(configMap),
 	}
@@ -159,7 +163,8 @@ func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
 	assert.Equal(t, capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
 			WorkflowID:    testWorkflowID,
-			WorkflowOwner: "",
+			WorkflowOwner: testWorkflowOwner,
+			ReferenceID:   anyReferenceID,
 		},
 		Config: expectedMap,
 	}, req)
@@ -168,8 +173,9 @@ func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
 func TestUnregisterFromWorkflowRequestToProto(t *testing.T) {
 	req := capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:  testWorkflowID,
-			ReferenceID: anyReferenceID,
+			WorkflowID:    testWorkflowID,
+			ReferenceID:   anyReferenceID,
+			WorkflowOwner: testWorkflowOwner,
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -178,6 +184,7 @@ func TestUnregisterFromWorkflowRequestToProto(t *testing.T) {
 	pr := pb.UnregisterFromWorkflowRequestToProto(req)
 	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
 	assert.Equal(t, anyReferenceID, pr.Metadata.ReferenceId)
+	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
 	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
 }
 
@@ -189,8 +196,9 @@ func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
 
 	pr := &pb.UnregisterFromWorkflowRequest{
 		Metadata: &pb.RegistrationMetadata{
-			WorkflowId:  testWorkflowID,
-			ReferenceId: anyReferenceID,
+			WorkflowId:    testWorkflowID,
+			WorkflowOwner: testWorkflowOwner,
+			ReferenceId:   anyReferenceID,
 		},
 		Config: values.ProtoMap(configMap),
 	}
@@ -204,8 +212,9 @@ func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:  testWorkflowID,
-			ReferenceID: anyReferenceID,
+			WorkflowID:    testWorkflowID,
+			ReferenceID:   anyReferenceID,
+			WorkflowOwner: testWorkflowOwner,
 		},
 		Config: expectedMap,
 	}, req)

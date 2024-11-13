@@ -65,13 +65,15 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
-	ReferenceID              string
+	// The step reference ID of the workflow
+	ReferenceID string
 }
 
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
-	ReferenceID   string
+	// The step reference ID of the workflow
+	ReferenceID string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.

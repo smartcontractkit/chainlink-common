@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731509221958,
+  "lastUpdate": 1731514513990,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6720,6 +6720,48 @@ window.BENCHMARK_DATA = {
             "value": 28359,
             "unit": "ns/op",
             "extra": "42344 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cc4f026925aeb98e766366c1d871ae7401a810e5",
+          "message": "pkg/services: add *Engine IfStarted & IfNotStopped methods (#935)",
+          "timestamp": "2024-11-13T10:14:00-06:00",
+          "tree_id": "7797ce479d32a66f919339c6412935233371431a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cc4f026925aeb98e766366c1d871ae7401a810e5"
+        },
+        "date": 1731514512624,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 445.2,
+            "unit": "ns/op",
+            "extra": "2706406 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 502.4,
+            "unit": "ns/op",
+            "extra": "2378544 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28364,
+            "unit": "ns/op",
+            "extra": "42350 times\n4 procs"
           }
         ]
       }

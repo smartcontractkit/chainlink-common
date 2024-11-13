@@ -47,9 +47,13 @@ type Engine struct {
 
 	wg sync.WaitGroup
 
-	emitHealthErr func(error)
-	conds         map[string]error
-	condsMu       sync.RWMutex
+	serviceMethods interface {
+		emitHealthErr(error)
+		ifStarted(func() error) error
+		ifNotStopped(func() error) error
+	}
+	conds   map[string]error
+	condsMu sync.RWMutex
 }
 
 // Go runs fn in a tracked goroutine that will block closing the service.
@@ -101,7 +105,13 @@ func (e *Engine) Tracer() trace.Tracer {
 }
 
 // EmitHealthErr records an error to be reported via the next call to Healthy().
-func (e *Engine) EmitHealthErr(err error) { e.emitHealthErr(err) }
+func (e *Engine) EmitHealthErr(err error) { e.serviceMethods.emitHealthErr(err) }
+
+// IfStarted calls fn only if the service is started.
+func (e *Engine) IfStarted(fn func() error) error { return e.serviceMethods.ifStarted(fn) }
+
+// IfNotStopped calls fn only if the service is not stopped.
+func (e *Engine) IfNotStopped(fn func() error) error { return e.serviceMethods.ifNotStopped(fn) }
 
 // SetHealthCond records a condition key and an error, which causes an unhealthy report, until ClearHealthCond(condition) is called.
 // condition keys are for internal use only, and do not show up in the health report.
@@ -189,7 +199,7 @@ func (c Config) new(lggr logger.SugaredLogger) *service {
 			conds:         make(map[string]error),
 		},
 	}
-	s.eng.emitHealthErr = s.StateMachine.SvcErrBuffer.Append
+	s.eng.serviceMethods = s // give Engine access to some service methods
 	if c.NewSubServices != nil {
 		s.subs = c.NewSubServices(lggr)
 	}
@@ -279,4 +289,20 @@ func (s *service) Close() error {
 		err = errors.Join(err, MultiCloser(s.subs).Close())
 		return
 	})
+}
+
+func (s *service) emitHealthErr(err error) { s.StateMachine.SvcErrBuffer.Append(err) }
+
+func (s *service) ifStarted(fn func() error) (err error) {
+	if !s.IfStarted(func() { err = fn() }) {
+		return fmt.Errorf("service is %s, not started", s.State())
+	}
+	return
+}
+
+func (s *service) ifNotStopped(fn func() error) (err error) {
+	if !s.IfNotStopped(func() { err = fn() }) {
+		return errors.New("service is stopped")
+	}
+	return
 }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731507839046,
+  "lastUpdate": 1731509221958,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6678,6 +6678,48 @@ window.BENCHMARK_DATA = {
             "value": 28628,
             "unit": "ns/op",
             "extra": "42361 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb37b932100911bbfdadab21a8baa907d4636e10",
+          "message": "[CAPPL-270/271] Fix Consensus bugs (#934)\n\n- Fix \"result is not a pointer error\" in the reduce aggregator\r\n- Continue rather than error if we encounter an aggregation error",
+          "timestamp": "2024-11-13T14:45:57Z",
+          "tree_id": "891209760ef4bcd469f4a096fd095a0296d93dfa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cb37b932100911bbfdadab21a8baa907d4636e10"
+        },
+        "date": 1731509221246,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.8,
+            "unit": "ns/op",
+            "extra": "2700645 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 508,
+            "unit": "ns/op",
+            "extra": "2329899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28359,
+            "unit": "ns/op",
+            "extra": "42344 times\n4 procs"
           }
         ]
       }

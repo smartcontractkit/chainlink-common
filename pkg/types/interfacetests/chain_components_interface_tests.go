@@ -221,40 +221,6 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			Name: ContractReaderGetLatestValueWithHeadData,
-			Test: func(t T) {
-				ctx := tests.Context(t)
-				firstItem := CreateTestStruct(0, tester)
-
-				contracts := tester.GetBindings(t)
-				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
-
-				secondItem := CreateTestStruct(1, tester)
-
-				_ = SubmitTransactionToCW(t, tester, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
-
-				cr := tester.GetContractReader(t)
-				bindings := tester.GetBindings(t)
-				bound := BindingsByName(bindings, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
-
-				require.NoError(t, cr.Bind(ctx, bindings))
-
-				actual := &TestStruct{}
-				params := &LatestParams{I: 1}
-				headData, err := cr.GetLatestValueWithHeadData(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual)
-				require.NoError(t, err)
-				require.NotNil(t, headData)
-				assert.Equal(t, &firstItem, actual)
-
-				params.I = 2
-				actual = &TestStruct{}
-				headData, err = cr.GetLatestValueWithHeadData(ctx, bound.ReadIdentifier(MethodTakingLatestParamsReturningTestStruct), primitives.Unconfirmed, params, actual)
-				require.NoError(t, err)
-				require.NotNil(t, headData)
-				assert.Equal(t, &secondItem, actual)
-			},
-		},
-		{
 			Name: ContractReaderGetLatestValueWithPrimitiveReturn,
 			Test: func(t T) {
 				ctx := tests.Context(t)

@@ -1187,7 +1187,7 @@ func TestAggregateDeviation(t *testing.T) {
 
 	// 1st round
 	mockValueFirstRound, err := values.WrapMap(map[string]any{
-		"Timestamp": decimal.NewFromInt(35),
+		"Timestamp": decimal.NewFromInt(10),
 	})
 	require.NoError(t, err)
 
@@ -1201,11 +1201,11 @@ func TestAggregateDeviation(t *testing.T) {
 	require.NoError(t, err)
 	state, err := vmap.Unwrap()
 	require.NoError(t, err)
-	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(35)}), state)
+	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(10)}), state)
 
 	// 2nd round
 	mockValueSecondRound, err := values.WrapMap(map[string]any{
-		"Timestamp": decimal.NewFromInt(10),
+		"Timestamp": decimal.NewFromInt(30),
 	})
 	require.NoError(t, err)
 
@@ -1219,7 +1219,27 @@ func TestAggregateDeviation(t *testing.T) {
 	require.NoError(t, err)
 	state, err = vmap.Unwrap()
 	require.NoError(t, err)
-	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(35)}), state)
+	// the delta between 10 and 30 is 20, which is less than the deviation of 30, so the state should remain the same
+	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(10)}), state)
+
+	// 3rd round
+	mockValueThirdRound, err := values.WrapMap(map[string]any{
+		"Timestamp": decimal.NewFromInt(45),
+	})
+	require.NoError(t, err)
+
+	thirdOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueThirdRound}, 2: {mockValueThirdRound}, 3: {mockValueThirdRound}}, 1)
+	require.NoError(t, err)
+	require.Equal(t, true, thirdOutcome.ShouldReport)
+
+	// validate metadata
+	proto.Unmarshal(thirdOutcome.Metadata, pb)
+	vmap, err = values.FromMapValueProto(pb)
+	require.NoError(t, err)
+	state, err = vmap.Unwrap()
+	require.NoError(t, err)
+	// the delta between 10 and 45 is 35, which is more than the deviation of 30, thats why the state is updated
+	require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(45)}), state)
 }
 
 func getConfigReduceAggregator(t *testing.T, fields []aggregators.AggregationField, override map[string]any) *values.Map {

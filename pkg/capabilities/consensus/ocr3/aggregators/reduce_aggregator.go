@@ -105,16 +105,9 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			return nil, fmt.Errorf("unable to reduce on method %s, err: %s", field.Method, err.Error())
 		}
 
-		if field.DeviationType != DEVIATION_TYPE_NONE {
-			oldValue := (*currentState)[field.OutputKey]
-			currDeviation, err := deviation(field.DeviationType, oldValue, singleValue)
-			if oldValue != nil && err != nil {
-				return nil, fmt.Errorf("unable to determine deviation %s", err.Error())
-			}
-			if oldValue == nil || currDeviation.GreaterThan(field.Deviation) {
-				shouldReport = true
-			}
-			lggr.Debugw("checked deviation", "key", field.OutputKey, "deviationType", field.DeviationType, "currentDeviation", currDeviation.String(), "targetDeviation", field.Deviation.String(), "shouldReport", shouldReport)
+		shouldReport, err = a.shouldReport(lggr, field, singleValue, currentState)
+		if err != nil {
+			return nil, fmt.Errorf("unable to determine if should report, err: %s", err.Error())
 		}
 
 		if shouldReport {
@@ -187,6 +180,29 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 	}, nil
 }
 
+func (a *reduceAggregator) shouldReport(lggr logger.Logger, field AggregationField, singleValue values.Value, currentState *map[string]values.Value) (bool, error) {
+	if field.DeviationType == DEVIATION_TYPE_NONE {
+		return true, nil
+	}
+
+	oldValue := (*currentState)[field.OutputKey]
+	if oldValue == nil {
+		return true, nil
+	}
+
+	currDeviation, err := deviation(field.DeviationType, oldValue, singleValue)
+	if err != nil {
+		return false, fmt.Errorf("unable to determine deviation %s", err.Error())
+	}
+
+	if currDeviation.GreaterThan(field.Deviation) {
+		lggr.Debugw("checked deviation", "key", field.OutputKey, "deviationType", field.DeviationType, "currentDeviation", currDeviation.String(), "targetDeviation", field.Deviation.String(), "shouldReport", true)
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func (a *reduceAggregator) initializeCurrentState(lggr logger.Logger, previousOutcome *types.AggregationOutcome) (*map[string]values.Value, error) {
 	currentState := map[string]values.Value{}
 
@@ -201,14 +217,6 @@ func (a *reduceAggregator) initializeCurrentState(lggr logger.Logger, previousOu
 			return nil, fmt.Errorf("initializeCurrentState FromMapValueProto error: %w", err)
 		}
 		currentState = mv.Underlying
-	}
-
-	zeroValue := values.NewDecimal(decimal.Zero)
-	for _, field := range a.config.Fields {
-		if _, ok := currentState[field.OutputKey]; !ok {
-			currentState[field.OutputKey] = zeroValue
-			lggr.Debugw("initializing empty onchain state for feed", "fieldOutputKey", field.OutputKey)
-		}
 	}
 
 	lggr.Debugw("current state initialized", "state", currentState, "previousOutcome", previousOutcome)

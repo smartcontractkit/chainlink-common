@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731519622272,
+  "lastUpdate": 1731586375000,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6804,6 +6804,48 @@ window.BENCHMARK_DATA = {
             "value": 28359,
             "unit": "ns/op",
             "extra": "42235 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7f3fc0f974fce6009d8743b351c7b7adf3ed55ae",
+          "message": "Add 'identical' aggregator to OCR3 Consensus capability json schema options (#940)\n\n* Add 'identical' aggregator to OCR3 Consensus capability json schema options\r\n\r\n* (test): update test schema",
+          "timestamp": "2024-11-14T12:11:45Z",
+          "tree_id": "c1ddc0c2af6f6f2d6d3ea72cc5fced289f3fc261",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7f3fc0f974fce6009d8743b351c7b7adf3ed55ae"
+        },
+        "date": 1731586374463,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 441.7,
+            "unit": "ns/op",
+            "extra": "2618528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 524.9,
+            "unit": "ns/op",
+            "extra": "2385081 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28360,
+            "unit": "ns/op",
+            "extra": "42322 times\n4 procs"
           }
         ]
       }

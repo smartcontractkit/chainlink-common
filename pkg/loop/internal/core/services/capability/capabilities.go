@@ -309,7 +309,8 @@ func (c *executableServer) RegisterToWorkflow(ctx context.Context, req *capabili
 
 	err = c.impl.RegisterToWorkflow(ctx, capabilities.RegisterToWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowId,
+			WorkflowID:  req.Metadata.WorkflowId,
+			ReferenceID: req.Metadata.ReferenceId,
 		},
 		Config: config,
 	})
@@ -324,7 +325,8 @@ func (c *executableServer) UnregisterFromWorkflow(ctx context.Context, req *capa
 
 	err = c.impl.UnregisterFromWorkflow(ctx, capabilities.UnregisterFromWorkflowRequest{
 		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID: req.Metadata.WorkflowId,
+			WorkflowID:  req.Metadata.WorkflowId,
+			ReferenceID: req.Metadata.ReferenceId,
 		},
 		Config: config,
 	})
@@ -398,7 +400,8 @@ func (c *executableClient) UnregisterFromWorkflow(ctx context.Context, req capab
 	r := &capabilitiespb.UnregisterFromWorkflowRequest{
 		Config: values.ProtoMap(config),
 		Metadata: &capabilitiespb.RegistrationMetadata{
-			WorkflowId: req.Metadata.WorkflowID,
+			WorkflowId:  req.Metadata.WorkflowID,
+			ReferenceId: req.Metadata.ReferenceID,
 		},
 	}
 
@@ -415,7 +418,8 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 	r := &capabilitiespb.RegisterToWorkflowRequest{
 		Config: values.ProtoMap(config),
 		Metadata: &capabilitiespb.RegistrationMetadata{
-			WorkflowId: req.Metadata.WorkflowID,
+			WorkflowId:  req.Metadata.WorkflowID,
+			ReferenceId: req.Metadata.ReferenceID,
 		},
 	}
 

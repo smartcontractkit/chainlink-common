@@ -94,6 +94,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 
 	var remoteTriggerConfig *capabilities.RemoteTriggerConfig
 	var remoteTargetConfig *capabilities.RemoteTargetConfig
+	var remoteExecutableConfig *capabilities.RemoteExecutableConfig
 
 	switch res.CapabilityConfig.RemoteConfig.(type) {
 	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
@@ -110,12 +111,17 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
 		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
 		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
+	case *capabilitiespb.CapabilityConfig_RemoteExecutableConfig:
+		prtc := res.CapabilityConfig.GetRemoteExecutableConfig()
+		remoteExecutableConfig = &capabilities.RemoteExecutableConfig{}
+		remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
 	}
 
 	return capabilities.CapabilityConfiguration{
-		DefaultConfig:       mc,
-		RemoteTriggerConfig: remoteTriggerConfig,
-		RemoteTargetConfig:  remoteTargetConfig,
+		DefaultConfig:          mc,
+		RemoteTriggerConfig:    remoteTriggerConfig,
+		RemoteTargetConfig:     remoteTargetConfig,
+		RemoteExecutableConfig: remoteExecutableConfig,
 	}, nil
 }
 

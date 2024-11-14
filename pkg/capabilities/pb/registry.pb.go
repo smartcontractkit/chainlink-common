@@ -159,6 +159,56 @@ func (x *RemoteTargetConfig) GetRequestHashExcludedAttributes() []string {
 	return nil
 }
 
+type RemoteExecutableConfig struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote executable capability
+	// when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
+	// that the hash of logically identical requests is consistent.
+	RequestHashExcludedAttributes []string `protobuf:"bytes,1,rep,name=requestHashExcludedAttributes,proto3" json:"requestHashExcludedAttributes,omitempty"`
+}
+
+func (x *RemoteExecutableConfig) Reset() {
+	*x = RemoteExecutableConfig{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_capabilities_pb_registry_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RemoteExecutableConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteExecutableConfig) ProtoMessage() {}
+
+func (x *RemoteExecutableConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_pb_registry_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteExecutableConfig.ProtoReflect.Descriptor instead.
+func (*RemoteExecutableConfig) Descriptor() ([]byte, []int) {
+	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RemoteExecutableConfig) GetRequestHashExcludedAttributes() []string {
+	if x != nil {
+		return x.RequestHashExcludedAttributes
+	}
+	return nil
+}
+
 type CapabilityConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -169,13 +219,14 @@ type CapabilityConfig struct {
 	//
 	//	*CapabilityConfig_RemoteTriggerConfig
 	//	*CapabilityConfig_RemoteTargetConfig
+	//	*CapabilityConfig_RemoteExecutableConfig
 	RemoteConfig isCapabilityConfig_RemoteConfig `protobuf_oneof:"remote_config"`
 }
 
 func (x *CapabilityConfig) Reset() {
 	*x = CapabilityConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_capabilities_pb_registry_proto_msgTypes[2]
+		mi := &file_capabilities_pb_registry_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -188,7 +239,7 @@ func (x *CapabilityConfig) String() string {
 func (*CapabilityConfig) ProtoMessage() {}
 
 func (x *CapabilityConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_registry_proto_msgTypes[2]
+	mi := &file_capabilities_pb_registry_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -201,7 +252,7 @@ func (x *CapabilityConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityConfig.ProtoReflect.Descriptor instead.
 func (*CapabilityConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CapabilityConfig) GetDefaultConfig() *pb.Map {
@@ -232,6 +283,13 @@ func (x *CapabilityConfig) GetRemoteTargetConfig() *RemoteTargetConfig {
 	return nil
 }
 
+func (x *CapabilityConfig) GetRemoteExecutableConfig() *RemoteExecutableConfig {
+	if x, ok := x.GetRemoteConfig().(*CapabilityConfig_RemoteExecutableConfig); ok {
+		return x.RemoteExecutableConfig
+	}
+	return nil
+}
+
 type isCapabilityConfig_RemoteConfig interface {
 	isCapabilityConfig_RemoteConfig()
 }
@@ -244,9 +302,15 @@ type CapabilityConfig_RemoteTargetConfig struct {
 	RemoteTargetConfig *RemoteTargetConfig `protobuf:"bytes,3,opt,name=remote_target_config,json=remoteTargetConfig,proto3,oneof"`
 }
 
+type CapabilityConfig_RemoteExecutableConfig struct {
+	RemoteExecutableConfig *RemoteExecutableConfig `protobuf:"bytes,4,opt,name=remote_executable_config,json=remoteExecutableConfig,proto3,oneof"`
+}
+
 func (*CapabilityConfig_RemoteTriggerConfig) isCapabilityConfig_RemoteConfig() {}
 
 func (*CapabilityConfig_RemoteTargetConfig) isCapabilityConfig_RemoteConfig() {}
+
+func (*CapabilityConfig_RemoteExecutableConfig) isCapabilityConfig_RemoteConfig() {}
 
 var File_capabilities_pb_registry_proto protoreflect.FileDescriptor
 
@@ -288,7 +352,13 @@ var file_capabilities_pb_registry_proto_rawDesc = []byte{
 	0x61, 0x73, 0x68, 0x45, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69,
 	0x62, 0x75, 0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x1d, 0x72, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x45, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64,
-	0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x22, 0xf6, 0x01, 0x0a, 0x10, 0x43,
+	0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x22, 0x5e, 0x0a, 0x16, 0x52, 0x65,
+	0x6d, 0x6f, 0x74, 0x65, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x12, 0x44, 0x0a, 0x1d, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48,
+	0x61, 0x73, 0x68, 0x45, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x1d, 0x72, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x45, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64,
+	0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x22, 0xd0, 0x02, 0x0a, 0x10, 0x43,
 	0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12,
 	0x32, 0x0a, 0x0e, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69,
 	0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73,
@@ -303,12 +373,18 @@ var file_capabilities_pb_registry_proto_rawDesc = []byte{
 	0x28, 0x0b, 0x32, 0x18, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x74, 0x65,
 	0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x48, 0x00, 0x52, 0x12,
 	0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x42, 0x0f, 0x0a, 0x0d, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x5f, 0x63, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x42, 0x42, 0x5a, 0x40, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b,
-	0x69, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d,
-	0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69,
-	0x74, 0x69, 0x65, 0x73, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x67, 0x12, 0x58, 0x0a, 0x18, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x5f, 0x65, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x52, 0x65, 0x6d, 0x6f,
+	0x74, 0x65, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x48, 0x00, 0x52, 0x16, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x45, 0x78, 0x65, 0x63,
+	0x75, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x0f, 0x0a, 0x0d,
+	0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x42, 0x5a,
+	0x40, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61, 0x72,
+	0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68, 0x61,
+	0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x6b,
+	0x67, 0x2f, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x2f, 0x70,
+	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -323,27 +399,29 @@ func file_capabilities_pb_registry_proto_rawDescGZIP() []byte {
 	return file_capabilities_pb_registry_proto_rawDescData
 }
 
-var file_capabilities_pb_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_capabilities_pb_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_capabilities_pb_registry_proto_goTypes = []interface{}{
-	(*RemoteTriggerConfig)(nil), // 0: loop.RemoteTriggerConfig
-	(*RemoteTargetConfig)(nil),  // 1: loop.RemoteTargetConfig
-	(*CapabilityConfig)(nil),    // 2: loop.CapabilityConfig
-	(*durationpb.Duration)(nil), // 3: google.protobuf.Duration
-	(*pb.Map)(nil),              // 4: values.Map
+	(*RemoteTriggerConfig)(nil),    // 0: loop.RemoteTriggerConfig
+	(*RemoteTargetConfig)(nil),     // 1: loop.RemoteTargetConfig
+	(*RemoteExecutableConfig)(nil), // 2: loop.RemoteExecutableConfig
+	(*CapabilityConfig)(nil),       // 3: loop.CapabilityConfig
+	(*durationpb.Duration)(nil),    // 4: google.protobuf.Duration
+	(*pb.Map)(nil),                 // 5: values.Map
 }
 var file_capabilities_pb_registry_proto_depIdxs = []int32{
-	3, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
-	3, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	3, // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
-	3, // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
-	4, // 4: loop.CapabilityConfig.default_config:type_name -> values.Map
+	4, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
+	4, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
+	4, // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
+	4, // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
+	5, // 4: loop.CapabilityConfig.default_config:type_name -> values.Map
 	0, // 5: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
 	1, // 6: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	2, // 7: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_pb_registry_proto_init() }
@@ -377,6 +455,18 @@ func file_capabilities_pb_registry_proto_init() {
 			}
 		}
 		file_capabilities_pb_registry_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RemoteExecutableConfig); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_capabilities_pb_registry_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CapabilityConfig); i {
 			case 0:
 				return &v.state
@@ -389,9 +479,10 @@ func file_capabilities_pb_registry_proto_init() {
 			}
 		}
 	}
-	file_capabilities_pb_registry_proto_msgTypes[2].OneofWrappers = []interface{}{
+	file_capabilities_pb_registry_proto_msgTypes[3].OneofWrappers = []interface{}{
 		(*CapabilityConfig_RemoteTriggerConfig)(nil),
 		(*CapabilityConfig_RemoteTargetConfig)(nil),
+		(*CapabilityConfig_RemoteExecutableConfig)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -399,7 +490,7 @@ func file_capabilities_pb_registry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_capabilities_pb_registry_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

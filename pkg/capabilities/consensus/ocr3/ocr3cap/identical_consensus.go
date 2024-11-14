@@ -2,6 +2,7 @@ package ocr3cap
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
@@ -22,6 +23,7 @@ func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string,
 			"encoder":            c.Encoder,
 			"encoder_config":     c.EncoderConfig,
 			"aggregation_method": "identical",
+			"aggregation_config": values.EmptyMap(),
 			"report_id":          c.ReportID,
 		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,

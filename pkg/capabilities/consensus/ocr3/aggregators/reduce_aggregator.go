@@ -1,6 +1,7 @@
 package aggregators
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -105,12 +106,13 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			return nil, fmt.Errorf("unable to reduce on method %s, err: %s", field.Method, err.Error())
 		}
 
-		shouldReport, err = a.shouldReport(lggr, field, singleValue, currentState)
+		shouldReportField, err := a.shouldReport(lggr, field, singleValue, currentState)
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine if should report, err: %s", err.Error())
 		}
 
-		if shouldReport {
+		if shouldReportField {
+			shouldReport = true
 			(*currentState)[field.OutputKey] = singleValue
 		}
 		if len(field.OutputKey) > 0 {
@@ -181,13 +183,37 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 }
 
 func (a *reduceAggregator) shouldReport(lggr logger.Logger, field AggregationField, singleValue values.Value, currentState *map[string]values.Value) (bool, error) {
-	if field.DeviationType == DEVIATION_TYPE_NONE {
+	oldValue := (*currentState)[field.OutputKey]
+
+	// this means its the first round and the field has not been initialised
+	if oldValue == nil {
 		return true, nil
 	}
 
-	oldValue := (*currentState)[field.OutputKey]
-	if oldValue == nil {
-		return true, nil
+	if field.DeviationType == DEVIATION_TYPE_NONE {
+		unwrappedOldValue, err := oldValue.Unwrap()
+		if err != nil {
+			return false, err
+		}
+
+		unwrappedSingleValue, err := singleValue.Unwrap()
+		if err != nil {
+			return false, err
+		}
+
+		// we will only report in case of a change in value
+		switch v := unwrappedOldValue.(type) {
+		case []byte:
+			if !bytes.Equal(v, unwrappedSingleValue.([]byte)) {
+				return true, nil
+			}
+		default:
+			if unwrappedOldValue != unwrappedSingleValue {
+				return true, nil
+			}
+		}
+
+		return false, nil
 	}
 
 	currDeviation, err := deviation(field.DeviationType, oldValue, singleValue)

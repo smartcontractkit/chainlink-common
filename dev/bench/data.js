@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731592169452,
+  "lastUpdate": 1731599803080,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6888,6 +6888,48 @@ window.BENCHMARK_DATA = {
             "value": 28297,
             "unit": "ns/op",
             "extra": "42411 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vyzaldysanchez@gmail.com",
+            "name": "Vyzaldy Sanchez",
+            "username": "vyzaldysanchez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9557da03bad32971c6035d8a1bf5ffe7bf536284",
+          "message": "Adds beholder logging (#938)",
+          "timestamp": "2024-11-14T10:55:34-05:00",
+          "tree_id": "b335396794bf3f3b00638c432aa5b1d314b3f21e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9557da03bad32971c6035d8a1bf5ffe7bf536284"
+        },
+        "date": 1731599802195,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 443.8,
+            "unit": "ns/op",
+            "extra": "2681691 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 500.5,
+            "unit": "ns/op",
+            "extra": "2383836 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28274,
+            "unit": "ns/op",
+            "extra": "42469 times\n4 procs"
           }
         ]
       }

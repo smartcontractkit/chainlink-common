@@ -22,6 +22,7 @@ func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string,
 		Config: map[string]any{
 			"encoder":            c.Encoder,
 			"encoder_config":     c.EncoderConfig,
+			"aggregation_config": make(map[string]interface{}),
 			"aggregation_method": "identical",
 			"report_id":          c.ReportID,
 			"key_id":             c.KeyID,

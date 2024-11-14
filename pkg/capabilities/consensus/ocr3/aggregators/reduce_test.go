@@ -1243,12 +1243,13 @@ func TestAggregateShouldReport(t *testing.T) {
 		require.Equal(t, map[string]interface{}(map[string]interface{}{"Time": decimal.NewFromInt(45)}), state)
 	})
 
-	t.Run("NOK-do_not_report_if_deviation_type_none_byte_field_does_not_change", func(t *testing.T) {
+	t.Run("NOK-do_not_report_if_deviation_type_any_byte_field_does_not_change", func(t *testing.T) {
 		fields := []aggregators.AggregationField{
 			{
-				InputKey:  "FeedID",
-				OutputKey: "FeedID",
-				Method:    "mode",
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
 			},
 			{
 				InputKey:        "Timestamp",
@@ -1304,12 +1305,13 @@ func TestAggregateShouldReport(t *testing.T) {
 		require.Equal(t, false, secondOutcome.ShouldReport)
 	})
 
-	t.Run("NOK-do_not_report_if_deviation_type_none_bool_field_does_not_change", func(t *testing.T) {
+	t.Run("NOK-do_not_report_if_deviation_type_any_bool_field_does_not_change", func(t *testing.T) {
 		fields := []aggregators.AggregationField{
 			{
-				InputKey:  "BoolField",
-				OutputKey: "BoolField",
-				Method:    "mode",
+				InputKey:      "BoolField",
+				OutputKey:     "BoolField",
+				Method:        "mode",
+				DeviationType: "any",
 			},
 			{
 				InputKey:        "Timestamp",
@@ -1365,12 +1367,13 @@ func TestAggregateShouldReport(t *testing.T) {
 		require.Equal(t, false, secondOutcome.ShouldReport)
 	})
 
-	t.Run("OK-report_if_deviation_type_none_byte_field_is_changed", func(t *testing.T) {
+	t.Run("OK-report_if_deviation_type_any_byte_field_is_changed", func(t *testing.T) {
 		fields := []aggregators.AggregationField{
 			{
-				InputKey:  "FeedID",
-				OutputKey: "FeedID",
-				Method:    "mode",
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
 			},
 			{
 				InputKey:        "Timestamp",
@@ -1426,12 +1429,13 @@ func TestAggregateShouldReport(t *testing.T) {
 		require.Equal(t, true, secondOutcome.ShouldReport)
 	})
 
-	t.Run("OK-report_if_deviation_type_none_bool_field_is_changed", func(t *testing.T) {
+	t.Run("OK-report_if_deviation_type_any_bool_field_is_changed", func(t *testing.T) {
 		fields := []aggregators.AggregationField{
 			{
-				InputKey:  "BoolField",
-				OutputKey: "BoolField",
-				Method:    "mode",
+				InputKey:      "BoolField",
+				OutputKey:     "BoolField",
+				Method:        "mode",
+				DeviationType: "any",
 			},
 			{
 				InputKey:        "Timestamp",
@@ -1487,6 +1491,501 @@ func TestAggregateShouldReport(t *testing.T) {
 		require.Equal(t, true, secondOutcome.ShouldReport)
 	})
 
+	t.Run("OK-report_if_deviation_type_any_string_field_is_changed", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    "A",
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": "A",
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    "B",
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should report, given the value has changed from A to B
+		require.Equal(t, true, secondOutcome.ShouldReport)
+	})
+
+	t.Run("NOK-do_not_report_if_deviation_type_any_string_field_does_not_change", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    "A",
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": "A",
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    "A",
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should not report, given the value has not changed
+		require.Equal(t, false, secondOutcome.ShouldReport)
+	})
+
+	t.Run("OK-report_if_deviation_type_any_map_field_is_changed", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    map[string]any{"A": "A"},
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": map[string]any{"A": "A"},
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    map[string]any{"A": "B"},
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should report, given the value of A has changed from A to B
+		require.Equal(t, true, secondOutcome.ShouldReport)
+	})
+
+	t.Run("NOK-do_not_report_if_deviation_type_any_map_field_does_not_change", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    map[string]any{"A": "A"},
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": map[string]any{"A": "A"},
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    map[string]any{"A": "A"},
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should not report, given the value has not changed
+		require.Equal(t, false, secondOutcome.ShouldReport)
+	})
+
+	t.Run("OK-report_if_deviation_type_any_slice_field_is_changed", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    []any{"A"},
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": []any{"A"},
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    []any{"B"},
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should report, given the value has changed from A to B
+		require.Equal(t, true, secondOutcome.ShouldReport)
+	})
+
+	t.Run("NOK-do_not_report_if_deviation_type_any_slice_field_does_not_change", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    []any{"A"},
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": []any{"A"},
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    []any{"A"},
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should not report, given the value has not changed
+		require.Equal(t, false, secondOutcome.ShouldReport)
+	})
+
+	t.Run("OK-report_if_deviation_type_any_numeric_field_is_changed", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    int64(1),
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": int64(1),
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    int64(2),
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should report, given the value has changed from 1 to 2
+		require.Equal(t, true, secondOutcome.ShouldReport)
+	})
+
+	t.Run("NOK-do_not_report_if_deviation_type_any_numeric_field_does_not_change", func(t *testing.T) {
+		fields := []aggregators.AggregationField{
+			{
+				InputKey:      "FeedID",
+				OutputKey:     "FeedID",
+				Method:        "mode",
+				DeviationType: "any",
+			},
+			{
+				InputKey:        "Timestamp",
+				OutputKey:       "Time",
+				Method:          "median",
+				DeviationString: "30",
+				DeviationType:   "absolute",
+			},
+		}
+		extraConfig := map[string]any{
+			"reportFormat": "array",
+		}
+
+		config := getConfigReduceAggregator(t, fields, extraConfig)
+		agg, err := aggregators.NewReduceAggregator(*config)
+		require.NoError(t, err)
+
+		pb := &pb.Map{}
+
+		// 1st round
+		mockValueFirstRound, err := values.WrapMap(map[string]any{
+			"FeedID":    int64(1),
+			"Timestamp": decimal.NewFromInt(10),
+		})
+		require.NoError(t, err)
+
+		firstOutcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockValueFirstRound}, 2: {mockValueFirstRound}, 3: {mockValueFirstRound}}, 1)
+		require.NoError(t, err)
+		require.Equal(t, true, firstOutcome.ShouldReport)
+
+		// validate metadata
+		proto.Unmarshal(firstOutcome.Metadata, pb)
+		vmap, err := values.FromMapValueProto(pb)
+		require.NoError(t, err)
+		state, err := vmap.Unwrap()
+		require.NoError(t, err)
+		require.Equal(t, map[string]interface{}(map[string]interface{}{
+			"FeedID": int64(1),
+			"Time":   decimal.NewFromInt(10),
+		}), state)
+
+		// 2nd round
+		mockValueSecondRound, err := values.WrapMap(map[string]any{
+			"FeedID":    int64(1),
+			"Timestamp": decimal.NewFromInt(20),
+		})
+		require.NoError(t, err)
+
+		secondOutcome, err := agg.Aggregate(logger.Nop(), firstOutcome, map[commontypes.OracleID][]values.Value{1: {mockValueSecondRound}, 2: {mockValueSecondRound}, 3: {mockValueSecondRound}}, 1)
+		require.NoError(t, err)
+
+		// This should not report, given the value has not changed
+		require.Equal(t, false, secondOutcome.ShouldReport)
+	})
 }
 
 func getConfigReduceAggregator(t *testing.T, fields []aggregators.AggregationField, override map[string]any) *values.Map {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731586375000,
+  "lastUpdate": 1731592169452,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6846,6 +6846,48 @@ window.BENCHMARK_DATA = {
             "value": 28360,
             "unit": "ns/op",
             "extra": "42322 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aadff98ef0688543aae154ba4712484b2df83d82",
+          "message": "Changes required for remote action support  (#930)\n\n* reader capability changes\r\n\r\n* update test\r\n\r\n* review comments",
+          "timestamp": "2024-11-14T13:48:22Z",
+          "tree_id": "de5249653533d0450f36332cc67bf9521ab19b91",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aadff98ef0688543aae154ba4712484b2df83d82"
+        },
+        "date": 1731592168909,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.6,
+            "unit": "ns/op",
+            "extra": "2686148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 497.2,
+            "unit": "ns/op",
+            "extra": "2401112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28297,
+            "unit": "ns/op",
+            "extra": "42411 times\n4 procs"
           }
         ]
       }

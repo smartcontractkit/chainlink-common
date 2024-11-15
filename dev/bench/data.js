@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731599803080,
+  "lastUpdate": 1731670247983,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -6930,6 +6930,48 @@ window.BENCHMARK_DATA = {
             "value": 28274,
             "unit": "ns/op",
             "extra": "42469 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "65bdfbc52ccf2e617e5f05f12b8aa0d6f8e6a7d2",
+          "message": "[CAPPL-276] update current state only if should report is true (#939)\n\n* fix: update current state only if should report is true\r\n\r\n* fix: refactor initializeCurrentState to not initialize with ZeroValue in order to distinguish between zero and empty value\r\n\r\n* feat: only report DEVIATION_TYPE_NONE if the value has changed\r\n\r\n* feat: add DEVIATION_TYPE_ANY to check for any type of change\r\n\r\n* test: create test table to reduce duplication",
+          "timestamp": "2024-11-15T11:29:43Z",
+          "tree_id": "c40862f566b5a076a8debf140c0f24630daf72c8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/65bdfbc52ccf2e617e5f05f12b8aa0d6f8e6a7d2"
+        },
+        "date": 1731670247430,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 462.4,
+            "unit": "ns/op",
+            "extra": "2487567 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 501.1,
+            "unit": "ns/op",
+            "extra": "2370848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28280,
+            "unit": "ns/op",
+            "extra": "42140 times\n4 procs"
           }
         ]
       }

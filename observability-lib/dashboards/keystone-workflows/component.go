@@ -37,20 +37,7 @@ func NewDashboard(props *Props) (*grafana.Observability, error) {
 	builder.AddPanel(registrySyncer(props)...)
 
 	builder.AddRow("Logs")
-	builder.AddPanel(grafana.NewLogPanel(&grafana.LogPanelOptions{
-		PanelOptions: &grafana.PanelOptions{
-			Datasource: props.LogsDataSource.Name,
-			Title:      "Logs",
-			Span:       24,
-			Height:     6,
-			Query: []grafana.Query{
-				{
-					Expr:   `{cluster="staging-us-west-2-o11y", namespace="platform-workflow-benthos"}`,
-					Legend: "",
-				},
-			},
-		},
-	}))
+	builder.AddPanel(customMessage(props)...)
 
 	if props.SlackChannel != "" && props.SlackWebhookURL != "" {
 		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{
@@ -103,6 +90,26 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 	}))
 
 	return variables
+}
+
+func customMessage(p *Props) []*grafana.Panel {
+	var panels []*grafana.Panel
+
+	panels = append(panels, grafana.NewLogPanel(&grafana.LogPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource: p.LogsDataSource.Name,
+			Title:      "Logs",
+			Span:       24,
+			Height:     6,
+			Query: []grafana.Query{
+				{
+					Expr:   `{cluster="staging-us-west-2-o11y", namespace="platform-workflow-benthos"}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+	return panels
 }
 
 func engine(p *Props) []*grafana.Panel {

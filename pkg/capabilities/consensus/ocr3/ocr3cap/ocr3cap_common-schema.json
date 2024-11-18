@@ -46,7 +46,7 @@
     },
     "encoder": {
       "type": "string",
-      "enum": ["EVM", "ValueMap"]
+      "enum": ["EVM", "ValueMap", "Passthrough"]
     },
     "encoder_config": {
       "type": "object",

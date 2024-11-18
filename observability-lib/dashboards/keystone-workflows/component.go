@@ -45,7 +45,7 @@ func NewDashboard(props *Props) (*grafana.Observability, error) {
 			Height:     6,
 			Query: []grafana.Query{
 				{
-					Expr:   `{domain="keystone"}`,
+					Expr:   `{cluster="staging-us-west-2-o11y", namespace="platform-workflow-benthos"}`,
 					Legend: "",
 				},
 			},

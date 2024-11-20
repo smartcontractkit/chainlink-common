@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1731672320775,
+  "lastUpdate": 1732101527331,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7014,6 +7014,48 @@ window.BENCHMARK_DATA = {
             "value": 28350,
             "unit": "ns/op",
             "extra": "42030 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a6a70ec7692bd91bb15a55c99d74344975ca2957",
+          "message": "[CAPPL-305] Fix typo in custom compute capability ID (#945)",
+          "timestamp": "2024-11-20T11:17:40Z",
+          "tree_id": "da4c14073ff0fa1901f72d422041d30e0816c673",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a6a70ec7692bd91bb15a55c99d74344975ca2957"
+        },
+        "date": 1732101526200,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 444.4,
+            "unit": "ns/op",
+            "extra": "2687307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 497.9,
+            "unit": "ns/op",
+            "extra": "2320359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28297,
+            "unit": "ns/op",
+            "extra": "42321 times\n4 procs"
           }
         ]
       }

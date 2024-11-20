@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732101527331,
+  "lastUpdate": 1732129632995,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7056,6 +7056,48 @@ window.BENCHMARK_DATA = {
             "value": 28297,
             "unit": "ns/op",
             "extra": "42321 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "domino.valdano@smartcontract.com",
+            "name": "Domino Valdano",
+            "username": "reductionista"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "262c6d8a55e1bc7bc5f1d8a23ef3b0e8c4d96642",
+          "message": "generate a mock DataSource for use in unit testing (#919)\n\n* Add sqltest package with no-op DataSource definition",
+          "timestamp": "2024-11-20T11:06:13-08:00",
+          "tree_id": "25c14893050fa2082d701559e1618a92adfaa204",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/262c6d8a55e1bc7bc5f1d8a23ef3b0e8c4d96642"
+        },
+        "date": 1732129632432,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 448.9,
+            "unit": "ns/op",
+            "extra": "2663347 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 522.1,
+            "unit": "ns/op",
+            "extra": "2043003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28330,
+            "unit": "ns/op",
+            "extra": "42436 times\n4 procs"
           }
         ]
       }

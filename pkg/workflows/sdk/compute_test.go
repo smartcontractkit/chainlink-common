@@ -55,7 +55,7 @@ func TestCompute(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "custom_compute@1.0.0",
+					ID:  "custom-compute@1.0.0",
 					Ref: "Compute",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs)"},

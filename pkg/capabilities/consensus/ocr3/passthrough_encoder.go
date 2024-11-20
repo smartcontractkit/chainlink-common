@@ -13,6 +13,7 @@ import (
 
 type PassthroughEncoder struct{}
 
+// Brought in from CL core.
 type ReportV1Metadata struct {
 	Version             uint8
 	WorkflowExecutionID [32]byte
@@ -34,10 +35,18 @@ func (rm ReportV1Metadata) Encode() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (rm ReportV1Metadata) Length() int {
+	bytes, err := rm.Encode()
+	if err != nil {
+		return 0
+	}
+	return len(bytes)
+}
+
 func (v PassthroughEncoder) Encode(ctx context.Context, input values.Map) ([]byte, error) {
-	metaMap, ok := input.Underlying["INTERNAL_METADATA"]
+	metaMap, ok := input.Underlying[consensustypes.MetadataFieldName]
 	if !ok {
-		return nil, fmt.Errorf("expected metadata field to be present: %s", "INTERNAL_METADATA")
+		return nil, fmt.Errorf("expected metadata field to be present: %s", consensustypes.MetadataFieldName)
 	}
 
 	dataMap, ok := input.Underlying["0"]

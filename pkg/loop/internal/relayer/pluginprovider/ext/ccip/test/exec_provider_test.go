@@ -75,20 +75,6 @@ func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 		require.NoError(t, priceRegistryClient.Close())
 	})
 
-	t.Run("TokenData", func(t *testing.T) {
-		tokenDataClient, err := client.NewTokenDataReader(tests.Context(t), "ignored")
-		require.NoError(t, err)
-		roundTripTokenDataTests(t, tokenDataClient)
-		require.NoError(t, tokenDataClient.Close())
-	})
-
-	t.Run("TokenPool", func(t *testing.T) {
-		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t), "ignored", 0)
-		require.NoError(t, err)
-		roundTripTokenPoolTests(t, tokenReaderClient)
-		require.NoError(t, tokenReaderClient.Close())
-	})
-
 	t.Run("SourceNativeToken", func(t *testing.T) {
 		token, err := client.SourceNativeToken(tests.Context(t), "ignored")
 		require.NoError(t, err)

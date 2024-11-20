@@ -111,15 +111,13 @@ var ExecutionFactoryGenerator_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ExecutionCustomHandlers_GetTransactionStatus_FullMethodName      = "/loop.internal.pb.ccip.ExecutionCustomHandlers/GetTransactionStatus"
-	ExecutionCustomHandlers_NewCommitStoreReader_FullMethodName      = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewCommitStoreReader"
-	ExecutionCustomHandlers_NewOffRampReader_FullMethodName          = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewOffRampReader"
-	ExecutionCustomHandlers_NewOnRampReader_FullMethodName           = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewOnRampReader"
-	ExecutionCustomHandlers_NewPriceRegistryReader_FullMethodName    = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewPriceRegistryReader"
-	ExecutionCustomHandlers_NewTokenDataReader_FullMethodName        = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewTokenDataReader"
-	ExecutionCustomHandlers_NewTokenPoolBatchedReader_FullMethodName = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewTokenPoolBatchedReader"
-	ExecutionCustomHandlers_SourceNativeToken_FullMethodName         = "/loop.internal.pb.ccip.ExecutionCustomHandlers/SourceNativeToken"
-	ExecutionCustomHandlers_Close_FullMethodName                     = "/loop.internal.pb.ccip.ExecutionCustomHandlers/Close"
+	ExecutionCustomHandlers_GetTransactionStatus_FullMethodName   = "/loop.internal.pb.ccip.ExecutionCustomHandlers/GetTransactionStatus"
+	ExecutionCustomHandlers_NewCommitStoreReader_FullMethodName   = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewCommitStoreReader"
+	ExecutionCustomHandlers_NewOffRampReader_FullMethodName       = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewOffRampReader"
+	ExecutionCustomHandlers_NewOnRampReader_FullMethodName        = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewOnRampReader"
+	ExecutionCustomHandlers_NewPriceRegistryReader_FullMethodName = "/loop.internal.pb.ccip.ExecutionCustomHandlers/NewPriceRegistryReader"
+	ExecutionCustomHandlers_SourceNativeToken_FullMethodName      = "/loop.internal.pb.ccip.ExecutionCustomHandlers/SourceNativeToken"
+	ExecutionCustomHandlers_Close_FullMethodName                  = "/loop.internal.pb.ccip.ExecutionCustomHandlers/Close"
 )
 
 // ExecutionCustomHandlersClient is the client API for ExecutionCustomHandlers service.
@@ -131,8 +129,6 @@ type ExecutionCustomHandlersClient interface {
 	NewOffRampReader(ctx context.Context, in *NewOffRampReaderRequest, opts ...grpc.CallOption) (*NewOffRampReaderResponse, error)
 	NewOnRampReader(ctx context.Context, in *NewOnRampReaderRequest, opts ...grpc.CallOption) (*NewOnRampReaderResponse, error)
 	NewPriceRegistryReader(ctx context.Context, in *NewPriceRegistryReaderRequest, opts ...grpc.CallOption) (*NewPriceRegistryReaderResponse, error)
-	NewTokenDataReader(ctx context.Context, in *NewTokenDataRequest, opts ...grpc.CallOption) (*NewTokenDataResponse, error)
-	NewTokenPoolBatchedReader(ctx context.Context, in *NewTokenPoolBatchedReaderRequest, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error)
 	SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error)
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -190,24 +186,6 @@ func (c *executionCustomHandlersClient) NewPriceRegistryReader(ctx context.Conte
 	return out, nil
 }
 
-func (c *executionCustomHandlersClient) NewTokenDataReader(ctx context.Context, in *NewTokenDataRequest, opts ...grpc.CallOption) (*NewTokenDataResponse, error) {
-	out := new(NewTokenDataResponse)
-	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_NewTokenDataReader_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *executionCustomHandlersClient) NewTokenPoolBatchedReader(ctx context.Context, in *NewTokenPoolBatchedReaderRequest, opts ...grpc.CallOption) (*NewTokenPoolBatchedReaderResponse, error) {
-	out := new(NewTokenPoolBatchedReaderResponse)
-	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_NewTokenPoolBatchedReader_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *executionCustomHandlersClient) SourceNativeToken(ctx context.Context, in *SourceNativeTokenRequest, opts ...grpc.CallOption) (*SourceNativeTokenResponse, error) {
 	out := new(SourceNativeTokenResponse)
 	err := c.cc.Invoke(ctx, ExecutionCustomHandlers_SourceNativeToken_FullMethodName, in, out, opts...)
@@ -235,8 +213,6 @@ type ExecutionCustomHandlersServer interface {
 	NewOffRampReader(context.Context, *NewOffRampReaderRequest) (*NewOffRampReaderResponse, error)
 	NewOnRampReader(context.Context, *NewOnRampReaderRequest) (*NewOnRampReaderResponse, error)
 	NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error)
-	NewTokenDataReader(context.Context, *NewTokenDataRequest) (*NewTokenDataResponse, error)
-	NewTokenPoolBatchedReader(context.Context, *NewTokenPoolBatchedReaderRequest) (*NewTokenPoolBatchedReaderResponse, error)
 	SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error)
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedExecutionCustomHandlersServer()
@@ -260,12 +236,6 @@ func (UnimplementedExecutionCustomHandlersServer) NewOnRampReader(context.Contex
 }
 func (UnimplementedExecutionCustomHandlersServer) NewPriceRegistryReader(context.Context, *NewPriceRegistryReaderRequest) (*NewPriceRegistryReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPriceRegistryReader not implemented")
-}
-func (UnimplementedExecutionCustomHandlersServer) NewTokenDataReader(context.Context, *NewTokenDataRequest) (*NewTokenDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewTokenDataReader not implemented")
-}
-func (UnimplementedExecutionCustomHandlersServer) NewTokenPoolBatchedReader(context.Context, *NewTokenPoolBatchedReaderRequest) (*NewTokenPoolBatchedReaderResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewTokenPoolBatchedReader not implemented")
 }
 func (UnimplementedExecutionCustomHandlersServer) SourceNativeToken(context.Context, *SourceNativeTokenRequest) (*SourceNativeTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SourceNativeToken not implemented")
@@ -377,42 +347,6 @@ func _ExecutionCustomHandlers_NewPriceRegistryReader_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExecutionCustomHandlers_NewTokenDataReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewTokenDataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ExecutionCustomHandlersServer).NewTokenDataReader(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ExecutionCustomHandlers_NewTokenDataReader_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutionCustomHandlersServer).NewTokenDataReader(ctx, req.(*NewTokenDataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ExecutionCustomHandlers_NewTokenPoolBatchedReader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewTokenPoolBatchedReaderRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ExecutionCustomHandlersServer).NewTokenPoolBatchedReader(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ExecutionCustomHandlers_NewTokenPoolBatchedReader_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutionCustomHandlersServer).NewTokenPoolBatchedReader(ctx, req.(*NewTokenPoolBatchedReaderRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ExecutionCustomHandlers_SourceNativeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SourceNativeTokenRequest)
 	if err := dec(in); err != nil {
@@ -475,14 +409,6 @@ var ExecutionCustomHandlers_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewPriceRegistryReader",
 			Handler:    _ExecutionCustomHandlers_NewPriceRegistryReader_Handler,
-		},
-		{
-			MethodName: "NewTokenDataReader",
-			Handler:    _ExecutionCustomHandlers_NewTokenDataReader_Handler,
-		},
-		{
-			MethodName: "NewTokenPoolBatchedReader",
-			Handler:    _ExecutionCustomHandlers_NewTokenPoolBatchedReader_Handler,
 		},
 		{
 			MethodName: "SourceNativeToken",

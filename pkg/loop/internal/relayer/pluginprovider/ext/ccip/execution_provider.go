@@ -136,40 +136,6 @@ func (e *ExecProviderClient) NewPriceRegistryReader(ctx context.Context, addr cc
 	return priceReader, nil
 }
 
-// NewTokenDataReader implements types.CCIPExecProvider.
-func (e *ExecProviderClient) NewTokenDataReader(ctx context.Context, tokenAddress cciptypes.Address) (cciptypes.TokenDataReader, error) {
-	req := ccippb.NewTokenDataRequest{Address: string(tokenAddress)}
-	resp, err := e.grpcClient.NewTokenDataReader(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	// TODO BCF-3061: make this work for proxied relayer
-	tokenDataConn, err := e.BrokerExt.Dial(uint32(resp.TokenDataReaderServiceId))
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup token data reader service at %d: %w", resp.TokenDataReaderServiceId, err)
-	}
-	// need to wrap grpc tokenDataReader into the desired interface
-	tokenDataReader := NewTokenDataReaderGRPCClient(tokenDataConn)
-
-	return tokenDataReader, nil
-}
-
-// NewTokenPoolBatchedReader implements types.CCIPExecProvider.
-func (e *ExecProviderClient) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress cciptypes.Address, srcChainSelector uint64) (cciptypes.TokenPoolBatchedReader, error) {
-	req := ccippb.NewTokenPoolBatchedReaderRequest{Address: string(offRampAddress), SourceChainSelector: srcChainSelector}
-	resp, err := e.grpcClient.NewTokenPoolBatchedReader(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	// TODO BCF-3061: make this work for proxied relayer
-	tokenPoolConn, err := e.BrokerExt.Dial(uint32(resp.TokenPoolBatchedReaderServiceId))
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup token poll batched reader service at %d: %w", resp.TokenPoolBatchedReaderServiceId, err)
-	}
-	tokenPool := NewTokenPoolBatchedReaderGRPCClient(tokenPoolConn)
-	return tokenPool, nil
-}
-
 // SourceNativeToken implements types.CCIPExecProvider.
 func (e *ExecProviderClient) SourceNativeToken(ctx context.Context, addr cciptypes.Address) (cciptypes.Address, error) {
 	// unlike the other methods, this one does not create a new resource, so we do not
@@ -187,7 +153,7 @@ func (e *ExecProviderClient) Close() error {
 }
 
 // ExecProviderServer is a server that wraps the custom methods of the [types.CCIPExecProvider]
-// this is necessary because those method create new resources that need to be served by the broker
+// this is necessary because those methods create new resources that need to be served by the broker
 // when we are running in legacy mode.
 type ExecProviderServer struct {
 	ccippb.UnimplementedExecutionCustomHandlersServer
@@ -255,7 +221,7 @@ func (e *ExecProviderServer) NewOffRampReader(ctx context.Context, req *ccippb.N
 	if err != nil {
 		return nil, err
 	}
-	// ensure the grpc server is closed when the offRamp is closed. See comment in NewPriceRegistryReader for more details
+	// Ensure the grpc server is closed when the offRamp is closed. See comment in NewPriceRegistryReader for more details
 	offRampHandler.AddDep(offRampResource)
 	return &ccippb.NewOffRampReaderResponse{OfframpReaderServiceId: int32(offRampID)}, nil
 }
@@ -274,7 +240,7 @@ func (e *ExecProviderServer) NewOnRampReader(ctx context.Context, req *ccippb.Ne
 	if err != nil {
 		return nil, err
 	}
-	// ensure the grpc server is closed when the onRamp is closed. See comment in NewPriceRegistryReader for more details
+	// Ensure the grpc server is closed when the onRamp is closed. See comment in NewPriceRegistryReader for more details
 	srv.AddDep(onRampResource)
 	return &ccippb.NewOnRampReaderResponse{OnrampReaderServiceId: int32(onRampID)}, nil
 }
@@ -294,49 +260,11 @@ func (e *ExecProviderServer) NewPriceRegistryReader(ctx context.Context, req *cc
 		return nil, err
 	}
 	// There is a chicken-and-egg problem here. Our broker is responsible for spawning the grpc server.
-	// that server needs to be shutdown when the priceRegistry is closed. We don't have a handle to the
+	// That server needs to be shutdown when the priceRegistry is closed. We don't have a handle to the
 	// grpc server until we after we have constructed the priceRegistry, so we can't configure the shutdown
 	// handler up front.
 	priceRegistryHandler.AddDep(spawnedServer)
 	return &ccippb.NewPriceRegistryReaderResponse{PriceRegistryReaderServiceId: int32(priceReaderID)}, nil
-}
-
-func (e *ExecProviderServer) NewTokenDataReader(ctx context.Context, req *ccippb.NewTokenDataRequest) (*ccippb.NewTokenDataResponse, error) {
-	reader, err := e.impl.NewTokenDataReader(ctx, cciptypes.Address(req.Address))
-	if err != nil {
-		return nil, err
-	}
-	// wrap the reader in a grpc server and serve it
-	tokenDataHandler := NewTokenDataReaderGRPCServer(reader)
-	// the id is handle to the broker, we will need it on the other side to dial the resource
-	tokeDataReaderID, spawnedServer, err := e.ServeNew("TokenDataReader", func(s *grpc.Server) {
-		ccippb.RegisterTokenDataReaderServer(s, tokenDataHandler)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	tokenDataHandler.AddDep(spawnedServer)
-	return &ccippb.NewTokenDataResponse{TokenDataReaderServiceId: int32(tokeDataReaderID)}, nil
-}
-
-func (e *ExecProviderServer) NewTokenPoolBatchedReader(ctx context.Context, req *ccippb.NewTokenPoolBatchedReaderRequest) (*ccippb.NewTokenPoolBatchedReaderResponse, error) {
-	reader, err := e.impl.NewTokenPoolBatchedReader(ctx, cciptypes.Address(req.Address), req.SourceChainSelector)
-	if err != nil {
-		return nil, err
-	}
-	// wrap the reader in a grpc server and serve it
-	tokenPoolHandler := NewTokenPoolBatchedReaderGRPCServer(reader)
-	// the id is handle to the broker, we will need it on the other side to dial the resource
-	tokenPoolID, spawnedServer, err := e.ServeNew("TokenPoolBatchedReader", func(s *grpc.Server) {
-		ccippb.RegisterTokenPoolBatcherReaderServer(s, tokenPoolHandler)
-	})
-	if err != nil {
-		return nil, err
-	}
-	// ensure the grpc server is closed when the tokenPool is closed. See comment in NewPriceRegistryReader for more details
-	tokenPoolHandler.AddDep(spawnedServer)
-	return &ccippb.NewTokenPoolBatchedReaderResponse{TokenPoolBatchedReaderServiceId: int32(tokenPoolID)}, nil
 }
 
 func (e *ExecProviderServer) SourceNativeToken(ctx context.Context, req *ccippb.SourceNativeTokenRequest) (*ccippb.SourceNativeTokenResponse, error) {

@@ -27,7 +27,7 @@ type ExecProviderTester interface {
 }
 
 // ExecutionProvider is a static implementation of the ExecProviderTester interface.
-// It is to be used in tests the verify grpc implementations of the ExecProvider interface.
+// It is to be used in tests the `verify` grpc implementations of the ExecProvider interface.
 var ExecutionProvider = staticExecProvider{
 	staticExecProviderConfig: staticExecProviderConfig{
 		addr:                      ccip.Address("some address"),
@@ -39,8 +39,6 @@ var ExecutionProvider = staticExecProvider{
 		onRampReader:              OnRampReader,
 		priceRegistryReader:       PriceRegistryReader,
 		sourceNativeTokenResponse: ccip.Address("source native token response"),
-		tokenDataReader:           TokenDataReader,
-		tokenPoolBatchedReader:    TokenPoolBatchedReader,
 		transactionStatusResponse: types.Fatal,
 	},
 }
@@ -58,8 +56,6 @@ type staticExecProviderConfig struct {
 	onRampReader              OnRampEvaluator
 	priceRegistryReader       PriceRegistryReaderEvaluator
 	sourceNativeTokenResponse ccip.Address
-	tokenDataReader           TokenDataReaderEvaluator
-	tokenPoolBatchedReader    TokenPoolBatchedReaderEvaluator
 	transactionStatusResponse types.TransactionStatus
 }
 
@@ -143,26 +139,6 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 		return evaluationError{err: err, component: priceRegistryComponent}
 	}
 
-	// TokenDataReader test case
-	otherTokenData, err := other.NewTokenDataReader(ctx, "ignored")
-	if err != nil {
-		return fmt.Errorf("failed to create other token data reader: %w", err)
-	}
-	err = s.tokenDataReader.Evaluate(ctx, otherTokenData)
-	if err != nil {
-		return evaluationError{err: err, component: "TokenDataReader"}
-	}
-
-	// TokenPoolBatchedReader test case
-	otherPool, err := other.NewTokenPoolBatchedReader(ctx, "ignored", 0)
-	if err != nil {
-		return fmt.Errorf("failed to create other token pool batched reader: %w", err)
-	}
-	err = s.tokenPoolBatchedReader.Evaluate(ctx, otherPool)
-	if err != nil {
-		return evaluationError{err: err, component: "TokenPoolBatchedReader"}
-	}
-
 	// SourceNativeToken test case
 	otherSourceNativeToken, err := other.SourceNativeToken(ctx, "ignored")
 	if err != nil {
@@ -207,16 +183,6 @@ func (s staticExecProvider) NewOnRampReader(ctx context.Context, addr ccip.Addre
 // NewPriceRegistryReader implements ExecProviderEvaluator.
 func (s staticExecProvider) NewPriceRegistryReader(ctx context.Context, addr ccip.Address) (ccip.PriceRegistryReader, error) {
 	return s.priceRegistryReader, nil
-}
-
-// NewTokenDataReader implements ExecProviderEvaluator.
-func (s staticExecProvider) NewTokenDataReader(ctx context.Context, tokenAddress ccip.Address) (ccip.TokenDataReader, error) {
-	return s.tokenDataReader, nil
-}
-
-// NewTokenPoolBatchedReader implements ExecProviderEvaluator.
-func (s staticExecProvider) NewTokenPoolBatchedReader(ctx context.Context, offRampAddress ccip.Address, sourceChainSelector uint64) (ccip.TokenPoolBatchedReader, error) {
-	return s.tokenPoolBatchedReader, nil
 }
 
 // OffchainConfigDigester implements ExecProviderEvaluator.
@@ -268,13 +234,6 @@ func (s staticExecProvider) AssertEqual(ctx context.Context, t *testing.T, other
 			other, err := other.SourceNativeToken(ctx, "ignored")
 			require.NoError(t, err)
 			assert.Equal(t, s.sourceNativeTokenResponse, other)
-		})
-
-		// TokenDataReader test case
-		t.Run("TokenDataReader", func(t *testing.T) {
-			other, err := other.NewTokenDataReader(ctx, "ignored")
-			require.NoError(t, err)
-			assert.NoError(t, s.tokenDataReader.Evaluate(ctx, other))
 		})
 
 		// GetTransactionStatus test case

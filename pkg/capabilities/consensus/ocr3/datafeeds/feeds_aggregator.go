@@ -162,7 +162,7 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 		return nil, err
 	}
 
-	toWrap := []any{}
+	var toWrap []any
 	for _, report := range reportsNeedingUpdate {
 		feedID := datastreams.FeedID(report.FeedID).Bytes()
 		remappedID := a.config.Feeds[datastreams.FeedID(report.FeedID)].RemappedID

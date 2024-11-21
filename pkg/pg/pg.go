@@ -16,7 +16,7 @@ func NewSqlxDB(t testing.TB, dbURL string) *sqlx.DB {
 	tests.SkipShortDB(t)
 	err := RegisterTxDb(dbURL)
 	if err != nil {
-		t.Errorf("failed to register txdb dialect: %s", err.Error())
+		t.Fatalf("failed to register txdb dialect: %s", err.Error())
 		return nil
 	}
 	db, err := sqlx.Open(string(TransactionWrappedPostgres), uuid.New().String())

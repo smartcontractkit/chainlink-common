@@ -50,9 +50,26 @@ func TestNewBuilder(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error during build: %v", err)
 		}
-
 		require.NotEmpty(t, o.Dashboard)
 		require.NotEmpty(t, o.Alerts)
+		require.Len(t, o.Alerts, 1)
+		require.Empty(t, o.ContactPoints)
+		require.Empty(t, o.NotificationPolicies)
+	})
+
+	t.Run("NewBuilder builds only alerts", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
+		builder.AddAlert(grafana.NewAlertRule(&grafana.AlertOptions{
+			Title: "Alert Title",
+		}))
+
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error during build: %v", err)
+		}
+		require.Empty(t, o.Dashboard)
+		require.NotEmpty(t, o.Alerts)
+		require.Len(t, o.Alerts, 1)
 		require.Empty(t, o.ContactPoints)
 		require.Empty(t, o.NotificationPolicies)
 	})

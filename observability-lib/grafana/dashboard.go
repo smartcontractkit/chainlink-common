@@ -64,24 +64,35 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 		options.GrafanaURL,
 		options.GrafanaToken,
 	)
+	fmt.Println(o)
 
 	if options.FolderName != "" {
 		folder, errFolder := grafanaClient.FindOrCreateFolder(options.FolderName)
 		if errFolder != nil {
 			return errFolder
 		}
-		newDashboard, _, errPostDashboard := grafanaClient.PostDashboard(api.PostDashboardRequest{
-			Dashboard: o.Dashboard,
-			Overwrite: true,
-			FolderID:  int(folder.ID),
-		})
-		if errPostDashboard != nil {
-			return errPostDashboard
+		var newDashboard api.PostDashboardResponse
+		var errPostDashboard error
+		if o.Dashboard != nil {
+			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
+				Dashboard: o.Dashboard,
+				Overwrite: true,
+				FolderID:  int(folder.ID),
+			})
+			if errPostDashboard != nil {
+				return errPostDashboard
+			}
 		}
 
 		if !options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
 			// Get alert rules for the dashboard
-			alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
+			var alertsRule []alerting.Rule
+			var errGetAlertRules error
+			if newDashboard.UID != nil {
+				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
+			} else if folder.UID != "" {
+				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByFolderUID(folder.UID)
+			}
 			if errGetAlertRules != nil {
 				return errGetAlertRules
 			}
@@ -98,7 +109,13 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 		// Create alerts for the dashboard
 		if options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
 			// Get alert rules for the dashboard
-			alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
+			var alertsRule []alerting.Rule
+			var errGetAlertRules error
+			if newDashboard.UID != nil {
+				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
+			} else if folder.UID != "" {
+				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByFolderUID(folder.UID)
+			}
 			if errGetAlertRules != nil {
 				return errGetAlertRules
 			}
@@ -116,15 +133,28 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 
 			// Create alert rules for the dashboard
 			for _, alert := range o.Alerts {
-				alert.RuleGroup = *o.Dashboard.Title
-				alert.FolderUID = folder.UID
-				alert.Annotations["__dashboardUid__"] = *newDashboard.UID
+				// rule group is the dashboard title
+				if o.Dashboard != nil {
+					alert.RuleGroup = *o.Dashboard.Title
+				} else {
+					// TODO: We need to be able to set the rule group name instead of being hardcoded to "default"
+					alert.RuleGroup = "default"
+				}
+				if folder.UID != "" {
+					alert.FolderUID = folder.UID
+				}
 
-				panelId := panelIDByTitle(o.Dashboard, alert.Annotations["panel_title"])
-				// we can clean it up as it was only used to get the panelId
-				delete(alert.Annotations, "panel_title")
-				if panelId != "" {
-					alert.Annotations["__panelId__"] = panelId
+				if o.Dashboard != nil {
+					if alert.Annotations["panel_title"] != "" {
+						panelId := panelIDByTitle(o.Dashboard, alert.Annotations["panel_title"])
+						// we can clean it up as it was only used to get the panelId
+						delete(alert.Annotations, "panel_title")
+						if panelId != "" {
+							// Both or none should be set
+							alert.Annotations["__panelId__"] = panelId
+							alert.Annotations["__dashboardUid__"] = *newDashboard.UID
+						}
+					}
 				}
 				if alertRuleExist(alertsRule, alert) {
 					// update alert rule if it already exists

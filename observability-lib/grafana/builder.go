@@ -120,31 +120,31 @@ func (b *Builder) Build() (*Observability, error) {
 			return nil, errBuildDashboard
 		}
 		observability.Dashboard = &db
-
-		var alerts []alerting.Rule
-		for _, alertBuilder := range b.alertsBuilder {
-			alert, errBuildAlert := alertBuilder.Build()
-			if errBuildAlert != nil {
-				return nil, errBuildAlert
-			}
-
-			// Add common tags to alerts
-			if b.alertsTags != nil && len(b.alertsTags) > 0 {
-				tags := maps.Clone(b.alertsTags)
-				maps.Copy(tags, alert.Labels)
-
-				alertBuildWithTags := alertBuilder.Labels(tags)
-				alertWithTags, errBuildAlertWithTags := alertBuildWithTags.Build()
-				if errBuildAlertWithTags != nil {
-					return nil, errBuildAlertWithTags
-				}
-				alerts = append(alerts, alertWithTags)
-			} else {
-				alerts = append(alerts, alert)
-			}
-		}
-		observability.Alerts = alerts
 	}
+
+	var alerts []alerting.Rule
+	for _, alertBuilder := range b.alertsBuilder {
+		alert, errBuildAlert := alertBuilder.Build()
+		if errBuildAlert != nil {
+			return nil, errBuildAlert
+		}
+
+		// Add common tags to alerts
+		if b.alertsTags != nil && len(b.alertsTags) > 0 {
+			tags := maps.Clone(b.alertsTags)
+			maps.Copy(tags, alert.Labels)
+
+			alertBuildWithTags := alertBuilder.Labels(tags)
+			alertWithTags, errBuildAlertWithTags := alertBuildWithTags.Build()
+			if errBuildAlertWithTags != nil {
+				return nil, errBuildAlertWithTags
+			}
+			alerts = append(alerts, alertWithTags)
+		} else {
+			alerts = append(alerts, alert)
+		}
+	}
+	observability.Alerts = alerts
 
 	var contactPoints []alerting.ContactPoint
 	for _, contactPointBuilder := range b.contactPointsBuilder {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732129632995,
+  "lastUpdate": 1732191126385,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7098,6 +7098,48 @@ window.BENCHMARK_DATA = {
             "value": 28330,
             "unit": "ns/op",
             "extra": "42436 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e0189e5db1ec1fa675cdacccdae5baaa40239c8a",
+          "message": "Pass AuthHeaders from beholder config to to loop/Tracing (#948)",
+          "timestamp": "2024-11-21T06:11:06-06:00",
+          "tree_id": "2dd8c72de420cdaeb9adcd9777289b03a17f033c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e0189e5db1ec1fa675cdacccdae5baaa40239c8a"
+        },
+        "date": 1732191125796,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.7,
+            "unit": "ns/op",
+            "extra": "2667625 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.1,
+            "unit": "ns/op",
+            "extra": "2271579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28370,
+            "unit": "ns/op",
+            "extra": "42462 times\n4 procs"
           }
         ]
       }

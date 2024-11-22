@@ -20,6 +20,7 @@ const (
 type Observability struct {
 	Dashboard            *dashboard.Dashboard
 	Alerts               []alerting.Rule
+	AlertGroups          []alerting.RuleGroup
 	ContactPoints        []alerting.ContactPoint
 	NotificationPolicies []alerting.NotificationPolicy
 }
@@ -59,46 +60,85 @@ func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
 	return nil
 }
 
+func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
+	var alertsRule []alerting.Rule
+	var errGetAlertRules error
+
+	if dashboardUID != nil {
+		alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*dashboardUID)
+		if errGetAlertRules != nil {
+			return nil, errGetAlertRules
+		}
+	} else {
+		if alertGroups != nil && len(alertGroups) > 0 {
+			for _, alertGroup := range alertGroups {
+				alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
+				if errGetAlertRulesPerGroup != nil {
+					return nil, errGetAlertRulesPerGroup
+				}
+				alertsRule = append(alertsRule, alertsRulePerGroup...)
+			}
+		}
+	}
+
+	return alertsRule, nil
+}
+
 func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	grafanaClient := api.NewClient(
 		options.GrafanaURL,
 		options.GrafanaToken,
 	)
-	fmt.Println(o)
 
+	// Create or update folder
+	var folder *api.Folder
+	var errFolder error
 	if options.FolderName != "" {
-		folder, errFolder := grafanaClient.FindOrCreateFolder(options.FolderName)
+		folder, errFolder = grafanaClient.FindOrCreateFolder(options.FolderName)
 		if errFolder != nil {
 			return errFolder
 		}
-		var newDashboard api.PostDashboardResponse
-		var errPostDashboard error
-		if o.Dashboard != nil {
-			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
-				Dashboard: o.Dashboard,
-				Overwrite: true,
-				FolderID:  int(folder.ID),
-			})
-			if errPostDashboard != nil {
-				return errPostDashboard
-			}
+	}
+
+	// Create or update dashboard
+	var newDashboard api.PostDashboardResponse
+	var errPostDashboard error
+	if folder != nil && o.Dashboard != nil {
+		newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
+			Dashboard: o.Dashboard,
+			Overwrite: true,
+			FolderID:  int(folder.ID),
+		})
+		if errPostDashboard != nil {
+			return errPostDashboard
+		}
+	}
+
+	// If disabling alerts delete alerts for the folder and alert groups scope
+	if folder != nil && !options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
+		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, newDashboard.UID, folder.UID, o.AlertGroups)
+		if errGetAlertRules != nil {
+			return errGetAlertRules
 		}
 
-		if !options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
-			// Get alert rules for the dashboard
-			var alertsRule []alerting.Rule
-			var errGetAlertRules error
-			if newDashboard.UID != nil {
-				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
-			} else if folder.UID != "" {
-				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByFolderUID(folder.UID)
+		for _, rule := range alertsRule {
+			_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
+			if errDeleteAlertRule != nil {
+				return errDeleteAlertRule
 			}
-			if errGetAlertRules != nil {
-				return errGetAlertRules
-			}
+		}
+	}
 
-			// delete existing alert rules for the dashboard if alerts are disabled
-			for _, rule := range alertsRule {
+	// Create or update alerts
+	if folder != nil && options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
+		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, newDashboard.UID, folder.UID, o.AlertGroups)
+		if errGetAlertRules != nil {
+			return errGetAlertRules
+		}
+
+		// delete alert rules that are not defined anymore in the code
+		for _, rule := range alertsRule {
+			if !alertRuleExist(o.Alerts, rule) {
 				_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
 				if errDeleteAlertRule != nil {
 					return errDeleteAlertRule
@@ -106,72 +146,56 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 			}
 		}
 
-		// Create alerts for the dashboard
-		if options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
-			// Get alert rules for the dashboard
-			var alertsRule []alerting.Rule
-			var errGetAlertRules error
-			if newDashboard.UID != nil {
-				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*newDashboard.UID)
-			} else if folder.UID != "" {
-				alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByFolderUID(folder.UID)
+		// Create alert rules
+		for _, alert := range o.Alerts {
+			if folder.UID != "" {
+				alert.FolderUID = folder.UID
 			}
-			if errGetAlertRules != nil {
-				return errGetAlertRules
-			}
-
-			// delete alert rules for the dashboard
-			for _, rule := range alertsRule {
-				// delete alert rule only if it won't be created again from code
-				if !alertRuleExist(o.Alerts, rule) {
-					_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
-					if errDeleteAlertRule != nil {
-						return errDeleteAlertRule
-					}
-				}
-			}
-
-			// Create alert rules for the dashboard
-			for _, alert := range o.Alerts {
-				// rule group is the dashboard title
-				if o.Dashboard != nil {
+			if o.Dashboard != nil {
+				if alert.RuleGroup == "" {
 					alert.RuleGroup = *o.Dashboard.Title
-				} else {
-					// TODO: We need to be able to set the rule group name instead of being hardcoded to "default"
-					alert.RuleGroup = "default"
 				}
-				if folder.UID != "" {
-					alert.FolderUID = folder.UID
+				if alert.Annotations["panel_title"] != "" {
+					panelId := panelIDByTitle(o.Dashboard, alert.Annotations["panel_title"])
+					// we can clean it up as it was only used to get the panelId
+					delete(alert.Annotations, "panel_title")
+					if panelId != "" {
+						// Both or none should be set
+						alert.Annotations["__panelId__"] = panelId
+						alert.Annotations["__dashboardUid__"] = *newDashboard.UID
+					}
 				}
+			} else {
+				if alert.RuleGroup == "" {
+					return fmt.Errorf("you must create at one rule group and set it to your alerts")
+				}
+			}
 
-				if o.Dashboard != nil {
-					if alert.Annotations["panel_title"] != "" {
-						panelId := panelIDByTitle(o.Dashboard, alert.Annotations["panel_title"])
-						// we can clean it up as it was only used to get the panelId
-						delete(alert.Annotations, "panel_title")
-						if panelId != "" {
-							// Both or none should be set
-							alert.Annotations["__panelId__"] = panelId
-							alert.Annotations["__dashboardUid__"] = *newDashboard.UID
-						}
+			if alertRuleExist(alertsRule, alert) {
+				// update alert rule if it already exists
+				alertToUpdate := getAlertRuleByTitle(alertsRule, alert.Title)
+				if alertToUpdate != nil {
+					_, _, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
+					if errPutAlertRule != nil {
+						return errPutAlertRule
 					}
 				}
-				if alertRuleExist(alertsRule, alert) {
-					// update alert rule if it already exists
-					alertToUpdate := getAlertRuleByTitle(alertsRule, alert.Title)
-					if alertToUpdate != nil {
-						_, _, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
-						if errPutAlertRule != nil {
-							return errPutAlertRule
-						}
-					}
-				} else {
-					// create alert rule if it doesn't exist
-					_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
-					if errPostAlertRule != nil {
-						return errPostAlertRule
-					}
+			} else {
+				// create alert rule if it doesn't exist
+				_, _, errPostAlertRule := grafanaClient.PostAlertRule(alert)
+				if errPostAlertRule != nil {
+					return errPostAlertRule
 				}
+			}
+		}
+	}
+
+	// Update alert groups
+	if folder != nil {
+		for _, alertGroup := range o.AlertGroups {
+			_, _, errPostAlertGroup := grafanaClient.UpdateAlertRuleGroup(folder.UID, alertGroup)
+			if errPostAlertGroup != nil {
+				return errPostAlertGroup
 			}
 		}
 	}

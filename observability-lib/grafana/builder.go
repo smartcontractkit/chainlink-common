@@ -12,6 +12,7 @@ import (
 type Builder struct {
 	dashboardBuilder            *dashboard.DashboardBuilder
 	alertsBuilder               []*alerting.RuleBuilder
+	alertGroupsBuilder          []*alerting.RuleGroupBuilder
 	contactPointsBuilder        []*alerting.ContactPointBuilder
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
@@ -103,6 +104,10 @@ func (b *Builder) AddAlert(alerts ...*alerting.RuleBuilder) {
 	b.alertsBuilder = append(b.alertsBuilder, alerts...)
 }
 
+func (b *Builder) AddAlertGroup(alertGroups ...*alerting.RuleGroupBuilder) {
+	b.alertGroupsBuilder = append(b.alertGroupsBuilder, alertGroups...)
+}
+
 func (b *Builder) AddContactPoint(contactPoints ...*alerting.ContactPointBuilder) {
 	b.contactPointsBuilder = append(b.contactPointsBuilder, contactPoints...)
 }
@@ -145,6 +150,16 @@ func (b *Builder) Build() (*Observability, error) {
 		}
 	}
 	observability.Alerts = alerts
+
+	var alertGroups []alerting.RuleGroup
+	for _, alertGroupBuilder := range b.alertGroupsBuilder {
+		alertGroup, errBuildAlertGroup := alertGroupBuilder.Build()
+		if errBuildAlertGroup != nil {
+			return nil, errBuildAlertGroup
+		}
+		alertGroups = append(alertGroups, alertGroup)
+	}
+	observability.AlertGroups = alertGroups
 
 	var contactPoints []alerting.ContactPoint
 	for _, contactPointBuilder := range b.contactPointsBuilder {

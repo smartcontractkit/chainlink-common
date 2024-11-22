@@ -170,6 +170,7 @@ type AlertOptions struct {
 	QueryRefCondition string
 	Condition         []ConditionQuery
 	PanelTitle        string
+	RuleGroupTitle    string
 }
 
 func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
@@ -206,6 +207,10 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 		Condition(options.QueryRefCondition).
 		Annotations(annotations).
 		Labels(options.Tags)
+
+	if options.RuleGroupTitle != "" {
+		rule.RuleGroup(options.RuleGroupTitle)
+	}
 
 	for _, query := range options.Query {
 		rule.WithQuery(newRuleQuery(query))

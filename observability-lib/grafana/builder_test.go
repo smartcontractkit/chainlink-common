@@ -74,6 +74,24 @@ func TestNewBuilder(t *testing.T) {
 		require.Empty(t, o.NotificationPolicies)
 	})
 
+	t.Run("NewBuilder builds an alert group", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
+		builder.AddAlertGroup(grafana.NewAlertGroup(&grafana.AlertGroupOptions{
+			Title:    "Group Title",
+			Interval: 30, // duration in seconds
+		}))
+
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error during build: %v", err)
+		}
+		require.Empty(t, o.Dashboard)
+		require.NotEmpty(t, o.AlertGroups)
+		require.Len(t, o.AlertGroups, 1)
+		require.Empty(t, o.ContactPoints)
+		require.Empty(t, o.NotificationPolicies)
+	})
+
 	t.Run("NewBuilder builds a contact point", func(t *testing.T) {
 		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
 		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{

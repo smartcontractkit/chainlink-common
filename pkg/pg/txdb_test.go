@@ -2,9 +2,12 @@ package pg
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"testing"
 	"time"
+
+	_ "github.com/marcboeker/go-duckdb"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -18,7 +21,10 @@ import (
 
 func TestTxDBDriver(t *testing.T) {
 	dbURL, ok := os.LookupEnv("CL_DATABASE_URL")
-	require.True(t, ok, "CL_DATABASE_URL must be set")
+	if !ok {
+		fmt.Sprintf("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
+		dbURL = string(InMemoryPostgres)
+	}
 	db := NewSqlxDB(t, dbURL)
 	dropTable := func() error {
 		_, err := db.Exec(`DROP TABLE IF EXISTS txdb_test`)

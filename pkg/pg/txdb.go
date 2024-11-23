@@ -41,21 +41,23 @@ func RegisterTxDb(dbURL string) error {
 			return nil
 		}
 	}
-	if testing.Short() {
-		// -short tests don't need a DB
-		return nil
-	}
-	parsed, err := url.Parse(dbURL)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s as a database URL: %w", dbURL, err)
-	}
-	if parsed.Path == "" {
-		return fmt.Errorf("database url `%s` must point to your test database. Note that the test database MUST end in `_test` to differentiate from a possible production DB. HINT: Try postgresql://postgres@localhost:5432/chainlink_test?sslmode=disable", parsed.String())
-	}
-	if !strings.HasSuffix(parsed.Path, "_test") {
-		return fmt.Errorf("cannot run tests against database named `%s`. Note that the test database MUST end in `_test` to differentiate from a possible production DB. HINT: Try postgresql://postgres@localhost:5432/chainlink_test?sslmode=disable", parsed.Path[1:])
-	}
 
+	if dbURL != string(InMemoryPostgres) {
+		if testing.Short() {
+			// -short tests don't need a DB
+			return nil
+		}
+		parsed, err := url.Parse(dbURL)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s as a database URL: %w", dbURL, err)
+		}
+		if parsed.Path == "" {
+			return fmt.Errorf("database url `%s` must point to your test database. Note that the test database MUST end in `_test` to differentiate from a possible production DB. HINT: Try postgresql://postgres@localhost:5432/chainlink_test?sslmode=disable", parsed.String())
+		}
+		if !strings.HasSuffix(parsed.Path, "_test") {
+			return fmt.Errorf("cannot run tests against database named `%s`. Note that the test database MUST end in `_test` to differentiate from a possible production DB. HINT: Try postgresql://postgres@localhost:5432/chainlink_test?sslmode=disable", parsed.Path[1:])
+		}
+	}
 	name := string(TransactionWrappedPostgres)
 	sql.Register(name, &txDriver{
 		dbURL: dbURL,
@@ -85,7 +87,11 @@ func (d *txDriver) Open(dsn string) (driver.Conn, error) {
 	defer d.Unlock()
 	// Open real db connection if its the first call
 	if d.db == nil {
-		db, err := sql.Open(string(Postgres), d.dbURL)
+		dialect := string(Postgres)
+		if d.dbURL == string(InMemoryPostgres) {
+			dialect = d.dbURL
+		}
+		db, err := sql.Open(dialect, d.dbURL)
 		if err != nil {
 			return nil, err
 		}

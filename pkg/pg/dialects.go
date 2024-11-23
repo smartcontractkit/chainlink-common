@@ -15,4 +15,5 @@ const (
 	// When the connection is opened, it starts a transaction and all
 	// operations performed on the DB will be within that transaction.
 	TransactionWrappedPostgres DialectName = "txdb"
+	InMemoryPostgres           DialectName = "duckdb"
 )

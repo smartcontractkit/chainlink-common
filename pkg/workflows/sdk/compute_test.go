@@ -42,8 +42,6 @@ func TestCompute(t *testing.T) {
 		spec, err2 := workflow.Spec()
 		require.NoError(t, err2)
 		expectedSpec := sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "notstreams@1.0.0",

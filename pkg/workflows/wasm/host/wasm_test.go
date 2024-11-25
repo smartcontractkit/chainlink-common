@@ -91,7 +91,7 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	spec, err := GetWorkflowSpec(
+	_, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
 			Logger:         logger.Test(t),
@@ -101,9 +101,6 @@ func Test_GetWorkflowSpec(t *testing.T) {
 		[]byte(""),
 	)
 	require.NoError(t, err)
-
-	assert.Equal(t, spec.Name, "tester")
-	assert.Equal(t, spec.Owner, "ryan")
 }
 
 func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
@@ -111,7 +108,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
-	spec, err := GetWorkflowSpec(
+	_, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
 			Logger:         logger.Test(t),
@@ -121,9 +118,6 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 		[]byte(""),
 	)
 	require.NoError(t, err)
-
-	assert.Equal(t, spec.Name, "tester")
-	assert.Equal(t, spec.Owner, "ryan")
 }
 
 func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {

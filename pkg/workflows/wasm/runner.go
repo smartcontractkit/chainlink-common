@@ -33,7 +33,10 @@ type Runner struct {
 
 func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 	if r.req == nil {
-		r.cacheRequest()
+		success := r.cacheRequest()
+		if !success {
+			return
+		}
 	}
 
 	req := r.req
@@ -46,7 +49,7 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 			if ok {
 				r.sendResponse(errorResponse(r.req.Id, asErr))
 			} else {
-				r.sendResponse(errorResponse(r.req.Id, errors.New(fmt.Sprintf("caught panic: +v%", err))))
+				r.sendResponse(errorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
 			}
 		}
 	}()
@@ -79,7 +82,10 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 
 func (r *Runner) Config() []byte {
 	if r.req == nil {
-		r.cacheRequest()
+		success := r.cacheRequest()
+		if !success {
+			return nil
+		}
 	}
 
 	return r.req.Config
@@ -87,7 +93,10 @@ func (r *Runner) Config() []byte {
 
 func (r *Runner) ExitWithError(err error) {
 	if r.req == nil {
-		r.cacheRequest()
+		success := r.cacheRequest()
+		if !success {
+			return
+		}
 	}
 
 	r.sendResponse(errorResponse(r.req.Id, err))
@@ -101,16 +110,17 @@ func errorResponse(id string, err error) *wasmpb.Response {
 	}
 }
 
-func (r *Runner) cacheRequest() {
+func (r *Runner) cacheRequest() bool {
 	if r.req == nil {
 		req, err := r.parseRequest()
 		if err != nil {
 			r.sendResponse(errorResponse(unknownID, err))
-			return
+			return false
 		}
 
 		r.req = req
 	}
+	return true
 }
 
 func (r *Runner) parseRequest() (*wasmpb.Request, error) {

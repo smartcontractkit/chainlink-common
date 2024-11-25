@@ -40,8 +40,6 @@ func TestIdenticalConsensus(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := sdk.WorkflowSpec{
-		Name:  "Test",
-		Owner: "0x1234",
 		Triggers: []sdk.StepDefinition{
 			{
 				ID:     "basic-test-trigger@1.0.0",

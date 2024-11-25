@@ -211,8 +211,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.NoError(t, err)
 
 		expected := sdk.WorkflowSpec{
-			Name:  "notccipethsep",
-			Owner: "0x00000000000000000000000000000000000000aa",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "notstreams@1.0.0",
@@ -295,8 +293,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		spec, err := workflow.Spec()
 		require.NoError(t, err)
 		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:     "basic-test-trigger@1.0.0",
@@ -332,8 +328,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		spec, err := workflow.Spec()
 		require.NoError(t, err)
 		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:     "basic-test-trigger@1.0.0",
@@ -377,8 +371,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.NoError(t, err)
 
 		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "list@1.0.0",
@@ -434,8 +426,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.NoError(t, err)
 
 		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "basic-test-trigger@1.0.0",
@@ -491,8 +481,6 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.NoError(t, err)
 
 		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "basic-test-trigger@1.0.0",

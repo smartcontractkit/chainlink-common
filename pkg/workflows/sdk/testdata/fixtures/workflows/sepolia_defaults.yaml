@@ -1,6 +1,3 @@
-workflow:
-  name: ccipethsep
-  owner: '0x00000000000000000000000000000000000000aa'
 maxFrequencyMs: 5000
 default_heartbeat: 3600
 default_deviation: '0.05'

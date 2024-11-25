@@ -253,7 +253,7 @@ func TestTypeGeneration(t *testing.T) {
 	})
 
 	t.Run("casing is respected from the json schema", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Owner: "owner", Name: "name"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		ai := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "foo", SnakeCaseInSchemaForTesting: 12}.
 			New(workflow, "ref", basicaction.ActionInput{InputThing: sdk.ConstantDefinition[bool](true)})
 		spec, _ := workflow.Spec()

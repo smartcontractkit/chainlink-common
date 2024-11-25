@@ -307,6 +307,11 @@ func CreateMapFromStruct(v any) (*Map, error) {
 	// use reflect to handle nested types as an interface
 	rv := reflect.ValueOf(v)
 	rt := reflect.TypeOf(v)
+
+	if rv.Kind() != reflect.Struct {
+		return nil, errors.New("input must be of struct type")
+	}
+
 	for i := 0; i < rv.NumField(); i++ {
 		field := rt.Field(i)
 		// ignore private fields

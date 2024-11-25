@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732191126385,
+  "lastUpdate": 1732547239376,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7140,6 +7140,48 @@ window.BENCHMARK_DATA = {
             "value": 28370,
             "unit": "ns/op",
             "extra": "42462 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97ceadb2072d3f60896922c260ae902ecb2d8c5d",
+          "message": "[CAPPL-197/CAPPL-309] Small fixes to compute (#951)\n\n* [CAPPL-197/CAPPL-309] Small fixes to compute\r\n\r\n- Add a recovery handler to the runner's Run method. This means we\r\n  preserve stack traces and will help debugging.\r\n- Allow users to explicitly error with an error via ExitWithError.\r\n- Remove owner and name from the factory constructor.\r\n\r\n* [CAPPL-197/CAPPL-309] Small fixes to compute\r\n\r\n- Add a recovery handler to the runner's Run method. This means we\r\n  preserve stack traces and will help debugging.\r\n- Allow users to explicitly error with an error via ExitWithError.\r\n- Remove owner and name from the factory constructor.",
+          "timestamp": "2024-11-25T15:06:08Z",
+          "tree_id": "00e2c987d9689985219ed89065e856e39c58a03a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/97ceadb2072d3f60896922c260ae902ecb2d8c5d"
+        },
+        "date": 1732547238148,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 452.7,
+            "unit": "ns/op",
+            "extra": "2453799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.1,
+            "unit": "ns/op",
+            "extra": "2380863 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28269,
+            "unit": "ns/op",
+            "extra": "42435 times\n4 procs"
           }
         ]
       }

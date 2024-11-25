@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732547239376,
+  "lastUpdate": 1732570870460,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7182,6 +7182,48 @@ window.BENCHMARK_DATA = {
             "value": 28269,
             "unit": "ns/op",
             "extra": "42435 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "59c388b419b2d714f8134ba03607414dde8e3128",
+          "message": "add QueryKey helper functions (#613)\n\n* add QueryKey helper functions",
+          "timestamp": "2024-11-25T16:40:03-05:00",
+          "tree_id": "7e3273910498e60d13a710b4cc1020be8a4983ca",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/59c388b419b2d714f8134ba03607414dde8e3128"
+        },
+        "date": 1732570869296,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 447.3,
+            "unit": "ns/op",
+            "extra": "2676764 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.6,
+            "unit": "ns/op",
+            "extra": "2300148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28283,
+            "unit": "ns/op",
+            "extra": "42403 times\n4 procs"
           }
         ]
       }

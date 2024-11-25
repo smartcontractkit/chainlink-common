@@ -91,7 +91,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
 	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
-	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
+	factory, err := newFactory(o.config.store, o.config.capability, &capabilityRegistry, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}

@@ -125,18 +125,9 @@ func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 
 func (c *capDefinitionImpl[O]) private() {}
 
-type NewWorkflowParams struct {
-	Owner string
-	Name  string
-}
-
-func NewWorkflowSpecFactory(
-	params NewWorkflowParams,
-) *WorkflowSpecFactory {
+func NewWorkflowSpecFactory() *WorkflowSpecFactory {
 	return &WorkflowSpecFactory{
 		spec: &WorkflowSpec{
-			Owner:     params.Owner,
-			Name:      params.Name,
 			Triggers:  make([]StepDefinition, 0),
 			Actions:   make([]StepDefinition, 0),
 			Consensus: make([]StepDefinition, 0),

@@ -16,10 +16,7 @@ import (
 
 func TestReduceConsensus(t *testing.T) {
 	t.Parallel()
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "0x1234",
-		Name:  "Test",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := basictrigger.TriggerConfig{Name: "1234", Number: 1}.New(workflow)
 

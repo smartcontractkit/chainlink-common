@@ -33,16 +33,23 @@ type Runner struct {
 
 func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 	if r.req == nil {
-		req, err := r.parseRequest()
-		if err != nil {
-			r.sendResponse(errorResponse(unknownID, err))
-			return
-		}
-
-		r.req = req
+		r.cacheRequest()
 	}
 
 	req := r.req
+
+	// We set this up *after* parsing the request, so that we can guarantee
+	// that we'll have access to the request object.
+	defer func() {
+		if err := recover(); err != nil {
+			asErr, ok := err.(error)
+			if ok {
+				r.sendResponse(errorResponse(r.req.Id, asErr))
+			} else {
+				r.sendResponse(errorResponse(r.req.Id, errors.New(fmt.Sprintf("caught panic: +v%", err))))
+			}
+		}
+	}()
 
 	resp := &wasmpb.Response{
 		Id: req.Id,
@@ -72,22 +79,37 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 
 func (r *Runner) Config() []byte {
 	if r.req == nil {
-		req, err := r.parseRequest()
-		if err != nil {
-			r.sendResponse(errorResponse(unknownID, err))
-			return nil
-		}
-
-		r.req = req
+		r.cacheRequest()
 	}
 
 	return r.req.Config
+}
+
+func (r *Runner) ExitWithError(err error) {
+	if r.req == nil {
+		r.cacheRequest()
+	}
+
+	r.sendResponse(errorResponse(r.req.Id, err))
+	return
 }
 
 func errorResponse(id string, err error) *wasmpb.Response {
 	return &wasmpb.Response{
 		Id:     id,
 		ErrMsg: err.Error(),
+	}
+}
+
+func (r *Runner) cacheRequest() {
+	if r.req == nil {
+		req, err := r.parseRequest()
+		if err != nil {
+			r.sendResponse(errorResponse(unknownID, err))
+			return
+		}
+
+		r.req = req
 	}
 }
 

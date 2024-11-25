@@ -28,7 +28,6 @@ import (
 // This implicitly tests the code generators functionally, as the generated code is used in the tests.
 
 type Config struct {
-	Workflow    sdk.NewWorkflowParams
 	Streams     *streams.TriggerConfig
 	Ocr         *ocr3.DataFeedsConsensusConfig
 	ChainWriter *chainwriter.TargetConfig
@@ -41,7 +40,7 @@ func NewWorkflowSpec(rawConfig []byte) (*sdk.WorkflowSpecFactory, error) {
 		return nil, err
 	}
 
-	workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+	workflow := sdk.NewWorkflowSpecFactory()
 	streamsTrigger := conf.Streams.New(workflow)
 	consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 		Observations: sdk.ListOf[streams.Feed](streamsTrigger)},
@@ -55,7 +54,6 @@ func NewWorkflowSpec(rawConfig []byte) (*sdk.WorkflowSpecFactory, error) {
 // ModifiedConfig, and the test it's used in, show how you can structure config to remove copy/paste issues when data
 // needs to be repeated in multiple capability configurations.
 type ModifiedConfig struct {
-	Workflow                sdk.NewWorkflowParams
 	AllowedPartialStaleness string
 	MaxFrequencyMs          uint64
 	DefaultHeartbeat        uint64        `yaml:"default_heartbeat" json:"default_heartbeat"`
@@ -114,7 +112,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*sdk.WorkflowSpecFactory, error) {
 	}
 	ocr3Config.AggregationConfig.Feeds = feeds
 
-	workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+	workflow := sdk.NewWorkflowSpecFactory()
 	streamsTrigger := streamsConfig.New(workflow)
 
 	consensus := ocr3Config.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
@@ -134,7 +132,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*sdk.WorkflowSpecFactory, 
 		return nil, err
 	}
 
-	workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+	workflow := sdk.NewWorkflowSpecFactory()
 	notStreamsTrigger := conf.NotStream.New(workflow)
 
 	md := streams.NewSignersMetadataFromFields(
@@ -291,7 +289,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("maps work correctly", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "1", Number: 1}.New(workflow)
 		mapaction.ActionConfig{}.New(workflow, "ref", mapaction.ActionInput{Payload: sdk.Map[string, mapaction.ActionInputsPayload](map[string]sdk.CapDefinition[string]{"Foo": trigger.CoolOutput()})})
 		spec, err := workflow.Spec()
@@ -328,7 +326,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("any maps work correctly", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "1", Number: 1}.New(workflow)
 		anymapaction.MapActionConfig{}.New(workflow, "ref", anymapaction.MapActionInput{Payload: sdk.AnyMap[anymapaction.MapActionInputsPayload](sdk.CapMap{"Foo": trigger.CoolOutput()})})
 		spec, err := workflow.Spec()
@@ -365,7 +363,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("ToListDefinition works correctly for list elements", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := listtrigger.TriggerConfig{Name: "1"}.New(workflow)
 		asList := sdk.ToListDefinition[string](trigger.CoolOutput())
 		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
@@ -422,7 +420,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("ToListDefinition works correctly for built up lists", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "1"}.New(workflow)
 		asList := sdk.ToListDefinition(sdk.ListOf(trigger.CoolOutput()))
 		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
@@ -479,7 +477,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("ToListDefinition works correctly for hard-coded lists", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "1"}.New(workflow)
 		list := sdk.ToListDefinition(sdk.ConstantDefinition([]string{"1", "2"}))
 		sdk.Compute2(workflow, "compute", sdk.Compute2Inputs[string, []string]{Arg0: trigger.CoolOutput(), Arg1: list}, func(_ sdk.Runtime, t string, l []string) (string, error) {
@@ -542,14 +540,14 @@ func TestBuilder_ValidSpec(t *testing.T) {
 	})
 
 	t.Run("AnyListOf works like list of but returns a type any", func(t *testing.T) {
-		workflow1 := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow1 := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 0}
 		list := sdk.ListOf(trigger.New(workflow1).CoolOutput())
 		sdk.Compute1(workflow1, "compute", sdk.Compute1Inputs[[]string]{Arg0: list}, func(_ sdk.Runtime, inputs []string) (string, error) {
 			return inputs[0], nil
 		})
 
-		workflow2 := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow2 := sdk.NewWorkflowSpecFactory()
 		anyList := sdk.AnyListOf(trigger.New(workflow2).CoolOutput())
 		sdk.Compute1(workflow2, "compute", sdk.Compute1Inputs[[]any]{Arg0: anyList}, func(_ sdk.Runtime, inputs []any) (any, error) {
 			return inputs[0], nil
@@ -567,7 +565,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		conf, err := UnmarshalYaml[Config](sepoliaConfig)
 		require.NoError(t, err)
 
-		workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+		workflow := sdk.NewWorkflowSpecFactory()
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 			Observations: sdk.ListOf[streams.Feed](streamsTrigger)},
@@ -589,7 +587,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		conf, err := UnmarshalYaml[Config](sepoliaConfig)
 		require.NoError(t, err)
 
-		workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+		workflow := sdk.NewWorkflowSpecFactory()
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "", ocr3.DataFeedsConsensusInput{
 			Observations: sdk.ListOf[streams.Feed](streamsTrigger)},
@@ -605,7 +603,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		conf, err := UnmarshalYaml[Config](sepoliaConfig)
 		require.NoError(t, err)
 
-		workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+		workflow := sdk.NewWorkflowSpecFactory()
 		badStep := sdk.Step[streams.Feed]{
 			Definition: sdk.StepDefinition{
 				ID:             "streams-trigger@1.0.0",
@@ -632,7 +630,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		conf, err := UnmarshalYaml[Config](sepoliaConfig)
 		require.NoError(t, err)
 
-		workflow := sdk.NewWorkflowSpecFactory(conf.Workflow)
+		workflow := sdk.NewWorkflowSpecFactory()
 		streamsTrigger := conf.Streams.New(workflow)
 		consensus := conf.Ocr.New(workflow, "ccip_feeds", ocr3.DataFeedsConsensusInput{
 			Observations: sdk.ListOf[streams.Feed](streamsTrigger)},
@@ -665,7 +663,6 @@ func runSepoliaStagingTest(t *testing.T, config []byte, gen func([]byte) (*sdk.W
 }
 
 type NotStreamsConfig struct {
-	Workflow    sdk.NewWorkflowParams
 	NotStream   *notstreams.TriggerConfig `yaml:"not_stream" json:"not_stream"`
 	Ocr         *ModifiedConsensusConfig
 	ChainWriter *chainwriter.TargetConfig

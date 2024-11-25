@@ -179,10 +179,7 @@ type ComputeOutput struct {
 }
 
 func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime, config ComputeConfig, input basictrigger.TriggerOutputs) (ComputeOutput, error)) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "owner",
-		Name:  "name",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
 	trigger := triggerCfg.New(workflow)
@@ -202,10 +199,7 @@ func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime
 }
 
 func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams.Feed, error)) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "owner",
-		Name:  "name",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := notstreams.TriggerConfig{MaxFrequencyMs: 5000}.New(workflow)
 	computed := sdk.Compute1(workflow, "Compute", sdk.Compute1Inputs[notstreams.Feed]{Arg0: trigger}, fn)

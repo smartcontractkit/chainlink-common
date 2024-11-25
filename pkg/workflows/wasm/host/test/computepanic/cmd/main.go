@@ -1,5 +1,3 @@
-//go:build wasip1
-
 package main
 
 import (
@@ -8,6 +6,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
+
+type foo struct {
+	thing string
+}
+
+func (f *foo) doAThing() {
+	_ = f.thing
+}
 
 func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 	workflow := sdk.NewWorkflowSpecFactory()
@@ -19,13 +25,10 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 		workflow,
 		"transform",
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
-		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
-			if err := rsdk.Emitter().
-				With("test-string-field-key", "this is a test field content").
-				Emit("testing emit"); err != nil {
-				return false, err
-			}
-			return true, nil
+		func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
+			var f *foo
+			f.doAThing()
+			return false, nil
 		})
 
 	return workflow

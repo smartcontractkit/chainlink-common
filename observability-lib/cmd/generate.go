@@ -18,14 +18,13 @@ var GenerateCmd = &cobra.Command{
 			MetricsDataSource: grafana.NewDataSource(cmd.Flag("metrics-datasource").Value.String(), ""),
 			LogsDataSource:    grafana.NewDataSource(cmd.Flag("logs-datasource").Value.String(), ""),
 		})
-
 		if err != nil {
 			return err
 		}
 
 		dashboardJSON, errDashboardJSON := dashboard.GenerateJSON()
 		if errDashboardJSON != nil {
-			return err
+			return errDashboardJSON
 		}
 
 		fmt.Print(string(dashboardJSON))

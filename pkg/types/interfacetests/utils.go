@@ -20,11 +20,31 @@ type BasicTester[T any] interface {
 	Setup(t T)
 	Name() string
 	GetAccountBytes(i int) []byte
+	GetAccountString(i int) string
+	IsDisabled(testID string) bool
+	DisableTests(testIDs []string)
 }
 
-type testcase[T any] struct {
-	name string
-	test func(t T)
+type TestSelectionSupport struct {
+	disabledTests map[string]bool
+}
+
+func (t TestSelectionSupport) IsDisabled(testID string) bool {
+	return t.disabledTests[testID]
+}
+
+func (t *TestSelectionSupport) DisableTests(testIDs []string) {
+	if t.disabledTests == nil {
+		t.disabledTests = map[string]bool{}
+	}
+	for _, testID := range testIDs {
+		t.disabledTests[testID] = true
+	}
+}
+
+type Testcase[T any] struct {
+	Name string
+	Test func(t T)
 }
 
 type TestingT[T any] interface {
@@ -33,12 +53,16 @@ type TestingT[T any] interface {
 	Run(name string, f func(t T)) bool
 }
 
-func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
+// Tests execution utility function that will consider enabled / disabled test cases according to
+// Basic Tester configuration.
+func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
 	for _, test := range tests {
-		t.Run(test.name+" for "+tester.Name(), func(t T) {
-			tester.Setup(t)
-			test.test(t)
-		})
+		if !tester.IsDisabled(test.Name) {
+			t.Run(test.Name+" for "+tester.Name(), func(t T) {
+				tester.Setup(t)
+				test.Test(t)
+			})
+		}
 	}
 }
 
@@ -132,25 +156,41 @@ func (e ExpectedGetLatestValueArgs) String() string {
 		e.ContractName, e.ReadName, e.ConfidenceLevel, e.Params, e.ReturnVal)
 }
 
-type InnerTestStruct struct {
+type InnerDynamicTestStruct struct {
 	I int
 	S string
 }
 
-type MidLevelTestStruct struct {
+type InnerStaticTestStruct struct {
+	I int
+	A []byte
+}
+
+type MidLevelDynamicTestStruct struct {
 	FixedBytes [2]byte
-	Inner      InnerTestStruct
+	Inner      InnerDynamicTestStruct
+}
+
+type MidLevelStaticTestStruct struct {
+	FixedBytes [2]byte
+	Inner      InnerStaticTestStruct
+}
+
+type AccountStruct struct {
+	Account    []byte
+	AccountStr string
 }
 
 type TestStruct struct {
-	Field          *int32
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
-	Account        []byte
-	Accounts       [][]byte
-	DifferentField string
-	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
+	Field               *int32
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
+	AccountStruct       AccountStruct
+	Accounts            [][]byte
+	DifferentField      string
+	BigField            *big.Int
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
 }
 
 type TestStructWithExtraField struct {
@@ -159,25 +199,27 @@ type TestStructWithExtraField struct {
 }
 
 type TestStructMissingField struct {
-	DifferentField string
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
-	Account        []byte
-	Accounts       [][]byte
-	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
+	DifferentField      string
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
+	AccountStruct       AccountStruct
+	Accounts            [][]byte
+	BigField            *big.Int
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
 }
 
 // compatibleTestStruct has fields in a different order
 type compatibleTestStruct struct {
-	Account        []byte
-	Accounts       [][]byte
-	BigField       *big.Int
-	DifferentField string
-	Field          int32
-	NestedStruct   MidLevelTestStruct
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
+	AccountStruct       AccountStruct
+	Accounts            [][]byte
+	BigField            *big.Int
+	DifferentField      string
+	Field               int32
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
 }
 
 type LatestParams struct {
@@ -189,29 +231,41 @@ type FilterEventParams struct {
 	Field int32
 }
 
-type BatchCallEntry map[types.BoundContract]ContractBatchEntry
-type ContractBatchEntry []ReadEntry
-type ReadEntry struct {
-	Name        string
-	ReturnValue any
-}
+type (
+	BatchCallEntry     map[types.BoundContract]ContractBatchEntry
+	ContractBatchEntry []ReadEntry
+	ReadEntry          struct {
+		Name        string
+		ReturnValue any
+	}
+)
 
 func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	s := fmt.Sprintf("field%v", i)
 	fv := int32(i)
 	return TestStruct{
-		Field:          &fv,
-		OracleID:       commontypes.OracleID(i + 1),
-		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
-		Account:        tester.GetAccountBytes(i + 3),
+		Field:     &fv,
+		OracleID:  commontypes.OracleID(i + 1),
+		OracleIDs: [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
+		AccountStruct: AccountStruct{
+			Account:    tester.GetAccountBytes(i),
+			AccountStr: tester.GetAccountString(i),
+		},
 		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
 		DifferentField: s,
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
-		NestedStruct: MidLevelTestStruct{
+		NestedDynamicStruct: MidLevelDynamicTestStruct{
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
-			Inner: InnerTestStruct{
+			Inner: InnerDynamicTestStruct{
 				I: i,
 				S: s,
+			},
+		},
+		NestedStaticStruct: MidLevelStaticTestStruct{
+			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
+			Inner: InnerStaticTestStruct{
+				I: i,
+				A: tester.GetAccountBytes(i + 6),
 			},
 		},
 	}

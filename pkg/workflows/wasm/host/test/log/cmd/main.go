@@ -18,18 +18,25 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 	)
 
 	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
-	_ = triggerCfg.New(workflow)
+	trigger := triggerCfg.New(workflow)
+
+	sdk.Compute1[basictrigger.TriggerOutputs, bool](
+		workflow,
+		"transform",
+		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
+			rsdk.Logger().Infow("building workflow...", []interface{}{
+				"test-string-field-key", "this is a test field content",
+				"test-numeric-field-key", 6400000,
+			}...)
+			return false, nil
+		})
 
 	return workflow
 }
 
 func main() {
 	runner := wasm.NewRunner()
-	runner.SDK.Logger.Infow("building workflow...", []interface{}{
-		"test-string-field-key", "this is a test field content",
-		"test-numeric-field-key", 6400000,
-	}...)
 	workflow := BuildWorkflow(runner.Config())
-	runner.SDK.Logger.Info("running workflow...")
 	runner.Run(workflow)
 }

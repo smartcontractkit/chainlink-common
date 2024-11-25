@@ -2,6 +2,8 @@ package host
 
 import (
 	"encoding/binary"
+	"io"
+	"math/rand"
 	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v23"
@@ -14,7 +16,7 @@ var (
 	tick     = 100 * time.Millisecond
 )
 
-func newWasiLinker(engine *wasmtime.Engine) (*wasmtime.Linker, error) {
+func newWasiLinker(modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Linker, error) {
 	linker := wasmtime.NewLinker(engine)
 	linker.AllowShadowing(true)
 
@@ -39,6 +41,17 @@ func newWasiLinker(engine *wasmtime.Engine) (*wasmtime.Linker, error) {
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if modCfg.Determinism != nil {
+		err = linker.FuncWrap(
+			"wasi_snapshot_preview1",
+			"random_get",
+			createRandomGet(modCfg),
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return linker, nil
@@ -68,7 +81,7 @@ func clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTime
 	uint64Size := int32(8)
 	trg := make([]byte, uint64Size)
 	binary.LittleEndian.PutUint64(trg, uint64(val))
-	copyBuffer(caller, trg, resultTimestamp, uint64Size)
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
 }
 
@@ -92,7 +105,7 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 		return ErrnoInval
 	}
 
-	subs, err := safeMem(caller, subscriptionptr, nsubscriptions*subscriptionLen)
+	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
 	if err != nil {
 		return ErrnoFault
 	}
@@ -163,13 +176,13 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))
 
 	// Write the number of events to `resultNevents`
-	size := copyBuffer(caller, rne, resultNevents, uint32Size)
+	size := wasmWrite(caller, rne, resultNevents, uint32Size)
 	if size == -1 {
 		return ErrnoFault
 	}
 
 	// Write the events to `events`
-	size = copyBuffer(caller, events, eventsptr, nsubscriptions*eventsLen)
+	size = wasmWrite(caller, events, eventsptr, nsubscriptions*eventsLen)
 	if size == -1 {
 		return ErrnoFault
 	}
@@ -184,4 +197,34 @@ func writeEvent(slot []byte, userData []byte, errno Errno, eventType int) {
 	slot[8] = byte(errno)
 	slot[9] = 0
 	binary.LittleEndian.PutUint32(slot[10:], uint32(eventType))
+}
+
+// createRandomGet accepts a seed from the module config and overrides the random_get function in
+// the WASI API.  The override fixes the random source with a hardcoded seed via insecure randomness.
+// Function errors if the config is not set or does not contain a seed.
+func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
+	return func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
+		if cfg == nil || cfg.Determinism == nil {
+			return ErrnoInval
+		}
+
+		var (
+			// Fix the random source with a hardcoded seed
+			seed       = cfg.Determinism.Seed
+			randSource = rand.New(rand.NewSource(seed)) //nolint:gosec
+			randOutput = make([]byte, bufLen)
+		)
+
+		// Generate random bytes from the source
+		if _, err := io.ReadAtLeast(randSource, randOutput, int(bufLen)); err != nil {
+			return ErrnoFault
+		}
+
+		// Copy the random bytes into the wasm module memory
+		if n := wasmWrite(caller, randOutput, buf, bufLen); n != int64(len(randOutput)) {
+			return ErrnoFault
+		}
+
+		return ErrnoSuccess
+	}
 }

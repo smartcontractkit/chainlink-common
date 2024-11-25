@@ -3,6 +3,8 @@ package values
 import (
 	"errors"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
@@ -27,6 +29,16 @@ func (f *Float64) UnwrapTo(to any) error {
 	if f == nil {
 		return errors.New("cannot unwrap nil values.Float64")
 	}
+
+	switch t := to.(type) {
+	case *decimal.Decimal:
+		if t == nil {
+			return errors.New("cannot unwrap to nil pointer")
+		}
+		*t = decimal.NewFromFloat(f.Underlying)
+		return nil
+	}
+
 	return unwrapTo(f.Underlying, to)
 }
 

@@ -8,31 +8,57 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 )
 
+func objectMatchersEqual(a alerting.ObjectMatchers, b alerting.ObjectMatchers) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		foundMatch := false
+		for j := range b {
+			if reflect.DeepEqual(a[i], b[j]) {
+				foundMatch = true
+				break
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+
+	return true
+}
+
+func policyExist(parent alerting.NotificationPolicy, newNotificationPolicy alerting.NotificationPolicy) bool {
+	for _, notificationPolicy := range parent.Routes {
+		matchersEqual := false
+		if notificationPolicy.ObjectMatchers != nil {
+			matchersEqual = objectMatchersEqual(*notificationPolicy.ObjectMatchers, *newNotificationPolicy.ObjectMatchers)
+		}
+		receiversEqual := reflect.DeepEqual(notificationPolicy.Receiver, newNotificationPolicy.Receiver)
+		if matchersEqual && receiversEqual {
+			return true
+		}
+		if notificationPolicy.Routes != nil {
+			policyExist(notificationPolicy, newNotificationPolicy)
+		}
+	}
+	return false
+}
+
 // AddNestedPolicy Add Nested Policy to Notification Policy Tree
 func (c *Client) AddNestedPolicy(newNotificationPolicy alerting.NotificationPolicy) error {
 	notificationPolicyTree, _, err := c.GetNotificationPolicy()
 	if err != nil {
 		return err
 	}
-	updatedNotificationPolicy := notificationPolicyTree
-	tagsEqual := false
-	for key, notificationPolicy := range updatedNotificationPolicy.Routes {
-		if notificationPolicy.ObjectMatchers != nil {
-			tagsEqual = reflect.DeepEqual(notificationPolicy.ObjectMatchers, newNotificationPolicy.ObjectMatchers)
-			if tagsEqual {
-				updatedNotificationPolicy.Routes[key] = newNotificationPolicy
-			}
+	if !policyExist(alerting.NotificationPolicy(notificationPolicyTree), newNotificationPolicy) {
+		notificationPolicyTree.Routes = append(notificationPolicyTree.Routes, newNotificationPolicy)
+		_, _, errPutNotificationPolicy := c.PutNotificationPolicy(alerting.NotificationPolicy(notificationPolicyTree))
+		if errPutNotificationPolicy != nil {
+			return errPutNotificationPolicy
 		}
 	}
-	if !tagsEqual {
-		updatedNotificationPolicy.Routes = append(updatedNotificationPolicy.Routes, newNotificationPolicy)
-	}
-
-	_, _, errPutNotificationPolicy := c.PutNotificationPolicy(alerting.NotificationPolicy(updatedNotificationPolicy))
-	if errPutNotificationPolicy != nil {
-		return errPutNotificationPolicy
-	}
-
 	return nil
 }
 

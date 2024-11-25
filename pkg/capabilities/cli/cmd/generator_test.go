@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/anymapaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction/arrayactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
@@ -16,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger/basictriggertest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction/externalreferenceactiontest"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/mapaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/nestedaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/referenceactiontest"
@@ -51,6 +53,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = trigger.CoolOutput()
 			_ = expectedOutput
+
+			trigger = basictrigger.ConstantTriggerOutputs(basictrigger.TriggerOutputs{}) //nolint
 		})
 	})
 
@@ -74,6 +78,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = action.AdaptedThing()
 			_ = expectedOutput
+
+			action = basicaction.ConstantActionOutputs(basicaction.ActionOutputs{}) //nolint
 		})
 	})
 
@@ -101,6 +107,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedSigsField sdk.CapDefinition[[]string] //nolint
 			expectedSigsField = consensus.Sigs()
 			_ = expectedSigsField
+
+			consensus = basicconsensus.ConstantConsensusOutputs(basicconsensus.ConsensusOutputs{}) //nolint
 		})
 	})
 
@@ -225,6 +233,22 @@ func TestTypeGeneration(t *testing.T) {
 			var adapted basicaction.ActionOutputsCap //nolint
 			adapted = basicaction.NewActionOutputsFromFields(action.AdaptedThing())
 			_ = adapted
+		})
+	})
+
+	t.Run("Maps allow input from other capabilities", func(t *testing.T) {
+		onlyVerifySyntax(func() {
+			factory := &sdk.WorkflowSpecFactory{}
+			trigger := basictrigger.TriggerConfig{}.New(factory)
+			mapaction.ActionConfig{}.New(factory, "ref", mapaction.ActionInput{Payload: sdk.Map[string, mapaction.ActionInputsPayload](map[string]sdk.CapDefinition[string]{"Foo": trigger.CoolOutput()})})
+		})
+	})
+
+	t.Run("Map any casting", func(t *testing.T) {
+		onlyVerifySyntax(func() {
+			factory := &sdk.WorkflowSpecFactory{}
+			trigger := basictrigger.TriggerConfig{}.New(factory)
+			anymapaction.MapActionConfig{}.New(factory, "ref", anymapaction.MapActionInput{Payload: sdk.AnyMap[anymapaction.MapActionInputsPayload](sdk.CapMap{"Foo": trigger.CoolOutput()})})
 		})
 	})
 

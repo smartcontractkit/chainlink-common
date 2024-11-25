@@ -1,0 +1,159 @@
+package {{.Package}}
+
+import (
+{{- if not (.CapabilityType|IsCommon) }}
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+{{- end }}
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+
+    {{- range .ExtraImports }}
+    {{.}}
+    {{- end }}
+)
+
+{{ if .Config.Ref }}type {{.Config.Name}} {{.Config.Ref}} {{ end }}
+
+{{- if not (.CapabilityType|IsCommon) }}
+func (cfg {{.Config.Name}}) New(w *sdk.WorkflowSpecFactory, {{- if not .ID }}id string,{{- end }} {{- if and (ne .CapabilityType "target") (ne .CapabilityType "trigger")}}ref string,{{- end }}{{- if .Input }} input {{InputAfterCapability}}{{- end }}) {{- if ne .CapabilityType "target"}}{{- if eq .RootNumSlice 0}}{{.RootType.Name}}Cap{{- else }}sdk.CapDefinition[{{Repeat "[]" .RootNumSlice}}{{.RootType.Name}}]{{- end }}{{- end }} {
+    {{ if eq .CapabilityType "trigger" }} ref := "trigger" {{- end }}
+    def := sdk.StepDefinition{
+       ID: {{- if .ID }} "{{.ID}}" {{- else }} id {{- end }},
+       {{- if ne .CapabilityType "target"}}Ref: ref, {{- end }}
+       Inputs: {{- if .Input }} input.ToSteps() {{- else }} sdk.StepInputs{} {{ end }},
+       Config: map[string]any{
+{{- range $fieldName, $type := .Config.Outputs }}
+           "{{$type.ConfigName}}": cfg.{{$fieldName}},
+{{- end }}
+       },
+       CapabilityType: capabilities.CapabilityType{{.CapabilityType|CapitalizeCap}},
+   }
+
+
+    step := sdk.Step[{{- if eq .CapabilityType "target"}}struct{}{{- else }}{{Repeat "[]" .RootNumSlice}}{{.RootOutput}} {{- end}}]{Definition: def}
+    {{- if eq .CapabilityType "target" }}
+    step.AddTo(w)
+    {{- else if eq 0 .RootNumSlice }}
+    raw :=  step.AddTo(w)
+    return {{.RootType.Name}}Wrapper(raw)
+    {{- else }}
+    return step.AddTo(w)
+    {{- end }}
+}
+{{- end }}
+
+{{ range $key, $value := .Types }}
+
+// {{$key}}Wrapper allows access to field from an sdk.CapDefinition[{{$key}}]
+func {{$key}}Wrapper(raw sdk.CapDefinition[{{$key}}]) {{$key}}Cap {
+    wrapped, ok := raw.({{$key}}Cap)
+    if ok {
+        return wrapped
+    }
+
+    {{- if .Outputs }}
+    return &{{$key|LowerFirst}}Cap{CapDefinition: raw}
+    {{- else }}
+    return {{$key}}Cap(raw)
+    {{- end }}
+}
+
+{{- if .Outputs }}
+type {{$key}}Cap interface {
+    sdk.CapDefinition[{{ $key }}]
+    {{- range $fieldName, $type := .Outputs }}
+        {{- if or $type.WrapCap }}
+    {{$fieldName}}() {{ $type.Type }}Cap
+        {{- else }}
+    {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+        {{- end }}
+    {{- end }}
+    private()
+}
+
+type {{$key|LowerFirst}}Cap struct {
+    sdk.CapDefinition[{{ $key }}]
+}
+
+func (*{{$key|LowerFirst}}Cap) private() {}
+
+    {{- range $fieldName, $type := .Outputs }}
+        {{- if or $type.WrapCap }}
+func (c *{{$key|LowerFirst}}Cap) {{$fieldName}}() {{ $type.Type }}Cap {
+     return {{ $type.Type }}Wrapper(sdk.AccessField[{{$value.Name}}, {{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}"))
+        {{- else }}
+func (c *{{$key|LowerFirst}}Cap) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+    return sdk.AccessField[{{$value.Name}}, {{Repeat "[]" $type.NumSlice}}{{$type.Type}}](c.CapDefinition, "{{$type.ConfigName}}")
+        {{- end }}
+}
+    {{- end }}
+
+func Constant{{$key}}(value {{$key}}) {{$key}}Cap {
+    return &{{$key|LowerFirst}}Cap{CapDefinition: sdk.ConstantDefinition(value)}
+}
+
+func New{{$key}}FromFields({{- range $fieldName, $type := .Outputs }}
+                                                                            {{- if or $type.WrapCap }}
+                                                                        {{$fieldName|LowerFirst}} {{ $type.Type }}Cap,
+                                                                            {{- else }}
+                                                                        {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}],
+                                                                            {{- end }}                                                                        {{- end }}) {{$key}}Cap {
+    return &simple{{$key}}{
+        CapDefinition: sdk.ComponentCapDefinition[{{$value.Name}}]{ {{- range $fieldName, $type := .Outputs }}
+        "{{$type.ConfigName}}": {{$fieldName|LowerFirst}}.Ref(),
+        {{- end }}
+        },
+        {{- range $fieldName, $type := .Outputs }}
+        {{$fieldName|LowerFirst}}: {{$fieldName|LowerFirst}},
+        {{- end }}
+    }
+}
+
+type simple{{$key}} struct {
+    sdk.CapDefinition[{{ $key }}]
+    {{- range $fieldName, $type := .Outputs }}
+        {{- if $type.WrapCap }}
+    {{$fieldName|LowerFirst}} {{ $type.Type }}Cap
+        {{- else }}
+    {{$fieldName|LowerFirst}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+        {{- end }}
+    {{- end }}
+}
+
+ {{- range $fieldName, $type := .Outputs }}
+        {{- if or $type.WrapCap }}
+func (c *simple{{$key}}) {{$fieldName}}() {{ $type.Type }}Cap {
+        {{- else }}
+func (c *simple{{$key}}) {{$fieldName}}() sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}] {
+        {{- end }}
+    return c.{{$fieldName|LowerFirst}}
+}
+    {{- end }}
+
+func (c *simple{{$key}}) private() {}
+{{- else }}
+type {{$key}}Cap sdk.CapDefinition[{{ $key }}]
+{{- end }}
+
+{{ end }}
+
+{{- if .Input }}
+    {{- if .Input.Ref }}
+type {{InputAfterCapability}} = {{.Input.RefPkg}}.{{InputAfterCapability}}
+    {{- else }}
+type {{InputAfterCapability}} struct {
+{{- range $fieldName, $type := .Input.Outputs }}
+    {{$fieldName}} sdk.CapDefinition[{{Repeat "[]" $type.NumSlice}}{{ $type.Type }}]
+{{- end }}
+}
+
+func (input {{InputAfterCapability}}) ToSteps() sdk.StepInputs {
+    return sdk.StepInputs{
+       Mapping: map[string]any{
+        {{- range $fieldName, $type := .Input.Outputs }}
+        "{{$type.ConfigName}}": input.{{$fieldName}}.Ref(),
+        {{- end }}
+       },
+   }
+}
+    {{- end }}
+{{- end }}

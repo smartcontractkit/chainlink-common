@@ -118,6 +118,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	s.lggr.Debug("Launching")
 
 	cc := s.grpcPlug.ClientConfig()
+	cc.SkipHostEnv = true
 	cc.Cmd = s.cmd()
 	client := plugin.NewClient(cc)
 	cp, err := client.Client()
@@ -221,11 +222,6 @@ func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	case <-s.stopCh:
 		return fmt.Errorf("service was stoped while waiting: %w", context.Canceled)
 	}
-}
-
-// Wait is the context-ignorant version of WaitCtx above.
-func (s *PluginService[P, S]) Wait() error {
-	return s.WaitCtx(context.Background())
 }
 
 // XXXTestHook returns a TestPluginService.

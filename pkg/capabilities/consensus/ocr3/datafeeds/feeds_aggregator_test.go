@@ -42,11 +42,11 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	require.NoError(t, err)
 	config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
 	codec := mocks.NewReportCodec(t)
-	agg, err := datafeeds.NewDataFeedsAggregator(*config, codec, logger.Nop())
+	agg, err := datafeeds.NewDataFeedsAggregator(*config, codec)
 	require.NoError(t, err)
 
 	// first round, empty previous Outcome, empty observations
-	outcome, err := agg.Aggregate(nil, map[commontypes.OracleID][]values.Value{}, 1)
+	outcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{}, 1)
 	require.NoError(t, err)
 	require.False(t, outcome.ShouldReport)
 
@@ -70,7 +70,7 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	}
 	codec.On("Unwrap", mock.Anything).Return(latestMercuryReports, nil)
 	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	outcome, err = agg.Aggregate(outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
+	outcome, err = agg.Aggregate(logger.Nop(), outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
 
@@ -117,7 +117,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	require.NoError(t, err)
 	config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
 	codec := mocks.NewReportCodec(t)
-	agg, err := datafeeds.NewDataFeedsAggregator(*config, codec, logger.Nop())
+	agg, err := datafeeds.NewDataFeedsAggregator(*config, codec)
 	require.NoError(t, err)
 
 	// first round, both feeds are stale
@@ -135,7 +135,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	}
 	codec.On("Unwrap", mock.Anything).Return(latestReportsRound1, nil).Twice()
 	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	outcome, err := agg.Aggregate(nil, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
+	outcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
 	require.Equal(t, 2, len(outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields))
@@ -155,7 +155,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	}
 	codec.On("Unwrap", mock.Anything).Return(latestReportsRound2, nil).Twice()
 	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	outcome, err = agg.Aggregate(outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
+	outcome, err = agg.Aggregate(logger.Nop(), outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
 	require.Equal(t, 1, len(outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields))
@@ -175,7 +175,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	}
 	codec.On("Unwrap", mock.Anything).Return(latestReportsRound3, nil).Twice()
 	codec.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	outcome, err = agg.Aggregate(outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
+	outcome, err = agg.Aggregate(logger.Nop(), outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
 	require.Equal(t, 2, len(outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields))
@@ -192,11 +192,11 @@ func TestDataFeedsAggregator_Aggregate_Failures(t *testing.T) {
 
 	config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
 	codec := mocks.NewReportCodec(t)
-	agg, err := datafeeds.NewDataFeedsAggregator(*config, codec, logger.Nop())
+	agg, err := datafeeds.NewDataFeedsAggregator(*config, codec)
 	require.NoError(t, err)
 
 	// no valid signers - each one should appear at least twice to be valid
-	_, err = agg.Aggregate(nil, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}}, 1)
+	_, err = agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}}, 1)
 	require.Error(t, err)
 }
 

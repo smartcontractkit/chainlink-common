@@ -149,6 +149,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	}
 	providerRes := net.Resource{Closer: providerConn, Name: "MedianProvider"}
 	provider := medianprovider.NewProviderClient(m.BrokerExt, providerConn)
+	provider.RmUnimplemented(ctx)
 
 	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {

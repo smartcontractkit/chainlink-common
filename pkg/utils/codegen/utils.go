@@ -30,7 +30,7 @@ func WriteFiles(dir, localPrefix, tool string, files map[string]string) error {
 			}
 		}
 
-		if err := os.MkdirAll(path.Dir(file), 0600); err != nil {
+		if err := os.MkdirAll(path.Dir(file), 0700); err != nil {
 			errs = append(errs, err)
 		} else if err = os.WriteFile(file, []byte(content), 0600); err != nil {
 			errs = append(errs, err)

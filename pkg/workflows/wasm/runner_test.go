@@ -2,7 +2,9 @@ package wasm
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"testing"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -12,8 +14,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -132,6 +136,9 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 	runner := &Runner{
 		args:         []string{"wasm", str},
 		sendResponse: responseFn,
+		sdkFactory: func(cfg *RuntimeConfig, _ ...func(*RuntimeConfig)) *Runtime {
+			return nil
+		},
 	}
 	runner.Run(workflow)
 
@@ -158,6 +165,10 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	)
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
+	// Define and add a target to the workflow
+	targetInput := basictarget.TargetInput{CoolInput: trigger.CoolOutput()}
+	targetConfig := basictarget.TargetConfig{Name: "basictarget", Number: 150}
+	targetConfig.New(workflow, targetInput)
 	computeFn := func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
 		return true, nil
 	}
@@ -199,5 +210,173 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 	// Do some massaging due to protos lossy conversion of types
 	gotSpec.Triggers[0].Inputs.Mapping = map[string]any{}
 	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(uint64))
+	gotSpec.Targets[0].Config["number"] = int64(gotSpec.Targets[0].Config["number"].(uint64))
 	assert.Equal(t, &gotSpec, spc)
+
+	// Verify the target is included in the workflow spec
+	assert.Equal(t, targetConfig.Number, uint64(gotSpec.Targets[0].Config["number"].(int64)))
+}
+
+// Test_createEmitFn validates the runtime's emit function implementation.  Uses mocks of the
+// imported wasip1 emit function.
+func Test_createEmitFn(t *testing.T) {
+	var (
+		l         = logger.Test(t)
+		reqId     = "random-id"
+		sdkConfig = &RuntimeConfig{
+			MaxFetchResponseSizeBytes: 1_000,
+			Metadata: &capabilities.RequestMetadata{
+				WorkflowID:          "workflow_id",
+				WorkflowExecutionID: "workflow_execution_id",
+				WorkflowName:        "workflow_name",
+				WorkflowOwner:       "workflow_owner_address",
+			},
+			RequestID: &reqId,
+		}
+		giveMsg    = "testing guest"
+		giveLabels = map[string]string{
+			"some-key": "some-value",
+		}
+	)
+
+	t.Run("success", func(t *testing.T) {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
+		assert.NoError(t, err)
+	})
+
+	t.Run("successfully read error message when emit fails", func(t *testing.T) {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			// marshall the protobufs
+			b, err := proto.Marshal(&wasmpb.EmitMessageResponse{
+				Error: &wasmpb.Error{
+					Message: assert.AnError.Error(),
+				},
+			})
+			assert.NoError(t, err)
+
+			// write the marshalled response message to memory
+			resp := unsafe.Slice((*byte)(respptr), len(b))
+			copy(resp, b)
+
+			// write the length of the response to memory in little endian
+			respLen := unsafe.Slice((*byte)(resplenptr), uint32Size)
+			binary.LittleEndian.PutUint32(respLen, uint32(len(b)))
+
+			return 0
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, assert.AnError.Error())
+	})
+
+	t.Run("fail to deserialize response from memory", func(t *testing.T) {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			// b is a non-protobuf byte slice
+			b := []byte(assert.AnError.Error())
+
+			// write the marshalled response message to memory
+			resp := unsafe.Slice((*byte)(respptr), len(b))
+			copy(resp, b)
+
+			// write the length of the response to memory in little endian
+			respLen := unsafe.Slice((*byte)(resplenptr), uint32Size)
+			binary.LittleEndian.PutUint32(respLen, uint32(len(b)))
+
+			return 0
+		}
+
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "invalid wire-format data")
+	})
+
+	t.Run("fail with nonzero code from emit", func(t *testing.T) {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 42
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, giveLabels)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "emit failed with errno 42")
+	})
+}
+
+func Test_createFetchFn(t *testing.T) {
+	var (
+		l         = logger.Test(t)
+		requestID = uuid.New().String()
+		sdkConfig = &RuntimeConfig{
+			RequestID:                 &requestID,
+			MaxFetchResponseSizeBytes: 1_000,
+			Metadata: &capabilities.RequestMetadata{
+				WorkflowID:          "workflow_id",
+				WorkflowExecutionID: "workflow_execution_id",
+				WorkflowName:        "workflow_name",
+				WorkflowOwner:       "workflow_owner_address",
+			},
+		}
+	)
+
+	t.Run("OK-success", func(t *testing.T) {
+		hostFetch := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeFetch := createFetchFn(sdkConfig, l, hostFetch)
+		response, err := runtimeFetch(sdk.FetchRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, sdk.FetchResponse{
+			Headers: map[string]any{},
+		}, response)
+	})
+
+	t.Run("NOK-config_missing_request_id", func(t *testing.T) {
+		invalidConfig := &RuntimeConfig{
+			RequestID:                 nil,
+			MaxFetchResponseSizeBytes: 1_000,
+			Metadata: &capabilities.RequestMetadata{
+				WorkflowID:          "workflow_id",
+				WorkflowExecutionID: "workflow_execution_id",
+				WorkflowName:        "workflow_name",
+				WorkflowOwner:       "workflow_owner_address",
+			},
+		}
+		hostFetch := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeFetch := createFetchFn(invalidConfig, l, hostFetch)
+		_, err := runtimeFetch(sdk.FetchRequest{})
+		assert.ErrorContains(t, err, "request ID is required to fetch")
+	})
+
+	t.Run("NOK-fetch_returns_handled_error", func(t *testing.T) {
+		hostFetch := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			fetchResponse := &wasmpb.FetchResponse{
+				ExecutionError: true,
+				ErrorMessage:   assert.AnError.Error(),
+			}
+			respBytes, perr := proto.Marshal(fetchResponse)
+			if perr != nil {
+				return 0
+			}
+
+			// write the marshalled response message to memory
+			resp := unsafe.Slice((*byte)(respptr), len(respBytes))
+			copy(resp, respBytes)
+
+			// write the length of the response to memory in little endian
+			respLen := unsafe.Slice((*byte)(resplenptr), uint32Size)
+			binary.LittleEndian.PutUint32(respLen, uint32(len(respBytes)))
+
+			return 0
+		}
+		runtimeFetch := createFetchFn(sdkConfig, l, hostFetch)
+		_, err := runtimeFetch(sdk.FetchRequest{})
+		assert.ErrorContains(t, err, assert.AnError.Error())
+	})
 }

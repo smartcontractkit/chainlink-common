@@ -26,7 +26,7 @@ func (e errStopExecution) Error() string {
 }
 
 func (e errStopExecution) Is(err error) bool {
-	return err.Error() == errStopExecutionMsg
+	return strings.Contains(err.Error(), errStopExecutionMsg)
 }
 
 // CapabilityType enum values.
@@ -65,12 +65,15 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
-	ReferenceID              string
+	// The step reference ID of the workflow
+	ReferenceID string
 }
 
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
+	// The step reference ID of the workflow
+	ReferenceID string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -345,6 +348,10 @@ type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
 
+type RemoteExecutableConfig struct {
+	RequestHashExcludedAttributes []string
+}
+
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
@@ -369,7 +376,8 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 }
 
 type CapabilityConfiguration struct {
-	DefaultConfig       *values.Map
-	RemoteTriggerConfig *RemoteTriggerConfig
-	RemoteTargetConfig  *RemoteTargetConfig
+	DefaultConfig          *values.Map
+	RemoteTriggerConfig    *RemoteTriggerConfig
+	RemoteTargetConfig     *RemoteTargetConfig
+	RemoteExecutableConfig *RemoteExecutableConfig
 }

@@ -20,6 +20,7 @@ feed_info:
   - feedId: '0x00036c962c10ac4e0aafae5021c99c4f5adb503c0cb76cfddd8d17efe3098f67'
   - feedId: '0x0003010b9d4a4740f554eeea1e6a2cf1e60189a3d8cf7ced7a03ce050df30076'
 report_id: '0001'
+key_id: 'evm'
 encoder: EVM
 encoder_config:
   abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"

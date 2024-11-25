@@ -127,6 +127,8 @@ type Message struct {
 	FeeToken Bytes `json:"feeToken"`
 	// FeeTokenAmount is the amount of fee tokens paid.
 	FeeTokenAmount BigInt `json:"feeTokenAmount"`
+	// FeeValueJuels is the fee amount in Juels
+	FeeValueJuels BigInt `json:"feeValueJuels"`
 	// TokenAmounts is the array of tokens and amounts to transfer.
 	TokenAmounts []RampTokenAmount `json:"tokenAmounts"`
 }
@@ -168,13 +170,23 @@ type RampTokenAmount struct {
 	// This value is trusted as it was obtained through the onRamp. It can be relied upon by the destination
 	// pool to validate the source pool.
 	SourcePoolAddress Bytes `json:"sourcePoolAddress"`
+
 	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains.
 	// This value is UNTRUSTED as any pool owner can return whatever value they want.
 	DestTokenAddress Bytes `json:"destTokenAddress"`
+
 	// ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
 	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead
 	// has to be set for the specific token.
 	ExtraData Bytes `json:"extraData"`
+
 	// Amount is the amount of tokens to be transferred.
 	Amount BigInt `json:"amount"`
+
+	// DestExecData is destination chain specific execution data encoded in bytes.
+	// For an EVM destination, it consists of the amount of gas available for the releaseOrMint
+	// and transfer calls made by the offRamp.
+	// NOTE: this must be decoded before providing it as an execution input to the destination chain
+	// or hashing it. See Internal._hash(Any2EVMRampMessage) for more details as an example.
+	DestExecData Bytes `json:"destExecData"`
 }

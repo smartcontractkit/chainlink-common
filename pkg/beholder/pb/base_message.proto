@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/beholder/pb/";
+
+package pb;
+
+// BaseMessage is a basic custom message, allowing the consumer to send
+// a string msg with some key-value pairs for labels. Consumers can consume
+// BaseMessage directly or extend it by adding use-case specific fields
+// NOTE: do not compose protos for Beholder until INFOPLAT-1386 is completed
+message BaseMessage {
+  string msg=1;
+  // https://protobuf.dev/programming-guides/proto3/#maps
+  // In go: if Value is empty for a key, nothing will be serialized
+  map<string, string> labels = 2;
+}

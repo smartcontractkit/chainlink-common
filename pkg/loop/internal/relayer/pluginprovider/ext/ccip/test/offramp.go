@@ -375,7 +375,7 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected gasPrice %v but got %v", GasPriceEstimatorExec.getGasPriceResponse, price)
 	}
 	// DenoteInUSD test case
-	gotUsd, err := gasPriceEstimator.DenoteInUSD(GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
+	gotUsd, err := gasPriceEstimator.DenoteInUSD(ctx, GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
 	if err != nil {
 		return fmt.Errorf("failed to get other usd: %w", err)
 	}
@@ -383,11 +383,7 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected usd %v but got %v", GasPriceEstimatorExec.denoteInUSDResponse.result, gotUsd)
 	}
 	// EstimateMsgCostUSD test case
-	cost, err := gasPriceEstimator.EstimateMsgCostUSD(
-		GasPriceEstimatorExec.estimateMsgCostUSDRequest.p,
-		GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice,
-		GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg,
-	)
+	cost, err := gasPriceEstimator.EstimateMsgCostUSD(ctx, GasPriceEstimatorExec.estimateMsgCostUSDRequest.p, GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice, GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg)
 	if err != nil {
 		return fmt.Errorf("failed to get other cost: %w", err)
 	}
@@ -395,7 +391,7 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected cost %v but got %v", GasPriceEstimatorExec.estimateMsgCostUSDResponse, cost)
 	}
 	// Median test case
-	median, err := gasPriceEstimator.Median(GasPriceEstimatorExec.medianRequest.gasPrices)
+	median, err := gasPriceEstimator.Median(ctx, GasPriceEstimatorExec.medianRequest.gasPrices)
 	if err != nil {
 		return fmt.Errorf("failed to get other median: %w", err)
 	}

@@ -84,9 +84,9 @@ func NewCommitService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cm
 	return &cfs
 }
 
-func (m *CommitFactoryService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+func (m *CommitFactoryService) NewReportingPlugin(ctx context.Context, config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewReportingPlugin(ctx, config)
 }

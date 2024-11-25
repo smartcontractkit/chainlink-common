@@ -16,6 +16,49 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+// GetLatestValue method
+const (
+	ContractReaderGetLatestValueAsValuesDotValue                              = "Gets the latest value as a values.Value"
+	ContractReaderGetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue = "Get latest value without arguments and with primitive return as a values.Value"
+	ContractReaderGetLatestValueNoArgumentsAndSliceReturnAsValueDotValue      = "Get latest value without arguments and with slice return as a values.Value"
+	ContractReaderGetLatestValue                                              = "Gets the latest value"
+	ContractReaderGetLatestValueWithHeadData                                  = "Gets the latest value with head data"
+	ContractReaderGetLatestValueWithPrimitiveReturn                           = "Get latest value without arguments and with primitive return"
+	ContractReaderGetLatestValueBasedOnConfidenceLevel                        = "Get latest value based on confidence level"
+	ContractReaderGetLatestValueFromMultipleContractsNamesSameFunction        = "Get latest value allows multiple contract names to have the same function "
+	ContractReaderGetLatestValueWithModifiersUsingOwnMapstrctureOverrides     = "Get latest value wraps config with modifiers using its own mapstructure overrides"
+	ContractReaderGetLatestValueNoArgumentsAndSliceReturn                     = "Get latest value without arguments and with slice return"
+)
+
+// GetLatestValue event
+const (
+	ContractReaderGetLatestValueGetsLatestForEvent                      = "Get latest value gets latest event"
+	ContractReaderGetLatestValueBasedOnConfidenceLevelForEvent          = "Get latest event based on provided confidence level"
+	ContractReaderGetLatestValueReturnsNotFoundWhenNotTriggeredForEvent = "Get latest value returns not found if event was never triggered"
+	ContractReaderGetLatestValueWithFilteringForEvent                   = "Get latest value gets latest event with filtering"
+)
+
+// BatchGet
+const (
+	ContractReaderBatchGetLatestValue                                                   = "BatchGetLatestValues works"
+	ContractReaderBatchGetLatestValueNoArgumentsPrimitiveReturn                         = "BatchGetLatestValues works without arguments and with primitive return"
+	ContractReaderBatchGetLatestValueMultipleContractNamesSameFunction                  = "BatchGetLatestValues allows multiple contract names to have the same function Name"
+	ContractReaderBatchGetLatestValueNoArgumentsWithSliceReturn                         = "BatchGetLatestValue without arguments and with slice return"
+	ContractReaderBatchGetLatestValueWithModifiersOwnMapstructureOverride               = "BatchGetLatestValues wraps config with modifiers using its own mapstructure overrides"
+	ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrder                  = "BatchGetLatestValues supports same read with different params and results retain order from request"
+	ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrderMultipleContracts = "BatchGetLatestValues supports same read with different params and results retain order from request even with multiple contracts"
+	ContractReaderBatchGetLatestValueSetsErrorsProperly                                 = "BatchGetLatestValues sets errors properly"
+)
+
+// Query key
+const (
+	ContractReaderQueryKeyNotFound                     = "QueryKey returns not found if sequence never happened"
+	ContractReaderQueryKeyReturnsData                  = "QueryKey returns sequence data properly"
+	ContractReaderQueryKeyReturnsDataAsValuesDotValue  = "QueryKey returns sequence data properly as values.Value"
+	ContractReaderQueryKeyCanFilterWithValueComparator = "QueryKey can filter data with value comparator"
+	ContractReaderQueryKeyCanLimitResultsWithCursor    = "QueryKey can limit results with cursor"
+)
+
 type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetContractReader(t T) types.ContractReader
@@ -63,10 +106,11 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 }
 
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	tests := []testcase[T]{
+
+	tests := []Testcase[T]{
 		{
-			name: "Gets the latest value as a values.Value",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueAsValuesDotValue,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
 
@@ -106,8 +150,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 		},
 
 		{
-			name: "Get latest value without arguments and with primitive return as a values.Value",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueNoArgumentsAndPrimitiveReturnAsValuesDotValue,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -127,8 +171,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value without arguments and with slice return as a values.Value",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueNoArgumentsAndSliceReturnAsValueDotValue,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -147,8 +191,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Gets the latest value",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValue,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				firstItem := CreateTestStruct(0, tester)
 
@@ -177,8 +221,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value without arguments and with primitive return",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueWithPrimitiveReturn,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -193,8 +237,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value based on confidence level",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueBasedOnConfidenceLevel,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -233,8 +277,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value allows multiple contract names to have the same function name",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueFromMultipleContractsNamesSameFunction,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -249,8 +293,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value without arguments and with slice return",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueNoArgumentsAndSliceReturn,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -265,12 +309,12 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value wraps config with modifiers using its own mapstructure overrides",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueWithModifiersUsingOwnMapstrctureOverrides,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
-				testStruct.Account = nil
+				testStruct.AccountStruct.Account = nil
 
 				bindings := tester.GetBindings(t)
 				bound := BindingsByName(bindings, AnyContractName)[0]
@@ -290,8 +334,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value gets latest event",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueGetsLatestForEvent,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -307,15 +351,15 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts, contracts[0], types.Unconfirmed)
 
 				result := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Unconfirmed, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},
 		{
-			name: "Get latest event based on provided confidence level",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueBasedOnConfidenceLevelForEvent,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -327,7 +371,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				txID := SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, bindings[0], types.Unconfirmed)
 
 				result := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Finalized, nil, &result)
 					return err != nil && assert.ErrorContains(t, err, types.ErrNotFound.Error())
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
@@ -338,20 +382,20 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ts2 := CreateTestStruct[T](3, tester)
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, bindings[0], types.Unconfirmed)
 
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Finalized, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts1)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Unconfirmed, nil, &result)
 					return err == nil && reflect.DeepEqual(result, &ts2)
 				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 			},
 		},
 		{
-			name: "Get latest value returns not found if event was never triggered",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueReturnsNotFoundWhenNotTriggeredForEvent,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -365,8 +409,8 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 		{
-			name: "Get latest value gets latest event with filtering",
-			test: func(t T) {
+			Name: ContractReaderGetLatestValueWithFilteringForEvent,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -396,14 +440,15 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 	}
-	runTests(t, tester, tests)
+	RunTests(t, tester, tests)
 }
 
 func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	testCases := []testcase[T]{
+
+	testCases := []Testcase[T]{
 		{
-			name: "BatchGetLatestValues works",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValue,
+			Test: func(t T) {
 				// setup test data
 				firstItem := CreateTestStruct(1, tester)
 				bindings := tester.GetBindings(t)
@@ -439,8 +484,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValues works without arguments and with primitive return",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueNoArgumentsPrimitiveReturn,
+			Test: func(t T) {
 				// setup call data
 				var primitiveReturnValue uint64
 				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
@@ -470,8 +515,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValues allows multiple contract names to have the same function Name",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueMultipleContractNamesSameFunction,
+			Test: func(t T) {
 				var primitiveReturnValueAnyContract, primitiveReturnValueAnySecondContract uint64
 				batchGetLatestValuesRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
@@ -500,8 +545,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValue without arguments and with slice return",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueNoArgumentsWithSliceReturn,
+			Test: func(t T) {
 				// setup call data
 				var sliceReturnValue []uint64
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
@@ -524,12 +569,12 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValues wraps config with modifiers using its own mapstructure overrides",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueWithModifiersOwnMapstructureOverride,
+			Test: func(t T) {
 				// setup call data
 				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
-				testStruct.Account = nil
+				testStruct.AccountStruct.Account = nil
 				actual := &TestStructWithExtraField{}
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
@@ -556,8 +601,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValues supports same read with different params and results retain order from request",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrder,
+			Test: func(t T) {
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
@@ -592,8 +637,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValues supports same read with different params and results retain order from request even with multiple contracts",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueDifferentParamsResultsRetainOrderMultipleContracts,
+			Test: func(t T) {
 				batchCallEntry := make(BatchCallEntry)
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
@@ -640,8 +685,8 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 		{
-			name: "BatchGetLatestValues sets errors properly",
-			test: func(t T) {
+			Name: ContractReaderBatchGetLatestValueSetsErrorsProperly,
+			Test: func(t T) {
 				batchGetLatestValueRequest := make(types.BatchGetLatestValuesRequest)
 				bindings := tester.GetBindings(t)
 				bound1 := BindingsByName(bindings, AnyContractName)[0]
@@ -674,14 +719,14 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 	}
-	runTests(t, tester, testCases)
+	RunTests(t, tester, testCases)
 }
 
 func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T]) {
-	tests := []testcase[T]{
+	tests := []Testcase[T]{
 		{
-			name: "QueryKey returns not found if sequence never happened",
-			test: func(t T) {
+			Name: ContractReaderQueryKeyNotFound,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -696,8 +741,8 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			name: "QueryKey returns sequence data properly",
-			test: func(t T) {
+			Name: ContractReaderQueryKeyReturnsData,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -711,7 +756,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
 
 				ts := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, boundContract, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts1, sequences[1].Data) && reflect.DeepEqual(&ts2, sequences[0].Data)
@@ -719,8 +764,8 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			name: "QueryKey returns sequence data properly as values.Value",
-			test: func(t T) {
+			Name: ContractReaderQueryKeyReturnsDataAsValuesDotValue,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -735,7 +780,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 
 				var value values.Value
 
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, bound, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, &value)
 					if err != nil || len(sequences) != 2 {
@@ -759,8 +804,8 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			},
 		},
 		{
-			name: "QueryKey can filter data with value comparator",
-			test: func(t T) {
+			Name: ContractReaderQueryKeyCanFilterWithValueComparator,
+			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
@@ -776,7 +821,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
 
 				ts := &TestStruct{}
-				assert.Eventually(t, func() bool {
+				require.Eventually(t, func() bool {
 					// sequences from queryKey without limit and sort should be in descending order
 					sequences, err := cr.QueryKey(ctx, boundContract, query.KeyFilter{Key: EventName, Expressions: []query.Expression{
 						query.Comparator("Field",
@@ -791,12 +836,63 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 					},
 					}, query.LimitAndSort{}, ts)
 					return err == nil && len(sequences) == 2 && reflect.DeepEqual(&ts2, sequences[1].Data) && reflect.DeepEqual(&ts3, sequences[0].Data)
-				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*500)
+			},
+		},
+		{
+			Name: ContractReaderQueryKeyCanLimitResultsWithCursor,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				// keep this an even number such that the cursor limit can be in batches of 2
+				testStructs := make([]TestStruct, 4)
+
+				// create test structs in sequence
+				for idx := range testStructs {
+					testStructs[idx] = CreateTestStruct(idx*2, tester)
+
+					_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, testStructs[idx], boundContract, types.Unconfirmed)
+				}
+
+				require.Eventually(t, func() bool {
+					var allSequences []types.Sequence
+
+					filter := query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						query.Confidence(primitives.Finalized),
+					}}
+					limit := query.LimitAndSort{
+						SortBy: []query.SortBy{query.NewSortBySequence(query.Asc)},
+						Limit:  query.CountLimit(2),
+					}
+
+					for idx := 0; idx < len(testStructs)/2; idx++ {
+						// sequences from queryKey without limit and sort should be in descending order
+						sequences, err := cr.QueryKey(ctx, boundContract, filter, limit, &TestStruct{})
+
+						require.NoError(t, err)
+
+						if len(sequences) == 0 {
+							continue
+						}
+
+						limit.Limit = query.CursorLimit(sequences[len(sequences)-1].Cursor, query.CursorFollowing, 2)
+						allSequences = append(allSequences, sequences...)
+					}
+
+					return len(allSequences) == len(testStructs) &&
+						reflect.DeepEqual(&testStructs[0], allSequences[0].Data) &&
+						reflect.DeepEqual(&testStructs[len(testStructs)-1], allSequences[len(testStructs)-1].Data)
+				}, tester.MaxWaitTimeForEvents(), 500*time.Millisecond)
 			},
 		},
 	}
 
-	runTests(t, tester, tests)
+	RunTests(t, tester, tests)
 }
 
 func BindingsByName(bindings []types.BoundContract, name string) []types.BoundContract {

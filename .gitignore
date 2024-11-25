@@ -19,11 +19,13 @@
 **/testdata/fuzz/*
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # IntelliJ IDE
 .idea
 
-vendor/
+# Visual Studio Code
+.vscode
 
+# Generated files
 *.wasm

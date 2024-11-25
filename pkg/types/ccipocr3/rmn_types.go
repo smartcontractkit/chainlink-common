@@ -21,7 +21,9 @@ type RMNLaneUpdate struct {
 	MerkleRoot          Bytes32
 }
 
-// // RMNECDSASignature represents the signature provided by RMN on the RMNReport structure.
+// RMNECDSASignature represents the signature provided by RMN on the RMNReport structure.
+// The V value of the signature is included in the top-level commit report as part of a
+// bitmap.
 type RMNECDSASignature struct {
 	R Bytes32 `json:"r"`
 	S Bytes32 `json:"s"`

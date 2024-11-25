@@ -2,9 +2,11 @@ package loop
 
 import (
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/assert"
@@ -121,12 +123,16 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TracingTLSCertPath:     "some/path",
 		TracingAttributes:      map[string]string{"key": "value"},
 
-		TelemetryEnabled:            true,
-		TelemetryEndpoint:           "example.com/beholder",
-		TelemetryInsecureConnection: true,
-		TelemetryCACertFile:         "foo/bar",
-		TelemetryAttributes:         OtelAttributes{"foo": "bar", "baz": "42"},
-		TelemetryTraceSampleRatio:   0.42,
+		TelemetryEnabled:               true,
+		TelemetryEndpoint:              "example.com/beholder",
+		TelemetryInsecureConnection:    true,
+		TelemetryCACertFile:            "foo/bar",
+		TelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
+		TelemetryTraceSampleRatio:      0.42,
+		TelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
+		TelemetryAuthPubKeyHex:         "pub-key-hex",
+		TelemetryEmitterBatchProcessor: true,
+		TelemetryEmitterExportTimeout:  1 * time.Second,
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -151,6 +157,39 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "0.42", got[envTelemetryTraceSampleRatio])
 	assert.Equal(t, "bar", got[envTelemetryAttribute+"foo"])
 	assert.Equal(t, "42", got[envTelemetryAttribute+"baz"])
+	assert.Equal(t, "header-value", got[envTelemetryAuthHeader+"header-key"])
+	assert.Equal(t, "pub-key-hex", got[envTelemetryAuthPubKeyHex])
+	assert.Equal(t, "true", got[envTelemetryEmitterBatchProcessor])
+	assert.Equal(t, "1s", got[envTelemetryEmitterExportTimeout])
+}
+
+func TestGetMap(t *testing.T) {
+	os.Setenv("TEST_PREFIX_KEY1", "value1")
+	os.Setenv("TEST_PREFIX_KEY2", "value2")
+	os.Setenv("OTHER_KEY", "othervalue")
+
+	defer func() {
+		os.Unsetenv("TEST_PREFIX_KEY1")
+		os.Unsetenv("TEST_PREFIX_KEY2")
+		os.Unsetenv("OTHER_KEY")
+	}()
+
+	result := getMap("TEST_PREFIX_")
+
+	expected := map[string]string{
+		"KEY1": "value1",
+		"KEY2": "value2",
+	}
+
+	if len(result) != len(expected) {
+		t.Errorf("Expected map length %d, got %d", len(expected), len(result))
+	}
+
+	for k, v := range expected {
+		if result[k] != v {
+			t.Errorf("Expected key %s to have value %s, but got %s", k, v, result[k])
+		}
+	}
 }
 
 func TestManagedGRPCClientConfig(t *testing.T) {

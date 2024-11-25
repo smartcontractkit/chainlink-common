@@ -13,15 +13,19 @@ var DeployCmd = &cobra.Command{
 		if errAlertsTags != nil {
 			return errAlertsTags
 		}
-		
-		metricsDataSource, errMetricsDataSource := grafana.GetDataSourceFromGrafana(
-			cmd.Flag("metrics-datasource").Value.String(),
-			cmd.Flag("grafana-url").Value.String(),
-			cmd.Flag("grafana-token").Value.String(),
-		)
 
-		if errMetricsDataSource != nil {
-			return errMetricsDataSource
+		var metricsDataSource *grafana.DataSource
+		if cmd.Flag("metrics-datasource").Value.String() != "" {
+			var errMetricsDataSource error
+			metricsDataSource, errMetricsDataSource = grafana.GetDataSourceFromGrafana(
+				cmd.Flag("metrics-datasource").Value.String(),
+				cmd.Flag("grafana-url").Value.String(),
+				cmd.Flag("grafana-token").Value.String(),
+			)
+
+			if errMetricsDataSource != nil {
+				return errMetricsDataSource
+			}
 		}
 
 		var logsDataSource *grafana.DataSource
@@ -47,8 +51,8 @@ var DeployCmd = &cobra.Command{
 			SlackChannel:      cmd.Flag("slack-channel").Value.String(),
 			SlackWebhookURL:   cmd.Flag("slack-webhook").Value.String(),
 			AlertsTags:        alertsTags,
+			AlertsFilters:     cmd.Flag("alerts-filters").Value.String(),
 		})
-
 		if err != nil {
 			return err
 		}
@@ -61,7 +65,7 @@ var DeployCmd = &cobra.Command{
 			NotificationTemplates: cmd.Flag("notification-templates").Value.String(),
 		})
 		if errDeploy != nil {
-			return err
+			return errDeploy
 		}
 
 		return nil
@@ -101,4 +105,5 @@ func init() {
 	DeployCmd.Flags().String("slack-channel", "", "Slack channel, required when setting up slack contact points")
 	DeployCmd.Flags().String("slack-webhook", "", "Slack webhook URL, required when setting up slack contact points")
 	DeployCmd.Flags().String("slack-token", "", "Slack token, required when setting up slack contact points and slack webhook is not provided")
+	DeployCmd.Flags().String("alerts-filters", "", "Alerts Filters applied to the queries")
 }

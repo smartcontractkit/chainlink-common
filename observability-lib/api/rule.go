@@ -53,6 +53,7 @@ func (c *Client) PostAlertRule(alertRule alerting.Rule) (PostAlertRuleResponse, 
 
 	resp, err := c.resty.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Disable-Provenance", "true").
 		SetBody(alertRule).
 		SetResult(&grafanaResp).
 		Post("/api/v1/provisioning/alert-rules")
@@ -64,6 +65,31 @@ func (c *Client) PostAlertRule(alertRule alerting.Rule) (PostAlertRuleResponse, 
 	statusCode := resp.StatusCode()
 	if statusCode != 201 {
 		return PostAlertRuleResponse{}, resp, fmt.Errorf("error creating alert rule, received unexpected status code %d: %s", statusCode, resp.String())
+	}
+
+	return grafanaResp, resp, nil
+}
+
+type UpdateAlertRuleResponse struct{}
+
+// UpdateAlertRule Update a specific alert rule by UID
+func (c *Client) UpdateAlertRule(uid string, alertRule alerting.Rule) (UpdateAlertRuleResponse, *resty.Response, error) {
+	var grafanaResp UpdateAlertRuleResponse
+
+	resp, err := c.resty.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Disable-Provenance", "true").
+		SetBody(alertRule).
+		SetResult(&grafanaResp).
+		Put(fmt.Sprintf("/api/v1/provisioning/alert-rules/%s", uid))
+
+	if err != nil {
+		return UpdateAlertRuleResponse{}, resp, fmt.Errorf("error making API request: %w", err)
+	}
+
+	statusCode := resp.StatusCode()
+	if statusCode != 200 {
+		return UpdateAlertRuleResponse{}, resp, fmt.Errorf("error updating alert rule, received unexpected status code %d: %s", statusCode, resp.String())
 	}
 
 	return grafanaResp, resp, nil

@@ -9,6 +9,7 @@ ocr:
   deviation: '0.5'
   heartbeat: 3600
   report_id: '0001'
+  key_id: 'evm'
   encoder: EVM
   encoder_config:
     Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"

@@ -2,23 +2,29 @@ run:
   timeout: 15m0s
 linters:
   enable:
+    - containedctx
+    - depguard
+    - errname
+    - errorlint
     - exhaustive
     - exportloopref
-    - revive
+    - fatcontext
+    - ginkgolinter
     - goimports
     - gosec
-    - misspell
-    - rowserrcheck
-    - errorlint
-    - unconvert
-    - sqlclosecheck
-    - noctx
-    - whitespace
-    - depguard
-    - containedctx
-    - fatcontext
-    - mirror
     - loggercheck
+    - mirror
+    - misspell
+    - noctx
+    - perfsprint
+    - prealloc
+    - revive
+    - rowserrcheck
+    - spancheck
+    - sqlclosecheck
+    - testifylint
+    - unconvert
+    - whitespace
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
@@ -49,9 +55,6 @@ linters-settings:
           - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).AssumptionViolationf
           - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Tracef
           - (github.com/smartcontractkit/chainlink-common/pkg/logger.SugaredLogger).Criticalf
-  errorlint:
-    # Allow formatting of errors without %w
-    errorf: false
   revive:
     confidence: 0.8
     rules:

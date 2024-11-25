@@ -7,7 +7,9 @@
         "aggregation_method": {
           "type": "string",
           "enum": [
-            "data_feeds"
+            "data_feeds",
+            "identical",
+            "reduce"
           ]
         },
         "aggregation_config": {
@@ -67,6 +69,21 @@
             "Underlying": {
               "items": true,
               "type": "array"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "Underlying"
+          ]
+        },
+        "encoder": {
+          "type": "string"
+        },
+        "encoder_config": {
+          "properties": {
+            "Underlying": {
+              "type": "object"
             }
           },
           "additionalProperties": false,

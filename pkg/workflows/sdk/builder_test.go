@@ -8,11 +8,15 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/anymapaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/mapaction"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/listtrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/notstreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
@@ -58,6 +62,7 @@ type ModifiedConfig struct {
 	DefaultDeviation        string        `yaml:"default_deviation" json:"default_deviation"`
 	FeedInfo                []FeedInfo    `yaml:"feed_info" json:"feed_info"`
 	ReportID                ocr3.ReportId `yaml:"report_id" json:"report_id"`
+	KeyID                   ocr3.KeyId    `yaml:"key_id" json:"key_id"`
 	Encoder                 ocr3.Encoder
 	EncoderConfig           ocr3.EncoderConfig `yaml:"encoder_config" json:"encoder_config"`
 	ChainWriter             *chainwriter.TargetConfig
@@ -83,6 +88,7 @@ func NewWorkflowRemapped(rawConfig []byte) (*sdk.WorkflowSpecFactory, error) {
 		Encoder:           conf.Encoder,
 		EncoderConfig:     conf.EncoderConfig,
 		ReportId:          conf.ReportID,
+		KeyId:             conf.KeyID,
 		AggregationConfig: ocr3.DataFeedsConsensusConfigAggregationConfig{
 			AllowedPartialStaleness: conf.AllowedPartialStaleness,
 		},
@@ -163,6 +169,7 @@ func NewWorkflowSpecFromPrimitives(rawConfig []byte) (*sdk.WorkflowSpecFactory, 
 		Encoder:           conf.Ocr.Encoder,
 		EncoderConfig:     conf.Ocr.EncoderConfig,
 		ReportId:          conf.Ocr.ReportID,
+		KeyId:             conf.Ocr.KeyID,
 	}
 
 	consensus := ocrConfig.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
@@ -259,6 +266,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 							"Abi": "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports",
 						},
 						"report_id": "0001",
+						"key_id":    "evm",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},
@@ -280,6 +288,279 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		}
 
 		testutils.AssertWorkflowSpec(t, expected, actual)
+	})
+
+	t.Run("maps work correctly", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "1", Number: 1}.New(workflow)
+		mapaction.ActionConfig{}.New(workflow, "ref", mapaction.ActionInput{Payload: sdk.Map[string, mapaction.ActionInputsPayload](map[string]sdk.CapDefinition[string]{"Foo": trigger.CoolOutput()})})
+		spec, err := workflow.Spec()
+		require.NoError(t, err)
+		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
+			Name:  "name",
+			Owner: "owner",
+			Triggers: []sdk.StepDefinition{
+				{
+					ID:     "basic-test-trigger@1.0.0",
+					Ref:    "trigger",
+					Inputs: sdk.StepInputs{},
+					Config: map[string]any{
+						"name":   "1",
+						"number": uint64(1),
+					},
+					CapabilityType: capabilities.CapabilityTypeTrigger,
+				},
+			},
+			Actions: []sdk.StepDefinition{
+				{
+					ID:  "mapaction@1.0.0",
+					Ref: "ref",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{"payload": map[string]string{"Foo": "$(trigger.outputs.cool_output)"}},
+					},
+					Config:         map[string]any{},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+			},
+			Consensus: []sdk.StepDefinition{},
+			Targets:   []sdk.StepDefinition{},
+		}, spec)
+	})
+
+	t.Run("any maps work correctly", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "1", Number: 1}.New(workflow)
+		anymapaction.MapActionConfig{}.New(workflow, "ref", anymapaction.MapActionInput{Payload: sdk.AnyMap[anymapaction.MapActionInputsPayload](sdk.CapMap{"Foo": trigger.CoolOutput()})})
+		spec, err := workflow.Spec()
+		require.NoError(t, err)
+		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
+			Name:  "name",
+			Owner: "owner",
+			Triggers: []sdk.StepDefinition{
+				{
+					ID:     "basic-test-trigger@1.0.0",
+					Ref:    "trigger",
+					Inputs: sdk.StepInputs{},
+					Config: map[string]any{
+						"name":   "1",
+						"number": uint64(1),
+					},
+					CapabilityType: capabilities.CapabilityTypeTrigger,
+				},
+			},
+			Actions: []sdk.StepDefinition{
+				{
+					ID:  "anymapaction@1.0.0",
+					Ref: "ref",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{"payload": map[string]string{"Foo": "$(trigger.outputs.cool_output)"}},
+					},
+					Config:         map[string]any{},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+			},
+			Consensus: []sdk.StepDefinition{},
+			Targets:   []sdk.StepDefinition{},
+		}, spec)
+	})
+
+	t.Run("ToListDefinition works correctly for list elements", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := listtrigger.TriggerConfig{Name: "1"}.New(workflow)
+		asList := sdk.ToListDefinition[string](trigger.CoolOutput())
+		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
+			return inputs[0], nil
+		})
+		sdk.Compute1(workflow, "compute again", sdk.Compute1Inputs[string]{Arg0: asList.Index(0)}, func(runtime sdk.Runtime, input string) (string, error) {
+			return input, nil
+		})
+
+		spec, err := workflow.Spec()
+		require.NoError(t, err)
+
+		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
+			Name:  "name",
+			Owner: "owner",
+			Triggers: []sdk.StepDefinition{
+				{
+					ID:             "list@1.0.0",
+					Ref:            "trigger",
+					Inputs:         sdk.StepInputs{},
+					Config:         map[string]any{"name": "1"},
+					CapabilityType: capabilities.CapabilityTypeTrigger,
+				},
+			},
+			Actions: []sdk.StepDefinition{
+				{
+					ID:  "custom-compute@1.0.0",
+					Ref: "compute",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{"Arg0": "$(trigger.outputs.cool_output)"},
+					},
+					Config: map[string]any{
+						"config": "$(ENV.config)",
+						"binary": "$(ENV.binary)",
+					},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+				{
+					ID:  "custom-compute@1.0.0",
+					Ref: "compute again",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{"Arg0": "$(trigger.outputs.cool_output.0)"},
+					},
+					Config: map[string]any{
+						"config": "$(ENV.config)",
+						"binary": "$(ENV.binary)",
+					},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+			},
+			Consensus: []sdk.StepDefinition{},
+			Targets:   []sdk.StepDefinition{},
+		}, spec)
+	})
+
+	t.Run("ToListDefinition works correctly for built up lists", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "1"}.New(workflow)
+		asList := sdk.ToListDefinition(sdk.ListOf(trigger.CoolOutput()))
+		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[[]string]{Arg0: asList}, func(_ sdk.Runtime, inputs []string) (string, error) {
+			return inputs[0], nil
+		})
+		sdk.Compute1(workflow, "compute again", sdk.Compute1Inputs[string]{Arg0: asList.Index(0)}, func(runtime sdk.Runtime, input string) (string, error) {
+			return input, nil
+		})
+
+		spec, err := workflow.Spec()
+		require.NoError(t, err)
+
+		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
+			Name:  "name",
+			Owner: "owner",
+			Triggers: []sdk.StepDefinition{
+				{
+					ID:             "basic-test-trigger@1.0.0",
+					Ref:            "trigger",
+					Inputs:         sdk.StepInputs{},
+					Config:         map[string]any{"name": "1", "number": uint64(0)},
+					CapabilityType: capabilities.CapabilityTypeTrigger,
+				},
+			},
+			Actions: []sdk.StepDefinition{
+				{
+					ID:  "custom-compute@1.0.0",
+					Ref: "compute",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{"Arg0": []any{"$(trigger.outputs.cool_output)"}},
+					},
+					Config: map[string]any{
+						"config": "$(ENV.config)",
+						"binary": "$(ENV.binary)",
+					},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+				{
+					ID:  "custom-compute@1.0.0",
+					Ref: "compute again",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{"Arg0": "$(trigger.outputs.cool_output)"},
+					},
+					Config: map[string]any{
+						"config": "$(ENV.config)",
+						"binary": "$(ENV.binary)",
+					},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+			},
+			Consensus: []sdk.StepDefinition{},
+			Targets:   []sdk.StepDefinition{},
+		}, spec)
+	})
+
+	t.Run("ToListDefinition works correctly for hard-coded lists", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "1"}.New(workflow)
+		list := sdk.ToListDefinition(sdk.ConstantDefinition([]string{"1", "2"}))
+		sdk.Compute2(workflow, "compute", sdk.Compute2Inputs[string, []string]{Arg0: trigger.CoolOutput(), Arg1: list}, func(_ sdk.Runtime, t string, l []string) (string, error) {
+			return "", nil
+		})
+		sdk.Compute2(workflow, "compute again", sdk.Compute2Inputs[string, string]{Arg0: trigger.CoolOutput(), Arg1: list.Index(0)}, func(_ sdk.Runtime, t string, l string) (string, error) {
+			return "", nil
+		})
+
+		spec, err := workflow.Spec()
+		require.NoError(t, err)
+
+		testutils.AssertWorkflowSpec(t, sdk.WorkflowSpec{
+			Name:  "name",
+			Owner: "owner",
+			Triggers: []sdk.StepDefinition{
+				{
+					ID:             "basic-test-trigger@1.0.0",
+					Ref:            "trigger",
+					Inputs:         sdk.StepInputs{},
+					Config:         map[string]any{"name": "1", "number": uint64(0)},
+					CapabilityType: capabilities.CapabilityTypeTrigger,
+				},
+			},
+			Actions: []sdk.StepDefinition{
+				{
+					ID:  "custom-compute@1.0.0",
+					Ref: "compute",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{
+							"Arg0": "$(trigger.outputs.cool_output)",
+							"Arg1": []string{"1", "2"},
+						},
+					},
+					Config: map[string]any{
+						"config": "$(ENV.config)",
+						"binary": "$(ENV.binary)",
+					},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+				{
+					ID:  "custom-compute@1.0.0",
+					Ref: "compute again",
+					Inputs: sdk.StepInputs{
+						Mapping: map[string]any{
+							"Arg0": "$(trigger.outputs.cool_output)",
+							"Arg1": "1",
+						},
+					},
+					Config: map[string]any{
+						"config": "$(ENV.config)",
+						"binary": "$(ENV.binary)",
+					},
+					CapabilityType: capabilities.CapabilityTypeAction,
+				},
+			},
+			Consensus: []sdk.StepDefinition{},
+			Targets:   []sdk.StepDefinition{},
+		}, spec)
+	})
+
+	t.Run("AnyListOf works like list of but returns a type any", func(t *testing.T) {
+		workflow1 := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 0}
+		list := sdk.ListOf(trigger.New(workflow1).CoolOutput())
+		sdk.Compute1(workflow1, "compute", sdk.Compute1Inputs[[]string]{Arg0: list}, func(_ sdk.Runtime, inputs []string) (string, error) {
+			return inputs[0], nil
+		})
+
+		workflow2 := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		anyList := sdk.AnyListOf(trigger.New(workflow2).CoolOutput())
+		sdk.Compute1(workflow2, "compute", sdk.Compute1Inputs[[]any]{Arg0: anyList}, func(_ sdk.Runtime, inputs []any) (any, error) {
+			return inputs[0], nil
+		})
+
+		spec1, err := workflow1.Spec()
+		require.NoError(t, err)
+		spec2, err := workflow2.Spec()
+		require.NoError(t, err)
+
+		testutils.AssertWorkflowSpec(t, spec1, spec2)
 	})
 
 	t.Run("duplicate names causes errors", func(t *testing.T) {
@@ -399,6 +680,7 @@ type ModifiedConsensusConfig struct {
 	Encoder                 ocr3.Encoder                                   `json:"encoder" yaml:"encoder" mapstructure:"encoder"`
 	EncoderConfig           ocr3.EncoderConfig                             `json:"encoder_config" yaml:"encoder_config" mapstructure:"encoder_config"`
 	ReportID                ocr3.ReportId                                  `json:"report_id" yaml:"report_id" mapstructure:"report_id"`
+	KeyID                   ocr3.KeyId                                     `json:"key_id" yaml:"key_id" mapstructure:"key_id"`
 }
 
 func UnmarshalYaml[T any](raw []byte) (*T, error) {

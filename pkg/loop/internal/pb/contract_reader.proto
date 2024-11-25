@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 
 service ContractReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc GetLatestValueWithHeadData (GetLatestValueRequest) returns (GetLatestValueWithHeadDataReply) {}
   rpc BatchGetLatestValues (BatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
   rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
@@ -49,6 +50,13 @@ message UnbindRequest {
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
   VersionedBytes ret_val = 1;
+}
+
+
+// GetLatestValueWithHeadDataReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithHeadData].
+message GetLatestValueWithHeadDataReply {
+  VersionedBytes ret_val = 1;
+  Head head_data = 2;
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].

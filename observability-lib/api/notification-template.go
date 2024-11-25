@@ -30,3 +30,24 @@ func (c *Client) PutNotificationTemplate(notificationTemplate alerting.Notificat
 
 	return grafanaResp, resp, nil
 }
+
+type DeleteNotificationTemplateResponse struct{}
+
+func (c *Client) DeleteNotificationTemplate(name string) (DeleteNotificationTemplateResponse, *resty.Response, error) {
+	var grafanaResp DeleteNotificationTemplateResponse
+
+	resp, err := c.resty.R().
+		SetResult(&grafanaResp).
+		Delete(fmt.Sprintf("/api/v1/provisioning/templates/%s", name))
+
+	if err != nil {
+		return DeleteNotificationTemplateResponse{}, resp, fmt.Errorf("error making API request: %w", err)
+	}
+
+	statusCode := resp.StatusCode()
+	if statusCode != 200 {
+		return DeleteNotificationTemplateResponse{}, resp, fmt.Errorf("error deleting notification template, received unexpected status code %d: %s", statusCode, resp.String())
+	}
+
+	return grafanaResp, resp, nil
+}

@@ -1,7 +1,9 @@
 package sdk
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -14,6 +16,7 @@ type WorkflowSpecFactory struct {
 	duplicateNames map[string]bool
 	emptyNames     bool
 	badCapTypes    []string
+	errors         []error
 	fns            map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
 }
 
@@ -22,8 +25,13 @@ func (w *WorkflowSpecFactory) GetFn(name string) func(sdk Runtime, request capab
 }
 
 type CapDefinition[O any] interface {
-	Ref() any
+	capDefinition
 	self() CapDefinition[O]
+}
+
+type capDefinition interface {
+	Ref() any
+	private()
 }
 
 type CapListDefinition[O any] interface {
@@ -39,13 +47,23 @@ func ListOf[O any](capabilities ...CapDefinition[O]) CapListDefinition[O] {
 	return &impl
 }
 
+func AnyListOf(capabilities ...capDefinition) CapListDefinition[any] {
+	impl := multiCapList[any]{refs: make([]any, len(capabilities))}
+	for i, c := range capabilities {
+		impl.refs[i] = c.Ref()
+	}
+	return &impl
+}
+
 func ConstantDefinition[O any](o O) CapDefinition[O] {
 	return &capDefinitionImpl[O]{ref: o}
 }
 
-// ToListDefinition TODO think if this is actually broken, what if the definitions were built up, would this still work?
-// also what about hard-coded?
 func ToListDefinition[O any](c CapDefinition[[]O]) CapListDefinition[O] {
+	if list, ok := c.(CapListDefinition[O]); ok {
+		return list
+	}
+
 	return &singleCapList[O]{CapDefinition: c}
 }
 
@@ -61,6 +79,8 @@ func (c *multiCapList[O]) Ref() any {
 	return c.refs
 }
 
+func (c *multiCapList[O]) private() {}
+
 // self is required to implement CapDefinition, complication fails without it, false positive.
 // nolint
 func (c *multiCapList[O]) self() CapDefinition[[]O] {
@@ -72,7 +92,17 @@ type singleCapList[O any] struct {
 }
 
 func (s singleCapList[O]) Index(i int) CapDefinition[O] {
-	return &capDefinitionImpl[O]{ref: s.CapDefinition.Ref().(string) + "." + strconv.FormatInt(int64(i), 10)}
+	listRef, ok := s.CapDefinition.Ref().(string)
+
+	// There are two cases to indexing:
+	// It's a ref, in which case we just want to index the ref, i.e. ref -> ref.i
+	// It's a hardcoded list, in which case we get the nth element.
+	if !ok {
+		return &capDefinitionImpl[O]{ref: reflect.ValueOf(s.CapDefinition.Ref()).Index(i).Interface()}
+	}
+
+	listRef = listRef[:len(listRef)-1]
+	return &capDefinitionImpl[O]{ref: listRef + "." + strconv.FormatInt(int64(i), 10) + ")"}
 }
 
 type Step[O any] struct {
@@ -93,6 +123,8 @@ func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 	return c
 }
 
+func (c *capDefinitionImpl[O]) private() {}
+
 type NewWorkflowParams struct {
 	Owner string
 	Name  string
@@ -112,6 +144,7 @@ func NewWorkflowSpecFactory(
 		},
 		names:          map[string]bool{},
 		duplicateNames: map[string]bool{},
+		errors:         []error{},
 		emptyNames:     false,
 	}
 }
@@ -152,7 +185,15 @@ func AccessField[I, O any](c CapDefinition[I], fieldName string) CapDefinition[O
 	return &capDefinitionImpl[O]{ref: originalRef[:len(originalRef)-1] + "." + fieldName + ")"}
 }
 
+func (w *WorkflowSpecFactory) AddErr(err error) {
+	w.errors = append(w.errors, err)
+}
+
 func (w *WorkflowSpecFactory) Spec() (WorkflowSpec, error) {
+	if len(w.errors) > 0 {
+		return WorkflowSpec{}, errors.Join(w.errors...)
+	}
+
 	if len(w.duplicateNames) > 0 {
 		duplicates := make([]string, 0, len(w.duplicateNames))
 		for k := range w.duplicateNames {
@@ -183,4 +224,48 @@ func (c ComponentCapDefinition[O]) Ref() any {
 // nolint
 func (c ComponentCapDefinition[O]) self() CapDefinition[O] {
 	return c
+}
+
+func (c ComponentCapDefinition[O]) private() {}
+
+func Map[T any, M ~map[string]T](input map[string]CapDefinition[T]) CapDefinition[M] {
+	components := &ComponentCapDefinition[M]{}
+
+	for k, v := range input {
+		(*components)[k] = v.Ref()
+	}
+
+	return components
+}
+
+type CapMap map[string]capDefinition
+
+func AnyMap[M ~map[string]any](inputs CapMap) CapDefinition[M] {
+	components := &ComponentCapDefinition[M]{}
+
+	for k, v := range inputs {
+		(*components)[k] = v.Ref()
+	}
+
+	return components
+}
+
+type SecretValue string
+
+func (s SecretValue) Ref() any {
+	return s
+}
+
+func (s SecretValue) private() {}
+
+func (s SecretValue) self() CapDefinition[string] {
+	return s
+}
+
+func Secrets() SecretValue {
+	return "$(ENV.secrets)"
+}
+
+func Secret(named string) SecretValue {
+	return SecretValue(fmt.Sprintf("$(ENV.secrets.%s)", named))
 }

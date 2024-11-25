@@ -8,8 +8,10 @@ import (
 )
 
 type Request struct {
-	Observations *values.List `mapstructure:"-"`
-	ExpiresAt    time.Time
+	Observations            *values.List `mapstructure:"-"`
+	OverriddenEncoderName   string
+	OverriddenEncoderConfig *values.Map
+	ExpiresAt               time.Time
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
@@ -29,9 +31,11 @@ type Request struct {
 
 func (r *Request) Copy() *Request {
 	return &Request{
-		Observations: r.Observations.CopyList(),
+		Observations:            r.Observations.CopyList(),
+		OverriddenEncoderConfig: r.OverriddenEncoderConfig.CopyMap(),
 
 		// No need to copy these, they're value types.
+		OverriddenEncoderName:    r.OverriddenEncoderName,
 		ExpiresAt:                r.ExpiresAt,
 		WorkflowExecutionID:      r.WorkflowExecutionID,
 		WorkflowID:               r.WorkflowID,

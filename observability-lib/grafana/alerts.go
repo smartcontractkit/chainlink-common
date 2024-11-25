@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
+	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/expr"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 )
@@ -62,61 +63,45 @@ type ResampleExpression struct {
 
 type ThresholdExpression struct {
 	Expression                 string
-	ThresholdConditionsOptions []ThresholdConditionsOption
+	ThresholdConditionsOptions ThresholdConditionsOption
 }
+
+type TypeThresholdType string
+
+const (
+	TypeThresholdTypeGt           TypeThresholdType = "gt"
+	TypeThresholdTypeLt           TypeThresholdType = "lt"
+	TypeThresholdTypeWithinRange  TypeThresholdType = "within_range"
+	TypeThresholdTypeOutsideRange TypeThresholdType = "outside_range"
+)
 
 type ThresholdConditionsOption struct {
 	Params []float64
-	Type   expr.TypeThresholdType
+	Type   TypeThresholdType
 }
 
-func newThresholdConditionsOptions(options []ThresholdConditionsOption) []struct {
-	Evaluator struct {
-		Params []float64              `json:"params"`
-		Type   expr.TypeThresholdType `json:"type"`
-	} `json:"evaluator"`
-	LoadedDimensions any `json:"loadedDimensions,omitempty"`
-	UnloadEvaluator  *struct {
-		Params []float64              `json:"params"`
-		Type   expr.TypeThresholdType `json:"type"`
-	} `json:"unloadEvaluator,omitempty"`
-} {
-	var conditions []struct {
-		Evaluator struct {
-			Params []float64              `json:"params"`
-			Type   expr.TypeThresholdType `json:"type"`
-		} `json:"evaluator"`
-		LoadedDimensions any `json:"loadedDimensions,omitempty"`
-		UnloadEvaluator  *struct {
-			Params []float64              `json:"params"`
-			Type   expr.TypeThresholdType `json:"type"`
-		} `json:"unloadEvaluator,omitempty"`
+func newThresholdConditionsOptions(options ThresholdConditionsOption) []cog.Builder[expr.ExprTypeThresholdConditions] {
+	var conditions []cog.Builder[expr.ExprTypeThresholdConditions]
+
+	var params []float64
+	params = append(params, options.Params...)
+
+	if len(options.Params) == 1 {
+		params = append(params, 0)
 	}
-	for _, option := range options {
-		conditions = append(conditions, struct {
-			Evaluator struct {
-				Params []float64              `json:"params"`
-				Type   expr.TypeThresholdType `json:"type"`
-			} `json:"evaluator"`
-			LoadedDimensions any `json:"loadedDimensions,omitempty"`
-			UnloadEvaluator  *struct {
-				Params []float64              `json:"params"`
-				Type   expr.TypeThresholdType `json:"type"`
-			} `json:"unloadEvaluator,omitempty"`
-		}{
-			Evaluator: struct {
-				Params []float64              `json:"params"`
-				Type   expr.TypeThresholdType `json:"type"`
-			}{
-				Params: option.Params,
-				Type:   option.Type,
-			},
-		})
-	}
+
+	conditions = append(conditions, expr.NewExprTypeThresholdConditionsBuilder().
+		Evaluator(
+			expr.NewExprTypeThresholdConditionsEvaluatorBuilder().
+				Params(params).
+				Type(expr.TypeThresholdType(options.Type)),
+		),
+	)
+
 	return conditions
 }
 
-func newConditionQuery(options *ConditionQuery) *alerting.QueryBuilder {
+func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 	if options.IntervalMs == nil {
 		options.IntervalMs = Pointer[float64](1000)
 	}
@@ -173,17 +158,18 @@ func newConditionQuery(options *ConditionQuery) *alerting.QueryBuilder {
 }
 
 type AlertOptions struct {
-	Name             string
-	Datasource       string
-	Summary          string
-	Description      string
-	RunbookURL       string
-	For              string
-	NoDataState      alerting.RuleNoDataState
-	RuleExecErrState alerting.RuleExecErrState
-	Tags             map[string]string
-	Query            []RuleQuery
-	Condition        *ConditionQuery
+	Title             string
+	Summary           string
+	Description       string
+	RunbookURL        string
+	For               string
+	NoDataState       alerting.RuleNoDataState
+	RuleExecErrState  alerting.RuleExecErrState
+	Tags              map[string]string
+	Query             []RuleQuery
+	QueryRefCondition string
+	Condition         []ConditionQuery
+	PanelTitle        string
 }
 
 func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
@@ -199,23 +185,35 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 		options.RuleExecErrState = alerting.RuleExecErrStateAlerting
 	}
 
-	rule := alerting.NewRuleBuilder(options.Name).
+	if options.QueryRefCondition == "" {
+		options.QueryRefCondition = "A"
+	}
+
+	annotations := map[string]string{
+		"summary":     options.Summary,
+		"description": options.Description,
+		"runbook_url": options.RunbookURL,
+	}
+
+	if options.PanelTitle != "" {
+		annotations["panel_title"] = options.PanelTitle
+	}
+
+	rule := alerting.NewRuleBuilder(options.Title).
 		For(options.For).
-		Condition(options.Condition.RefID).
 		NoDataState(options.NoDataState).
 		ExecErrState(options.RuleExecErrState).
-		Annotations(map[string]string{
-			"summary":     options.Summary,
-			"description": options.Description,
-			"runbook_url": options.RunbookURL,
-		}).
+		Condition(options.QueryRefCondition).
+		Annotations(annotations).
 		Labels(options.Tags)
 
 	for _, query := range options.Query {
 		rule.WithQuery(newRuleQuery(query))
 	}
 
-	rule.WithQuery(newConditionQuery(options.Condition))
+	for _, condition := range options.Condition {
+		rule.WithQuery(newConditionQuery(condition))
+	}
 
 	return rule
 }

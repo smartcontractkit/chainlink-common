@@ -31,3 +31,10 @@ type RMNCrypto interface {
 		signerAddresses []Bytes,
 	) error
 }
+
+// TokenDataEncoder is a generic interface for encoding offchain token data for different chain families.
+// Right now it supports only USDC/CCTP, but every new token that requires offchain data processsing
+// should be added to that interface and implemented in the downstream repositories (e.g. chainlink-ccip, chainlink).
+type TokenDataEncoder interface {
+	EncodeUSDC(ctx context.Context, message Bytes, attestation Bytes) (Bytes, error)
+}

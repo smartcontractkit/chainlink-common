@@ -21,7 +21,8 @@ var _ ocr3rp.ProviderServer[commontypes.PluginProvider] = (*Capability)(nil)
 type Capability struct {
 	loop.Plugin
 	reportingplugins.PluginProviderServer
-	config Config
+	config             Config
+	capabilityRegistry core.CapabilitiesRegistry
 }
 
 type Config struct {
@@ -91,7 +92,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
 	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
-	factory, err := newFactory(o.config.store, o.config.capability, &capabilityRegistry, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
+	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +102,8 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 		return nil, err
 	}
 
+	o.capabilityRegistry = capabilityRegistry
+
 	return factory, err
 }
 
@@ -108,4 +111,18 @@ func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationS
 	s := &validationService{lggr: o.Logger}
 	o.SubService(s)
 	return s, nil
+}
+
+func (o *Capability) Close() error {
+	o.Plugin.Close()
+
+	if o.capabilityRegistry == nil {
+		return nil
+	}
+
+	if err := o.capabilityRegistry.Remove(context.TODO(), o.config.capability); err != nil {
+		return err
+	}
+
+	return nil
 }

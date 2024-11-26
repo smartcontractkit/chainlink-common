@@ -264,9 +264,7 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 	return nil
 }
 
-func (cr *capabilitiesRegistryClient) Remove(c capabilities.BaseCapability) error {
-	ctx := context.TODO()
-
+func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, c capabilities.BaseCapability) error {
 	info, err := c.Info(ctx)
 	if err != nil {
 		return err
@@ -575,7 +573,7 @@ func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *pb.Rem
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
 
-	err = c.impl.Remove(client)
+	err = c.impl.Remove(ctx, client)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}

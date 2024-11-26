@@ -537,17 +537,17 @@ func (_c *CapabilitiesRegistry_LocalNode_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// Remove provides a mock function with given fields: c
-func (_m *CapabilitiesRegistry) Remove(c capabilities.BaseCapability) error {
-	ret := _m.Called(c)
+// Remove provides a mock function with given fields: ctx, c
+func (_m *CapabilitiesRegistry) Remove(ctx context.Context, c capabilities.BaseCapability) error {
+	ret := _m.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Remove")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(capabilities.BaseCapability) error); ok {
-		r0 = rf(c)
+	if rf, ok := ret.Get(0).(func(context.Context, capabilities.BaseCapability) error); ok {
+		r0 = rf(ctx, c)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -561,14 +561,15 @@ type CapabilitiesRegistry_Remove_Call struct {
 }
 
 // Remove is a helper method to define mock.On call
+//   - ctx context.Context
 //   - c capabilities.BaseCapability
-func (_e *CapabilitiesRegistry_Expecter) Remove(c interface{}) *CapabilitiesRegistry_Remove_Call {
-	return &CapabilitiesRegistry_Remove_Call{Call: _e.mock.On("Remove", c)}
+func (_e *CapabilitiesRegistry_Expecter) Remove(ctx interface{}, c interface{}) *CapabilitiesRegistry_Remove_Call {
+	return &CapabilitiesRegistry_Remove_Call{Call: _e.mock.On("Remove", ctx, c)}
 }
 
-func (_c *CapabilitiesRegistry_Remove_Call) Run(run func(c capabilities.BaseCapability)) *CapabilitiesRegistry_Remove_Call {
+func (_c *CapabilitiesRegistry_Remove_Call) Run(run func(ctx context.Context, c capabilities.BaseCapability)) *CapabilitiesRegistry_Remove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(capabilities.BaseCapability))
+		run(args[0].(context.Context), args[1].(capabilities.BaseCapability))
 	})
 	return _c
 }
@@ -578,7 +579,7 @@ func (_c *CapabilitiesRegistry_Remove_Call) Return(_a0 error) *CapabilitiesRegis
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_Remove_Call) RunAndReturn(run func(capabilities.BaseCapability) error) *CapabilitiesRegistry_Remove_Call {
+func (_c *CapabilitiesRegistry_Remove_Call) RunAndReturn(run func(context.Context, capabilities.BaseCapability) error) *CapabilitiesRegistry_Remove_Call {
 	_c.Call.Return(run)
 	return _c
 }

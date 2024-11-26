@@ -6,7 +6,6 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -15,7 +14,6 @@ import (
 type factory struct {
 	store                   *requests.Store
 	capability              *capability
-	capabilityRegistry      *core.CapabilitiesRegistry
 	batchSize               int
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
@@ -28,11 +26,10 @@ const (
 	defaultMaxReportCount      = 20
 )
 
-func newFactory(s *requests.Store, c *capability, cr *core.CapabilitiesRegistry, batchSize int, outcomePruningThreshold uint64, lggr logger.Logger) (*factory, error) {
+func newFactory(s *requests.Store, c *capability, batchSize int, outcomePruningThreshold uint64, lggr logger.Logger) (*factory, error) {
 	return &factory{
 		store:                   s,
 		capability:              c,
-		capabilityRegistry:      cr,
 		batchSize:               batchSize,
 		outcomePruningThreshold: outcomePruningThreshold,
 		lggr:                    logger.Named(lggr, "OCR3ReportingPluginFactory"),
@@ -62,11 +59,6 @@ func (o *factory) Start(ctx context.Context) error {
 
 func (o *factory) Close() error {
 	return o.StopOnce("OCR3ReportingPlugin", func() error {
-		err := (*o.capabilityRegistry).Remove(o.capability)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	})
 }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732625905761,
+  "lastUpdate": 1732650274323,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7266,6 +7266,48 @@ window.BENCHMARK_DATA = {
             "value": 28275,
             "unit": "ns/op",
             "extra": "42511 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1a1df2cf0f6139543868c44b910ec857b454c826",
+          "message": "bump golangci-lint 1.62.2 (#954)",
+          "timestamp": "2024-11-26T13:43:35-06:00",
+          "tree_id": "5c9fa18f557916893a9655cd4c0dbfd1de4068e3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1a1df2cf0f6139543868c44b910ec857b454c826"
+        },
+        "date": 1732650273685,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 454.8,
+            "unit": "ns/op",
+            "extra": "2686425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.9,
+            "unit": "ns/op",
+            "extra": "2263554 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28379,
+            "unit": "ns/op",
+            "extra": "42375 times\n4 procs"
           }
         ]
       }

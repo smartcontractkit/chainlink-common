@@ -24,7 +24,7 @@ const (
 	RelayerSet_List_FullMethodName                = "/loop.relayerset.RelayerSet/List"
 	RelayerSet_NewPluginProvider_FullMethodName   = "/loop.relayerset.RelayerSet/NewPluginProvider"
 	RelayerSet_NewContractReader_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractReader"
-	RelayerSet_NewChainWriter_FullMethodName      = "/loop.relayerset.RelayerSet/NewChainWriter"
+	RelayerSet_NewContractWriter_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractWriter"
 	RelayerSet_StartRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/StartRelayer"
 	RelayerSet_CloseRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/CloseRelayer"
 	RelayerSet_RelayerReady_FullMethodName        = "/loop.relayerset.RelayerSet/RelayerReady"
@@ -41,7 +41,7 @@ type RelayerSetClient interface {
 	List(ctx context.Context, in *ListAllRelayersRequest, opts ...grpc.CallOption) (*ListAllRelayersResponse, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderResponse, error)
-	NewChainWriter(ctx context.Context, in *NewChainWriterRequest, opts ...grpc.CallOption) (*NewChainWriterResponse, error)
+	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterResponse, error)
 	StartRelayer(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CloseRelayer(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RelayerReady(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -94,9 +94,9 @@ func (c *relayerSetClient) NewContractReader(ctx context.Context, in *NewContrac
 	return out, nil
 }
 
-func (c *relayerSetClient) NewChainWriter(ctx context.Context, in *NewChainWriterRequest, opts ...grpc.CallOption) (*NewChainWriterResponse, error) {
-	out := new(NewChainWriterResponse)
-	err := c.cc.Invoke(ctx, RelayerSet_NewChainWriter_FullMethodName, in, out, opts...)
+func (c *relayerSetClient) NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterResponse, error) {
+	out := new(NewContractWriterResponse)
+	err := c.cc.Invoke(ctx, RelayerSet_NewContractWriter_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ type RelayerSetServer interface {
 	List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error)
-	NewChainWriter(context.Context, *NewChainWriterRequest) (*NewChainWriterResponse, error)
+	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterResponse, error)
 	StartRelayer(context.Context, *RelayerId) (*emptypb.Empty, error)
 	CloseRelayer(context.Context, *RelayerId) (*emptypb.Empty, error)
 	RelayerReady(context.Context, *RelayerId) (*emptypb.Empty, error)
@@ -191,8 +191,8 @@ func (UnimplementedRelayerSetServer) NewPluginProvider(context.Context, *NewPlug
 func (UnimplementedRelayerSetServer) NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
 }
-func (UnimplementedRelayerSetServer) NewChainWriter(context.Context, *NewChainWriterRequest) (*NewChainWriterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewChainWriter not implemented")
+func (UnimplementedRelayerSetServer) NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
 }
 func (UnimplementedRelayerSetServer) StartRelayer(context.Context, *RelayerId) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartRelayer not implemented")
@@ -297,20 +297,20 @@ func _RelayerSet_NewContractReader_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RelayerSet_NewChainWriter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewChainWriterRequest)
+func _RelayerSet_NewContractWriter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewContractWriterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RelayerSetServer).NewChainWriter(ctx, in)
+		return srv.(RelayerSetServer).NewContractWriter(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RelayerSet_NewChainWriter_FullMethodName,
+		FullMethod: RelayerSet_NewContractWriter_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelayerSetServer).NewChainWriter(ctx, req.(*NewChainWriterRequest))
+		return srv.(RelayerSetServer).NewContractWriter(ctx, req.(*NewContractWriterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -447,8 +447,8 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RelayerSet_NewContractReader_Handler,
 		},
 		{
-			MethodName: "NewChainWriter",
-			Handler:    _RelayerSet_NewChainWriter_Handler,
+			MethodName: "NewContractWriter",
+			Handler:    _RelayerSet_NewContractWriter_Handler,
 		},
 		{
 			MethodName: "StartRelayer",

@@ -17,8 +17,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
@@ -195,15 +195,15 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
-	cwc := r.NewClientConn("ChainWriter", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewChainWriter(ctx, &pb.NewChainWriterRequest{ChainWriterConfig: chainWriterConfig})
+func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
+	cwc := r.NewClientConn("ContractWriter", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewContractWriter(ctx, &pb.NewContractWriterRequest{ContractWriterConfig: contractWriterConfig})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.ChainWriterID, nil, nil
+		return reply.ContractWriterID, nil, nil
 	})
-	return chainwriter.NewClient(r.WithName("ChainWriterClient"), cwc), nil
+	return contractwriter.NewClient(r.WithName("ContractWriterClient"), cwc), nil
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
@@ -377,8 +377,8 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
-func (r *relayerServer) NewChainWriter(ctx context.Context, request *pb.NewChainWriterRequest) (*pb.NewChainWriterReply, error) {
-	cw, err := r.impl.NewChainWriter(ctx, request.GetChainWriterConfig())
+func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {
+	cw, err := r.impl.NewContractWriter(ctx, request.GetContractWriterConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -387,15 +387,15 @@ func (r *relayerServer) NewChainWriter(ctx context.Context, request *pb.NewChain
 		return nil, err
 	}
 
-	const name = "ChainWriter"
+	const name = "ContractWriter"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chainwriter.RegisterChainWriterService(s, cw)
+		contractwriter.RegisterContractWriterService(s, cw)
 	}, net.Resource{Closer: cw, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.NewChainWriterReply{ChainWriterID: id}, nil
+	return &pb.NewContractWriterReply{ContractWriterID: id}, nil
 }
 
 func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewContractReaderRequest) (*pb.NewContractReaderReply, error) {

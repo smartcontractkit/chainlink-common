@@ -106,6 +106,7 @@ func (h *Handler) worker(ctx context.Context) {
 		case <-responseCacheExpiryTicker.Chan():
 			h.expireCachedResponses()
 		case req := <-h.requestCh:
+			h.lggr.Debug("worker received request", "workflowExecutionID", req.WorkflowExecutionID)
 			h.pendingRequests[req.WorkflowExecutionID] = req
 
 			existingResponse := h.responseCache[req.WorkflowExecutionID]
@@ -116,6 +117,7 @@ func (h *Handler) worker(ctx context.Context) {
 				continue
 			}
 
+			h.lggr.Debug("worker adding request to store", "workflowExecutionID", req.WorkflowExecutionID)
 			if err := h.store.Add(req); err != nil {
 				h.lggr.Errorw("failed to add request to store", "err", err)
 			}

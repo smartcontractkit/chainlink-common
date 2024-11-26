@@ -261,6 +261,7 @@ func (o *capability) queueRequestForProcessing(
 	i *inputs,
 	c *config,
 ) (<-chan requests.Response, error) {
+	o.lggr.Debugw("queing to store")
 	callbackCh := make(chan requests.Response, o.callbackChannelBufferSize)
 
 	// Use the capability-level request timeout unless the request's config specifies
@@ -291,5 +292,6 @@ func (o *capability) queueRequestForProcessing(
 	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
 
 	o.reqHandler.SendRequest(ctx, r)
+	o.lggr.Debugw("added to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
 	return callbackCh, nil
 }

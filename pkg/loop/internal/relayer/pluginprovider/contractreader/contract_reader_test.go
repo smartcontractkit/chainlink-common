@@ -299,7 +299,7 @@ type fakeContractReaderInterfaceTester struct {
 	interfaceTesterBase
 	TestSelectionSupport
 	impl types.ContractReader
-	cw   fakeChainWriter
+	cw   fakeContractWriter
 }
 
 func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
@@ -315,7 +315,7 @@ func (it *fakeContractReaderInterfaceTester) GetContractReader(_ *testing.T) typ
 	return it.impl
 }
 
-func (it *fakeContractReaderInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
+func (it *fakeContractReaderInterfaceTester) GetContractWriter(_ *testing.T) types.ContractWriter {
 	it.cw.cr = it.impl.(*fakeContractReader)
 	return &it.cw
 }
@@ -361,12 +361,12 @@ type fakeContractReader struct {
 	lock        sync.Mutex
 }
 
-type fakeChainWriter struct {
-	types.ChainWriter
+type fakeContractWriter struct {
+	types.ContractWriter
 	cr *fakeContractReader
 }
 
-func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+func (f *fakeContractWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
 	contractID := toAddress + "-" + contractName
 	switch method {
 	case MethodSettingStruct:
@@ -387,7 +387,7 @@ func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, met
 			return fmt.Errorf("unexpected type %T", args)
 		}
 		f.cr.SetTrigger(contractID, &v)
-	case "batchChainWrite":
+	case "batchContractWrite":
 		v, ok := args.(BatchCallEntry)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
@@ -400,11 +400,11 @@ func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, met
 	return nil
 }
 
-func (f *fakeChainWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+func (f *fakeContractWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
 	return types.Finalized, nil
 }
 
-func (f *fakeChainWriter) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
+func (f *fakeContractWriter) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
 	return &types.ChainFeeComponents{}, nil
 }
 

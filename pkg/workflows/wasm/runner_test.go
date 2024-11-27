@@ -87,12 +87,7 @@ func Test_Runner_Config(t *testing.T) {
 }
 
 func TestRunner_Run_ExecuteCompute(t *testing.T) {
-	workflow := sdk.NewWorkflowSpecFactory(
-		sdk.NewWorkflowParams{
-			Name:  "tester",
-			Owner: "cedric",
-		},
-	)
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	computeFn := func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
@@ -157,12 +152,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 }
 
 func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
-	workflow := sdk.NewWorkflowSpecFactory(
-		sdk.NewWorkflowParams{
-			Name:  "tester",
-			Owner: "cedric",
-		},
-	)
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	// Define and add a target to the workflow

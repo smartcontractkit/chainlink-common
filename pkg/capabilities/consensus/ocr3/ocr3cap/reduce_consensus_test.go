@@ -16,10 +16,7 @@ import (
 
 func TestReduceConsensus(t *testing.T) {
 	t.Parallel()
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "0x1234",
-		Name:  "Test",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := basictrigger.TriggerConfig{Name: "1234", Number: 1}.New(workflow)
 
@@ -73,8 +70,6 @@ func TestReduceConsensus(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := sdk.WorkflowSpec{
-		Name:  "Test",
-		Owner: "0x1234",
 		Triggers: []sdk.StepDefinition{
 			{
 				ID:     "basic-test-trigger@1.0.0",

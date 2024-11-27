@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732650274323,
+  "lastUpdate": 1732719611013,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7308,6 +7308,48 @@ window.BENCHMARK_DATA = {
             "value": 28379,
             "unit": "ns/op",
             "extra": "42375 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "15b3598dc146c282c6c8dd0330c44ffceb42a3b4",
+          "message": "feat(observability-lib): can create standalone alerts with alert group (#950)",
+          "timestamp": "2024-11-27T15:59:10+01:00",
+          "tree_id": "60dcf3fb2f8c6154c3555eb39e3361608366512b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/15b3598dc146c282c6c8dd0330c44ffceb42a3b4"
+        },
+        "date": 1732719610428,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 468.4,
+            "unit": "ns/op",
+            "extra": "2704198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 493.5,
+            "unit": "ns/op",
+            "extra": "2423229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28005,
+            "unit": "ns/op",
+            "extra": "41948 times\n4 procs"
           }
         ]
       }

@@ -322,7 +322,7 @@ func CreateMapFromStruct(v any) (*Map, error) {
 		msTag := field.Tag.Get("mapstructure")
 		key := msTag
 		if key == "" {
-			key = rv.Type().Field(i).Name
+			key = field.Name
 		}
 
 		resultMap[key] = rv.Field(i).Interface()

@@ -1,8 +1,6 @@
 module github.com/smartcontractkit/chainlink-common
 
-go 1.22.0
-
-toolchain go1.22.7
+go 1.23.3
 
 require (
 	github.com/andybalholm/brotli v1.1.0
@@ -19,7 +17,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/hashicorp/consul/sdk v0.16.0
 	github.com/hashicorp/go-hclog v1.5.0
-	github.com/hashicorp/go-plugin v1.6.2-0.20240829161738-06afb6d7ae99
+	github.com/hashicorp/go-plugin v1.6.2
 	github.com/iancoleman/strcase v0.3.0
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jmoiron/sqlx v1.4.0

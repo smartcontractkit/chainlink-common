@@ -12,6 +12,7 @@ type ReduceConsensusConfig[T any] struct {
 	Encoder           Encoder
 	EncoderConfig     EncoderConfig
 	ReportID          ReportId
+	KeyID             KeyId
 	AggregationConfig aggregators.ReduceAggConfig
 }
 
@@ -26,6 +27,7 @@ func (c ReduceConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string, in
 			"encoder":            c.Encoder,
 			"encoder_config":     c.EncoderConfig,
 			"report_id":          c.ReportID,
+			"key_id":             c.KeyID,
 		},
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 	}

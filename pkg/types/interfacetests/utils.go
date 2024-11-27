@@ -21,11 +21,30 @@ type BasicTester[T any] interface {
 	Name() string
 	GetAccountBytes(i int) []byte
 	GetAccountString(i int) string
+	IsDisabled(testID string) bool
+	DisableTests(testIDs []string)
 }
 
-type testcase[T any] struct {
-	name string
-	test func(t T)
+type TestSelectionSupport struct {
+	disabledTests map[string]bool
+}
+
+func (t TestSelectionSupport) IsDisabled(testID string) bool {
+	return t.disabledTests[testID]
+}
+
+func (t *TestSelectionSupport) DisableTests(testIDs []string) {
+	if t.disabledTests == nil {
+		t.disabledTests = map[string]bool{}
+	}
+	for _, testID := range testIDs {
+		t.disabledTests[testID] = true
+	}
+}
+
+type Testcase[T any] struct {
+	Name string
+	Test func(t T)
 }
 
 type TestingT[T any] interface {
@@ -34,12 +53,16 @@ type TestingT[T any] interface {
 	Run(name string, f func(t T)) bool
 }
 
-func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
+// Tests execution utility function that will consider enabled / disabled test cases according to
+// Basic Tester configuration.
+func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
 	for _, test := range tests {
-		t.Run(test.name+" for "+tester.Name(), func(t T) {
-			tester.Setup(t)
-			test.test(t)
-		})
+		if !tester.IsDisabled(test.Name) {
+			t.Run(test.Name+" for "+tester.Name(), func(t T) {
+				tester.Setup(t)
+				test.Test(t)
+			})
+		}
 	}
 }
 
@@ -208,12 +231,14 @@ type FilterEventParams struct {
 	Field int32
 }
 
-type BatchCallEntry map[types.BoundContract]ContractBatchEntry
-type ContractBatchEntry []ReadEntry
-type ReadEntry struct {
-	Name        string
-	ReturnValue any
-}
+type (
+	BatchCallEntry     map[types.BoundContract]ContractBatchEntry
+	ContractBatchEntry []ReadEntry
+	ReadEntry          struct {
+		Name        string
+		ReturnValue any
+	}
+)
 
 func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	s := fmt.Sprintf("field%v", i)

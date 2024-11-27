@@ -1,8 +1,6 @@
 # At the time of writing, this was taken form the staging deployment
 # trigger ref was added so it can match the way it's done by the builder.  It's implied as trigger today, and not harmful to add.
 # One of the heartbeat and deviation values were modified so that the defaults example can be shown to work.
-name: "ccipethsep"
-owner: "0x00000000000000000000000000000000000000aa"
 triggers:
   - id: "streams-trigger@1.0.0"
     ref: "trigger"
@@ -28,6 +26,7 @@ consensus:
         - "$(trigger.outputs)"
     config:
       report_id: "0001"
+      key_id: 'evm'
       aggregation_method: "data_feeds"
       aggregation_config:
         allowedPartialStaleness: "0.5"

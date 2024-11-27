@@ -57,7 +57,7 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 		case ModifierAddressToString:
 			(*m)[i] = &AddressBytesToStringModifierConfig{}
 		case ModifierWrapper:
-			(*m)[i] = &ModifiersConfig{}
+			(*m)[i] = &WrapperModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}

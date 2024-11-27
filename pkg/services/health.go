@@ -16,12 +16,13 @@ import (
 // HealthReporter should be implemented by any type requiring health checks.
 type HealthReporter interface {
 	// Ready should return nil if ready, or an error message otherwise. From the k8s docs:
-	// > ready means it’s initialized and clearCond means that it can accept traffic in kubernetes
+	// > ready means it’s initialized and healthy means that it can accept traffic in kubernetes
 	// See: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 	Ready() error
 	// HealthReport returns a full health report of the callee including its dependencies.
-	// key is the dep name, value is nil if clearCond, or error message otherwise.
+	// Keys are based on Name(), with nil values when healthy or errors otherwise.
 	// Use CopyHealth to collect reports from sub-services.
+	// This should run very fast, so avoid doing computation and instead prefer reporting pre-calculated state.
 	HealthReport() map[string]error
 	// Name returns the fully qualified name of the component. Usually the logger name.
 	Name() string
@@ -86,7 +87,12 @@ var (
 	)
 )
 
+// Deprecated: Use NewHealthChecker
 func NewChecker(ver, sha string) *HealthChecker {
+	return NewHealthChecker(ver, sha)
+}
+
+func NewHealthChecker(ver, sha string) *HealthChecker {
 	if ver == "" || sha == "" {
 		if bi, ok := debug.ReadBuildInfo(); ok {
 			if ver == "" {

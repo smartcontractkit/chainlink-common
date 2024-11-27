@@ -43,7 +43,7 @@ type DeployOptions struct {
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
 	for _, a := range alerts {
-		if reflect.DeepEqual(a, alert) {
+		if reflect.DeepEqual(a.Title, alert.Title) {
 			return true
 		}
 	}
@@ -210,6 +210,19 @@ func DeleteDashboard(options *DeleteOptions) error {
 	db, _, errGetDashboard := grafanaClient.GetDashboardByName(options.Name)
 	if errGetDashboard != nil {
 		return errGetDashboard
+	}
+
+	alertsRule, errGetAlertRules := grafanaClient.GetAlertRulesByDashboardUID(*db.UID)
+	if errGetAlertRules != nil {
+		return errGetAlertRules
+	}
+
+	// delete existing alert rules for the dashboard if alerts are disabled
+	for _, rule := range alertsRule {
+		_, _, errDeleteAlertRule := grafanaClient.DeleteAlertRule(*rule.Uid)
+		if errDeleteAlertRule != nil {
+			return errDeleteAlertRule
+		}
 	}
 
 	_, errDelete := grafanaClient.DeleteDashboardByUID(*db.UID)

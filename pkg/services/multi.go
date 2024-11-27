@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// StartClose is a subset of the ServiceCtx interface.
+// StartClose is a subset of the Service interface.
 type StartClose interface {
 	Start(context.Context) error
 	Close() error

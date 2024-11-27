@@ -29,32 +29,36 @@ import (
 )
 
 const (
-	successBinaryLocation    = "test/success/cmd/testmodule.wasm"
-	successBinaryCmd         = "test/success/cmd"
-	failureBinaryLocation    = "test/fail/cmd/testmodule.wasm"
-	failureBinaryCmd         = "test/fail/cmd"
-	oomBinaryLocation        = "test/oom/cmd/testmodule.wasm"
-	oomBinaryCmd             = "test/oom/cmd"
-	sleepBinaryLocation      = "test/sleep/cmd/testmodule.wasm"
-	sleepBinaryCmd           = "test/sleep/cmd"
-	filesBinaryLocation      = "test/files/cmd/testmodule.wasm"
-	filesBinaryCmd           = "test/files/cmd"
-	dirsBinaryLocation       = "test/dirs/cmd/testmodule.wasm"
-	dirsBinaryCmd            = "test/dirs/cmd"
-	httpBinaryLocation       = "test/http/cmd/testmodule.wasm"
-	httpBinaryCmd            = "test/http/cmd"
-	envBinaryLocation        = "test/env/cmd/testmodule.wasm"
-	envBinaryCmd             = "test/env/cmd"
-	logBinaryLocation        = "test/log/cmd/testmodule.wasm"
-	logBinaryCmd             = "test/log/cmd"
-	fetchBinaryLocation      = "test/fetch/cmd/testmodule.wasm"
-	fetchBinaryCmd           = "test/fetch/cmd"
-	fetchlimitBinaryLocation = "test/fetchlimit/cmd/testmodule.wasm"
-	fetchlimitBinaryCmd      = "test/fetchlimit/cmd"
-	randBinaryLocation       = "test/rand/cmd/testmodule.wasm"
-	randBinaryCmd            = "test/rand/cmd"
-	emitBinaryLocation       = "test/emit/cmd/testmodule.wasm"
-	emitBinaryCmd            = "test/emit/cmd"
+	successBinaryLocation      = "test/success/cmd/testmodule.wasm"
+	successBinaryCmd           = "test/success/cmd"
+	failureBinaryLocation      = "test/fail/cmd/testmodule.wasm"
+	failureBinaryCmd           = "test/fail/cmd"
+	oomBinaryLocation          = "test/oom/cmd/testmodule.wasm"
+	oomBinaryCmd               = "test/oom/cmd"
+	sleepBinaryLocation        = "test/sleep/cmd/testmodule.wasm"
+	sleepBinaryCmd             = "test/sleep/cmd"
+	filesBinaryLocation        = "test/files/cmd/testmodule.wasm"
+	filesBinaryCmd             = "test/files/cmd"
+	dirsBinaryLocation         = "test/dirs/cmd/testmodule.wasm"
+	dirsBinaryCmd              = "test/dirs/cmd"
+	httpBinaryLocation         = "test/http/cmd/testmodule.wasm"
+	httpBinaryCmd              = "test/http/cmd"
+	envBinaryLocation          = "test/env/cmd/testmodule.wasm"
+	envBinaryCmd               = "test/env/cmd"
+	logBinaryLocation          = "test/log/cmd/testmodule.wasm"
+	logBinaryCmd               = "test/log/cmd"
+	fetchBinaryLocation        = "test/fetch/cmd/testmodule.wasm"
+	fetchBinaryCmd             = "test/fetch/cmd"
+	fetchlimitBinaryLocation   = "test/fetchlimit/cmd/testmodule.wasm"
+	fetchlimitBinaryCmd        = "test/fetchlimit/cmd"
+	randBinaryLocation         = "test/rand/cmd/testmodule.wasm"
+	randBinaryCmd              = "test/rand/cmd"
+	emitBinaryLocation         = "test/emit/cmd/testmodule.wasm"
+	emitBinaryCmd              = "test/emit/cmd"
+	computePanicBinaryLocation = "test/computepanic/cmd/testmodule.wasm"
+	computePanicBinaryCmd      = "test/computepanic/cmd"
+	buildErrorBinaryLocation   = "test/builderr/cmd/testmodule.wasm"
+	buildErrorBinaryCmd        = "test/builderr/cmd"
 )
 
 func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) []byte {
@@ -87,7 +91,7 @@ func Test_GetWorkflowSpec(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	spec, err := GetWorkflowSpec(
+	_, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
 			Logger:         logger.Test(t),
@@ -97,9 +101,6 @@ func Test_GetWorkflowSpec(t *testing.T) {
 		[]byte(""),
 	)
 	require.NoError(t, err)
-
-	assert.Equal(t, spec.Name, "tester")
-	assert.Equal(t, spec.Owner, "ryan")
 }
 
 func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
@@ -107,7 +108,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
-	spec, err := GetWorkflowSpec(
+	_, err := GetWorkflowSpec(
 		ctx,
 		&ModuleConfig{
 			Logger:         logger.Test(t),
@@ -117,9 +118,6 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 		[]byte(""),
 	)
 	require.NoError(t, err)
-
-	assert.Equal(t, spec.Name, "tester")
-	assert.Equal(t, spec.Owner, "ryan")
 }
 
 func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
@@ -157,6 +155,23 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	)
 	// panic
 	assert.ErrorContains(t, err, "wasm trap: interrupt")
+}
+
+func Test_GetWorkflowSpec_BuildError(t *testing.T) {
+	t.Parallel()
+	ctx := tests.Context(t)
+	binary := createTestBinary(buildErrorBinaryCmd, buildErrorBinaryLocation, true, t)
+
+	_, err := GetWorkflowSpec(
+		ctx,
+		&ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		},
+		binary,
+		[]byte(""),
+	)
+	assert.ErrorContains(t, err, "oops")
 }
 
 func Test_Compute_Logs(t *testing.T) {
@@ -240,7 +255,10 @@ func Test_Compute_Emit(t *testing.T) {
 	}
 
 	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
+		ctxKey := "key"
 		ctx := tests.Context(t)
+		ctxValue := "test-value"
+		ctx = context.WithValue(ctx, ctxKey, ctxValue)
 		m, err := NewModule(&ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
@@ -248,7 +266,9 @@ func Test_Compute_Emit(t *testing.T) {
 			Labeler: newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
 				t.Helper()
 
-				assert.Equal(t, ctx, gotCtx)
+				v := ctx.Value(ctxKey)
+				assert.Equal(t, ctxValue, v)
+
 				assert.Equal(t, "testing emit", msg)
 				assert.Equal(t, "this is a test field content", kvs["test-string-field-key"])
 				assert.Equal(t, "workflow-id", kvs["workflow_id"])
@@ -343,6 +363,37 @@ func Test_Compute_Emit(t *testing.T) {
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "failed to create emission")
 	})
+}
+
+func Test_Compute_PanicIsRecovered(t *testing.T) {
+	t.Parallel()
+	binary := createTestBinary(computePanicBinaryCmd, computePanicBinaryLocation, true, t)
+
+	ctx := tests.Context(t)
+	m, err := NewModule(&ModuleConfig{
+		Logger:         logger.Test(t),
+		IsUncompressed: true,
+	}, binary)
+	require.NoError(t, err)
+
+	m.Start()
+
+	req := &wasmpb.Request{
+		Id: uuid.New().String(),
+		Message: &wasmpb.Request_ComputeRequest{
+			ComputeRequest: &wasmpb.ComputeRequest{
+				Request: &capabilitiespb.CapabilityRequest{
+					Inputs: &valuespb.Map{},
+					Config: &valuespb.Map{},
+					Metadata: &capabilitiespb.RequestMetadata{
+						ReferenceId: "transform",
+					},
+				},
+			},
+		},
+	}
+	_, err = m.Run(ctx, req)
+	assert.ErrorContains(t, err, "invalid memory address or nil pointer dereference")
 }
 
 func Test_Compute_Fetch(t *testing.T) {
@@ -857,7 +908,8 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	d := 1 * time.Millisecond
+	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()

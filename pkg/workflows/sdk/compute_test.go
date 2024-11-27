@@ -42,8 +42,6 @@ func TestCompute(t *testing.T) {
 		spec, err2 := workflow.Spec()
 		require.NoError(t, err2)
 		expectedSpec := sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "notstreams@1.0.0",
@@ -55,7 +53,7 @@ func TestCompute(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "custom_compute@1.0.0",
+					ID:  "custom-compute@1.0.0",
 					Ref: "Compute",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs)"},
@@ -88,6 +86,7 @@ func TestCompute(t *testing.T) {
 						"encoder":            ocr3.EncoderEVM,
 						"encoder_config":     ocr3.EncoderConfig{},
 						"report_id":          "0001",
+						"key_id":             "evm",
 					},
 					CapabilityType: capabilities.CapabilityTypeConsensus,
 				},
@@ -178,10 +177,7 @@ type ComputeOutput struct {
 }
 
 func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime, config ComputeConfig, input basictrigger.TriggerOutputs) (ComputeOutput, error)) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "owner",
-		Name:  "name",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
 	trigger := triggerCfg.New(workflow)
@@ -201,10 +197,7 @@ func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime
 }
 
 func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams.Feed, error)) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "owner",
-		Name:  "name",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := notstreams.TriggerConfig{MaxFrequencyMs: 5000}.New(workflow)
 	computed := sdk.Compute1(workflow, "Compute", sdk.Compute1Inputs[notstreams.Feed]{Arg0: trigger}, fn)
@@ -223,6 +216,7 @@ func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams
 		Encoder:           ocr3.EncoderEVM,
 		EncoderConfig:     ocr3.EncoderConfig{},
 		ReportId:          "0001",
+		KeyId:             "evm",
 	}.New(workflow, "data-feeds-report", ocr3.DataFeedsConsensusInput{
 		Observations: computed.Value(),
 	})

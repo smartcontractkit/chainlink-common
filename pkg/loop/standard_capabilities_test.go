@@ -61,6 +61,7 @@ func TestRunningStandardCapabilitiesPluginOutOfProcess(t *testing.T) {
 func newOutOfProcessStandardCapabilitiesService(t *testing.T, staticChecks bool, stopCh <-chan struct{}) loop.StandardCapabilities {
 	scl := loop.StandardCapabilitiesLoop{Logger: logger.Test(t), BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
 	cc := scl.ClientConfig()
+	cc.SkipHostEnv = true
 	cc.Cmd = NewHelperProcessCommand(loop.PluginStandardCapabilitiesName, staticChecks, 0)
 	c := plugin.NewClient(cc)
 	t.Cleanup(c.Kill)

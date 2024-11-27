@@ -196,6 +196,44 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 	return DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
+func (c *Client) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) (*types.Head, error) {
+	_, asValueType := retVal.(*values.Value)
+
+	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
+	if err != nil {
+		return nil, err
+	}
+
+	pbConfidence, err := confidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := c.grpc.GetLatestValueWithHeadData(
+		ctx,
+		&pb.GetLatestValueRequest{
+			ReadIdentifier: readIdentifier,
+			Confidence:     pbConfidence,
+			Params:         versionedParams,
+			AsValueType:    asValueType,
+		},
+	)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	var headData *types.Head
+	if reply.HeadData != nil {
+		headData = &types.Head{
+			Height:    reply.HeadData.Height,
+			Hash:      reply.HeadData.Hash,
+			Timestamp: reply.HeadData.Timestamp,
+		}
+	}
+
+	return headData, DecodeVersionedBytes(retVal, reply.RetVal)
+}
+
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
 	pbRequest, err := convertBatchGetLatestValuesRequestToProto(request, c.encodeWith)
 	if err != nil {
@@ -358,6 +396,53 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 	}
 
 	return &pb.GetLatestValueReply{RetVal: versionedBytes}, nil
+}
+
+func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.GetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
+	params, err := getContractEncodedType(request.ReadIdentifier, c.impl, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = DecodeVersionedBytes(params, request.Params); err != nil {
+		return nil, err
+	}
+
+	retVal, err := getContractEncodedType(request.ReadIdentifier, c.impl, false)
+	if err != nil {
+		return nil, err
+	}
+
+	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	if err != nil {
+		return nil, err
+	}
+
+	headData, err := c.impl.GetLatestValueWithHeadData(ctx, request.ReadIdentifier, confidenceLevel, params, retVal)
+	if err != nil {
+		return nil, err
+	}
+
+	encodeWith := EncodingVersion(request.Params.Version)
+	if request.AsValueType {
+		encodeWith = ValuesEncodingVersion
+	}
+
+	versionedBytes, err := EncodeVersionedBytes(retVal, encodeWith)
+	if err != nil {
+		return nil, err
+	}
+
+	var headDataProto *pb.Head
+	if headData != nil {
+		headDataProto = &pb.Head{
+			Height:    headData.Height,
+			Hash:      headData.Hash,
+			Timestamp: headData.Timestamp,
+		}
+	}
+
+	return &pb.GetLatestValueWithHeadDataReply{RetVal: versionedBytes, HeadData: headDataProto}, nil
 }
 
 func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
@@ -618,11 +703,11 @@ func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSo
 		var tp pb.SortType
 
 		switch sort := sortBy.(type) {
-		case query.SortByBlock:
+		case query.SortByBlock, *query.SortByBlock:
 			tp = pb.SortType_SortBlock
-		case query.SortByTimestamp:
+		case query.SortByTimestamp, *query.SortByTimestamp:
 			tp = pb.SortType_SortTimestamp
-		case query.SortBySequence:
+		case query.SortBySequence, *query.SortBySequence:
 			tp = pb.SortType_SortSequence
 		default:
 			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sort)
@@ -902,5 +987,7 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 }
 
 func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractReader})
+	service := goplugin.ServiceServer{Srv: contractReader}
+	pb.RegisterServiceServer(s, &service)
+	pb.RegisterContractReaderServer(s, NewServer(contractReader))
 }

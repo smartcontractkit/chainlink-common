@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
-	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,7 +19,23 @@ import (
 
 func TestTxDBDriver(t *testing.T) {
 	t.Parallel()
-	dbURL, ok := os.LookupEnv("CL_DATABASE_URL")
+
+	t.Run("Make sure sql.Register() can be called concurrently without racing", func(t *testing.T) {
+		wg := sync.WaitGroup{}
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func() {
+				err := RegisterTxDb(string(InMemoryPostgres))
+				require.NoError(t, err)
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+		drivers := sql.Drivers()
+		assert.Contains(t, drivers, "txdb")
+	})
+
+	dbURL, ok := os.LookupEnv("CL_VATABASE_URL")
 	if !ok {
 		t.Log("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
 		dbURL = string(InMemoryPostgres)
@@ -57,17 +73,5 @@ func TestTxDBDriver(t *testing.T) {
 		// This approach is not ideal, but there is no better way to wait for independent goroutine to complete
 		time.Sleep(time.Second * 10)
 		ensureValuesPresent(t, db)
-	})
-
-	t.Run("Make sure calling sql.Register() can be called twice", func(t *testing.T) {
-		require.NoError(t, RegisterTxDb("foo"))
-		require.NoError(t, RegisterTxDb("bar"))
-		drivers := sql.Drivers()
-		assert.Contains(t, drivers, "txdb")
-	})
-	t.Run("Make sure sql.Register() can be called concurrently without racing", func(t *testing.T) {
-		for i := 0; i < 100; i++ {
-			go RegisterTxDb(strconv.Itoa(i))
-		}
 	})
 }

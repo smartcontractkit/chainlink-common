@@ -34,7 +34,10 @@ import (
 // See heavyweight.FullTestDB() as a convenience function to help you do this,
 // but please use sparingly because as it's name implies, it is expensive.
 func RegisterTxDb(dbURL string) error {
+	registerMutex.Lock()
+	defer registerMutex.Unlock()
 	drivers := sql.Drivers()
+
 	for _, driver := range drivers {
 		if driver == string(TransactionWrappedPostgres) {
 			// TxDB driver already registered
@@ -66,6 +69,12 @@ func RegisterTxDb(dbURL string) error {
 	sqlx.BindDriver(name, sqlx.DOLLAR)
 	return nil
 }
+
+// Calling sql.Register() will panic if it's called more than once.
+// We cannot atomically check whether the driver is already registered and
+// register it if necessary. So a mutex protecting the call to sql.Drivers()
+// is used to avoid the race condition.
+var registerMutex sync.Mutex
 
 var _ driver.Conn = &conn{}
 

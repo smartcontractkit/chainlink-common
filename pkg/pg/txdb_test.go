@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 )
 
 func TestTxDBDriver(t *testing.T) {
+	t.Parallel()
 	dbURL, ok := os.LookupEnv("CL_DATABASE_URL")
 	if !ok {
 		t.Log("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
@@ -62,5 +64,10 @@ func TestTxDBDriver(t *testing.T) {
 		require.NoError(t, RegisterTxDb("bar"))
 		drivers := sql.Drivers()
 		assert.Contains(t, drivers, "txdb")
+	})
+	t.Run("Make sure sql.Register() can be called concurrently without racing", func(t *testing.T) {
+		for i := 0; i < 100; i++ {
+			go RegisterTxDb(strconv.Itoa(i))
+		}
 	})
 }

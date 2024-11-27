@@ -272,6 +272,23 @@ func engine(p *Props) []*grafana.Panel {
 	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 		PanelOptions: &grafana.PanelOptions{
 			Datasource:  p.MetricsDataSource.Name,
+			Title:       "Workflow Execution Latency by Workflow",
+			Description: "",
+			Span:        8,
+			Height:      8,
+			Unit:        "ms",
+			Query: []grafana.Query{
+				{
+					Expr:   `platform_engine_workflow_time{` + `status="completed",` + `workflowName="$workflowName"` + p.QueryFilters + `}`,
+					Legend: "",
+				},
+			},
+		},
+	}))
+
+	panels = append(panels, grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Datasource:  p.MetricsDataSource.Name,
 			Title:       "Workflow Execution Latency | Status: completed",
 			Description: "",
 			Span:        8,

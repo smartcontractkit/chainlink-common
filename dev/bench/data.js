@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732721160607,
+  "lastUpdate": 1732724859822,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7392,6 +7392,48 @@ window.BENCHMARK_DATA = {
             "value": 28341,
             "unit": "ns/op",
             "extra": "39368 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07aa781ee1f492bd806386e4ab4b4b0e987fdb96",
+          "message": "Rename ChainWriter Chain Component to ContractWriter (#956)\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2024-11-27T17:26:36+01:00",
+          "tree_id": "819a0356c66f222eb351d3ce91b905e8ea1aa45a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/07aa781ee1f492bd806386e4ab4b4b0e987fdb96"
+        },
+        "date": 1732724859109,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 465.9,
+            "unit": "ns/op",
+            "extra": "2698802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 493.4,
+            "unit": "ns/op",
+            "extra": "2398128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28281,
+            "unit": "ns/op",
+            "extra": "41691 times\n4 procs"
           }
         ]
       }

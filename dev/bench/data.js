@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732719611013,
+  "lastUpdate": 1732721160607,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7350,6 +7350,48 @@ window.BENCHMARK_DATA = {
             "value": 28005,
             "unit": "ns/op",
             "extra": "41948 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "75cf18c4d0c4c3e563827ee1f8d339c001981a0d",
+          "message": "feat(observability-lib): notification policy provisioning improvements (#955)",
+          "timestamp": "2024-11-27T16:24:56+01:00",
+          "tree_id": "109794974c925ddb6f9f18b987506a7cbc957b1a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/75cf18c4d0c4c3e563827ee1f8d339c001981a0d"
+        },
+        "date": 1732721159878,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 443.2,
+            "unit": "ns/op",
+            "extra": "2687457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 496.2,
+            "unit": "ns/op",
+            "extra": "2341320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28341,
+            "unit": "ns/op",
+            "extra": "39368 times\n4 procs"
           }
         ]
       }

@@ -14,7 +14,7 @@ func NewDashboard(props *Props) (*grafana.Observability, error) {
 		return nil, err
 	}
 	props.AlertsTitlePrefix = "[Keystone]"
-	props.QueryFilters = `env=~"${env}", cluster=~"${cluster}"`
+	props.QueryFilters = `env=~"${env}", cluster=~"${cluster}", workflowName=~"${workflowName}"`
 	props.AlertsTags = map[string]string{
 		"team": "keystone",
 	}
@@ -89,6 +89,15 @@ func vars(p *Props) []cog.Builder[dashboard.VariableModel] {
 		Query:      `label_values(platform_engine_workflow_count{env="$env"}, cluster)`,
 	}))
 
+	variables = append(variables, grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+		VariableOption: &grafana.VariableOption{
+			Label: "WorkflowName",
+			Name:  "workflowName",
+		},
+		Datasource: p.MetricsDataSource.Name,
+		Query:      `label_values(platform_engine_workflow_count{env="$env", cluster="$cluster"}, workflowName)`,
+	}))
+
 	return variables
 }
 
@@ -124,7 +133,7 @@ func engine(p *Props) []*grafana.Panel {
 			Height:      8,
 			Query: []grafana.Query{
 				{
-					Expr: `sum(platform_engine_workflow_count) by (container_id)`,
+					Expr: `sum(platform_engine_workflow_count{env="$env"}) by (csa_public_key)`,
 				},
 			},
 		},

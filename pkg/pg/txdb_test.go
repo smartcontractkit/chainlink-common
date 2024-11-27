@@ -1,20 +1,17 @@
 package pg
 
 import (
+	"context"
 	"database/sql"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
-	_ "github.com/marcboeker/go-duckdb"
-
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/marcboeker/go-duckdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"context"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
@@ -22,7 +19,7 @@ import (
 func TestTxDBDriver(t *testing.T) {
 	dbURL, ok := os.LookupEnv("CL_DATABASE_URL")
 	if !ok {
-		fmt.Sprintf("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
+		t.Log("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
 		dbURL = string(InMemoryPostgres)
 	}
 	db := NewSqlxDB(t, dbURL)

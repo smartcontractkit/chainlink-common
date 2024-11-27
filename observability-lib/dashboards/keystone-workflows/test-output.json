@@ -33,13 +33,13 @@
         "id": 1,
         "targets": [
           {
-            "expr": "sum(platform_engine_workflow_count{env=~\"${env}\", cluster=~\"${cluster}\"}) by (workflowOwner, workflowName)",
+            "expr": "sum(platform_engine_workflow_count) by (container_id)",
             "format": "",
-            "legendFormat": "{{ workflowOwner }} - {{ workflowName }}",
+            "legendFormat": "",
             "refId": ""
           }
         ],
-        "title": "Workflows Running",
+        "title": "Workflows Running by Node",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -233,13 +233,13 @@
         "id": 5,
         "targets": [
           {
-            "expr": "histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{env=~\"${env}\", cluster=~\"${cluster}\"}[$__rate_interval])) by (le, job, workflowExecutionID))",
+            "expr": "platform_engine_workflow_time{status=\"completed\",env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
-            "legendFormat": "WorkflowExecID: {{workflowExecutionID}}",
+            "legendFormat": "",
             "refId": ""
           }
         ],
-        "title": "Workflow Execution Latency p99",
+        "title": "Workflow Execution Latency | Status: completed",
         "description": "",
         "transparent": false,
         "datasource": {
@@ -283,6 +283,106 @@
         "id": 6,
         "targets": [
           {
+            "expr": "platform_engine_workflow_time{status=\"completed_early_exit\",env=~\"${env}\", cluster=~\"${cluster}\"}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Workflow Execution Latency | Status: Early Exit",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 9
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 7,
+        "targets": [
+          {
+            "expr": "platform_engine_workflow_time{status=\"errored\",env=~\"${env}\", cluster=~\"${cluster}\"}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Workflow Execution Latency | Status: Errored",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Prometheus"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 17
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true,
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "",
+            "sort": ""
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "noValue": "No data",
+            "custom": {
+              "fillOpacity": 0,
+              "scaleDistribution": {
+                "type": "linear"
+              }
+            }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "timeseries",
+        "id": 8,
+        "targets": [
+          {
             "expr": "platform_engine_capabilities_count{env=~\"${env}\", cluster=~\"${cluster}\"}",
             "format": "",
             "legendFormat": "",
@@ -298,8 +398,8 @@
         "gridPos": {
           "h": 8,
           "w": 8,
-          "x": 16,
-          "y": 9
+          "x": 8,
+          "y": 17
         },
         "options": {
           "legend": {
@@ -336,14 +436,14 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 17
+          "y": 25
         },
         "id": 0,
         "panels": null
       },
       {
         "type": "timeseries",
-        "id": 7,
+        "id": 9,
         "targets": [
           {
             "expr": "platform_registrysyncer_sync_failures{env=~\"${env}\", cluster=~\"${cluster}\"}",
@@ -362,7 +462,7 @@
           "h": 8,
           "w": 8,
           "x": 0,
-          "y": 18
+          "y": 26
         },
         "options": {
           "legend": {
@@ -393,7 +493,7 @@
       },
       {
         "type": "timeseries",
-        "id": 8,
+        "id": 10,
         "targets": [
           {
             "expr": "platform_registrysyncer_launch_failures{env=~\"${env}\", cluster=~\"${cluster}\"}",
@@ -412,7 +512,7 @@
           "h": 8,
           "w": 8,
           "x": 8,
-          "y": 18
+          "y": 26
         },
         "options": {
           "legend": {
@@ -437,6 +537,60 @@
                 "type": "linear"
               }
             }
+          },
+          "overrides": null
+        }
+      },
+      {
+        "type": "row",
+        "collapsed": false,
+        "title": "Logs",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 34
+        },
+        "id": 0,
+        "panels": null
+      },
+      {
+        "type": "logs",
+        "id": 11,
+        "targets": [
+          {
+            "expr": "{cluster=\"staging-us-west-2-o11y\", namespace=\"platform-workflow-benthos\"}",
+            "format": "",
+            "legendFormat": "",
+            "refId": ""
+          }
+        ],
+        "title": "Logs",
+        "description": "",
+        "transparent": false,
+        "datasource": {
+          "uid": "Loki"
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 35
+        },
+        "options": {
+          "showLabels": false,
+          "showCommonLabels": false,
+          "showTime": false,
+          "showLogContextToggle": false,
+          "wrapLogMessage": false,
+          "prettifyLogMessage": false,
+          "enableLogDetails": false,
+          "sortOrder": "",
+          "dedupStrategy": ""
+        },
+        "fieldConfig": {
+          "defaults": {
+            "noValue": "No data"
           },
           "overrides": null
         }
@@ -494,7 +648,7 @@
     {
       "annotations": {
         "description": "{{ index $labels \"job\" }} number of workflow running is {{ index $values \"B\" }} in the last 1h",
-        "panel_title": "Workflows Running",
+        "panel_title": "Workflows Running by Node",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
         "summary": "Platform Engine: No workflows are running"
       },
@@ -503,7 +657,7 @@
         {
           "datasourceUid": "1",
           "model": {
-            "expr": "platform_engine_workflow_count{}",
+            "expr": "sum(platform_engine_workflow_count{}) by (container_id)",
             "legendFormat": "__auto",
             "refId": "A"
           },
@@ -647,17 +801,17 @@
     },
     {
       "annotations": {
-        "description": "{{ index $labels \"job\" }} workflow latency is {{ index $values \"B\" }}ms",
-        "panel_title": "Workflow Execution Latency p99",
+        "description": "{{ index $labels \"job\" }}/{{ index $labels \"workflowID\" }} workflow latency is {{ index $values \"B\" }}ms",
+        "panel_title": "Workflow Execution Latency | Status: completed",
         "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
-        "summary": "Workflow Execution latency (99th percentile) is high"
+        "summary": "Workflow Execution Completed latency is high"
       },
       "condition": "C",
       "data": [
         {
           "datasourceUid": "1",
           "model": {
-            "expr": "histogram_quantile(0.99, sum(rate(platform_engine_workflow_time{}[5m])) by (job, le))",
+            "expr": "platform_engine_workflow_time{}",
             "legendFormat": "__auto",
             "refId": "A"
           },
@@ -720,7 +874,161 @@
       "noDataState": "OK",
       "orgID": 0,
       "ruleGroup": "",
-      "title": "[Keystone][Engine] Workflow Execution Latency p99"
+      "title": "[Keystone][Engine] Workflow Execution Completed Latency"
+    },
+    {
+      "annotations": {
+        "description": "{{ index $labels \"job\" }}/{{ index $labels \"workflowID\" }} workflow latency is {{ index $values \"B\" }}ms",
+        "panel_title": "Workflow Execution Latency | Status: Early Exit",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Workflow Execution Early Exit latency is high"
+      },
+      "condition": "C",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "platform_engine_workflow_time{status=\"completed_early_exit\",}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    900000,
+                    0
+                  ],
+                  "type": "gt"
+                }
+              }
+            ],
+            "expression": "B",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "threshold"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "5m",
+      "labels": {
+        "severity": "critical",
+        "team": "keystone"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "[Keystone][Engine] Workflow Execution Completed Early Latency"
+    },
+    {
+      "annotations": {
+        "description": "{{ index $labels \"job\" }}/{{ index $labels \"workflowID\" }} workflow latency is {{ index $values \"B\" }}ms",
+        "panel_title": "Workflow Execution Latency | Status: Errored",
+        "runbook_url": "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+        "summary": "Workflow Execution Errored latency is high"
+      },
+      "condition": "C",
+      "data": [
+        {
+          "datasourceUid": "1",
+          "model": {
+            "expr": "platform_engine_workflow_time{status=\"errored\",}",
+            "legendFormat": "__auto",
+            "refId": "A"
+          },
+          "refId": "A",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "expression": "A",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "reducer": "mean",
+            "refId": "B",
+            "type": "reduce"
+          },
+          "refId": "B",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        },
+        {
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    900000,
+                    0
+                  ],
+                  "type": "gt"
+                }
+              }
+            ],
+            "expression": "B",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "C",
+            "type": "threshold"
+          },
+          "refId": "C",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          }
+        }
+      ],
+      "execErrState": "Alerting",
+      "folderUID": "",
+      "for": "5m",
+      "labels": {
+        "severity": "critical",
+        "team": "keystone"
+      },
+      "noDataState": "OK",
+      "orgID": 0,
+      "ruleGroup": "",
+      "title": "[Keystone][Engine] Workflow Execution Errored Latency"
     }
   ],
   "ContactPoints": null,

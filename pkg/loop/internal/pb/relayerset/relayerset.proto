@@ -67,13 +67,13 @@ message NewContractReaderResponse {
   uint32 contractReaderId = 1;
 }
 
-message NewChainWriterRequest {
+message NewContractWriterRequest {
   RelayerId relayerId = 1;
-  bytes chainWriterConfig = 2;
+  bytes contractWriterConfig = 2;
 }
 
-message NewChainWriterResponse {
-  uint32 chainWriterId = 1;
+message NewContractWriterResponse {
+  uint32 contractWriterId = 1;
 }
 
 message LatestHeadRequest {
@@ -99,7 +99,7 @@ service RelayerSet {
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
   rpc NewContractReader(NewContractReaderRequest) returns (NewContractReaderResponse) {}
-  rpc NewChainWriter(NewChainWriterRequest) returns (NewChainWriterResponse) {}
+  rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterResponse) {}
 
   rpc StartRelayer(RelayerId) returns (google.protobuf.Empty) {}
   rpc CloseRelayer(RelayerId) returns (google.protobuf.Empty) {}

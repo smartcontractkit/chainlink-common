@@ -45,9 +45,9 @@ type OCR3CapabilityProvider interface {
 type Relayer interface {
 	types.ChainService
 
-	// NewChainWriter returns a new ChainWriter.
+	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
-	NewChainWriter(ctx context.Context, chainWriterConfig []byte) (types.ChainWriter, error)
+	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.

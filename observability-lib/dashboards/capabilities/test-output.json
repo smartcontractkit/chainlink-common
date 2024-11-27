@@ -462,6 +462,7 @@
     "annotations": {}
   },
   "Alerts": null,
+  "AlertGroups": null,
   "ContactPoints": null,
   "NotificationPolicies": null
 }

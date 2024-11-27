@@ -6348,6 +6348,12 @@
       "title": "Head Tracker Heads Received Rate"
     }
   ],
+  "AlertGroups": [
+    {
+      "interval": 60,
+      "title": "Core Node Dashboard"
+    }
+  ],
   "ContactPoints": null,
   "NotificationPolicies": null
 }

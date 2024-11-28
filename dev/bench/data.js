@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732724859822,
+  "lastUpdate": 1732789433970,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7434,6 +7434,48 @@ window.BENCHMARK_DATA = {
             "value": 28281,
             "unit": "ns/op",
             "extra": "41691 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2c73d505ee33197542d1907b3b86d55e46d93206",
+          "message": "(fix): Handle nested types as output of Compute capability (#949)\n\n* (fix): Handle nested types from output of Compute capability\r\n\r\n* Only allow structs input in CreateMapFromStruct\r\n\r\n* Update pkg/values/value.go\r\n\r\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>\r\n\r\n---------\r\n\r\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>",
+          "timestamp": "2024-11-28T10:22:50Z",
+          "tree_id": "3254efe04c40aae371ab25c458e272c2bcaa41ce",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2c73d505ee33197542d1907b3b86d55e46d93206"
+        },
+        "date": 1732789433364,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467.4,
+            "unit": "ns/op",
+            "extra": "2648060 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 496.7,
+            "unit": "ns/op",
+            "extra": "2395237 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28905,
+            "unit": "ns/op",
+            "extra": "42444 times\n4 procs"
           }
         ]
       }

@@ -16,7 +16,10 @@ type Config struct {
 	// OTel Resource
 	ResourceAttributes []otelattr.KeyValue
 	// Message Emitter
-	EmitterExportTimeout time.Duration
+	EmitterExportTimeout      time.Duration
+	EmitterExportInterval     time.Duration
+	EmitterExportMaxBatchSize int
+	EmitterMaxQueueSize       int
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	EmitterBatchProcessor bool

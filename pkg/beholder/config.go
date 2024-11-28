@@ -29,7 +29,10 @@ type Config struct {
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	// OTel Log
-	LogExportTimeout time.Duration
+	LogExportTimeout      time.Duration
+	LogExportInterval     time.Duration
+	LogExportMaxBatchSize int
+	LogMaxQueueSize       int
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	LogBatchProcessor bool

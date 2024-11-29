@@ -79,7 +79,10 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	if cfg.LogBatchProcessor {
 		loggerProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.LogExportTimeout), // Default is 30s
+			sdklog.WithExportTimeout(cfg.LogExportTimeout),           // Default is 30s
+			sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize), // Default is 512, must be <= maxQueueSize
+			sdklog.WithExportInterval(cfg.LogExportInterval),         // Default is 1s
+			sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize),             // Default is 2048
 		)
 	} else {
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -119,7 +122,10 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	if cfg.EmitterBatchProcessor {
 		messageLogProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.EmitterExportTimeout), // Default is 30s
+			sdklog.WithExportTimeout(cfg.EmitterExportTimeout),           // Default is 30s
+			sdklog.WithExportMaxBatchSize(cfg.EmitterExportMaxBatchSize), // Default is 512, must be <= maxQueueSize
+			sdklog.WithExportInterval(cfg.EmitterExportInterval),         // Default is 1s
+			sdklog.WithMaxQueueSize(cfg.EmitterMaxQueueSize),             // Default is 2048
 		)
 	} else {
 		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)

@@ -85,8 +85,11 @@ func DefaultConfig() Config {
 		// Resource
 		ResourceAttributes: defaultOtelAttributes,
 		// Message Emitter
-		EmitterExportTimeout:  1 * time.Second,
-		EmitterBatchProcessor: true,
+		EmitterExportTimeout:      1 * time.Second,
+		EmitterExportMaxBatchSize: 512,
+		EmitterExportInterval:     1 * time.Second,
+		EmitterMaxQueueSize:       2048,
+		EmitterBatchProcessor:     true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
@@ -99,8 +102,11 @@ func DefaultConfig() Config {
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
-		LogExportTimeout:  1 * time.Second,
-		LogBatchProcessor: true,
+		LogExportTimeout:      1 * time.Second,
+		LogExportMaxBatchSize: 512,
+		LogExportInterval:     1 * time.Second,
+		LogMaxQueueSize:       2048,
+		LogBatchProcessor:     true,
 	}
 }
 

@@ -118,7 +118,6 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize), // Default is 512, must be <= maxQueueSize
 			sdklog.WithExportInterval(cfg.LogExportInterval),         // Default is 1s
 			sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize),             // Default is 2048
-
 		)
 	} else {
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)

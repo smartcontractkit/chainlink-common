@@ -4,6 +4,8 @@ import (
 	"os"
 	"unsafe"
 
+	lg "log"
+
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -45,6 +47,10 @@ func NewRunner() *Runner {
 // sendResponseFn implements sendResponse for import into WASM.
 func sendResponseFn(response *wasmpb.Response) {
 	pb, err := proto.Marshal(response)
+	lg.Println("sendResponseFn response")
+	lg.Println(response)
+	lg.Println(response.ErrMsg)
+	lg.Println(response.Message)
 	if err != nil {
 		// We somehow couldn't marshal the response, so let's
 		// exit with a special error code letting the host know

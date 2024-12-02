@@ -264,34 +264,16 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 	return nil
 }
 
-func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, c capabilities.BaseCapability) error {
-	info, err := c.Info(ctx)
+func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) error {
+	req := &pb.RemoveRequest{
+		Id: ID,
+	}
+
+	_, err := cr.grpc.Remove(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	// Check the capability and the CapabilityType match here as the ServeNew method does not return an error
-	err = validateCapability(c, info.CapabilityType)
-	if err != nil {
-		return err
-	}
-
-	var cRes net.Resource
-	id, cRes, err := cr.ServeNew(info.ID, func(s *grpc.Server) {
-		pbRegisterCapability(s, cr.BrokerExt, c, info.CapabilityType)
-	})
-	if err != nil {
-		return err
-	}
-
-	_, err = cr.grpc.Remove(ctx, &pb.RemoveRequest{
-		CapabilityID: id,
-		Type:         pb.ExecuteAPIType(getExecuteAPIType(info.CapabilityType)),
-	})
-	if err != nil {
-		cRes.Close()
-		return err
-	}
 	return nil
 }
 
@@ -558,22 +540,7 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 }
 
 func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *pb.RemoveRequest) (*emptypb.Empty, error) {
-	conn, err := c.Dial(request.CapabilityID)
-	if err != nil {
-		return &emptypb.Empty{}, net.ErrConnDial{Name: "Remove", ID: request.CapabilityID, Err: err}
-	}
-	var client capabilities.BaseCapability
-
-	switch request.Type {
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
-		client = NewTriggerCapabilityClient(c.BrokerExt, conn)
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
-		client = NewExecutableCapabilityClient(c.BrokerExt, conn)
-	default:
-		return nil, fmt.Errorf("unknown execute type %d", request.Type)
-	}
-
-	err = c.impl.Remove(ctx, client)
+	err := c.impl.Remove(ctx, request.Id)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}

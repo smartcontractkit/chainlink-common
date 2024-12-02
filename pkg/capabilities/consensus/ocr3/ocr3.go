@@ -120,7 +120,7 @@ func (o *Capability) Close() error {
 		return nil
 	}
 
-	if err := o.capabilityRegistry.Remove(context.TODO(), o.config.capability); err != nil {
+	if err := o.capabilityRegistry.Remove(context.TODO(), o.config.capability.ID); err != nil {
 		return err
 	}
 

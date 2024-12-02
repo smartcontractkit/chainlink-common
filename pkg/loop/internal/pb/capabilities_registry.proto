@@ -107,8 +107,7 @@ message AddRequest {
 
 // Remove has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Remove].
 message RemoveRequest {
-  uint32 capabilityID = 1;
-  ExecuteAPIType type = 2;
+  string id = 1;
 }
 
 message ConfigForCapabilityRequest {

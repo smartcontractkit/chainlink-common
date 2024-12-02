@@ -17,5 +17,5 @@ type CapabilitiesRegistry interface {
 	GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error)
 	List(ctx context.Context) ([]capabilities.BaseCapability, error)
 	Add(ctx context.Context, c capabilities.BaseCapability) error
-	Remove(ctx context.Context, c capabilities.BaseCapability) error
+	Remove(ctx context.Context, ID string) error
 }

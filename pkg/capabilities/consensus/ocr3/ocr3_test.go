@@ -55,7 +55,7 @@ func TestOCR3_ReportingFactoryIsAService(t *testing.T) {
 	var rs core.RelayerSet
 	r := mocks.NewCapabilitiesRegistry(t)
 	r.On("Add", mock.Anything, o.config.capability).Return(nil)
-	r.On("Remove", mock.Anything, o.config.capability).Return(nil)
+	r.On("Remove", mock.Anything, o.config.capability.ID).Return(nil)
 
 	factory, err := o.NewReportingPluginFactory(ctx, core.ReportingPluginServiceConfig{}, p, pr, tc, el, r, kv, rs)
 	require.NoError(t, err)
@@ -68,5 +68,5 @@ func TestOCR3_ReportingFactoryIsAService(t *testing.T) {
 	err = o.Close()
 	require.NoError(t, err)
 
-	r.AssertCalled(t, "Remove", mock.Anything, o.config.capability)
+	r.AssertCalled(t, "Remove", mock.Anything, o.config.capability.ID)
 }

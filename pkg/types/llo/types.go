@@ -45,6 +45,9 @@ const (
 	// ReportFormatRetirement is a special "capstone" report format to indicate
 	// a retired OCR instance, and handover crucial information to a new one
 	ReportFormatRetirement ReportFormat = 3
+	// ReportFormatEVMAbiEncodeUnpacked supports encoding reports with a fixed
+	// schema followed by an arbitrary ABI-encoded payload
+	ReportFormatEVMAbiEncodeUnpacked = 4
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )

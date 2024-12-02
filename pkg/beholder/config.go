@@ -23,14 +23,17 @@ type Config struct {
 	// Batch processing is enabled by default
 	// Disable it only for testing
 	EmitterBatchProcessor bool
+
 	// OTel Trace
 	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
 	TraceSpanExporter sdktrace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
+
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
+
 	// OTel Log
 	LogExportTimeout      time.Duration
 	LogExportInterval     time.Duration

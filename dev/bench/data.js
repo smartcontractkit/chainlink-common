@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1732789433970,
+  "lastUpdate": 1733160313900,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7476,6 +7476,48 @@ window.BENCHMARK_DATA = {
             "value": 28905,
             "unit": "ns/op",
             "extra": "42444 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26d4a0b45b233961f6148439a000a86006413613",
+          "message": "[CAPPL-205] Remove OCR3 capability from registry when closed (#953)\n\n* Add Remove method to capabilities registry interface\r\n\r\n* Remove OCR3 capability plugin from Capability Registry on close\r\n\r\n* Refactor to use context & remove from Registry within OCR3 Capability\r\n\r\n* (refactor): Simplify to passing ID as the input to Remove",
+          "timestamp": "2024-12-02T12:24:04-05:00",
+          "tree_id": "cae4eb13789295c31e0cbf2d9555dd419dc91267",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/26d4a0b45b233961f6148439a000a86006413613"
+        },
+        "date": 1733160312704,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 456.8,
+            "unit": "ns/op",
+            "extra": "2677824 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.1,
+            "unit": "ns/op",
+            "extra": "2324020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28320,
+            "unit": "ns/op",
+            "extra": "42364 times\n4 procs"
           }
         ]
       }

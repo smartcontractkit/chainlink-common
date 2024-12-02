@@ -359,6 +359,7 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
+		sdkmetric.WithView(config.MetricView),
 	)
 	return mp, nil
 }

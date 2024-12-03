@@ -1,6 +1,7 @@
 package pg
 
 import (
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -8,12 +9,9 @@ import (
 	"github.com/scylladb/go-reflectx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func NewSqlxDB(t testing.TB, dbURL string) *sqlx.DB {
-	tests.SkipShortDB(t)
 	err := RegisterTxDb(dbURL)
 	if err != nil {
 		t.Fatalf("failed to register txdb dialect: %s", err.Error())
@@ -25,4 +23,13 @@ func NewSqlxDB(t testing.TB, dbURL string) *sqlx.DB {
 	db.MapperFunc(reflectx.CamelToSnakeASCII)
 
 	return db
+}
+
+func DbUrlOrInMemory(t testing.TB) string {
+	dbURL, ok := os.LookupEnv("CL_DATABASE_URL")
+	if ok {
+		return dbURL
+	}
+	t.Log("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
+	return string(InMemoryPostgres)
 }

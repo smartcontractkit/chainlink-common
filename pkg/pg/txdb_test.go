@@ -3,7 +3,6 @@ package pg
 import (
 	"context"
 	"database/sql"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -35,12 +34,7 @@ func TestTxDBDriver(t *testing.T) {
 		assert.Contains(t, drivers, "txdb")
 	})
 
-	dbURL, ok := os.LookupEnv("CL_VATABASE_URL")
-	if !ok {
-		t.Log("CL_DATABASE_URL not set--falling back to testing txdb backed by an in-memory db")
-		dbURL = string(InMemoryPostgres)
-	}
-	db := NewSqlxDB(t, dbURL)
+	db := NewSqlxDB(t, DbUrlOrInMemory(t))
 	dropTable := func() error {
 		_, err := db.Exec(`DROP TABLE IF EXISTS txdb_test`)
 		return err

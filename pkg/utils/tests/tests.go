@@ -76,11 +76,6 @@ func SkipShort(tb testing.TB, why string) {
 	}
 }
 
-// SkipShortDB skips tb during -short runs, and notes the DB dependency.
-func SkipShortDB(tb testing.TB) {
-	SkipShort(tb, "DB dependency")
-}
-
 func SkipFlakey(t *testing.T, ticketURL string) {
 	t.Skip("Flakey", ticketURL)
 }

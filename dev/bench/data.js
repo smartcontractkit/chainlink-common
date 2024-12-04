@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733333643321,
+  "lastUpdate": 1733337988125,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7602,6 +7602,48 @@ window.BENCHMARK_DATA = {
             "value": 28176,
             "unit": "ns/op",
             "extra": "42606 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "29871ced7b4de1ccbedb96c0771ef5dfac7c28b8",
+          "message": "[chore] Add function to generate workflowID (#962)\n\n* [chore] Add function to generate workflowID\r\n\r\n* [chore] Add function to generate workflowID",
+          "timestamp": "2024-12-04T18:45:25Z",
+          "tree_id": "47ef8db2e4f7d79ed9681720dea0923e2c966843",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/29871ced7b4de1ccbedb96c0771ef5dfac7c28b8"
+        },
+        "date": 1733337986986,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460,
+            "unit": "ns/op",
+            "extra": "2631580 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 510.8,
+            "unit": "ns/op",
+            "extra": "2338092 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28432,
+            "unit": "ns/op",
+            "extra": "42603 times\n4 procs"
           }
         ]
       }

@@ -20,9 +20,7 @@ type Config struct {
 	EmitterExportInterval     time.Duration
 	EmitterExportMaxBatchSize int
 	EmitterMaxQueueSize       int
-	// Batch processing is enabled by default
-	// Disable it only for testing
-	EmitterBatchProcessor bool
+	EmitterBatchProcessor     bool // Enabled by default. Disable only for testing.
 
 	// OTel Trace
 	TraceSampleRatio  float64
@@ -39,9 +37,7 @@ type Config struct {
 	LogExportInterval     time.Duration
 	LogExportMaxBatchSize int
 	LogMaxQueueSize       int
-	// Batch processing is enabled by default
-	// Disable it only for testing
-	LogBatchProcessor bool
+	LogBatchProcessor     bool // Enabled by default. Disable only for testing.
 	// Retry config for shared log exporter, used by Emitter and Logger
 	LogRetryConfig *RetryConfig
 

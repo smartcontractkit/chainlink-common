@@ -28,7 +28,10 @@ type TestingT interface {
 func Run[R Runnable](tb TestingT, r R) R {
 	tb.Helper()
 	require.NoError(tb, r.Start(tests.Context(tb)), "service failed to start")
-	tb.Cleanup(func() { assert.NoError(tb, r.Close(), "error closing service") })
+	tb.Cleanup(func() {
+		tb.Helper()
+		assert.NoError(tb, r.Close(), "error closing service")
+	})
 	return r
 }
 

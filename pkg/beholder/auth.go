@@ -12,12 +12,10 @@ var authHeaderKey = "X-Beholder-Node-Auth-Token"
 
 // authHeaderVersion is the version of the auth header format
 var authHeaderVersion = "1"
+var authHeaderVersionV2 = "2"
 
-// BuildAuthHeadersOpt are used to modify the behavior of the BuildAuthHeaders function
-type BuildAuthHeadersOpt func(*authHeaderConfig)
-
-type authHeaderConfig struct {
-	privKey   ed25519.PrivateKey
+// AuthHeaderConfig is a configuration struct for the BuildAuthHeadersV2 function
+type AuthHeaderConfig struct {
 	timestamp int64
 	version   string
 }
@@ -34,26 +32,7 @@ type authHeaderConfig struct {
 // <version>:<public_key_hex>:<timestamp>:<signature_hex>
 //
 // where the byte value of <public_key_hex> and <timestamp> are what's being signed
-func BuildAuthHeaders(privKey ed25519.PrivateKey, opts ...BuildAuthHeadersOpt) map[string]string {
-	// Defaults
-	cfg := &authHeaderConfig{
-		privKey:   privKey,
-		timestamp: time.Now().UnixMilli(),
-		version:   authHeaderVersion,
-	}
-	// Apply config options
-	for _, opt := range opts {
-		opt(cfg)
-	}
-	// Use the new version of the auth header with timestamps
-	if cfg.version == "2" {
-		return buildAuthHeadersV2(cfg.privKey, cfg.timestamp, cfg.version)
-	}
-	// Use the old version of the auth header as default
-	return buildAuthHeaderV1(cfg.privKey)
-}
-
-func buildAuthHeaderV1(privKey ed25519.PrivateKey) map[string]string {
+func BuildAuthHeaders(privKey ed25519.PrivateKey) map[string]string {
 	pubKey := privKey.Public().(ed25519.PublicKey)
 	messageBytes := pubKey
 	signature := ed25519.Sign(privKey, messageBytes)
@@ -61,33 +40,37 @@ func buildAuthHeaderV1(privKey ed25519.PrivateKey) map[string]string {
 	return map[string]string{authHeaderKey: fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)}
 }
 
-func buildAuthHeadersV2(privKey ed25519.PrivateKey, timestamp int64, version string) map[string]string {
+func BuildAuthHeadersV2(privKey ed25519.PrivateKey, config *AuthHeaderConfig) map[string]string {
+	if config == nil {
+		config = defaultAuthHeaderConfig()
+	}
+	if config.version == "" {
+		config.version = authHeaderVersionV2
+	}
+	// If timestamp is not set, use the current time
+	if config.timestamp == 0 {
+		config.timestamp = time.Now().UnixMilli()
+	}
+	// If timestamp is negative, set it to 0. negative values cause overflow on convertsion to uint64
+	// 0 timestamps will be rejected by the server as being too old
+	if config.timestamp < 0 {
+		config.timestamp = 0
+	}
+
 	pubKey := privKey.Public().(ed25519.PublicKey)
 
 	timestampUnixMsBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(timestampUnixMsBytes, uint64(timestamp))
+	binary.BigEndian.PutUint64(timestampUnixMsBytes, uint64(config.timestamp))
 
 	messageBytes := append(pubKey, timestampUnixMsBytes...)
 	signature := ed25519.Sign(privKey, messageBytes)
 
-	return map[string]string{authHeaderKey: fmt.Sprintf("%s:%x:%d:%x", version, pubKey, timestamp, signature)}
+	return map[string]string{authHeaderKey: fmt.Sprintf("%s:%x:%d:%x", config.version, pubKey, config.timestamp, signature)}
 }
 
-// WithAuthHeaderTimestamp is an option to set the timestamp to be used in auth headers ~ default is time.Now().UnixMilli()
-func WithAuthHeaderTimestamp(timestamp int64) BuildAuthHeadersOpt {
-	return func(cfg *authHeaderConfig) {
-		// negative timestamps can cause overflow when casting to unint64
-		// this will send a 0 timestamp, which will be rejected by auth server as being too old
-		if timestamp < 0 {
-			timestamp = 0
-		}
-		cfg.timestamp = timestamp
-	}
-}
-
-// WithAuthHeaderV2 is an option to use version 2 of auth headers that uses timestamps
-func WithAuthHeaderV2() BuildAuthHeadersOpt {
-	return func(cfg *authHeaderConfig) {
-		cfg.version = "2"
+func defaultAuthHeaderConfig() *AuthHeaderConfig {
+	return &AuthHeaderConfig{
+		version:   authHeaderVersionV2,
+		timestamp: time.Now().UnixMilli(),
 	}
 }

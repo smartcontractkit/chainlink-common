@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733320728454,
+  "lastUpdate": 1733333643321,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7560,6 +7560,48 @@ window.BENCHMARK_DATA = {
             "value": 28596,
             "unit": "ns/op",
             "extra": "41894 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3d96843f6b7dbc0d2792ad260113742b4f843aeb",
+          "message": "pkg/loop/internal/net: treat Close specially from clientConn (#960)",
+          "timestamp": "2024-12-04T11:32:18-06:00",
+          "tree_id": "1255b3e3fcc8595d9fd6ec12c1e21006ee04ea9f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3d96843f6b7dbc0d2792ad260113742b4f843aeb"
+        },
+        "date": 1733333642670,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 468.8,
+            "unit": "ns/op",
+            "extra": "2612439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.8,
+            "unit": "ns/op",
+            "extra": "2336398 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28176,
+            "unit": "ns/op",
+            "extra": "42606 times\n4 procs"
           }
         ]
       }

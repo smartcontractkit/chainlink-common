@@ -29,7 +29,7 @@ type Config struct {
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
-	MetricView           sdkmetric.View
+	MetricViews          []sdkmetric.View
 	// OTel Log
 	LogExportTimeout time.Duration
 	// Batch processing is enabled by default

@@ -3,7 +3,7 @@ package workflows
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"strings"
 )
 
 func EncodeExecutionID(workflowID, eventID string) (string, error) {
@@ -22,16 +22,17 @@ func EncodeExecutionID(workflowID, eventID string) (string, error) {
 }
 
 func GenerateWorkflowIDFromStrings(owner string, workflow []byte, config []byte, secretsURL string) (string, error) {
-	ownerb, err := hex.DecodeString(owner)
+	ownerWithoutPrefix := owner
+	if strings.HasPrefix(owner, "0x") {
+		ownerWithoutPrefix = owner[2:]
+	}
+
+	ownerb, err := hex.DecodeString(ownerWithoutPrefix)
 	if err != nil {
 		return "", err
 	}
 
-	if len(ownerb) != 20 {
-		return "", fmt.Errorf("invalid owner length: got %d, expected 20", len(ownerb))
-	}
-
-	wid, err := GenerateWorkflowID([20]byte(ownerb), workflow, config, secretsURL)
+	wid, err := GenerateWorkflowID(ownerb, workflow, config, secretsURL)
 	if err != nil {
 		return "", err
 	}
@@ -39,9 +40,9 @@ func GenerateWorkflowIDFromStrings(owner string, workflow []byte, config []byte,
 	return hex.EncodeToString(wid[:]), nil
 }
 
-func GenerateWorkflowID(owner [20]byte, workflow []byte, config []byte, secretsURL string) ([32]byte, error) {
+func GenerateWorkflowID(owner []byte, workflow []byte, config []byte, secretsURL string) ([32]byte, error) {
 	s := sha256.New()
-	_, err := s.Write(owner[:])
+	_, err := s.Write(owner)
 	if err != nil {
 		return [32]byte{}, err
 	}

@@ -41,18 +41,25 @@ func Test_EncodeExecutionID(t *testing.T) {
 }
 
 func Test_GenerateWorkflowIDFromStrings(t *testing.T) {
-	owner := "26729408f179371be6433b9585d8427f121bfe82"
+	// With prefix
+	owner := "0x26729408f179371be6433b9585d8427f121bfe82"
 	got, err := GenerateWorkflowIDFromStrings(owner, []byte("workflow"), []byte("config"), "http://mysecrets.com")
 	require.NoError(t, err)
+	assert.NotNil(t, got)
 
+	// Without prefix
+	owner = "26729408f179371be6433b9585d8427f121bfe82"
+	got, err = GenerateWorkflowIDFromStrings(owner, []byte("workflow"), []byte("config"), "http://mysecrets.com")
+	require.NoError(t, err)
+	assert.NotNil(t, got)
+
+	// Very short; empty but with a prefix
+	owner = "0x"
+	got, err = GenerateWorkflowIDFromStrings(owner, []byte("workflow"), []byte("config"), "http://mysecrets.com")
+	require.NoError(t, err)
 	assert.NotNil(t, got)
 
 	owner = "invalid"
 	_, err = GenerateWorkflowIDFromStrings(owner, []byte("workflow"), []byte("config"), "http://mysecrets.com")
 	assert.ErrorContains(t, err, "encoding/hex")
-
-	// invalid length
-	owner = "26729408f179371be6433b95"
-	_, err = GenerateWorkflowIDFromStrings(owner, []byte("workflow"), []byte("config"), "http://mysecrets.com")
-	assert.ErrorContains(t, err, "invalid owner length")
 }

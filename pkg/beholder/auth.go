@@ -76,6 +76,11 @@ func buildAuthHeadersV2(privKey ed25519.PrivateKey, timestamp int64, version str
 // WithAuthHeaderTimestamp is an option to set the timestamp to be used in auth headers ~ default is time.Now().UnixMilli()
 func WithAuthHeaderTimestamp(timestamp int64) BuildAuthHeadersOpt {
 	return func(cfg *authHeaderConfig) {
+		// negative timestamps can cause overflow when casting to unint64
+		// this will send a 0 timestamp, which will be rejected by auth server as being too old
+		if timestamp < 0 {
+			timestamp = 0
+		}
 		cfg.timestamp = timestamp
 	}
 }

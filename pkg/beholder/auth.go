@@ -54,7 +54,6 @@ func BuildAuthHeaders(privKey ed25519.PrivateKey, opts ...BuildAuthHeadersOpt) m
 }
 
 func buildAuthHeaderV1(privKey ed25519.PrivateKey) map[string]string {
-
 	pubKey := privKey.Public().(ed25519.PublicKey)
 	messageBytes := pubKey
 	signature := ed25519.Sign(privKey, messageBytes)
@@ -63,7 +62,6 @@ func buildAuthHeaderV1(privKey ed25519.PrivateKey) map[string]string {
 }
 
 func buildAuthHeadersV2(privKey ed25519.PrivateKey, timestamp int64, version string) map[string]string {
-
 	pubKey := privKey.Public().(ed25519.PublicKey)
 
 	timestampUnixMsBytes := make([]byte, 8)

@@ -4,7 +4,6 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -12,13 +11,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildAuthHeadersV1(t *testing.T) {
-
 	csaPrivKeyHex := "1ac84741fa51c633845fa65c06f37a700303619135630a01f2d22fb98eb1c54ecab39509e63cfaa81c70e2c907391f96803aacb00db5619a5ace5588b4b08159"
 	csaPrivKeyBytes, err := hex.DecodeString(csaPrivKeyHex)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	csaPrivKey := ed25519.PrivateKey(csaPrivKeyBytes)
 
 	expectedHeaders := map[string]string{
@@ -29,10 +28,9 @@ func TestBuildAuthHeadersV1(t *testing.T) {
 }
 
 func TestBuildAuthHeadersV2(t *testing.T) {
-
 	csaPrivKeyHex := "1ac84741fa51c633845fa65c06f37a700303619135630a01f2d22fb98eb1c54ecab39509e63cfaa81c70e2c907391f96803aacb00db5619a5ace5588b4b08159"
 	csaPrivKeyBytes, err := hex.DecodeString(csaPrivKeyHex)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	csaPrivKey := ed25519.PrivateKey(csaPrivKeyBytes)
 	timestamp := time.Now().UnixMilli()
 
@@ -42,7 +40,7 @@ func TestBuildAuthHeadersV2(t *testing.T) {
 	)
 
 	authHeaderValue, ok := authHeaderMap[authHeaderKey]
-	assert.True(t, ok, "auth header should be present")
+	require.True(t, ok, "auth header should be present")
 
 	parts := strings.Split(authHeaderValue, ":")
 	assert.Len(t, parts, 4, "auth header v2 should have 4 parts")
@@ -50,16 +48,16 @@ func TestBuildAuthHeadersV2(t *testing.T) {
 	version, pubKeyHex, timestampStr, signatureHex := parts[0], parts[1], parts[2], parts[3]
 	assert.Equal(t, "2", version, "using WithAuthHeaderV2 should should have version 2")
 	assert.Equal(t, hex.EncodeToString(csaPrivKey.Public().(ed25519.PublicKey)), pubKeyHex)
-	assert.Equal(t, fmt.Sprintf("%d", timestamp), timestampStr)
+	assert.Equal(t, strconv.FormatInt(timestamp, 10), timestampStr)
 
 	// Decode the public key and signature
 	pubKeyBytes, err := hex.DecodeString(pubKeyHex)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, csaPrivKey.Public().(ed25519.PublicKey), ed25519.PublicKey(pubKeyBytes))
 
 	// Parse the timestamp
 	timestampParsed, err := strconv.ParseInt(timestampStr, 10, 64)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, timestamp, timestampParsed)
 	timestampBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(timestampBytes, uint64(timestampParsed))
@@ -69,7 +67,6 @@ func TestBuildAuthHeadersV2(t *testing.T) {
 
 	// Verify the signature
 	signatureBytes, err := hex.DecodeString(signatureHex)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, ed25519.Verify(pubKeyBytes, messageBytes, signatureBytes))
-
 }

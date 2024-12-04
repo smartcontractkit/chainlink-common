@@ -70,3 +70,27 @@ func TestBuildAuthHeadersV2(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ed25519.Verify(pubKeyBytes, messageBytes, signatureBytes))
 }
+
+func TestBuildAuthHeadersV2WithNegativeTimestamp(t *testing.T) {
+	csaPrivKeyHex := "1ac84741fa51c633845fa65c06f37a700303619135630a01f2d22fb98eb1c54ecab39509e63cfaa81c70e2c907391f96803aacb00db5619a5ace5588b4b08159"
+	csaPrivKeyBytes, err := hex.DecodeString(csaPrivKeyHex)
+	require.NoError(t, err)
+	csaPrivKey := ed25519.PrivateKey(csaPrivKeyBytes)
+	timestamp := int64(-2244466688)
+
+	authHeaderMap := BuildAuthHeaders(csaPrivKey,
+		WithAuthHeaderV2(),
+		WithAuthHeaderTimestamp(timestamp),
+	)
+
+	authHeaderValue, ok := authHeaderMap[authHeaderKey]
+	require.True(t, ok, "auth header should be present")
+
+	parts := strings.Split(authHeaderValue, ":")
+	assert.Len(t, parts, 4, "auth header v2 should have 4 parts")
+	// Check the the returned timestamp is 0
+	_, _, timestampStr, _ := parts[0], parts[1], parts[2], parts[3]
+	timestampParsed, err := strconv.ParseInt(timestampStr, 10, 64)
+	require.NoError(t, err)
+	assert.Zero(t, timestampParsed)
+}

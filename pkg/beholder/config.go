@@ -88,7 +88,7 @@ func DefaultConfig() Config {
 		// Resource
 		ResourceAttributes: defaultOtelAttributes,
 		// Message Emitter
-		EmitterExportTimeout:      1 * time.Second,
+		EmitterExportTimeout:      30 * time.Second,
 		EmitterExportMaxBatchSize: 512,
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
@@ -105,7 +105,7 @@ func DefaultConfig() Config {
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
-		LogExportTimeout:      1 * time.Second,
+		LogExportTimeout:      30 * time.Second,
 		LogExportMaxBatchSize: 512,
 		LogExportInterval:     1 * time.Second,
 		LogMaxQueueSize:       2048,

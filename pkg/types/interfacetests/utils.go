@@ -56,14 +56,16 @@ type TestingT[T any] interface {
 // Tests execution utility function that will consider enabled / disabled test cases according to
 // Basic Tester configuration.
 func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
-	for _, test := range tests {
-		if !tester.IsDisabled(test.Name) {
-			t.Run(test.Name+" for "+tester.Name(), func(t T) {
-				tester.Setup(t)
-				test.Test(t)
-			})
+	t.Run(tester.Name(), func(t T) {
+		for _, test := range tests {
+			if !tester.IsDisabled(test.Name) {
+				t.Run(test.Name, func(t T) {
+					tester.Setup(t)
+					test.Test(t)
+				})
+			}
 		}
-	}
+	})
 }
 
 // Batch contract write takes a batch call entry and writes it to the chain using the ContractWriter.

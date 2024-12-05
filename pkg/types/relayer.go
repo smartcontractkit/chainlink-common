@@ -78,33 +78,38 @@ type NodeStatus struct {
 	State   string
 }
 
-// ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
-type ChainService interface {
-	Service
-
+type ChainReader interface {
+	// NewContractReader returns a new ContractReader.
+	// The format of contractReaderConfig depends on the implementation.
+	NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error)
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.
 	ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error)
+}
+
+type ChainWriter interface {
+	// NewContractWriter returns a new ContractWriter.
+	// The format of config depends on the implementation.
+	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 }
 
+// ChainService encapsulates ChainReader and IChainWriter sub-interfaces that encapsulate explicit read/write interactions with a chain and smart contract read/write components ContractReader and ContractWriter.
+type ChainService interface {
+	Service
+
+	ChainReader
+	ChainWriter
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
-
-	// NewContractWriter returns a new ContractWriter.
-	// The format of config depends on the implementation.
-	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
-
-	// NewContractReader returns a new ContractReader.
-	// The format of contractReaderConfig depends on the implementation.
-	NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error)
-
 	NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error)
 
 	NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)

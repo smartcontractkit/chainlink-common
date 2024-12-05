@@ -44,14 +44,6 @@ type OCR3CapabilityProvider interface {
 // Relayer is like types.Relayer, but with a dynamic NewPluginProvider method.
 type Relayer interface {
 	types.ChainService
-
-	// NewContractWriter returns a new ContractWriter.
-	// The format of config depends on the implementation.
-	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
-
-	// NewContractReader returns a new ContractReader.
-	// The format of contractReaderConfig depends on the implementation.
-	NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewPluginProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.PluginProvider, error)
 	NewLLOProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.LLOProvider, error)

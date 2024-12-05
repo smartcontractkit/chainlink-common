@@ -465,9 +465,9 @@ func (_c *Relayer_NewContractReader_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
-// NewContractWriter provides a mock function with given fields: ctx, contractWriterConfig
-func (_m *Relayer) NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
-	ret := _m.Called(ctx, contractWriterConfig)
+// NewContractWriter provides a mock function with given fields: ctx, config
+func (_m *Relayer) NewContractWriter(ctx context.Context, config []byte) (types.ContractWriter, error) {
+	ret := _m.Called(ctx, config)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewContractWriter")
@@ -476,10 +476,10 @@ func (_m *Relayer) NewContractWriter(ctx context.Context, contractWriterConfig [
 	var r0 types.ContractWriter
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ContractWriter, error)); ok {
-		return rf(ctx, contractWriterConfig)
+		return rf(ctx, config)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ContractWriter); ok {
-		r0 = rf(ctx, contractWriterConfig)
+		r0 = rf(ctx, config)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(types.ContractWriter)
@@ -487,7 +487,7 @@ func (_m *Relayer) NewContractWriter(ctx context.Context, contractWriterConfig [
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
-		r1 = rf(ctx, contractWriterConfig)
+		r1 = rf(ctx, config)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -502,12 +502,12 @@ type Relayer_NewContractWriter_Call struct {
 
 // NewContractWriter is a helper method to define mock.On call
 //   - ctx context.Context
-//   - contractWriterConfig []byte
-func (_e *Relayer_Expecter) NewContractWriter(ctx interface{}, contractWriterConfig interface{}) *Relayer_NewContractWriter_Call {
-	return &Relayer_NewContractWriter_Call{Call: _e.mock.On("NewContractWriter", ctx, contractWriterConfig)}
+//   - config []byte
+func (_e *Relayer_Expecter) NewContractWriter(ctx interface{}, config interface{}) *Relayer_NewContractWriter_Call {
+	return &Relayer_NewContractWriter_Call{Call: _e.mock.On("NewContractWriter", ctx, config)}
 }
 
-func (_c *Relayer_NewContractWriter_Call) Run(run func(ctx context.Context, contractWriterConfig []byte)) *Relayer_NewContractWriter_Call {
+func (_c *Relayer_NewContractWriter_Call) Run(run func(ctx context.Context, config []byte)) *Relayer_NewContractWriter_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([]byte))
 	})

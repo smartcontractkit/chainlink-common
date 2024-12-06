@@ -24,6 +24,7 @@ import (
 // - epoch to time -> [EpochToTimeModifierConfig]
 // - address to string -> [AddressBytesToStringModifierConfig]
 // - field wrapper -> [WrapperModifierConfig]
+// - precodec -> [PrecodecModifierConfig]
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
@@ -58,6 +59,8 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &AddressBytesToStringModifierConfig{}
 		case ModifierWrapper:
 			(*m)[i] = &WrapperModifierConfig{}
+		case ModifierPreCodec:
+			(*m)[i] = &PreCodecModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -84,6 +87,7 @@ func (m *ModifiersConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc
 type ModifierType string
 
 const (
+	ModifierPreCodec        ModifierType = "precodec"
 	ModifierRename          ModifierType = "rename"
 	ModifierDrop            ModifierType = "drop"
 	ModifierHardCode        ModifierType = "hard code"
@@ -196,6 +200,33 @@ func (h *HardCodeModifierConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[HardCodeModifierConfig]{
 		Type: ModifierHardCode,
 		T:    h,
+	})
+}
+
+// PreCodec creates a modifier that will transform data using a preliminary encoding/decoding step.
+// 'Off-chain' values will be overwritten with the encoded data as a byte array.
+// 'On-chain' values will be typed using the optimistic types from the codec.
+// This is useful when wanting to move the data as generic bytes.
+type PreCodecModifierConfig struct {
+	// A map of a path of properties to encoding scheme.
+	// If the path leads to an array, encoding will occur on every entry.
+	//
+	// Example: "a.b" -> "uint256 Value"
+	Fields map[string]string
+	// A factory function that given an encoding scheme, returns a specific codec.
+	// This allows encoding and decoding implementations to be handled outside of the modifier.
+	// The map value given to "Fields" will be used to initialize the codec.
+	CodecFactory func(typeABI string) types.RemoteCodec
+}
+
+func (c *PreCodecModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewPreCodec(c.Fields, c.CodecFactory), nil
+}
+
+func (c *PreCodecModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[PreCodecModifierConfig]{
+		Type: ModifierPreCodec,
+		T:    c,
 	})
 }
 

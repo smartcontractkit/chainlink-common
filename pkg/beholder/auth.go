@@ -51,7 +51,7 @@ func BuildAuthHeadersV2(privKey ed25519.PrivateKey, config *AuthHeaderConfig) ma
 	if config.timestamp == 0 {
 		config.timestamp = time.Now().UnixMilli()
 	}
-	// If timestamp is negative, set it to 0. negative values cause overflow on convertsion to uint64
+	// If timestamp is negative, set it to 0. negative values cause overflow on conversion to uint64
 	// 0 timestamps will be rejected by the server as being too old
 	if config.timestamp < 0 {
 		config.timestamp = 0

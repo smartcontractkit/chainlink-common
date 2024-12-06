@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
@@ -280,6 +281,43 @@ func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, fil
 	return convertSequencesFromProto(reply.Sequences, sequenceDataType)
 }
 
+func (c *Client) QueryKeys(ctx context.Context, keyQueries []types.ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, types.Sequence], error) {
+	var filters []*pb.ContractKeyFilter
+	for _, keyQuery := range keyQueries {
+		_, asValueType := keyQuery.SequenceDataType.(*values.Value)
+		contract := convertBoundContractToProto(keyQuery.Contract)
+
+		pbQueryFilter, err := convertQueryFilterToProto(keyQuery.KeyFilter, c.encodeWith)
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, &pb.ContractKeyFilter{
+			Contract:    contract,
+			Filter:      pbQueryFilter,
+			AsValueType: asValueType,
+		})
+	}
+
+	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := c.grpc.QueryKeys(
+		ctx,
+		&pb.QueryKeysRequest{
+			Filters:      filters,
+			LimitAndSort: pbLimitAndSort,
+		},
+	)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return convertSequencesWithKeyFromProto(reply.Sequences, keyQueries)
+}
+
 func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error {
 	pbBindings := make([]*pb.BoundContract, len(bindings))
 	for i, b := range bindings {
@@ -462,7 +500,7 @@ func (c *Server) BatchGetLatestValues(ctx context.Context, pbRequest *pb.BatchGe
 func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
 	contract := convertBoundContractFromProto(request.Contract)
 
-	queryFilter, err := convertQueryFiltersFromProto(request, contract, c.impl)
+	queryFilter, err := convertQueryFiltersFromProto(request.Filter, contract, c.impl)
 	if err != nil {
 		return nil, err
 	}
@@ -493,6 +531,46 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 	}
 
 	return &pb.QueryKeyReply{Sequences: pbSequences}, nil
+}
+
+func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
+	var filters []types.ContractKeyFilter
+	for _, keyQuery := range request.Filters {
+		contract := convertBoundContractFromProto(keyQuery.Contract)
+
+		queryFilter, err := convertQueryFiltersFromProto(keyQuery.Filter, contract, c.impl)
+		if err != nil {
+			return nil, err
+		}
+
+		sequenceDataType, err := getContractEncodedType(contract.ReadIdentifier(queryFilter.Key), c.impl, false)
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, types.ContractKeyFilter{
+			Contract:         contract,
+			KeyFilter:        queryFilter,
+			SequenceDataType: sequenceDataType,
+		})
+	}
+
+	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	if err != nil {
+		return nil, err
+	}
+
+	sequences, err := c.impl.QueryKeys(ctx, filters, limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+
+	pbSequences, err := convertSequencesWithKeyToVersionedBytesProto(sequences, request.Filters, c.encodeWith)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.QueryKeysReply{Sequences: pbSequences}, nil
 }
 
 func (c *Server) Bind(ctx context.Context, bindings *pb.BindRequest) (*emptypb.Empty, error) {
@@ -758,6 +836,42 @@ func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version E
 	return pbSequences, nil
 }
 
+func convertSequencesWithKeyToVersionedBytesProto(sequences iter.Seq2[string, types.Sequence], filters []*pb.ContractKeyFilter, encodeWith EncodingVersion) ([]*pb.SequenceWithKey, error) {
+	keyToEncodingVersion := make(map[string]EncodingVersion)
+	for _, filter := range filters {
+		if filter.AsValueType {
+			keyToEncodingVersion[filter.Filter.Key] = ValuesEncodingVersion
+		} else {
+			keyToEncodingVersion[filter.Filter.Key] = encodeWith
+		}
+	}
+
+	var pbSequences []*pb.SequenceWithKey
+	for key, sequence := range sequences {
+		version, ok := keyToEncodingVersion[key]
+		if !ok {
+			return nil, fmt.Errorf("missing encoding version for key %s", key)
+		}
+
+		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, version)
+		if err != nil {
+			return nil, err
+		}
+		pbSequence := &pb.SequenceWithKey{
+			Key:            key,
+			SequenceCursor: sequence.Cursor,
+			Head: &pb.Head{
+				Height:    sequence.Height,
+				Hash:      sequence.Hash,
+				Timestamp: sequence.Timestamp,
+			},
+			Data: versionedSequenceDataType,
+		}
+		pbSequences = append(pbSequences, pbSequence)
+	}
+	return pbSequences, nil
+}
+
 func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, reply *pb.BatchGetLatestValuesReply) (types.BatchGetLatestValuesResult, error) {
 	if reply == nil {
 		return nil, fmt.Errorf("received nil reply from grpc BatchGetLatestValues")
@@ -844,8 +958,7 @@ func convertBoundContractFromProto(contract *pb.BoundContract) types.BoundContra
 	}
 }
 
-func convertQueryFiltersFromProto(request *pb.QueryKeyRequest, contract types.BoundContract, impl types.ContractReader) (query.KeyFilter, error) {
-	pbQueryFilters := request.Filter
+func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryKeyFilter, contract types.BoundContract, impl types.ContractReader) (query.KeyFilter, error) {
 	queryFilter := query.KeyFilter{Key: pbQueryFilters.Key}
 	for _, pbQueryFilter := range pbQueryFilters.Expression {
 		expression, err := convertExpressionFromProto(pbQueryFilter, contract, queryFilter.Key, impl)
@@ -949,16 +1062,9 @@ func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAnd
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
 	sequences := make([]types.Sequence, len(pbSequences))
 
-	seqTypeOf := reflect.TypeOf(sequenceDataType)
-
-	// get the non-pointer data type for the sequence data
-	nonPointerType := seqTypeOf
-	if seqTypeOf.Kind() == reflect.Pointer {
-		nonPointerType = seqTypeOf.Elem()
-	}
-
-	if nonPointerType.Kind() == reflect.Pointer {
-		return nil, fmt.Errorf("%w: sequenceDataType does not support pointers to pointers", types.ErrInvalidType)
+	seqTypeOf, nonPointerType, err := getSequenceTypeInformation(sequenceDataType)
+	if err != nil {
+		return nil, err
 	}
 
 	for idx, pbSequence := range pbSequences {
@@ -984,6 +1090,78 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 	}
 
 	return sequences, nil
+}
+
+func getSequenceTypeInformation(sequenceDataType any) (reflect.Type, reflect.Type, error) {
+	seqTypeOf := reflect.TypeOf(sequenceDataType)
+
+	// get the non-pointer data type for the sequence data
+	nonPointerType := seqTypeOf
+	if seqTypeOf.Kind() == reflect.Pointer {
+		nonPointerType = seqTypeOf.Elem()
+	}
+
+	if nonPointerType.Kind() == reflect.Pointer {
+		return nil, nil, fmt.Errorf("%w: sequenceDataType does not support pointers to pointers", types.ErrInvalidType)
+	}
+	return seqTypeOf, nonPointerType, nil
+}
+
+func convertSequencesWithKeyFromProto(pbSequences []*pb.SequenceWithKey, keyQueries []types.ContractKeyFilter) (iter.Seq2[string, types.Sequence], error) {
+	type sequenceWithKey struct {
+		Key      string
+		Sequence types.Sequence
+	}
+
+	sequencesWithKey := make([]sequenceWithKey, len(pbSequences))
+
+	keyToSeqTypeOf := make(map[string]reflect.Type)
+	keyToNonPointerType := make(map[string]reflect.Type)
+
+	for _, keyQuery := range keyQueries {
+		seqTypeOf, nonPointerType, err := getSequenceTypeInformation(keyQuery.SequenceDataType)
+		if err != nil {
+			return nil, err
+		}
+
+		keyToSeqTypeOf[keyQuery.Key] = seqTypeOf
+		keyToNonPointerType[keyQuery.Key] = nonPointerType
+	}
+
+	for idx, pbSequence := range pbSequences {
+		seqTypeOf, nonPointerType := keyToSeqTypeOf[pbSequence.Key], keyToNonPointerType[pbSequence.Key]
+
+		cpy := reflect.New(nonPointerType).Interface()
+		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
+			return nil, err
+		}
+
+		// match provided data type either as pointer or non-pointer
+		if seqTypeOf.Kind() != reflect.Pointer {
+			cpy = reflect.Indirect(reflect.ValueOf(cpy)).Interface()
+		}
+		pbSeq := pbSequences[idx]
+		sequencesWithKey[idx] = sequenceWithKey{
+			Key: pbSeq.Key,
+			Sequence: types.Sequence{
+				Cursor: pbSeq.SequenceCursor,
+				Head: types.Head{
+					Height:    pbSeq.Head.Height,
+					Hash:      pbSeq.Head.Hash,
+					Timestamp: pbSeq.Head.Timestamp,
+				},
+				Data: cpy,
+			},
+		}
+	}
+
+	return func(yield func(string, types.Sequence) bool) {
+		for _, s := range sequencesWithKey {
+			if !yield(s.Key, s.Sequence) {
+				return
+			}
+		}
+	}, nil
 }
 
 func RegisterContractReaderService(s *grpc.Server, contractReader types.ContractReader) {

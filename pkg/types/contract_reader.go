@@ -15,7 +15,7 @@ const (
 	ErrContractReaderConfigMissing = UnimplementedError("ContractReader entry missing from RelayConfig")
 	ErrInternal                    = InternalError("internal error")
 	ErrNotFound                    = NotFoundError("not found")
-	ErrFinalityViolation           = InternalError("finality violation")
+	ErrFinalityViolated            = InternalError("finality violated")
 )
 
 // ContractReader defines essential read operations a chain should implement for reading contract values and events.

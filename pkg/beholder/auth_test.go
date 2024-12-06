@@ -92,9 +92,9 @@ func TestBuildAuthHeadersV2WithDefaults(t *testing.T) {
 	timestampParsed, err := strconv.ParseInt(timestampStr, 10, 64)
 	require.NoError(t, err)
 
-	// Verify the timestamp is within the last 100ms
+	// Verify the timestamp is within the last 50ms
 	// This verifies that default configuration is to use the current time
-	assert.InDelta(t, now, timestampParsed, 50, "timestamp should be within the last 100ms")
+	assert.InDelta(t, now, timestampParsed, 50, "timestamp should be within the last 50ms")
 
 	timestampBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(timestampBytes, uint64(timestampParsed))

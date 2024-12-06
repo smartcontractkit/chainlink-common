@@ -1,4 +1,4 @@
-package chainwriter
+package contractwriter
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"

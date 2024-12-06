@@ -62,15 +62,15 @@ const (
 type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetContractReader(t T) types.ContractReader
-	GetChainWriter(t T) types.ChainWriter
+	GetContractWriter(t T) types.ContractWriter
 	GetBindings(t T) []types.BoundContract
 	// DirtyContracts signals to the underlying tester than the test contracts are dirty, i.e. the state has been changed such that
 	// new, fresh contracts should be deployed. This usually happens after a value is written to the contract via
-	// the ChainWriter.
+	// the ContractWriter.
 	DirtyContracts()
 	MaxWaitTimeForEvents() time.Duration
 	// GenerateBlocksTillConfidenceLevel is only used by the internal common tests, all other tests can/should
-	// rely on the ChainWriter waiting for actual blocks to be mined.
+	// rely on the ContractWriter waiting for actual blocks to be mined.
 	GenerateBlocksTillConfidenceLevel(t T, contractName, readName string, confidenceLevel primitives.ConfidenceLevel)
 }
 
@@ -100,9 +100,11 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 const AnyExtraValue = 3
 
 func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-	t.Run("GetLatestValue for "+tester.Name(), func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
-	t.Run("BatchGetLatestValues for "+tester.Name(), func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
-	t.Run("QueryKey for "+tester.Name(), func(t T) { runQueryKeyInterfaceTests(t, tester) })
+	t.Run(tester.Name(), func(t T) {
+		t.Run("GetLatestValue", func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
+		t.Run("BatchGetLatestValues", func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
+		t.Run("QueryKey", func(t T) { runQueryKeyInterfaceTests(t, tester) })
+	})
 }
 
 func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
@@ -456,7 +458,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 
 				batchCallEntry := make(BatchCallEntry)
 				batchCallEntry[bound] = ContractBatchEntry{{Name: MethodTakingLatestParamsReturningTestStruct, ReturnValue: &firstItem}}
-				batchChainWrite(t, tester, batchCallEntry, mockRun)
+				batchContractWrite(t, tester, batchCallEntry, mockRun)
 
 				// setup call data
 				params, actual := &LatestParams{I: 1}, &TestStruct{}
@@ -618,7 +620,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 						types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 1 + i}, ReturnVal: &TestStruct{}},
 					)
 				}
-				batchChainWrite(t, tester, batchCallEntry, mockRun)
+				batchContractWrite(t, tester, batchCallEntry, mockRun)
 
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
@@ -654,7 +656,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 					batchGetLatestValueRequest[bound1] = append(batchGetLatestValueRequest[bound1], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 1 + i}, ReturnVal: &TestStruct{}})
 					batchGetLatestValueRequest[bound2] = append(batchGetLatestValueRequest[bound2], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 1 + i}, ReturnVal: &TestStruct{}})
 				}
-				batchChainWrite(t, tester, batchCallEntry, mockRun)
+				batchContractWrite(t, tester, batchCallEntry, mockRun)
 
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)

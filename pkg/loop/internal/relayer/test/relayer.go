@@ -135,7 +135,7 @@ func (s staticPluginRelayer) Name() string { panic("unimplemented") }
 
 func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
 
-func (s staticPluginRelayer) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+func (s staticPluginRelayer) NewContractWriter(_ context.Context, _ []byte) (types.ContractWriter, error) {
 	return nil, errors.New("not implemented")
 }
 

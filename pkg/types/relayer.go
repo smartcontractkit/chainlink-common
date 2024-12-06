@@ -97,9 +97,9 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
-	// NewChainWriter returns a new ChainWriter.
+	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
-	NewChainWriter(ctx context.Context, config []byte) (ChainWriter, error)
+	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.

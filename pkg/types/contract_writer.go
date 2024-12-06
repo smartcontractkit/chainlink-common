@@ -11,10 +11,10 @@ const (
 	ErrSettingTransactionGasLimitNotSupported = InvalidArgumentError("setting transaction gas limit is not supported")
 )
 
-type ChainWriter interface {
+type ContractWriter interface {
 	services.Service
 
-	// SubmitTransaction packs and broadcasts a transaction to the underlying chain.
+	// SubmitTransaction packs and broadcasts a transaction to the underlying chain contract.
 	//
 	// - `args` should be any object which maps a set of method param into the contract and method specific method params.
 	// - `transactionID` will be used by the underlying TXM as an idempotency key, and unique reference to track transaction attempts.
@@ -31,8 +31,8 @@ type ChainWriter interface {
 type TxMeta struct {
 	// Used for Keystone Workflows
 	WorkflowExecutionID *string
-	// An optional maximum gas limit for the transaction. If not set the ChainWriter implementation will be responsible for
-	// setting a gas limit for the transaction.  If it is set and the ChainWriter implementation does not support setting
+	// An optional maximum gas limit for the transaction. If not set the ContractWriter implementation will be responsible for
+	// setting a gas limit for the transaction.  If it is set and the ContractWriter implementation does not support setting
 	// this value per transaction it will return ErrSettingTransactionGasLimitNotSupported
 	GasLimit *big.Int
 }

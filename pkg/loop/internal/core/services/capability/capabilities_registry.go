@@ -264,6 +264,19 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 	return nil
 }
 
+func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) error {
+	req := &pb.RemoveRequest{
+		Id: ID,
+	}
+
+	_, err := cr.grpc.Remove(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface, b *net.BrokerExt) *capabilitiesRegistryClient {
 	return &capabilitiesRegistryClient{grpc: pb.NewCapabilitiesRegistryClient(cc), BrokerExt: b.WithName("CapabilitiesRegistryClient")}
 }
@@ -520,6 +533,14 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 	}
 
 	err = c.impl.Add(ctx, client)
+	if err != nil {
+		return &emptypb.Empty{}, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *pb.RemoveRequest) (*emptypb.Empty, error) {
+	err := c.impl.Remove(ctx, request.Id)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}

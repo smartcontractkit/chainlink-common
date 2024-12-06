@@ -31,7 +31,7 @@ type Decoder interface {
 
 /*
 Codec is an interface that provides encoding and decoding functionality for a specific type identified by a name.
-Because there are many types that a [ContractReader] or [ChainWriter] can either accept or return, all encoding
+Because there are many types that a [ContractReader] or [ContractWriter] can either accept or return, all encoding
 instructions provided by the codec are based on the type name.
 
 Starting from the lowest level, take for instance a [big.Int] encoder where we want the output to be big endian binary

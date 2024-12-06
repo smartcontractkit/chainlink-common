@@ -59,6 +59,11 @@ func NewDashboard(props *Props) (*grafana.Observability, error) {
 		AlertsTags: props.AlertsTags,
 	})
 
+	builder.AddAlertGroup(grafana.NewAlertGroup(&grafana.AlertGroupOptions{
+		Title:    props.Name,
+		Interval: 60,
+	}))
+
 	if props.SlackChannel != "" && props.SlackWebhookURL != "" {
 		builder.AddContactPoint(grafana.NewContactPoint(&grafana.ContactPointOptions{
 			Name: "chainlink-slack",

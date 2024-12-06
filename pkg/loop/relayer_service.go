@@ -48,11 +48,11 @@ func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderCo
 	return r.Service.NewContractReader(ctx, contractReaderConfig)
 }
 
-func (r *RelayerService) NewChainWriter(ctx context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+func (r *RelayerService) NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewChainWriter(ctx, chainWriterConfig)
+	return r.Service.NewContractWriter(ctx, contractWriterConfig)
 }
 
 func (r *RelayerService) NewConfigProvider(ctx context.Context, args types.RelayArgs) (types.ConfigProvider, error) {

@@ -33,7 +33,10 @@ func TestCompute(t *testing.T) {
 		},
 		Timestamp: 1690838088,
 	}
-	nsf, err := values.CreateMapFromStruct(map[string]any{"Arg0": anyNotStreamsInput})
+	structToMap, err := values.CreateMapFromStruct(anyNotStreamsInput)
+	require.NoError(t, err)
+
+	nsf, err := values.NewMap(map[string]any{"Arg0": structToMap})
 	require.NoError(t, err)
 
 	t.Run("creates correct workflow spec", func(t *testing.T) {

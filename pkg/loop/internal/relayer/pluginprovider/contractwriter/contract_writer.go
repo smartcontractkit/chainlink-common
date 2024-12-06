@@ -1,4 +1,4 @@
-package chainwriter
+package contractwriter
 
 import (
 	"context"
@@ -14,20 +14,20 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ types.ChainWriter = (*Client)(nil)
+var _ types.ContractWriter = (*Client)(nil)
 
 type ClientOpt func(*Client)
 
 type Client struct {
 	*goplugin.ServiceClient
-	grpc       pb.ChainWriterClient
+	grpc       pb.ContractWriterClient
 	encodeWith contractreader.EncodingVersion
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		ServiceClient: goplugin.NewServiceClient(b, cc),
-		grpc:          pb.NewChainWriterClient(cc),
+		grpc:          pb.NewContractWriterClient(cc),
 		encodeWith:    contractreader.DefaultEncodingVersion,
 	}
 
@@ -91,17 +91,17 @@ func (c *Client) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponent
 
 // Server.
 
-var _ pb.ChainWriterServer = (*Server)(nil)
+var _ pb.ContractWriterServer = (*Server)(nil)
 
 type ServerOpt func(*Server)
 
 type Server struct {
-	pb.UnimplementedChainWriterServer
-	impl       types.ChainWriter
+	pb.UnimplementedContractWriterServer
+	impl       types.ContractWriter
 	encodeWith contractreader.EncodingVersion
 }
 
-func NewServer(impl types.ChainWriter, opts ...ServerOpt) pb.ChainWriterServer {
+func NewServer(impl types.ContractWriter, opts ...ServerOpt) pb.ContractWriterServer {
 	server := &Server{
 		impl:       impl,
 		encodeWith: contractreader.DefaultEncodingVersion,
@@ -150,6 +150,6 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	}, nil
 }
 
-func RegisterChainWriterService(s *grpc.Server, chainWriter types.ChainWriter) {
-	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: chainWriter})
+func RegisterContractWriterService(s *grpc.Server, contractWriter types.ContractWriter) {
+	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractWriter})
 }

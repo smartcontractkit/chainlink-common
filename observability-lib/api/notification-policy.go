@@ -46,18 +46,78 @@ func policyExist(parent alerting.NotificationPolicy, newNotificationPolicy alert
 	return false
 }
 
-// AddNestedPolicy Add Nested Policy to Notification Policy Tree
-func (c *Client) AddNestedPolicy(newNotificationPolicy alerting.NotificationPolicy) error {
-	notificationPolicyTree, _, err := c.GetNotificationPolicy()
+func updateInPlace(parent *alerting.NotificationPolicy, newNotificationPolicy alerting.NotificationPolicy) bool {
+	for key, notificationPolicy := range parent.Routes {
+		matchersEqual := false
+		if notificationPolicy.ObjectMatchers != nil {
+			matchersEqual = objectMatchersEqual(*notificationPolicy.ObjectMatchers, *newNotificationPolicy.ObjectMatchers)
+		}
+		receiversEqual := reflect.DeepEqual(notificationPolicy.Receiver, newNotificationPolicy.Receiver)
+		if matchersEqual && receiversEqual {
+			parent.Routes[key] = newNotificationPolicy
+			return true
+		}
+		if notificationPolicy.Routes != nil {
+			policyExist(notificationPolicy, newNotificationPolicy)
+		}
+	}
+	return false
+}
+
+func deleteInPlace(parent *alerting.NotificationPolicy, newNotificationPolicy alerting.NotificationPolicy) bool {
+	for key, notificationPolicy := range parent.Routes {
+		matchersEqual := false
+		if notificationPolicy.ObjectMatchers != nil {
+			matchersEqual = objectMatchersEqual(*notificationPolicy.ObjectMatchers, *newNotificationPolicy.ObjectMatchers)
+		}
+		receiversEqual := reflect.DeepEqual(notificationPolicy.Receiver, newNotificationPolicy.Receiver)
+		if matchersEqual && receiversEqual {
+			parent.Routes = append(parent.Routes[:key], parent.Routes[key+1:]...)
+			return true
+		}
+		if notificationPolicy.Routes != nil {
+			policyExist(notificationPolicy, newNotificationPolicy)
+		}
+	}
+	return false
+}
+
+// DeleteNestedPolicy Delete Nested Policy from Notification Policy Tree
+func (c *Client) DeleteNestedPolicy(newNotificationPolicy alerting.NotificationPolicy) error {
+	notificationPolicyTreeResponse, _, err := c.GetNotificationPolicy()
+	notificationPolicyTree := alerting.NotificationPolicy(notificationPolicyTreeResponse)
+
 	if err != nil {
 		return err
 	}
-	if !policyExist(alerting.NotificationPolicy(notificationPolicyTree), newNotificationPolicy) {
+	if policyExist(notificationPolicyTree, newNotificationPolicy) {
+		deleteInPlace(&notificationPolicyTree, newNotificationPolicy)
+	} else {
+		return fmt.Errorf("policy not found")
+	}
+	_, _, errPutNotificationPolicy := c.PutNotificationPolicy(notificationPolicyTree)
+	if errPutNotificationPolicy != nil {
+		return errPutNotificationPolicy
+	}
+	return nil
+}
+
+// AddNestedPolicy Add Nested Policy to Notification Policy Tree
+func (c *Client) AddNestedPolicy(newNotificationPolicy alerting.NotificationPolicy) error {
+	notificationPolicyTreeResponse, _, err := c.GetNotificationPolicy()
+	notificationPolicyTree := alerting.NotificationPolicy(notificationPolicyTreeResponse)
+
+	if err != nil {
+		return err
+	}
+	if !policyExist(notificationPolicyTree, newNotificationPolicy) {
 		notificationPolicyTree.Routes = append(notificationPolicyTree.Routes, newNotificationPolicy)
-		_, _, errPutNotificationPolicy := c.PutNotificationPolicy(alerting.NotificationPolicy(notificationPolicyTree))
-		if errPutNotificationPolicy != nil {
-			return errPutNotificationPolicy
-		}
+	} else {
+		updateInPlace(&notificationPolicyTree, newNotificationPolicy)
+	}
+	_, _, errPutNotificationPolicy := c.PutNotificationPolicy(notificationPolicyTree)
+	if errPutNotificationPolicy != nil {
+		return errPutNotificationPolicy
 	}
 	return nil
 }

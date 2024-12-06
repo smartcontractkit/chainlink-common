@@ -152,14 +152,14 @@ func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, c
 	return resp.ContractReaderId, nil
 }
 
-func (k *Client) NewChainWriter(ctx context.Context, relayID types.RelayID, chainWriterConfig []byte) (uint32, error) {
-	req := &relayerset.NewChainWriterRequest{
-		RelayerId:         &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
-		ChainWriterConfig: chainWriterConfig,
+func (k *Client) NewContractWriter(ctx context.Context, relayID types.RelayID, contractWriterConfig []byte) (uint32, error) {
+	req := &relayerset.NewContractWriterRequest{
+		RelayerId:            &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+		ContractWriterConfig: contractWriterConfig,
 	}
-	resp, err := k.relayerSetClient.NewChainWriter(ctx, req)
+	resp, err := k.relayerSetClient.NewContractWriter(ctx, req)
 	if err != nil {
-		return 0, fmt.Errorf("error getting new chain writer: %w", err)
+		return 0, fmt.Errorf("error getting new contract writer: %w", err)
 	}
-	return resp.ChainWriterId, nil
+	return resp.ContractWriterId, nil
 }

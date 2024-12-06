@@ -25,6 +25,22 @@ func (c *Client) GetAlertRulesByDashboardUID(dashboardUID string) (GetAllAlertRu
 	return alerts, nil
 }
 
+// GetAlertRulesByFolderUIDAndGroupName Get alert rules by folder UID and GroupName
+func (c *Client) GetAlertRulesByFolderUIDAndGroupName(folderUID string, ruleGroupName string) (GetAllAlertRulesResponse, error) {
+	var alerts []alerting.Rule
+
+	alertsRule, _, err := c.GetAlertRules()
+	if err != nil {
+		return nil, err
+	}
+	for _, rule := range alertsRule {
+		if rule.FolderUID != "" && (rule.FolderUID == folderUID) && (rule.RuleGroup == ruleGroupName) {
+			alerts = append(alerts, rule)
+		}
+	}
+	return alerts, nil
+}
+
 // GetAlertRules Get all alert rules
 func (c *Client) GetAlertRules() (GetAllAlertRulesResponse, *resty.Response, error) {
 	var grafanaResp GetAllAlertRulesResponse

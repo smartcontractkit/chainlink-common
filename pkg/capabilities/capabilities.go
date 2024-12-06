@@ -350,6 +350,8 @@ type RemoteTargetConfig struct {
 
 type RemoteExecutableConfig struct {
 	RequestHashExcludedAttributes []string
+	RegistrationRefresh           time.Duration
+	RegistrationExpiry            time.Duration
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
@@ -372,6 +374,18 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 	if c.BatchCollectionPeriod == 0 {
 		c.BatchCollectionPeriod = DefaultBatchCollectionPeriod
+	}
+}
+
+func (c *RemoteExecutableConfig) ApplyDefaults() {
+	if c == nil {
+		return
+	}
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
+	}
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
 	}
 }
 

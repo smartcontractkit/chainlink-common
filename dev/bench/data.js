@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733337988125,
+  "lastUpdate": 1733447611041,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7644,6 +7644,48 @@ window.BENCHMARK_DATA = {
             "value": 28432,
             "unit": "ns/op",
             "extra": "42603 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b6684ee6508f89d0d3b7d8c8b9fb1b2db93c1e43",
+          "message": "Adding View option to Beholder config (#958)\n\n* Adding View option to Beholder config\r\n\r\n* updating to a slice of metric views\r\n\r\n* fixing httm meter provider\r\n\r\n* attempting to fix ExampleConfig test",
+          "timestamp": "2024-12-05T20:12:33-05:00",
+          "tree_id": "ec1e26493482943a3e3616c717deea5daefbe8a7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b6684ee6508f89d0d3b7d8c8b9fb1b2db93c1e43"
+        },
+        "date": 1733447610253,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.3,
+            "unit": "ns/op",
+            "extra": "2341770 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 510,
+            "unit": "ns/op",
+            "extra": "2293284 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28191,
+            "unit": "ns/op",
+            "extra": "42580 times\n4 procs"
           }
         ]
       }

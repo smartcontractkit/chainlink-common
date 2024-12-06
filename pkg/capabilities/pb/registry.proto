@@ -28,6 +28,8 @@ message RemoteExecutableConfig {
   // when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
   // that the hash of logically identical requests is consistent.
   repeated string requestHashExcludedAttributes = 1;
+  google.protobuf.Duration registrationRefresh = 2;
+  google.protobuf.Duration registrationExpiry = 3;
 }
 
 message CapabilityConfig {

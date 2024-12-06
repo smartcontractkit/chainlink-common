@@ -71,7 +71,6 @@ func TestBuildAuthHeadersV2WithDefaults(t *testing.T) {
 	require.NoError(t, err)
 
 	now := time.Now().UnixMilli()
-	time.Sleep(30 * time.Millisecond)
 
 	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, nil)
 	authHeaderValue, ok := authHeaderMap[authHeaderKey]
@@ -95,7 +94,7 @@ func TestBuildAuthHeadersV2WithDefaults(t *testing.T) {
 
 	// Verify the timestamp is within the last 100ms
 	// This verifies that default configuration is to use the current time
-	assert.InDelta(t, now, timestampParsed, 100, "timestamp should be within the last 100ms")
+	assert.InDelta(t, now, timestampParsed, 50, "timestamp should be within the last 100ms")
 
 	timestampBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(timestampBytes, uint64(timestampParsed))

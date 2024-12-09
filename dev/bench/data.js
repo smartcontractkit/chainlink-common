@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733447611041,
+  "lastUpdate": 1733757299337,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7686,6 +7686,48 @@ window.BENCHMARK_DATA = {
             "value": 28191,
             "unit": "ns/op",
             "extra": "42580 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "70300ddcc77640b62c3dcd49c36b1eaf80844ac4",
+          "message": "additional API method to support getting events of different types in index order (#944)",
+          "timestamp": "2024-12-09T15:13:52Z",
+          "tree_id": "add24a6ddf7586bb044ae0cff0ac1e0f9b880373",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/70300ddcc77640b62c3dcd49c36b1eaf80844ac4"
+        },
+        "date": 1733757298653,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 479.7,
+            "unit": "ns/op",
+            "extra": "2468149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521,
+            "unit": "ns/op",
+            "extra": "2296135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28217,
+            "unit": "ns/op",
+            "extra": "42602 times\n4 procs"
           }
         ]
       }

@@ -109,14 +109,54 @@ func TestPreCodec(t *testing.T) {
 
 	t.Run("RetypeToOffChain converts type to codec.CreateType type", func(t *testing.T) {
 		offChainType, err := preCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
-
 		require.NoError(t, err)
-
 		require.Equal(t, 2, offChainType.NumField())
 		field0 := offChainType.Field(0)
 		assert.Equal(t, "Ask", field0.Name)
 		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
 		field1 := offChainType.Field(1)
+		assert.Equal(t, "Bid", field1.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+	})
+
+	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		elem := offChainType.Elem()
+		require.Equal(t, 2, elem.NumField())
+		field0 := elem.Field(0)
+		assert.Equal(t, "Ask", field0.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		field1 := elem.Field(1)
+		assert.Equal(t, "Bid", field1.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+	})
+
+	t.Run("RetypeToOffChain works on slices", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.SliceOf(reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+		assert.Equal(t, reflect.Slice, offChainType.Kind())
+		elem := offChainType.Elem()
+		require.Equal(t, 2, elem.NumField())
+		field0 := elem.Field(0)
+		assert.Equal(t, "Ask", field0.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		field1 := elem.Field(1)
+		assert.Equal(t, "Bid", field1.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+	})
+
+	t.Run("RetypeToOffChain works on arrays", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.ArrayOf(1, reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+		assert.Equal(t, reflect.Array, offChainType.Kind())
+		elem := offChainType.Elem()
+		require.Equal(t, 2, elem.NumField())
+		field0 := elem.Field(0)
+		assert.Equal(t, "Ask", field0.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		field1 := elem.Field(1)
 		assert.Equal(t, "Bid", field1.Name)
 		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
 	})
@@ -196,6 +236,154 @@ func TestPreCodec(t *testing.T) {
 		}
 		assert.Equal(t, expected, output)
 		newInput, err := preCodec.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+
+		rOffchain := reflect.New(offChainType.Elem())
+		iOffchain := reflect.Indirect(rOffchain)
+		iOffchain.FieldByName("Ask").SetInt(20)
+		iOffchain.FieldByName("Bid").SetInt(10)
+
+		output, err := preCodec.TransformToOnChain(rOffchain.Interface(), "")
+		require.NoError(t, err)
+		jsonEncoded, err := json.Marshal(20)
+		require.NoError(t, err)
+		expected := testStructOn{
+			Ask: jsonEncoded,
+			Bid: 10,
+		}
+		assert.Equal(t, &expected, output)
+		newInput, err := preCodec.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on slices", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.SliceOf(reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+
+		iOffchain := reflect.MakeSlice(offChainType, 2, 2)
+		iElm := iOffchain.Index(0)
+		iElm.FieldByName("Ask").SetInt(20)
+		iElm.FieldByName("Bid").SetInt(10)
+		iElm2 := iOffchain.Index(1)
+		iElm2.FieldByName("Ask").SetInt(20)
+		iElm2.FieldByName("Bid").SetInt(30)
+
+		output, err := preCodec.TransformToOnChain(iOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		jsonEncoded, err := json.Marshal(20)
+		require.NoError(t, err)
+		expected := []testStructOn{
+			{
+				Ask: jsonEncoded,
+				Bid: 10,
+			},
+			{
+				Ask: jsonEncoded,
+				Bid: 30,
+			},
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := preCodec.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on arrays", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.ArrayOf(2, reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+
+		iOffchain := reflect.New(offChainType).Elem()
+		iElm := iOffchain.Index(0)
+		iElm.FieldByName("Ask").SetInt(20)
+		iElm.FieldByName("Bid").SetInt(10)
+		iElm2 := iOffchain.Index(1)
+		iElm2.FieldByName("Ask").SetInt(20)
+		iElm2.FieldByName("Bid").SetInt(30)
+
+		output, err := preCodec.TransformToOnChain(iOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		jsonEncoded, err := json.Marshal(20)
+		require.NoError(t, err)
+		expected := [2]testStructOn{
+			{
+				Ask: jsonEncoded,
+				Bid: 10,
+			},
+			{
+				Ask: jsonEncoded,
+				Bid: 30,
+			},
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := preCodec.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on nested fields", func(t *testing.T) {
+		offChainType, err := nestedPreCodec.RetypeToOffChain(reflect.TypeOf(nestedTestStructOn{}), "")
+		require.NoError(t, err)
+
+		iOffchain := reflect.Indirect(reflect.New(offChainType))
+		iReport := iOffchain.FieldByName("Report")
+		iReport.FieldByName("Ask").SetInt(20)
+		iReport.FieldByName("Bid").SetInt(10)
+
+		output, err := nestedPreCodec.TransformToOnChain(iOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		report := testStructOff{
+			Ask: 20,
+			Bid: 10,
+		}
+		jsonEncoded, err := json.Marshal(report)
+		require.NoError(t, err)
+		expected := nestedTestStructOn{
+			Report: jsonEncoded,
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := nestedPreCodec.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on deeply nested fields", func(t *testing.T) {
+		offChainType, err := deepNestedPreCodec.RetypeToOffChain(reflect.TypeOf(deepNestedTestStructOn{}), "")
+		require.NoError(t, err)
+
+		iOffchain := reflect.Indirect(reflect.New(offChainType))
+		iReports := iOffchain.FieldByName("Reports")
+		iReports.Set(reflect.MakeSlice(iReports.Type(), 1, 1))
+		iElm := iReports.Index(0)
+		iReport := iElm.FieldByName("Report")
+		iReport.FieldByName("Ask").SetInt(20)
+		iReport.FieldByName("Bid").SetInt(10)
+
+		output, err := deepNestedPreCodec.TransformToOnChain(iOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		report := testStructOff{
+			Ask: 20,
+			Bid: 10,
+		}
+		jsonEncoded, err := json.Marshal(report)
+		require.NoError(t, err)
+		expected := deepNestedTestStructOn{
+			Reports: []nestedTestStructOn{
+				{Report: jsonEncoded},
+			},
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := deepNestedPreCodec.TransformToOffChain(expected, "")
 		require.NoError(t, err)
 		assert.Equal(t, iOffchain.Interface(), newInput)
 	})

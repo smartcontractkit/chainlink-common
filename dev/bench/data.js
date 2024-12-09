@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733757299337,
+  "lastUpdate": 1733762332507,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7728,6 +7728,48 @@ window.BENCHMARK_DATA = {
             "value": 28217,
             "unit": "ns/op",
             "extra": "42602 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "182a3d1ef5af6c5e9a21bca84d904251847fc315",
+          "message": "feat(observability-lib): remove consumers + refactor cmd (#964)",
+          "timestamp": "2024-12-09T17:37:49+01:00",
+          "tree_id": "415fb43e771fb7905ebac767ec26befb062f7d80",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/182a3d1ef5af6c5e9a21bca84d904251847fc315"
+        },
+        "date": 1733762331977,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 472,
+            "unit": "ns/op",
+            "extra": "2512638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 516.3,
+            "unit": "ns/op",
+            "extra": "2321942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28204,
+            "unit": "ns/op",
+            "extra": "42513 times\n4 procs"
           }
         ]
       }

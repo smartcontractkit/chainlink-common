@@ -99,6 +99,11 @@ func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any,
 			return &FilterEventParams{}, nil
 		}
 		return &TestStruct{}, nil
+	case strings.HasSuffix(readName, DynamicTopicEventName), strings.HasSuffix(readName, EventWithFilterName):
+		if isEncode {
+			return &FilterEventParams{}, nil
+		}
+		return &SomeDynamicTopicEvent{}, nil
 	case strings.HasSuffix(readName, EventNameField):
 		if isEncode {
 			var typ int32

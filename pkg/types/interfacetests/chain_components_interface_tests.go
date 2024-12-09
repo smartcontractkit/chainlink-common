@@ -59,6 +59,16 @@ const (
 	ContractReaderQueryKeyCanLimitResultsWithCursor    = "QueryKey can limit results with cursor"
 )
 
+// Query keys
+const (
+	ContractReaderQueryKeysReturnsDataTwoEventTypes     = "QueryKeys returns sequence data properly for two event types"
+	ContractReaderQueryKeysNotFound                     = "QueryKeys returns not found if sequence never happened"
+	ContractReaderQueryKeysReturnsData                  = "QueryKeys returns sequence data properly"
+	ContractReaderQueryKeysReturnsDataAsValuesDotValue  = "QueryKeys returns sequence data properly as values.Value"
+	ContractReaderQueryKeysCanFilterWithValueComparator = "QueryKeys can filter data with value comparator"
+	ContractReaderQueryKeysCanLimitResultsWithCursor    = "QueryKeys can limit results with cursor"
+)
+
 type ChainComponentsInterfaceTester[T TestingT[T]] interface {
 	BasicTester[T]
 	GetContractReader(t T) types.ContractReader
@@ -85,6 +95,8 @@ const (
 	MethodSettingStruct                         = "addTestStruct"
 	MethodSettingUint64                         = "setAlterablePrimitiveValue"
 	MethodTriggeringEvent                       = "triggerEvent"
+	MethodTriggeringEventWithDynamicTopic       = "triggerEventWithDynamicTopic"
+	DynamicTopicEventName                       = "TriggeredEventWithDynamicTopic"
 	EventName                                   = "SomeEvent"
 	EventNameField                              = EventName + ".Field"
 	ProtoTest                                   = "ProtoTest"
@@ -104,11 +116,336 @@ func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsI
 		t.Run("GetLatestValue", func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
 		t.Run("BatchGetLatestValues", func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
 		t.Run("QueryKey", func(t T) { runQueryKeyInterfaceTests(t, tester) })
+		t.Run("QueryKeys", func(t T) { runQueryKeysInterfaceTests(t, tester) })
 	})
 }
 
-func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+type SomeDynamicTopicEvent struct {
+	Field string
+}
 
+type sequenceWithKey struct {
+	types.Sequence
+	Key string
+}
+
+func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T]) {
+	tests := []Testcase[T]{
+		{
+			Name: ContractReaderQueryKeysReturnsDataTwoEventTypes,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				expectedSequenceData := createMixedEventTypeSequence(t, tester, boundContract)
+
+				ts := &TestStruct{}
+				require.Eventually(t, func() bool {
+					contractFilter := types.ContractKeyFilter{
+						Contract:         boundContract,
+						KeyFilter:        query.KeyFilter{Key: EventName},
+						SequenceDataType: ts,
+					}
+
+					ds := SomeDynamicTopicEvent{}
+					secondContractFilter := types.ContractKeyFilter{
+						Contract:         boundContract,
+						KeyFilter:        query.KeyFilter{Key: DynamicTopicEventName},
+						SequenceDataType: &ds,
+					}
+
+					sequencesIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{secondContractFilter, contractFilter}, query.LimitAndSort{})
+					if err != nil {
+						return false
+					}
+
+					sequences := make([]sequenceWithKey, 0)
+					for k, s := range sequencesIter {
+						sequences = append(sequences, sequenceWithKey{Sequence: s, Key: k})
+					}
+
+					return sequenceDataEqual(expectedSequenceData, sequences)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+
+		{
+			Name: ContractReaderQueryKeysNotFound,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+
+				contractFilter := types.ContractKeyFilter{
+					Contract:         bound,
+					KeyFilter:        query.KeyFilter{Key: EventName},
+					SequenceDataType: &TestStruct{},
+				}
+
+				logsIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{contractFilter}, query.LimitAndSort{})
+				require.NoError(t, err)
+				var logs []types.Sequence
+				for _, log := range logsIter {
+					logs = append(logs, log)
+				}
+				assert.Len(t, logs, 0)
+			},
+		},
+
+		{
+			Name: ContractReaderQueryKeysReturnsDataAsValuesDotValue,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				bound := BindingsByName(bindings, AnyContractName)[0]
+
+				expectedSequenceData := createMixedEventTypeSequence(t, tester, bound)
+
+				var value values.Value
+				require.Eventually(t, func() bool {
+					contractFilter := types.ContractKeyFilter{
+						Contract:         bound,
+						KeyFilter:        query.KeyFilter{Key: EventName},
+						SequenceDataType: &value,
+					}
+
+					secondContractFilter := types.ContractKeyFilter{
+						Contract:         bound,
+						KeyFilter:        query.KeyFilter{Key: DynamicTopicEventName},
+						SequenceDataType: &value,
+					}
+
+					sequencesIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{contractFilter, secondContractFilter}, query.LimitAndSort{})
+					if err != nil {
+						return false
+					}
+
+					sequences := make([]sequenceWithKey, 0)
+					for k, s := range sequencesIter {
+						sequences = append(sequences, sequenceWithKey{Sequence: s, Key: k})
+					}
+
+					if len(expectedSequenceData) != len(sequences) {
+						return false
+					}
+
+					for i, sequence := range sequences {
+						switch sequence.Key {
+						case EventName:
+							val := *sequences[i].Data.(*values.Value)
+							ts := TestStruct{}
+							err = val.UnwrapTo(&ts)
+							require.NoError(t, err)
+							assert.Equal(t, expectedSequenceData[i], &ts)
+						case DynamicTopicEventName:
+							val := *sequences[i].Data.(*values.Value)
+							ds := SomeDynamicTopicEvent{}
+							err = val.UnwrapTo(&ds)
+							require.NoError(t, err)
+							assert.Equal(t, expectedSequenceData[i], &ds)
+						default:
+							return false
+						}
+					}
+
+					return true
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
+			},
+		},
+
+		{
+			Name: ContractReaderQueryKeysCanFilterWithValueComparator,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				expectedSequenceData := createMixedEventTypeSequence(t, tester, boundContract)
+
+				ts := &TestStruct{}
+				require.Eventually(t, func() bool {
+					contractFilter := types.ContractKeyFilter{
+						Contract: boundContract,
+						KeyFilter: query.KeyFilter{Key: EventName,
+							Expressions: []query.Expression{
+								query.Comparator("Field",
+									primitives.ValueComparator{
+										Value:    2,
+										Operator: primitives.Gte,
+									},
+									primitives.ValueComparator{
+										Value:    3,
+										Operator: primitives.Lte,
+									}),
+							}},
+						SequenceDataType: ts,
+					}
+
+					ds := SomeDynamicTopicEvent{}
+					secondContractFilter := types.ContractKeyFilter{
+						Contract:         boundContract,
+						KeyFilter:        query.KeyFilter{Key: DynamicTopicEventName},
+						SequenceDataType: &ds,
+					}
+
+					sequencesIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{contractFilter, secondContractFilter}, query.LimitAndSort{})
+					if err != nil {
+						return false
+					}
+
+					sequences := make([]sequenceWithKey, 0)
+					for k, s := range sequencesIter {
+						sequences = append(sequences, sequenceWithKey{Sequence: s, Key: k})
+					}
+
+					expectedSequenceData = expectedSequenceData[2:]
+					return sequenceDataEqual(expectedSequenceData, sequences)
+				}, tester.MaxWaitTimeForEvents(), time.Millisecond*500)
+			},
+		},
+		{
+			Name: ContractReaderQueryKeysCanLimitResultsWithCursor,
+			Test: func(t T) {
+				ctx := tests.Context(t)
+				cr := tester.GetContractReader(t)
+				bindings := tester.GetBindings(t)
+
+				require.NoError(t, cr.Bind(ctx, bindings))
+				boundContract := BindingsByName(bindings, AnyContractName)[0]
+
+				var expectedSequenceData []any
+
+				ts1 := CreateTestStruct[T](0, tester)
+				expectedSequenceData = append(expectedSequenceData, &ts1)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
+				ts2 := CreateTestStruct[T](1, tester)
+				expectedSequenceData = append(expectedSequenceData, &ts2)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
+
+				ds1 := SomeDynamicTopicEvent{Field: "1"}
+				expectedSequenceData = append(expectedSequenceData, &ds1)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds1, boundContract, types.Unconfirmed)
+
+				ts3 := CreateTestStruct[T](2, tester)
+				expectedSequenceData = append(expectedSequenceData, &ts3)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
+
+				ds2 := SomeDynamicTopicEvent{Field: "2"}
+				expectedSequenceData = append(expectedSequenceData, &ds2)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds2, boundContract, types.Unconfirmed)
+
+				ts4 := CreateTestStruct[T](3, tester)
+				expectedSequenceData = append(expectedSequenceData, &ts4)
+				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts4, boundContract, types.Finalized)
+
+				require.Eventually(t, func() bool {
+					var allSequences []sequenceWithKey
+					contractFilter := types.ContractKeyFilter{
+						Contract: boundContract,
+						KeyFilter: query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+							query.Confidence(primitives.Finalized),
+						}},
+						SequenceDataType: &TestStruct{},
+					}
+
+					ds := SomeDynamicTopicEvent{}
+					secondContractFilter := types.ContractKeyFilter{
+						Contract: boundContract,
+						KeyFilter: query.KeyFilter{Key: DynamicTopicEventName, Expressions: []query.Expression{
+							query.Confidence(primitives.Finalized),
+						}},
+						SequenceDataType: &ds,
+					}
+
+					limit := query.LimitAndSort{
+						SortBy: []query.SortBy{query.NewSortBySequence(query.Asc)},
+						Limit:  query.CountLimit(3),
+					}
+
+					for idx := 0; idx < len(expectedSequenceData)/2; idx++ {
+						// sequences from queryKey without limit and sort should be in descending order
+						sequencesIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{secondContractFilter, contractFilter}, limit)
+						require.NoError(t, err)
+
+						sequences := make([]sequenceWithKey, 0)
+						for k, s := range sequencesIter {
+							sequences = append(sequences, sequenceWithKey{Sequence: s, Key: k})
+						}
+
+						if len(sequences) == 0 {
+							continue
+						}
+
+						limit.Limit = query.CursorLimit(sequences[len(sequences)-1].Cursor, query.CursorFollowing, 3)
+						allSequences = append(allSequences, sequences...)
+					}
+
+					return sequenceDataEqual(expectedSequenceData, allSequences)
+				}, tester.MaxWaitTimeForEvents(), 500*time.Millisecond)
+			},
+		},
+	}
+
+	RunTests(t, tester, tests)
+}
+
+func createMixedEventTypeSequence[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], boundContract types.BoundContract) []any {
+	var expectedSequenceData []any
+
+	ts1 := CreateTestStruct[T](0, tester)
+	expectedSequenceData = append(expectedSequenceData, &ts1)
+	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
+	ts2 := CreateTestStruct[T](1, tester)
+	expectedSequenceData = append(expectedSequenceData, &ts2)
+	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
+
+	ds1 := SomeDynamicTopicEvent{Field: "1"}
+	expectedSequenceData = append(expectedSequenceData, &ds1)
+	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds1, boundContract, types.Unconfirmed)
+
+	ts3 := CreateTestStruct[T](2, tester)
+	expectedSequenceData = append(expectedSequenceData, &ts3)
+	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
+
+	ds2 := SomeDynamicTopicEvent{Field: "2"}
+	expectedSequenceData = append(expectedSequenceData, &ds2)
+	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds2, boundContract, types.Unconfirmed)
+
+	ts4 := CreateTestStruct[T](3, tester)
+	expectedSequenceData = append(expectedSequenceData, &ts4)
+	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts4, boundContract, types.Unconfirmed)
+
+	return expectedSequenceData
+}
+
+func sequenceDataEqual(expectedSequenceData []any, sequences []sequenceWithKey) bool {
+	if len(expectedSequenceData) != len(sequences) {
+		return false
+	}
+
+	for i, sequence := range sequences {
+		if !reflect.DeepEqual(sequence.Data, expectedSequenceData[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
 	tests := []Testcase[T]{
 		{
 			Name: ContractReaderGetLatestValueAsValuesDotValue,
@@ -446,7 +783,6 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 }
 
 func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
-
 	testCases := []Testcase[T]{
 		{
 			Name: ContractReaderBatchGetLatestValue,

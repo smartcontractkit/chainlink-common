@@ -318,7 +318,7 @@ func CreateMapFromStruct(v any) (*Map, error) {
 		if !field.IsExported() {
 			continue
 		}
-		// for backwards compatability, use tagged mapstructure tag as key if provided
+		// for backwards compatibility, use tagged mapstructure tag as key if provided
 		msTag := field.Tag.Get("mapstructure")
 		key := msTag
 		if key == "" {

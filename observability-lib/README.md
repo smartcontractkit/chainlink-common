@@ -15,8 +15,7 @@ The observability-lib is structured as follows:
 ```shell
 observability-lib/
     api/ # Grafana HTTP API Client to interact with resources
-    cmd/ # CLI to interact deploy or generateJSON from dashboards defined in folder below
-    dashboards/ # Dashboards definitions
+    cmd/ # CLI
     grafana/ # grafana-foundations-sdk abstraction to manipulate grafana resources
 ```
 
@@ -89,43 +88,56 @@ func main() {
 ```
 </details>
 
-More advanced examples can be found in the [dashboards](./dashboards) folder :
-- [DON OCR](./dashboards/atlas-don/component.go)
-- [Capabilities](./dashboards/capabilities/component.go)
-- [Node General](./dashboards/core-node/component.go)
-- [Node Components](./dashboards/core-node-components/component.go)
-- [Kubernetes Resources](./dashboards/k8s-resources/component.go)
-- [NOP OCR Health](./dashboards/nop-ocr/component.go)
-
 ## Cmd Usage
 
-The CLI can be used to :
-- Deploy dashboards and alerts to grafana
-- Generate JSON from dashboards defined in the `dashboards` folder
+CLI to manipulate grafana resources
 
-`func NewDashboard(props *Props)` in each [dashboards](./dashboards) packages is called from [cmd](./cmd/builder.go) to deploy or generate JSON from the dashboard.
+### Contact Point
 
-Example to deploy a dashboard to grafana instance using URL and token:
+#### List
+
 ```shell
-make build
-./observability-lib deploy \
-  --dashboard-name DashboardName \
-  --dashboard-folder FolderName \
-  --grafana-url $GRAFANA_URL \
-  --grafana-token $GRAFANA_TOKEN \
-  --type core-node \
-  --platform kubernetes \
-  --metrics-datasource Prometheus
+./observability-lib api contact-point list \
+  --grafana-url http://localhost:3000 \
+  --grafana-token <token>
 ```
-To see how to get a grafana token you can check this [page](https://grafana.com/docs/grafana/latest/administration/service-accounts/)
 
-Example to generate JSON from a dashboard defined in the `dashboards` folder:
+#### Delete
+
 ```shell
-make build
-./observability-lib generate \
-  --dashboard-name DashboardName \
-  --type core-node-components \
-  --platform kubernetes
+./observability-lib api contact-point delete <name> \
+  --grafana-url http://localhost:3000 \
+  --grafana-token <token>
+```
+
+### Dashboard
+
+#### Delete
+
+```shell
+./observability-lib api dashboard delete <name> \
+  --grafana-url http://localhost:3000 \
+  --grafana-token <token>
+```
+
+### Notification Policy
+
+#### List
+
+```shell
+./observability-lib api notification-policy list \
+  --grafana-url http://localhost:3000 \
+  --grafana-token <token>
+```
+
+#### Delete
+
+```shell
+./observability-lib api notification-policy delete <receiverName> \ 
+  --grafana-url http://localhost:3000 \
+  --grafana-token <token> \
+  --matchers key,=,value \
+  --matchers key2,=,value2
 ```
 
 ## Makefile Usage

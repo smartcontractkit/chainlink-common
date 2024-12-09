@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"iter"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -65,7 +66,17 @@ type ContractReader interface {
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
 
+	// QueryKeys provides fetching chain agnostic events (Sequence) of different types with general querying capability.
+	// The iterator returns a pair of key and sequence.
+	QueryKeys(ctx context.Context, filters []ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, Sequence], error)
+
 	mustEmbedUnimplementedContractReader()
+}
+
+type ContractKeyFilter struct {
+	query.KeyFilter
+	Contract         BoundContract
+	SequenceDataType any
 }
 
 // BatchGetLatestValuesRequest string is contract name.
@@ -151,6 +162,10 @@ func (UnimplementedContractReader) Unbind(ctx context.Context, bindings []BoundC
 
 func (UnimplementedContractReader) QueryKey(ctx context.Context, boundContract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error) {
 	return nil, UnimplementedError("ContractReader.QueryKey unimplemented")
+}
+
+func (UnimplementedContractReader) QueryKeys(ctx context.Context, keyQueries []ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, Sequence], error) {
+	return nil, UnimplementedError("ContractReader.QueryKeys unimplemented")
 }
 
 func (UnimplementedContractReader) Start(context.Context) error {

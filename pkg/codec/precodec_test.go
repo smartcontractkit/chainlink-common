@@ -3,6 +3,7 @@ package codec_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -163,21 +164,39 @@ func TestPreCodec(t *testing.T) {
 		assert.Equal(t, err.Error(), "can only decode []byte from on-chain: int")
 	})
 
-	t.Run("RetypeToOffChain only works with valid path", func(t *testing.T) {
+	t.Run("RetypeToOffChain only works with a valid path", func(t *testing.T) {
 		_, err := invalidPreCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
 		require.Error(t, err)
 		assert.Equal(t, err.Error(), "invalid type: cannot find Unknown")
 	})
-}
 
-func assertPreCodecTransform(t *testing.T, offChainType reflect.Type) {
-	require.Equal(t, 2, offChainType.NumField())
-	field0 := offChainType.Field(0)
-	fmt.Println(offChainType)
-	fmt.Println(field0.Type)
-	assert.Equal(t, "Ask", field0.Name)
-	assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
-	field1 := offChainType.Field(1)
-	assert.Equal(t, "Bid", field1.Name)
-	assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {
+		incorrectVal := struct{}{}
+		_, err := preCodec.TransformToOnChain(incorrectVal, "")
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		_, err = preCodec.TransformToOffChain(incorrectVal, "")
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
+		offChainType, err := preCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
+		require.NoError(t, err)
+		iOffchain := reflect.Indirect(reflect.New(offChainType))
+		iOffchain.FieldByName("Ask").SetInt(20)
+		iOffchain.FieldByName("Bid").SetInt(10)
+
+		output, err := preCodec.TransformToOnChain(iOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		jsonEncoded, err := json.Marshal(20)
+		require.NoError(t, err)
+		expected := testStructOn{
+			Ask: jsonEncoded,
+			Bid: 10,
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := preCodec.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
 }

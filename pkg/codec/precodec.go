@@ -80,7 +80,7 @@ func (pc *preCodec) decodeFieldMapAction(extractMap map[string]any, key string, 
 	if err != nil {
 		return err
 	}
-	err = codec.Decode(context.TODO(), extractMap[key].([]byte), to, "")
+	err = codec.Decode(context.Background(), extractMap[key].([]byte), &to, "")
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (pc *preCodec) encodeFieldMapAction(extractMap map[string]any, key string, 
 		return fmt.Errorf("codec not found for abi: '%s'", abi)
 	}
 
-	encoded, err := codec.Encode(context.TODO(), extractMap[key], "")
+	encoded, err := codec.Encode(context.Background(), extractMap[key], "")
 	if err != nil {
 		return err
 	}

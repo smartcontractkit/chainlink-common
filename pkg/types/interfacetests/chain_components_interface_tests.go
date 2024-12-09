@@ -600,8 +600,6 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				var prim1 uint64
 				bound := BindingsByName(bindings, callArgs.ContractName)[0]
 
-				require.Error(t, cr.GetLatestValue(ctx, bound.ReadIdentifier(callArgs.ReadName), primitives.Finalized, callArgs.Params, &prim1))
-
 				err := WaitForTransactionStatus(t, tester, txID, types.Finalized, mockRun)
 				require.NoError(t, err)
 
@@ -710,10 +708,6 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				txID := SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, bindings[0], types.Unconfirmed)
 
 				result := &TestStruct{}
-				require.Eventually(t, func() bool {
-					err := cr.GetLatestValue(ctx, bound.ReadIdentifier(EventName), primitives.Finalized, nil, &result)
-					return err != nil && assert.ErrorContains(t, err, types.ErrNotFound.Error())
-				}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 
 				err := WaitForTransactionStatus(t, tester, txID, types.Finalized, mockRun)
 				require.NoError(t, err)

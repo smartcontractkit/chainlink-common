@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733846808255,
+  "lastUpdate": 1733858885034,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7812,6 +7812,48 @@ window.BENCHMARK_DATA = {
             "value": 28252,
             "unit": "ns/op",
             "extra": "42498 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a9c706f99e83ac0ec0e3508930138e4e06d5b160",
+          "message": "[INFOPLAT-1592] Address high CPU utilization when telemetry is enabled (#967)\n\n* [loop/EnvConfig] parse sets TelemetryEmitterBatchProcessor, TelemetryEmitterExportTimeout\r\n\r\n* [beholder/client] BatchProcessor ExportTimeout option is non-zero value\r\n\r\n* [loop/EnvConfig] Use maps.Equal in tests\r\n\r\n---------\r\n\r\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2024-12-10T14:26:53-05:00",
+          "tree_id": "541a9c2107d89b528d00ac53cb66137120ebfe57",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a9c706f99e83ac0ec0e3508930138e4e06d5b160"
+        },
+        "date": 1733858883830,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 449.9,
+            "unit": "ns/op",
+            "extra": "2680748 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.1,
+            "unit": "ns/op",
+            "extra": "2346340 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26890,
+            "unit": "ns/op",
+            "extra": "44739 times\n4 procs"
           }
         ]
       }

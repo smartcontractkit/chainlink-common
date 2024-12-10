@@ -216,7 +216,7 @@ type PreCodecModifierConfig struct {
 	// A factory function that given an encoding scheme, returns a specific codec.
 	// This allows encoding and decoding implementations to be handled outside of the modifier.
 	// The map value given to "Fields" will be used to initialize the codec.
-	CodecFactory func(typeABI string) types.RemoteCodec
+	CodecFactory func(typeDef string) types.RemoteCodec
 }
 
 func (c *PreCodecModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {

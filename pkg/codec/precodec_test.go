@@ -56,16 +56,6 @@ type testStructOff struct {
 	Bid int
 }
 
-type nestedTestStructOff struct {
-	Report    testStructOff
-	FeedID    [32]byte
-	Timestamp int64
-}
-
-type deepNestedTestStructOff struct {
-	Reports []nestedTestStructOff
-}
-
 type testStructOn struct {
 	Ask []byte
 	Bid int
@@ -82,7 +72,7 @@ type deepNestedTestStructOn struct {
 }
 
 const (
-	TestStructOffABI = "uint256 Ask, uint256 Bid"
+	TestStructOffDef = "uint256 Ask, uint256 Bid"
 )
 
 func TestPreCodec(t *testing.T) {
@@ -90,21 +80,21 @@ func TestPreCodec(t *testing.T) {
 
 	preCodec := codec.NewPreCodec(
 		map[string]string{"Ask": "uint256"},
-		func(typeABI string) types.RemoteCodec {
+		func(typeDef string) types.RemoteCodec {
 			return ExampleCodec{offChainType: int(0)}
 		},
 	)
 	nestedPreCodec := codec.NewPreCodec(
-		map[string]string{"Report": TestStructOffABI},
-		func(typeABI string) types.RemoteCodec { return ExampleCodec{offChainType: testStructOff{}} },
+		map[string]string{"Report": TestStructOffDef},
+		func(typeDef string) types.RemoteCodec { return ExampleCodec{offChainType: testStructOff{}} },
 	)
 	deepNestedPreCodec := codec.NewPreCodec(
-		map[string]string{"Reports.Report": TestStructOffABI},
-		func(typeABI string) types.RemoteCodec { return ExampleCodec{offChainType: testStructOff{}} },
+		map[string]string{"Reports.Report": TestStructOffDef},
+		func(typeDef string) types.RemoteCodec { return ExampleCodec{offChainType: testStructOff{}} },
 	)
 	invalidPreCodec := codec.NewPreCodec(
-		map[string]string{"Unknown": TestStructOffABI},
-		func(typeABI string) types.RemoteCodec { return ExampleCodec{offChainType: testStructOff{}} },
+		map[string]string{"Unknown": TestStructOffDef},
+		func(typeDef string) types.RemoteCodec { return ExampleCodec{offChainType: testStructOff{}} },
 	)
 
 	t.Run("RetypeToOffChain converts type to codec.CreateType type", func(t *testing.T) {

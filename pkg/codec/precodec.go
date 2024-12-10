@@ -11,7 +11,7 @@ import (
 
 // PreCodec creates a modifier that will run a preliminary encoding/decoding step.
 // This is useful when wanting to move nested data as generic bytes.
-func NewPreCodec(fields map[string]string, codecFactory func(typeABI string) types.RemoteCodec) Modifier {
+func NewPreCodec(fields map[string]string, codecFactory func(typeDef string) types.RemoteCodec) Modifier {
 	m := &preCodec{
 		modifierBase: modifierBase[string]{
 			fields:           fields,
@@ -22,22 +22,22 @@ func NewPreCodec(fields map[string]string, codecFactory func(typeABI string) typ
 		codecs:       make(map[string]types.RemoteCodec),
 	}
 
-	// set up a codec each unique ABI
-	for _, abi := range fields {
-		if _, ok := m.codecs[abi]; ok {
+	// set up a codec for each unique type definition
+	for _, typeDef := range fields {
+		if _, ok := m.codecs[typeDef]; ok {
 			continue
 		}
-		m.codecs[abi] = codecFactory(abi)
+		m.codecs[typeDef] = codecFactory(typeDef)
 	}
 
-	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, abi string) error {
+	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, typeDef string) error {
 		if field.Type != reflect.SliceOf(reflect.TypeFor[uint8]()) {
 			return fmt.Errorf("can only decode []byte from on-chain: %s", field.Type)
 		}
 
-		codec, ok := m.codecs[abi]
+		codec, ok := m.codecs[typeDef]
 		if !ok || codec == nil {
-			return fmt.Errorf("codec not found for abi: '%s'", abi)
+			return fmt.Errorf("codec not found for type definition: '%s'", typeDef)
 		}
 
 		newType, err := codec.CreateType("", false)
@@ -54,7 +54,7 @@ func NewPreCodec(fields map[string]string, codecFactory func(typeABI string) typ
 
 type preCodec struct {
 	modifierBase[string]
-	codecFactory func(typeABI string) types.RemoteCodec
+	codecFactory func(typeDef string) types.RemoteCodec
 	codecs       map[string]types.RemoteCodec
 }
 
@@ -65,15 +65,15 @@ func (pc *preCodec) TransformToOffChain(onChainValue any, _ string) (any, error)
 	return transformWithMaps(onChainValue, pc.onToOffChainType, pc.fields, pc.decodeFieldMapAction, allHooks...)
 }
 
-func (pc *preCodec) decodeFieldMapAction(extractMap map[string]any, key string, abi string) error {
+func (pc *preCodec) decodeFieldMapAction(extractMap map[string]any, key string, typeDef string) error {
 	_, exists := extractMap[key]
 	if !exists {
 		return fmt.Errorf("field %s does not exist", key)
 	}
 
-	codec, ok := pc.codecs[abi]
+	codec, ok := pc.codecs[typeDef]
 	if !ok || codec == nil {
-		return fmt.Errorf("codec not found for abi: '%s'", abi)
+		return fmt.Errorf("codec not found for type definition: '%s'", typeDef)
 	}
 
 	to, err := codec.CreateType("", false)
@@ -95,15 +95,15 @@ func (pc *preCodec) TransformToOnChain(offChainValue any, _ string) (any, error)
 	return transformWithMaps(offChainValue, pc.offToOnChainType, pc.fields, pc.encodeFieldMapAction, allHooks...)
 }
 
-func (pc *preCodec) encodeFieldMapAction(extractMap map[string]any, key string, abi string) error {
+func (pc *preCodec) encodeFieldMapAction(extractMap map[string]any, key string, typeDef string) error {
 	_, exists := extractMap[key]
 	if !exists {
 		return fmt.Errorf("field %s does not exist", key)
 	}
 
-	codec, ok := pc.codecs[abi]
+	codec, ok := pc.codecs[typeDef]
 	if !ok || codec == nil {
-		return fmt.Errorf("codec not found for abi: '%s'", abi)
+		return fmt.Errorf("codec not found for type definition: '%s'", typeDef)
 	}
 
 	encoded, err := codec.Encode(context.Background(), extractMap[key], "")

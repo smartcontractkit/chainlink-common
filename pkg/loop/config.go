@@ -142,6 +142,14 @@ func (e *EnvConfig) parse() error {
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
 		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
 		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
+		e.TelemetryEmitterBatchProcessor, err = getBool(envTelemetryEmitterBatchProcessor)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)
+		}
+		e.TelemetryEmitterExportTimeout, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportTimeout))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportTimeout, err)
+		}
 	}
 	return nil
 }

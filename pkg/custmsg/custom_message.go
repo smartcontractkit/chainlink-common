@@ -112,6 +112,7 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	}
 	payloadBytes, err := proto.Marshal(payload)
 	if err != nil {
+		fmt.Printf("error payload: %+v", payload)
 		return fmt.Errorf("sending custom message failed to marshal protobuf: %w", err)
 	}
 

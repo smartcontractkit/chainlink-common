@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/cron/cron-trigger@1.0.0",
+  "$defs": {
+    "Payload": {
+      "type": "object",
+      "properties": {
+        "ActualExecutionTime": {
+          "type": "string",
+          "description": "Time that cron trigger's task execution occurred (RFC3339Nano formatted)"
+        },
+        "ScheduledExecutionTime": {
+          "type": "string",
+          "description": "Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)"
+        }
+      },
+      "required": ["ActualExecutionTime", "ScheduledExecutionTime"],
+      "additionalProperties": false
+    },
+    "Config": {
+      "type": "object",
+      "properties": {
+        "schedule": {
+          "type": "string"
+        }
+      },
+      "required": ["schedule"],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "config": {
+      "$ref": "#/$defs/Config"
+    },
+    "outputs": {
+      "$ref": "#/$defs/Payload"
+    }
+  },
+  "required": ["config", "outputs"],
+  "additionalProperties": false,
+  "description": "A trigger that uses a cron schedule to run periodically at fixed times, dates, or intervals."
+}

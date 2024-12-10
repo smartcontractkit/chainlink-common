@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733762332507,
+  "lastUpdate": 1733846808255,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7770,6 +7770,48 @@ window.BENCHMARK_DATA = {
             "value": 28204,
             "unit": "ns/op",
             "extra": "42513 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eb2f2bc67b8f3e8bc0bb3b3eed5f774e356899e6",
+          "message": "[Keystone] Increase default OCR phase size limit (#969)",
+          "timestamp": "2024-12-10T08:05:42-08:00",
+          "tree_id": "ea325bcfb9859493656120d11fd2c0ed5b935bc5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eb2f2bc67b8f3e8bc0bb3b3eed5f774e356899e6"
+        },
+        "date": 1733846807678,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.5,
+            "unit": "ns/op",
+            "extra": "2609665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 523.1,
+            "unit": "ns/op",
+            "extra": "2296021 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28252,
+            "unit": "ns/op",
+            "extra": "42498 times\n4 procs"
           }
         ]
       }

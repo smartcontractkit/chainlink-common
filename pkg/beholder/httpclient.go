@@ -14,7 +14,6 @@ import (
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -77,9 +76,13 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	// Logger
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.LogExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
+		}
 		loggerProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.LogExportTimeout), // Default is 30s
+			batchProcessorOpts...,
 		)
 	} else {
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -117,9 +120,13 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	// Message Emitter
 	var messageLogProcessor sdklog.Processor
 	if cfg.EmitterBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.EmitterExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.EmitterExportTimeout)) // Default is 30s
+		}
 		messageLogProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.EmitterExportTimeout), // Default is 30s
+			batchProcessorOpts..., // Default is 30s
 		)
 	} else {
 		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -181,9 +188,12 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	if err != nil {
 		return nil, err
 	}
-
+	batcherOpts := []sdktrace.BatchSpanProcessorOption{}
+	if config.TraceBatchTimeout > 0 {
+		batcherOpts = append(batcherOpts, sdktrace.WithBatchTimeout(config.TraceBatchTimeout)) // Default is 5s
+	}
 	opts := []sdktrace.TracerProviderOption{
-		sdktrace.WithBatcher(exporter, trace.WithBatchTimeout(config.TraceBatchTimeout)), // Default is 5s
+		sdktrace.WithBatcher(exporter, batcherOpts...),
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(

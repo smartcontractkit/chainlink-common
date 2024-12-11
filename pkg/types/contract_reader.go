@@ -16,6 +16,7 @@ const (
 	ErrContractReaderConfigMissing = UnimplementedError("ContractReader entry missing from RelayConfig")
 	ErrInternal                    = InternalError("internal error")
 	ErrNotFound                    = NotFoundError("not found")
+	ErrFinalityViolated            = InternalError("finality violated")
 )
 
 // ContractReader defines essential read operations a chain should implement for reading contract values and events.
@@ -69,6 +70,13 @@ type ContractReader interface {
 	// QueryKeys provides fetching chain agnostic events (Sequence) of different types with general querying capability.
 	// The iterator returns a pair of key and sequence.
 	QueryKeys(ctx context.Context, filters []ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, Sequence], error)
+
+	// HealthReport returns a full health report of the callee including its dependencies.
+	// Keys are based on Name(), with nil values when healthy or errors otherwise.
+	// Use CopyHealth to collect reports from sub-services.
+	// This should run very fast, so avoid doing computation and instead prefer reporting pre-calculated state.
+	// On finality violation report must contain at least one ErrFinalityViolation.
+	HealthReport() map[string]error
 
 	mustEmbedUnimplementedContractReader()
 }

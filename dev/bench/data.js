@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733858885034,
+  "lastUpdate": 1733944039597,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7854,6 +7854,48 @@ window.BENCHMARK_DATA = {
             "value": 26890,
             "unit": "ns/op",
             "extra": "44739 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lei.shi@smartcontract.com",
+            "name": "Lei",
+            "username": "shileiwill"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9087f5e8daf9a3e693a726839f789e6590e7ce09",
+          "message": "add cron trigger and readcontract action (#971)\n\nSigned-off-by: Lei <lei.shi@smartcontract.com>",
+          "timestamp": "2024-12-11T19:06:13Z",
+          "tree_id": "ca5d4ebe6d26f5e6a1201b73d2599c17be74ed60",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9087f5e8daf9a3e693a726839f789e6590e7ce09"
+        },
+        "date": 1733944038899,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 475.2,
+            "unit": "ns/op",
+            "extra": "2427742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 516.9,
+            "unit": "ns/op",
+            "extra": "2311503 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28312,
+            "unit": "ns/op",
+            "extra": "40534 times\n4 procs"
           }
         ]
       }

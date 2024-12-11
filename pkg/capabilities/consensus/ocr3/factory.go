@@ -22,7 +22,8 @@ type factory struct {
 }
 
 const (
-	defaultMaxPhaseOutputBytes = 100000
+	// TODO(KS-617): read this from contract config
+	defaultMaxPhaseOutputBytes = 1000000 // 1 MB
 	defaultMaxReportCount      = 20
 )
 

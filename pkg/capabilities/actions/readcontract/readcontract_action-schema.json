@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/readcontract/read-contract-action@1.0.0",
+  "$defs": {
+    "Config": {
+      "type": "object",
+      "properties": {
+        "ContractReaderConfig": {
+          "type": "string"
+        },
+        "ReadIdentifier": {
+          "type": "string"
+        },
+        "ContractAddress": {
+          "type": "string"
+        },
+        "ContractName": {
+          "type": "string"
+        }
+      },
+      "required": ["ContractReaderConfig", "ReadIdentifier", "ContractAddress", "ContractName"]
+    },
+    "Input": {
+      "type": "object",
+      "properties": {
+        "ConfidenceLevel": {
+          "type": "string"
+        },
+        "Params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["ConfidenceLevel", "Params"]
+    },
+    "Output": {
+      "type": "object",
+      "properties": {
+        "LatestValue": {
+          "type": ["object", "string", "boolean", "null", "array"]
+        }
+      },
+      "required": ["LatestValue"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "Config": {
+      "$ref": "#/$defs/Config"
+    },
+    "Inputs": {
+      "$ref": "#/$defs/Input"
+    },
+    "Outputs": {
+      "$ref": "#/$defs/Output"
+    }
+  }
+}

@@ -191,7 +191,7 @@ func (c *conn) PrepareContext(_ context.Context, query string) (driver.Stmt, err
 	// It is not safe to give the passed in context to the tx directly
 	// because the tx is shared by many conns and cancelling the context will
 	// destroy the tx which can affect other conns. Instead, we pass the context
-	// passed to NewSqlxDb when the database was set up so the operation can at
+	// passed to NewTestDb when the database was set up so the operation can at
 	// least be aborted immediately if the whole test is interrupted.
 	ctx, cancel := utils.ContextFromChan(c.abort)
 	defer cancel()

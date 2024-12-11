@@ -34,7 +34,7 @@ func TestTxDBDriver(t *testing.T) {
 		assert.Contains(t, drivers, "txdb")
 	})
 
-	db := NewSqlxDB(t, DbUrlOrInMemory(t))
+	db := NewTestDB(t, TestURL(t))
 	dropTable := func() error {
 		_, err := db.Exec(`DROP TABLE IF EXISTS txdb_test`)
 		return err

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func NewSqlxDB(t testing.TB, dbURL string) *sqlx.DB {
+func NewTestDB(t testing.TB, dbURL string) *sqlx.DB {
 	err := RegisterTxDb(dbURL)
 	if err != nil {
 		t.Fatalf("failed to register txdb dialect: %s", err.Error())
@@ -25,7 +25,7 @@ func NewSqlxDB(t testing.TB, dbURL string) *sqlx.DB {
 	return db
 }
 
-func DbUrlOrInMemory(t testing.TB) string {
+func TestURL(t testing.TB) string {
 	dbURL, ok := os.LookupEnv("CL_DATABASE_URL")
 	if ok {
 		return dbURL

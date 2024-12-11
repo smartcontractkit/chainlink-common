@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733944039597,
+  "lastUpdate": 1733945009402,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7896,6 +7896,48 @@ window.BENCHMARK_DATA = {
             "value": 28312,
             "unit": "ns/op",
             "extra": "40534 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0b03fa331a49577ad30b8b780e0bc8070bd58328",
+          "message": "BCFR-1086 finality violation (#966)\n\n* define finality violation error\r\n\r\nSigned-off-by: Dmytro Haidashenko <dmytro.haidashenko@smartcontract.com>\r\n\r\n* rename finality violation\r\n\r\nSigned-off-by: Dmytro Haidashenko <dmytro.haidashenko@smartcontract.com>\r\n\r\n* Test ContainsError\r\n\r\nSigned-off-by: Dmytro Haidashenko <dmytro.haidashenko@smartcontract.com>\r\n\r\n---------\r\n\r\nSigned-off-by: Dmytro Haidashenko <dmytro.haidashenko@smartcontract.com>\r\nCo-authored-by: Domino Valdano <domino.valdano@smartcontract.com>",
+          "timestamp": "2024-12-11T20:22:25+01:00",
+          "tree_id": "303c1daeb26f62b20d8d895053c20bbb712c7ae8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0b03fa331a49577ad30b8b780e0bc8070bd58328"
+        },
+        "date": 1733945008868,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 464.4,
+            "unit": "ns/op",
+            "extra": "2590290 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 514.9,
+            "unit": "ns/op",
+            "extra": "2302418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28238,
+            "unit": "ns/op",
+            "extra": "42352 times\n4 procs"
           }
         ]
       }

@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	AGGREGATION_METHOD_MEDIAN = "median"
-	AGGREGATION_METHOD_MODE   = "mode"
+	AGGREGATION_METHOD_MEDIAN   = "median"
+	AGGREGATION_METHOD_MODE     = "mode"
+	AGGREGATION_METHOD_MAJORITY = "majority"
 	// DEVIATION_TYPE_NONE is no deviation check
 	DEVIATION_TYPE_NONE = "none"
 	// DEVIATION_TYPE_ANY is any difference from the previous value to the next value
@@ -71,7 +72,8 @@ type AggregationField struct {
 	// How the data set should be aggregated to a single value
 	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types. not a true median, because no average if two middle values.
 	// * mode - take the most frequent value. if tied, use the "first".
-	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode" required:"true"`
+	// * majority - take the most frequent value. if tied, use the "first". error if f+1 of the same answer are not seen.
+	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode,enum=majority" required:"true"`
 	// The key that the aggregated data is put under
 	// If omitted, the InputKey will be used
 	OutputKey string `mapstructure:"outputKey" json:"outputKey"`
@@ -108,7 +110,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			return nil, fmt.Errorf("not enough observations provided %s, have %d want %d", field.InputKey, len(vals), 2*f+1)
 		}
 
-		singleValue, err := reduce(field.Method, vals)
+		singleValue, err := reduce(field.Method, vals, f)
 		if err != nil {
 			return nil, fmt.Errorf("unable to reduce on method %s, err: %s", field.Method, err.Error())
 		}
@@ -335,12 +337,19 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 	return vals
 }
 
-func reduce(method string, items []values.Value) (values.Value, error) {
+func reduce(method string, items []values.Value, f int) (values.Value, error) {
 	switch method {
 	case AGGREGATION_METHOD_MEDIAN:
 		return median(items)
 	case AGGREGATION_METHOD_MODE:
-		return mode(items)
+		value, _, err := mode(items)
+		return value, err
+	case AGGREGATION_METHOD_MAJORITY:
+		value, count, err := mode(items)
+		if count < f+1 {
+			return nil, fmt.Errorf("agreement not reached. have: %d, want: %d", count, f+1)
+		}
+		return value, err
 	default:
 		// invariant, config should be validated
 		return nil, fmt.Errorf("unsupported aggregation method %s", method)
@@ -408,10 +417,10 @@ func toDecimal(item values.Value) (decimal.Decimal, error) {
 	}
 }
 
-func mode(items []values.Value) (values.Value, error) {
+func mode(items []values.Value) (values.Value, int, error) {
 	if len(items) == 0 {
 		// invariant, as long as f > 0 there should be items
-		return nil, errors.New("items cannot be empty")
+		return nil, 0, errors.New("items cannot be empty")
 	}
 
 	counts := make(map[[32]byte]*counter)
@@ -419,7 +428,7 @@ func mode(items []values.Value) (values.Value, error) {
 		marshalled, err := proto.MarshalOptions{Deterministic: true}.Marshal(values.Proto(item))
 		if err != nil {
 			// invariant: values should always be able to be proto marshalled
-			return nil, err
+			return nil, 0, err
 		}
 		sha := sha256.Sum256(marshalled)
 		elem, ok := counts[sha]
@@ -449,7 +458,7 @@ func mode(items []values.Value) (values.Value, error) {
 
 	// If more than one mode found, choose first
 
-	return modes[0], nil
+	return modes[0], maxCount, nil
 }
 
 func deviation(method string, previousValue values.Value, nextValue values.Value) (decimal.Decimal, error) {
@@ -558,8 +567,8 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 			}
 			parsedConfig.Fields[i].Deviation = deci
 		}
-		if len(field.Method) == 0 || !isOneOf(field.Method, []string{AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE}) {
-			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE)
+		if len(field.Method) == 0 || !isOneOf(field.Method, []string{AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE, AGGREGATION_METHOD_MAJORITY}) {
+			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE, AGGREGATION_METHOD_MAJORITY)
 		}
 		if len(field.DeviationString) > 0 && isOneOf(field.DeviationType, []string{DEVIATION_TYPE_NONE, DEVIATION_TYPE_ANY}) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field cannot have deviation with a deviation type of %s", field.DeviationType)

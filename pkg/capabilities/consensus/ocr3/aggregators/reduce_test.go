@@ -634,6 +634,24 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
 				},
 			},
+			{
+				name:            "reduce error median",
+				previousOutcome: nil,
+				fields: []aggregators.AggregationField{
+					{
+						Method:    "majority",
+						OutputKey: "Price",
+					},
+				},
+				extraConfig: map[string]any{},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.Wrap(true)
+					require.NoError(t, err)
+					mockValue2, err := values.Wrap(true)
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}}
+				},
+			},
 		}
 		for _, tt := range cases {
 			t.Run(tt.name, func(t *testing.T) {
@@ -857,6 +875,38 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 								InputKey:        "FeedID",
 								OutputKey:       "FeedId",
 								Method:          "median",
+								DeviationString: "",
+								Deviation:       decimal.Decimal{},
+								DeviationType:   "none",
+							},
+						},
+						OutputFieldName: "Reports",
+						ReportFormat:    "array",
+					}
+				},
+			},
+			{
+				name: "aggregation method majority, no deviation",
+				inputFactory: func() map[string]any {
+					return map[string]any{
+						"fields": []aggregators.AggregationField{
+							{
+								InputKey:  "FeedID",
+								OutputKey: "FeedId",
+								Method:    "majority",
+							},
+						},
+						"outputFieldName": "Reports",
+						"reportFormat":    "array",
+					}
+				},
+				outputFactory: func() aggregators.ReduceAggConfig {
+					return aggregators.ReduceAggConfig{
+						Fields: []aggregators.AggregationField{
+							{
+								InputKey:        "FeedID",
+								OutputKey:       "FeedId",
+								Method:          "majority",
 								DeviationString: "",
 								Deviation:       decimal.Decimal{},
 								DeviationType:   "none",

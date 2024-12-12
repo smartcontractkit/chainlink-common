@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1733945009402,
+  "lastUpdate": 1734020593270,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7938,6 +7938,48 @@ window.BENCHMARK_DATA = {
             "value": 28238,
             "unit": "ns/op",
             "extra": "42352 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "525a5610c8775f1566802ddec651f1383e155df1",
+          "message": "[CAPPL] Add mode quorum configuration option to Reduce Aggregator (#972)\n\n* Add 'majority' aggregation method to Reduce Aggregator\r\n\r\n* (refactor): Change implementation to 'ModeQuorum'\r\n\r\n* Only fill modeQuorum for method mode",
+          "timestamp": "2024-12-12T08:22:05-08:00",
+          "tree_id": "fc7132d00b4f277fe50047facd398a60a53df3bf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/525a5610c8775f1566802ddec651f1383e155df1"
+        },
+        "date": 1734020592515,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458,
+            "unit": "ns/op",
+            "extra": "2482362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.5,
+            "unit": "ns/op",
+            "extra": "2320495 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28250,
+            "unit": "ns/op",
+            "extra": "42482 times\n4 procs"
           }
         ]
       }

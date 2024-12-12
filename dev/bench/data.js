@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734020593270,
+  "lastUpdate": 1734021663929,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -7980,6 +7980,48 @@ window.BENCHMARK_DATA = {
             "value": 28250,
             "unit": "ns/op",
             "extra": "42482 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6a43e61b9d4990e98ca80a8155cfa5287c5d67b6",
+          "message": "[CAPPL-366/CAPPL-382] Miscellaneous fixes (#973)\n\n* [CAPPL-382] Normalize owner before comparing\r\n\r\n* [CAPPL-366] Add name to hash to generate workflowID",
+          "timestamp": "2024-12-12T16:39:58Z",
+          "tree_id": "b4f5d564555cdbbde29b5db43ae012ff27c015c6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6a43e61b9d4990e98ca80a8155cfa5287c5d67b6"
+        },
+        "date": 1734021663178,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467.9,
+            "unit": "ns/op",
+            "extra": "2613801 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.6,
+            "unit": "ns/op",
+            "extra": "2311908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28376,
+            "unit": "ns/op",
+            "extra": "42555 times\n4 procs"
           }
         ]
       }

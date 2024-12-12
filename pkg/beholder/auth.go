@@ -40,6 +40,8 @@ func BuildAuthHeaders(privKey ed25519.PrivateKey) map[string]string {
 	return map[string]string{authHeaderKey: fmt.Sprintf("%s:%x:%x", authHeaderVersion1, messageBytes, signature)}
 }
 
+// BuildAuthHeadersV2 creates the auth header value to be included on requests.
+// See documentation on BuildAuthHeaders for more info. 
 func BuildAuthHeadersV2(privKey ed25519.PrivateKey, config *AuthHeaderConfig) map[string]string {
 	if config == nil {
 		config = defaultAuthHeaderConfig()

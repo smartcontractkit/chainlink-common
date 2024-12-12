@@ -23,23 +23,25 @@ import (
 )
 
 const (
-	AGGREGATION_METHOD_MEDIAN   = "median"
-	AGGREGATION_METHOD_MODE     = "mode"
-	AGGREGATION_METHOD_MAJORITY = "majority"
+	AGGREGATION_METHOD_MEDIAN = "median"
+	AGGREGATION_METHOD_MODE   = "mode"
 	// DEVIATION_TYPE_NONE is no deviation check
 	DEVIATION_TYPE_NONE = "none"
 	// DEVIATION_TYPE_ANY is any difference from the previous value to the next value
 	DEVIATION_TYPE_ANY = "any"
 	// DEVIATION_TYPE_PERCENT is a numeric percentage difference
 	DEVIATION_TYPE_PERCENT = "percent"
-	// DEVIATION_TYPE_ABSOLUTE is a numeric absolute difference
+	// DEVIATION_TYPE_ABSOLUTE is a numeric unsigned difference
 	DEVIATION_TYPE_ABSOLUTE = "absolute"
 	REPORT_FORMAT_MAP       = "map"
 	REPORT_FORMAT_ARRAY     = "array"
 	REPORT_FORMAT_VALUE     = "value"
+	MODE_QUORUM_OCR         = "ocr"
+	MODE_QUORUM_ANY         = "any"
 
 	DEFAULT_REPORT_FORMAT     = REPORT_FORMAT_MAP
 	DEFAULT_OUTPUT_FIELD_NAME = "Reports"
+	DEFAULT_MODE_QUORUM       = MODE_QUORUM_ANY
 )
 
 type ReduceAggConfig struct {
@@ -71,9 +73,12 @@ type AggregationField struct {
 	InputKey string `mapstructure:"inputKey" json:"inputKey"`
 	// How the data set should be aggregated to a single value
 	// * median - take the centermost value of the sorted data set of observations. can only be used on numeric types. not a true median, because no average if two middle values.
-	// * mode - take the most frequent value. if tied, use the "first".
-	// * majority - take the most frequent value. if tied, use the "first". error if f+1 of the same answer are not seen.
-	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode,enum=majority" required:"true"`
+	// * mode - take the most frequent value. if tied, use the "first". use "ModeQuorom" to configure the minimum number of seen values.
+	Method string `mapstructure:"method" json:"method" jsonschema:"enum=median,enum=mode" required:"true"`
+	// When using Method=mode, this will configure the minimum number of values that must be seen
+	// * ocr - (default) enforces that the number of matching values must be at least f+1, otherwise consensus fails
+	// * any - do not enforce any limit on the minimum viable count. this may result in unexpected answers if every observation is unique.
+	ModeQuorum string `mapstructure:"modeQuorum" json:"modeQuorum" jsonschema:"enum=ocr,enum=any" default:"map"`
 	// The key that the aggregated data is put under
 	// If omitted, the InputKey will be used
 	OutputKey string `mapstructure:"outputKey" json:"outputKey"`
@@ -110,7 +115,7 @@ func (a *reduceAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.
 			return nil, fmt.Errorf("not enough observations provided %s, have %d want %d", field.InputKey, len(vals), 2*f+1)
 		}
 
-		singleValue, err := reduce(field.Method, vals, f)
+		singleValue, err := reduce(field.Method, vals, f, field.ModeQuorum)
 		if err != nil {
 			return nil, fmt.Errorf("unable to reduce on method %s, err: %s", field.Method, err.Error())
 		}
@@ -337,17 +342,18 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 	return vals
 }
 
-func reduce(method string, items []values.Value, f int) (values.Value, error) {
+func reduce(method string, items []values.Value, f int, modeQuorum string) (values.Value, error) {
 	switch method {
 	case AGGREGATION_METHOD_MEDIAN:
 		return median(items)
 	case AGGREGATION_METHOD_MODE:
-		value, _, err := mode(items)
-		return value, err
-	case AGGREGATION_METHOD_MAJORITY:
 		value, count, err := mode(items)
-		if count < f+1 {
-			return nil, fmt.Errorf("agreement not reached. have: %d, want: %d", count, f+1)
+		if err != nil {
+			return value, err
+		}
+		err = modeHasQuorum(modeQuorum, count, f)
+		if err != nil {
+			return value, err
 		}
 		return value, err
 	default:
@@ -461,6 +467,21 @@ func mode(items []values.Value) (values.Value, int, error) {
 	return modes[0], maxCount, nil
 }
 
+func modeHasQuorum(quorumType string, count int, f int) error {
+	switch quorumType {
+	case MODE_QUORUM_ANY:
+		return nil
+	case MODE_QUORUM_OCR:
+		if count < f+1 {
+			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, f+1)
+		}
+		return nil
+	default:
+		// invariant, config should be validated
+		return fmt.Errorf("unsupported mode quorum %s", quorumType)
+	}
+}
+
 func deviation(method string, previousValue values.Value, nextValue values.Value) (decimal.Decimal, error) {
 	prevDeci, err := toDecimal(previousValue)
 	if err != nil {
@@ -567,8 +588,15 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 			}
 			parsedConfig.Fields[i].Deviation = deci
 		}
-		if len(field.Method) == 0 || !isOneOf(field.Method, []string{AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE, AGGREGATION_METHOD_MAJORITY}) {
-			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE, AGGREGATION_METHOD_MAJORITY)
+		if len(field.Method) == 0 || !isOneOf(field.Method, []string{AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE}) {
+			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE)
+		}
+		if len(field.ModeQuorum) == 0 {
+			field.ModeQuorum = MODE_QUORUM_OCR
+			parsedConfig.Fields[i].ModeQuorum = MODE_QUORUM_OCR
+		}
+		if !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR}) {
+			return ReduceAggConfig{}, fmt.Errorf("mode quorum must be one of options: [%s, %s]", MODE_QUORUM_ANY, MODE_QUORUM_OCR)
 		}
 		if len(field.DeviationString) > 0 && isOneOf(field.DeviationType, []string{DEVIATION_TYPE_NONE, DEVIATION_TYPE_ANY}) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field cannot have deviation with a deviation type of %s", field.DeviationType)

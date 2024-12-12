@@ -78,7 +78,7 @@ type AggregationField struct {
 	// When using Method=mode, this will configure the minimum number of values that must be seen
 	// * ocr - (default) enforces that the number of matching values must be at least f+1, otherwise consensus fails
 	// * any - do not enforce any limit on the minimum viable count. this may result in unexpected answers if every observation is unique.
-	ModeQuorum string `mapstructure:"modeQuorum" json:"modeQuorum" jsonschema:"enum=ocr,enum=any" default:"map"`
+	ModeQuorum string `mapstructure:"modeQuorum" json:"modeQuorum,omitempty" jsonschema:"enum=ocr,enum=any" default:"ocr"`
 	// The key that the aggregated data is put under
 	// If omitted, the InputKey will be used
 	OutputKey string `mapstructure:"outputKey" json:"outputKey"`
@@ -591,11 +591,11 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 		if len(field.Method) == 0 || !isOneOf(field.Method, []string{AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE}) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE)
 		}
-		if len(field.ModeQuorum) == 0 {
+		if field.Method == AGGREGATION_METHOD_MODE && len(field.ModeQuorum) == 0 {
 			field.ModeQuorum = MODE_QUORUM_OCR
 			parsedConfig.Fields[i].ModeQuorum = MODE_QUORUM_OCR
 		}
-		if !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR}) {
+		if field.Method == AGGREGATION_METHOD_MODE && !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR}) {
 			return ReduceAggConfig{}, fmt.Errorf("mode quorum must be one of options: [%s, %s]", MODE_QUORUM_ANY, MODE_QUORUM_OCR)
 		}
 		if len(field.DeviationString) > 0 && isOneOf(field.DeviationType, []string{DEVIATION_TYPE_NONE, DEVIATION_TYPE_ANY}) {

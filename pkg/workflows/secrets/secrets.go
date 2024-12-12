@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/nacl/box"
 )
@@ -146,11 +147,21 @@ func DecryptSecretsForNode(
 		return nil, err
 	}
 
-	if payload.WorkflowOwner != workflowOwner {
+	if normalizeOwner(payload.WorkflowOwner) != normalizeOwner(workflowOwner) {
 		return nil, fmt.Errorf("invalid secrets bundle: got owner %s, expected %s", payload.WorkflowOwner, workflowOwner)
 	}
 
 	return payload.Secrets, nil
+}
+
+func normalizeOwner(owner string) string {
+	o := owner
+	if strings.HasPrefix(o, "0x") {
+		o = o[2:]
+	}
+
+	o = strings.ToLower(o)
+	return o
 }
 
 func ValidateEncryptedSecrets(secretsData []byte, encryptionPublicKeys map[string][32]byte, workflowOwner string) error {

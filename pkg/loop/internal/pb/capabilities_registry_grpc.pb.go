@@ -29,6 +29,7 @@ const (
 	CapabilitiesRegistry_GetTarget_FullMethodName           = "/loop.CapabilitiesRegistry/GetTarget"
 	CapabilitiesRegistry_List_FullMethodName                = "/loop.CapabilitiesRegistry/List"
 	CapabilitiesRegistry_Add_FullMethodName                 = "/loop.CapabilitiesRegistry/Add"
+	CapabilitiesRegistry_Remove_FullMethodName              = "/loop.CapabilitiesRegistry/Remove"
 )
 
 // CapabilitiesRegistryClient is the client API for CapabilitiesRegistry service.
@@ -44,6 +45,7 @@ type CapabilitiesRegistryClient interface {
 	GetTarget(ctx context.Context, in *GetTargetRequest, opts ...grpc.CallOption) (*GetTargetReply, error)
 	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListReply, error)
 	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Remove(ctx context.Context, in *RemoveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type capabilitiesRegistryClient struct {
@@ -135,6 +137,15 @@ func (c *capabilitiesRegistryClient) Add(ctx context.Context, in *AddRequest, op
 	return out, nil
 }
 
+func (c *capabilitiesRegistryClient) Remove(ctx context.Context, in *RemoveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_Remove_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CapabilitiesRegistryServer is the server API for CapabilitiesRegistry service.
 // All implementations must embed UnimplementedCapabilitiesRegistryServer
 // for forward compatibility
@@ -148,6 +159,7 @@ type CapabilitiesRegistryServer interface {
 	GetTarget(context.Context, *GetTargetRequest) (*GetTargetReply, error)
 	List(context.Context, *emptypb.Empty) (*ListReply, error)
 	Add(context.Context, *AddRequest) (*emptypb.Empty, error)
+	Remove(context.Context, *RemoveRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCapabilitiesRegistryServer()
 }
 
@@ -181,6 +193,9 @@ func (UnimplementedCapabilitiesRegistryServer) List(context.Context, *emptypb.Em
 }
 func (UnimplementedCapabilitiesRegistryServer) Add(context.Context, *AddRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
+}
+func (UnimplementedCapabilitiesRegistryServer) Remove(context.Context, *RemoveRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Remove not implemented")
 }
 func (UnimplementedCapabilitiesRegistryServer) mustEmbedUnimplementedCapabilitiesRegistryServer() {}
 
@@ -357,6 +372,24 @@ func _CapabilitiesRegistry_Add_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CapabilitiesRegistry_Remove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CapabilitiesRegistryServer).Remove(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CapabilitiesRegistry_Remove_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CapabilitiesRegistryServer).Remove(ctx, req.(*RemoveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CapabilitiesRegistry_ServiceDesc is the grpc.ServiceDesc for CapabilitiesRegistry service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -399,6 +432,10 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Add",
 			Handler:    _CapabilitiesRegistry_Add_Handler,
+		},
+		{
+			MethodName: "Remove",
+			Handler:    _CapabilitiesRegistry_Remove_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

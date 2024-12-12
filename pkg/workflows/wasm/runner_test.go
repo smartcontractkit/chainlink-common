@@ -3,10 +3,13 @@ package wasm
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"math/big"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -86,83 +89,339 @@ func Test_Runner_Config(t *testing.T) {
 	assert.Nil(t, gotResponse)
 }
 
+type ValidStruct struct {
+	SomeInt    int
+	SomeString string
+	SomeTime   time.Time
+}
+
+type PrivateFieldStruct struct {
+	SomeInt         int
+	SomeString      string
+	somePrivateTime time.Time
+}
+
 func TestRunner_Run_ExecuteCompute(t *testing.T) {
-	workflow := sdk.NewWorkflowSpecFactory(
-		sdk.NewWorkflowParams{
-			Name:  "tester",
-			Owner: "cedric",
-		},
-	)
+	now := time.Now().UTC()
 
-	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
-	computeFn := func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
-		return true, nil
-	}
-	sdk.Compute1(
-		workflow,
-		"compute",
-		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
-		computeFn,
-	)
-
-	var gotResponse *wasmpb.Response
-	responseFn := func(resp *wasmpb.Response) {
-		gotResponse = resp
-	}
-
-	m, err := values.NewMap(map[string]any{
-		"cool_output": "a trigger event",
-	})
-	require.NoError(t, err)
-
-	req := capabilities.CapabilityRequest{
-		Config: values.EmptyMap(),
-		Inputs: m,
-		Metadata: capabilities.RequestMetadata{
-			ReferenceID: "compute",
-		},
-	}
-	reqpb := capabilitiespb.CapabilityRequestToProto(req)
-	request := &wasmpb.Request{
-		Id: uuid.New().String(),
-		Message: &wasmpb.Request_ComputeRequest{
-			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: reqpb,
+	cases := []struct {
+		name           string
+		expectedOutput any
+		compute        func(*sdk.WorkflowSpecFactory, basictrigger.TriggerOutputsCap)
+		errorString    string
+	}{
+		// Success cases
+		{
+			name:           "valid compute func - bigint",
+			expectedOutput: big.NewInt(1),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (*big.Int, error) {
+						return big.NewInt(1), nil
+					},
+				)
 			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - bool",
+			expectedOutput: true,
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
+						return true, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - bytes",
+			expectedOutput: []byte{3},
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) ([]byte, error) {
+						return []byte{3}, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - decimal",
+			expectedOutput: decimal.NewFromInt(2),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (decimal.Decimal, error) {
+						return decimal.NewFromInt(2), nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - float64",
+			expectedOutput: float64(1.1),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (float64, error) {
+						return 1.1, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - int",
+			expectedOutput: int64(1),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (int, error) {
+						return 1, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - list",
+			expectedOutput: []interface{}([]interface{}{int64(1), int64(2), int64(3), int64(4)}),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) ([]int, error) {
+						return []int{1, 2, 3, 4}, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - map",
+			expectedOutput: map[string]interface{}(map[string]interface{}{"test": int64(1)}),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (map[string]int, error) {
+						out := map[string]int{"test": 1}
+						return out, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - deep map",
+			expectedOutput: map[string]interface{}(map[string]interface{}{"test1": map[string]interface{}{"test2": int64(1)}}),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (map[string]map[string]int, error) {
+						out := map[string]map[string]int{"test1": {"test2": 1}}
+						return out, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - string",
+			expectedOutput: "hiya",
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (string, error) {
+						return "hiya", nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - struct",
+			expectedOutput: map[string]interface{}(map[string]interface{}{"SomeInt": int64(3), "SomeString": "hiya", "SomeTime": now}),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (ValidStruct, error) {
+						return ValidStruct{SomeString: "hiya", SomeTime: now, SomeInt: 3}, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - empty interface",
+			expectedOutput: nil,
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (interface{}, error) {
+						var empty interface{}
+						return empty, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - time",
+			expectedOutput: now,
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (time.Time, error) {
+						return now, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - any",
+			expectedOutput: now,
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (any, error) {
+						return now, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - nil",
+			expectedOutput: nil,
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (any, error) {
+						return nil, nil
+					},
+				)
+			},
+			errorString: "",
+		},
+		{
+			name:           "valid compute func - private struct",
+			expectedOutput: map[string]interface{}(map[string]interface{}{"SomeInt": int64(3), "SomeString": "hiya"}),
+			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
+				sdk.Compute1(
+					workflow,
+					"compute",
+					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (PrivateFieldStruct, error) {
+						return PrivateFieldStruct{SomeString: "hiya", somePrivateTime: now, SomeInt: 3}, nil
+					},
+				)
+			},
+			errorString: "",
 		},
 	}
-	str, err := marshalRequest(request)
-	require.NoError(t, err)
-	runner := &Runner{
-		args:         []string{"wasm", str},
-		sendResponse: responseFn,
-		sdkFactory: func(cfg *RuntimeConfig, _ ...func(*RuntimeConfig)) *Runtime {
-			return nil
-		},
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			workflow := sdk.NewWorkflowSpecFactory()
+
+			trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
+
+			tt.compute(workflow, trigger)
+
+			var gotResponse *wasmpb.Response
+			responseFn := func(resp *wasmpb.Response) {
+				gotResponse = resp
+			}
+
+			m, err := values.NewMap(map[string]any{
+				"cool_output": "a trigger event",
+			})
+			require.NoError(t, err)
+
+			req := capabilities.CapabilityRequest{
+				Config: values.EmptyMap(),
+				Inputs: m,
+				Metadata: capabilities.RequestMetadata{
+					ReferenceID: "compute",
+				},
+			}
+			reqpb := capabilitiespb.CapabilityRequestToProto(req)
+			request := &wasmpb.Request{
+				Id: uuid.New().String(),
+				Message: &wasmpb.Request_ComputeRequest{
+					ComputeRequest: &wasmpb.ComputeRequest{
+						Request: reqpb,
+					},
+				},
+			}
+			str, err := marshalRequest(request)
+			require.NoError(t, err)
+			runner := &Runner{
+				args:         []string{"wasm", str},
+				sendResponse: responseFn,
+				sdkFactory: func(cfg *RuntimeConfig, _ ...func(*RuntimeConfig)) *Runtime {
+					return nil
+				},
+			}
+			runner.Run(workflow)
+
+			if tt.errorString == "" {
+				assert.NotNil(t, gotResponse.GetComputeResponse())
+				resp := gotResponse.GetComputeResponse().GetResponse()
+				assert.Equal(t, resp.Error, "")
+
+				m, err = values.FromMapValueProto(resp.Value)
+				require.NoError(t, err)
+
+				unw, err := values.Unwrap(m)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedOutput, unw.(map[string]any)["Value"])
+			} else {
+				assert.Equal(t, tt.errorString, gotResponse.ErrMsg)
+				assert.Nil(t, gotResponse.GetComputeResponse())
+			}
+		})
 	}
-	runner.Run(workflow)
-
-	assert.NotNil(t, gotResponse.GetComputeResponse())
-
-	resp := gotResponse.GetComputeResponse().GetResponse()
-	assert.Equal(t, resp.Error, "")
-
-	m, err = values.FromMapValueProto(resp.Value)
-	require.NoError(t, err)
-
-	unw, err := values.Unwrap(m)
-	require.NoError(t, err)
-
-	assert.Equal(t, unw.(map[string]any)["Value"].(bool), true)
 }
 
 func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
-	workflow := sdk.NewWorkflowSpecFactory(
-		sdk.NewWorkflowParams{
-			Name:  "tester",
-			Owner: "cedric",
-		},
-	)
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	// Define and add a target to the workflow

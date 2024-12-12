@@ -1,6 +1,7 @@
 package loop
 
 import (
+	"maps"
 	"net/url"
 	"os"
 	"strconv"
@@ -18,34 +19,65 @@ import (
 
 func TestEnvConfig_parse(t *testing.T) {
 	cases := []struct {
-		name                           string
-		envVars                        map[string]string
-		expectError                    bool
-		expectedDatabaseURL            string
-		expectedPrometheusPort         int
-		expectedTracingEnabled         bool
-		expectedTracingCollectorTarget string
-		expectedTracingSamplingRatio   float64
-		expectedTracingTLSCertPath     string
+		name                                   string
+		envVars                                map[string]string
+		expectError                            bool
+		expectedDatabaseURL                    string
+		expectedPrometheusPort                 int
+		expectedTracingEnabled                 bool
+		expectedTracingCollectorTarget         string
+		expectedTracingSamplingRatio           float64
+		expectedTracingTLSCertPath             string
+		expectedTelemetryEnabled               bool
+		expectedTelemetryEndpoint              string
+		expectedTelemetryInsecureConn          bool
+		expectedTelemetryCACertFile            string
+		expectedTelemetryAttributes            OtelAttributes
+		expectedTelemetryTraceSampleRatio      float64
+		expectedTelemetryAuthHeaders           map[string]string
+		expectedTelemetryAuthPubKeyHex         string
+		expectedTelemetryEmitterBatchProcessor bool
+		expectedTelemetryEmitterExportTimeout  time.Duration
 	}{
 		{
 			name: "All variables set correctly",
 			envVars: map[string]string{
-				envDatabaseURL:              "postgres://user:password@localhost:5432/db",
-				envPromPort:                 "8080",
-				envTracingEnabled:           "true",
-				envTracingCollectorTarget:   "some:target",
-				envTracingSamplingRatio:     "1.0",
-				envTracingTLSCertPath:       "internal/test/fixtures/client.pem",
-				envTracingAttribute + "XYZ": "value",
+				envDatabaseURL:                        "postgres://user:password@localhost:5432/db",
+				envPromPort:                           "8080",
+				envTracingEnabled:                     "true",
+				envTracingCollectorTarget:             "some:target",
+				envTracingSamplingRatio:               "1.0",
+				envTracingTLSCertPath:                 "internal/test/fixtures/client.pem",
+				envTracingAttribute + "XYZ":           "value",
+				envTelemetryEnabled:                   "true",
+				envTelemetryEndpoint:                  "example.com/beholder",
+				envTelemetryInsecureConn:              "true",
+				envTelemetryCACertFile:                "foo/bar",
+				envTelemetryAttribute + "foo":         "bar",
+				envTelemetryAttribute + "baz":         "42",
+				envTelemetryTraceSampleRatio:          "0.42",
+				envTelemetryAuthHeader + "header-key": "header-value",
+				envTelemetryAuthPubKeyHex:             "pub-key-hex",
+				envTelemetryEmitterBatchProcessor:     "true",
+				envTelemetryEmitterExportTimeout:      "1s",
 			},
-			expectError:                    false,
-			expectedDatabaseURL:            "postgres://user:password@localhost:5432/db",
-			expectedPrometheusPort:         8080,
-			expectedTracingEnabled:         true,
-			expectedTracingCollectorTarget: "some:target",
-			expectedTracingSamplingRatio:   1.0,
-			expectedTracingTLSCertPath:     "internal/test/fixtures/client.pem",
+			expectError:                            false,
+			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
+			expectedPrometheusPort:                 8080,
+			expectedTracingEnabled:                 true,
+			expectedTracingCollectorTarget:         "some:target",
+			expectedTracingSamplingRatio:           1.0,
+			expectedTracingTLSCertPath:             "internal/test/fixtures/client.pem",
+			expectedTelemetryEnabled:               true,
+			expectedTelemetryEndpoint:              "example.com/beholder",
+			expectedTelemetryInsecureConn:          true,
+			expectedTelemetryCACertFile:            "foo/bar",
+			expectedTelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
+			expectedTelemetryTraceSampleRatio:      0.42,
+			expectedTelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
+			expectedTelemetryAuthPubKeyHex:         "pub-key-hex",
+			expectedTelemetryEmitterBatchProcessor: true,
+			expectedTelemetryEmitterExportTimeout:  1 * time.Second,
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -105,6 +137,36 @@ func TestEnvConfig_parse(t *testing.T) {
 					}
 					if config.TracingTLSCertPath != tc.expectedTracingTLSCertPath {
 						t.Errorf("Expected tracingTLSCertPath %s, got %s", tc.expectedTracingTLSCertPath, config.TracingTLSCertPath)
+					}
+					if config.TelemetryEnabled != tc.expectedTelemetryEnabled {
+						t.Errorf("Expected telemetryEnabled %v, got %v", tc.expectedTelemetryEnabled, config.TelemetryEnabled)
+					}
+					if config.TelemetryEndpoint != tc.expectedTelemetryEndpoint {
+						t.Errorf("Expected telemetryEndpoint %s, got %s", tc.expectedTelemetryEndpoint, config.TelemetryEndpoint)
+					}
+					if config.TelemetryInsecureConnection != tc.expectedTelemetryInsecureConn {
+						t.Errorf("Expected telemetryInsecureConn %v, got %v", tc.expectedTelemetryInsecureConn, config.TelemetryInsecureConnection)
+					}
+					if config.TelemetryCACertFile != tc.expectedTelemetryCACertFile {
+						t.Errorf("Expected telemetryCACertFile %s, got %s", tc.expectedTelemetryCACertFile, config.TelemetryCACertFile)
+					}
+					if !maps.Equal(config.TelemetryAttributes, tc.expectedTelemetryAttributes) {
+						t.Errorf("Expected telemetryAttributes %v, got %v", tc.expectedTelemetryAttributes, config.TelemetryAttributes)
+					}
+					if config.TelemetryTraceSampleRatio != tc.expectedTelemetryTraceSampleRatio {
+						t.Errorf("Expected telemetryTraceSampleRatio %f, got %f", tc.expectedTelemetryTraceSampleRatio, config.TelemetryTraceSampleRatio)
+					}
+					if !maps.Equal(config.TelemetryAuthHeaders, tc.expectedTelemetryAuthHeaders) {
+						t.Errorf("Expected telemetryAuthHeaders %v, got %v", tc.expectedTelemetryAuthHeaders, config.TelemetryAuthHeaders)
+					}
+					if config.TelemetryAuthPubKeyHex != tc.expectedTelemetryAuthPubKeyHex {
+						t.Errorf("Expected telemetryAuthPubKeyHex %s, got %s", tc.expectedTelemetryAuthPubKeyHex, config.TelemetryAuthPubKeyHex)
+					}
+					if config.TelemetryEmitterBatchProcessor != tc.expectedTelemetryEmitterBatchProcessor {
+						t.Errorf("Expected telemetryEmitterBatchProcessor %v, got %v", tc.expectedTelemetryEmitterBatchProcessor, config.TelemetryEmitterBatchProcessor)
+					}
+					if config.TelemetryEmitterExportTimeout != tc.expectedTelemetryEmitterExportTimeout {
+						t.Errorf("Expected telemetryEmitterExportTimeout %v, got %v", tc.expectedTelemetryEmitterExportTimeout, config.TelemetryEmitterExportTimeout)
 					}
 				}
 			}

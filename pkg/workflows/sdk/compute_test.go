@@ -33,7 +33,10 @@ func TestCompute(t *testing.T) {
 		},
 		Timestamp: 1690838088,
 	}
-	nsf, err := values.CreateMapFromStruct(map[string]any{"Arg0": anyNotStreamsInput})
+	structToMap, err := values.CreateMapFromStruct(anyNotStreamsInput)
+	require.NoError(t, err)
+
+	nsf, err := values.NewMap(map[string]any{"Arg0": structToMap})
 	require.NoError(t, err)
 
 	t.Run("creates correct workflow spec", func(t *testing.T) {
@@ -42,8 +45,6 @@ func TestCompute(t *testing.T) {
 		spec, err2 := workflow.Spec()
 		require.NoError(t, err2)
 		expectedSpec := sdk.WorkflowSpec{
-			Name:  "name",
-			Owner: "owner",
 			Triggers: []sdk.StepDefinition{
 				{
 					ID:             "notstreams@1.0.0",
@@ -179,10 +180,7 @@ type ComputeOutput struct {
 }
 
 func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime, config ComputeConfig, input basictrigger.TriggerOutputs) (ComputeOutput, error)) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "owner",
-		Name:  "name",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
 	trigger := triggerCfg.New(workflow)
@@ -202,10 +200,7 @@ func createComputeWithConfigWorkflow(config ComputeConfig, fn func(_ sdk.Runtime
 }
 
 func createWorkflow(fn func(_ sdk.Runtime, inputFeed notstreams.Feed) ([]streams.Feed, error)) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "owner",
-		Name:  "name",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := notstreams.TriggerConfig{MaxFrequencyMs: 5000}.New(workflow)
 	computed := sdk.Compute1(workflow, "Compute", sdk.Compute1Inputs[notstreams.Feed]{Arg0: trigger}, fn)

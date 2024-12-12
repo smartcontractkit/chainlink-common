@@ -24,6 +24,7 @@ const (
 	ContractReader_GetLatestValueWithHeadData_FullMethodName = "/loop.ContractReader/GetLatestValueWithHeadData"
 	ContractReader_BatchGetLatestValues_FullMethodName       = "/loop.ContractReader/BatchGetLatestValues"
 	ContractReader_QueryKey_FullMethodName                   = "/loop.ContractReader/QueryKey"
+	ContractReader_QueryKeys_FullMethodName                  = "/loop.ContractReader/QueryKeys"
 	ContractReader_Bind_FullMethodName                       = "/loop.ContractReader/Bind"
 	ContractReader_Unbind_FullMethodName                     = "/loop.ContractReader/Unbind"
 )
@@ -36,6 +37,7 @@ type ContractReaderClient interface {
 	GetLatestValueWithHeadData(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueWithHeadDataReply, error)
 	BatchGetLatestValues(ctx context.Context, in *BatchGetLatestValuesRequest, opts ...grpc.CallOption) (*BatchGetLatestValuesReply, error)
 	QueryKey(ctx context.Context, in *QueryKeyRequest, opts ...grpc.CallOption) (*QueryKeyReply, error)
+	QueryKeys(ctx context.Context, in *QueryKeysRequest, opts ...grpc.CallOption) (*QueryKeysReply, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Unbind(ctx context.Context, in *UnbindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -84,6 +86,15 @@ func (c *contractReaderClient) QueryKey(ctx context.Context, in *QueryKeyRequest
 	return out, nil
 }
 
+func (c *contractReaderClient) QueryKeys(ctx context.Context, in *QueryKeysRequest, opts ...grpc.CallOption) (*QueryKeysReply, error) {
+	out := new(QueryKeysReply)
+	err := c.cc.Invoke(ctx, ContractReader_QueryKeys_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *contractReaderClient) Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ContractReader_Bind_FullMethodName, in, out, opts...)
@@ -110,6 +121,7 @@ type ContractReaderServer interface {
 	GetLatestValueWithHeadData(context.Context, *GetLatestValueRequest) (*GetLatestValueWithHeadDataReply, error)
 	BatchGetLatestValues(context.Context, *BatchGetLatestValuesRequest) (*BatchGetLatestValuesReply, error)
 	QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error)
+	QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error)
 	Bind(context.Context, *BindRequest) (*emptypb.Empty, error)
 	Unbind(context.Context, *UnbindRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedContractReaderServer()
@@ -130,6 +142,9 @@ func (UnimplementedContractReaderServer) BatchGetLatestValues(context.Context, *
 }
 func (UnimplementedContractReaderServer) QueryKey(context.Context, *QueryKeyRequest) (*QueryKeyReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryKey not implemented")
+}
+func (UnimplementedContractReaderServer) QueryKeys(context.Context, *QueryKeysRequest) (*QueryKeysReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryKeys not implemented")
 }
 func (UnimplementedContractReaderServer) Bind(context.Context, *BindRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bind not implemented")
@@ -222,6 +237,24 @@ func _ContractReader_QueryKey_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ContractReader_QueryKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ContractReaderServer).QueryKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ContractReader_QueryKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ContractReaderServer).QueryKeys(ctx, req.(*QueryKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ContractReader_Bind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BindRequest)
 	if err := dec(in); err != nil {
@@ -280,6 +313,10 @@ var ContractReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryKey",
 			Handler:    _ContractReader_QueryKey_Handler,
+		},
+		{
+			MethodName: "QueryKeys",
+			Handler:    _ContractReader_QueryKeys_Handler,
 		},
 		{
 			MethodName: "Bind",

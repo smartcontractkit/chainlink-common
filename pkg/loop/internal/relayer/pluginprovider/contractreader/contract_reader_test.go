@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"math/big"
 	"reflect"
 	"sort"
@@ -29,7 +30,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
-	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
+	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
 func TestVersionedBytesFunctions(t *testing.T) {
@@ -299,14 +300,14 @@ type fakeContractReaderInterfaceTester struct {
 	interfaceTesterBase
 	TestSelectionSupport
 	impl types.ContractReader
-	cw   fakeChainWriter
+	cw   fakeContractWriter
 }
 
 func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
 	fake, ok := it.impl.(*fakeContractReader)
 	if ok {
 		fake.vals = make(map[string][]valConfidencePair)
-		fake.triggers = make(map[string][]eventConfidencePair)
+		fake.triggers = newEventsRecorder()
 		fake.stored = make(map[string][]TestStruct)
 	}
 }
@@ -315,7 +316,7 @@ func (it *fakeContractReaderInterfaceTester) GetContractReader(_ *testing.T) typ
 	return it.impl
 }
 
-func (it *fakeContractReaderInterfaceTester) GetChainWriter(_ *testing.T) types.ChainWriter {
+func (it *fakeContractReaderInterfaceTester) GetContractWriter(_ *testing.T) types.ContractWriter {
 	it.cw.cr = it.impl.(*fakeContractReader)
 	return &it.cw
 }
@@ -351,22 +352,95 @@ type eventConfidencePair struct {
 	confidenceLevel primitives.ConfidenceLevel
 }
 
+type dynamicTopicEventConfidencePair struct {
+	someDynamicTopicEvent SomeDynamicTopicEvent
+	confidenceLevel       primitives.ConfidenceLevel
+}
+type event struct {
+	contractID      string
+	event           any
+	confidenceLevel primitives.ConfidenceLevel
+	eventType       string
+}
+
+type eventsRecorder struct {
+	mux    sync.Mutex
+	events []event
+}
+
+func newEventsRecorder() *eventsRecorder {
+	return &eventsRecorder{}
+}
+
+func (e *eventsRecorder) RecordEvent(contractID string, evt any, confidenceLevel primitives.ConfidenceLevel, eventType string) error {
+	e.mux.Lock()
+	defer e.mux.Unlock()
+
+	switch eventType {
+	case EventName:
+		_, ok := evt.(TestStruct)
+		if !ok {
+			return fmt.Errorf("unexpected event type %T", evt)
+		}
+	case DynamicTopicEventName:
+		_, ok := evt.(SomeDynamicTopicEvent)
+		if !ok {
+			return fmt.Errorf("unexpected event type %T", evt)
+		}
+
+	}
+
+	e.events = append(e.events, event{contractID: contractID, event: evt, confidenceLevel: confidenceLevel, eventType: eventType})
+
+	return nil
+}
+
+func (e *eventsRecorder) setConfidenceLevelOnAllEvents(confidenceLevel primitives.ConfidenceLevel) {
+	e.mux.Lock()
+	defer e.mux.Unlock()
+
+	for i := range e.events {
+		e.events[i].confidenceLevel = confidenceLevel
+	}
+}
+
+func (e *eventsRecorder) getEvents(filters ...func(event) bool) []event {
+	e.mux.Lock()
+	defer e.mux.Unlock()
+
+	events := make([]event, 0)
+	for _, event := range e.events {
+		match := true
+		for _, filter := range filters {
+			if !filter(event) {
+				match = false
+				break
+			}
+		}
+		if match {
+			events = append(events, event)
+		}
+	}
+
+	return events
+}
+
 type fakeContractReader struct {
 	types.UnimplementedContractReader
 	fakeTypeProvider
 	vals        map[string][]valConfidencePair
-	triggers    map[string][]eventConfidencePair
+	triggers    *eventsRecorder
 	stored      map[string][]TestStruct
 	batchStored BatchCallEntry
 	lock        sync.Mutex
 }
 
-type fakeChainWriter struct {
-	types.ChainWriter
+type fakeContractWriter struct {
+	types.ContractWriter
 	cr *fakeContractReader
 }
 
-func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
+func (f *fakeContractWriter) SubmitTransaction(_ context.Context, contractName, method string, args any, transactionID string, toAddress string, meta *types.TxMeta, value *big.Int) error {
 	contractID := toAddress + "-" + contractName
 	switch method {
 	case MethodSettingStruct:
@@ -382,12 +456,14 @@ func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, met
 		}
 		f.cr.SetUintLatestValue(contractID, v.Value, ExpectedGetLatestValueArgs{})
 	case MethodTriggeringEvent:
-		v, ok := args.(TestStruct)
-		if !ok {
-			return fmt.Errorf("unexpected type %T", args)
+		if err := f.cr.triggers.RecordEvent(contractID, args, primitives.Unconfirmed, EventName); err != nil {
+			return fmt.Errorf("failed to record event: %w", err)
 		}
-		f.cr.SetTrigger(contractID, &v)
-	case "batchChainWrite":
+	case MethodTriggeringEventWithDynamicTopic:
+		if err := f.cr.triggers.RecordEvent(contractID, args, primitives.Unconfirmed, DynamicTopicEventName); err != nil {
+			return fmt.Errorf("failed to record event: %w", err)
+		}
+	case "batchContractWrite":
 		v, ok := args.(BatchCallEntry)
 		if !ok {
 			return fmt.Errorf("unexpected type %T", args)
@@ -400,11 +476,11 @@ func (f *fakeChainWriter) SubmitTransaction(_ context.Context, contractName, met
 	return nil
 }
 
-func (f *fakeChainWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+func (f *fakeContractWriter) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
 	return types.Finalized, nil
 }
 
-func (f *fakeChainWriter) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
+func (f *fakeContractWriter) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
 	return &types.ChainFeeComponents{}, nil
 }
 
@@ -495,14 +571,17 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		f.lock.Lock()
 		defer f.lock.Unlock()
 
-		triggers := f.triggers[contractName]
-		if len(triggers) == 0 {
+		events := f.triggers.getEvents(func(e event) bool {
+			return e.contractID == contractName && e.eventType == EventName
+		})
+
+		if len(events) == 0 {
 			return types.ErrNotFound
 		}
 
-		for i := len(triggers) - 1; i >= 0; i-- {
-			if triggers[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*TestStruct) = triggers[i].testStruct
+		for i := len(events) - 1; i >= 0; i-- {
+			if events[i].confidenceLevel == confidenceLevel {
+				*returnVal.(*TestStruct) = events[i].event.(TestStruct)
 				return nil
 			}
 		}
@@ -512,14 +591,33 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		f.lock.Lock()
 		defer f.lock.Unlock()
 		param := params.(*FilterEventParams)
-		triggers := f.triggers[contractName]
+		triggers := f.triggers.getEvents(func(e event) bool { return e.contractID == contractName && e.eventType == EventName })
 		for i := len(triggers) - 1; i >= 0; i-- {
-			if *triggers[i].testStruct.Field == param.Field {
-				*returnVal.(*TestStruct) = triggers[i].testStruct
+			testStruct := triggers[i].event.(TestStruct)
+			if *testStruct.Field == param.Field {
+				*returnVal.(*TestStruct) = testStruct
 				return nil
 			}
 		}
 		return types.ErrNotFound
+	} else if strings.HasSuffix(readIdentifier, DynamicTopicEventName) {
+		f.lock.Lock()
+		defer f.lock.Unlock()
+
+		triggers := f.triggers.getEvents(func(e event) bool { return e.contractID == contractName && e.eventType == DynamicTopicEventName })
+
+		if len(triggers) == 0 {
+			return types.ErrNotFound
+		}
+
+		for i := len(triggers) - 1; i >= 0; i-- {
+			if triggers[i].confidenceLevel == confidenceLevel {
+				*returnVal.(*SomeDynamicTopicEvent) = triggers[i].event.(SomeDynamicTopicEvent)
+				return nil
+			}
+		}
+
+		return fmt.Errorf("%w: no event with %s confidence was found ", types.ErrNotFound, confidenceLevel)
 	} else if !strings.HasSuffix(readIdentifier, MethodTakingLatestParamsReturningTestStruct) {
 		return errors.New("unknown method " + readIdentifier)
 	}
@@ -614,112 +712,166 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 	return result, nil
 }
 
-func (f *fakeContractReader) QueryKey(_ context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceType any) ([]types.Sequence, error) {
-	_, isValueType := sequenceType.(*values.Value)
-	if filter.Key == EventName {
-		f.lock.Lock()
-		defer f.lock.Unlock()
-		if len(f.triggers) == 0 {
-			return []types.Sequence{}, nil
-		}
+func (f *fakeContractReader) QueryKey(ctx context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceType any) ([]types.Sequence, error) {
+	seqsIter, err := f.QueryKeys(ctx, []types.ContractKeyFilter{types.ContractKeyFilter{
+		KeyFilter:        filter,
+		Contract:         bc,
+		SequenceDataType: sequenceType,
+	}}, limitAndSort)
 
-		var sequences []types.Sequence
-		for idx, trigger := range f.triggers[bc.String()] {
-			doAppend := true
-			for _, expr := range filter.Expressions {
-				if primitive, ok := expr.Primitive.(*primitives.Comparator); ok {
-					if len(primitive.ValueComparators) == 0 {
-						return nil, fmt.Errorf("value comparator for %s should not be empty", primitive.Name)
-					}
-					if primitive.Name == "Field" {
-						for _, valComp := range primitive.ValueComparators {
-							doAppend = doAppend && Compare(*trigger.testStruct.Field, *valComp.Value.(*int32), valComp.Operator)
-						}
-					}
-				}
-			}
-
-			var skipAppend bool
-			if limitAndSort.HasCursorLimit() {
-				cursor, err := strconv.Atoi(limitAndSort.Limit.Cursor)
-				if err != nil {
-					return nil, err
-				}
-
-				// assume CursorFollowing order for now
-				if cursor >= idx {
-					skipAppend = true
-				}
-			}
-
-			if (len(filter.Expressions) == 0 || doAppend) && !skipAppend {
-				if isValueType {
-					value, err := values.Wrap(trigger.testStruct)
-					if err != nil {
-						return nil, err
-					}
-					sequences = append(sequences, types.Sequence{Cursor: strconv.Itoa(idx), Data: &value})
-				} else {
-					sequences = append(sequences, types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: trigger.testStruct})
-				}
-			}
-
-			if limitAndSort.Limit.Count > 0 && len(sequences) >= int(limitAndSort.Limit.Count) {
-				break
-			}
-		}
-
-		if isValueType {
-			if !limitAndSort.HasSequenceSort() && !limitAndSort.HasCursorLimit() {
-				sort.Slice(sequences, func(i, j int) bool {
-					valI := *sequences[i].Data.(*values.Value)
-					valJ := *sequences[j].Data.(*values.Value)
-
-					mapI := valI.(*values.Map)
-					mapJ := valJ.(*values.Map)
-
-					if mapI.Underlying["Field"] == nil || mapJ.Underlying["Field"] == nil {
-						return false
-					}
-					var iVal int32
-					err := mapI.Underlying["Field"].UnwrapTo(&iVal)
-					if err != nil {
-						panic(err)
-					}
-
-					var jVal int32
-					err = mapJ.Underlying["Field"].UnwrapTo(&jVal)
-					if err != nil {
-						panic(err)
-					}
-
-					return iVal > jVal
-				})
-			}
-		} else {
-			if !limitAndSort.HasSequenceSort() && !limitAndSort.HasCursorLimit() {
-				sort.Slice(sequences, func(i, j int) bool {
-					if sequences[i].Data.(TestStruct).Field == nil || sequences[j].Data.(TestStruct).Field == nil {
-						return false
-					}
-					return *sequences[i].Data.(TestStruct).Field > *sequences[j].Data.(TestStruct).Field
-				})
-			}
-		}
-
-		return sequences, nil
+	if err != nil {
+		return nil, err
 	}
+
+	if seqsIter != nil {
+		var seqs []types.Sequence
+		for _, seq := range seqsIter {
+			seqs = append(seqs, seq)
+		}
+
+		return seqs, nil
+	}
+
 	return nil, nil
 }
 
-func (f *fakeContractReader) SetTrigger(contractID string, testStruct *TestStruct) {
+type sequenceWithEventType struct {
+	eventType string
+	sequence  types.Sequence
+}
+
+func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, types.Sequence], error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	if _, ok := f.triggers[contractID]; !ok {
-		f.triggers[contractID] = []eventConfidencePair{}
+
+	supportedEventTypes := map[string]struct{}{EventName: {}, DynamicTopicEventName: {}}
+
+	for _, filter := range filters {
+		if _, ok := supportedEventTypes[filter.Key]; !ok {
+			return nil, fmt.Errorf("unsupported event type %s", filter.Key)
+		}
 	}
 
-	f.triggers[contractID] = append(f.triggers[contractID], eventConfidencePair{testStruct: *testStruct, confidenceLevel: primitives.Unconfirmed})
+	if len(filters) > 1 {
+		fmt.Printf("filters: %v\n", filters)
+	}
+
+	isValueType := false
+	eventTypeToFilter := map[string]types.ContractKeyFilter{}
+	for _, filter := range filters {
+		eventTypeToFilter[filter.Key] = filter
+		_, isValueType = filter.SequenceDataType.(*values.Value)
+	}
+
+	events := f.triggers.getEvents(func(e event) bool {
+		filter := eventTypeToFilter[e.eventType]
+
+		if e.contractID != filter.Contract.String() {
+			return false
+		}
+		_, filterExistsForType := eventTypeToFilter[e.eventType]
+
+		return filterExistsForType
+	})
+
+	var sequences []sequenceWithEventType
+	for idx, trigger := range events {
+		filter := eventTypeToFilter[trigger.eventType]
+
+		doAppend := true
+		for _, expr := range filter.Expressions {
+			if primitive, ok := expr.Primitive.(*primitives.Comparator); ok {
+				if len(primitive.ValueComparators) == 0 {
+					return nil, fmt.Errorf("value comparator for %s should not be empty", primitive.Name)
+				}
+				if primitive.Name == "Field" {
+					for _, valComp := range primitive.ValueComparators {
+						doAppend = doAppend && Compare(*trigger.event.(TestStruct).Field, *valComp.Value.(*int32), valComp.Operator)
+					}
+				}
+			}
+		}
+
+		var skipAppend bool
+		if limitAndSort.HasCursorLimit() {
+			cursor, err := strconv.Atoi(limitAndSort.Limit.Cursor)
+			if err != nil {
+				return nil, err
+			}
+
+			// assume CursorFollowing order for now
+			if cursor >= idx {
+				skipAppend = true
+			}
+		}
+
+		if (len(eventTypeToFilter[trigger.eventType].Expressions) == 0 || doAppend) && !skipAppend {
+			if isValueType {
+				value, err := values.Wrap(trigger.event)
+				if err != nil {
+					return nil, err
+				}
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), Data: &value}})
+			} else {
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: trigger.event}})
+			}
+		}
+
+		if limitAndSort.Limit.Count > 0 && len(sequences) >= int(limitAndSort.Limit.Count) {
+			break
+		}
+	}
+
+	if isValueType {
+		if !limitAndSort.HasSequenceSort() && !limitAndSort.HasCursorLimit() {
+			sort.Slice(sequences, func(i, j int) bool {
+				valI := *sequences[i].sequence.Data.(*values.Value)
+				valJ := *sequences[j].sequence.Data.(*values.Value)
+
+				mapI := valI.(*values.Map)
+				mapJ := valJ.(*values.Map)
+
+				if mapI.Underlying["Field"] == nil || mapJ.Underlying["Field"] == nil {
+					return false
+				}
+				var iVal int32
+				err := mapI.Underlying["Field"].UnwrapTo(&iVal)
+				if err != nil {
+					panic(err)
+				}
+
+				var jVal int32
+				err = mapJ.Underlying["Field"].UnwrapTo(&jVal)
+				if err != nil {
+					panic(err)
+				}
+
+				return iVal > jVal
+			})
+		}
+	} else {
+		if !limitAndSort.HasSequenceSort() && !limitAndSort.HasCursorLimit() {
+			if len(eventTypeToFilter) == 1 {
+				if _, ok := eventTypeToFilter[EventName]; ok {
+					sort.Slice(sequences, func(i, j int) bool {
+						if sequences[i].sequence.Data.(TestStruct).Field == nil || sequences[j].sequence.Data.(TestStruct).Field == nil {
+							return false
+						}
+						return *sequences[i].sequence.Data.(TestStruct).Field > *sequences[j].sequence.Data.(TestStruct).Field
+					})
+				}
+			}
+		}
+	}
+
+	return func(yield func(string, types.Sequence) bool) {
+		for _, s := range sequences {
+			if !yield(s.eventType, s.sequence) {
+				return
+			}
+		}
+	}, nil
+
 }
 
 func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ string, confidenceLevel primitives.ConfidenceLevel) {
@@ -732,11 +884,7 @@ func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, 
 		}
 	}
 
-	for contractID, triggers := range f.triggers {
-		for i, trigger := range triggers {
-			f.triggers[contractID][i] = eventConfidencePair{testStruct: trigger.testStruct, confidenceLevel: confidenceLevel}
-		}
-	}
+	f.triggers.setConfidenceLevelOnAllEvents(confidenceLevel)
 }
 
 type errContractReader struct {

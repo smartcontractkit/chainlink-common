@@ -53,6 +53,9 @@ type TracingConfig struct {
 
 	// OnDialError is called when the dialer fails, providing an opportunity to log.
 	OnDialError func(error)
+
+	// Auth
+	AuthHeaders map[string]string
 }
 
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
@@ -150,7 +153,10 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 		return nil, err
 	}
 
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	traceExporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithGRPCConn(conn),
+		otlptracegrpc.WithHeaders(config.AuthHeaders),
+	)
 	if err != nil {
 		return nil, err
 	}

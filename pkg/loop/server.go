@@ -104,6 +104,9 @@ func (s *Server) start() error {
 		}
 
 		if tracingConfig.Enabled {
+			if beholderCfg.AuthHeaders != nil {
+				tracingConfig.AuthHeaders = beholderCfg.AuthHeaders
+			}
 			exporter, err := tracingConfig.NewSpanExporter()
 			if err != nil {
 				return fmt.Errorf("failed to setup tracing exporter: %w", err)

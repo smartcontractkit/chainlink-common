@@ -13,8 +13,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset/inprocessprovider"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -139,15 +139,15 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 	return &relayerset.NewPluginProviderResponse{PluginProviderId: providerID}, nil
 }
 
-// RelayerSet is supposed to serve relayers, which then hold a ContractReader and ChainWriter. Serving NewContractReader
-// and NewChainWriter from RelayerSet is a way to save us from instantiating an extra server for the Relayer. Without
+// RelayerSet is supposed to serve relayers, which then hold a ContractReader and ContractWriter. Serving NewContractReader
+// and NewContractWriter from RelayerSet is a way to save us from instantiating an extra server for the Relayer. Without
 // this approach, the calls we would make normally are
 //   - RelayerSet.Get -> Relayer
 //   - Relayer.NewContractReader -> ContractReader
 //
 // We could translate this to the GRPC world by having each call to RelayerSet.Get wrap the returned relayer in a server
 // and register that to the GRPC server. However this is actually pretty inefficient since a relayer object on its own
-// is not useful. Users will always want to use the relayer to instantiate a contractreader or chainwriter. So we can avoid
+// is not useful. Users will always want to use the relayer to instantiate a contractreader or contractwriter. So we can avoid
 // the intermediate server for the relayer by just storing a reference to the relayerSet client and the relayer we want
 // to fetch. I.e. the calls described above instead would become:
 //   - RelayerSet.Get -> (RelayerSetClient, RelayerID). Effectively this call just acts as check that Relayer exists
@@ -182,47 +182,47 @@ func (s *Server) NewContractReader(ctx context.Context, req *relayerset.NewContr
 	return &relayerset.NewContractReaderResponse{ContractReaderId: id}, nil
 }
 
-// RelayerSet is supposed to serve relayers, which then hold a ContractReader and ChainWriter. Serving NewChainWriter
-// and NewChainWriter from RelayerSet is a way to save us from instantiating an extra server for the Relayer. Without
+// RelayerSet is supposed to serve relayers, which then hold a ContractReader and ContractWriter. Serving NewContractWriter
+// and NewContractWriter from RelayerSet is a way to save us from instantiating an extra server for the Relayer. Without
 // this approach, the calls we would make normally are
 //   - RelayerSet.Get -> Relayer
-//   - Relayer.NewChainWriter -> ChainWriter
+//   - Relayer.NewContractWriter -> ContractWriter
 //
 // We could translate this to the GRPC world by having each call to RelayerSet.Get wrap the returned relayer in a server
 // and register that to the GRPC server. However this is actually pretty inefficient since a relayer object on its own
-// is not useful. Users will always want to use the relayer to instantiate a contractreader or chainwriter. So we can avoid
+// is not useful. Users will always want to use the relayer to instantiate a contractreader or contractwriter. So we can avoid
 // the intermediate server for the relayer by just storing a reference to the relayerSet client and the relayer we want
 // to fetch. I.e. the calls described above instead would become:
 //   - RelayerSet.Get -> (RelayerSetClient, RelayerID). Effectively this call just acts as check that Relayer exists
 //
-// RelayerClient.NewChainWriter -> This is a call to RelayerSet.NewChainWriter with (relayerID, []contractReaderConfig);
-// The implementation will then fetch the relayer and call NewChainWriter on it
-func (s *Server) NewChainWriter(ctx context.Context, req *relayerset.NewChainWriterRequest) (*relayerset.NewChainWriterResponse, error) {
+// RelayerClient.NewContractWriter -> This is a call to RelayerSet.NewContractWriter with (relayerID, []contractWriterConfig);
+// The implementation will then fetch the relayer and call NewContractWriter on it
+func (s *Server) NewContractWriter(ctx context.Context, req *relayerset.NewContractWriterRequest) (*relayerset.NewContractWriterResponse, error) {
 	relayer, err := s.getRelayer(ctx, req.RelayerId)
 	if err != nil {
 		return nil, err
 	}
 
-	chainWriter, err := relayer.NewChainWriter(ctx, req.ChainWriterConfig)
+	contractWriter, err := relayer.NewContractWriter(ctx, req.ContractWriterConfig)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error creating contract reader: %v", err)
 	}
 
-	// Start ChainWriter service
-	if err = chainWriter.Start(ctx); err != nil {
+	// Start ContractWriter service
+	if err = contractWriter.Start(ctx); err != nil {
 		return nil, err
 	}
 
-	// Start gRPC service for the ChainWriter service above
-	const name = "ChainWriterInRelayerSet"
+	// Start gRPC service for the ContractWriter service above
+	const name = "ContractWriterInRelayerSet"
 	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
-		chainwriter.RegisterChainWriterService(s, chainWriter)
-	}, net.Resource{Closer: chainWriter, Name: name})
+		contractwriter.RegisterContractWriterService(s, contractWriter)
+	}, net.Resource{Closer: contractWriter, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &relayerset.NewChainWriterResponse{ChainWriterId: id}, nil
+	return &relayerset.NewContractWriterResponse{ContractWriterId: id}, nil
 }
 
 // getProviderConnection wraps a non-LOOPP provider in an in process provider server.  This can be removed once all providers are LOOPP providers.

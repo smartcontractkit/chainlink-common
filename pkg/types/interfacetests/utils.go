@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -56,22 +57,24 @@ type TestingT[T any] interface {
 // Tests execution utility function that will consider enabled / disabled test cases according to
 // Basic Tester configuration.
 func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
-	for _, test := range tests {
-		if !tester.IsDisabled(test.Name) {
-			t.Run(test.Name+" for "+tester.Name(), func(t T) {
-				tester.Setup(t)
-				test.Test(t)
-			})
+	t.Run(tester.Name(), func(t T) {
+		for _, test := range tests {
+			if !tester.IsDisabled(test.Name) {
+				t.Run(test.Name, func(t T) {
+					tester.Setup(t)
+					test.Test(t)
+				})
+			}
 		}
-	}
+	})
 }
 
-// Batch chain write takes a batch call entry and writes it to the chain using the ChainWriter.
-func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+// Batch contract write takes a batch call entry and writes it to the chain using the ContractWriter.
+func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
 	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
 	if mockRun {
-		cw := tester.GetChainWriter(t)
-		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		cw := tester.GetContractWriter(t)
+		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchContractWrite", batchCallEntry, "", "", nil, big.NewInt(0))
 		require.NoError(t, err)
 		return
 	}
@@ -94,11 +97,11 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 	}
 }
 
-// SubmitTransactionToCW submits a transaction to the ChainWriter and waits for it to reach the given status.
+// SubmitTransactionToCW submits a transaction to the ContractWriter and waits for it to reach the given status.
 func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	tester.DirtyContracts()
 	txID := uuid.New().String()
-	cw := tester.GetChainWriter(t)
+	cw := tester.GetContractWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
@@ -125,7 +128,7 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 				tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
 				return nil
 			}
-			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
+			current, err := tester.GetContractWriter(t).GetTransactionStatus(ctx, txID)
 			if err != nil {
 				return fmt.Errorf("failed to get transaction status: %w", err)
 			}

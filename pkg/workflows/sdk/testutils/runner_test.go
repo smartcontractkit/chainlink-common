@@ -64,7 +64,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run allows hard-coded values", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 		hardCodedInput := basicaction.NewActionOutputsFromFields(sdk.ConstantDefinition("hard-coded"))
 		tTransform := sdk.Compute2[basictrigger.TriggerOutputs, basicaction.ActionOutputs, bool](
@@ -261,7 +261,7 @@ type ComputeConfig struct {
 
 func TestCompute(t *testing.T) {
 	t.Run("Inputs don't loose integer types when any is deserialized to", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
 		toMap := sdk.Compute1(workflow, "tomap", sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, i0 string) (map[string]any, error) {
 			v, err := strconv.Atoi(i0)
@@ -292,7 +292,7 @@ func TestCompute(t *testing.T) {
 	})
 
 	t.Run("Config interpolates secrets", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
 
 		conf := ComputeConfig{
@@ -321,7 +321,7 @@ func TestCompute(t *testing.T) {
 }
 
 func registrationWorkflow() (*sdk.WorkflowSpecFactory, map[string]any, map[string]any) {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	workflow := sdk.NewWorkflowSpecFactory()
 	testTriggerConfig := map[string]any{"something": "from nothing"}
 	trigger := sdk.Step[int]{
 		Definition: sdk.StepDefinition{
@@ -369,7 +369,7 @@ func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.Tri
 type actionTransform func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error)
 
 func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	workflow := sdk.NewWorkflowSpecFactory()
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	tTransform := sdk.Compute1[basictrigger.TriggerOutputs, bool](
 		workflow,

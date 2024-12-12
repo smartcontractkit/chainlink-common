@@ -21,7 +21,7 @@ func EncodeExecutionID(workflowID, eventID string) (string, error) {
 	return hex.EncodeToString(s.Sum(nil)), nil
 }
 
-func GenerateWorkflowIDFromStrings(owner string, workflow []byte, config []byte, secretsURL string) (string, error) {
+func GenerateWorkflowIDFromStrings(owner string, name string, workflow []byte, config []byte, secretsURL string) (string, error) {
 	ownerWithoutPrefix := owner
 	if strings.HasPrefix(owner, "0x") {
 		ownerWithoutPrefix = owner[2:]
@@ -32,7 +32,7 @@ func GenerateWorkflowIDFromStrings(owner string, workflow []byte, config []byte,
 		return "", err
 	}
 
-	wid, err := GenerateWorkflowID(ownerb, workflow, config, secretsURL)
+	wid, err := GenerateWorkflowID(ownerb, name, workflow, config, secretsURL)
 	if err != nil {
 		return "", err
 	}
@@ -40,13 +40,21 @@ func GenerateWorkflowIDFromStrings(owner string, workflow []byte, config []byte,
 	return hex.EncodeToString(wid[:]), nil
 }
 
-func GenerateWorkflowID(owner []byte, workflow []byte, config []byte, secretsURL string) ([32]byte, error) {
+var (
+	versionByte = byte(0)
+)
+
+func GenerateWorkflowID(owner []byte, name string, workflow []byte, config []byte, secretsURL string) ([32]byte, error) {
 	s := sha256.New()
 	_, err := s.Write(owner)
 	if err != nil {
 		return [32]byte{}, err
 	}
-	_, err = s.Write([]byte(workflow))
+	_, err = s.Write([]byte(name))
+	if err != nil {
+		return [32]byte{}, err
+	}
+	_, err = s.Write(workflow)
 	if err != nil {
 		return [32]byte{}, err
 	}
@@ -58,5 +66,9 @@ func GenerateWorkflowID(owner []byte, workflow []byte, config []byte, secretsURL
 	if err != nil {
 		return [32]byte{}, err
 	}
-	return [32]byte(s.Sum(nil)), nil
+
+	sha := [32]byte(s.Sum(nil))
+	sha[0] = versionByte
+
+	return sha, nil
 }

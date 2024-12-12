@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ var (
 		"SECRET_A": {"one", "two", "three", "four"},
 		"SECRET_B": {"all"},
 	}
-	workflowOwner = "0x9ed925d8206a4f88a2f643b28b3035b315753cd6"
+	workflowOwner = "0xFbb30BD8E9D779044c3c30dd82e52a5FA1573388"
 	config        = SecretsConfig{
 		SecretsNames: map[string][]string{
 			"SECRET_A": {"ENV_VAR_A_FOR_NODE_ONE", "ENV_VAR_A_FOR_NODE_TWO", "ENV_VAR_A_FOR_NODE_THREE", "ENV_VAR_A_FOR_NODE_FOUR"},
@@ -160,6 +161,16 @@ func TestEncryptDecrypt(t *testing.T) {
 	t.Run("incorrect owner", func(st *testing.T) {
 		_, err = DecryptSecretsForNode(result, k, "wrong owner")
 		assert.ErrorContains(t, err, "invalid secrets bundle: got owner")
+	})
+
+	t.Run("owner without 0x prefix", func(st *testing.T) {
+		_, err = DecryptSecretsForNode(result, k, workflowOwner[2:])
+		require.NoError(t, err)
+	})
+
+	t.Run("owner with lower casing", func(st *testing.T) {
+		_, err = DecryptSecretsForNode(result, k, strings.ToLower(workflowOwner))
+		require.NoError(t, err)
 	})
 
 	t.Run("key not in metadata", func(st *testing.T) {

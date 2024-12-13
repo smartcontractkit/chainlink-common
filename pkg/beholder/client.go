@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -93,7 +94,11 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	opts := []otlploggrpc.Option{
 		otlploggrpc.WithTLSCredentials(creds),
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
-		otlploggrpc.WithHeaders(cfg.AuthHeaders),
+	}
+	if cfg.AuthHeaderProvider != nil {
+		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithPerRPCCredentials(cfg.AuthHeaderProvider.Credentials())))
+	} else {
+		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
 	}
 	if cfg.LogRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -298,7 +303,11 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		otlptracegrpc.WithHeaders(config.AuthHeaders),
+	}
+	if config.AuthHeaderProvider != nil {
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithDialOption(grpc.WithPerRPCCredentials(config.AuthHeaderProvider.Credentials())))
+	} else {
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithHeaders(config.AuthHeaders))
 	}
 	if config.TraceRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -335,7 +344,11 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
-		otlpmetricgrpc.WithHeaders(config.AuthHeaders),
+	}
+	if config.AuthHeaderProvider != nil {
+		opts = append(opts, otlpmetricgrpc.WithDialOption(grpc.WithPerRPCCredentials(config.AuthHeaderProvider.Credentials())))
+	} else {
+		opts = append(opts, otlpmetricgrpc.WithHeaders(config.AuthHeaders))
 	}
 	if config.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK

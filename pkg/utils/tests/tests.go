@@ -68,3 +68,14 @@ func RequireSignal(t *testing.T, ch <-chan struct{}, failMsg string) {
 		t.Fatal(failMsg)
 	}
 }
+
+// SkipShort skips tb during -short runs, and notes why.
+func SkipShort(tb testing.TB, why string) {
+	if testing.Short() {
+		tb.Skipf("skipping: %s", why)
+	}
+}
+
+func SkipFlakey(t *testing.T, ticketURL string) {
+	t.Skip("Flakey", ticketURL)
+}

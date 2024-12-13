@@ -257,3 +257,14 @@ func (c *HealthChecker) IsHealthy() (healthy bool, errors map[string]error) {
 
 	return
 }
+
+// ContainsError - returns true if report contains targetErr
+func ContainsError(report map[string]error, targetErr error) bool {
+	for _, err := range report {
+		if errors.Is(err, targetErr) {
+			return true
+		}
+	}
+
+	return false
+}

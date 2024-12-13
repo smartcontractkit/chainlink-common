@@ -30,7 +30,7 @@ func TestBuildAuthHeadersV2(t *testing.T) {
 	require.NoError(t, err)
 	timestamp := time.Now().UnixMilli()
 
-	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
+	authHeaderMap := buildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
 		timestamp: timestamp,
 	})
 
@@ -72,7 +72,7 @@ func TestBuildAuthHeadersV2WithDefaults(t *testing.T) {
 
 	now := time.Now().UnixMilli()
 
-	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, nil)
+	authHeaderMap := buildAuthHeadersV2(csaPrivKey, nil)
 	authHeaderValue, ok := authHeaderMap[authHeaderKey]
 	require.True(t, ok, "auth header should be present")
 
@@ -113,7 +113,7 @@ func TestBuildAuthHeadersV2WithNegativeTimestamp(t *testing.T) {
 	require.NoError(t, err)
 	timestamp := int64(-111)
 
-	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
+	authHeaderMap := buildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
 		timestamp: timestamp,
 	})
 

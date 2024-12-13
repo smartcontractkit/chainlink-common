@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734112243510,
+  "lastUpdate": 1734124037184,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8064,6 +8064,48 @@ window.BENCHMARK_DATA = {
             "value": 28240,
             "unit": "ns/op",
             "extra": "42519 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "domino.valdano@smartcontract.com",
+            "name": "Domino Valdano",
+            "username": "reductionista"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "edc5deed9ffd87fd980b153e8297660f8b541746",
+          "message": "Add pkg/pg with dialects.go & txdb.go (#910)\n\n* Add pkg/pg with dialects.go & txdb.go\r\n\r\nNeither of these were in the actual pg package in chainlink repo.\r\ndialects.go came from core/store/dialects and txdb.go from\r\ncore/internal/testutils/pgtest, but neither of these seem like they\r\ndeserve their own package in chainlink-common--we can lump all the\r\npostgres specific common utilities under pkg/pg\r\n\r\n* Add TestTxDBDriver, NewSqlxDB, SkipShort, SkipShortDB and SkipFlakey\r\n\r\n* Add idempotency test of RegisterTxDb\r\n\r\n* Create ctx from testing context, instead of using context.Background\r\n\r\n* Only abort tx's when last connection is closed\r\n\r\nAlso: convert rest of panic isn't ordinary errors\r\n\r\n* go mod tidy\r\n\r\n* Split abort channel into one per connection object\r\n\r\nAll txdb connections share the same underlying connection to the\r\npostgres db. Calling NewSqlxDB() or NewConnection() with dialect=txdb\r\ndoesn't create a new pg connection, it just creates a new tx with\r\nBEGIN. Closing the connection with db.Close() issues ROLLBACK.\r\n\r\nBoth NewSqlxDB() and NewConneciton() choose random UUID's for their\r\ndsn string, so we shouldn't have a case where the same dsn is opened\r\nmore than once. If that did happen, then these two different txdb\r\n\"connections\" would be sharing the same transaction which would\r\nmean closing the abort channel due to a query sent over one of them\r\nwould affect the other. Hopefully that's not a problem? If it is\r\nI think our only option will be to go back to using context.Background\r\nfor all queries.\r\n\r\nBefore this commit, there was only one abort channel for the entire\r\ntxdb driver meaning that even two entirely different connections\r\nopened with different dsn's could interfere with each other's queries.\r\nThis should fix that case, which is presumably the only case we\r\ncare about. Since each dsn corresponds to a different call to\r\nNewSqlxDB() and the UUID's are generated randomly, there should no\r\nlonger be a conflict. Each txdb connection will have its own abort\r\nchannel.\r\n\r\n* Errorf -> Fatalf on failure to register txdb driver\r\n\r\n* Add in-memory DataSource using go-duckdb\r\n\r\n* Fall back to testing txdb with in-memory backed db if CL_DATABASE_URL is not set\r\n\r\nThis allows us to test most of it in CI, and all locally\r\n\r\n* Fix imports & fmt.Sprintf -> t.Log\r\n\r\n* Add concurrency test for RegisterTxDb()\r\n\r\n* Fix race condition\r\n\r\nThis showed up in some of the unit tests in the linked PR in chainlink repo\r\n\r\n* Remove pg.SkipDB(), add DbUrlOrInMemory()\r\n\r\n* pkg/pg -> pkg/sqlutil/pg\r\n\r\n* NewSqlxDB -> NewTestDB, DbUrlOrInMemory -> TestURL",
+          "timestamp": "2024-12-13T13:05:22-08:00",
+          "tree_id": "a50cda0f992b0387c03ff3c908aeaf00dee3ab94",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/edc5deed9ffd87fd980b153e8297660f8b541746"
+        },
+        "date": 1734124036620,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 455.3,
+            "unit": "ns/op",
+            "extra": "2638141 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 526.5,
+            "unit": "ns/op",
+            "extra": "2340086 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28392,
+            "unit": "ns/op",
+            "extra": "42552 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734021663929,
+  "lastUpdate": 1734112243510,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8022,6 +8022,48 @@ window.BENCHMARK_DATA = {
             "value": 28376,
             "unit": "ns/op",
             "extra": "42555 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dbebc0fc753a6cb6955fb08e9d2f53d8e401ed24",
+          "message": "(feat): Add PreCodec modifier (#961)",
+          "timestamp": "2024-12-13T17:49:39Z",
+          "tree_id": "2f1a7c1e449576581af6c39f29b440c088120529",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/dbebc0fc753a6cb6955fb08e9d2f53d8e401ed24"
+        },
+        "date": 1734112242766,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 457,
+            "unit": "ns/op",
+            "extra": "2604240 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 513.1,
+            "unit": "ns/op",
+            "extra": "2324736 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28240,
+            "unit": "ns/op",
+            "extra": "42519 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734124037184,
+  "lastUpdate": 1734191951464,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8106,6 +8106,48 @@ window.BENCHMARK_DATA = {
             "value": 28392,
             "unit": "ns/op",
             "extra": "42552 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b403079b28054659d66944a44e6d7bae1fb662dc",
+          "message": "(fix): Allow pointers to bytes in PreCodec modifier (#975)",
+          "timestamp": "2024-12-14T10:58:18-05:00",
+          "tree_id": "f0cffe4413cc8ee87eec9b04185bcfe7e7d4b5ca",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b403079b28054659d66944a44e6d7bae1fb662dc"
+        },
+        "date": 1734191950907,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 464.5,
+            "unit": "ns/op",
+            "extra": "2505398 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 523.4,
+            "unit": "ns/op",
+            "extra": "2309174 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28397,
+            "unit": "ns/op",
+            "extra": "42496 times\n4 procs"
           }
         ]
       }

@@ -30,7 +30,7 @@ func NewPreCodec(fields map[string]string, codecs map[string]types.RemoteCodec) 
 	}
 
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, typeDef string) error {
-		if field.Type != reflect.SliceOf(reflect.TypeFor[uint8]()) {
+		if field.Type != reflect.SliceOf(reflect.TypeFor[uint8]()) && field.Type != reflect.PointerTo(reflect.SliceOf(reflect.TypeFor[uint8]())) {
 			return fmt.Errorf("can only decode []byte from on-chain: %s", field.Type)
 		}
 

@@ -61,6 +61,11 @@ type testStructOn struct {
 	Bid int
 }
 
+type testStructOnPointer struct {
+	Ask *[]byte
+	Bid int
+}
+
 type nestedTestStructOn struct {
 	Report    []byte
 	FeedID    [32]byte
@@ -79,6 +84,12 @@ func TestPreCodec(t *testing.T) {
 	t.Parallel()
 
 	preCodec, err := codec.NewPreCodec(
+		map[string]string{"Ask": "uint256"},
+		map[string]types.RemoteCodec{"uint256": ExampleCodec{offChainType: int(0)}},
+	)
+	require.NoError(t, err)
+
+	pointerPreCodec, err := codec.NewPreCodec(
 		map[string]string{"Ask": "uint256"},
 		map[string]types.RemoteCodec{"uint256": ExampleCodec{offChainType: int(0)}},
 	)
@@ -122,8 +133,22 @@ func TestPreCodec(t *testing.T) {
 		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
 	})
 
-	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
+	t.Run("RetypeToOffChain works on pointers to type", func(t *testing.T) {
 		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
+		require.NoError(t, err)
+		assert.Equal(t, reflect.Ptr, offChainType.Kind())
+		elem := offChainType.Elem()
+		require.Equal(t, 2, elem.NumField())
+		field0 := elem.Field(0)
+		assert.Equal(t, "Ask", field0.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		field1 := elem.Field(1)
+		assert.Equal(t, "Bid", field1.Name)
+		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+	})
+
+	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
+		offChainType, err := pointerPreCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOnPointer{})), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Ptr, offChainType.Kind())
 		elem := offChainType.Elem()

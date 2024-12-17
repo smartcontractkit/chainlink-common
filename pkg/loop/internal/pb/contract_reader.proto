@@ -12,6 +12,7 @@ service ContractReader {
   rpc GetLatestValueWithHeadData (GetLatestValueRequest) returns (GetLatestValueWithHeadDataReply) {}
   rpc BatchGetLatestValues (BatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
   rpc QueryKey(QueryKeyRequest) returns (QueryKeyReply) {}
+  rpc QueryKeys(QueryKeysRequest) returns (QueryKeysReply) {}
   rpc Bind(BindRequest) returns (google.protobuf.Empty) {}
   rpc Unbind(UnbindRequest) returns (google.protobuf.Empty) {}
 }
@@ -34,6 +35,18 @@ message QueryKeyRequest {
   BoundContract contract = 1;
   QueryKeyFilter filter = 2;
   LimitAndSort limit_and_sort = 3;
+  bool as_value_type = 4;
+}
+
+// QueryKeysRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.QueryKeys].
+message QueryKeysRequest {
+  repeated ContractKeyFilter filters = 1;
+  LimitAndSort limit_and_sort = 2;
+}
+
+message ContractKeyFilter {
+  BoundContract contract = 1;
+  QueryKeyFilter filter = 2;
   bool as_value_type = 4;
 }
 
@@ -67,6 +80,11 @@ message BatchGetLatestValuesReply {
 // QueryKeyReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.QueryKey].
 message QueryKeyReply {
   repeated Sequence sequences = 1;
+}
+
+// QueryKeysReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.QueryKeys].
+message QueryKeysReply {
+  repeated SequenceWithKey sequences = 1;
 }
 
 // ContractBatch is gRPC adapter for the BatchGetLatestValuesRequest struct map value [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValuesRequest].
@@ -107,6 +125,13 @@ message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
   VersionedBytes data = 3;
+}
+
+message SequenceWithKey {
+  string sequence_cursor = 1;
+  Head head = 2;
+  VersionedBytes data = 3;
+  string key = 4;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

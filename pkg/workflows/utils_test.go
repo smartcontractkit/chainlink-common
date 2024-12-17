@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_EncodeExecutionID(t *testing.T) {
@@ -37,4 +38,31 @@ func Test_EncodeExecutionID(t *testing.T) {
 
 	reversed := hex.EncodeToString(s.Sum(nil))
 	assert.NotEqual(t, reversed, actual)
+}
+
+func Test_GenerateWorkflowIDFromStrings(t *testing.T) {
+	// With prefix
+	owner := "0x26729408f179371be6433b9585d8427f121bfe82"
+	got, err := GenerateWorkflowIDFromStrings(owner, "porporpore", []byte("workflow"), []byte("config"), "http://mysecrets.com")
+	require.NoError(t, err)
+	assert.NotNil(t, got)
+
+	// Always starts with the version byte
+	assert.Equal(t, got[:2], hex.EncodeToString([]byte{versionByte}))
+
+	// Without prefix
+	owner = "26729408f179371be6433b9585d8427f121bfe82"
+	got, err = GenerateWorkflowIDFromStrings(owner, "porporpore", []byte("workflow"), []byte("config"), "http://mysecrets.com")
+	require.NoError(t, err)
+	assert.NotNil(t, got)
+
+	// Very short; empty but with a prefix
+	owner = "0x"
+	got, err = GenerateWorkflowIDFromStrings(owner, "porporpore", []byte("workflow"), []byte("config"), "http://mysecrets.com")
+	require.NoError(t, err)
+	assert.NotNil(t, got)
+
+	owner = "invalid"
+	_, err = GenerateWorkflowIDFromStrings(owner, "porporpore", []byte("workflow"), []byte("config"), "http://mysecrets.com")
+	assert.ErrorContains(t, err, "encoding/hex")
 }

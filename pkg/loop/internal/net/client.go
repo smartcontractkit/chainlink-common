@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
 var _ grpc.ClientConnInterface = (*AtomicClient)(nil)
@@ -58,7 +59,12 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}
 	for cc != nil {
 		err := cc.Invoke(ctx, method, args, reply, opts...)
 		if isErrTerminal(err) {
-			c.Logger.Warnw("clientConn: Invoke: terminal error, refreshing connection", "err", err)
+			if method == pb.Service_Close_FullMethodName {
+				// don't reconnect just to call Close
+				c.Logger.Warnw("clientConn: Invoke: terminal error", "method", method, "err", err)
+				return err
+			}
+			c.Logger.Warnw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
 			cc = c.refresh(ctx, cc)
 			continue
 		}

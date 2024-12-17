@@ -14,7 +14,6 @@ import (
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
@@ -117,9 +116,13 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// Logger
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.LogExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
+		}
 		loggerProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.LogExportTimeout), // Default is 30s
+			batchProcessorOpts...,
 		)
 	} else {
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -157,9 +160,13 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// Message Emitter
 	var messageLogProcessor sdklog.Processor
 	if cfg.EmitterBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.EmitterExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.EmitterExportTimeout)) // Default is 30s
+		}
 		messageLogProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.EmitterExportTimeout), // Default is 30s
+			batchProcessorOpts...,
 		)
 	} else {
 		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -323,9 +330,12 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 	if err != nil {
 		return nil, err
 	}
-
+	batcherOpts := []sdktrace.BatchSpanProcessorOption{}
+	if config.TraceBatchTimeout > 0 {
+		batcherOpts = append(batcherOpts, sdktrace.WithBatchTimeout(config.TraceBatchTimeout)) // Default is 5s
+	}
 	opts := []sdktrace.TracerProviderOption{
-		sdktrace.WithBatcher(exporter, trace.WithBatchTimeout(config.TraceBatchTimeout)), // Default is 5s
+		sdktrace.WithBatcher(exporter, batcherOpts...),
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(
@@ -372,6 +382,7 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
+		sdkmetric.WithView(config.MetricViews...),
 	)
 	return mp, nil
 }

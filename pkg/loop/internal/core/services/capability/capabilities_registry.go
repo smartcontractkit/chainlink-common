@@ -115,6 +115,8 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		prtc := res.CapabilityConfig.GetRemoteExecutableConfig()
 		remoteExecutableConfig = &capabilities.RemoteExecutableConfig{}
 		remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
+		remoteExecutableConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
+		remoteExecutableConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
 	}
 
 	return capabilities.CapabilityConfiguration{
@@ -348,6 +350,16 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTargetConfig{
 			RemoteTargetConfig: &capabilitiespb.RemoteTargetConfig{
 				RequestHashExcludedAttributes: cc.RemoteTargetConfig.RequestHashExcludedAttributes,
+			},
+		}
+	}
+
+	if cc.RemoteExecutableConfig != nil {
+		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteExecutableConfig{
+			RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
+				RequestHashExcludedAttributes: cc.RemoteExecutableConfig.RequestHashExcludedAttributes,
+				RegistrationRefresh:           durationpb.New(cc.RemoteExecutableConfig.RegistrationRefresh),
+				RegistrationExpiry:            durationpb.New(cc.RemoteExecutableConfig.RegistrationExpiry),
 			},
 		}
 	}

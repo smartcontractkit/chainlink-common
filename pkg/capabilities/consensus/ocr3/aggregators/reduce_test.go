@@ -634,6 +634,25 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
 				},
 			},
+			{
+				name:            "reduce error mode with mode quorum of ocr",
+				previousOutcome: nil,
+				fields: []aggregators.AggregationField{
+					{
+						Method:     "mode",
+						ModeQuorum: "ocr",
+						OutputKey:  "Price",
+					},
+				},
+				extraConfig: map[string]any{},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.Wrap(true)
+					require.NoError(t, err)
+					mockValue2, err := values.Wrap(true)
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}}
+				},
+			},
 		}
 		for _, tt := range cases {
 			t.Run(tt.name, func(t *testing.T) {
@@ -825,6 +844,7 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 								InputKey:        "FeedID",
 								OutputKey:       "FeedId",
 								Method:          "mode",
+								ModeQuorum:      "ocr",
 								DeviationString: "1.1",
 								Deviation:       decimal.NewFromFloat(1.1),
 								DeviationType:   "absolute",
@@ -1153,6 +1173,23 @@ func TestMedianAggregator_ParseConfig(t *testing.T) {
 					return vMap
 				},
 			},
+			{
+				name: "invalid mode quorum",
+				configFactory: func() *values.Map {
+					vMap, err := values.NewMap(map[string]any{
+						"fields": []aggregators.AggregationField{
+							{
+								InputKey:   "Price",
+								Method:     "mode",
+								ModeQuorum: "invalid",
+								OutputKey:  "Price",
+							},
+						},
+					})
+					require.NoError(t, err)
+					return vMap
+				},
+			},
 		}
 
 		for _, tt := range cases {
@@ -1233,6 +1270,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1278,6 +1316,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "BoolField",
 					OutputKey:     "BoolField",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1323,6 +1362,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1368,6 +1408,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "BoolField",
 					OutputKey:     "BoolField",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1413,6 +1454,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1458,6 +1500,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1503,6 +1546,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1548,6 +1592,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1593,6 +1638,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1638,6 +1684,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1683,6 +1730,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{
@@ -1728,6 +1776,7 @@ func TestAggregateShouldReport(t *testing.T) {
 					InputKey:      "FeedID",
 					OutputKey:     "FeedID",
 					Method:        "mode",
+					ModeQuorum:    "any",
 					DeviationType: "any",
 				},
 				{

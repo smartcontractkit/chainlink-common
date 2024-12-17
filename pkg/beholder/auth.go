@@ -141,7 +141,8 @@ func buildAuthHeadersV2(privKey ed25519.PrivateKey, config *AuthHeaderConfig) ma
 	if config.version == "" {
 		config.version = authHeaderVersion2
 	}
-	// If timestamp is negative, set it to 0. negative values cause overflow on conversion to uint64
+	// If timestamp is negative or 0, set it to current timestamp.
+	// negative values cause overflow on conversion to uint64
 	if config.timestamp <= 0 {
 		config.timestamp = time.Now().UnixMilli()
 	}

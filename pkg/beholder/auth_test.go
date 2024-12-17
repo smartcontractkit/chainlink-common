@@ -109,6 +109,7 @@ func TestBuildAuthHeadersV2WithDefaults(t *testing.T) {
 }
 
 func TestBuildAuthHeadersV2WithNegativeTimestamp(t *testing.T) {
+	// This tests that if the timestamp is negative, it will be set it to current timestamp
 	csaPrivKey, err := generateTestCSAPrivateKey()
 	require.NoError(t, err)
 	timestamp := int64(-111)
@@ -126,7 +127,8 @@ func TestBuildAuthHeadersV2WithNegativeTimestamp(t *testing.T) {
 	_, _, timestampStr, _ := parts[0], parts[1], parts[2], parts[3]
 	timestampParsed, err := strconv.ParseInt(timestampStr, 10, 64)
 	require.NoError(t, err)
-	assert.Zero(t, timestampParsed)
+	// Verify the timestamp is within the last 50ms
+	assert.InDelta(t, time.Now().UnixMilli(), timestampParsed, 50, "timestamp should be 0")
 }
 
 func generateTestCSAPrivateKey() (ed25519.PrivateKey, error) {

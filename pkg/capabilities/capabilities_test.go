@@ -149,3 +149,11 @@ func Test_MustNewCapabilityInfo(t *testing.T) {
 		)
 	})
 }
+
+func Test_RemoteExecutableConfig_ApplyDefaults(t *testing.T) {
+	rec := &RemoteExecutableConfig{}
+	rec.ApplyDefaults()
+
+	assert.Equal(t, DefaultRegistrationRefresh, rec.RegistrationRefresh)
+	assert.Equal(t, DefaultRegistrationExpiry, rec.RegistrationExpiry)
+}

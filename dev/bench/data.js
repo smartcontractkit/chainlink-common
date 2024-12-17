@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734191951464,
+  "lastUpdate": 1734437429389,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8148,6 +8148,48 @@ window.BENCHMARK_DATA = {
             "value": 28397,
             "unit": "ns/op",
             "extra": "42496 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbe318cd07609546b26b84bf3f43d622d2e0ea0c",
+          "message": "add registration refresh and expiry to executable capability remote config (#968)\n\n* wip\r\n\r\n* tests",
+          "timestamp": "2024-12-17T12:09:18Z",
+          "tree_id": "94e90c1cc695b17aa8285e4856b7927e38e43885",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bbe318cd07609546b26b84bf3f43d622d2e0ea0c"
+        },
+        "date": 1734437428464,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 456.5,
+            "unit": "ns/op",
+            "extra": "2624692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 537.5,
+            "unit": "ns/op",
+            "extra": "2333137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28835,
+            "unit": "ns/op",
+            "extra": "41590 times\n4 procs"
           }
         ]
       }

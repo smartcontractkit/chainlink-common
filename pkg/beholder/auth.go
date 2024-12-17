@@ -27,18 +27,20 @@ type AuthHeaderProvider interface {
 
 // authHeaderPerRPCredentials is a PerRPCCredentials implementation that provides the auth headers
 type authHeaderPerRPCredentials struct {
-	privKey     ed25519.PrivateKey
-	lastUpdated time.Time
-	headerTTL   time.Duration
-	headers     map[string]string
-	version     string
-	mu          sync.Mutex
+	privKey                  ed25519.PrivateKey
+	lastUpdated              time.Time
+	headerTTL                time.Duration
+	requireTransportSecurity bool
+	headers                  map[string]string
+	version                  string
+	mu                       sync.Mutex
 }
 
 // AuthHeaderProviderConfig configures AuthHeaderProvider
 type AuthHeaderProviderConfig struct {
-	HeaderTTL time.Duration
-	Version   string
+	HeaderTTL                time.Duration
+	Version                  string
+	RequireTransportSecurity bool
 }
 
 func NewAuthHeaderProvider(privKey ed25519.PrivateKey, config *AuthHeaderProviderConfig) AuthHeaderProvider {
@@ -55,6 +57,8 @@ func NewAuthHeaderProvider(privKey ed25519.PrivateKey, config *AuthHeaderProvide
 	creds := &authHeaderPerRPCredentials{
 		privKey:   privKey,
 		headerTTL: config.HeaderTTL,
+		version:   config.Version,
+		requireTransportSecurity: config.RequireTransportSecurity,
 	}
 	// Initialize the headers ~ lastUpdated is 0 so the headers are generated on the first call
 	creds.refresh()
@@ -70,11 +74,11 @@ func (a *authHeaderPerRPCredentials) GetRequestMetadata(_ context.Context, _ ...
 }
 
 func (a *authHeaderPerRPCredentials) RequireTransportSecurity() bool {
-	return false
+	return a.requireTransportSecurity
 }
 
 // get headers returns the auth headers, refreshing them if they are expired
-func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {		
+func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
 	if time.Since(a.lastUpdated) > a.headerTTL {
 		a.refresh()
 	}
@@ -85,7 +89,7 @@ func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
 func (a *authHeaderPerRPCredentials) refresh() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	
+
 	timeNow := time.Now()
 
 	switch a.version {

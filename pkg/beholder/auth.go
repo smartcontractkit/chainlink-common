@@ -55,9 +55,9 @@ func NewAuthHeaderProvider(privKey ed25519.PrivateKey, config *AuthHeaderProvide
 	}
 
 	creds := &authHeaderPerRPCredentials{
-		privKey:   privKey,
-		headerTTL: config.HeaderTTL,
-		version:   config.Version,
+		privKey:                  privKey,
+		headerTTL:                config.HeaderTTL,
+		version:                  config.Version,
 		requireTransportSecurity: config.RequireTransportSecurity,
 	}
 	// Initialize the headers ~ lastUpdated is 0 so the headers are generated on the first call
@@ -77,7 +77,7 @@ func (a *authHeaderPerRPCredentials) RequireTransportSecurity() bool {
 	return a.requireTransportSecurity
 }
 
-// get headers returns the auth headers, refreshing them if they are expired
+// getHeaders returns the auth headers, refreshing them if they are expired
 func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
 	if time.Since(a.lastUpdated) > a.headerTTL {
 		a.refresh()
@@ -104,7 +104,6 @@ func (a *authHeaderPerRPCredentials) refresh() {
 	}
 	// Set the lastUpdated time to now
 	a.lastUpdated = timeNow
-	return
 }
 
 // AuthHeaderConfig configures buildAuthHeadersV2

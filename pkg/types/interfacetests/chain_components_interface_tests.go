@@ -111,12 +111,12 @@ var AnySliceToReadWithoutAnArgument = []uint64{3, 4}
 
 const AnyExtraValue = 3
 
-func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func RunContractReaderInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool, parallel bool) {
 	t.Run(tester.Name(), func(t T) {
-		t.Run("GetLatestValue", func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun) })
-		t.Run("BatchGetLatestValues", func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun) })
-		t.Run("QueryKey", func(t T) { runQueryKeyInterfaceTests(t, tester) })
-		t.Run("QueryKeys", func(t T) { runQueryKeysInterfaceTests(t, tester) })
+		t.Run("GetLatestValue", func(t T) { runContractReaderGetLatestValueInterfaceTests(t, tester, mockRun, parallel) })
+		t.Run("BatchGetLatestValues", func(t T) { runContractReaderBatchGetLatestValuesInterfaceTests(t, tester, mockRun, parallel) })
+		t.Run("QueryKey", func(t T) { runQueryKeyInterfaceTests(t, tester, parallel) })
+		t.Run("QueryKeys", func(t T) { runQueryKeysInterfaceTests(t, tester, parallel) })
 	})
 }
 
@@ -129,19 +129,21 @@ type sequenceWithKey struct {
 	Key string
 }
 
-func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T]) {
+func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], parallel bool) {
 	tests := []Testcase[T]{
 		{
 			Name: ContractReaderQueryKeysReturnsDataTwoEventTypes,
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
+				cw := tester.GetContractWriter(t)
+
 				bindings := tester.GetBindings(t)
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
 
-				expectedSequenceData := createMixedEventTypeSequence(t, tester, boundContract)
+				expectedSequenceData := createMixedEventTypeSequence(t, tester, cw, boundContract)
 
 				ts := &TestStruct{}
 				require.Eventually(t, func() bool {
@@ -181,7 +183,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 				bindings := tester.GetBindings(t)
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
-				require.NoError(t, cr.Bind(ctx, tester.GetBindings(t)))
+				require.NoError(t, cr.Bind(ctx, bindings))
 
 				contractFilter := types.ContractKeyFilter{
 					Contract:         bound,
@@ -204,12 +206,13 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
+				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
-				expectedSequenceData := createMixedEventTypeSequence(t, tester, bound)
+				expectedSequenceData := createMixedEventTypeSequence(t, tester, cw, bound)
 
 				var value values.Value
 				require.Eventually(t, func() bool {
@@ -268,12 +271,15 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
+				cw := tester.GetContractWriter(t)
+
 				bindings := tester.GetBindings(t)
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
 
-				expectedSequenceData := createMixedEventTypeSequence(t, tester, boundContract)
+				expectedSequenceData := createMixedEventTypeSequence(t, tester, cw, boundContract)
+				fmt.Println("expectedSequenceData", expectedSequenceData)
 
 				ts := &TestStruct{}
 				require.Eventually(t, func() bool {
@@ -321,6 +327,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 			Test: func(t T) {
 				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
+				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -330,26 +337,26 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 
 				ts1 := CreateTestStruct[T](0, tester)
 				expectedSequenceData = append(expectedSequenceData, &ts1)
-				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
 				ts2 := CreateTestStruct[T](1, tester)
 				expectedSequenceData = append(expectedSequenceData, &ts2)
-				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
 
 				ds1 := SomeDynamicTopicEvent{Field: "1"}
 				expectedSequenceData = append(expectedSequenceData, &ds1)
-				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds1, boundContract, types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEventWithDynamicTopic, ds1, boundContract, types.Unconfirmed)
 
 				ts3 := CreateTestStruct[T](2, tester)
 				expectedSequenceData = append(expectedSequenceData, &ts3)
-				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
 
 				ds2 := SomeDynamicTopicEvent{Field: "2"}
 				expectedSequenceData = append(expectedSequenceData, &ds2)
-				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds2, boundContract, types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEventWithDynamicTopic, ds2, boundContract, types.Unconfirmed)
 
 				ts4 := CreateTestStruct[T](3, tester)
 				expectedSequenceData = append(expectedSequenceData, &ts4)
-				_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts4, boundContract, types.Finalized)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts4, boundContract, types.Finalized)
 
 				require.Eventually(t, func() bool {
 					var allSequences []sequenceWithKey
@@ -399,35 +406,38 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		},
 	}
 
-	RunTests(t, tester, tests)
+	if parallel {
+		RunTestsInParallel(t, tester, tests)
+	} else {
+		RunTests(t, tester, tests)
+	}
 }
 
-func createMixedEventTypeSequence[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], boundContract types.BoundContract) []any {
+func createMixedEventTypeSequence[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, boundContract types.BoundContract) []any {
 	var expectedSequenceData []any
 
 	ts1 := CreateTestStruct[T](0, tester)
 	expectedSequenceData = append(expectedSequenceData, &ts1)
-	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
+	_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts1, boundContract, types.Unconfirmed)
 	ts2 := CreateTestStruct[T](1, tester)
 	expectedSequenceData = append(expectedSequenceData, &ts2)
-	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
+	_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts2, boundContract, types.Unconfirmed)
 
 	ds1 := SomeDynamicTopicEvent{Field: "1"}
 	expectedSequenceData = append(expectedSequenceData, &ds1)
-	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds1, boundContract, types.Unconfirmed)
+	_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEventWithDynamicTopic, ds1, boundContract, types.Unconfirmed)
 
 	ts3 := CreateTestStruct[T](2, tester)
 	expectedSequenceData = append(expectedSequenceData, &ts3)
-	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
+	_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts3, boundContract, types.Unconfirmed)
 
 	ds2 := SomeDynamicTopicEvent{Field: "2"}
 	expectedSequenceData = append(expectedSequenceData, &ds2)
-	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEventWithDynamicTopic, ds2, boundContract, types.Unconfirmed)
+	_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEventWithDynamicTopic, ds2, boundContract, types.Unconfirmed)
 
 	ts4 := CreateTestStruct[T](3, tester)
 	expectedSequenceData = append(expectedSequenceData, &ts4)
-	_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts4, boundContract, types.Unconfirmed)
-
+	_ = SubmitTransactionToCW(t, tester, cw, MethodTriggeringEvent, ts4, boundContract, types.Unconfirmed)
 	return expectedSequenceData
 }
 
@@ -445,7 +455,7 @@ func sequenceDataEqual(expectedSequenceData []any, sequences []sequenceWithKey) 
 	return true
 }
 
-func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool, parallel bool) {
 	tests := []Testcase[T]{
 		{
 			Name: ContractReaderGetLatestValueAsValuesDotValue,
@@ -776,10 +786,14 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			},
 		},
 	}
-	RunTests(t, tester, tests)
+	if parallel {
+		RunTestsInParallel(t, tester, tests)
+	} else {
+		RunTests(t, tester, tests)
+	}
 }
 
-func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool) {
+func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], mockRun bool, parallel bool) {
 	testCases := []Testcase[T]{
 		{
 			Name: ContractReaderBatchGetLatestValue,
@@ -1058,10 +1072,14 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 			},
 		},
 	}
-	RunTests(t, tester, testCases)
+	if parallel {
+		RunTestsInParallel(t, tester, testCases)
+	} else {
+		RunTests(t, tester, testCases)
+	}
 }
 
-func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T]) {
+func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], parallel bool) {
 	tests := []Testcase[T]{
 		{
 			Name: ContractReaderQueryKeyNotFound,
@@ -1235,7 +1253,11 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 		},
 	}
 
-	RunTests(t, tester, tests)
+	if parallel {
+		RunTestsInParallel(t, tester, tests)
+	} else {
+		RunTests(t, tester, tests)
+	}
 }
 
 func BindingsByName(bindings []types.BoundContract, name string) []types.BoundContract {

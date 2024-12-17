@@ -85,6 +85,7 @@ func TestContractReaderInterfaceTests(t *testing.T) {
 					contractreadertest.WithContractReaderLoopEncoding(version),
 				),
 				true,
+				false,
 			)
 		}
 	})
@@ -310,10 +311,6 @@ func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
 		fake.triggers = newEventsRecorder()
 		fake.stored = make(map[string][]TestStruct)
 	}
-}
-
-func (it *fakeContractReaderInterfaceTester) Init(_ *testing.T) {
-
 }
 
 func (it *fakeContractReaderInterfaceTester) GetContractReader(_ *testing.T) types.ContractReader {
@@ -1166,7 +1163,7 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			fake := &fakeContractReader{}
-			fakeCW := &fakeContractWriter{}
+			fakeCW := &fakeContractWriter{cr: fake}
 			tester := &fakeContractReaderInterfaceTester{impl: fake}
 			tester.Setup(t)
 
@@ -1210,7 +1207,7 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			fake := &fakeContractReader{}
-			fakeCW := &fakeContractWriter{}
+			fakeCW := &fakeContractWriter{cr: fake}
 
 			tester := &fakeContractReaderInterfaceTester{impl: fake}
 			tester.Setup(t)

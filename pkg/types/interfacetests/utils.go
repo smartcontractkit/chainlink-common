@@ -59,7 +59,20 @@ type TestingT[T any] interface {
 // Basic Tester configuration.
 func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
 	t.Run(tester.Name(), func(t T) {
-		tester.Setup(t)
+		for _, test := range tests {
+			if !tester.IsDisabled(test.Name) {
+				t.Run(test.Name, func(t T) {
+					tester.Setup(t)
+					test.Test(t)
+				})
+			}
+		}
+	})
+}
+
+func RunTestsInParallel[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
+	// Assumes Setup() called on tester initialization to avoid race conditions on tester setup
+	t.Run(tester.Name(), func(t T) {
 		for _, test := range tests {
 			if !tester.IsDisabled(test.Name) {
 				t.Run(test.Name, func(t T) {

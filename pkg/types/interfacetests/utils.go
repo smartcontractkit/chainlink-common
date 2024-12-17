@@ -52,16 +52,18 @@ type TestingT[T any] interface {
 	tests.TestingT
 	Failed() bool
 	Run(name string, f func(t T)) bool
+	Parallel()
 }
 
 // Tests execution utility function that will consider enabled / disabled test cases according to
 // Basic Tester configuration.
 func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
 	t.Run(tester.Name(), func(t T) {
+		tester.Setup(t)
 		for _, test := range tests {
 			if !tester.IsDisabled(test.Name) {
 				t.Run(test.Name, func(t T) {
-					tester.Setup(t)
+					t.Parallel()
 					test.Test(t)
 				})
 			}
@@ -70,16 +72,14 @@ func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
 }
 
 // Batch contract write takes a batch call entry and writes it to the chain using the ContractWriter.
-func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, boundContracts []types.BoundContract, batchCallEntry BatchCallEntry, mockRun bool) {
 	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
 	if mockRun {
-		cw := tester.GetContractWriter(t)
 		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchContractWrite", batchCallEntry, "", "", nil, big.NewInt(0))
 		require.NoError(t, err)
 		return
 	}
 	nameToAddress := make(map[string]string)
-	boundContracts := tester.GetBindings(t)
 	for _, bc := range boundContracts {
 		nameToAddress[bc.Name] = bc.Address
 	}
@@ -92,27 +92,26 @@ func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTeste
 			if !isOk {
 				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contract.Name, readEntry.Name, readEntry.ReturnValue)
 			}
-			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contract.Name, Address: nameToAddress[contract.Name]}, types.Unconfirmed)
+			SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, val, types.BoundContract{Name: contract.Name, Address: nameToAddress[contract.Name]}, types.Unconfirmed)
 		}
 	}
 }
 
 // SubmitTransactionToCW submits a transaction to the ContractWriter and waits for it to reach the given status.
-func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
+func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	tester.DirtyContracts()
 	txID := uuid.New().String()
-	cw := tester.GetContractWriter(t)
 	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
-	err = WaitForTransactionStatus(t, tester, txID, status, false)
+	err = WaitForTransactionStatus(t, tester, cw, txID, status, false)
 	require.NoError(t, err)
 
 	return txID
 }
 
 // WaitForTransactionStatus waits for a transaction to reach the given status.
-func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
+func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, txID string, status types.TransactionStatus, mockRun bool) error {
 	ctx, cancel := context.WithTimeout(tests.Context(t), 15*time.Minute)
 	defer cancel()
 
@@ -128,7 +127,7 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 				tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
 				return nil
 			}
-			current, err := tester.GetContractWriter(t).GetTransactionStatus(ctx, txID)
+			current, err := cw.GetTransactionStatus(ctx, txID)
 			if err != nil {
 				return fmt.Errorf("failed to get transaction status: %w", err)
 			}

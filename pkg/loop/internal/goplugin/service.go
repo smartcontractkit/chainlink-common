@@ -3,6 +3,7 @@ package goplugin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
@@ -82,6 +83,7 @@ type ServiceServer struct {
 }
 
 func (s *ServiceServer) Close(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {
+	fmt.Println("CLOSING CLIENT SERVICE")
 	return &emptypb.Empty{}, s.Srv.Close()
 }
 

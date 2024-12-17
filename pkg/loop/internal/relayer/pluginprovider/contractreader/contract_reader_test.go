@@ -312,6 +312,10 @@ func (it *fakeContractReaderInterfaceTester) Setup(_ *testing.T) {
 	}
 }
 
+func (it *fakeContractReaderInterfaceTester) Init(_ *testing.T) {
+
+}
+
 func (it *fakeContractReaderInterfaceTester) GetContractReader(_ *testing.T) types.ContractReader {
 	return it.impl
 }
@@ -1162,6 +1166,7 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			fake := &fakeContractReader{}
+			fakeCW := &fakeContractWriter{}
 			tester := &fakeContractReaderInterfaceTester{impl: fake}
 			tester.Setup(t)
 
@@ -1179,14 +1184,14 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			require.NoError(t, cr.Bind(ctx, toBind))
 
 			ts1AnyContract := CreateTestStruct(0, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract, anyContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnyContract, anyContract, types.Unconfirmed)
 			ts2AnyContract := CreateTestStruct(1, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract, anyContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnyContract, anyContract, types.Unconfirmed)
 
 			ts1AnySecondContract := CreateTestStruct(0, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract, anySecondContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnySecondContract, anySecondContract, types.Unconfirmed)
 			ts2AnySecondContract := CreateTestStruct(1, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
 			require.Eventually(t, func() bool {
@@ -1205,6 +1210,8 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			fake := &fakeContractReader{}
+			fakeCW := &fakeContractWriter{}
+
 			tester := &fakeContractReaderInterfaceTester{impl: fake}
 			tester.Setup(t)
 
@@ -1225,22 +1232,22 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			require.NoError(t, cr.Bind(ctx, toBind))
 
 			ts1AnyContract1 := CreateTestStruct(0, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract1, anyContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnyContract1, anyContract1, types.Unconfirmed)
 			ts2AnyContract1 := CreateTestStruct(1, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract1, anyContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnyContract1, anyContract1, types.Unconfirmed)
 			ts1AnyContract2 := CreateTestStruct(2, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract2, anyContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnyContract2, anyContract2, types.Unconfirmed)
 			ts2AnyContract2 := CreateTestStruct(3, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract2, anyContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnyContract2, anyContract2, types.Unconfirmed)
 
 			ts1AnySecondContract1 := CreateTestStruct(4, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract1, anySecondContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnySecondContract1, anySecondContract1, types.Unconfirmed)
 			ts2AnySecondContract1 := CreateTestStruct(5, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract1, anySecondContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnySecondContract1, anySecondContract1, types.Unconfirmed)
 			ts1AnySecondContract2 := CreateTestStruct(6, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract2, anySecondContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnySecondContract2, anySecondContract2, types.Unconfirmed)
 			ts2AnySecondContract2 := CreateTestStruct(7, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
 			require.Eventually(t, func() bool {

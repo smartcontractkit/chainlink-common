@@ -328,6 +328,7 @@ func (c *Client) Bind(ctx context.Context, bindings []types.BoundContract) error
 	}
 
 	_, err := c.grpc.Bind(ctx, &pb.BindRequest{Bindings: pbBindings})
+	fmt.Println("ERROR:", err)
 	return net.WrapRPCErr(err)
 }
 

@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"fmt"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc/credentials"
@@ -31,6 +32,7 @@ type authHeaderPerRPCredentials struct {
 	headerTTL   time.Duration
 	headers     map[string]string
 	version     string
+	mu          sync.Mutex
 }
 
 // AuthHeaderProviderConfig configures AuthHeaderProvider
@@ -72,7 +74,7 @@ func (a *authHeaderPerRPCredentials) RequireTransportSecurity() bool {
 }
 
 // get headers returns the auth headers, refreshing them if they are expired
-func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
+func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {		
 	if time.Since(a.lastUpdated) > a.headerTTL {
 		a.refresh()
 	}
@@ -81,16 +83,20 @@ func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
 
 // refresh creates a new signed auth header token and sets the lastUpdated time to now
 func (a *authHeaderPerRPCredentials) refresh() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	
 	timeNow := time.Now()
+
 	switch a.version {
-		// refresh doesn't actually do anything for version 1 since we are only signing the public key
-		// this for backwards compatibility and smooth transition to version 2
-		case authHeaderVersion1:
-			a.headers = BuildAuthHeaders(a.privKey)
-		case authHeaderVersion2:
-			a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: timeNow.UnixMilli()})
-		default:
-			a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: timeNow.UnixMilli()})
+	// refresh doesn't actually do anything for version 1 since we are only signing the public key
+	// this for backwards compatibility and smooth transition to version 2
+	case authHeaderVersion1:
+		a.headers = BuildAuthHeaders(a.privKey)
+	case authHeaderVersion2:
+		a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: timeNow.UnixMilli()})
+	default:
+		a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: timeNow.UnixMilli()})
 	}
 	// Set the lastUpdated time to now
 	a.lastUpdated = timeNow
@@ -102,6 +108,7 @@ type AuthHeaderConfig struct {
 	timestamp int64
 	version   string
 }
+
 // BuildAuthHeaders creates the auth headers to be included on requests.
 // There are two formats for the header. Version `1` is:
 //

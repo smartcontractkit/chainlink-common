@@ -81,17 +81,19 @@ func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
 
 // refresh creates a new signed auth header token and sets the lastUpdated time to now
 func (a *authHeaderPerRPCredentials) refresh() {
-	a.lastUpdated = time.Now()
+	timeNow := time.Now()
 	switch a.version {
 		// refresh doesn't actually do anything for version 1 since we are only signing the public key
 		// this for backwards compatibility and smooth transition to version 2
 		case authHeaderVersion1:
 			a.headers = BuildAuthHeaders(a.privKey)
 		case authHeaderVersion2:
-			a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: a.lastUpdated.UnixMilli()})
+			a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: timeNow.UnixMilli()})
 		default:
-			a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: a.lastUpdated.UnixMilli()})
+			a.headers = buildAuthHeadersV2(a.privKey, &AuthHeaderConfig{timestamp: timeNow.UnixMilli()})
 	}
+	// Set the lastUpdated time to now
+	a.lastUpdated = timeNow
 	return
 }
 

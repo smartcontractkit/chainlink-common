@@ -1,15 +1,21 @@
 package loop
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
+
+const HeartbeatSeconds = 1
 
 // NewStartedServer returns a started Server.
 // The caller is responsible for calling Server.Stop().
@@ -48,6 +54,7 @@ type Server struct {
 	Logger     logger.SugaredLogger
 	promServer *PromServer
 	checker    *services.HealthChecker
+	heartbeat  *services.Heartbeat
 }
 
 func newServer(loggerName string) (*Server, error) {
@@ -62,6 +69,48 @@ func newServer(loggerName string) (*Server, error) {
 	}
 	lggr = logger.Named(lggr, loggerName)
 	s.Logger = logger.Sugared(lggr)
+
+	var gauge metric.Int64Gauge
+	var count metric.Int64Counter
+	var cme custmsg.Labeler
+
+	heartbeat := services.NewHeartbeat(
+		s.Logger,
+		HeartbeatSeconds*time.Second,
+		func(ctx context.Context) error {
+			// Setup beholder resources
+			gauge, err = beholder.GetMeter().Int64Gauge("heartbeat")
+			if err != nil {
+				return err
+			}
+			count, err = beholder.GetMeter().Int64Counter("heartbeat_count")
+			if err != nil {
+				return err
+			}
+
+			cme = custmsg.NewLabeler()
+			return nil
+		},
+		func(engCtx context.Context) {
+			// TODO allow override of tracer provider into engine for beholder
+			_, innerSpan := beholder.GetTracer().Start(engCtx, "heartbeat.beat")
+			defer innerSpan.End()
+
+			gauge.Record(engCtx, 1)
+			count.Add(engCtx, 1)
+
+			err = cme.Emit(engCtx, "heartbeat")
+			if err != nil {
+				// TODO this is the server logger, not the engine logger
+				s.Logger.Errorw("heartbeat emit failed", "err", err)
+			}
+		},
+		func() error {
+			return nil
+		},
+	)
+	s.heartbeat = &heartbeat
+
 	return s, nil
 }
 
@@ -132,6 +181,10 @@ func (s *Server) start() error {
 		return fmt.Errorf("error starting health checker: %w", err)
 	}
 
+	if err := s.heartbeat.Start(context.TODO()); err != nil {
+		return fmt.Errorf("error starting heartbeat: %w", err)
+	}
+
 	return nil
 }
 
@@ -151,4 +204,5 @@ func (s *Server) Stop() {
 	if err := s.Logger.Sync(); err != nil {
 		fmt.Println("Failed to sync logger:", err)
 	}
+	s.heartbeat.Close()
 }

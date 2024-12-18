@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/hex"
 	"strings"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -27,7 +28,10 @@ type Metadata struct {
 // the json schema allows for a variable length string <= len(10)
 // pad with trailing spaces to meet the contract requirements
 func (m *Metadata) padWorkflowName() {
-	if len(m.WorkflowName) < 10 {
+	b, err := hex.DecodeString(m.WorkflowName)
+	if err == nil && len(b) < 10 {
+		m.WorkflowName = hex.EncodeToString(append(b, make([]byte, 10-len(b))...))
+	} else if len(m.WorkflowName) < 10 {
 		suffix := strings.Repeat(" ", 10-len(m.WorkflowName))
 		m.WorkflowName += suffix
 	}

@@ -66,3 +66,23 @@ func Test_GenerateWorkflowIDFromStrings(t *testing.T) {
 	_, err = GenerateWorkflowIDFromStrings(owner, "porporpore", []byte("workflow"), []byte("config"), "http://mysecrets.com")
 	assert.ErrorContains(t, err, "encoding/hex")
 }
+
+func Test_GenerateFromStringOrBytesReturnsEqualResult(t *testing.T) {
+	ownerHex := "26729408f179371be6433b9585d8427f121bfe82"
+	name := "someRandomWorkflowName"
+	binary := []byte("binary goes here")
+	config := []byte("configuration goes here")
+	secretsUrl := "http://mysecrets.com"
+
+	workflowIDFromString, err := GenerateWorkflowIDFromStrings(ownerHex, name, binary, config, secretsUrl)
+	require.NoError(t, err)
+	assert.NotNil(t, workflowIDFromString)
+
+	ownerBytes, err := hex.DecodeString(ownerHex)
+	require.NoError(t, err)
+	workflowIDFromBinary, err := GenerateWorkflowID(ownerBytes, name, binary, config, secretsUrl)
+	require.NoError(t, err)
+	assert.NotNil(t, workflowIDFromBinary)
+
+	assert.Equal(t, workflowIDFromString, hex.EncodeToString(workflowIDFromBinary[:]))
+}

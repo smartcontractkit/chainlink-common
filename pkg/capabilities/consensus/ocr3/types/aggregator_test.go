@@ -16,25 +16,32 @@ func TestMetadata_padWorkflowName(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "padWorkflowName 1",
+			name: "padWorkflowName hex with 9 bytes",
 			fields: fields{
-				WorkflowName: "123456789",
+				WorkflowName: "ABCD1234EF567890AB",
 			},
-			want: "123456789 ",
+			want: "ABCD1234EF567890AB00",
 		},
 		{
-			name: "padWorkflowName 0",
+			name: "padWorkflowName hex with 5 bytes",
 			fields: fields{
-				WorkflowName: "1234567890",
+				WorkflowName: "1234ABCD56",
 			},
-			want: "1234567890",
+			want: "1234ABCD560000000000",
 		},
 		{
-			name: "padWorkflowName 10",
+			name: "padWorkflowName empty",
 			fields: fields{
 				WorkflowName: "",
 			},
-			want: "          ",
+			want: "00000000000000000000",
+		},
+		{
+			name: "padWorkflowName non-hex string",
+			fields: fields{
+				WorkflowName: "not-hex",
+			},
+			want: "not-hex0000000000000",
 		},
 	}
 	for _, tt := range tests {

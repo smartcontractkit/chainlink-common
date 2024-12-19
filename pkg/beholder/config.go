@@ -39,8 +39,9 @@ type Config struct {
 	LogRetryConfig *RetryConfig
 
 	// Auth
-	AuthPublicKeyHex string
-	AuthHeaders      map[string]string
+	AuthPublicKeyHex   string
+	AuthHeaders        map[string]string
+	AuthHeaderProvider AuthHeaderProvider
 }
 
 type RetryConfig struct {

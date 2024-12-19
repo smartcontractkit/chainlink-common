@@ -25,13 +25,16 @@ type Metadata struct {
 }
 
 // the contract requires exactly 10 bytes for the workflow name
-// the json schema allows for a variable length string <= len(10)
-// pad with trailing spaces to meet the contract requirements
+// the resulting workflow name should be up to 10 bytes long
+// so pad accordingly to meet the contract requirements
 func (m *Metadata) padWorkflowName() {
 	b, err := hex.DecodeString(m.WorkflowName)
 	if err == nil && len(b) < 10 {
-		m.WorkflowName = hex.EncodeToString(append(b, make([]byte, 10-len(b))...))
+		// Each byte is 2 characters, so we need to pad with 0s
+		neededBytes := append(b, make([]byte, 10-len(b))...)
+		m.WorkflowName = hex.EncodeToString(neededBytes)
 	} else if len(m.WorkflowName) < 10 {
+		// Pad with spaces
 		suffix := strings.Repeat(" ", 10-len(m.WorkflowName))
 		m.WorkflowName += suffix
 	}

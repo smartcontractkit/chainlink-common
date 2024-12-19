@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734437429389,
+  "lastUpdate": 1734638318654,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8190,6 +8190,48 @@ window.BENCHMARK_DATA = {
             "value": 28835,
             "unit": "ns/op",
             "extra": "41590 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vyzaldysanchez@gmail.com",
+            "name": "Vyzaldy Sanchez",
+            "username": "vyzaldysanchez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9728444fab6273123d4f1f59a917956a68abbc62",
+          "message": "Fix `padWorkflowName()` (#977)\n\n* Fixes `padWorkflowName()`\r\n\r\n* Fixes `padWorkflowName()`\r\n\r\n* Fixes `padWorkflowName()`\r\n\r\n* Updates comments on `Metadata` struct\r\n\r\n* Fixes tests",
+          "timestamp": "2024-12-19T15:57:27-04:00",
+          "tree_id": "ff39d8e2fb914e41237298714ab0c8483c57b354",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9728444fab6273123d4f1f59a917956a68abbc62"
+        },
+        "date": 1734638317410,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.5,
+            "unit": "ns/op",
+            "extra": "2616327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 522.4,
+            "unit": "ns/op",
+            "extra": "2301211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28321,
+            "unit": "ns/op",
+            "extra": "42109 times\n4 procs"
           }
         ]
       }

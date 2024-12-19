@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
 	"strings"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -28,14 +27,9 @@ type Metadata struct {
 // the resulting workflow name should be up to 10 bytes long
 // so pad accordingly to meet the contract requirements
 func (m *Metadata) padWorkflowName() {
-	b, err := hex.DecodeString(m.WorkflowName)
-	if err == nil && len(b) < 10 {
-		// Each byte is 2 characters, so we need to pad with 0s
-		neededBytes := append(b, make([]byte, 10-len(b))...)
-		m.WorkflowName = hex.EncodeToString(neededBytes)
-	} else if len(m.WorkflowName) < 10 {
-		// Pad with spaces
-		suffix := strings.Repeat(" ", 10-len(m.WorkflowName))
+	// it should have 10 hex bytes, so 20 characters total
+	if len(m.WorkflowName) < 20 {
+		suffix := strings.Repeat("0", 20-len(m.WorkflowName))
 		m.WorkflowName += suffix
 	}
 }

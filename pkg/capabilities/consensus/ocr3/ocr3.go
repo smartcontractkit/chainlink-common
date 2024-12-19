@@ -21,7 +21,8 @@ var _ ocr3rp.ProviderServer[commontypes.PluginProvider] = (*Capability)(nil)
 type Capability struct {
 	loop.Plugin
 	reportingplugins.PluginProviderServer
-	config Config
+	config             Config
+	capabilityRegistry core.CapabilitiesRegistry
 }
 
 type Config struct {
@@ -101,6 +102,8 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 		return nil, err
 	}
 
+	o.capabilityRegistry = capabilityRegistry
+
 	return factory, err
 }
 
@@ -108,4 +111,18 @@ func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationS
 	s := &validationService{lggr: o.Logger}
 	o.SubService(s)
 	return s, nil
+}
+
+func (o *Capability) Close() error {
+	o.Plugin.Close()
+
+	if o.capabilityRegistry == nil {
+		return nil
+	}
+
+	if err := o.capabilityRegistry.Remove(context.TODO(), o.config.capability.ID); err != nil {
+		return err
+	}
+
+	return nil
 }

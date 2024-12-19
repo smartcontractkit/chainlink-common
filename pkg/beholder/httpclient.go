@@ -14,7 +14,6 @@ import (
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -77,12 +76,18 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	// Logger
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
-		loggerProcessor = sdklog.NewBatchProcessor(
-			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.LogExportTimeout),           // Default is 30s
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.LogExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
+		}
+		batchProcessorOpts = append(batchProcessorOpts,
 			sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize), // Default is 512, must be <= maxQueueSize
 			sdklog.WithExportInterval(cfg.LogExportInterval),         // Default is 1s
 			sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize),             // Default is 2048
+		)
+		loggerProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			batchProcessorOpts...,
 		)
 	} else {
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -120,12 +125,18 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	// Message Emitter
 	var messageLogProcessor sdklog.Processor
 	if cfg.EmitterBatchProcessor {
-		messageLogProcessor = sdklog.NewBatchProcessor(
-			sharedLogExporter,
-			sdklog.WithExportTimeout(cfg.EmitterExportTimeout),           // Default is 30s
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.EmitterExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.EmitterExportTimeout)) // Default is 30s
+		}
+		batchProcessorOpts = append(batchProcessorOpts,
 			sdklog.WithExportMaxBatchSize(cfg.EmitterExportMaxBatchSize), // Default is 512, must be <= maxQueueSize
 			sdklog.WithExportInterval(cfg.EmitterExportInterval),         // Default is 1s
 			sdklog.WithMaxQueueSize(cfg.EmitterMaxQueueSize),             // Default is 2048
+		)
+		messageLogProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			batchProcessorOpts...,
 		)
 	} else {
 		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
@@ -187,9 +198,12 @@ func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsCon
 	if err != nil {
 		return nil, err
 	}
-
+	batcherOpts := []sdktrace.BatchSpanProcessorOption{}
+	if config.TraceBatchTimeout > 0 {
+		batcherOpts = append(batcherOpts, sdktrace.WithBatchTimeout(config.TraceBatchTimeout)) // Default is 5s
+	}
 	opts := []sdktrace.TracerProviderOption{
-		sdktrace.WithBatcher(exporter, trace.WithBatchTimeout(config.TraceBatchTimeout)), // Default is 5s
+		sdktrace.WithBatcher(exporter, batcherOpts...),
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(
@@ -237,6 +251,7 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
+		sdkmetric.WithView(config.MetricViews...),
 	)
 	return mp, nil
 }

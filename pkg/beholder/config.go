@@ -4,6 +4,7 @@ import (
 	"time"
 
 	otelattr "go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -31,6 +32,7 @@ type Config struct {
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
+	MetricViews          []sdkmetric.View
 
 	// OTel Log
 	LogExportTimeout      time.Duration

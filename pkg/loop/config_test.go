@@ -1,6 +1,7 @@
 package loop
 
 import (
+	"maps"
 	"net/url"
 	"os"
 	"strconv"
@@ -158,13 +159,13 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.TelemetryCACertFile != tc.expectedTelemetryCACertFile {
 						t.Errorf("Expected telemetryCACertFile %s, got %s", tc.expectedTelemetryCACertFile, config.TelemetryCACertFile)
 					}
-					if !equalOtelAttributes(config.TelemetryAttributes, tc.expectedTelemetryAttributes) {
+					if !maps.Equal(config.TelemetryAttributes, tc.expectedTelemetryAttributes) {
 						t.Errorf("Expected telemetryAttributes %v, got %v", tc.expectedTelemetryAttributes, config.TelemetryAttributes)
 					}
 					if config.TelemetryTraceSampleRatio != tc.expectedTelemetryTraceSampleRatio {
 						t.Errorf("Expected telemetryTraceSampleRatio %f, got %f", tc.expectedTelemetryTraceSampleRatio, config.TelemetryTraceSampleRatio)
 					}
-					if !equalStringMaps(config.TelemetryAuthHeaders, tc.expectedTelemetryAuthHeaders) {
+					if !maps.Equal(config.TelemetryAuthHeaders, tc.expectedTelemetryAuthHeaders) {
 						t.Errorf("Expected telemetryAuthHeaders %v, got %v", tc.expectedTelemetryAuthHeaders, config.TelemetryAuthHeaders)
 					}
 					if config.TelemetryAuthPubKeyHex != tc.expectedTelemetryAuthPubKeyHex {

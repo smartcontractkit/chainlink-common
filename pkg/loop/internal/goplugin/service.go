@@ -62,11 +62,12 @@ func (s *ServiceClient) HealthReport() map[string]error {
 	ctx, cancel = context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
+	name := s.b.Logger.Name()
 	reply, err := s.grpc.HealthReport(ctx, &emptypb.Empty{})
 	if err != nil {
-		return map[string]error{s.b.Logger.Name(): err}
+		return map[string]error{name: err}
 	}
-	hr := healthReport(reply.HealthReport)
+	hr := healthReport(name, reply.HealthReport)
 	hr[s.b.Logger.Name()] = nil
 	return hr
 }
@@ -102,14 +103,14 @@ func (s *ServiceServer) HealthReport(ctx context.Context, empty *emptypb.Empty) 
 	return &r, nil
 }
 
-func healthReport(s map[string]string) (hr map[string]error) {
+func healthReport(prefix string, s map[string]string) (hr map[string]error) {
 	hr = make(map[string]error, len(s))
 	for n, e := range s {
 		var err error
 		if e != "" {
 			err = errors.New(e)
 		}
-		hr[n] = err
+		hr[prefix+"."+n] = err
 	}
 	return hr
 }

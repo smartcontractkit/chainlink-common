@@ -238,6 +238,11 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes, relayerSetRes)
 		return nil, err
 	}
+	//TODO start factory - when to close?
+	if err = factory.Start(ctx); err != nil {
+		m.CloseAll(providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, keyValueStoreRes, relayerSetRes)
+		return nil, err
+	}
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
@@ -251,6 +256,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.OCR3ReportingPluginClient) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }

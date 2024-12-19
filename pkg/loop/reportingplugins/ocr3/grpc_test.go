@@ -59,14 +59,15 @@ func PluginGenericTest(t *testing.T, p core.OCR3ReportingPluginClient) {
 func TestGRPCService_MedianProvider(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
 		ocr3test.OCR3ReportingPluginWithMedianProviderName,
 		&GRPCService[types.MedianProvider]{
-			PluginServer: ocr3test.MedianServer,
+			PluginServer: ocr3test.MedianServer(lggr),
 			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
+				Logger: lggr,
 				StopCh: stopCh,
 			},
 		},
@@ -77,12 +78,13 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 func TestGRPCService_PluginProvider(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
 		PluginServiceName,
 		&GRPCService[types.PluginProvider]{
-			PluginServer: ocr3test.AgnosticPluginServer,
+			PluginServer: ocr3test.AgnosticPluginServer(lggr),
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh,

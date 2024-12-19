@@ -95,7 +95,6 @@ type MedianProviderTester interface {
 }
 
 type RelayerTester interface {
-	looptypes.PluginRelayer
 	looptypes.Relayer
 	// implements all the possible providers as a one-stop shop for testing
 	looptypes.MercuryProvider

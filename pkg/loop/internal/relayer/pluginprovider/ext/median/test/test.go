@@ -8,6 +8,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
@@ -23,41 +24,39 @@ const (
 	n                = 12
 )
 
-var (
-	MedianFactoryServer = staticMedianFactoryServer{
-		staticPluginMedianConfig: staticPluginMedianConfig{
-			provider:                   MedianProvider,
-			contractID:                 MedianContractID,
-			dataSource:                 DataSource,
-			juelsPerFeeCoinDataSource:  JuelsPerFeeCoinDataSource,
-			gasPriceSubunitsDataSource: GasPriceSubunitsDataSource,
-			errorLog:                   errorlogtest.ErrorLog,
-		},
-	}
+func NewMedianFactoryServer(lggr logger.Logger) staticMedianFactoryServer {
+	return newStaticMedianFactoryServer(lggr, staticPluginMedianConfig{
+		provider:                   MedianProvider(lggr),
+		contractID:                 MedianContractID,
+		dataSource:                 DataSource,
+		juelsPerFeeCoinDataSource:  JuelsPerFeeCoinDataSource,
+		gasPriceSubunitsDataSource: GasPriceSubunitsDataSource,
+		errorLog:                   errorlogtest.ErrorLog,
+	})
+}
 
-	MedianProvider = staticMedianProvider{
-		staticMedianProviderConfig: staticMedianProviderConfig{
-			offchainDigester:    ocr2test.OffchainConfigDigester,
-			contractTracker:     ocr2test.ContractConfigTracker,
-			contractTransmitter: ocr2test.ContractTransmitter,
-			reportCodec:         staticReportCodec{},
-			medianContract: staticMedianContract{
-				staticMedianContractConfig: staticMedianContractConfig{
-					configDigest:     libocr.ConfigDigest([32]byte{1: 1, 11: 8}),
-					epoch:            7,
-					round:            11,
-					latestAnswer:     big.NewInt(123),
-					latestTimestamp:  time.Unix(1234567890, 987654321).UTC(),
-					lookbackDuration: lookbackDuration,
-				},
+func MedianProvider(lggr logger.Logger) staticMedianProvider {
+	return newStaticMedianProvider(lggr, staticMedianProviderConfig{
+		offchainDigester:    ocr2test.OffchainConfigDigester,
+		contractTracker:     ocr2test.ContractConfigTracker,
+		contractTransmitter: ocr2test.ContractTransmitter,
+		reportCodec:         staticReportCodec{},
+		medianContract: staticMedianContract{
+			staticMedianContractConfig: staticMedianContractConfig{
+				configDigest:     libocr.ConfigDigest([32]byte{1: 1, 11: 8}),
+				epoch:            7,
+				round:            11,
+				latestAnswer:     big.NewInt(123),
+				latestTimestamp:  time.Unix(1234567890, 987654321).UTC(),
+				lookbackDuration: lookbackDuration,
 			},
-			onchainConfigCodec: staticOnchainConfigCodec{},
-			contractReader:     chaincomponentstest.ContractReader,
 		},
-	}
+		onchainConfigCodec: staticOnchainConfigCodec{},
+		contractReader:     chaincomponentstest.ContractReader,
+	})
+}
 
-	MedianContractID = "0x42"
-)
+var MedianContractID = "0x42"
 
 var (
 	encodedOnchainConfig = []byte{5: 11}

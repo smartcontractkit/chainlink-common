@@ -45,6 +45,7 @@ type GRPCPluginRelayer struct {
 }
 
 func (p *GRPCPluginRelayer) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+	//TODO when to start PluginServer... auto? or explicit call from other side?
 	return relayer.RegisterPluginRelayerServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 

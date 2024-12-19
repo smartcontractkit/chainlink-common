@@ -4,7 +4,7 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 const (
@@ -46,22 +46,6 @@ var (
 		},
 	}
 
-	// ConfigProvider is a static implementation of the ConfigProviderTester interface for testing
-	ConfigProvider = staticConfigProvider{
-		staticConfigProviderConfig: staticConfigProviderConfig{
-			offchainDigester:      OffchainConfigDigester,
-			contractConfigTracker: ContractConfigTracker,
-		},
-	}
-
-	// AgnosticPluginProvider is a static implementation of the PluginProviderTester interface for testing
-	AgnosticPluginProvider = staticPluginProvider{
-		offchainConfigDigester: OffchainConfigDigester,
-		contractConfigTracker:  ContractConfigTracker,
-		contractTransmitter:    ContractTransmitter,
-		contractReader:         chaincomponentstest.ContractReader,
-	}
-
 	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})
 	configDigestPrefix = libocr.ConfigDigestPrefix(99)
 
@@ -84,3 +68,16 @@ var (
 		Round:        round,
 	}
 )
+
+// ConfigProvider is a static implementation of the ConfigProviderTester interface for testing
+func ConfigProvider(lggr logger.Logger) staticConfigProvider {
+	return newStaticConfigProvider(lggr, staticConfigProviderConfig{
+		offchainDigester:      OffchainConfigDigester,
+		contractConfigTracker: ContractConfigTracker,
+	})
+}
+
+// AgnosticPluginProvider is a static implementation of the PluginProviderTester interface for testing
+func AgnosticPluginProvider(lggr logger.Logger) staticPluginProvider {
+	return newStaticPluginProvider(lggr)
+}

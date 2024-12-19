@@ -60,14 +60,15 @@ func PluginGenericTest(t *testing.T, p core.ReportingPluginClient) {
 func TestGRPCService_MedianProvider(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
 		ocr2test.MedianID,
 		&reportingplugins.GRPCService[types.MedianProvider]{
-			PluginServer: ocr2test.MedianProviderServer,
+			PluginServer: ocr2test.MedianProviderServer(lggr),
 			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
+				Logger: lggr,
 				StopCh: stopCh,
 			},
 		},
@@ -78,14 +79,15 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 func TestGRPCService_PluginProvider(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
 		reportingplugins.PluginServiceName,
 		&reportingplugins.GRPCService[types.PluginProvider]{
-			PluginServer: ocr2test.AgnosticProviderServer,
+			PluginServer: ocr2test.AgnosticProviderServer(lggr),
 			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
+				Logger: lggr,
 				StopCh: stopCh,
 			},
 		},

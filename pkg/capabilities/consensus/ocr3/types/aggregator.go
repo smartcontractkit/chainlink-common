@@ -13,14 +13,14 @@ const MetadataFieldName = "INTERNAL_METADATA"
 
 type Metadata struct {
 	Version          uint32 //  1 byte
-	ExecutionID      string // 32 hex bytes
+	ExecutionID      string // 32 hex bytes (string len  = 64)
 	Timestamp        uint32 //  4 bytes
 	DONID            uint32 //  4 bytes
 	DONConfigVersion uint32 //  4 bytes
-	WorkflowID       string // 32 hex bytes
-	WorkflowName     string // 10 hex bytes
-	WorkflowOwner    string // 20 hex bytes
-	ReportID         string //  2 hex bytes
+	WorkflowID       string // 32 hex bytes (string len = 64)
+	WorkflowName     string // 10 hex bytes (string len = 20)
+	WorkflowOwner    string // 20 hex bytes (string len = 40)
+	ReportID         string //  2 hex bytes (string len = 4)
 }
 
 // the contract requires exactly 10 bytes for the workflow name

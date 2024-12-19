@@ -11,29 +11,18 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-var (
+const (
 	// authHeaderKey is the name of the header that the node authenticator will use to send the auth token
 	authHeaderKey = "X-Beholder-Node-Auth-Token"
 	// authHeaderVersion is the version of the auth header format
 	authHeaderVersion1 = "1"
 	authHeaderVersion2 = "2"
+	// defaultAuthHeaderTTL is the default time before the auth header is refreshed
+	defaultAuthHeaderTTL = 1 * time.Minute
 )
-
-const DefaultAuthHeaderTTL = 1 * time.Minute
 
 type AuthHeaderProvider interface {
 	Credentials() credentials.PerRPCCredentials
-}
-
-// authHeaderPerRPCredentials is a PerRPCCredentials implementation that provides the auth headers
-type authHeaderPerRPCredentials struct {
-	privKey                  ed25519.PrivateKey
-	lastUpdated              time.Time
-	headerTTL                time.Duration
-	requireTransportSecurity bool
-	headers                  map[string]string
-	version                  string
-	mu                       sync.Mutex
 }
 
 // AuthHeaderProviderConfig configures AuthHeaderProvider
@@ -43,18 +32,26 @@ type AuthHeaderProviderConfig struct {
 	RequireTransportSecurity bool
 }
 
-func NewAuthHeaderProvider(privKey ed25519.PrivateKey, config *AuthHeaderProviderConfig) AuthHeaderProvider {
-	if config == nil {
-		config = &AuthHeaderProviderConfig{}
-	}
+// authHeaderPerRPCredentials is a PerRPCCredentials implementation that provides the auth headers
+type authHeaderPerRPCCredentials struct {
+	privKey                  ed25519.PrivateKey
+	lastUpdated              time.Time
+	headerTTL                time.Duration
+	requireTransportSecurity bool
+	headers                  map[string]string
+	version                  string
+	mu                       sync.Mutex
+}
+
+func (config AuthHeaderProviderConfig) New(privKey ed25519.PrivateKey) AuthHeaderProvider {
 	if config.HeaderTTL <= 0 {
-		config.HeaderTTL = DefaultAuthHeaderTTL
+		config.HeaderTTL = defaultAuthHeaderTTL
 	}
 	if config.Version == "" {
 		config.Version = authHeaderVersion2
 	}
 
-	creds := &authHeaderPerRPCredentials{
+	creds := &authHeaderPerRPCCredentials{
 		privKey:                  privKey,
 		headerTTL:                config.HeaderTTL,
 		version:                  config.Version,
@@ -65,20 +62,24 @@ func NewAuthHeaderProvider(privKey ed25519.PrivateKey, config *AuthHeaderProvide
 	return creds
 }
 
-func (a *authHeaderPerRPCredentials) Credentials() credentials.PerRPCCredentials {
+func NewAuthHeaderProvider(privKey ed25519.PrivateKey) AuthHeaderProvider {
+	return AuthHeaderProviderConfig{}.New(privKey)
+}
+
+func (a *authHeaderPerRPCCredentials) Credentials() credentials.PerRPCCredentials {
 	return a
 }
 
-func (a *authHeaderPerRPCredentials) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
+func (a *authHeaderPerRPCCredentials) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
 	return a.getHeaders(), nil
 }
 
-func (a *authHeaderPerRPCredentials) RequireTransportSecurity() bool {
+func (a *authHeaderPerRPCCredentials) RequireTransportSecurity() bool {
 	return a.requireTransportSecurity
 }
 
 // getHeaders returns the auth headers, refreshing them if they are expired
-func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
+func (a *authHeaderPerRPCCredentials) getHeaders() map[string]string {
 	if time.Since(a.lastUpdated) > a.headerTTL {
 		a.refresh()
 	}
@@ -86,7 +87,7 @@ func (a *authHeaderPerRPCredentials) getHeaders() map[string]string {
 }
 
 // refresh creates a new signed auth header token and sets the lastUpdated time to now
-func (a *authHeaderPerRPCredentials) refresh() {
+func (a *authHeaderPerRPCCredentials) refresh() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 

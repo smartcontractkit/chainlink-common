@@ -137,7 +137,7 @@ func TestNewAuthHeaderProvider(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("default config", func(t *testing.T) {
-		provider := NewAuthHeaderProvider(csaPrivKey, nil)
+		provider := NewAuthHeaderProvider(csaPrivKey)
 		creds := provider.Credentials()
 
 		md, err := creds.GetRequestMetadata(context.Background())
@@ -152,12 +152,12 @@ func TestNewAuthHeaderProvider(t *testing.T) {
 	})
 
 	t.Run("custom config", func(t *testing.T) {
-		config := &AuthHeaderProviderConfig{
+		config := AuthHeaderProviderConfig{
 			HeaderTTL:                2 * time.Minute,
 			Version:                  authHeaderVersion1,
 			RequireTransportSecurity: true,
 		}
-		provider := NewAuthHeaderProvider(csaPrivKey, config)
+		provider := config.New(csaPrivKey)
 		creds := provider.Credentials()
 
 		md, err := creds.GetRequestMetadata(context.Background())
@@ -172,12 +172,13 @@ func TestNewAuthHeaderProvider(t *testing.T) {
 		assert.True(t, creds.RequireTransportSecurity(), "transport security should be required")
 	})
 }
+
 func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 	csaPrivKey, err := generateTestCSAPrivateKey()
 	require.NoError(t, err)
 
 	t.Run("version 1", func(t *testing.T) {
-		creds := &authHeaderPerRPCredentials{
+		creds := &authHeaderPerRPCCredentials{
 			privKey: csaPrivKey,
 			version: authHeaderVersion1,
 		}
@@ -193,7 +194,7 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 	})
 
 	t.Run("version 2", func(t *testing.T) {
-		creds := &authHeaderPerRPCredentials{
+		creds := &authHeaderPerRPCCredentials{
 			privKey: csaPrivKey,
 			version: authHeaderVersion2,
 		}
@@ -209,7 +210,7 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 	})
 
 	t.Run("default version", func(t *testing.T) {
-		creds := &authHeaderPerRPCredentials{
+		creds := &authHeaderPerRPCCredentials{
 			privKey: csaPrivKey,
 		}
 		creds.refresh()
@@ -224,7 +225,7 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 	})
 
 	t.Run("refresh after TTL", func(t *testing.T) {
-		creds := &authHeaderPerRPCredentials{
+		creds := &authHeaderPerRPCCredentials{
 			privKey:   csaPrivKey,
 			headerTTL: 1 * time.Millisecond,
 			version:   authHeaderVersion2,

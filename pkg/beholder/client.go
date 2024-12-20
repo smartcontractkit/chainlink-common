@@ -95,7 +95,7 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		otlploggrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
 	if cfg.AuthHeaderProvider != nil {
-		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithPerRPCCredentials(cfg.AuthHeaderProvider.Credentials())))
+		opts = append(opts, otlploggrpc.WithDialOption(authHeaderDialOption(creds, cfg.AuthHeaderProvider)))
 	} else {
 		opts = append(opts, otlploggrpc.WithHeaders(cfg.AuthHeaders))
 	}
@@ -312,7 +312,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, creds cred
 		otlptracegrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 	}
 	if config.AuthHeaderProvider != nil {
-		exporterOpts = append(exporterOpts, otlptracegrpc.WithDialOption(grpc.WithPerRPCCredentials(config.AuthHeaderProvider.Credentials())))
+		exporterOpts = append(exporterOpts, otlptracegrpc.WithDialOption(authHeaderDialOption(creds, config.AuthHeaderProvider)))
 	} else {
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithHeaders(config.AuthHeaders))
 	}
@@ -356,7 +356,7 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		otlpmetricgrpc.WithEndpoint(config.OtelExporterGRPCEndpoint),
 	}
 	if config.AuthHeaderProvider != nil {
-		opts = append(opts, otlpmetricgrpc.WithDialOption(grpc.WithPerRPCCredentials(config.AuthHeaderProvider.Credentials())))
+		opts = append(opts, otlpmetricgrpc.WithDialOption(authHeaderDialOption(creds, config.AuthHeaderProvider)))
 	} else {
 		opts = append(opts, otlpmetricgrpc.WithHeaders(config.AuthHeaders))
 	}
@@ -385,4 +385,11 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		sdkmetric.WithView(config.MetricViews...),
 	)
 	return mp, nil
+}
+
+func authHeaderDialOption(creds credentials.TransportCredentials, authHeaderProvider AuthHeaderProvider) grpc.DialOption {
+	if creds.Info().SecurityProtocol == "tls" {
+		authHeaderProvider.SetRequireTransportSecurity(true)
+	}
+	return grpc.WithPerRPCCredentials(authHeaderProvider.Credentials())
 }

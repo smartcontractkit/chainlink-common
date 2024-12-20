@@ -22,7 +22,10 @@ const (
 )
 
 type AuthHeaderProvider interface {
+	// Credentials returns the PerRPCCredentials implementation
 	Credentials() credentials.PerRPCCredentials
+	// SetRequireTransportSecurity sets the value of requireTransportSecurity
+	SetRequireTransportSecurity(bool)
 }
 
 // AuthHeaderProviderConfig configures AuthHeaderProvider
@@ -76,6 +79,14 @@ func (a *authHeaderPerRPCCredentials) GetRequestMetadata(_ context.Context, _ ..
 
 func (a *authHeaderPerRPCCredentials) RequireTransportSecurity() bool {
 	return a.requireTransportSecurity
+}
+
+// SetRequireTransportSecurity sets the value of requireTransportSecurity
+// This is to safeguard against inconsistent values between the PerRPCCredentials and the AuthHeaderProvider
+func (a *authHeaderPerRPCCredentials) SetRequireTransportSecurity(newValue bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.requireTransportSecurity = newValue
 }
 
 // getHeaders returns the auth headers, refreshing them if they are expired

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734638318654,
+  "lastUpdate": 1734698084354,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8232,6 +8232,48 @@ window.BENCHMARK_DATA = {
             "value": 28321,
             "unit": "ns/op",
             "extra": "42109 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "studentcuza@gmail.com",
+            "name": "Gheorghe Strimtu",
+            "username": "gheorghestrimtu"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c7d06f0c7e2c160b9b7f2af994595f33e2fa42e",
+          "message": "INFOPLAT-1539  Beholder Log Batch Processor More Settings (#957)\n\n* Beholder Log Batch Processor More Settings\r\n\r\n* add settings for message emitter\r\n\r\n* remove settings\r\n\r\n* add settings\r\n\r\n* more settings\r\n\r\n* add too httpclient and test\r\n\r\n* fix ExampleConfig test\r\n\r\n* add new lines for spacing in Config\r\n\r\n* Add all beholder config options to loop/EnvConfig; set beholder config options from loop EnvConfig\r\n\r\n* Set EmitterExportTimeout, LogExportTimeout to 30sec which is OTel default\r\n\r\n* Update comment for EmitterBatchProcessor config option\r\n\r\n* Dont set batch processor options with invalid values\r\n\r\n---------\r\n\r\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>",
+          "timestamp": "2024-12-20T06:33:42-06:00",
+          "tree_id": "f84498367a8459e6f0898a3066cd6138bc30783b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7c7d06f0c7e2c160b9b7f2af994595f33e2fa42e"
+        },
+        "date": 1734698083738,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 472.8,
+            "unit": "ns/op",
+            "extra": "2596122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521.3,
+            "unit": "ns/op",
+            "extra": "2307481 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28209,
+            "unit": "ns/op",
+            "extra": "42553 times\n4 procs"
           }
         ]
       }

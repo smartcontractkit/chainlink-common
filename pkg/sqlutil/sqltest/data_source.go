@@ -3,11 +3,22 @@ package sqltest
 import (
 	"context"
 	"database/sql"
+	"testing"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/marcboeker/go-duckdb"
+	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 )
+
+// NewInMemoryDataSource returns a new in-memory DataSource
+func NewInMemoryDataSource(t *testing.T) sqlutil.DataSource {
+	db, err := sqlx.Open("duckdb", t.Name())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+	return db
+}
 
 // NewNoOpDataSource returns an empty DataSource type which will satisfy the interface
 func NewNoOpDataSource() sqlutil.DataSource {

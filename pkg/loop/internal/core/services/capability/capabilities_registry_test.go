@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/assert"
@@ -434,4 +435,55 @@ func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
 	capConf, err := rc.ConfigForCapability(tests.Context(t), capID, donID)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCapConfig, capConf)
+}
+
+func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+	donID := uint32(1)
+	wm, err := values.WrapMap(map[string]any{"hello": "world"})
+	require.NoError(t, err)
+
+	var rec capabilities.RemoteExecutableConfig
+	rec.ApplyDefaults()
+	expectedCapConfig := capabilities.CapabilityConfiguration{
+		DefaultConfig:          wm,
+		RemoteExecutableConfig: &rec,
+	}
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
+
+	capConf, err := rc.ConfigForCapability(tests.Context(t), capID, donID)
+	require.NoError(t, err)
+	assert.Equal(t, expectedCapConfig, capConf)
+	assert.Equal(t, 30*time.Second, capConf.RemoteExecutableConfig.RegistrationRefresh)
+	assert.Equal(t, 2*time.Minute, capConf.RemoteExecutableConfig.RegistrationExpiry)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/cmd/api/contact_point"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/cmd/api/dashboard"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/cmd/api/notification_policy"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/cmd/api/rule"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,7 @@ func init() {
 	Cmd.AddCommand(contact_point.Cmd)
 	Cmd.AddCommand(dashboard.Cmd)
 	Cmd.AddCommand(notification_policy.Cmd)
+	Cmd.AddCommand(rule.Cmd)
 
 	Cmd.PersistentFlags().String("grafana-url", "", "Grafana URL")
 	errURL := Cmd.MarkPersistentFlagRequired("grafana-url")

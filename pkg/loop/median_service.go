@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -24,12 +25,17 @@ type MedianService struct {
 // NewMedianService returns a new [*MedianService].
 // cmd must return a new exec.Cmd each time it is called.
 func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MedianProvider, contractAddress string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog) *MedianService {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, services.HealthReporter, error) {
 		plug, ok := instance.(core.PluginMedian)
 		if !ok {
-			return nil, fmt.Errorf("expected PluginMedian but got %T", instance)
+			return nil, nil, fmt.Errorf("expected PluginMedian but got %T", instance)
 		}
-		return plug.NewMedianFactory(ctx, provider, contractAddress, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog)
+		//TODO plug.Start(ctx)? (how to close?)
+		factory, err := plug.NewMedianFactory(ctx, provider, contractAddress, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog)
+		if err != nil {
+			return nil, nil, err
+		}
+		return factory, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "MedianService")

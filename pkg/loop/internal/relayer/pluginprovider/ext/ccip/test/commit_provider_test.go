@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -20,21 +21,23 @@ func TestStaticCommitProvider(t *testing.T) {
 	t.Run("Self consistent Evaluate", func(t *testing.T) {
 		t.Parallel()
 		ctx := tests.Context(t)
+		lggr := logger.Test(t)
 		// static test implementation is self consistent
-		assert.NoError(t, CommitProvider.Evaluate(ctx, CommitProvider))
+		assert.NoError(t, CommitProvider(lggr).Evaluate(ctx, CommitProvider(lggr)))
 
 		// error when the test implementation evaluates something that differs from form itself
-		botched := CommitProvider
+		botched := CommitProvider(lggr)
 		botched.priceRegistryReader = staticPriceRegistryReader{}
-		err := CommitProvider.Evaluate(ctx, botched)
+		err := CommitProvider(lggr).Evaluate(ctx, botched)
 		require.Error(t, err)
 		var evalErr evaluationError
 		require.True(t, errors.As(err, &evalErr), "expected error to be an evaluationError")
 		assert.Equal(t, priceRegistryComponent, evalErr.component)
 	})
 	t.Run("Self consistent AssertEqual", func(t *testing.T) {
+		lggr := logger.Test(t)
 		// no parallel because the AssertEqual is parallel
-		CommitProvider.AssertEqual(tests.Context(t), t, CommitProvider)
+		CommitProvider(lggr).AssertEqual(tests.Context(t), t, CommitProvider(lggr))
 	})
 }
 
@@ -84,7 +87,7 @@ func roundTripCommitProviderTests(t *testing.T, client types.CCIPCommitProvider)
 }
 
 func setupCommitProviderServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *ccip.CommitProviderServer {
-	commitProvider := ccip.NewCommitProviderServer(CommitProvider, b)
+	commitProvider := ccip.NewCommitProviderServer(CommitProvider(logger.Test(t)), b)
 	ccippb.RegisterCommitCustomHandlersServer(s, commitProvider)
 	return commitProvider
 }

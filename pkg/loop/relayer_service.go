@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -22,16 +23,20 @@ type RelayerService struct {
 // NewRelayerService returns a new [*RelayerService].
 // cmd must return a new exec.Cmd each time it is called.
 func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
-	newService := func(ctx context.Context, instance any) (Relayer, error) {
+	newService := func(ctx context.Context, instance any) (Relayer, services.HealthReporter, error) {
 		plug, ok := instance.(PluginRelayer)
 		if !ok {
-			return nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
+			return nil, nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
+		}
+		//TODo plug.Start(ctx)? (how to close?)
+		if err := plug.Start(ctx); err != nil {
+			return nil, nil, fmt.Errorf("failed to start PluginRelayer: %w", err)
 		}
 		r, err := plug.NewRelayer(ctx, config, keystore, capabilityRegistry)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create Relayer: %w", err)
+			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
 		}
-		return r, nil
+		return r, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "RelayerService")

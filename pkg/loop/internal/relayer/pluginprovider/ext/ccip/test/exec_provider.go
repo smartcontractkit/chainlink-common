@@ -9,8 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
@@ -28,13 +31,13 @@ type ExecProviderTester interface {
 
 // ExecutionProvider is a static implementation of the ExecProviderTester interface.
 // It is to be used in tests the verify grpc implementations of the ExecProvider interface.
-var ExecutionProvider = staticExecProvider{
-	staticExecProviderConfig: staticExecProviderConfig{
+func ExecutionProvider(lggr logger.Logger) staticExecProvider {
+	return newStaticExecProvider(lggr, staticExecProviderConfig{
 		addr:                      ccip.Address("some address"),
 		offchainDigester:          ocr2test.OffchainConfigDigester,
 		contractTracker:           ocr2test.ContractConfigTracker,
 		contractTransmitter:       ocr2test.ContractTransmitter,
-		commitStoreReader:         CommitStoreReader,
+		commitStoreReader:         CommitStoreReader(lggr),
 		offRampReader:             OffRampReader,
 		onRampReader:              OnRampReader,
 		priceRegistryReader:       PriceRegistryReader,
@@ -42,7 +45,7 @@ var ExecutionProvider = staticExecProvider{
 		tokenDataReader:           TokenDataReader,
 		tokenPoolBatchedReader:    TokenPoolBatchedReader,
 		transactionStatusResponse: types.Fatal,
-	},
+	})
 }
 
 var _ ExecProviderTester = staticExecProvider{}
@@ -64,16 +67,20 @@ type staticExecProviderConfig struct {
 }
 
 type staticExecProvider struct {
+	services.Service
 	staticExecProviderConfig
+}
+
+func newStaticExecProvider(lggr logger.Logger, cfg staticExecProviderConfig) staticExecProvider {
+	lggr = logger.Named(lggr, "staticExecProvider")
+	return staticExecProvider{
+		Service:                  test.NewStaticService(lggr),
+		staticExecProviderConfig: cfg,
+	}
 }
 
 // ContractReader implements ExecProviderEvaluator.
 func (s staticExecProvider) ContractReader() types.ContractReader {
-	return nil
-}
-
-// Close implements ExecProviderEvaluator.
-func (s staticExecProvider) Close() error {
 	return nil
 }
 
@@ -174,16 +181,6 @@ func (s staticExecProvider) Evaluate(ctx context.Context, other types.CCIPExecPr
 	return nil
 }
 
-// HealthReport implements ExecProviderEvaluator.
-func (s staticExecProvider) HealthReport() map[string]error {
-	panic("unimplemented")
-}
-
-// Name implements ExecProviderEvaluator.
-func (s staticExecProvider) Name() string {
-	panic("unimplemented")
-}
-
 // GetTransactionStatus implements ExecProviderEvaluator.
 func (s staticExecProvider) GetTransactionStatus(ctx context.Context, tid string) (types.TransactionStatus, error) {
 	return s.transactionStatusResponse, nil
@@ -224,19 +221,9 @@ func (s staticExecProvider) OffchainConfigDigester() libocr.OffchainConfigDigest
 	return s.offchainDigester
 }
 
-// Ready implements ExecProviderEvaluator.
-func (s staticExecProvider) Ready() error {
-	return nil
-}
-
 // SourceNativeToken implements ExecProviderEvaluator.
 func (s staticExecProvider) SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error) {
 	return s.sourceNativeTokenResponse, nil
-}
-
-// Start implements ExecProviderEvaluator.
-func (s staticExecProvider) Start(context.Context) error {
-	return nil
 }
 
 // AssertEqual implements ExecProviderTester.

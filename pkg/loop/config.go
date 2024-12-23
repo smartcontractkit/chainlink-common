@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
 const (
@@ -27,8 +28,6 @@ const (
 	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
 	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
 	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
-	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
-	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
 	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
 	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
 	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
@@ -55,8 +54,7 @@ type EnvConfig struct {
 	TelemetryCACertFile                string
 	TelemetryAttributes                OtelAttributes
 	TelemetryTraceSampleRatio          float64
-	TelemetryAuthHeaders               map[string]string
-	TelemetryAuthPubKeyHex             string
+	TelemetryAuthHeaderProvider        beholder.AuthHeaderProvider
 	TelemetryEmitterBatchProcessor     bool
 	TelemetryEmitterExportTimeout      time.Duration
 	TelemetryEmitterExportInterval     time.Duration
@@ -92,11 +90,6 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	for k, v := range e.TelemetryAttributes {
 		add(envTelemetryAttribute+k, v)
 	}
-
-	for k, v := range e.TelemetryAuthHeaders {
-		add(envTelemetryAuthHeader+k, v)
-	}
-	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
 	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.TelemetryEmitterBatchProcessor))
 	add(envTelemetryEmitterExportTimeout, e.TelemetryEmitterExportTimeout.String())
 	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
@@ -148,8 +141,6 @@ func (e *EnvConfig) parse() error {
 		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
 		e.TelemetryAttributes = getMap(envTelemetryAttribute)
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
-		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
-		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
 		e.TelemetryEmitterBatchProcessor, err = getBool(envTelemetryEmitterBatchProcessor)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)

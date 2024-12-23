@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734717108846,
+  "lastUpdate": 1734964841079,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8316,6 +8316,48 @@ window.BENCHMARK_DATA = {
             "value": 28393,
             "unit": "ns/op",
             "extra": "42546 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32529249+silaslenihan@users.noreply.github.com",
+            "name": "Silas Lenihan",
+            "username": "silaslenihan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db7919d60550c76b37a0d7cc5e694a272cc54bdd",
+          "message": "Removed flakey testcases and optimized for parallel test runs (#965)\n\n* Removed Finality Checks that expect errors in ChainComponents tests\"\r\n\r\n* Removed flakey testcases and optimized for parallel test runs\r\n\r\n* Updated new tests",
+          "timestamp": "2024-12-23T09:39:29-05:00",
+          "tree_id": "f09527d2e5047c20fd89263381fc79bc840c1fbe",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/db7919d60550c76b37a0d7cc5e694a272cc54bdd"
+        },
+        "date": 1734964840551,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 474.5,
+            "unit": "ns/op",
+            "extra": "2612947 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.3,
+            "unit": "ns/op",
+            "extra": "2309457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28443,
+            "unit": "ns/op",
+            "extra": "42368 times\n4 procs"
           }
         ]
       }

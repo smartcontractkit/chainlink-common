@@ -99,6 +99,7 @@ func (s *Server) start() error {
 			TraceSampleRatio:          envCfg.TelemetryTraceSampleRatio,
 			AuthHeaders:               envCfg.TelemetryAuthHeaders,
 			AuthPublicKeyHex:          envCfg.TelemetryAuthPubKeyHex,
+			AuthHeaderProvider: 	   envCfg.TelemetryAuthHeaderProvider,
 			EmitterBatchProcessor:     envCfg.TelemetryEmitterBatchProcessor,
 			EmitterExportTimeout:      envCfg.TelemetryEmitterExportTimeout,
 			EmitterExportInterval:     envCfg.TelemetryEmitterExportInterval,

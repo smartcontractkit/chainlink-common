@@ -72,3 +72,15 @@ func GenerateWorkflowID(owner []byte, name string, workflow []byte, config []byt
 
 	return sha, nil
 }
+
+// HashTruncateName returns the SHA-256 hash of the workflow name truncated to the first 10 bytes.
+func HashTruncateName(name string) [10]byte {
+	// Compute SHA-256 hash of the input string
+	hash := sha256.Sum256([]byte(name))
+
+	// Truncate the hash to 10 bytes
+	var result [10]byte
+	copy(result[:], hash[:10])
+
+	return result
+}

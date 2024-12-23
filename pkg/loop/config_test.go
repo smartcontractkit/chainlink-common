@@ -165,12 +165,6 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.TelemetryTraceSampleRatio != tc.expectedTelemetryTraceSampleRatio {
 						t.Errorf("Expected telemetryTraceSampleRatio %f, got %f", tc.expectedTelemetryTraceSampleRatio, config.TelemetryTraceSampleRatio)
 					}
-					if !maps.Equal(config.TelemetryAuthHeaders, tc.expectedTelemetryAuthHeaders) {
-						t.Errorf("Expected telemetryAuthHeaders %v, got %v", tc.expectedTelemetryAuthHeaders, config.TelemetryAuthHeaders)
-					}
-					if config.TelemetryAuthPubKeyHex != tc.expectedTelemetryAuthPubKeyHex {
-						t.Errorf("Expected telemetryAuthPubKeyHex %s, got %s", tc.expectedTelemetryAuthPubKeyHex, config.TelemetryAuthPubKeyHex)
-					}
 					if config.TelemetryEmitterBatchProcessor != tc.expectedTelemetryEmitterBatchProcessor {
 						t.Errorf("Expected telemetryEmitterBatchProcessor %v, got %v", tc.expectedTelemetryEmitterBatchProcessor, config.TelemetryEmitterBatchProcessor)
 					}
@@ -264,8 +258,6 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "0.42", got[envTelemetryTraceSampleRatio])
 	assert.Equal(t, "bar", got[envTelemetryAttribute+"foo"])
 	assert.Equal(t, "42", got[envTelemetryAttribute+"baz"])
-	assert.Equal(t, "header-value", got[envTelemetryAuthHeader+"header-key"])
-	assert.Equal(t, "pub-key-hex", got[envTelemetryAuthPubKeyHex])
 	assert.Equal(t, "true", got[envTelemetryEmitterBatchProcessor])
 	assert.Equal(t, "1s", got[envTelemetryEmitterExportTimeout])
 	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])

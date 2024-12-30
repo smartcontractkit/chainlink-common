@@ -19,8 +19,6 @@ service ExecutionCustomHandlers {
     rpc NewOffRampReader(NewOffRampReaderRequest) returns (NewOffRampReaderResponse) {}
     rpc NewOnRampReader(NewOnRampReaderRequest) returns (NewOnRampReaderResponse) {}
     rpc NewPriceRegistryReader(NewPriceRegistryReaderRequest) returns (NewPriceRegistryReaderResponse) {}
-    rpc NewTokenDataReader(NewTokenDataRequest) returns (NewTokenDataResponse) {}
-    rpc NewTokenPoolBatchedReader(NewTokenPoolBatchedReaderRequest) returns (NewTokenPoolBatchedReaderResponse) {}
     rpc SourceNativeToken(SourceNativeTokenRequest) returns (SourceNativeTokenResponse) {}
     rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
@@ -145,32 +143,6 @@ message NewPriceRegistryReaderRequest {
 // It contains the id of the created price registry reader service that was created
 message NewPriceRegistryReaderResponse {
     int32 price_registry_reader_service_id = 1;
-}
-
-
-// NewTokenDataRequest is a gRPC adapter for the input arguments of
-// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewTokenDataReader]
-message NewTokenDataRequest {
-    string address = 1;
-}
-
-// NewTokenDataResponse is a gRPC adapter for the output arguments of
-// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewTokenDataReader]
-// It contains the id of the created token data reader service that was created
-message NewTokenDataResponse {
-    int32 token_data_reader_service_id = 1;
-}
-
-message NewTokenPoolBatchedReaderRequest {
-    string address = 1;
-    uint64 sourceChainSelector = 2;
-}
-
-// NewTokenPoolBatchedReaderResponse is a gRPC adapter for the output arguments of
-// [github.com/smartcontractkit/chainlink-common/pkg/types/CCIPExecProvider.NewTokenPoolBatchedReader]
-// It contains the id of the created token pool batched reader service that was created
-message NewTokenPoolBatchedReaderResponse {
-    int32 token_pool_batched_reader_service_id = 1;
 }
 
 // SourceNativeTokenResponse is a gRPC adapter for the input arguments of

@@ -12,6 +12,7 @@ type RuleQuery struct {
 	RefID        string
 	Datasource   string
 	LegendFormat string
+	TimeRange    int64
 	Instant      bool
 }
 
@@ -20,9 +21,13 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 		query.LegendFormat = "__auto"
 	}
 
+	if query.TimeRange == 0 {
+		query.TimeRange = 600
+	}
+
 	res := alerting.NewQueryBuilder(query.RefID).
 		DatasourceUid(query.Datasource).
-		RelativeTimeRange(600, 0) // TODO
+		RelativeTimeRange(alerting.Duration(query.TimeRange), alerting.Duration(0))
 
 	model := prometheus.NewDataqueryBuilder().
 		Expr(query.Expr).

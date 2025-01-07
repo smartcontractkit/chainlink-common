@@ -93,6 +93,9 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.heatmapBuilder != nil {
 			item.heatmapBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.heatmapBuilder)
+		} else if item.textPanelBuilder != nil {
+			item.textPanelBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.textPanelBuilder)
 		}
 		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
 			b.AddAlert(item.alertBuilders...)

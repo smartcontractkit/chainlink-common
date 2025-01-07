@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -96,6 +97,32 @@ func TestNormalizeWorkflowName(t *testing.T) {
 
 			// Assert that the result is 10 bytes long
 			require.Len(t, result, 10)
+		})
+	}
+}
+
+func TestHexDecodeWorkflowName(t *testing.T) {
+	tt := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "OK-correct_workflow_name",
+			input:    "776f726b666c6f772d6e616d65",
+			expected: "workflow-name",
+		},
+		{
+			name:     "NOK-incorrect_workflow_name",
+			input:    "776f726b666c6f772d6e616d65!",
+			expected: "776f726b666c6f772d6e616d65!",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			result := HexDecodeWorkflowName(tc.input, logger.TestSugared(t))
+			require.Equal(t, tc.expected, result)
 		})
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"regexp"
 
 	"strings"
 	"sync"
@@ -383,6 +384,9 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 }
 
 func containsCode(err error, code int) bool {
+	if err == nil {
+		return false
+	}
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
 }
 
@@ -596,21 +600,24 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			args = append(args, k, v)
 		}
 
+		reg, _ := regexp.Compile(`[^\w]`)
+		sanitizedMsg := reg.ReplaceAllString(msg, " ")
+
 		switch level {
 		case "debug":
-			logger.Debugw(msg, args...)
+			logger.Debugw(sanitizedMsg, args...)
 		case "info":
-			logger.Infow(msg, args...)
+			logger.Infow(sanitizedMsg, args...)
 		case "warn":
-			logger.Warnw(msg, args...)
+			logger.Warnw(sanitizedMsg, args...)
 		case "error":
-			logger.Errorw(msg, args...)
+			logger.Errorw(sanitizedMsg, args...)
 		case "panic":
-			logger.Panicw(msg, args...)
+			logger.Panicw(sanitizedMsg, args...)
 		case "fatal":
-			logger.Fatalw(msg, args...)
+			logger.Fatalw(sanitizedMsg, args...)
 		default:
-			logger.Infow(msg, args...)
+			logger.Infow(sanitizedMsg, args...)
 		}
 	}
 }

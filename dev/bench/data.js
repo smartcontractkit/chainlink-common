@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1734964841079,
+  "lastUpdate": 1736339943438,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8358,6 +8358,48 @@ window.BENCHMARK_DATA = {
             "value": 28443,
             "unit": "ns/op",
             "extra": "42368 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "47a52b179fe3b35c66105acc806bca160bc8ac8c",
+          "message": "feat(observability-lib): can specify tooltip on timeseries panels and enable by default (#982)",
+          "timestamp": "2025-01-08T13:36:52+01:00",
+          "tree_id": "93f262e32abde71963fde4d25f2275afbf94662d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/47a52b179fe3b35c66105acc806bca160bc8ac8c"
+        },
+        "date": 1736339941762,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 463.3,
+            "unit": "ns/op",
+            "extra": "2608291 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521.3,
+            "unit": "ns/op",
+            "extra": "2268507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28201,
+            "unit": "ns/op",
+            "extra": "42502 times\n4 procs"
           }
         ]
       }

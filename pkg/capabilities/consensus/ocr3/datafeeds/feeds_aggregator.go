@@ -16,6 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger/lk"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -112,12 +113,12 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 		previousReportInfo := currentState.FeedInfo[feedIDStr]
 		feedID, err2 := datastreams.NewFeedID(feedIDStr)
 		if err2 != nil {
-			lggr.Errorw("could not convert %s to feedID", "feedID", feedID)
+			lggr.Errorw("could not convert %s to feedID", lk.FeedID, feedID)
 			continue
 		}
 		latestReport, ok := latestReportPerFeed[feedID]
 		if !ok {
-			lggr.Errorw("no new Mercury report for feed", "feedID", feedID)
+			lggr.Errorw("no new Mercury report for feed", lk.FeedID, feedID)
 			continue
 		}
 		config := a.config.Feeds[feedID]
@@ -126,7 +127,7 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 		currDeviation := deviation(oldPrice, newPrice)
 		currStaleness := latestReport.ObservationTimestamp - previousReportInfo.ObservationTimestamp
 		lggr.Debugw("checking deviation and heartbeat",
-			"feedID", feedID,
+			lk.FeedID, feedID,
 			"currentTs", latestReport.ObservationTimestamp,
 			"oldTs", previousReportInfo.ObservationTimestamp,
 			"currStaleness", currStaleness,
@@ -213,14 +214,14 @@ func (a *dataFeedsAggregator) initializeCurrentState(lggr logger.Logger, previou
 				ObservationTimestamp: 0, // will always trigger an update
 				BenchmarkPrice:       big.NewInt(0).Bytes(),
 			}
-			lggr.Debugw("initializing empty onchain state for feed", "feedID", feedID.String())
+			lggr.Debugw("initializing empty onchain state for feed", lk.FeedID, feedID.String())
 		}
 	}
 	// remove obsolete feeds from state
 	for feedID := range currentState.FeedInfo {
 		if _, ok := a.config.Feeds[datastreams.FeedID(feedID)]; !ok {
 			delete(currentState.FeedInfo, feedID)
-			lggr.Debugw("removed obsolete feedID from state", "feedID", feedID)
+			lggr.Debugw("removed obsolete feedID from state", lk.FeedID, feedID)
 		}
 	}
 	lggr.Debugw("current state initialized", "state", currentState, "previousOutcome", previousOutcome)

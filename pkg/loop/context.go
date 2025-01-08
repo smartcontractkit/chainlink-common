@@ -1,6 +1,10 @@
 package loop
 
-import "context"
+import (
+	"context"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger/lk"
+)
 
 type ctxKey int
 
@@ -25,19 +29,19 @@ type ContextValues struct {
 // Args returns a slice of args to pass to [logger.Logger.With].
 func (v *ContextValues) Args() (a []any) {
 	if v.JobID != nil {
-		a = append(a, "jobID", v.JobID)
+		a = append(a, lk.JobID, v.JobID)
 	}
 	if v.JobName != nil {
-		a = append(a, "jobName", v.JobName)
+		a = append(a, lk.JobName, v.JobName)
 	}
 	if v.ContractID != nil {
-		a = append(a, "contractID", v.ContractID)
+		a = append(a, lk.ContractID, v.ContractID)
 	}
 	if v.FeedID != nil {
-		a = append(a, "feedID", v.FeedID)
+		a = append(a, lk.FeedID, v.FeedID)
 	}
 	if v.TransmitterID != nil {
-		a = append(a, "transmitterID", v.TransmitterID)
+		a = append(a, lk.TransmitterID, v.TransmitterID)
 	}
 	return
 }

@@ -66,7 +66,8 @@ type RequestMetadata struct {
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
 	// The step reference ID of the workflow
-	ReferenceID         string
+	ReferenceID string
+	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
 	DecodedWorkflowName string
 }
 

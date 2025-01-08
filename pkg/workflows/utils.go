@@ -4,8 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"strings"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func EncodeExecutionID(workflowID, eventID string) (string, error) {
@@ -85,15 +83,4 @@ func HashTruncateName(name string) [10]byte {
 	copy(result[:], hash[:10])
 
 	return result
-}
-
-// HexDecodeWorkflowName makes the best effort to decode the hex workflow name.
-// In case of failure it will log the error and return the input name.
-func HexDecodeWorkflowName(encoded string, logger logger.Logger) string {
-	decoded, err := hex.DecodeString(encoded)
-	if err != nil {
-		logger.Errorf("failed to decode WorkflowName %q: %v", encoded, err)
-		return encoded
-	}
-	return string(decoded)
 }

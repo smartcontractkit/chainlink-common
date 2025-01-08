@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736339943438,
+  "lastUpdate": 1736365463603,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8400,6 +8400,48 @@ window.BENCHMARK_DATA = {
             "value": 28201,
             "unit": "ns/op",
             "extra": "42502 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2ebd63bbb16ec1bb0f0c5b7263a18411a849201a",
+          "message": "[CAPPL-320] implement HexDecodeWorkflowName (#983)",
+          "timestamp": "2025-01-08T14:43:20-05:00",
+          "tree_id": "5d3b92a0b4cf1fb87abc7c9300a047500c12ba14",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2ebd63bbb16ec1bb0f0c5b7263a18411a849201a"
+        },
+        "date": 1736365463013,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 466.3,
+            "unit": "ns/op",
+            "extra": "2604100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 532.5,
+            "unit": "ns/op",
+            "extra": "2306035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28634,
+            "unit": "ns/op",
+            "extra": "42488 times\n4 procs"
           }
         ]
       }

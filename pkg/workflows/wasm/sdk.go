@@ -98,7 +98,7 @@ func createEmitFn(
 		}
 
 		if labels == nil {
-			return NewEmissionError(fmt.Errorf("labels must be provided"))
+			labels = map[string]string{}
 		}
 		labels, err := toEmitLabels(sdkConfig.Metadata, labels)
 		if err != nil {
@@ -272,7 +272,7 @@ func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]string) (m
 	}
 
 	if md.WorkflowExecutionID == "" {
-		return nil, fmt.Errorf("must provide workflow owner to emit event")
+		return nil, fmt.Errorf("must provide workflow execution id to emit event")
 	}
 
 	labels[events.LabelWorkflowExecutionID] = md.WorkflowExecutionID

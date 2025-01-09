@@ -183,6 +183,7 @@ func createFetchFn(
 				WorkflowName:        sdkConfig.Metadata.WorkflowName,
 				WorkflowOwner:       sdkConfig.Metadata.WorkflowOwner,
 				WorkflowExecutionId: sdkConfig.Metadata.WorkflowExecutionID,
+				DecodedWorkflowName: sdkConfig.Metadata.DecodedWorkflowName,
 			},
 		})
 		if err != nil {

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736365463603,
+  "lastUpdate": 1736438914333,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8442,6 +8442,48 @@ window.BENCHMARK_DATA = {
             "value": 28634,
             "unit": "ns/op",
             "extra": "42488 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c2007b3df1b680db993a9fae43ce8583f1e20921",
+          "message": "fix: newTimeout should be read as Uint64 (#987)",
+          "timestamp": "2025-01-09T08:07:30-08:00",
+          "tree_id": "80b60bf027e14e4fb0636e6f9d74c1d0547ac3dc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c2007b3df1b680db993a9fae43ce8583f1e20921"
+        },
+        "date": 1736438913746,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 466.8,
+            "unit": "ns/op",
+            "extra": "2518530 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 542.6,
+            "unit": "ns/op",
+            "extra": "2297578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28308,
+            "unit": "ns/op",
+            "extra": "42296 times\n4 procs"
           }
         ]
       }

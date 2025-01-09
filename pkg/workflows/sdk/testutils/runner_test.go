@@ -64,7 +64,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run allows hard-coded values", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 		hardCodedInput := basicaction.NewActionOutputsFromFields(sdk.ConstantDefinition("hard-coded"))
 		tTransform := sdk.Compute2[basictrigger.TriggerOutputs, basicaction.ActionOutputs, bool](
@@ -255,9 +255,13 @@ func TestRunner(t *testing.T) {
 	})
 }
 
+type ComputeConfig struct {
+	Fidelity sdk.SecretValue
+}
+
 func TestCompute(t *testing.T) {
 	t.Run("Inputs don't loose integer types when any is deserialized to", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "name", Owner: "owner"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
 		toMap := sdk.Compute1(workflow, "tomap", sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, i0 string) (map[string]any, error) {
 			v, err := strconv.Atoi(i0)
@@ -286,10 +290,38 @@ func TestCompute(t *testing.T) {
 
 		require.NoError(t, runner.Err())
 	})
+
+	t.Run("Config interpolates secrets", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory()
+		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
+
+		conf := ComputeConfig{
+			Fidelity: sdk.Secret("fidelity"),
+		}
+		var gotC ComputeConfig
+		sdk.Compute1WithConfig(workflow, "tomap", &sdk.ComputeConfig[ComputeConfig]{Config: conf}, sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, c ComputeConfig, i0 string) (ComputeConfig, error) {
+			gotC = c
+			return c, nil
+		})
+
+		runner := testutils.NewRunner(tests.Context(t))
+		secretToken := "superSuperSecretToken"
+		runner.Secrets = map[string]string{
+			"fidelity": secretToken,
+		}
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "100"}, nil
+		})
+
+		runner.Run(workflow)
+
+		require.NoError(t, runner.Err())
+		assert.Equal(t, gotC.Fidelity, sdk.SecretValue(secretToken))
+	})
 }
 
 func registrationWorkflow() (*sdk.WorkflowSpecFactory, map[string]any, map[string]any) {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	workflow := sdk.NewWorkflowSpecFactory()
 	testTriggerConfig := map[string]any{"something": "from nothing"}
 	trigger := sdk.Step[int]{
 		Definition: sdk.StepDefinition{
@@ -337,7 +369,7 @@ func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.Tri
 type actionTransform func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error)
 
 func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	workflow := sdk.NewWorkflowSpecFactory()
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	tTransform := sdk.Compute1[basictrigger.TriggerOutputs, bool](
 		workflow,

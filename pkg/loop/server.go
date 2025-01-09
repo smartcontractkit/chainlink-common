@@ -58,7 +58,7 @@ func newServer(loggerName string) (*Server, error) {
 
 	lggr, err := NewLogger()
 	if err != nil {
-		return nil, fmt.Errorf("error creating logger: %s", err)
+		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
 	lggr = logger.Named(lggr, loggerName)
 	s.Logger = logger.Sugared(lggr)
@@ -90,15 +90,26 @@ func (s *Server) start() error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
+
 		beholderCfg := beholder.Config{
-			InsecureConnection:       envCfg.TelemetryInsecureConnection,
-			CACertFile:               envCfg.TelemetryCACertFile,
-			OtelExporterGRPCEndpoint: envCfg.TelemetryEndpoint,
-			ResourceAttributes:       append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
-			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
+			InsecureConnection:        envCfg.TelemetryInsecureConnection,
+			CACertFile:                envCfg.TelemetryCACertFile,
+			OtelExporterGRPCEndpoint:  envCfg.TelemetryEndpoint,
+			ResourceAttributes:        append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
+			TraceSampleRatio:          envCfg.TelemetryTraceSampleRatio,
+			AuthHeaders:               envCfg.TelemetryAuthHeaders,
+			AuthPublicKeyHex:          envCfg.TelemetryAuthPubKeyHex,
+			EmitterBatchProcessor:     envCfg.TelemetryEmitterBatchProcessor,
+			EmitterExportTimeout:      envCfg.TelemetryEmitterExportTimeout,
+			EmitterExportInterval:     envCfg.TelemetryEmitterExportInterval,
+			EmitterExportMaxBatchSize: envCfg.TelemetryEmitterExportMaxBatchSize,
+			EmitterMaxQueueSize:       envCfg.TelemetryEmitterMaxQueueSize,
 		}
 
 		if tracingConfig.Enabled {
+			if beholderCfg.AuthHeaders != nil {
+				tracingConfig.AuthHeaders = beholderCfg.AuthHeaders
+			}
 			exporter, err := tracingConfig.NewSpanExporter()
 			if err != nil {
 				return fmt.Errorf("failed to setup tracing exporter: %w", err)

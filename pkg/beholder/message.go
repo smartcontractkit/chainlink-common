@@ -1,7 +1,10 @@
 package beholder
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -16,6 +19,8 @@ type Message struct {
 type Metadata struct {
 	//	REQUIRED FIELDS
 	// Schema Registry URI to fetch schema
+	BeholderDomain     string `validate:"required,domain_entity"`
+	BeholderEntity     string `validate:"required,domain_entity"`
 	BeholderDataSchema string `validate:"required,uri"`
 
 	// OPTIONAL FIELDS
@@ -55,6 +60,8 @@ func (m Metadata) Attributes() Attributes {
 		"workflow_owner_address":      m.WorkflowOwnerAddress,
 		"workflow_spec_id":            m.WorkflowSpecID,
 		"workflow_execution_id":       m.WorkflowExecutionID,
+		"beholder_domain":             m.BeholderDomain,
+		"beholder_entity":             m.BeholderEntity,
 		"beholder_data_schema":        m.BeholderDataSchema,
 		"capability_contract_address": m.CapabilityContractAddress,
 		"capability_id":               m.CapabilityID,
@@ -199,6 +206,10 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.WorkflowSpecID = v.(string)
 		case "workflow_execution_id":
 			m.WorkflowExecutionID = v.(string)
+		case "beholder_domain":
+			m.BeholderDomain = v.(string)
+		case "beholder_entity":
+			m.BeholderEntity = v.(string)
 		case "beholder_data_schema":
 			m.BeholderDataSchema = v.(string)
 		case "capability_contract_address":
@@ -222,17 +233,44 @@ func NewMetadata(attrs Attributes) *Metadata {
 	return m
 }
 
-func (m *Metadata) Validate() error {
+// validDomainAndEntityRegex allows for alphanumeric characters and ._-
+var validDomainAndEntityRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
+
+func NewMetadataValidator() (*validator.Validate, error) {
 	validate := validator.New()
+	err := validate.RegisterValidation("domain_entity", func(fl validator.FieldLevel) bool {
+		str, isStr := fl.Field().Interface().(string)
+		if !isStr {
+			return false
+		}
+		if strings.Contains(str, "__") {
+			return false
+		}
+		if !validDomainAndEntityRegex.MatchString(str) {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	return validate, nil
+}
+
+func (m *Metadata) Validate() error {
+	validate, err := NewMetadataValidator()
+	if err != nil {
+		return err
+	}
 	return validate.Struct(m)
 }
 
 func (e Message) Validate() error {
 	if e.Body == nil {
-		return fmt.Errorf("message body is required")
+		return errors.New("message body is required")
 	}
 	if len(e.Attrs) == 0 {
-		return fmt.Errorf("message attributes are required")
+		return errors.New("message attributes are required")
 	}
 	metadata := NewMetadata(e.Attrs)
 	return metadata.Validate()

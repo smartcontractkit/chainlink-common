@@ -104,8 +104,9 @@ func FindAndInterpolateAllKeys(input any, state Results) (any, error) {
 }
 
 type Env struct {
-	Binary []byte
-	Config []byte
+	Binary  []byte
+	Config  []byte
+	Secrets map[string]string
 }
 
 // FindAndInterpolateEnv takes a `config` any value, and recursively
@@ -126,7 +127,7 @@ func FindAndInterpolateEnvVars(input any, env Env) (any, error) {
 			}
 
 			splitToken := strings.Split(matches[1], ".")
-			if len(splitToken) != 2 {
+			if len(splitToken) < 2 {
 				return el, nil
 			}
 
@@ -139,8 +140,26 @@ func FindAndInterpolateEnvVars(input any, env Env) (any, error) {
 				return env.Config, nil
 			case "binary":
 				return env.Binary, nil
+			case "secrets":
+				switch len(splitToken) {
+				// A token of the form:
+				// ENV.secrets.<key>
+				case 3:
+					got, ok := env.Secrets[splitToken[2]]
+					if !ok {
+						return "", fmt.Errorf("invalid env token: could not find %q in ENV.secrets", splitToken[2])
+					}
+
+					return got, nil
+				// A token of the form:
+				// ENV.secrets
+				case 2:
+					return env.Secrets, nil
+				}
+
+				return nil, fmt.Errorf("invalid env token: must contain two or three elements, got %q", el.(string))
 			default:
-				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary>): got %s", el)
+				return "", fmt.Errorf("invalid env token: must be of the form $(ENV.<config|binary|secrets>): got %s", el)
 			}
 		},
 	)

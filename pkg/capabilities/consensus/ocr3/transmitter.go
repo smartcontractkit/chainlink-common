@@ -15,6 +15,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -22,7 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-var _ (ocr3types.ContractTransmitter[[]byte]) = (*ContractTransmitter)(nil)
+var _ ocr3types.ContractTransmitter[[]byte] = (*ContractTransmitter)(nil)
 
 // ContractTransmitter is a custom transmitter for the OCR3 capability.
 // When called it will forward the report + its signatures back to the
@@ -33,6 +34,7 @@ type ContractTransmitter struct {
 	registry    core.CapabilitiesRegistry
 	capability  capabilities.ExecutableCapability
 	fromAccount string
+	emitter     custmsg.MessageEmitter
 }
 
 func extractReportInfo(data []byte) (*pbtypes.ReportInfo, error) {
@@ -72,7 +74,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 
 	signedReport := &pbtypes.SignedReport{}
 	if info.ShouldReport {
-		signedReport.Report = []byte(rwi.Report)
+		signedReport.Report = rwi.Report
 
 		// report context is the config digest + the sequence number padded with zeros
 		// (see OCR3OnchainKeyringAdapter in core)
@@ -82,7 +84,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		repContext := append(append(configDigest[:], seqToEpoch[:]...), zeros...)
 		signedReport.Context = repContext
 
-		sigs := [][]byte{}
+		var sigs [][]byte
 		for _, s := range signatures {
 			sigs = append(sigs, s.Signature)
 		}
@@ -116,6 +118,18 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		c.capability = cp.(capabilities.ExecutableCapability)
 	}
 
+	msg := "report with id " + info.Id.ReportId + " should be reported: " + fmt.Sprint(info.ShouldReport)
+	err = c.emitter.With(
+		"workflowExecutionID", info.Id.WorkflowExecutionId,
+		"workflowID", info.Id.WorkflowId,
+		"workflowOwner", info.Id.WorkflowOwner,
+		"workflowName", info.Id.WorkflowName,
+		"reportId", info.Id.ReportId,
+	).Emit(ctx, msg)
+	if err != nil {
+		c.lggr.Errorw(fmt.Sprintf("could not emit message: %s", msg), "error", err)
+	}
+
 	_, err = c.capability.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: info.Id.WorkflowExecutionId,
@@ -131,10 +145,10 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 	return err
 }
 
-func (c *ContractTransmitter) FromAccount(ctx context.Context) (types.Account, error) {
+func (c *ContractTransmitter) FromAccount(_ context.Context) (types.Account, error) {
 	return types.Account(c.fromAccount), nil
 }
 
 func NewContractTransmitter(lggr logger.Logger, registry core.CapabilitiesRegistry, fromAccount string) *ContractTransmitter {
-	return &ContractTransmitter{lggr: lggr, registry: registry, fromAccount: fromAccount}
+	return &ContractTransmitter{lggr: lggr, registry: registry, fromAccount: fromAccount, emitter: custmsg.NewLabeler()}
 }

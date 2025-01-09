@@ -22,6 +22,9 @@ import (
 // - hard code -> [HardCodeModifierConfig]
 // - extract element -> [ElementExtractorModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
+// - address to string -> [AddressBytesToStringModifierConfig]
+// - field wrapper -> [WrapperModifierConfig]
+// - precodec -> [PrecodecModifierConfig]
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
@@ -52,6 +55,12 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &EpochToTimeModifierConfig{}
 		case ModifierExtractProperty:
 			(*m)[i] = &PropertyExtractorConfig{}
+		case ModifierAddressToString:
+			(*m)[i] = &AddressBytesToStringModifierConfig{}
+		case ModifierWrapper:
+			(*m)[i] = &WrapperModifierConfig{}
+		case ModifierPreCodec:
+			(*m)[i] = &PreCodecModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -78,12 +87,15 @@ func (m *ModifiersConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc
 type ModifierType string
 
 const (
+	ModifierPreCodec        ModifierType = "precodec"
 	ModifierRename          ModifierType = "rename"
 	ModifierDrop            ModifierType = "drop"
 	ModifierHardCode        ModifierType = "hard code"
 	ModifierExtractElement  ModifierType = "extract element"
 	ModifierEpochToTime     ModifierType = "epoch to time"
 	ModifierExtractProperty ModifierType = "extract property"
+	ModifierAddressToString ModifierType = "address to string"
+	ModifierWrapper         ModifierType = "wrapper"
 )
 
 type ModifierConfig interface {
@@ -191,6 +203,69 @@ func (h *HardCodeModifierConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// PreCodec creates a modifier that will transform data using a preliminary encoding/decoding step.
+// 'Off-chain' values will be overwritten with the encoded data as a byte array.
+// 'On-chain' values will be typed using the optimistic types from the codec.
+// This is useful when wanting to move the data as generic bytes.
+//
+//				Example:
+//
+//				Based on this input struct:
+//					type example struct {
+//						A []B
+//					}
+//
+//					type B struct {
+//						C string
+//						D string
+//					}
+//
+//				And the fields config defined as:
+//			 		{"A": "string C, string D"}
+//
+//				The codec config gives a map of strings (the values from fields config map) to implementation for encoding/decoding
+//
+//		           RemoteCodec {
+//		              func (types.TypeProvider) CreateType(itemType string, forEncoding bool) (any, error)
+//		              func (types.Decoder) Decode(ctx context.Context, raw []byte, into any, itemType string) error
+//		              func (types.Encoder) Encode(ctx context.Context, item any, itemType string) ([]byte, error)
+//		              func (types.Decoder) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error)
+//		              func (types.Encoder) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error)
+//		           }
+//
+//		  		   {"string C, string D": RemoteCodec}
+//
+//				Result:
+//					type example struct {
+//						A [][]bytes
+//					}
+//
+//	             Where []bytes are the encoded input struct B
+type PreCodecModifierConfig struct {
+	// A map of a path of properties to encoding scheme.
+	// If the path leads to an array, encoding will occur on every entry.
+	//
+	// Example: "a.b" -> "uint256 Value"
+	Fields map[string]string
+	// Codecs is skipped in JSON serialization, it will be injected later.
+	// The map should be keyed using the value from "Fields" to a corresponding Codec that can encode/decode for it
+	// This allows encoding and decoding implementations to be handled outside of the modifier.
+	//
+	// Example: "uint256 Value" -> a chain specific encoder for "uint256 Value"
+	Codecs map[string]types.RemoteCodec `json:"-"`
+}
+
+func (c *PreCodecModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewPreCodec(c.Fields, c.Codecs)
+}
+
+func (c *PreCodecModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[PreCodecModifierConfig]{
+		Type: ModifierPreCodec,
+		T:    c,
+	})
+}
+
 // EpochToTimeModifierConfig is used to convert epoch seconds as uint64 fields on-chain to time.Time
 type EpochToTimeModifierConfig struct {
 	Fields []string
@@ -222,6 +297,99 @@ func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[PropertyExtractorConfig]{
 		Type: ModifierExtractProperty,
 		T:    c,
+	})
+}
+
+// AddressBytesToStringModifierConfig is used to transform address byte fields into string fields.
+// It holds the list of fields that should be modified and the chain-specific logic to do the modifications.
+type AddressBytesToStringModifierConfig struct {
+	Fields []string
+	// Modifier is skipped in JSON serialization, will be injected later.
+	Modifier AddressModifier `json:"-"`
+}
+
+func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewAddressBytesToStringModifier(c.Fields, c.Modifier), nil
+}
+
+func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[AddressBytesToStringModifierConfig]{
+		Type: ModifierAddressToString,
+		T:    c,
+	})
+}
+
+// WrapperModifierConfig replaces each field based on cfg map keys with a struct containing one field with the value of the original field which has is named based on map values.
+// Wrapper modifier does not maintain the original pointers.
+// Wrapper modifier config shouldn't edit fields that affect each other since the results are not deterministic.
+//
+//		Example #1:
+//
+//		Based on this input struct:
+//			type example struct {
+//				A string
+//			}
+//
+//		And the wrapper config defined as:
+//	 		{"D": "W"}
+//
+//		Result:
+//			type example struct {
+//				D
+//			}
+//
+//		where D is a struct that contains the original value of D under the name W:
+//			type D struct {
+//				W string
+//			}
+//
+//
+//		Example #2:
+//		Wrapper modifier works on any type of field, including nested fields or nested fields in slices etc.!
+//
+//		Based on this input struct:
+//			type example struct {
+//				A []B
+//			}
+//
+//			type B struct {
+//				C string
+//				D string
+//			}
+//
+//		And the wrapper config defined as:
+//	 		{"A.C": "E", "A.D": "F"}
+//
+//		Result:
+//			type example struct {
+//				A []B
+//			}
+//
+//			type B struct {
+//				C type struct { E string }
+//				D type struct { F string }
+//			}
+//
+//		Where each element of slice A under fields C.E and D.F retains the values of their respective input slice elements A.C and A.D .
+type WrapperModifierConfig struct {
+	// Fields key defines the fields to be wrapped and the name of the wrapper struct.
+	// The field becomes a subfield of the wrapper struct where the name of the subfield is map value.
+	Fields map[string]string
+}
+
+func (r *WrapperModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	fields := map[string]string{}
+	for i, f := range r.Fields {
+		// using a private variable will make the field not serialize, essentially dropping the field
+		fields[upperFirstCharacter(f)] = fmt.Sprintf("dropFieldPrivateName-%s", i)
+	}
+	return NewWrapperModifier(r.Fields), nil
+}
+
+func (r *WrapperModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[WrapperModifierConfig]{
+		Type: ModifierWrapper,
+		T:    r,
 	})
 }
 

@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	testWorkflowID  = "test-id-1"
-	testConfigKey   = "test-key"
-	testConfigValue = "test-value"
-	testInputsKey   = "input-key"
-	testInputsValue = "input-value"
-	testError       = "test-error"
-	anyReferenceID  = "anything"
+	testWorkflowID    = "test-id-1"
+	testConfigKey     = "test-key"
+	testConfigValue   = "test-value"
+	testInputsKey     = "input-key"
+	testInputsValue   = "input-value"
+	testError         = "test-error"
+	anyReferenceID    = "anything"
+	testWorkflowOwner = "testowner"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -79,6 +80,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
 			ReferenceID:              anyReferenceID,
+			DecodedWorkflowName:      "test-workflow-name",
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -118,4 +120,103 @@ func TestMarshalUnmarshalResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, resp, unmarshaled)
+}
+
+func TestRegisterToWorkflowRequestToProto(t *testing.T) {
+	req := capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    testWorkflowID,
+			WorkflowOwner: testWorkflowOwner,
+		},
+		Config: &values.Map{Underlying: map[string]values.Value{
+			testConfigKey: &values.String{Underlying: testConfigValue},
+		}},
+	}
+	pr := pb.RegisterToWorkflowRequestToProto(req)
+	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
+	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
+
+	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
+}
+
+func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
+	configMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+
+	pr := &pb.RegisterToWorkflowRequest{
+		Metadata: &pb.RegistrationMetadata{
+			WorkflowId:    testWorkflowID,
+			ReferenceId:   anyReferenceID,
+			WorkflowOwner: testWorkflowOwner,
+		},
+		Config: values.ProtoMap(configMap),
+	}
+
+	req, err := pb.RegisterToWorkflowRequestFromProto(pr)
+	require.NoError(t, err)
+
+	expectedMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    testWorkflowID,
+			WorkflowOwner: testWorkflowOwner,
+			ReferenceID:   anyReferenceID,
+		},
+		Config: expectedMap,
+	}, req)
+}
+
+func TestUnregisterFromWorkflowRequestToProto(t *testing.T) {
+	req := capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    testWorkflowID,
+			ReferenceID:   anyReferenceID,
+			WorkflowOwner: testWorkflowOwner,
+		},
+		Config: &values.Map{Underlying: map[string]values.Value{
+			testConfigKey: &values.String{Underlying: testConfigValue},
+		}},
+	}
+	pr := pb.UnregisterFromWorkflowRequestToProto(req)
+	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
+	assert.Equal(t, anyReferenceID, pr.Metadata.ReferenceId)
+	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
+	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
+}
+
+func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
+	configMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+
+	pr := &pb.UnregisterFromWorkflowRequest{
+		Metadata: &pb.RegistrationMetadata{
+			WorkflowId:    testWorkflowID,
+			WorkflowOwner: testWorkflowOwner,
+			ReferenceId:   anyReferenceID,
+		},
+		Config: values.ProtoMap(configMap),
+	}
+
+	req, err := pb.UnregisterFromWorkflowRequestFromProto(pr)
+	require.NoError(t, err)
+
+	expectedMap, err := values.NewMap(map[string]any{
+		testConfigKey: testConfigValue,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    testWorkflowID,
+			ReferenceID:   anyReferenceID,
+			WorkflowOwner: testWorkflowOwner,
+		},
+		Config: expectedMap,
+	}, req)
 }

@@ -60,6 +60,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowDonId:            req.Metadata.WorkflowDonID,
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 			ReferenceId:              req.Metadata.ReferenceID,
+			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
 		},
 		Inputs: values.ProtoMap(inputs),
 		Config: values.ProtoMap(config),
@@ -101,6 +102,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			WorkflowDonID:            md.WorkflowDonId,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 			ReferenceID:              md.ReferenceId,
+			DecodedWorkflowName:      md.DecodedWorkflowName,
 		},
 		Config: config,
 		Inputs: inputs,
@@ -147,6 +149,110 @@ func UnmarshalTriggerResponse(raw []byte) (capabilities.TriggerResponse, error) 
 		return capabilities.TriggerResponse{}, err
 	}
 	return TriggerResponseFromProto(&tr)
+}
+
+func RegisterToWorkflowRequestToProto(req capabilities.RegisterToWorkflowRequest) *RegisterToWorkflowRequest {
+	config := values.EmptyMap()
+	if req.Config != nil {
+		config = req.Config
+	}
+
+	return &RegisterToWorkflowRequest{
+		Metadata: &RegistrationMetadata{
+			WorkflowId:    req.Metadata.WorkflowID,
+			ReferenceId:   req.Metadata.ReferenceID,
+			WorkflowOwner: req.Metadata.WorkflowOwner,
+		},
+		Config: values.ProtoMap(config),
+	}
+}
+
+func RegisterToWorkflowRequestFromProto(req *RegisterToWorkflowRequest) (capabilities.RegisterToWorkflowRequest, error) {
+	if req == nil {
+		return capabilities.RegisterToWorkflowRequest{}, errors.New("received nil register to workflow request")
+	}
+
+	if req.Metadata == nil {
+		return capabilities.RegisterToWorkflowRequest{}, errors.New("received nil metadata in register to workflow request")
+	}
+
+	config, err := values.FromMapValueProto(req.Config)
+	if err != nil {
+		return capabilities.RegisterToWorkflowRequest{}, err
+	}
+
+	return capabilities.RegisterToWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    req.Metadata.WorkflowId,
+			ReferenceID:   req.Metadata.ReferenceId,
+			WorkflowOwner: req.Metadata.WorkflowOwner,
+		},
+		Config: config,
+	}, nil
+}
+
+func UnregisterFromWorkflowRequestToProto(req capabilities.UnregisterFromWorkflowRequest) *UnregisterFromWorkflowRequest {
+	config := values.EmptyMap()
+	if req.Config != nil {
+		config = req.Config
+	}
+
+	return &UnregisterFromWorkflowRequest{
+		Metadata: &RegistrationMetadata{
+			WorkflowId:    req.Metadata.WorkflowID,
+			ReferenceId:   req.Metadata.ReferenceID,
+			WorkflowOwner: req.Metadata.WorkflowOwner,
+		},
+		Config: values.ProtoMap(config),
+	}
+}
+
+func UnregisterFromWorkflowRequestFromProto(req *UnregisterFromWorkflowRequest) (capabilities.UnregisterFromWorkflowRequest, error) {
+	if req == nil {
+		return capabilities.UnregisterFromWorkflowRequest{}, errors.New("received nil unregister from workflow request")
+	}
+
+	if req.Metadata == nil {
+		return capabilities.UnregisterFromWorkflowRequest{}, errors.New("received nil metadata in unregister from workflow request")
+	}
+
+	config, err := values.FromMapValueProto(req.Config)
+	if err != nil {
+		return capabilities.UnregisterFromWorkflowRequest{}, err
+	}
+
+	return capabilities.UnregisterFromWorkflowRequest{
+		Metadata: capabilities.RegistrationMetadata{
+			WorkflowID:    req.Metadata.WorkflowId,
+			ReferenceID:   req.Metadata.ReferenceId,
+			WorkflowOwner: req.Metadata.WorkflowOwner,
+		},
+		Config: config,
+	}, nil
+}
+
+func UnmarshalUnregisterFromWorkflowRequest(raw []byte) (capabilities.UnregisterFromWorkflowRequest, error) {
+	var r UnregisterFromWorkflowRequest
+	if err := proto.Unmarshal(raw, &r); err != nil {
+		return capabilities.UnregisterFromWorkflowRequest{}, err
+	}
+	return UnregisterFromWorkflowRequestFromProto(&r)
+}
+
+func MarshalUnregisterFromWorkflowRequest(req capabilities.UnregisterFromWorkflowRequest) ([]byte, error) {
+	return proto.MarshalOptions{Deterministic: true}.Marshal(UnregisterFromWorkflowRequestToProto(req))
+}
+
+func UnmarshalRegisterToWorkflowRequest(raw []byte) (capabilities.RegisterToWorkflowRequest, error) {
+	var r RegisterToWorkflowRequest
+	if err := proto.Unmarshal(raw, &r); err != nil {
+		return capabilities.RegisterToWorkflowRequest{}, err
+	}
+	return RegisterToWorkflowRequestFromProto(&r)
+}
+
+func MarshalRegisterToWorkflowRequest(req capabilities.RegisterToWorkflowRequest) ([]byte, error) {
+	return proto.MarshalOptions{Deterministic: true}.Marshal(RegisterToWorkflowRequestToProto(req))
 }
 
 func TriggerRegistrationRequestToProto(req capabilities.TriggerRegistrationRequest) *TriggerRegistrationRequest {

@@ -67,6 +67,9 @@
         "encoder_config": {
           "$ref": "ocr3cap_common-schema.json#/$defs/encoder_config"
         },
+        "key_id": {
+          "$ref": "ocr3cap_common-schema.json#/$defs/key_id"
+        },
         "report_id": {
             "$ref": "ocr3cap_common-schema.json#/$defs/report_id"
         }
@@ -78,6 +81,7 @@
         "aggregation_config",
         "encoder",
         "encoder_config",
+        "key_id",
         "report_id"
       ]
     },

@@ -13,7 +13,7 @@ import (
 )
 
 func TestDataFeedsAggregator_Aggregate(t *testing.T) {
-	config := getConfig(t, nil)
+	config := getConfigIdenticalAggregator(t, nil)
 	agg, err := aggregators.NewIdenticalAggregator(*config)
 	require.NoError(t, err)
 
@@ -37,7 +37,7 @@ func TestDataFeedsAggregator_Aggregate(t *testing.T) {
 }
 
 func TestDataFeedsAggregator_Aggregate_OverrideWithKeys(t *testing.T) {
-	config := getConfig(t, []string{"outcome"})
+	config := getConfigIdenticalAggregator(t, []string{"outcome"})
 	agg, err := aggregators.NewIdenticalAggregator(*config)
 	require.NoError(t, err)
 
@@ -61,7 +61,7 @@ func TestDataFeedsAggregator_Aggregate_OverrideWithKeys(t *testing.T) {
 }
 
 func TestDataFeedsAggregator_Aggregate_NoConsensus(t *testing.T) {
-	config := getConfig(t, []string{"outcome"})
+	config := getConfigIdenticalAggregator(t, []string{"outcome"})
 	agg, err := aggregators.NewIdenticalAggregator(*config)
 	require.NoError(t, err)
 
@@ -81,7 +81,7 @@ func TestDataFeedsAggregator_Aggregate_NoConsensus(t *testing.T) {
 	require.ErrorContains(t, err, "can't reach consensus on observations with index 0")
 }
 
-func getConfig(t *testing.T, overrideKeys []string) *values.Map {
+func getConfigIdenticalAggregator(t *testing.T, overrideKeys []string) *values.Map {
 	unwrappedConfig := map[string]any{
 		"expectedObservationsLen": len(overrideKeys),
 		"keyOverrides":            overrideKeys,

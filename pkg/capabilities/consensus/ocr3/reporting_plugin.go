@@ -339,7 +339,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, obs, r.config.F)
 		if err2 != nil {
 			lggr.Errorw("error aggregating outcome", "error", err2)
-			return nil, err
+			continue
 		}
 
 		// Only if the previous outcome exists:

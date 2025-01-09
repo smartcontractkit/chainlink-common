@@ -6,8 +6,8 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"time"
 
-	"github.com/go-viper/mapstructure/v2"
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -76,6 +76,8 @@ func Wrap(v any) (Value, error) {
 		return NewFloat64(float64(tv)), nil
 	case *big.Int:
 		return NewBigInt(tv), nil
+	case time.Time:
+		return NewTime(tv), nil
 	case nil:
 		return nil, nil
 
@@ -94,6 +96,12 @@ func Wrap(v any) (Value, error) {
 	case *Int64:
 		return tv, nil
 	case *Float64:
+		return tv, nil
+	case *Bool:
+		return tv, nil
+	case *BigInt:
+		return tv, nil
+	case *Time:
 		return tv, nil
 	}
 
@@ -294,12 +302,32 @@ func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
 }
 
 func CreateMapFromStruct(v any) (*Map, error) {
-	var resultMap map[string]interface{}
+	resultMap := map[string]any{}
 
-	err := mapstructure.Decode(v, &resultMap)
-	if err != nil {
-		return nil, err
+	// use reflect to handle nested types as an interface
+	rv := reflect.ValueOf(v)
+	rt := reflect.TypeOf(v)
+
+	if rv.Kind() != reflect.Struct {
+		return nil, errors.New("input must be of struct type")
 	}
+
+	for i := 0; i < rv.NumField(); i++ {
+		field := rt.Field(i)
+		// ignore private fields
+		if !field.IsExported() {
+			continue
+		}
+		// for backwards compatibility, use tagged mapstructure tag as key if provided
+		msTag := field.Tag.Get("mapstructure")
+		key := msTag
+		if key == "" {
+			key = field.Name
+		}
+
+		resultMap[key] = rv.Field(i).Interface()
+	}
+
 	return NewMap(resultMap)
 }
 

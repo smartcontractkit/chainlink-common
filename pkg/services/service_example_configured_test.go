@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	. "github.com/smartcontractkit/chainlink-common/pkg/internal/example" // nolint
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -32,6 +34,13 @@ func (c *configured) close() error {
 
 // do processes all outstanding work
 func (c *configured) do(ctx context.Context) {
+	ctx, span := c.eng.Tracer().Start(ctx, "DoWork")
+	defer span.End()
+	var count, errs int
+	defer func() {
+		span.SetAttributes(attribute.Int("count", count))
+		span.SetAttributes(attribute.Int("errs", errs))
+	}()
 	for {
 		select {
 		case <-ctx.Done():
@@ -40,8 +49,10 @@ func (c *configured) do(ctx context.Context) {
 			if !ok {
 				return
 			}
+			count++
 			name, err := work()
 			if err != nil {
+				errs++
 				c.eng.SetHealthCond(name, err)
 			} else {
 				c.eng.ClearHealthCond(name)

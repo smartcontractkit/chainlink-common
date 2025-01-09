@@ -26,23 +26,33 @@ var _ sdk.Runner = (*Runner)(nil)
 
 type Runner struct {
 	sendResponse func(payload *wasmpb.Response)
-	sdkFactory   func(cfg *RuntimeConfig) *Runtime
+	sdkFactory   func(cfg *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime
 	args         []string
 	req          *wasmpb.Request
 }
 
 func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 	if r.req == nil {
-		req, err := r.parseRequest()
-		if err != nil {
-			r.sendResponse(errorResponse(unknownID, err))
+		success := r.cacheRequest()
+		if !success {
 			return
 		}
-
-		r.req = req
 	}
 
 	req := r.req
+
+	// We set this up *after* parsing the request, so that we can guarantee
+	// that we'll have access to the request object.
+	defer func() {
+		if err := recover(); err != nil {
+			asErr, ok := err.(error)
+			if ok {
+				r.sendResponse(errorResponse(r.req.Id, asErr))
+			} else {
+				r.sendResponse(errorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
+			}
+		}
+	}()
 
 	resp := &wasmpb.Response{
 		Id: req.Id,
@@ -72,16 +82,25 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 
 func (r *Runner) Config() []byte {
 	if r.req == nil {
-		req, err := r.parseRequest()
-		if err != nil {
-			r.sendResponse(errorResponse(unknownID, err))
+		success := r.cacheRequest()
+		if !success {
 			return nil
 		}
-
-		r.req = req
 	}
 
 	return r.req.Config
+}
+
+func (r *Runner) ExitWithError(err error) {
+	if r.req == nil {
+		success := r.cacheRequest()
+		if !success {
+			return
+		}
+	}
+
+	r.sendResponse(errorResponse(r.req.Id, err))
+	return
 }
 
 func errorResponse(id string, err error) *wasmpb.Response {
@@ -89,6 +108,19 @@ func errorResponse(id string, err error) *wasmpb.Response {
 		Id:     id,
 		ErrMsg: err.Error(),
 	}
+}
+
+func (r *Runner) cacheRequest() bool {
+	if r.req == nil {
+		req, err := r.parseRequest()
+		if err != nil {
+			r.sendResponse(errorResponse(unknownID, err))
+			return false
+		}
+
+		r.req = req
+	}
+	return true
 }
 
 func (r *Runner) parseRequest() (*wasmpb.Request, error) {
@@ -156,7 +188,7 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 	}
 
 	// Extract the config from the request
-	drc := defaultRuntimeConfig()
+	drc := defaultRuntimeConfig(id, &creq.Metadata)
 	if rc := computeReq.GetRuntimeConfig(); rc != nil {
 		if rc.MaxFetchResponseSizeBytes != 0 {
 			drc.MaxFetchResponseSizeBytes = rc.MaxFetchResponseSizeBytes

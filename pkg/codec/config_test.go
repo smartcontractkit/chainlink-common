@@ -90,6 +90,7 @@ func TestModifiersConfig(t *testing.T) {
 	type testStruct struct {
 		A int
 		C int
+		D int
 		T int64
 	}
 
@@ -119,7 +120,13 @@ func TestModifiersConfig(t *testing.T) {
 	{
 		"Type": "Epoch To time",
 		"Fields": ["T"]
-	}
+	},
+	{
+        "Type": "Wrapper",
+        "Fields": {
+            "D": "F"
+        }
+    }
 ]`
 
 	lowerJSONConfig := `[
@@ -148,7 +155,13 @@ func TestModifiersConfig(t *testing.T) {
 	{
 		"type": "epoch to time",
 		"fields": ["t"]
-	}
+	},
+	{
+        "Type": "Wrapper",
+        "Fields": {
+            "D": "F"
+        }
+    }
 ]`
 
 	for _, test := range []struct{ name, json string }{
@@ -170,6 +183,7 @@ func TestModifiersConfig(t *testing.T) {
 				A: 1,
 				C: 100,
 				T: 631515600,
+				D: 123,
 			}
 
 			offChain, err := modifier.TransformToOffChain(onChain, "")
@@ -191,6 +205,7 @@ func TestModifiersConfig(t *testing.T) {
 				"B": float64(2),
 				// drop the quotes around the string
 				"T": string(j)[1 : len(j)-1],
+				"D": map[string]any{"F": float64(123)},
 			}
 
 			assert.Equal(t, expectedMap, actualMap)
@@ -215,6 +230,12 @@ func TestModifiersConfig(t *testing.T) {
 			},
 			&codec.EpochToTimeModifierConfig{
 				Fields: []string{"T"},
+			},
+			&codec.AddressBytesToStringModifierConfig{
+				Fields: []string{"D"},
+			},
+			&codec.WrapperModifierConfig{
+				Fields: map[string]string{"A": "Z"},
 			},
 		}
 

@@ -12,6 +12,7 @@ import (
 type Builder struct {
 	dashboardBuilder            *dashboard.DashboardBuilder
 	alertsBuilder               []*alerting.RuleBuilder
+	alertGroupsBuilder          []*alerting.RuleGroupBuilder
 	contactPointsBuilder        []*alerting.ContactPointBuilder
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
@@ -29,16 +30,23 @@ type BuilderOptions struct {
 }
 
 func NewBuilder(options *BuilderOptions) *Builder {
-	if options.TimeZone == "" {
-		options.TimeZone = common.TimeZoneBrowser
-	}
+	builder := &Builder{}
 
-	builder := &Builder{
-		dashboardBuilder: dashboard.NewDashboardBuilder(options.Name).
-			Tags(options.Tags).
-			Refresh(options.Refresh).
-			Time(options.TimeFrom, options.TimeTo).
-			Timezone(options.TimeZone),
+	if options.Name != "" {
+		builder.dashboardBuilder = dashboard.NewDashboardBuilder(options.Name)
+		if options.Tags != nil {
+			builder.dashboardBuilder.Tags(options.Tags)
+		}
+		if options.Refresh != "" {
+			builder.dashboardBuilder.Refresh(options.Refresh)
+		}
+		if options.TimeFrom != "" && options.TimeTo != "" {
+			builder.dashboardBuilder.Time(options.TimeFrom, options.TimeTo)
+		}
+		if options.TimeZone == "" {
+			options.TimeZone = common.TimeZoneBrowser
+		}
+		builder.dashboardBuilder.Timezone(options.TimeZone)
 	}
 
 	if options.AlertsTags != nil {
@@ -59,8 +67,8 @@ func (b *Builder) AddRow(title string) {
 }
 
 func (b *Builder) getPanelCounter() uint32 {
-	res := b.panelCounter
 	b.panelCounter = inc(&b.panelCounter)
+	res := b.panelCounter
 	return res
 }
 
@@ -82,11 +90,22 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.logPanelBuilder != nil {
 			item.logPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.logPanelBuilder)
+		} else if item.heatmapBuilder != nil {
+			item.heatmapBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.heatmapBuilder)
 		}
-		if item.alertBuilder != nil {
-			b.alertsBuilder = append(b.alertsBuilder, item.alertBuilder)
+		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
+			b.AddAlert(item.alertBuilders...)
 		}
 	}
+}
+
+func (b *Builder) AddAlert(alerts ...*alerting.RuleBuilder) {
+	b.alertsBuilder = append(b.alertsBuilder, alerts...)
+}
+
+func (b *Builder) AddAlertGroup(alertGroups ...*alerting.RuleGroupBuilder) {
+	b.alertGroupsBuilder = append(b.alertGroupsBuilder, alertGroups...)
 }
 
 func (b *Builder) AddContactPoint(contactPoints ...*alerting.ContactPointBuilder) {
@@ -97,10 +116,15 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 	b.notificationPoliciesBuilder = append(b.notificationPoliciesBuilder, notificationPolicies...)
 }
 
-func (b *Builder) Build() (*Dashboard, error) {
-	db, errBuildDashboard := b.dashboardBuilder.Build()
-	if errBuildDashboard != nil {
-		return nil, errBuildDashboard
+func (b *Builder) Build() (*Observability, error) {
+	observability := Observability{}
+
+	if b.dashboardBuilder != nil {
+		db, errBuildDashboard := b.dashboardBuilder.Build()
+		if errBuildDashboard != nil {
+			return nil, errBuildDashboard
+		}
+		observability.Dashboard = &db
 	}
 
 	var alerts []alerting.Rule
@@ -125,6 +149,17 @@ func (b *Builder) Build() (*Dashboard, error) {
 			alerts = append(alerts, alert)
 		}
 	}
+	observability.Alerts = alerts
+
+	var alertGroups []alerting.RuleGroup
+	for _, alertGroupBuilder := range b.alertGroupsBuilder {
+		alertGroup, errBuildAlertGroup := alertGroupBuilder.Build()
+		if errBuildAlertGroup != nil {
+			return nil, errBuildAlertGroup
+		}
+		alertGroups = append(alertGroups, alertGroup)
+	}
+	observability.AlertGroups = alertGroups
 
 	var contactPoints []alerting.ContactPoint
 	for _, contactPointBuilder := range b.contactPointsBuilder {
@@ -134,6 +169,7 @@ func (b *Builder) Build() (*Dashboard, error) {
 		}
 		contactPoints = append(contactPoints, contactPoint)
 	}
+	observability.ContactPoints = contactPoints
 
 	var notificationPolicies []alerting.NotificationPolicy
 	for _, notificationPolicyBuilder := range b.notificationPoliciesBuilder {
@@ -143,11 +179,7 @@ func (b *Builder) Build() (*Dashboard, error) {
 		}
 		notificationPolicies = append(notificationPolicies, notificationPolicy)
 	}
+	observability.NotificationPolicies = notificationPolicies
 
-	return &Dashboard{
-		Dashboard:            &db,
-		Alerts:               alerts,
-		ContactPoints:        contactPoints,
-		NotificationPolicies: notificationPolicies,
-	}, nil
+	return &observability, nil
 }

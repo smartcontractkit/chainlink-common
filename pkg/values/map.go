@@ -20,7 +20,7 @@ func EmptyMap() *Map {
 	}
 }
 
-func NewMap(m map[string]any) (*Map, error) {
+func NewMap[T any](m map[string]T) (*Map, error) {
 	mv := map[string]Value{}
 	for k, v := range m {
 		val, err := Wrap(v)

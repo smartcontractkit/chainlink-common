@@ -2,6 +2,7 @@ package ocr3
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"testing"
 	"time"
@@ -75,7 +76,7 @@ func TestReportingPlugin_Query(t *testing.T) {
 
 type mockCapability struct {
 	t                   *testing.T
-	aggregator          *aggregator
+	aggregator          pbtypes.Aggregator
 	encoder             *enc
 	registeredWorkflows map[string]bool
 	expectedEncoderName string
@@ -100,6 +101,20 @@ func (a *aggregator) Aggregate(lggr logger.Logger, pout *pbtypes.AggregationOutc
 		EncodableOutcome: values.Proto(nm).GetMapValue(),
 	}
 	return a.outcome, nil
+}
+
+type erroringAggregator struct {
+	aggregator
+	count int
+}
+
+func (a *erroringAggregator) Aggregate(lggr logger.Logger, pout *pbtypes.AggregationOutcome, observations map[commontypes.OracleID][]values.Value, i int) (*pbtypes.AggregationOutcome, error) {
+	defer func() { a.count += 1 }()
+	if a.count == 0 {
+		return nil, errors.New("failed to aggregate")
+	}
+
+	return a.aggregator.Aggregate(lggr, pout, observations, i)
 }
 
 type enc struct {
@@ -258,8 +273,9 @@ func TestReportingPlugin_Observation_NoResults(t *testing.T) {
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
 	s := requests.NewStore()
+	aggregator := &aggregator{}
 	mcap := &mockCapability{
-		aggregator: &aggregator{},
+		aggregator: aggregator,
 		encoder:    &enc{},
 	}
 	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
@@ -310,8 +326,83 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 
 	cr := opb.CurrentReports[0]
 	assert.EqualExportedValues(t, cr.Id, id)
-	assert.EqualExportedValues(t, cr.Outcome, mcap.aggregator.outcome)
-	assert.EqualExportedValues(t, opb.Outcomes[workflowTestID], mcap.aggregator.outcome)
+	assert.EqualExportedValues(t, cr.Outcome, aggregator.outcome)
+	assert.EqualExportedValues(t, opb.Outcomes[workflowTestID], aggregator.outcome)
+}
+
+func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t *testing.T) {
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	aggregator := &erroringAggregator{}
+	mcap := &mockCapability{
+		aggregator: aggregator,
+		encoder:    &enc{},
+	}
+	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	require.NoError(t, err)
+
+	weid := uuid.New().String()
+	wowner := uuid.New().String()
+	id := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	weid2 := uuid.New().String()
+	id2 := &pbtypes.Id{
+		WorkflowExecutionId: weid2,
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	q := &pbtypes.Query{
+		Ids: []*pbtypes.Id{id, id2},
+	}
+	qb, err := proto.Marshal(q)
+	require.NoError(t, err)
+	o, err := values.NewList([]any{"hello"})
+	require.NoError(t, err)
+
+	o2, err := values.NewList([]any{"world"})
+	require.NoError(t, err)
+	obs := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			{
+				Id:           id,
+				Observations: values.Proto(o).GetListValue(),
+			},
+			{
+				Id:           id2,
+				Observations: values.Proto(o2).GetListValue(),
+			},
+		},
+	}
+
+	rawObs, err := proto.Marshal(obs)
+	require.NoError(t, err)
+	aos := []types.AttributedObservation{
+		{
+			Observation: rawObs,
+			Observer:    commontypes.OracleID(1),
+		},
+	}
+
+	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
+	require.NoError(t, err)
+
+	opb := &pbtypes.Outcome{}
+	err = proto.Unmarshal(outcome, opb)
+	require.NoError(t, err)
+
+	assert.Len(t, opb.CurrentReports, 1)
+
+	cr := opb.CurrentReports[0]
+	assert.EqualExportedValues(t, cr.Id, id2)
+	assert.EqualExportedValues(t, cr.Outcome, aggregator.outcome)
+	assert.EqualExportedValues(t, opb.Outcomes[workflowTestID], aggregator.outcome)
 }
 
 func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
@@ -338,6 +429,73 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 		Ids: []*pbtypes.Id{
 			id,
 			nil,
+		},
+	}
+	qb, err := proto.Marshal(q)
+	require.NoError(t, err)
+	aos := []types.AttributedObservation{
+		{
+			Observer: commontypes.OracleID(1),
+		},
+		{},
+	}
+
+	_, err = rp.Outcome(ctx, ocr3types.OutcomeContext{}, qb, aos)
+	require.NoError(t, err)
+
+	obs := &pbtypes.Observations{
+		Observations: []*pbtypes.Observation{
+			nil,
+			{},
+		},
+		RegisteredWorkflowIds: nil,
+	}
+	obsb, err := proto.Marshal(obs)
+	require.NoError(t, err)
+
+	aos = []types.AttributedObservation{
+		{
+			Observation: obsb,
+			Observer:    commontypes.OracleID(1),
+		},
+	}
+	_, err = rp.Outcome(ctx, ocr3types.OutcomeContext{}, qb, aos)
+	require.NoError(t, err)
+}
+
+func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testing.T) {
+	ctx := tests.Context(t)
+	lggr := logger.Test(t)
+	s := requests.NewStore()
+	mcap := &mockCapability{
+		aggregator: &aggregator{},
+		encoder:    &enc{},
+	}
+	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	require.NoError(t, err)
+
+	weid := uuid.New().String()
+	wowner := uuid.New().String()
+	id1 := &pbtypes.Id{
+		WorkflowExecutionId: weid,
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+
+	weid2 := uuid.New().String()
+	id2 := &pbtypes.Id{
+		WorkflowExecutionId: weid2,
+		WorkflowId:          workflowTestID,
+		WorkflowOwner:       wowner,
+		WorkflowName:        workflowTestName,
+		ReportId:            reportTestID,
+	}
+	q := &pbtypes.Query{
+		Ids: []*pbtypes.Id{
+			id1,
+			id2,
 		},
 	}
 	qb, err := proto.Marshal(q)

@@ -71,8 +71,9 @@ func PluginTest[TB testing.TB, I any](tb TB, name string, p plugin.Plugin, testF
 	require.NotNil(tb, config)
 
 	c := plugin.NewClient(&plugin.ClientConfig{
-		Reattach: config,
-		Plugins:  map[string]plugin.Plugin{name: p},
+		Reattach:    config,
+		Plugins:     map[string]plugin.Plugin{name: p},
+		SkipHostEnv: true,
 	})
 	tb.Cleanup(c.Kill)
 	clientProtocol, err := c.Client()

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -20,12 +21,19 @@ const (
 	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
 	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
 
-	envTelemetryEnabled          = "CL_TELEMETRY_ENABLED"
-	envTelemetryEndpoint         = "CL_TELEMETRY_ENDPOINT"
-	envTelemetryInsecureConn     = "CL_TELEMETRY_INSECURE_CONNECTION"
-	envTelemetryCACertFile       = "CL_TELEMETRY_CA_CERT_FILE"
-	envTelemetryAttribute        = "CL_TELEMETRY_ATTRIBUTE_"
-	envTelemetryTraceSampleRatio = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryEnabled                   = "CL_TELEMETRY_ENABLED"
+	envTelemetryEndpoint                  = "CL_TELEMETRY_ENDPOINT"
+	envTelemetryInsecureConn              = "CL_TELEMETRY_INSECURE_CONNECTION"
+	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
+	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
+	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
+	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
+	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
+	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
+	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -41,12 +49,19 @@ type EnvConfig struct {
 	TracingTLSCertPath     string
 	TracingAttributes      map[string]string
 
-	TelemetryEnabled            bool
-	TelemetryEndpoint           string
-	TelemetryInsecureConnection bool
-	TelemetryCACertFile         string
-	TelemetryAttributes         OtelAttributes
-	TelemetryTraceSampleRatio   float64
+	TelemetryEnabled                   bool
+	TelemetryEndpoint                  string
+	TelemetryInsecureConnection        bool
+	TelemetryCACertFile                string
+	TelemetryAttributes                OtelAttributes
+	TelemetryTraceSampleRatio          float64
+	TelemetryAuthHeaders               map[string]string
+	TelemetryAuthPubKeyHex             string
+	TelemetryEmitterBatchProcessor     bool
+	TelemetryEmitterExportTimeout      time.Duration
+	TelemetryEmitterExportInterval     time.Duration
+	TelemetryEmitterExportMaxBatchSize int
+	TelemetryEmitterMaxQueueSize       int
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -78,6 +93,15 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		add(envTelemetryAttribute+k, v)
 	}
 
+	for k, v := range e.TelemetryAuthHeaders {
+		add(envTelemetryAuthHeader+k, v)
+	}
+	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
+	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.TelemetryEmitterBatchProcessor))
+	add(envTelemetryEmitterExportTimeout, e.TelemetryEmitterExportTimeout.String())
+	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
+	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
+	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
 	return
 }
 
@@ -87,7 +111,7 @@ func (e *EnvConfig) parse() error {
 	var err error
 	e.DatabaseURL, err = getDatabaseURL()
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %q", envDatabaseURL, err)
+		return fmt.Errorf("failed to parse %s: %w", envDatabaseURL, err)
 	}
 
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)
@@ -105,7 +129,7 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
-		e.TracingAttributes = getAttributes(envTracingAttribute)
+		e.TracingAttributes = getMap(envTracingAttribute)
 		e.TracingSamplingRatio = getFloat64OrZero(envTracingSamplingRatio)
 		e.TracingTLSCertPath = os.Getenv(envTracingTLSCertPath)
 	}
@@ -122,8 +146,30 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEndpoint, err)
 		}
 		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
-		e.TelemetryAttributes = getAttributes(envTelemetryAttribute)
+		e.TelemetryAttributes = getMap(envTelemetryAttribute)
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
+		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
+		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
+		e.TelemetryEmitterBatchProcessor, err = getBool(envTelemetryEmitterBatchProcessor)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)
+		}
+		e.TelemetryEmitterExportTimeout, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportTimeout))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportTimeout, err)
+		}
+		e.TelemetryEmitterExportInterval, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportInterval))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportInterval, err)
+		}
+		e.TelemetryEmitterExportMaxBatchSize, err = strconv.Atoi(os.Getenv(envTelemetryEmitterExportMaxBatchSize))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportMaxBatchSize, err)
+		}
+		e.TelemetryEmitterMaxQueueSize, err = strconv.Atoi(os.Getenv(envTelemetryEmitterMaxQueueSize))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
+		}
 	}
 	return nil
 }
@@ -158,14 +204,18 @@ func getValidCollectorTarget() (string, error) {
 	return tracingCollectorTarget, nil
 }
 
-func getAttributes(envKeyPrefix string) map[string]string {
-	tracingAttributes := make(map[string]string)
+func getMap(envKeyPrefix string) map[string]string {
+	m := make(map[string]string)
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, envKeyPrefix) {
-			tracingAttributes[strings.TrimPrefix(env, envKeyPrefix)] = os.Getenv(env)
+			key, value, found := strings.Cut(env, "=")
+			if found {
+				key = strings.TrimPrefix(key, envKeyPrefix)
+				m[key] = value
+			}
 		}
 	}
-	return tracingAttributes
+	return m
 }
 
 // Any errors in parsing result in a sampling ratio of 0.0.

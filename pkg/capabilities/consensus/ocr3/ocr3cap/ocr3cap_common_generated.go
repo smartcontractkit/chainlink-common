@@ -41,6 +41,8 @@ func (j *Encoder) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type KeyId string
+
 type ReportId string
 
 // UnmarshalJSON implements json.Unmarshaler.

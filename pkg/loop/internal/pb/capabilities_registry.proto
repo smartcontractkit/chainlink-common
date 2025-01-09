@@ -17,6 +17,7 @@ service CapabilitiesRegistry {
   rpc GetTarget (GetTargetRequest) returns (GetTargetReply) {}
   rpc List (google.protobuf.Empty) returns (ListReply) {}
   rpc Add (AddRequest) returns (google.protobuf.Empty) {}
+  rpc Remove (RemoveRequest) returns (google.protobuf.Empty) {}
 }
 
 enum ExecuteAPIType {
@@ -102,6 +103,11 @@ message GetTargetReply {
 message AddRequest {
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
+}
+
+// Remove has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Remove].
+message RemoveRequest {
+  string id = 1;
 }
 
 message ConfigForCapabilityRequest {

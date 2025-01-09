@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -15,6 +16,7 @@ type WorkflowSpecFactory struct {
 	duplicateNames map[string]bool
 	emptyNames     bool
 	badCapTypes    []string
+	errors         []error
 	fns            map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
 }
 
@@ -123,18 +125,9 @@ func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 
 func (c *capDefinitionImpl[O]) private() {}
 
-type NewWorkflowParams struct {
-	Owner string
-	Name  string
-}
-
-func NewWorkflowSpecFactory(
-	params NewWorkflowParams,
-) *WorkflowSpecFactory {
+func NewWorkflowSpecFactory() *WorkflowSpecFactory {
 	return &WorkflowSpecFactory{
 		spec: &WorkflowSpec{
-			Owner:     params.Owner,
-			Name:      params.Name,
 			Triggers:  make([]StepDefinition, 0),
 			Actions:   make([]StepDefinition, 0),
 			Consensus: make([]StepDefinition, 0),
@@ -142,6 +135,7 @@ func NewWorkflowSpecFactory(
 		},
 		names:          map[string]bool{},
 		duplicateNames: map[string]bool{},
+		errors:         []error{},
 		emptyNames:     false,
 	}
 }
@@ -182,7 +176,15 @@ func AccessField[I, O any](c CapDefinition[I], fieldName string) CapDefinition[O
 	return &capDefinitionImpl[O]{ref: originalRef[:len(originalRef)-1] + "." + fieldName + ")"}
 }
 
+func (w *WorkflowSpecFactory) AddErr(err error) {
+	w.errors = append(w.errors, err)
+}
+
 func (w *WorkflowSpecFactory) Spec() (WorkflowSpec, error) {
+	if len(w.errors) > 0 {
+		return WorkflowSpec{}, errors.Join(w.errors...)
+	}
+
 	if len(w.duplicateNames) > 0 {
 		duplicates := make([]string, 0, len(w.duplicateNames))
 		for k := range w.duplicateNames {
@@ -237,4 +239,24 @@ func AnyMap[M ~map[string]any](inputs CapMap) CapDefinition[M] {
 	}
 
 	return components
+}
+
+type SecretValue string
+
+func (s SecretValue) Ref() any {
+	return s
+}
+
+func (s SecretValue) private() {}
+
+func (s SecretValue) self() CapDefinition[string] {
+	return s
+}
+
+func Secrets() SecretValue {
+	return "$(ENV.secrets)"
+}
+
+func Secret(named string) SecretValue {
+	return SecretValue(fmt.Sprintf("$(ENV.secrets.%s)", named))
 }

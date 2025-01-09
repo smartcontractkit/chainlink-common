@@ -65,12 +65,17 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
-	ReferenceID              string
+	// The step reference ID of the workflow
+	ReferenceID string
+	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
+	DecodedWorkflowName string
 }
 
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
+	// The step reference ID of the workflow
+	ReferenceID string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -345,6 +350,12 @@ type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
 
+type RemoteExecutableConfig struct {
+	RequestHashExcludedAttributes []string
+	RegistrationRefresh           time.Duration
+	RegistrationExpiry            time.Duration
+}
+
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
@@ -368,8 +379,21 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 }
 
+func (c *RemoteExecutableConfig) ApplyDefaults() {
+	if c == nil {
+		return
+	}
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
+	}
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
+	}
+}
+
 type CapabilityConfiguration struct {
-	DefaultConfig       *values.Map
-	RemoteTriggerConfig *RemoteTriggerConfig
-	RemoteTargetConfig  *RemoteTargetConfig
+	DefaultConfig          *values.Map
+	RemoteTriggerConfig    *RemoteTriggerConfig
+	RemoteTargetConfig     *RemoteTargetConfig
+	RemoteExecutableConfig *RemoteExecutableConfig
 }

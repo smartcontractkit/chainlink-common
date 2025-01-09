@@ -31,7 +31,7 @@ func TestBuildAuthHeadersV2(t *testing.T) {
 	require.NoError(t, err)
 	timestamp := time.Now().UnixMilli()
 
-	authHeaderMap := buildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
+	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
 		timestamp: timestamp,
 	})
 
@@ -73,7 +73,7 @@ func TestBuildAuthHeadersV2WithDefaults(t *testing.T) {
 
 	now := time.Now().UnixMilli()
 
-	authHeaderMap := buildAuthHeadersV2(csaPrivKey, nil)
+	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, nil)
 	authHeaderValue, ok := authHeaderMap[authHeaderKey]
 	require.True(t, ok, "auth header should be present")
 
@@ -115,61 +115,64 @@ func TestBuildAuthHeadersV2WithNegativeTimestamp(t *testing.T) {
 	require.NoError(t, err)
 	timestamp := int64(-111)
 
-	authHeaderMap := buildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
+	authHeaderMap := BuildAuthHeadersV2(csaPrivKey, &AuthHeaderConfig{
 		timestamp: timestamp,
 	})
 
 	authHeaderValue, ok := authHeaderMap[authHeaderKey]
-	require.True(t, ok, "auth header should be present")
+	require.True(t, ok)
 
 	parts := strings.Split(authHeaderValue, ":")
-	assert.Len(t, parts, 4, "auth header v2 should have 4 parts")
+	assert.Len(t, parts, 4)
 	// Check the the returned timestamp is 0
 	_, _, timestampStr, _ := parts[0], parts[1], parts[2], parts[3]
 	timestampParsed, err := strconv.ParseInt(timestampStr, 10, 64)
 	require.NoError(t, err)
 	// Verify the timestamp is within the last 50ms
-	assert.InDelta(t, time.Now().UnixMilli(), timestampParsed, 50, "timestamp should be 0")
+	assert.InDelta(t, time.Now().UnixMilli(), timestampParsed, 50)
 }
 
 func TestNewAuthHeaderProvider(t *testing.T) {
 	csaPrivKey, err := generateTestCSAPrivateKey()
 	require.NoError(t, err)
+	refreshFunc := func() (map[string]string, error) {
+		return BuildAuthHeadersV2(csaPrivKey, nil), nil
+	}
 
 	t.Run("default config", func(t *testing.T) {
-		provider := NewAuthHeaderProvider(csaPrivKey)
+		provider := NewAuthHeaderProvider(refreshFunc)
 		creds := provider.Credentials()
 
 		md, err := creds.GetRequestMetadata(context.Background())
 		require.NoError(t, err)
 
 		authHeaderValue, ok := md[authHeaderKey]
-		require.True(t, ok, "auth header should be present")
+		require.True(t, ok)
 
 		parts := strings.Split(authHeaderValue, ":")
-		assert.Len(t, parts, 4, "auth header v2 should have 4 parts")
-		assert.Equal(t, authHeaderVersion2, parts[0], "default version should be 2")
+		assert.Len(t, parts, 4)
+		assert.Equal(t, authHeaderVersion2, parts[0])
 	})
 
 	t.Run("custom config", func(t *testing.T) {
-		config := AuthHeaderProviderConfig{
+
+		provider := AuthHeaderProviderConfig{
 			HeaderTTL:                2 * time.Minute,
-			Version:                  authHeaderVersion1,
 			RequireTransportSecurity: true,
-		}
-		provider := config.New(csaPrivKey)
+		}.New(refreshFunc)
+
 		creds := provider.Credentials()
 
 		md, err := creds.GetRequestMetadata(context.Background())
 		require.NoError(t, err)
 
 		authHeaderValue, ok := md[authHeaderKey]
-		require.True(t, ok, "auth header should be present")
+		require.True(t, ok)
 
 		parts := strings.Split(authHeaderValue, ":")
-		assert.Len(t, parts, 3, "auth header v1 should have 3 parts")
-		assert.Equal(t, authHeaderVersion1, parts[0], "version should be 1")
-		assert.True(t, creds.RequireTransportSecurity(), "transport security should be required")
+		assert.Len(t, parts, 4)
+		assert.Equal(t, authHeaderVersion2, parts[0])
+		assert.True(t, creds.RequireTransportSecurity())
 	})
 }
 
@@ -181,47 +184,40 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 		creds := &authHeaderPerRPCCredentials{
 			privKey: csaPrivKey,
 			version: authHeaderVersion1,
+			refreshFunc: func() (map[string]string, error) {
+				return BuildAuthHeaders(csaPrivKey), nil
+			},
 		}
 		creds.refresh()
 
-		headers := creds.getHeaders()
+		headers, err := creds.getHeaders()
+		require.NoError(t, err)
 		assert.NotNil(t, headers)
 		assert.Contains(t, headers, authHeaderKey)
 
 		parts := strings.Split(headers[authHeaderKey], ":")
-		assert.Len(t, parts, 3, "auth header v1 should have 3 parts")
-		assert.Equal(t, authHeaderVersion1, parts[0], "version should be 1")
+		assert.Len(t, parts, 3)
+		assert.Equal(t, authHeaderVersion1, parts[0])
 	})
 
 	t.Run("version 2", func(t *testing.T) {
 		creds := &authHeaderPerRPCCredentials{
 			privKey: csaPrivKey,
 			version: authHeaderVersion2,
+			refreshFunc: func() (map[string]string, error) {
+				return BuildAuthHeadersV2(csaPrivKey, nil), nil
+			},
 		}
 		creds.refresh()
 
-		headers := creds.getHeaders()
+		headers, err := creds.getHeaders()
+		require.NoError(t, err)
 		assert.NotNil(t, headers)
 		assert.Contains(t, headers, authHeaderKey)
 
 		parts := strings.Split(headers[authHeaderKey], ":")
-		assert.Len(t, parts, 4, "auth header v2 should have 4 parts")
-		assert.Equal(t, authHeaderVersion2, parts[0], "version should be 2")
-	})
-
-	t.Run("default version", func(t *testing.T) {
-		creds := &authHeaderPerRPCCredentials{
-			privKey: csaPrivKey,
-		}
-		creds.refresh()
-
-		headers := creds.getHeaders()
-		assert.NotNil(t, headers)
-		assert.Contains(t, headers, authHeaderKey)
-
-		parts := strings.Split(headers[authHeaderKey], ":")
-		assert.Len(t, parts, 4, "auth header v2 should have 4 parts")
-		assert.Equal(t, authHeaderVersion2, parts[0], "default version should be 2")
+		assert.Len(t, parts, 4)
+		assert.Equal(t, authHeaderVersion2, parts[0])
 	})
 
 	t.Run("refresh after TTL", func(t *testing.T) {
@@ -229,12 +225,17 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 			privKey:   csaPrivKey,
 			headerTTL: 1 * time.Millisecond,
 			version:   authHeaderVersion2,
+			refreshFunc: func() (map[string]string, error) {
+				return BuildAuthHeadersV2(csaPrivKey, nil), nil
+			},
 		}
 		creds.refresh()
 
-		headers1 := creds.getHeaders()
+		headers1, err := creds.getHeaders()
+		require.NoError(t, err)
 		time.Sleep(2 * time.Millisecond)
-		headers2 := creds.getHeaders()
+		headers2, err := creds.getHeaders()
+		require.NoError(t, err)
 
 		assert.NotEqual(t, headers1[authHeaderKey], headers2[authHeaderKey], "headers should be refreshed after TTL")
 	})

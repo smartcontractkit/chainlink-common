@@ -553,7 +553,7 @@ func Test_read(t *testing.T) {
 }
 
 func Test_write(t *testing.T) {
-	t.Run("successfully write to slice", func(t *testing.T) {
+	t.Run("OK-successfully_write_to_slice", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, 12)
 		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
@@ -561,21 +561,35 @@ func Test_write(t *testing.T) {
 		assert.Equal(t, []byte("hello, world"), memory[:len(giveSrc)])
 	})
 
-	t.Run("cannot write to slice because memory too small", func(t *testing.T) {
+	t.Run("NOK-cannot_write_to_slice_because_memory_too_small", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, len(giveSrc)-1)
 		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
-		assert.Equal(t, n, int64(-1))
+		assert.Equal(t, int64(-1), n)
 	})
 
-	t.Run("fails to write to invalid access", func(t *testing.T) {
+	t.Run("NOK-fails_to_write_to_invalid_access", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, len(giveSrc))
 		n := write(memory, giveSrc, 0, -1)
-		assert.Equal(t, n, int64(-1))
+		assert.Equal(t, int64(-1), n)
 
 		n = write(memory, giveSrc, -1, 1)
-		assert.Equal(t, n, int64(-1))
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("NOK-truncated_write_due_to_size_being_smaller_than_len", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, 12)
+		n := write(memory, giveSrc, 0, int32(len(giveSrc)-2))
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("NOK-unwanted_data_when_size_exceeds_written_data", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, 20)
+		n := write(memory, giveSrc, 0, 20)
+		assert.Equal(t, int64(-1), n)
 	})
 }
 

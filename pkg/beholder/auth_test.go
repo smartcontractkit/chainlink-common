@@ -155,7 +155,6 @@ func TestNewAuthHeaderProvider(t *testing.T) {
 	})
 
 	t.Run("custom config", func(t *testing.T) {
-
 		provider := AuthHeaderProviderConfig{
 			HeaderTTL:                2 * time.Minute,
 			RequireTransportSecurity: true,
@@ -182,13 +181,14 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 
 	t.Run("version 1", func(t *testing.T) {
 		creds := &authHeaderPerRPCCredentials{
-			privKey: csaPrivKey,
 			version: authHeaderVersion1,
 			refreshFunc: func() (map[string]string, error) {
 				return BuildAuthHeaders(csaPrivKey), nil
 			},
 		}
-		creds.refresh()
+
+		_, err := creds.refresh()
+		require.NoError(t, err)
 
 		headers, err := creds.getHeaders()
 		require.NoError(t, err)
@@ -202,13 +202,13 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 
 	t.Run("version 2", func(t *testing.T) {
 		creds := &authHeaderPerRPCCredentials{
-			privKey: csaPrivKey,
 			version: authHeaderVersion2,
 			refreshFunc: func() (map[string]string, error) {
 				return BuildAuthHeadersV2(csaPrivKey, nil), nil
 			},
 		}
-		creds.refresh()
+		_, err := creds.refresh()
+		require.NoError(t, err)
 
 		headers, err := creds.getHeaders()
 		require.NoError(t, err)
@@ -222,14 +222,15 @@ func TestAuthHeaderPerRPCCredentials_Refresh(t *testing.T) {
 
 	t.Run("refresh after TTL", func(t *testing.T) {
 		creds := &authHeaderPerRPCCredentials{
-			privKey:   csaPrivKey,
 			headerTTL: 1 * time.Millisecond,
 			version:   authHeaderVersion2,
 			refreshFunc: func() (map[string]string, error) {
 				return BuildAuthHeadersV2(csaPrivKey, nil), nil
 			},
 		}
-		creds.refresh()
+
+		_, err := creds.refresh()
+		require.NoError(t, err)
 
 		headers1, err := creds.getHeaders()
 		require.NoError(t, err)

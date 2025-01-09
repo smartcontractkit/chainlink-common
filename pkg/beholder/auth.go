@@ -99,7 +99,6 @@ func (a *authHeaderPerRPCCredentials) refresh() (map[string]string, error) {
 // getHeaders returns the auth headers, refreshing them if they are expired
 func (a *authHeaderPerRPCCredentials) getHeaders() (map[string]string, error) {
 	if time.Since(a.lastUpdated) > a.headerTTL {
-
 		a.mu.Lock()
 		defer a.mu.Unlock()
 
@@ -156,7 +155,6 @@ func BuildAuthHeadersV2(privKey ed25519.PrivateKey, config *AuthHeaderConfig) ma
 	}
 
 	pubKey := privKey.Public().(ed25519.PublicKey)
-
 	timestampUnixMsBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(timestampUnixMsBytes, uint64(config.timestamp))
 

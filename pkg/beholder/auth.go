@@ -37,7 +37,6 @@ type AuthHeaderProviderConfig struct {
 
 // authHeaderPerRPCredentials is a PerRPCCredentials implementation that provides the auth headers
 type authHeaderPerRPCCredentials struct {
-	privKey                  ed25519.PrivateKey
 	lastUpdated              time.Time
 	headerTTL                time.Duration
 	refreshFunc              func() (map[string]string, error)

@@ -138,7 +138,7 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 			// - 8-16: timeout
 			// - 16-24: precision
 			// - 24-32: flag
-			newTimeout := binary.LittleEndian.Uint16(argBuf[8:16])
+			newTimeout := binary.LittleEndian.Uint64(argBuf[8:16])
 			flag := binary.LittleEndian.Uint16(argBuf[24:32])
 
 			var errno Errno

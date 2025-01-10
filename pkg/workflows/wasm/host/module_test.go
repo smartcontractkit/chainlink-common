@@ -565,17 +565,31 @@ func Test_write(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, len(giveSrc)-1)
 		n := write(memory, giveSrc, 0, int32(len(giveSrc)))
-		assert.Equal(t, n, int64(-1))
+		assert.Equal(t, int64(-1), n)
 	})
 
 	t.Run("fails to write to invalid access", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, len(giveSrc))
 		n := write(memory, giveSrc, 0, -1)
-		assert.Equal(t, n, int64(-1))
+		assert.Equal(t, int64(-1), n)
 
 		n = write(memory, giveSrc, -1, 1)
-		assert.Equal(t, n, int64(-1))
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("truncated write due to size being smaller than len", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, 12)
+		n := write(memory, giveSrc, 0, int32(len(giveSrc)-2))
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("unwanted data when size exceeds written data", func(t *testing.T) {
+		giveSrc := []byte("hello, world")
+		memory := make([]byte, 20)
+		n := write(memory, giveSrc, 0, 20)
+		assert.Equal(t, int64(-1), n)
 	})
 }
 

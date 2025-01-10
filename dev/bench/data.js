@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736443205184,
+  "lastUpdate": 1736503901341,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8526,6 +8526,48 @@ window.BENCHMARK_DATA = {
             "value": 28252,
             "unit": "ns/op",
             "extra": "42538 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7dbb1b0863a38a649b7e049a89a2033ccc4588cd",
+          "message": "[CRE-42] Fix partial or truncated writes (#989)\n\n* fix: check size and len(src) match to avoid partial or truncated writes\r\n\r\n* fix: return the number of bytes copied\r\n\r\n* chore: align test naming",
+          "timestamp": "2025-01-10T10:10:35Z",
+          "tree_id": "09e48701d7c9cf304007a09d2dd8eeaf6cbf18e2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7dbb1b0863a38a649b7e049a89a2033ccc4588cd"
+        },
+        "date": 1736503900867,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467.4,
+            "unit": "ns/op",
+            "extra": "2530446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.1,
+            "unit": "ns/op",
+            "extra": "2185737 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28203,
+            "unit": "ns/op",
+            "extra": "42430 times\n4 procs"
           }
         ]
       }

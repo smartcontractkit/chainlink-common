@@ -728,11 +728,13 @@ func write(memory, src []byte, ptr, size int32) int64 {
 		return -1
 	}
 
+	if len(src) != int(size) {
+		return -1
+	}
+
 	if int32(len(memory)) < ptr+size {
 		return -1
 	}
 	buffer := memory[ptr : ptr+size]
-	dataLen := int64(len(src))
-	copy(buffer, src)
-	return dataLen
+	return int64(copy(buffer, src))
 }

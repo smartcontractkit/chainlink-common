@@ -88,21 +88,53 @@ func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
 	}
 }
 
+type ToolTipOptions struct {
+	Mode      common.TooltipDisplayMode
+	Sort      common.SortOrder
+	MaxWidth  *float64
+	MaxHeight *float64
+}
+
+func newToolTip(options *ToolTipOptions) *common.VizTooltipOptionsBuilder {
+	if options.Mode == "" {
+		options.Mode = common.TooltipDisplayModeSingle
+	}
+
+	if options.Sort == "" {
+		options.Sort = common.SortOrderNone
+	}
+
+	builder := common.NewVizTooltipOptionsBuilder().
+		Mode(options.Mode).
+		Sort(options.Sort)
+
+	if options.MaxWidth != nil {
+		builder.MaxWidth(*options.MaxWidth)
+	}
+
+	if options.MaxHeight != nil {
+		builder.MaxHeight(*options.MaxHeight)
+	}
+
+	return builder
+}
+
 type PanelOptions struct {
-	Datasource  string
-	Title       string
-	Description string
-	Span        uint32
-	Height      uint32
-	Decimals    float64
-	Unit        string
-	NoValue     string
-	Min         *float64
-	Max         *float64
-	Query       []Query
-	Threshold   *ThresholdOptions
-	Transform   *TransformOptions
-	ColorScheme dashboard.FieldColorModeId
+	Datasource    string
+	Title         string
+	Description   string
+	Span          uint32
+	Height        uint32
+	Decimals      float64
+	Unit          string
+	NoValue       string
+	Min           *float64
+	Max           *float64
+	MaxDataPoints *float64
+	Query         []Query
+	Threshold     *ThresholdOptions
+	Transform     *TransformOptions
+	ColorScheme   dashboard.FieldColorModeId
 }
 
 type Panel struct {
@@ -183,6 +215,10 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		Mappings(options.Mappings).
 		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
 
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
+
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
 	}
@@ -230,6 +266,7 @@ type TimeSeriesPanelOptions struct {
 	FillOpacity       float64
 	ScaleDistribution common.ScaleDistribution
 	LegendOptions     *LegendOptions
+	ToolTipOptions    *ToolTipOptions
 	ThresholdStyle    common.GraphThresholdsStyleMode
 }
 
@@ -242,6 +279,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 	if options.LegendOptions == nil {
 		options.LegendOptions = &LegendOptions{}
+	}
+
+	if options.ToolTipOptions == nil {
+		options.ToolTipOptions = &ToolTipOptions{}
 	}
 
 	newPanel := timeseries.NewPanelBuilder().
@@ -257,7 +298,12 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		Legend(newLegend(options.LegendOptions)).
 		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
 			Type(options.ScaleDistribution),
-		)
+		).
+		Tooltip(newToolTip(options.ToolTipOptions))
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -326,6 +372,10 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 				Calcs([]string{"lastNotNull"}).Values(false),
 		)
 
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
+
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
 	}
@@ -367,6 +417,10 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		Decimals(options.Decimals).
 		Unit(options.Unit).
 		NoValue(options.NoValue)
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -413,6 +467,10 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		Height(options.Height).
 		NoValue(options.NoValue).
 		PrettifyLogMessage(options.PrettifyJSON)
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)

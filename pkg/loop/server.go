@@ -92,15 +92,18 @@ func (s *Server) start() error {
 		}
 
 		beholderCfg := beholder.Config{
-			InsecureConnection:       envCfg.TelemetryInsecureConnection,
-			CACertFile:               envCfg.TelemetryCACertFile,
-			OtelExporterGRPCEndpoint: envCfg.TelemetryEndpoint,
-			ResourceAttributes:       append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
-			TraceSampleRatio:         envCfg.TelemetryTraceSampleRatio,
-			AuthHeaders:              envCfg.TelemetryAuthHeaders,
-			AuthPublicKeyHex:         envCfg.TelemetryAuthPubKeyHex,
-			EmitterBatchProcessor:    envCfg.TelemetryEmitterBatchProcessor,
-			EmitterExportTimeout:     envCfg.TelemetryEmitterExportTimeout,
+			InsecureConnection:        envCfg.TelemetryInsecureConnection,
+			CACertFile:                envCfg.TelemetryCACertFile,
+			OtelExporterGRPCEndpoint:  envCfg.TelemetryEndpoint,
+			ResourceAttributes:        append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
+			TraceSampleRatio:          envCfg.TelemetryTraceSampleRatio,
+			AuthHeaders:               envCfg.TelemetryAuthHeaders,
+			AuthPublicKeyHex:          envCfg.TelemetryAuthPubKeyHex,
+			EmitterBatchProcessor:     envCfg.TelemetryEmitterBatchProcessor,
+			EmitterExportTimeout:      envCfg.TelemetryEmitterExportTimeout,
+			EmitterExportInterval:     envCfg.TelemetryEmitterExportInterval,
+			EmitterExportMaxBatchSize: envCfg.TelemetryEmitterExportMaxBatchSize,
+			EmitterMaxQueueSize:       envCfg.TelemetryEmitterMaxQueueSize,
 		}
 
 		if tracingConfig.Enabled {

@@ -17,24 +17,29 @@ type Config struct {
 	// OTel Resource
 	ResourceAttributes []otelattr.KeyValue
 	// Message Emitter
-	EmitterExportTimeout time.Duration
-	// Batch processing is enabled by default
-	// Disable it only for testing
-	EmitterBatchProcessor bool
+	EmitterExportTimeout      time.Duration
+	EmitterExportInterval     time.Duration
+	EmitterExportMaxBatchSize int
+	EmitterMaxQueueSize       int
+	EmitterBatchProcessor     bool // Enabled by default. Disable only for testing.
+
 	// OTel Trace
 	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
 	TraceSpanExporter sdktrace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
+
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []sdkmetric.View
+
 	// OTel Log
-	LogExportTimeout time.Duration
-	// Batch processing is enabled by default
-	// Disable it only for testing
-	LogBatchProcessor bool
+	LogExportTimeout      time.Duration
+	LogExportInterval     time.Duration
+	LogExportMaxBatchSize int
+	LogMaxQueueSize       int
+	LogBatchProcessor     bool // Enabled by default. Disable only for testing.
 	// Retry config for shared log exporter, used by Emitter and Logger
 	LogRetryConfig *RetryConfig
 
@@ -81,8 +86,11 @@ func DefaultConfig() Config {
 		// Resource
 		ResourceAttributes: defaultOtelAttributes,
 		// Message Emitter
-		EmitterExportTimeout:  1 * time.Second,
-		EmitterBatchProcessor: true,
+		EmitterExportTimeout:      30 * time.Second,
+		EmitterExportMaxBatchSize: 512,
+		EmitterExportInterval:     1 * time.Second,
+		EmitterMaxQueueSize:       2048,
+		EmitterBatchProcessor:     true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
@@ -95,8 +103,11 @@ func DefaultConfig() Config {
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
-		LogExportTimeout:  1 * time.Second,
-		LogBatchProcessor: true,
+		LogExportTimeout:      30 * time.Second,
+		LogExportMaxBatchSize: 512,
+		LogExportInterval:     1 * time.Second,
+		LogMaxQueueSize:       2048,
+		LogBatchProcessor:     true,
 	}
 }
 

@@ -19,25 +19,28 @@ import (
 
 func TestEnvConfig_parse(t *testing.T) {
 	cases := []struct {
-		name                                   string
-		envVars                                map[string]string
-		expectError                            bool
-		expectedDatabaseURL                    string
-		expectedPrometheusPort                 int
-		expectedTracingEnabled                 bool
-		expectedTracingCollectorTarget         string
-		expectedTracingSamplingRatio           float64
-		expectedTracingTLSCertPath             string
-		expectedTelemetryEnabled               bool
-		expectedTelemetryEndpoint              string
-		expectedTelemetryInsecureConn          bool
-		expectedTelemetryCACertFile            string
-		expectedTelemetryAttributes            OtelAttributes
-		expectedTelemetryTraceSampleRatio      float64
-		expectedTelemetryAuthHeaders           map[string]string
-		expectedTelemetryAuthPubKeyHex         string
-		expectedTelemetryEmitterBatchProcessor bool
-		expectedTelemetryEmitterExportTimeout  time.Duration
+		name                                       string
+		envVars                                    map[string]string
+		expectError                                bool
+		expectedDatabaseURL                        string
+		expectedPrometheusPort                     int
+		expectedTracingEnabled                     bool
+		expectedTracingCollectorTarget             string
+		expectedTracingSamplingRatio               float64
+		expectedTracingTLSCertPath                 string
+		expectedTelemetryEnabled                   bool
+		expectedTelemetryEndpoint                  string
+		expectedTelemetryInsecureConn              bool
+		expectedTelemetryCACertFile                string
+		expectedTelemetryAttributes                OtelAttributes
+		expectedTelemetryTraceSampleRatio          float64
+		expectedTelemetryAuthHeaders               map[string]string
+		expectedTelemetryAuthPubKeyHex             string
+		expectedTelemetryEmitterBatchProcessor     bool
+		expectedTelemetryEmitterExportTimeout      time.Duration
+		expectedTelemetryEmitterExportInterval     time.Duration
+		expectedTelemetryEmitterExportMaxBatchSize int
+		expectedTelemetryEmitterMaxQueueSize       int
 	}{
 		{
 			name: "All variables set correctly",
@@ -60,24 +63,30 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryAuthPubKeyHex:             "pub-key-hex",
 				envTelemetryEmitterBatchProcessor:     "true",
 				envTelemetryEmitterExportTimeout:      "1s",
+				envTelemetryEmitterExportInterval:     "2s",
+				envTelemetryEmitterExportMaxBatchSize: "100",
+				envTelemetryEmitterMaxQueueSize:       "1000",
 			},
-			expectError:                            false,
-			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
-			expectedPrometheusPort:                 8080,
-			expectedTracingEnabled:                 true,
-			expectedTracingCollectorTarget:         "some:target",
-			expectedTracingSamplingRatio:           1.0,
-			expectedTracingTLSCertPath:             "internal/test/fixtures/client.pem",
-			expectedTelemetryEnabled:               true,
-			expectedTelemetryEndpoint:              "example.com/beholder",
-			expectedTelemetryInsecureConn:          true,
-			expectedTelemetryCACertFile:            "foo/bar",
-			expectedTelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
-			expectedTelemetryTraceSampleRatio:      0.42,
-			expectedTelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
-			expectedTelemetryAuthPubKeyHex:         "pub-key-hex",
-			expectedTelemetryEmitterBatchProcessor: true,
-			expectedTelemetryEmitterExportTimeout:  1 * time.Second,
+			expectError:                                false,
+			expectedDatabaseURL:                        "postgres://user:password@localhost:5432/db",
+			expectedPrometheusPort:                     8080,
+			expectedTracingEnabled:                     true,
+			expectedTracingCollectorTarget:             "some:target",
+			expectedTracingSamplingRatio:               1.0,
+			expectedTracingTLSCertPath:                 "internal/test/fixtures/client.pem",
+			expectedTelemetryEnabled:                   true,
+			expectedTelemetryEndpoint:                  "example.com/beholder",
+			expectedTelemetryInsecureConn:              true,
+			expectedTelemetryCACertFile:                "foo/bar",
+			expectedTelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+			expectedTelemetryTraceSampleRatio:          0.42,
+			expectedTelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+			expectedTelemetryAuthPubKeyHex:             "pub-key-hex",
+			expectedTelemetryEmitterBatchProcessor:     true,
+			expectedTelemetryEmitterExportTimeout:      1 * time.Second,
+			expectedTelemetryEmitterExportInterval:     2 * time.Second,
+			expectedTelemetryEmitterExportMaxBatchSize: 100,
+			expectedTelemetryEmitterMaxQueueSize:       1000,
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -168,10 +177,43 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.TelemetryEmitterExportTimeout != tc.expectedTelemetryEmitterExportTimeout {
 						t.Errorf("Expected telemetryEmitterExportTimeout %v, got %v", tc.expectedTelemetryEmitterExportTimeout, config.TelemetryEmitterExportTimeout)
 					}
+					if config.TelemetryEmitterExportInterval != tc.expectedTelemetryEmitterExportInterval {
+						t.Errorf("Expected telemetryEmitterExportInterval %v, got %v", tc.expectedTelemetryEmitterExportInterval, config.TelemetryEmitterExportInterval)
+					}
+					if config.TelemetryEmitterExportMaxBatchSize != tc.expectedTelemetryEmitterExportMaxBatchSize {
+						t.Errorf("Expected telemetryEmitterExportMaxBatchSize %d, got %d", tc.expectedTelemetryEmitterExportMaxBatchSize, config.TelemetryEmitterExportMaxBatchSize)
+					}
+					if config.TelemetryEmitterMaxQueueSize != tc.expectedTelemetryEmitterMaxQueueSize {
+						t.Errorf("Expected telemetryEmitterMaxQueueSize %d, got %d", tc.expectedTelemetryEmitterMaxQueueSize, config.TelemetryEmitterMaxQueueSize)
+					}
 				}
 			}
 		})
 	}
+}
+
+func equalOtelAttributes(a, b OtelAttributes) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func equalStringMaps(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
@@ -185,16 +227,19 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TracingTLSCertPath:     "some/path",
 		TracingAttributes:      map[string]string{"key": "value"},
 
-		TelemetryEnabled:               true,
-		TelemetryEndpoint:              "example.com/beholder",
-		TelemetryInsecureConnection:    true,
-		TelemetryCACertFile:            "foo/bar",
-		TelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
-		TelemetryTraceSampleRatio:      0.42,
-		TelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
-		TelemetryAuthPubKeyHex:         "pub-key-hex",
-		TelemetryEmitterBatchProcessor: true,
-		TelemetryEmitterExportTimeout:  1 * time.Second,
+		TelemetryEnabled:                   true,
+		TelemetryEndpoint:                  "example.com/beholder",
+		TelemetryInsecureConnection:        true,
+		TelemetryCACertFile:                "foo/bar",
+		TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+		TelemetryTraceSampleRatio:          0.42,
+		TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+		TelemetryAuthPubKeyHex:             "pub-key-hex",
+		TelemetryEmitterBatchProcessor:     true,
+		TelemetryEmitterExportTimeout:      1 * time.Second,
+		TelemetryEmitterExportInterval:     2 * time.Second,
+		TelemetryEmitterExportMaxBatchSize: 100,
+		TelemetryEmitterMaxQueueSize:       1000,
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -223,6 +268,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "pub-key-hex", got[envTelemetryAuthPubKeyHex])
 	assert.Equal(t, "true", got[envTelemetryEmitterBatchProcessor])
 	assert.Equal(t, "1s", got[envTelemetryEmitterExportTimeout])
+	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
+	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
+	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
 }
 
 func TestGetMap(t *testing.T) {

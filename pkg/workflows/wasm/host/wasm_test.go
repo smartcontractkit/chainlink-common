@@ -211,7 +211,7 @@ func Test_Compute_Logs(t *testing.T) {
 	require.Len(t, logs.AllUntimed(), 1)
 	expectedEntries := []Entry{
 		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
+			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow   "},
 			Fields: []zapcore.Field{
 				zap.String("test-string-field-key", "this is a test field content"),
 				zap.Float64("test-numeric-field-key", 6400000),

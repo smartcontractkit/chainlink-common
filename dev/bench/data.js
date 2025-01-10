@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736540312103,
+  "lastUpdate": 1736541181077,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8652,6 +8652,48 @@ window.BENCHMARK_DATA = {
             "value": 28259,
             "unit": "ns/op",
             "extra": "42339 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c712f12dc6a7f46afae5947e5b233038e1966a5",
+          "message": "feat(observability-lib): add timerange to alert rule (#979)",
+          "timestamp": "2025-01-10T21:31:57+01:00",
+          "tree_id": "57f2be320c7a76a035d6b7c7eeddb69285cc58e0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7c712f12dc6a7f46afae5947e5b233038e1966a5"
+        },
+        "date": 1736541180370,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 461.8,
+            "unit": "ns/op",
+            "extra": "2588624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 526,
+            "unit": "ns/op",
+            "extra": "2294354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28234,
+            "unit": "ns/op",
+            "extra": "42529 times\n4 procs"
           }
         ]
       }

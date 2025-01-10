@@ -233,12 +233,12 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 }
 
 func getSlot(events []byte, i int32) ([]byte, error) {
-	outOffset := i * eventsLen
+	offset := i * eventsLen
 
-	if outOffset+eventsLen > int32(len(events)) {
+	if offset+eventsLen > int32(len(events)) {
 		return nil, fmt.Errorf("slot %d out of bounds", i)
 	}
 
-	slot := events[outOffset : outOffset+eventsLen]
+	slot := events[offset : offset+eventsLen]
 	return slot, nil
 }

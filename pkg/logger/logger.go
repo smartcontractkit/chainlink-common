@@ -11,8 +11,24 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-// Logger is a minimal subset of smartcontractkit/chainlink/core/logger.Logger implemented by go.uber.org/zap.SugaredLogger
+// Logger is a basic logging interface implemented by smartcontractkit/chainlink/core/logger.Logger and go.uber.org/zap.SugaredLogger
+//
+// Loggers should be injected (and usually Named as well): e.g. lggr.Named("<service name>")
+//
+// Tests
+//   - Tests should use a [Test] logger, with [New] being reserved for actual runtime and limited direct testing.
+//
+// Levels
+//   - Fatal: Logs and then calls os.Exit(1). Be careful about using this since it does NOT unwind the stack and may exit uncleanly.
+//   - Panic: Unrecoverable error. Example: invariant violation, programmer error
+//   - Error: Something bad happened, and it was clearly on the node op side. No need for immediate action though. Example: database write timed out
+//   - Warn: Something bad happened, not clear who/what is at fault. Node ops should have a rough look at these once in a while to see whether anything stands out. Example: connection to peer was closed unexpectedly. observation timed out.
+//   - Info: High level information. First level we’d expect node ops to look at. Example: entered new epoch with leader, made an observation with value, etc.
+//   - Debug: Useful for forensic debugging, but we don't expect nops to look at this. Example: Got a message, dropped a message, ...
+//
+// Node Operator Docs: https://docs.chain.link/docs/configuration-variables/#log_level
 type Logger interface {
+	// Name returns the fully qualified name of the logger.
 	Name() string
 
 	Debug(args ...interface{})
@@ -20,6 +36,8 @@ type Logger interface {
 	Warn(args ...interface{})
 	Error(args ...interface{})
 	Panic(args ...interface{})
+	// Fatal logs and then calls os.Exit(1)
+	// Be careful about using this since it does NOT unwind the stack and may exit uncleanly
 	Fatal(args ...interface{})
 
 	Debugf(format string, values ...interface{})
@@ -36,6 +54,8 @@ type Logger interface {
 	Panicw(msg string, keysAndValues ...interface{})
 	Fatalw(msg string, keysAndValues ...interface{})
 
+	// Sync flushes any buffered log entries.
+	// Some insignificant errors are suppressed.
 	Sync() error
 }
 

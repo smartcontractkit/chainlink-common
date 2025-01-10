@@ -88,6 +88,37 @@ func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
 	}
 }
 
+type ToolTipOptions struct {
+	Mode      common.TooltipDisplayMode
+	Sort      common.SortOrder
+	MaxWidth  *float64
+	MaxHeight *float64
+}
+
+func newToolTip(options *ToolTipOptions) *common.VizTooltipOptionsBuilder {
+	if options.Mode == "" {
+		options.Mode = common.TooltipDisplayModeSingle
+	}
+
+	if options.Sort == "" {
+		options.Sort = common.SortOrderNone
+	}
+
+	builder := common.NewVizTooltipOptionsBuilder().
+		Mode(options.Mode).
+		Sort(options.Sort)
+
+	if options.MaxWidth != nil {
+		builder.MaxWidth(*options.MaxWidth)
+	}
+
+	if options.MaxHeight != nil {
+		builder.MaxHeight(*options.MaxHeight)
+	}
+
+	return builder
+}
+
 type PanelOptions struct {
 	Datasource    string
 	Title         string
@@ -235,6 +266,7 @@ type TimeSeriesPanelOptions struct {
 	FillOpacity       float64
 	ScaleDistribution common.ScaleDistribution
 	LegendOptions     *LegendOptions
+	ToolTipOptions    *ToolTipOptions
 	ThresholdStyle    common.GraphThresholdsStyleMode
 }
 
@@ -247,6 +279,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 	if options.LegendOptions == nil {
 		options.LegendOptions = &LegendOptions{}
+	}
+
+	if options.ToolTipOptions == nil {
+		options.ToolTipOptions = &ToolTipOptions{}
 	}
 
 	newPanel := timeseries.NewPanelBuilder().
@@ -262,7 +298,8 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		Legend(newLegend(options.LegendOptions)).
 		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
 			Type(options.ScaleDistribution),
-		)
+		).
+		Tooltip(newToolTip(options.ToolTipOptions))
 
 	if options.MaxDataPoints != nil {
 		newPanel.MaxDataPoints(*options.MaxDataPoints)

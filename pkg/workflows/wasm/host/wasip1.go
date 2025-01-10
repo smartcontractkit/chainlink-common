@@ -122,9 +122,8 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 		eventType := subs[inOffset+8]
 		argBuf := subs[inOffset+8+8:]
 
-		outOffset := events[i*eventsLen]
-
-		slot := events[outOffset:]
+		outOffset := i * eventsLen
+		slot := events[outOffset : outOffset+eventsLen]
 		switch eventType {
 		case eventTypeClock:
 			// We want to stub out clock events,

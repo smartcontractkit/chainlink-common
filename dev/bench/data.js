@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736525725918,
+  "lastUpdate": 1736540312103,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8610,6 +8610,48 @@ window.BENCHMARK_DATA = {
             "value": 28332,
             "unit": "ns/op",
             "extra": "42523 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9b2f9ef755857edbee5a8187ef1bf41aaa7cbc33",
+          "message": "feat(observability-lib): can specify max data points on panels (#981)",
+          "timestamp": "2025-01-10T21:17:31+01:00",
+          "tree_id": "f4c2b9985f8320b4dd1661bc7a72d1cb617671ac",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9b2f9ef755857edbee5a8187ef1bf41aaa7cbc33"
+        },
+        "date": 1736540311555,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459.9,
+            "unit": "ns/op",
+            "extra": "2591137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 525.3,
+            "unit": "ns/op",
+            "extra": "2288138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28259,
+            "unit": "ns/op",
+            "extra": "42339 times\n4 procs"
           }
         ]
       }

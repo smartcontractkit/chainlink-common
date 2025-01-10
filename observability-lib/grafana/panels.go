@@ -120,20 +120,21 @@ func newToolTip(options *ToolTipOptions) *common.VizTooltipOptionsBuilder {
 }
 
 type PanelOptions struct {
-	Datasource  string
-	Title       string
-	Description string
-	Span        uint32
-	Height      uint32
-	Decimals    float64
-	Unit        string
-	NoValue     string
-	Min         *float64
-	Max         *float64
-	Query       []Query
-	Threshold   *ThresholdOptions
-	Transform   *TransformOptions
-	ColorScheme dashboard.FieldColorModeId
+	Datasource    string
+	Title         string
+	Description   string
+	Span          uint32
+	Height        uint32
+	Decimals      float64
+	Unit          string
+	NoValue       string
+	Min           *float64
+	Max           *float64
+	MaxDataPoints *float64
+	Query         []Query
+	Threshold     *ThresholdOptions
+	Transform     *TransformOptions
+	ColorScheme   dashboard.FieldColorModeId
 }
 
 type Panel struct {
@@ -213,6 +214,10 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		JustifyMode(options.JustifyMode).
 		Mappings(options.Mappings).
 		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -296,6 +301,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		).
 		Tooltip(newToolTip(options.ToolTipOptions))
 
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
+
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
 	}
@@ -363,6 +372,10 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 				Calcs([]string{"lastNotNull"}).Values(false),
 		)
 
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
+
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
 	}
@@ -404,6 +417,10 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		Decimals(options.Decimals).
 		Unit(options.Unit).
 		NoValue(options.NoValue)
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -450,6 +467,10 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		Height(options.Height).
 		NoValue(options.NoValue).
 		PrettifyLogMessage(options.PrettifyJSON)
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)

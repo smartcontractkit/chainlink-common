@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736787881271,
+  "lastUpdate": 1736788781304,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8778,6 +8778,48 @@ window.BENCHMARK_DATA = {
             "value": 28661,
             "unit": "ns/op",
             "extra": "42472 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "samsondav@protonmail.com",
+            "name": "Sam",
+            "username": "samsondav"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d266596f156041499402862de51ef56ad04c20c9",
+          "message": "Serialization for ReportFormatEVMABIEncodeUnpacked (#995)",
+          "timestamp": "2025-01-13T12:18:35-05:00",
+          "tree_id": "33259b51be42c8144a01504e92bc11081d458928",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d266596f156041499402862de51ef56ad04c20c9"
+        },
+        "date": 1736788780567,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 458.1,
+            "unit": "ns/op",
+            "extra": "2589550 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 519.8,
+            "unit": "ns/op",
+            "extra": "2317011 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28232,
+            "unit": "ns/op",
+            "extra": "42510 times\n4 procs"
           }
         ]
       }

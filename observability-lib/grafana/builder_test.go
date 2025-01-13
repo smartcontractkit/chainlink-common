@@ -179,7 +179,7 @@ func TestBuilder_AddPanel(t *testing.T) {
 
 		panel := grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: "Panel Title",
+				Title: grafana.Pointer("Panel Title"),
 			},
 		})
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736788781304,
+  "lastUpdate": 1736793320724,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8820,6 +8820,48 @@ window.BENCHMARK_DATA = {
             "value": 28232,
             "unit": "ns/op",
             "extra": "42510 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42c3764c171e870bfd91443c6ae82a6e76bc6f1f",
+          "message": "Add hex encoding to HashTruncateName util (#996)",
+          "timestamp": "2025-01-13T10:34:10-08:00",
+          "tree_id": "4d0f6e5374200361835b872288e4d6b49f6615f8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/42c3764c171e870bfd91443c6ae82a6e76bc6f1f"
+        },
+        "date": 1736793320150,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 457.9,
+            "unit": "ns/op",
+            "extra": "2593540 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 522.9,
+            "unit": "ns/op",
+            "extra": "2310429 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28211,
+            "unit": "ns/op",
+            "extra": "37977 times\n4 procs"
           }
         ]
       }

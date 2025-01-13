@@ -20,13 +20,14 @@ type Builder struct {
 }
 
 type BuilderOptions struct {
-	Name       string
-	Tags       []string
-	Refresh    string
-	TimeFrom   string
-	TimeTo     string
-	TimeZone   string
-	AlertsTags map[string]string
+	Name         string
+	Tags         []string
+	Refresh      string
+	TimeFrom     string
+	TimeTo       string
+	TimeZone     string
+	GraphTooltip dashboard.DashboardCursorSync
+	AlertsTags   map[string]string
 }
 
 func NewBuilder(options *BuilderOptions) *Builder {
@@ -46,7 +47,9 @@ func NewBuilder(options *BuilderOptions) *Builder {
 		if options.TimeZone == "" {
 			options.TimeZone = common.TimeZoneBrowser
 		}
-		builder.dashboardBuilder.Timezone(options.TimeZone)
+		builder.dashboardBuilder.
+			Timezone(options.TimeZone).
+			Tooltip(options.GraphTooltip)
 	}
 
 	if options.AlertsTags != nil {

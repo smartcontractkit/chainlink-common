@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736541181077,
+  "lastUpdate": 1736765403392,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8694,6 +8694,48 @@ window.BENCHMARK_DATA = {
             "value": 28234,
             "unit": "ns/op",
             "extra": "42529 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b34bea64641c9c5e336f0232683de2fc731d8b18",
+          "message": "[CRE-43] fix slicing of events (#992)\n\n* fix: calculate the index of the slot instead of relying on the value of it\r\n\r\n* test: extract getSlot and unit test it\r\n\r\n* chore: renename offset + add test coverage",
+          "timestamp": "2025-01-13T10:48:49Z",
+          "tree_id": "93da6bcfa5dcfc0c3bd0de27a4f7b0c3861c9c68",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b34bea64641c9c5e336f0232683de2fc731d8b18"
+        },
+        "date": 1736765402666,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 504.9,
+            "unit": "ns/op",
+            "extra": "2370367 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 570.8,
+            "unit": "ns/op",
+            "extra": "2119292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29534,
+            "unit": "ns/op",
+            "extra": "40131 times\n4 procs"
           }
         ]
       }

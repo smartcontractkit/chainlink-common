@@ -903,6 +903,48 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	assert.ErrorContains(t, err, "exit status 2")
 }
 
+func TestModule_CompressedBinarySize(t *testing.T) {
+	t.Parallel()
+
+	t.Run("compressed binary size is smaller than the default 10mb limit", func(t *testing.T) {
+		binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+
+		_, err := NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		require.NoError(t, err)
+	})
+
+	t.Run("compressed binary size is bigger than the default 10mb limit", func(t *testing.T) {
+		// 11mb binary
+		binary := make([]byte, 11*1024*1024)
+
+		var b bytes.Buffer
+		bwr := brotli.NewWriter(&b)
+		_, err := bwr.Write(binary)
+		require.NoError(t, err)
+		require.NoError(t, bwr.Close())
+
+		_, err = NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", 10*1024*1024)
+		require.ErrorContains(t, err, default10mbLimit)
+	})
+
+	t.Run("compressed binary size is bigger than the custom limit", func(t *testing.T) {
+		// 2mb binary
+		binary := make([]byte, 2*1024*1024)
+
+		var b bytes.Buffer
+		bwr := brotli.NewWriter(&b)
+		_, err := bwr.Write(binary)
+		require.NoError(t, err)
+		require.NoError(t, bwr.Close())
+
+		customMaxBinarySize := int64(1 * 1024 * 1024)
+		_, err = NewModule(&ModuleConfig{IsUncompressed: false, MaxBinarySize: customMaxBinarySize, Logger: logger.Test(t)}, binary)
+		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", customMaxBinarySize)
+		require.ErrorContains(t, err, default10mbLimit)
+	})
+}
+
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)

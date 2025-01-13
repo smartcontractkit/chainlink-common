@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736765403392,
+  "lastUpdate": 1736787881271,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8736,6 +8736,48 @@ window.BENCHMARK_DATA = {
             "value": 29534,
             "unit": "ns/op",
             "extra": "40131 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lee.yikjiun@gmail.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "373e8891c5abe758d640459bad2486c54f68f8dd",
+          "message": "feat(observability-lib): various updates to observabilty library (#993)\n\n* Various updates to observabilty library\r\n\r\n- Add text panel\r\n- Make Title and Decimals in panel nullable\r\n- Add LineWidth and DrawStyle to time series panel\r\n- Add more configs to log panel\r\n- Add Hide to custom variable\r\n\r\n* Add timezone and tooltip to dashboard builder\r\n\r\n* Fix tests",
+          "timestamp": "2025-01-13T18:03:29+01:00",
+          "tree_id": "02d1f617d595a322a239815cd1fcdb39039850d6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/373e8891c5abe758d640459bad2486c54f68f8dd"
+        },
+        "date": 1736787880001,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.2,
+            "unit": "ns/op",
+            "extra": "2601374 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 522.1,
+            "unit": "ns/op",
+            "extra": "2294971 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28661,
+            "unit": "ns/op",
+            "extra": "42472 times\n4 procs"
           }
         ]
       }

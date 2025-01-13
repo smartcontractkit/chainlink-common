@@ -14,6 +14,7 @@ type VariableOption struct {
 	Name         string
 	Label        string
 	Description  string
+	Hide         dashboard.VariableHide
 	CurrentText  string
 	CurrentValue string
 }
@@ -31,6 +32,7 @@ func NewCustomVariable(options *CustomVariableOptions) *dashboard.CustomVariable
 
 	variable := dashboard.NewCustomVariableBuilder(options.Name).
 		Label(options.Label).
+		Hide(options.Hide).
 		Description(options.Description).
 		Current(dashboard.VariableOption{
 			Selected: cog.ToPtr[bool](true),

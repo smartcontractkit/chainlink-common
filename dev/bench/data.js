@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736793320724,
+  "lastUpdate": 1736863961158,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8862,6 +8862,48 @@ window.BENCHMARK_DATA = {
             "value": 28211,
             "unit": "ns/op",
             "extra": "37977 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0cd7b49eb4786c8c0253a280a412eb94941626d4",
+          "message": "[CRE-40] Check binary size before decompression (#994)\n\nfix: check binary size before decompression",
+          "timestamp": "2025-01-14T15:11:39+01:00",
+          "tree_id": "cec210e4c17a656fd32dd643e175a8b6ee735cbe",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0cd7b49eb4786c8c0253a280a412eb94941626d4"
+        },
+        "date": 1736863960644,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 475,
+            "unit": "ns/op",
+            "extra": "2583445 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 541.4,
+            "unit": "ns/op",
+            "extra": "2301604 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28909,
+            "unit": "ns/op",
+            "extra": "40776 times\n4 procs"
           }
         ]
       }

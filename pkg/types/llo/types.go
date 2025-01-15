@@ -45,6 +45,9 @@ const (
 	// ReportFormatRetirement is a special "capstone" report format to indicate
 	// a retired OCR instance, and handover crucial information to a new one
 	ReportFormatRetirement ReportFormat = 3
+	// ReportFormatEVMABIEncodeUnpacked supports encoding reports with a fixed
+	// schema followed by an arbitrary ABI-encoded payload
+	ReportFormatEVMABIEncodeUnpacked = 4
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -63,6 +66,8 @@ func (rf ReportFormat) String() string {
 		return "json"
 	case ReportFormatRetirement:
 		return "retirement"
+	case ReportFormatEVMABIEncodeUnpacked:
+		return "evm_abi_encode_unpacked"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -76,6 +81,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatJSON, nil
 	case "retirement":
 		return ReportFormatRetirement, nil
+	case "evm_abi_encode_unpacked":
+		return ReportFormatEVMABIEncodeUnpacked, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}

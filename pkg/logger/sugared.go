@@ -1,6 +1,8 @@
 package logger
 
-// SugaredLogger extends the base Logger interface with syntactic sugar, similar to zap.SugaredLogger.
+// SugaredLogger extends the base Logger interface with syntactic sugar, similar to zap.SugaredLogger, include two new levels.
+//   - Critical: Requires quick action from the node op, obviously these should happen extremely rarely. Example: failed to listen on TCP port
+//   - Trace: Only included if compiled with the trace tag. For example: go test -tags trace ...
 type SugaredLogger interface {
 	Logger
 
@@ -29,8 +31,16 @@ type SugaredLogger interface {
 	Tracef(format string, vals ...interface{})
 	Tracew(msg string, keysAndVals ...interface{})
 
+	// Named creates a new Logger sub-scoped with name.
+	// Names are inherited and dot-separated.
+	//   a := l.Named("A") // logger=A
+	//   b := a.Named("A") // logger=A.B
+	// Names are generally `MixedCaps`, without spaces, like Go names. `Foo.Bar.HTTPBaz`
 	Named(string) SugaredLogger
+	// With returns a new Logger with the given arguments.
 	With(keyvals ...any) SugaredLogger
+	// Helper returns a new logger with the number of callers skipped by caller annotation increased by skip.
+	// This allows wrappers and helpers to point higher up the stack (like testing.T.Helper()).
 	Helper(skip int) SugaredLogger
 }
 

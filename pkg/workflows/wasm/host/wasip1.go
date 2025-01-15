@@ -2,6 +2,7 @@ package host
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"math/rand"
 	"time"
@@ -122,9 +123,11 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 		eventType := subs[inOffset+8]
 		argBuf := subs[inOffset+8+8:]
 
-		outOffset := events[i*eventsLen]
+		slot, err := getSlot(events, i)
+		if err != nil {
+			return ErrnoFault
+		}
 
-		slot := events[outOffset:]
 		switch eventType {
 		case eventTypeClock:
 			// We want to stub out clock events,
@@ -227,4 +230,15 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 
 		return ErrnoSuccess
 	}
+}
+
+func getSlot(events []byte, i int32) ([]byte, error) {
+	offset := i * eventsLen
+
+	if offset+eventsLen > int32(len(events)) {
+		return nil, fmt.Errorf("slot %d out of bounds", i)
+	}
+
+	slot := events[offset : offset+eventsLen]
+	return slot, nil
 }

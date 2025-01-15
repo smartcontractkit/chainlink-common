@@ -7,6 +7,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -25,8 +26,12 @@ func TestIdenticalConsensus(t *testing.T) {
 	consensus := ocr3.IdenticalConsensusConfig[basictrigger.TriggerOutputs]{
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
-		ReportID:      "0001",
-		KeyID:         "evm",
+		AggregationConfig: aggregators.IdenticalAggConfig{
+			KeyOverrides:            []string{"evm"},
+			ExpectedObservationsLen: 1,
+		},
+		ReportID: "0001",
+		KeyID:    "evm",
 	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{
 		Observation:   trigger,
 		Encoder:       "evm",
@@ -72,8 +77,12 @@ func TestIdenticalConsensus(t *testing.T) {
 					"encoder_config":     map[string]any{},
 					"aggregation_config": map[string]any{},
 					"aggregation_method": "identical",
-					"report_id":          "0001",
-					"key_id":             "evm",
+					"aggregation_config": map[string]any{
+						"KeyOverrides":            []string{"evm"},
+						"ExpectedObservationsLen": 1,
+					},
+					"report_id": "0001",
+					"key_id":    "evm",
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},

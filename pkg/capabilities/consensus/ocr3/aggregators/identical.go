@@ -15,10 +15,10 @@ import (
 
 // Aggregates by the most frequent observation for each index of a data set
 type identicalAggregator struct {
-	config identicalAggConfig
+	config IdenticalAggConfig
 }
 
-type identicalAggConfig struct {
+type IdenticalAggConfig struct {
 	// Length of the list of observations that each node is expected to provide.
 	// Aggregator's output (i.e. EncodableOutcome) will be a values.Map with the same
 	// number of elements and keyed by indices 0,1,2,... (unless KeyOverrides are provided).
@@ -112,10 +112,10 @@ func NewIdenticalAggregator(config values.Map) (*identicalAggregator, error) {
 	}, nil
 }
 
-func ParseConfigIdenticalAggregator(config values.Map) (identicalAggConfig, error) {
-	parsedConfig := identicalAggConfig{}
+func ParseConfigIdenticalAggregator(config values.Map) (IdenticalAggConfig, error) {
+	parsedConfig := IdenticalAggConfig{}
 	if err := config.UnwrapTo(&parsedConfig); err != nil {
-		return identicalAggConfig{}, err
+		return IdenticalAggConfig{}, err
 	}
 	if parsedConfig.ExpectedObservationsLen == 0 {
 		parsedConfig.ExpectedObservationsLen = 1

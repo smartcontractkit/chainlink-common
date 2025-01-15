@@ -72,7 +72,7 @@ func (r *store) delete(id string) {
 var (
 	defaultTickInterval            = 100 * time.Millisecond
 	defaultTimeout                 = 10 * time.Second
-	defaultMinMemoryMBs            = 128
+	defaultMinMemoryMBs            = uint64(128)
 	DefaultInitialFuel             = uint64(100_000_000)
 	defaultMaxFetchRequests        = 5
 	defaultMaxCompressedBinarySize = 10 * 1024 * 1024 // 10 MB
@@ -85,8 +85,8 @@ type DeterminismConfig struct {
 type ModuleConfig struct {
 	TickInterval            time.Duration
 	Timeout                 *time.Duration
-	MaxMemoryMBs            int64
-	MinMemoryMBs            int64
+	MaxMemoryMBs            uint64
+	MinMemoryMBs            uint64
 	InitialFuel             uint64
 	Logger                  logger.Logger
 	IsUncompressed          bool
@@ -165,7 +165,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.MinMemoryMBs == 0 {
-		modCfg.MinMemoryMBs = int64(defaultMinMemoryMBs)
+		modCfg.MinMemoryMBs = defaultMinMemoryMBs
 	}
 
 	if modCfg.MaxCompressedBinarySize == 0 {
@@ -176,7 +176,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	// We do this because Go requires a minimum of 16 megabytes to run,
 	// and local testing has shown that with less than the min, some
 	// binaries may error sporadically.
-	modCfg.MaxMemoryMBs = int64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
+	modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
@@ -343,7 +343,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 
 	// Limit memory to max memory megabytes per instance.
 	store.Limiter(
-		m.cfg.MaxMemoryMBs*int64(math.Pow(10, 6)),
+		int64(m.cfg.MaxMemoryMBs)*int64(math.Pow(10, 6)),
 		-1, // tableElements, -1 == default
 		1,  // instances
 		1,  // tables

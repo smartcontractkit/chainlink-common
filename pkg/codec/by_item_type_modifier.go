@@ -22,13 +22,17 @@ type byItemTypeModifier struct {
 	modByitemType map[string]Modifier
 }
 
+// RetypeToOffChain attempts to apply a modifier using the provided itemType. To allow access to nested fields, this
+// function applies no modifications if a modifier by the specified name is not found.
 func (b *byItemTypeModifier) RetypeToOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
-	mod, ok := b.modByitemType[itemType]
+	head, tail := extendedItemType(itemType).next()
+
+	mod, ok := b.modByitemType[head]
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
 	}
 
-	return mod.RetypeToOffChain(onChainType, itemType)
+	return mod.RetypeToOffChain(onChainType, tail)
 }
 
 func (b *byItemTypeModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
@@ -40,13 +44,17 @@ func (b *byItemTypeModifier) TransformToOffChain(onChainValue any, itemType stri
 }
 
 func (b *byItemTypeModifier) transform(
-	val any, itemType string, transform func(Modifier, any, string) (any, error)) (any, error) {
-	mod, ok := b.modByitemType[itemType]
-	if !ok {
-		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
+	val any,
+	itemType string,
+	transform func(Modifier, any, string) (any, error),
+) (any, error) {
+	head, tail := extendedItemType(itemType).next()
+
+	if mod, ok := b.modByitemType[head]; ok {
+		return transform(mod, val, tail)
 	}
 
-	return transform(mod, val, itemType)
+	return val, nil
 }
 
 var _ Modifier = &byItemTypeModifier{}

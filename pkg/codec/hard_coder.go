@@ -2,6 +2,7 @@ package codec
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
@@ -81,7 +82,8 @@ func verifyHardCodeKeys(values map[string]any) error {
 	return nil
 }
 
-func (o *onChainHardCoder) TransformToOnChain(offChainValue any, _ string) (any, error) {
+func (o *onChainHardCoder) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	log.Println(itemType)
 	return transformWithMaps(offChainValue, o.offToOnChainType, o.onChain, hardCode, o.hooks...)
 }
 

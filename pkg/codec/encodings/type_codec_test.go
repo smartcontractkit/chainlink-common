@@ -4,6 +4,7 @@ import (
 	rawbin "encoding/binary"
 	"math"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/smartcontractkit/libocr/bigbigendian"
@@ -121,6 +122,34 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, singleItemSize*2, actual)
+	})
+
+	t.Run("CreateType works for nested struct values and modifiers", func(t *testing.T) {
+		itemType := strings.Join([]string{TestItemWithConfigExtra, "AccountStruct", "Account"}, ".")
+		ts := CreateTestStruct(0, biit)
+		c := biit.GetCodec(t)
+
+		encoded, err := c.Encode(tests.Context(t), ts.AccountStruct.Account, itemType)
+		require.NoError(t, err)
+
+		var actual []byte
+		require.NoError(t, c.Decode(tests.Context(t), encoded, &actual, itemType))
+
+		assert.Equal(t, ts.AccountStruct.Account, actual)
+	})
+
+	t.Run("CreateType works for nested struct values", func(t *testing.T) {
+		itemType := strings.Join([]string{TestItemType, "NestedDynamicStruct", "Inner", "S"}, ".")
+		ts := CreateTestStruct(0, biit)
+		c := biit.GetCodec(t)
+
+		encoded, err := c.Encode(tests.Context(t), ts.NestedDynamicStruct.Inner.S, itemType)
+		require.NoError(t, err)
+
+		var actual string
+		require.NoError(t, c.Decode(tests.Context(t), encoded, &actual, itemType))
+
+		assert.Equal(t, ts.NestedDynamicStruct.Inner.S, actual)
 	})
 }
 
@@ -319,7 +348,7 @@ func (b *bigEndianInterfaceTester) GetCodec(t *testing.T) types.Codec {
 	modCodec, err := codec.NewModifierCodec(c, byTypeMod, codec.BigIntHook)
 	require.NoError(t, err)
 
-	_, err = mod.RetypeToOffChain(reflect.PointerTo(testStruct.GetType()), TestItemWithConfigExtra)
+	_, err = mod.RetypeToOffChain(reflect.PointerTo(testStruct.GetType()), "")
 	require.NoError(t, err)
 
 	return modCodec

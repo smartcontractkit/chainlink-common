@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736934277890,
+  "lastUpdate": 1736954462132,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8946,6 +8946,48 @@ window.BENCHMARK_DATA = {
             "value": 28241,
             "unit": "ns/op",
             "extra": "42531 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "Chris Cushman",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e56b78c794ecb76b99aedb12fb64052afead8350",
+          "message": "Add AggregationConfig (#988)",
+          "timestamp": "2025-01-15T15:19:50Z",
+          "tree_id": "2bc55b3130ae776cd985777698ed7fdf5193c730",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e56b78c794ecb76b99aedb12fb64052afead8350"
+        },
+        "date": 1736954460824,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460,
+            "unit": "ns/op",
+            "extra": "2267336 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 518.9,
+            "unit": "ns/op",
+            "extra": "2296142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28232,
+            "unit": "ns/op",
+            "extra": "42495 times\n4 procs"
           }
         ]
       }

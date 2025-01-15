@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1736863961158,
+  "lastUpdate": 1736934277890,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -8904,6 +8904,48 @@ window.BENCHMARK_DATA = {
             "value": 28909,
             "unit": "ns/op",
             "extra": "40776 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e61572bb9bdfd020ff85cafe6ae480da72f02c4",
+          "message": "pkg/services: ErrorBuffer.Flush fix race (#998)",
+          "timestamp": "2025-01-15T10:43:25+01:00",
+          "tree_id": "39505132317629a658f85ced27f3d1852b1a5984",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4e61572bb9bdfd020ff85cafe6ae480da72f02c4"
+        },
+        "date": 1736934276633,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 459,
+            "unit": "ns/op",
+            "extra": "2635430 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 529.6,
+            "unit": "ns/op",
+            "extra": "2301537 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28241,
+            "unit": "ns/op",
+            "extra": "42531 times\n4 procs"
           }
         ]
       }

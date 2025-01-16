@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"regexp"
 
 	"strings"
 	"sync"
@@ -612,24 +611,21 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			args = append(args, k, v)
 		}
 
-		reg, _ := regexp.Compile(`[^\w\s]`)
-		sanitizedMsg := reg.ReplaceAllString(msg, "*")
-
 		switch level {
 		case "debug":
-			logger.Debugw(sanitizedMsg, args...)
+			logger.Debugw(msg, args...)
 		case "info":
-			logger.Infow(sanitizedMsg, args...)
+			logger.Infow(msg, args...)
 		case "warn":
-			logger.Warnw(sanitizedMsg, args...)
+			logger.Warnw(msg, args...)
 		case "error":
-			logger.Errorw(sanitizedMsg, args...)
+			logger.Errorw(msg, args...)
 		case "panic":
-			logger.Panicw(sanitizedMsg, args...)
+			logger.Panicw(msg, args...)
 		case "fatal":
-			logger.Fatalw(sanitizedMsg, args...)
+			logger.Fatalw(msg, args...)
 		default:
-			logger.Infow(sanitizedMsg, args...)
+			logger.Infow(msg, args...)
 		}
 	}
 }

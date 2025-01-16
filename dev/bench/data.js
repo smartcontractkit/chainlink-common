@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737028712205,
+  "lastUpdate": 1737051024247,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9030,6 +9030,48 @@ window.BENCHMARK_DATA = {
             "value": 28604,
             "unit": "ns/op",
             "extra": "42553 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8481a75ca8a94666851aecdb3e0e768f2012fd31",
+          "message": "[CRE-39] (fix): Add more guards & nil checks to WASM compute (#984)\n\n* (fix): Add guards\n\n* (test): Add sdk unit tests\n\n* (test): fix expected error string\n\n* Replace with * instead of space\n\n* Allow spaces in log sanitization\n\n* Split out log sanitization fix",
+          "timestamp": "2025-01-16T18:09:10Z",
+          "tree_id": "331dbe7be19549d7334b9908b64ac2a5d39dcc4a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8481a75ca8a94666851aecdb3e0e768f2012fd31"
+        },
+        "date": 1737051022943,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 461.7,
+            "unit": "ns/op",
+            "extra": "2600439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 521.8,
+            "unit": "ns/op",
+            "extra": "2315740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28259,
+            "unit": "ns/op",
+            "extra": "41853 times\n4 procs"
           }
         ]
       }

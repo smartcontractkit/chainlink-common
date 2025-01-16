@@ -2,16 +2,18 @@ package ocr3cap
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
 // Note this isn't generated because generics isn't supported in json schema
 
 type IdenticalConsensusConfig[T any] struct {
-	Encoder       Encoder
-	EncoderConfig EncoderConfig
-	ReportID      ReportId
-	KeyID         KeyId
+	Encoder           Encoder
+	EncoderConfig     EncoderConfig
+	AggregationConfig aggregators.IdenticalAggConfig
+	ReportID          ReportId
+	KeyID             KeyId
 }
 
 func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string, input IdenticalConsensusInput[T]) SignedReportCap {
@@ -22,6 +24,7 @@ func (c IdenticalConsensusConfig[T]) New(w *sdk.WorkflowSpecFactory, ref string,
 		Config: map[string]any{
 			"encoder":            c.Encoder,
 			"encoder_config":     c.EncoderConfig,
+			"aggregation_config": c.AggregationConfig,
 			"aggregation_method": "identical",
 			"report_id":          c.ReportID,
 			"key_id":             c.KeyID,

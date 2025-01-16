@@ -71,11 +71,12 @@ func (r *store) delete(id string) {
 }
 
 var (
-	defaultTickInterval     = 100 * time.Millisecond
-	defaultTimeout          = 10 * time.Second
-	defaultMinMemoryMBs     = 128
-	DefaultInitialFuel      = uint64(100_000_000)
-	defaultMaxFetchRequests = 5
+	defaultTickInterval            = 100 * time.Millisecond
+	defaultTimeout                 = 10 * time.Second
+	defaultMinMemoryMBs            = 128
+	DefaultInitialFuel             = uint64(100_000_000)
+	defaultMaxFetchRequests        = 5
+	defaultMaxCompressedBinarySize = 10 * 1024 * 1024 // 10 MB
 )
 
 type DeterminismConfig struct {
@@ -83,15 +84,16 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval     time.Duration
-	Timeout          *time.Duration
-	MaxMemoryMBs     int64
-	MinMemoryMBs     int64
-	InitialFuel      uint64
-	Logger           logger.Logger
-	IsUncompressed   bool
-	Fetch            func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
-	MaxFetchRequests int
+	TickInterval            time.Duration
+	Timeout                 *time.Duration
+	MaxMemoryMBs            int64
+	MinMemoryMBs            int64
+	InitialFuel             uint64
+	Logger                  logger.Logger
+	IsUncompressed          bool
+	Fetch                   func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+	MaxFetchRequests        int
+	MaxCompressedBinarySize uint64
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -167,6 +169,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		modCfg.MinMemoryMBs = int64(defaultMinMemoryMBs)
 	}
 
+	if modCfg.MaxCompressedBinarySize == 0 {
+		modCfg.MaxCompressedBinarySize = uint64(defaultMaxCompressedBinarySize)
+	}
+
 	// Take the max of the min and the configured max memory mbs.
 	// We do this because Go requires a minimum of 16 megabytes to run,
 	// and local testing has shown that with less than the min, some
@@ -184,6 +190,12 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
+		// validate the binary size before decompressing
+		// this is to prevent decompression bombs
+		if uint64(len(binary)) > modCfg.MaxCompressedBinarySize {
+			return nil, fmt.Errorf("binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
+		}
+
 		rdr := brotli.NewReader(bytes.NewBuffer(binary))
 		decompedBinary, err := io.ReadAll(rdr)
 		if err != nil {

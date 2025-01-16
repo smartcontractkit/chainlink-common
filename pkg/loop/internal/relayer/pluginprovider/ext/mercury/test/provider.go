@@ -7,10 +7,13 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	mercuryv1test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
 	mercuryv2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
 	mercuryv3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
 	mercuryv4test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v4/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 
 	mercurytypes "github.com/smartcontractkit/chainlink-common/pkg/types/mercury"
@@ -23,8 +26,8 @@ import (
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
 
-var MercuryProvider = staticMercuryProvider{
-	staticMercuryProviderConfig: staticMercuryProviderConfig{
+func MercuryProvider(lggr logger.Logger) staticMercuryProvider {
+	return newStaticMercuryProvider(lggr, staticMercuryProviderConfig{
 		offchainDigester:    ocr2test.OffchainConfigDigester,
 		contractTracker:     ocr2test.ContractConfigTracker,
 		contractTransmitter: ocr2test.ContractTransmitter,
@@ -35,7 +38,7 @@ var MercuryProvider = staticMercuryProvider{
 		onchainConfigCodec:  OnchainConfigCodec,
 		mercuryChainReader:  ChainReader,
 		serviceFetcher:      ServerFetcher,
-	},
+	})
 }
 
 type MercuryProviderTester interface {
@@ -62,18 +65,17 @@ type staticMercuryProviderConfig struct {
 var _ types.MercuryProvider = staticMercuryProvider{}
 
 type staticMercuryProvider struct {
+	services.Service
 	staticMercuryProviderConfig
 }
 
-func (s staticMercuryProvider) Start(ctx context.Context) error { return nil }
-
-func (s staticMercuryProvider) Close() error { return nil }
-
-func (s staticMercuryProvider) Ready() error { panic("unimplemented") }
-
-func (s staticMercuryProvider) Name() string { panic("unimplemented") }
-
-func (s staticMercuryProvider) HealthReport() map[string]error { panic("unimplemented") }
+func newStaticMercuryProvider(lggr logger.Logger, cfg staticMercuryProviderConfig) staticMercuryProvider {
+	lggr = logger.Named(lggr, "staticMercuryProvider")
+	return staticMercuryProvider{
+		Service:                     test.NewStaticService(lggr),
+		staticMercuryProviderConfig: cfg,
+	}
+}
 
 func (s staticMercuryProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return s.offchainDigester

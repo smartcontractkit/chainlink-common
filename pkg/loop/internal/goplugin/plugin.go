@@ -12,10 +12,10 @@ type PluginClient struct {
 	*net.BrokerExt
 }
 
-func NewPluginClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginClient {
+// NewPluginClient creates a *PluginClient. Refresh must be called to initialize the net.Broker and *grpc.ClientConn.
+func NewPluginClient(brokerCfg net.BrokerConfig) *PluginClient {
 	var pc PluginClient
 	pc.BrokerExt = &net.BrokerExt{Broker: &pc.AtomicBroker, BrokerConfig: brokerCfg}
-	pc.Refresh(broker, conn)
 	return &pc
 }
 

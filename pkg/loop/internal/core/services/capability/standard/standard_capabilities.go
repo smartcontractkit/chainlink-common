@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
@@ -44,12 +45,14 @@ type StandardCapabilitiesClient struct {
 
 var _ StandardCapabilities = (*StandardCapabilitiesClient)(nil)
 
-func NewStandardCapabilitiesClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *StandardCapabilitiesClient {
+func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabilitiesClient {
+	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "StandardCapabilitiesClient")
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &StandardCapabilitiesClient{
-		PluginClient:               goplugin.NewPluginClient(brokerExt.Broker, brokerExt.BrokerConfig, conn),
-		ServiceClient:              goplugin.NewServiceClient(brokerExt, conn),
-		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(conn),
-		BrokerExt:                  brokerExt,
+		PluginClient:               pc,
+		ServiceClient:              goplugin.NewServiceClient(pc.BrokerExt, pc),
+		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(pc),
+		BrokerExt:                  pc.BrokerExt,
 	}
 }
 

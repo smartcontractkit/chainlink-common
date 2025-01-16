@@ -28,9 +28,9 @@ type CommitLOOPClient struct {
 	generator ccippb.CommitFactoryGeneratorClient
 }
 
-func NewCommitLOOPClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *CommitLOOPClient {
+func NewCommitLOOPClient(brokerCfg net.BrokerConfig) *CommitLOOPClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "CommitLOOPClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &CommitLOOPClient{
 		PluginClient:  pc,
 		ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc),

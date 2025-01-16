@@ -36,9 +36,9 @@ type AdapterClient struct {
 	mercury mercurypb.MercuryAdapterClient
 }
 
-func NewMercuryAdapterClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *AdapterClient {
+func NewMercuryAdapterClient(brokerCfg net.BrokerConfig) *AdapterClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "MercuryAdapterClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &AdapterClient{
 		PluginClient:  pc,
 		ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc),

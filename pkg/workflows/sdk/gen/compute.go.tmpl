@@ -7,6 +7,7 @@ import (
 )
 
 {{- range . }}
+// Compute{{.}}Inputs contains the inputs for a Compute call with {{.}} arguments.
 type Compute{{.}}Inputs[{{range RangeNum . }}T{{.}} any,{{ end }}] struct {
     {{- range RangeNum .}}
     Arg{{.}} CapDefinition[T{{.}}]
@@ -30,6 +31,11 @@ func (input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}]) ToSteps()
    }
 }
 
+// Compute{{.}} is used to instantiate a Compute step with {{.}} arguments.
+//   - `w` is the spec factory instantiated via sdk.NewWorkflowSpecFactory()
+//   - `ref` is the name name of the step. This must be unique at the workflow level.
+//   - `input` contains the inputs to the step
+//   - `compute` is the function that performs the user-defined computation. The inputs to this function are `Runtime` (used to access external APIs like the logger and fetch), and I1->I<N> (the inputs that were passed in)
 func Compute{{.}}[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSpecFactory, ref string, input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}], compute func(Runtime, {{range RangeNum . }}I{{.}},{{ end }})(O, error)) ComputeOutputCap[O] {
     adaptedComputeFunc := func(r Runtime, _ struct{}, {{range RangeNum .}}i{{.}} I{{.}},{{end}}) (O, error) {
         return compute(r, {{range RangeNum .}}i{{.}},{{end}})
@@ -37,6 +43,12 @@ func Compute{{.}}[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSp
     return Compute{{.}}WithConfig[{{range  RangeNum .}}I{{.}}, {{ end }}O](w, ref, EmptyComputeConfig(), input, adaptedComputeFunc)
 }
 
+// Compute{{.}} is an alternative to instantiate a Compute step with {{.}} arguments, including config as well.
+//   - `w` is the spec factory instantiated via sdk.NewWorkflowSpecFactory()
+//   - `ref` is the name name of the step. This must be unique at the workflow level.
+//   - `config` contains the config of the step, wrapped in a `ComputeConfig` struct.
+//   - `input` contains the inputs to the step
+//   - `compute` is the function that performs the user-defined computation. The inputs to this function are `Runtime` (used to access external APIs like the logger and fetch), `C` (the unwrapped config that was passed in), and I1->I<N> (the inputs that were passed in)
 func Compute{{.}}WithConfig[{{range  RangeNum .}}I{{.}} any, {{ end }}O any, C any](w *WorkflowSpecFactory, ref string, config *ComputeConfig[C], input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}], compute func(Runtime, C, {{range RangeNum . }}I{{.}},{{ end }})(O, error)) ComputeOutputCap[O] {
     cm, err := config.ToMap()
     if err != nil {

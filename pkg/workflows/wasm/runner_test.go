@@ -507,6 +507,15 @@ func Test_createEmitFn(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("success if no labels are given", func(t *testing.T) {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, nil)
+		assert.NoError(t, err)
+	})
+
 	t.Run("successfully read error message when emit fails", func(t *testing.T) {
 		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
 			// marshall the protobufs

@@ -600,7 +600,7 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			args = append(args, k, v)
 		}
 
-		reg, _ := regexp.Compile(`[^\w]`)
+		reg, _ := regexp.Compile(`[^\w\s]`)
 		sanitizedMsg := reg.ReplaceAllString(msg, "*")
 
 		switch level {

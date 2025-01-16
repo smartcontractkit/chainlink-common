@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
+// WorkflowSpecFactory is used to build WorkflowSpecs.
 type WorkflowSpecFactory struct {
 	spec           *WorkflowSpec
 	names          map[string]bool
@@ -125,6 +126,8 @@ func (c *capDefinitionImpl[O]) self() CapDefinition[O] {
 
 func (c *capDefinitionImpl[O]) private() {}
 
+// NewWorkflowSpecFactory initializes a WorkflowSpecFactory. This is usually the first function that is called
+// when writing a new workflow.
 func NewWorkflowSpecFactory() *WorkflowSpecFactory {
 	return &WorkflowSpecFactory{
 		spec: &WorkflowSpec{

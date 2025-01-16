@@ -97,6 +97,9 @@ func createEmitFn(
 			return NewEmissionError(fmt.Errorf("metadata is required to emit"))
 		}
 
+		if labels == nil {
+			labels = map[string]string{}
+		}
 		labels, err := toEmitLabels(sdkConfig.Metadata, labels)
 		if err != nil {
 			return NewEmissionError(err)
@@ -120,14 +123,23 @@ func createEmitFn(
 		// Prepare the request to be sent to the host memory by allocating space for the
 		// response and response length buffers.
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _ := bufferToPointerLen(respBuffer)
+		respptr, _, err := bufferToPointerLen(respBuffer)
+		if err != nil {
+			return err
+		}
 
 		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _ := bufferToPointerLen(resplenBuffer)
+		resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+		if err != nil {
+			return err
+		}
 
 		// The request buffer is the wasm memory, get a pointer to the first element and the length
 		// of the protobuf message.
-		reqptr, reqptrlen := bufferToPointerLen(b)
+		reqptr, reqptrlen, err := bufferToPointerLen(b)
+		if err != nil {
+			return err
+		}
 
 		// Emit the message via the method imported from the host
 		errno := emit(respptr, resplenptr, reqptr, reqptrlen)
@@ -189,13 +201,22 @@ func createFetchFn(
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
 		}
-		reqptr, reqptrlen := bufferToPointerLen(b)
+		reqptr, reqptrlen, err := bufferToPointerLen(b)
+		if err != nil {
+			return sdk.FetchResponse{}, err
+		}
 
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _ := bufferToPointerLen(respBuffer)
+		respptr, _, err := bufferToPointerLen(respBuffer)
+		if err != nil {
+			return sdk.FetchResponse{}, err
+		}
 
 		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _ := bufferToPointerLen(resplenBuffer)
+		resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+		if err != nil {
+			return sdk.FetchResponse{}, err
+		}
 
 		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
 		if errno != 0 {
@@ -230,8 +251,11 @@ func createFetchFn(
 }
 
 // bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
-func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
-	return unsafe.Pointer(&buf[0]), int32(len(buf))
+func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32, error) {
+	if len(buf) == 0 {
+		return nil, 0, fmt.Errorf("buffer cannot be empty")
+	}
+	return unsafe.Pointer(&buf[0]), int32(len(buf)), nil
 }
 
 // toEmitLabels ensures that the required metadata is present in the labels map
@@ -246,6 +270,10 @@ func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]string) (m
 
 	if md.WorkflowOwner == "" {
 		return nil, fmt.Errorf("must provide workflow owner to emit event")
+	}
+
+	if md.WorkflowExecutionID == "" {
+		return nil, fmt.Errorf("must provide workflow execution id to emit event")
 	}
 
 	labels[events.LabelWorkflowExecutionID] = md.WorkflowExecutionID

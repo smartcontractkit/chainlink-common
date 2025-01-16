@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737055871510,
+  "lastUpdate": 1737064196995,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9114,6 +9114,48 @@ window.BENCHMARK_DATA = {
             "value": 28213,
             "unit": "ns/op",
             "extra": "42524 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f49c5c27db51b1ec116cd8b4acad5cd269446e2c",
+          "message": "pkg/loop: plugins report health to host [BCF-2709] (#206)\n\n* pkg/services/servicetest: add helper for testing HealthReport names\r\n\r\n* pkg/loop: plugins report health to host",
+          "timestamp": "2025-01-16T15:48:55-06:00",
+          "tree_id": "c44a803eac2d03945c1c8e90c0c4259c549a06cb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f49c5c27db51b1ec116cd8b4acad5cd269446e2c"
+        },
+        "date": 1737064196483,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 465,
+            "unit": "ns/op",
+            "extra": "2590003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 529,
+            "unit": "ns/op",
+            "extra": "2261188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28173,
+            "unit": "ns/op",
+            "extra": "41923 times\n4 procs"
           }
         ]
       }

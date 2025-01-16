@@ -395,6 +395,9 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 }
 
 func containsCode(err error, code int) bool {
+	if err == nil {
+		return false
+	}
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
 }
 

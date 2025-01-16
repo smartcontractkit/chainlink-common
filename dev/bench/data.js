@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737051024247,
+  "lastUpdate": 1737055871510,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9072,6 +9072,48 @@ window.BENCHMARK_DATA = {
             "value": 28259,
             "unit": "ns/op",
             "extra": "41853 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fe3ec4466fb5adfffd8fc77eef1cef67c4a918cc",
+          "message": "[CAPPL-471] Handle possible nil versioned bytes (#1002)",
+          "timestamp": "2025-01-16T19:30:07Z",
+          "tree_id": "681d96139e50cbc635d2afa33ef615c88850f425",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fe3ec4466fb5adfffd8fc77eef1cef67c4a918cc"
+        },
+        "date": 1737055870739,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 462.9,
+            "unit": "ns/op",
+            "extra": "2579654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 534.7,
+            "unit": "ns/op",
+            "extra": "2289985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28213,
+            "unit": "ns/op",
+            "extra": "42524 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737064196995,
+  "lastUpdate": 1737109031797,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9156,6 +9156,48 @@ window.BENCHMARK_DATA = {
             "value": 28173,
             "unit": "ns/op",
             "extra": "41923 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1922eef0bdd4bdb60669f64f0a41739fe89fe83c",
+          "message": "[CRE-44] Add restricted config; validate WASM config (#1001)\n\n* [chore] Add README documentation\n\n* [CRE-44] Add restricted_config and restricted_keys to capability registry config\n\n* Use uint64 to describe min/max memory",
+          "timestamp": "2025-01-17T10:15:54Z",
+          "tree_id": "91c4651b8be123a9d8e53c20c8bae586fbaf5313",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1922eef0bdd4bdb60669f64f0a41739fe89fe83c"
+        },
+        "date": 1737109030535,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 460.4,
+            "unit": "ns/op",
+            "extra": "2640570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 517.4,
+            "unit": "ns/op",
+            "extra": "2138074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28301,
+            "unit": "ns/op",
+            "extra": "42361 times\n4 procs"
           }
         ]
       }

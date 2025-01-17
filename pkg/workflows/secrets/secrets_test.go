@@ -202,7 +202,21 @@ func TestEncryptDecrypt(t *testing.T) {
 		_, err = DecryptSecretsForNode(overriddenResult, k2, workflowOwner)
 		assert.ErrorContains(t, err, "cannot find secrets blob")
 	})
+}
 
+func TestEncrypt_MalformedPayload(t *testing.T) {
+	k, err := newKey()
+	require.NoError(t, err)
+
+	results := EncryptedSecretsResult{
+		EncryptedSecrets: nil,
+		Metadata: Metadata{
+			NodePublicEncryptionKeys: nil,
+			EnvVarsAssignedToNodes:   nil,
+		},
+	}
+	_, err = DecryptSecretsForNode(results, k, "owner")
+	require.Error(t, err)
 }
 
 func TestValidateEncryptedSecrets(t *testing.T) {
@@ -228,7 +242,8 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 	}
 
 	// Serialize the valid input
-	validData, _ := json.Marshal(validInput)
+	validData, err := json.Marshal(validInput)
+	require.NoError(t, err)
 
 	// Define test cases
 	tests := []struct {
@@ -236,7 +251,7 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 		inputData            []byte
 		encryptionPublicKeys map[string][32]byte
 		workflowOwner        string
-		shouldError          bool
+		errMsg               string
 	}{
 		{
 			name:          "Valid input",
@@ -245,16 +260,15 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 			encryptionPublicKeys: map[string][32]byte{
 				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
 			},
-			shouldError: false,
 		},
 		{
 			name:          "Invalid base64 encoded secret",
-			inputData:     []byte(`{"encryptedSecrets": {"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": "invalid-base64!"}}`),
+			inputData:     []byte(`{"encryptedSecrets": {"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": "invalid-base64!"}, "metadata": {"workflowOwner": "correctOwner"}}`),
 			workflowOwner: "correctOwner",
 			encryptionPublicKeys: map[string][32]byte{
 				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
 			},
-			shouldError: true,
+			errMsg: "the encrypted secrets JSON payload contains encrypted secrets which are not in base64 format",
 		},
 		{
 			name:          "Missing public key",
@@ -263,7 +277,7 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 			encryptionPublicKeys: map[string][32]byte{
 				"some-other-id": {1, 2, 3},
 			},
-			shouldError: true,
+			errMsg: "encryption key not found",
 		},
 		{
 			name:          "Mismatched workflow owner",
@@ -272,7 +286,43 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 			encryptionPublicKeys: map[string][32]byte{
 				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
 			},
-			shouldError: true,
+			errMsg: "the workflow owner in the encrypted secrets metadata: correctOwner does not match the input workflow owner: incorrectOwner",
+		},
+		{
+			name:          "Invalid input",
+			inputData:     []byte("{}"),
+			workflowOwner: "incorrectOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			errMsg: "the workflow owner in the encrypted secrets metadata:  does not match the input workflow owner: incorrectOwner",
+		},
+		{
+			name:          "Empty encryptedSecrets -- doesn't panic",
+			inputData:     []byte(`{"encryptedSecrets": null, "metadata": {"workflowOwner": "correctOwner"}}`),
+			workflowOwner: "correctOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			errMsg: "",
+		},
+		{
+			name:          "invalid nodePublicEncryptionKeys",
+			inputData:     []byte(`{"encryptedSecrets": null, "metadata": {"workflowOwner": "correctOwner", "nodePublicEncryptionKeys": 100}}`),
+			workflowOwner: "correctOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			errMsg: "cannot unmarshal number into Go struct field",
+		},
+		{
+			name:          "empty encryptedSecrets",
+			inputData:     []byte(`{"encryptedSecrets": null, "metadata": {"workflowOwner": "correctOwner"}}`),
+			workflowOwner: "correctOwner",
+			encryptionPublicKeys: map[string][32]byte{
+				"09ca39cd924653c72fbb0e458b629c3efebdad3e29e7cd0b5760754d919ed829": {1, 2, 3},
+			},
+			errMsg: "",
 		},
 	}
 
@@ -280,8 +330,10 @@ func TestValidateEncryptedSecrets(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := ValidateEncryptedSecrets(test.inputData, test.encryptionPublicKeys, test.workflowOwner)
-			if (err != nil) != test.shouldError {
-				t.Errorf("Expected error: %v, got: %v", test.shouldError, err != nil)
+			if test.errMsg == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, test.errMsg)
 			}
 		})
 	}

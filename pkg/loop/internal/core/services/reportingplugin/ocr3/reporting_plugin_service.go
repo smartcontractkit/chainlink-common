@@ -31,9 +31,9 @@ type ReportingPluginServiceClient struct {
 	reportingPluginService pb.ReportingPluginServiceClient
 }
 
-func NewReportingPluginServiceClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {
+func NewReportingPluginServiceClient(brokerCfg net.BrokerConfig) *ReportingPluginServiceClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
@@ -251,6 +251,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.OCR3ReportingPluginClient) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }

@@ -8,15 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-var CommitFactoryServer = commitFactoryServer{
-	commitFactoryServerConfig: commitFactoryServerConfig{
-		provider: CommitProvider,
-	},
+func CommitFactoryServer(lggr logger.Logger) commitFactoryServer {
+	return newCommitFactoryServer(lggr, commitFactoryServerConfig{
+		provider: CommitProvider(lggr),
+	})
 }
 
 type commitFactoryServerConfig struct {
@@ -26,7 +29,18 @@ type commitFactoryServerConfig struct {
 var _ types.CCIPCommitFactoryGenerator = commitFactoryServer{}
 
 type commitFactoryServer struct {
+	services.Service
 	commitFactoryServerConfig
+	factory types.ReportingPluginFactory
+}
+
+func newCommitFactoryServer(lggr logger.Logger, cfg commitFactoryServerConfig) commitFactoryServer {
+	lggr = logger.Named(lggr, "commitFactoryServer")
+	return commitFactoryServer{
+		Service:                   test.NewStaticService(lggr),
+		commitFactoryServerConfig: cfg,
+		factory:                   reportingplugintest.Factory(lggr),
+	}
 }
 
 // NewCommitFactory implements types.CCIPCommitFactoryGenerator.
@@ -35,11 +49,11 @@ func (e commitFactoryServer) NewCommitFactory(ctx context.Context, provider type
 	if err != nil {
 		return nil, err
 	}
-	return reportingplugintest.Factory, nil
+	return e.factory, nil
 }
 
 func RunCommitLOOP(t *testing.T, p types.CCIPCommitFactoryGenerator) {
-	CommitLOOPTester{CommitProvider}.Run(t, p)
+	CommitLOOPTester{CommitProvider(logger.Test(t))}.Run(t, p)
 }
 
 type CommitLOOPTester struct {
@@ -75,7 +89,7 @@ func runCommitReportingPluginFactory(t *testing.T, factory types.ReportingPlugin
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(ctx, reportingplugintest.Factory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(ctx, reportingplugintest.StaticFactoryConfig.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })

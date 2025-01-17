@@ -118,6 +118,10 @@ func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes
 }
 
 func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
+	if vData == nil {
+		return errors.New("cannot decode nil versioned bytes")
+	}
+
 	var err error
 	switch EncodingVersion(vData.Version) {
 	case JSONEncodingVersion1:

@@ -25,7 +25,8 @@ type reportingPluginFactoryClient struct {
 }
 
 func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *reportingPluginFactoryClient {
-	return &reportingPluginFactoryClient{b.WithName("OCR3ReportingPluginProviderClient"), goplugin.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
+	b = b.WithName("OCR3ReportingPluginProviderClient")
+	return &reportingPluginFactoryClient{b, goplugin.NewServiceClient(b, cc), ocr3.NewReportingPluginFactoryClient(cc)}
 }
 
 func (r *reportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {

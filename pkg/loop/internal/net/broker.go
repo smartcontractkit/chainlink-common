@@ -132,11 +132,11 @@ func (b *BrokerExt) Serve(name string, server *grpc.Server, deps ...Resource) (u
 		}
 	}()
 
-	return id, Resource{fnCloser(func() {
+	return id, Resource{fnCloser(sync.OnceFunc(func() {
 		server.Stop()
 		close(done)
 		wg.Wait()
-	}), name}, nil
+	})), name}, nil
 }
 
 func (b *BrokerExt) CloseAll(deps ...Resource) {

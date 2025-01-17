@@ -8,8 +8,11 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
@@ -18,12 +21,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var Factory = staticFactory{
-	staticFactoryConfig: staticFactoryConfig{
-		ReportingPluginConfig: reportingPluginConfig,
-		rpi:                   rpi,
-		reportingPlugin:       ReportingPlugin,
-	},
+func Factory(lggr logger.Logger) staticFactory {
+	return newStaticFactory(lggr, StaticFactoryConfig)
+}
+
+var StaticFactoryConfig = staticFactoryConfig{
+	ReportingPluginConfig: reportingPluginConfig,
+	rpi:                   rpi,
+	reportingPlugin:       ReportingPlugin,
 }
 
 type staticFactoryConfig struct {
@@ -33,20 +38,19 @@ type staticFactoryConfig struct {
 }
 
 type staticFactory struct {
+	services.Service
 	staticFactoryConfig
 }
 
+func newStaticFactory(lggr logger.Logger, cfg staticFactoryConfig) staticFactory {
+	lggr = logger.Named(lggr, "staticFactory")
+	return staticFactory{
+		Service:             test.NewStaticService(lggr),
+		staticFactoryConfig: cfg,
+	}
+}
+
 var _ types.ReportingPluginFactory = staticFactory{}
-
-func (s staticFactory) Name() string { panic("implement me") }
-
-func (s staticFactory) Start(ctx context.Context) error { return nil }
-
-func (s staticFactory) Close() error { return nil }
-
-func (s staticFactory) Ready() error { panic("implement me") }
-
-func (s staticFactory) HealthReport() map[string]error { panic("implement me") }
 
 func (s staticFactory) NewReportingPlugin(ctx context.Context, config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
 	err := s.equalConfig(config)
@@ -97,7 +101,7 @@ func (s staticFactory) equalConfig(other libocr.ReportingPluginConfig) error {
 }
 
 func RunFactory(t *testing.T, factory libocr.ReportingPluginFactory) {
-	expectedFactory := Factory
+	expectedFactory := Factory(logger.Test(t))
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
 		ctx := tests.Context(t)
 		rp, gotRPI, err := factory.NewReportingPlugin(ctx, expectedFactory.ReportingPluginConfig)

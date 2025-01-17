@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737109031797,
+  "lastUpdate": 1737125155459,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9198,6 +9198,48 @@ window.BENCHMARK_DATA = {
             "value": 28301,
             "unit": "ns/op",
             "extra": "42361 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b05726309228e588596c9c9370d067d863fc39c",
+          "message": "[CAPPL-471] Add more tests to verify that panic is handled (#1003)",
+          "timestamp": "2025-01-17T14:44:51Z",
+          "tree_id": "a23bce3349913f1872b50a0845854a04c3eec6ee",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2b05726309228e588596c9c9370d067d863fc39c"
+        },
+        "date": 1737125154903,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 527.4,
+            "unit": "ns/op",
+            "extra": "2563680 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 519.9,
+            "unit": "ns/op",
+            "extra": "2293833 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28233,
+            "unit": "ns/op",
+            "extra": "42501 times\n4 procs"
           }
         ]
       }

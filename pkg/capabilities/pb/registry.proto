@@ -40,5 +40,8 @@ message CapabilityConfig {
     RemoteTargetConfig remote_target_config = 3;
     RemoteExecutableConfig remote_executable_config = 4;
   }
+
+  values.Map restricted_config = 5;
+  repeated string restricted_keys = 6;
 }
 

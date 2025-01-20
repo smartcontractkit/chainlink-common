@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type nestedTestStruct struct {
+	String string
+}
+
 type testStruct struct {
 	String      string
 	StringValue *String
@@ -32,6 +36,10 @@ type testStruct struct {
 
 	Map      map[string]any
 	MapValue *Map
+
+	Nested nestedTestStruct
+
+	NestedPointer *nestedTestStruct
 }
 
 func TestMap_UnwrapTo_Nil(t *testing.T) {
@@ -86,6 +94,10 @@ func TestMap_UnwrapTo(t *testing.T) {
 
 		Map:      im,
 		MapValue: mv,
+
+		Nested: nestedTestStruct{String: "nested"},
+
+		NestedPointer: &nestedTestStruct{String: "nestedPointer"},
 	}
 
 	m := map[string]any{
@@ -111,6 +123,14 @@ func TestMap_UnwrapTo(t *testing.T) {
 
 		"map":      im,
 		"mapValue": mv,
+
+		"nested": map[string]any{
+			"string": "nested",
+		},
+
+		"nestedPointer": map[string]any{
+			"string": "nestedPointer",
+		},
 	}
 	mv, err = NewMap(m)
 	require.NoError(t, err)

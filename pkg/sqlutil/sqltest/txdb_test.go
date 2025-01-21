@@ -1,4 +1,4 @@
-package pg
+package sqltest
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
@@ -24,7 +25,7 @@ func TestTxDBDriver(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			wg.Add(1)
 			go func() {
-				err := RegisterTxDb(string(InMemoryPostgres))
+				err := RegisterTxDB(pg.DriverInMemoryPostgres)
 				require.NoError(t, err)
 				wg.Done()
 			}()
@@ -34,7 +35,7 @@ func TestTxDBDriver(t *testing.T) {
 		assert.Contains(t, drivers, "txdb")
 	})
 
-	db := NewTestDB(t, TestURL(t))
+	db := NewDB(t, TestURL(t))
 	dropTable := func() error {
 		_, err := db.Exec(`DROP TABLE IF EXISTS txdb_test`)
 		return err

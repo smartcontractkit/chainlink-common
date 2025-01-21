@@ -14,7 +14,7 @@ import (
 
 // NewInMemoryDataSource returns a new in-memory DataSource
 func NewInMemoryDataSource(t *testing.T) sqlutil.DataSource {
-	db, err := sqlx.Open("duckdb", t.Name())
+	db, err := sqlx.Open("duckdb", "")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, db.Close()) })
 	return db

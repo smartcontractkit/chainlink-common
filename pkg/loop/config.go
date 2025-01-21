@@ -12,8 +12,15 @@ import (
 )
 
 const (
-	envDatabaseURL = "CL_DATABASE_URL"
-	envPromPort    = "CL_PROMETHEUS_PORT"
+	envDatabaseURL                    = "CL_DATABASE_URL"
+	envDatabaseIdleInTxSessionTimeout = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
+	envDatabaseLockTimeout            = "CL_DATABASE_LOCK_TIMEOUT"
+	envDatabaseQueryTimeout           = "CL_DATABASE_QUERY_TIMEOUT"
+	envDatabaseLogSQL                 = "CL_DATABASE_LOG_SQL"
+	envDatabaseMaxOpenConns           = "CL_DATABASE_MAX_OPEN_CONNS"
+	envDatabaseMaxIdleConns           = "CL_DATABASE_MAX_IDLE_CONNS"
+
+	envPromPort = "CL_PROMETHEUS_PORT"
 
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
@@ -39,7 +46,13 @@ const (
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	DatabaseURL *url.URL
+	DatabaseURL                    *url.URL
+	DatabaseIdleInTxSessionTimeout time.Duration
+	DatabaseLockTimeout            time.Duration
+	DatabaseQueryTimeout           time.Duration
+	DatabaseLogSQL                 bool
+	DatabaseMaxOpenConns           int
+	DatabaseMaxIdleConns           int
 
 	PrometheusPort int
 
@@ -72,7 +85,14 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 	if e.DatabaseURL != nil { // optional
 		add(envDatabaseURL, e.DatabaseURL.String())
+		add(envDatabaseIdleInTxSessionTimeout, e.DatabaseIdleInTxSessionTimeout.String())
+		add(envDatabaseLockTimeout, e.DatabaseLockTimeout.String())
+		add(envDatabaseQueryTimeout, e.DatabaseQueryTimeout.String())
+		add(envDatabaseLogSQL, strconv.FormatBool(e.DatabaseLogSQL))
+		add(envDatabaseMaxOpenConns, strconv.Itoa(e.DatabaseMaxOpenConns))
+		add(envDatabaseMaxIdleConns, strconv.Itoa(e.DatabaseMaxIdleConns))
 	}
+
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
 	add(envTracingEnabled, strconv.FormatBool(e.TracingEnabled))
@@ -107,13 +127,44 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
-	promPortStr := os.Getenv(envPromPort)
 	var err error
-	e.DatabaseURL, err = getDatabaseURL()
+	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*url.URL, error) {
+		if s == "" { // DatabaseURL is optional
+			return nil, nil
+		}
+		return url.Parse(s)
+	})
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envDatabaseURL, err)
+		return err
+	}
+	if e.DatabaseURL != nil {
+		e.DatabaseIdleInTxSessionTimeout, err = getEnv(envDatabaseIdleInTxSessionTimeout, time.ParseDuration)
+		if err != nil {
+			return err
+		}
+		e.DatabaseLockTimeout, err = getEnv(envDatabaseLockTimeout, time.ParseDuration)
+		if err != nil {
+			return err
+		}
+		e.DatabaseQueryTimeout, err = getEnv(envDatabaseQueryTimeout, time.ParseDuration)
+		if err != nil {
+			return err
+		}
+		e.DatabaseLogSQL, err = getEnv(envDatabaseLogSQL, strconv.ParseBool)
+		if err != nil {
+			return err
+		}
+		e.DatabaseMaxOpenConns, err = getEnv(envDatabaseMaxOpenConns, strconv.Atoi)
+		if err != nil {
+			return err
+		}
+		e.DatabaseMaxIdleConns, err = getEnv(envDatabaseMaxIdleConns, strconv.Atoi)
+		if err != nil {
+			return err
+		}
 	}
 
+	promPortStr := os.Getenv(envPromPort)
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
@@ -232,16 +283,11 @@ func getFloat64OrZero(envKey string) float64 {
 	return f
 }
 
-// getDatabaseURL parses the CL_DATABASE_URL environment variable.
-func getDatabaseURL() (*url.URL, error) {
-	databaseURL := os.Getenv(envDatabaseURL)
-	if databaseURL == "" {
-		// DatabaseURL is optional
-		return nil, nil
-	}
-	u, err := url.Parse(databaseURL)
+func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
+	v := os.Getenv(key)
+	t, err = parse(v)
 	if err != nil {
-		return nil, fmt.Errorf("invalid %s: %w", envDatabaseURL, err)
+		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
-	return u, nil
+	return
 }

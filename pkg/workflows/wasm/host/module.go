@@ -133,7 +133,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	for _, opt := range opts {
 		opt(modCfg)
 	}
-	
+
 	if modCfg.Logger == nil {
 		return nil, errors.New("must provide logger")
 	}

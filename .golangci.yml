@@ -3,11 +3,11 @@ run:
 linters:
   enable:
     - containedctx
+    - copyloopvar
     - depguard
     - errname
     - errorlint
     - exhaustive
-    - exportloopref
     - fatcontext
     - ginkgolinter
     - goimports

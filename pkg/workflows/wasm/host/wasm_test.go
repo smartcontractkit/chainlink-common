@@ -208,10 +208,17 @@ func Test_Compute_Logs(t *testing.T) {
 	_, err = m.Run(ctx, req)
 	assert.Nil(t, err)
 
-	require.Len(t, logs.AllUntimed(), 1)
+	require.Len(t, logs.AllUntimed(), 2)
 	expectedEntries := []Entry{
 		{
 			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
+			Fields: []zapcore.Field{
+				zap.String("test-string-field-key", "this is a test field content"),
+				zap.Float64("test-numeric-field-key", 6400000),
+			},
+		},
+		{
+			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "Sanitized symbols *********** Not sanitized symbols ッÖжγ"},
 			Fields: []zapcore.Field{
 				zap.String("test-string-field-key", "this is a test field content"),
 				zap.Float64("test-numeric-field-key", 6400000),

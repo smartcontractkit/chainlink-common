@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737477268834,
+  "lastUpdate": 1737486773934,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9324,6 +9324,48 @@ window.BENCHMARK_DATA = {
             "value": 28178,
             "unit": "ns/op",
             "extra": "42548 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "95c9b2dcf46a9a869b201ec22ff96f6ab0c24872",
+          "message": "Compute log sanitization (#1000)",
+          "timestamp": "2025-01-21T11:11:34-08:00",
+          "tree_id": "c19117a5b4c4d43919b30c258d93c54207b8b101",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/95c9b2dcf46a9a869b201ec22ff96f6ab0c24872"
+        },
+        "date": 1737486772706,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467,
+            "unit": "ns/op",
+            "extra": "2649210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 524.2,
+            "unit": "ns/op",
+            "extra": "2351820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28197,
+            "unit": "ns/op",
+            "extra": "42634 times\n4 procs"
           }
         ]
       }

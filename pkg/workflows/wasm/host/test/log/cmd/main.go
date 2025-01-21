@@ -24,6 +24,10 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 				"test-string-field-key", "this is a test field content",
 				"test-numeric-field-key", 6400000,
 			}...)
+			rsdk.Logger().Infow("Sanitized symbols []\\/><&{}:; Not sanitized symbols ッÖжγ", []interface{}{
+				"test-string-field-key", "this is a test field content",
+				"test-numeric-field-key", 6400000,
+			}...)
 			return false, nil
 		})
 

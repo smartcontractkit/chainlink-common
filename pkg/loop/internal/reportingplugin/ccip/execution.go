@@ -28,9 +28,9 @@ type ExecutionLOOPClient struct {
 	generator ccippb.ExecutionFactoryGeneratorClient
 }
 
-func NewExecutionLOOPClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ExecutionLOOPClient {
+func NewExecutionLOOPClient(brokerCfg net.BrokerConfig) *ExecutionLOOPClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ExecutionLOOPClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &ExecutionLOOPClient{
 		PluginClient:  pc,
 		ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc),

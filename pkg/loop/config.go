@@ -175,6 +175,7 @@ func (e *EnvConfig) parse() error {
 }
 
 // ManagedGRPCClientConfig return a Managed plugin and set grpc config values from the BrokerConfig.
+// The innermost relevant BrokerConfig should be used, to include any relevant services in the logger name.
 // Note: managed plugins shutdown when the parent process exits. We may want to change this behavior in the future
 // to enable host process restarts without restarting the plugin. To do that we would also need
 // supply the appropriate ReattachConfig to the plugin.ClientConfig.

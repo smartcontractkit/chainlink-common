@@ -22,8 +22,9 @@ type ReportingPluginFactoryClient struct {
 }
 
 func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ReportingPluginFactoryClient {
+	b = b.WithName("ReportingPluginProviderClient")
 	return &ReportingPluginFactoryClient{
-		BrokerExt:     b.WithName("ReportingPluginProviderClient"),
+		BrokerExt:     b,
 		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewReportingPluginFactoryClient(cc),
 	}

@@ -392,7 +392,13 @@ func (c *RemoteExecutableConfig) ApplyDefaults() {
 }
 
 type CapabilityConfiguration struct {
-	DefaultConfig          *values.Map
+	DefaultConfig *values.Map
+	// RestrictedKeys is a list of keys that can't be provided by users in their
+	// configuration; we'll remove these fields before passing them to the capability.
+	RestrictedKeys []string
+	// RestrictedConfig is configuration that can only be set by us; this
+	// takes precedence over any user-provided config.
+	RestrictedConfig       *values.Map
 	RemoteTriggerConfig    *RemoteTriggerConfig
 	RemoteTargetConfig     *RemoteTargetConfig
 	RemoteExecutableConfig *RemoteExecutableConfig

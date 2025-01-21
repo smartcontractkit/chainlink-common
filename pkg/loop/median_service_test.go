@@ -18,9 +18,10 @@ import (
 func TestMedianService(t *testing.T) {
 	t.Parallel()
 
-	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	lggr := logger.Test(t)
+	median := loop.NewMedianService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMedianName, false, 0)
-	}, mediantest.MedianProvider, mediantest.MedianContractID, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.GasPriceSubunitsDataSource, errorlogtest.ErrorLog)
+	}, mediantest.MedianProvider(lggr), mediantest.MedianContractID, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.GasPriceSubunitsDataSource, errorlogtest.ErrorLog)
 	hook := median.PluginService.XXXTestHook()
 	servicetest.Run(t, median)
 
@@ -49,14 +50,14 @@ func TestMedianService(t *testing.T) {
 
 func TestMedianService_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	median := loop.NewMedianService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		h := HelperProcessCommand{
+	median := loop.NewMedianService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
+		return HelperProcessCommand{
 			Command: loop.PluginMedianName,
 			Limit:   int(limit.Add(1)),
-		}
-		return h.New()
-	}, mediantest.MedianProvider, mediantest.MedianContractID, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.GasPriceSubunitsDataSource, errorlogtest.ErrorLog)
+		}.New()
+	}, mediantest.MedianProvider(lggr), mediantest.MedianContractID, mediantest.DataSource, mediantest.JuelsPerFeeCoinDataSource, mediantest.GasPriceSubunitsDataSource, errorlogtest.ErrorLog)
 	servicetest.Run(t, median)
 
 	reportingplugintest.RunFactory(t, median)

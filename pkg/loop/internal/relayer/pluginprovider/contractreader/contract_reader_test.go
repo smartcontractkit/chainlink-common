@@ -68,6 +68,16 @@ func TestVersionedBytesFunctions(t *testing.T) {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
+
+	t.Run("contractreader.DecodeVersionedBytes if nil returns error", func(t *testing.T) {
+		var decodedData map[string]interface{}
+		expected := errors.New("cannot decode nil versioned bytes")
+
+		err := contractreader.DecodeVersionedBytes(&decodedData, nil)
+		if err == nil || err.Error() != expected.Error() {
+			t.Errorf("expected error: %s, but got: %v", expected, err)
+		}
+	})
 }
 
 func TestContractReaderInterfaceTests(t *testing.T) {

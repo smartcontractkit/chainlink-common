@@ -10,7 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// PluginMercurynName is the name for [types.PluginMercury]/[NewGRPCPluginMercury].
+// PluginMercuryName is the name for [types.PluginMercury]/[NewGRPCPluginMercury].
 const PluginMercuryName = "mercury"
 
 func PluginMercuryHandshakeConfig() plugin.HandshakeConfig {
@@ -37,10 +37,9 @@ func (p *GRPCPluginMercury) GRPCServer(broker *plugin.GRPCBroker, server *grpc.S
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginMercury], updated with the new broker and conn.
 func (p *GRPCPluginMercury) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = mercury.NewMercuryAdapterClient(broker, p.BrokerConfig, conn)
-	} else {
-		p.pluginClient.Refresh(broker, conn)
+		p.pluginClient = mercury.NewMercuryAdapterClient(p.BrokerConfig)
 	}
+	p.pluginClient.Refresh(broker, conn)
 
 	return types.PluginMercury(p.pluginClient), nil
 }
@@ -50,5 +49,8 @@ func (p *GRPCPluginMercury) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: PluginMercuryHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginMercuryName: p},
 	}
-	return ManagedGRPCClientConfig(c, p.BrokerConfig)
+	if p.pluginClient == nil {
+		p.pluginClient = mercury.NewMercuryAdapterClient(p.BrokerConfig)
+	}
+	return ManagedGRPCClientConfig(c, p.pluginClient.BrokerConfig)
 }

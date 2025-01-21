@@ -23,7 +23,8 @@ type PluginFactoryClient struct {
 }
 
 func NewPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginFactoryClient {
-	return &PluginFactoryClient{b.WithName("MercuryPluginProviderClient"), goplugin.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
+	b = b.WithName("MercuryPluginProviderClient")
+	return &PluginFactoryClient{b, goplugin.NewServiceClient(b, cc), mercurypb.NewMercuryPluginFactoryClient(cc)}
 }
 
 func (r *PluginFactoryClient) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {

@@ -1,4 +1,4 @@
-package pg
+package sqltest
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"testing"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/multierr"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
 
@@ -33,23 +33,19 @@ import (
 // store to use the raw DialectPostgres dialect and setup a one-use database.
 // See heavyweight.FullTestDB() as a convenience function to help you do this,
 // but please use sparingly because as it's name implies, it is expensive.
-func RegisterTxDb(dbURL string) error {
+func RegisterTxDB(dbURL string) error {
 	registerMutex.Lock()
 	defer registerMutex.Unlock()
 	drivers := sql.Drivers()
 
 	for _, driver := range drivers {
-		if driver == string(TransactionWrappedPostgres) {
+		if driver == pg.DriverTxWrappedPostgres {
 			// TxDB driver already registered
 			return nil
 		}
 	}
 
-	if dbURL != string(InMemoryPostgres) {
-		if testing.Short() {
-			// -short tests don't need a DB
-			return nil
-		}
+	if dbURL != pg.DriverInMemoryPostgres {
 		parsed, err := url.Parse(dbURL)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s as a database URL: %w", dbURL, err)
@@ -61,7 +57,7 @@ func RegisterTxDb(dbURL string) error {
 			return fmt.Errorf("cannot run tests against database named `%s`. Note that the test database MUST end in `_test` to differentiate from a possible production DB. HINT: Try postgresql://postgres@localhost:5432/chainlink_test?sslmode=disable", parsed.Path[1:])
 		}
 	}
-	name := string(TransactionWrappedPostgres)
+	name := pg.DriverTxWrappedPostgres
 	sql.Register(name, &txDriver{
 		dbURL: dbURL,
 		conns: make(map[string]*conn),
@@ -96,11 +92,13 @@ func (d *txDriver) Open(dsn string) (driver.Conn, error) {
 	defer d.Unlock()
 	// Open real db connection if its the first call
 	if d.db == nil {
-		dialect := string(Postgres)
-		if d.dbURL == string(InMemoryPostgres) {
-			dialect = d.dbURL
+		var db *sql.DB
+		var err error
+		if d.dbURL == pg.DriverInMemoryPostgres {
+			db, err = sql.Open(pg.DriverInMemoryPostgres, "")
+		} else {
+			db, err = sql.Open(pg.DriverPostgres, d.dbURL)
 		}
-		db, err := sql.Open(dialect, d.dbURL)
 		if err != nil {
 			return nil, err
 		}

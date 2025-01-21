@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bytecodealliance/wasmtime-go/v23"
 	"github.com/google/uuid"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -13,8 +14,9 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
-	m, err := NewModule(modCfg, binary, WithDeterminism())
+func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte,
+	newWasmModule func(engine *wasmtime.Engine, wasm []byte) (*wasmtime.Module, error), config []byte) (*sdk.WorkflowSpec, error) {
+	m, err := NewModule(modCfg, binary, newWasmModule, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
 	}

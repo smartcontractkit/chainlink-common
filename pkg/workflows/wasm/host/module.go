@@ -128,7 +128,7 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+func NewModule(modCfg *ModuleConfig, binary []byte, newWasmModule func(engine *wasmtime.Engine, wasm []byte) (*wasmtime.Module, error), opts ...func(*ModuleConfig)) (*Module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -192,7 +192,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		binary = decompedBinary
 	}
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := newWasmModule(engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}

@@ -51,6 +51,18 @@ type ValueComparator struct {
 	Operator ComparisonOperator
 }
 
+// AnyOperator - represents SQL's `ANY (array expression)` operator. Useful to replace multiple comparators joined with OR.
+// i.e. allows to replace `field1 >= v1 OR field1 >= v2 OR field1 >= v3` with `field1 >= ANY(v1, v2, v3)`
+type AnyOperator []any
+
+func Any[T any](slice []T) AnyOperator {
+	result := make([]any, len(slice))
+	for i, v := range slice {
+		result[i] = v
+	}
+	return result
+}
+
 // Comparator is used to filter over values that belong to key data.
 type Comparator struct {
 	Name             string

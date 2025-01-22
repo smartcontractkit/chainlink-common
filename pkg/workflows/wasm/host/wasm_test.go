@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
+	"github.com/bytecodealliance/wasmtime-go/v23"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -98,6 +99,7 @@ func Test_GetWorkflowSpec(t *testing.T) {
 			IsUncompressed: true,
 		},
 		binary,
+		wasmtime.NewModule,
 		[]byte(""),
 	)
 	require.NoError(t, err)
@@ -115,6 +117,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 			IsUncompressed: false,
 		},
 		binary,
+		wasmtime.NewModule,
 		[]byte(""),
 	)
 	require.NoError(t, err)
@@ -131,6 +134,7 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 			IsUncompressed: true,
 		},
 		failBinary,
+		wasmtime.NewModule,
 		[]byte(""),
 	)
 	// panic
@@ -151,6 +155,7 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 			IsUncompressed: true,
 		},
 		binary, // use the success binary with a zero timeout
+		wasmtime.NewModule,
 		[]byte(""),
 	)
 	// panic
@@ -169,6 +174,7 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 			IsUncompressed: true,
 		},
 		binary,
+		wasmtime.NewModule,
 		[]byte(""),
 	)
 	assert.ErrorContains(t, err, "oops")
@@ -186,7 +192,7 @@ func Test_Compute_Logs(t *testing.T) {
 		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, nil
 		},
-	}, binary)
+	}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -284,7 +290,7 @@ func Test_Compute_Emit(t *testing.T) {
 				assert.Equal(t, "workflow-execution-id", kvs["workflow_execution_id"])
 				return nil
 			}),
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -312,7 +318,7 @@ func Test_Compute_Emit(t *testing.T) {
 
 				return assert.AnError
 			}),
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -345,7 +351,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, labels map[string]string) error {
 				return nil
 			}), // never called
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -380,7 +386,7 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 	m, err := NewModule(&ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
-	}, binary)
+	}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -427,7 +433,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -478,7 +484,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -523,7 +529,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return nil, assert.AnError
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -581,7 +587,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -630,7 +636,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					return &wasmpb.FetchResponse{}, nil
 				}
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -682,7 +688,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 1,
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -726,7 +732,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -771,7 +777,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 6,
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -816,7 +822,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 6,
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -850,7 +856,7 @@ func TestModule_Errors(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	_, err = m.Run(ctx, nil)
@@ -897,7 +903,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -956,7 +962,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	d := 1 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -982,7 +988,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1002,7 +1008,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1030,7 +1036,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1058,7 +1064,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1086,7 +1092,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, wasmtime.NewModule)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1139,7 +1145,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 			Determinism: &DeterminismConfig{
 				Seed: 42,
 			},
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1155,7 +1161,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-		}, binary)
+		}, binary, wasmtime.NewModule)
 		require.NoError(t, err)
 
 		m.Start()

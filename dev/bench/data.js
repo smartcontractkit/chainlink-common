@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737486773934,
+  "lastUpdate": 1737553766793,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9366,6 +9366,48 @@ window.BENCHMARK_DATA = {
             "value": 28197,
             "unit": "ns/op",
             "extra": "42634 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42d2956d3284e019793f8cc05562fc5045b7ed1a",
+          "message": "[fix] Update sanitization regex (#1007)",
+          "timestamp": "2025-01-22T13:48:06Z",
+          "tree_id": "6bfc98b610213cc577923e028eb9a694fa1c5cae",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/42d2956d3284e019793f8cc05562fc5045b7ed1a"
+        },
+        "date": 1737553765540,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 478.4,
+            "unit": "ns/op",
+            "extra": "2619588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.5,
+            "unit": "ns/op",
+            "extra": "2351211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28254,
+            "unit": "ns/op",
+            "extra": "42606 times\n4 procs"
           }
         ]
       }

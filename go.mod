@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/atombender/go-jsonschema v0.16.1-0.20240916205339-a74cd4e2851c
-	github.com/bytecodealliance/wasmtime-go/v23 v23.0.0
+	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0

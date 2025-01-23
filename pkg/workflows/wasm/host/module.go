@@ -1,22 +1,19 @@
 package host
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v23"
+	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -181,16 +178,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, newWasmModule func(engine *w
 	cfg.CacheConfigLoadDefault()
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
-	engine := wasmtime.NewEngineWithConfig(cfg)
-	if !modCfg.IsUncompressed {
-		rdr := brotli.NewReader(bytes.NewBuffer(binary))
-		decompedBinary, err := io.ReadAll(rdr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress binary: %w", err)
-		}
+	// this is critical to ensure loading performance does not deteriorate
+	cfg.SetNativeUnwindInfo(false)
 
-		binary = decompedBinary
-	}
+	engine := wasmtime.NewEngineWithConfig(cfg)
 
 	mod, err := newWasmModule(engine, binary)
 	if err != nil {

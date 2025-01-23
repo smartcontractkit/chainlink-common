@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -36,6 +37,20 @@ func NewRunner() *Runner {
 				logger:  l,
 				fetchFn: createFetchFn(sdkConfig, l, fetch),
 				emitFn:  createEmitFn(sdkConfig, l, emit),
+			}
+		},
+		args: os.Args,
+	}
+}
+
+func NewRunnerV2() *RunnerV2 {
+	return &RunnerV2{
+		sendResponse: sendResponseFn,
+		runtimeFactory: func(sdkConfig *RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2 {
+			return &RuntimeV2{
+				sendResponseFn: sendResponseFn,
+				refToResponse:  refToResponse,
+				hostRequestID:  hostReqID,
 			}
 		},
 		args: os.Args,

@@ -44,3 +44,13 @@ type FetchResponse struct {
 	Headers        map[string]any `json:"headers,omitempty"`      // HTTP headers
 	Body           []byte         `json:"body,omitempty"`         // HTTP response body
 }
+
+type RuntimeV2 interface {
+	CallCapabilities(calls ...CapabilityCallPromise) error
+}
+
+// weakly-typed, for the runtime to fulfill
+type CapabilityCallPromise interface {
+	CallInfo() (ref string, capId string, request capabilities.CapabilityRequest)
+	Fulfill(response capabilities.CapabilityResponse, err error)
+}

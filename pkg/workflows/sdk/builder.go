@@ -12,13 +12,30 @@ import (
 
 // WorkflowSpecFactory is used to build WorkflowSpecs.
 type WorkflowSpecFactory struct {
-	spec           *WorkflowSpec
-	names          map[string]bool
-	duplicateNames map[string]bool
-	emptyNames     bool
-	badCapTypes    []string
-	errors         []error
-	fns            map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
+	spec             *WorkflowSpec
+	names            map[string]bool
+	duplicateNames   map[string]bool
+	emptyNames       bool
+	badCapTypes      []string
+	errors           []error
+	fns              map[string]func(runtime Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error)
+	runFnsPerTrigger map[string]func(runtime RuntimeV2, triggerEvent capabilities.TriggerEvent) error
+}
+
+// One Run() function per registered trigger
+func AddRunFunctionForTrigger[TriggerConfig any, TriggerOutputs any](w *WorkflowSpecFactory, triggerRef string, triggerCfg TriggerConfig, fn func(runtime RuntimeV2, triggerOutputs TriggerOutputs) error) {
+	w.runFnsPerTrigger[triggerRef] = func(runtime RuntimeV2, triggerEvent capabilities.TriggerEvent) error {
+		var triggerOutputs TriggerOutputs
+		err := triggerEvent.Outputs.UnwrapTo(&triggerOutputs)
+		if err != nil {
+			return err
+		}
+		return fn(runtime, triggerOutputs)
+	}
+}
+
+func (w *WorkflowSpecFactory) GetRunFn(triggerRef string) func(runtime RuntimeV2, triggerEvent capabilities.TriggerEvent) error {
+	return w.runFnsPerTrigger[triggerRef]
 }
 
 func (w *WorkflowSpecFactory) GetFn(name string) func(sdk Runtime, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
@@ -136,10 +153,11 @@ func NewWorkflowSpecFactory() *WorkflowSpecFactory {
 			Consensus: make([]StepDefinition, 0),
 			Targets:   make([]StepDefinition, 0),
 		},
-		names:          map[string]bool{},
-		duplicateNames: map[string]bool{},
-		errors:         []error{},
-		emptyNames:     false,
+		names:            map[string]bool{},
+		duplicateNames:   map[string]bool{},
+		errors:           []error{},
+		emptyNames:       false,
+		runFnsPerTrigger: map[string]func(runtime RuntimeV2, triggerEvent capabilities.TriggerEvent) error{},
 	}
 }
 

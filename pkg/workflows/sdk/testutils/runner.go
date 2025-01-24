@@ -14,14 +14,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-func NewRunner(ctx context.Context) *Runner {
+func NewRunner(ctx context.Context, runtime sdk.Runtime) *Runner {
+	if runtime == nil {
+		runtime = &NoopRuntime{}
+	}
+
 	return &Runner{
 		ctx:          ctx,
 		registry:     map[string]capabilities.ExecutableCapability{},
 		results:      runnerResults{},
 		idToStep:     map[string]sdk.StepDefinition{},
 		dependencies: map[string][]string{},
-		runtime:      &NoopRuntime{},
+		runtime:      runtime,
 	}
 }
 

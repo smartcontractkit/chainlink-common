@@ -1,4 +1,3 @@
-
 package internal
 
 import (
@@ -6,21 +5,12 @@ import (
 
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
-	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	conventions "go.opentelemetry.io/collector/semconv/v1.25.0"
 	oldconventions "go.opentelemetry.io/collector/semconv/v1.6.1"
 )
 
-const removeOldSemconvFeatureGateID = "receiver.prometheusreceiver.RemoveLegacyResourceAttributes"
-
-var removeOldSemconvFeatureGate = featuregate.GlobalRegistry().MustRegister(
-	removeOldSemconvFeatureGateID,
-	featuregate.StageAlpha,
-	featuregate.WithRegisterFromVersion("v0.101.0"),
-	featuregate.WithRegisterDescription("When enabled, the net.host.name, net.host.port, and http.scheme resource attributes are no longer added to metrics. Use server.address, server.port, and url.scheme instead."),
-	featuregate.WithRegisterReferenceURL("https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/32814"),
-)
+var removeOldSemconvFeatureGateEnabled = true
 
 // isDiscernibleHost checks if a host can be used as a value for the 'host.name' key.
 // localhost-like hosts and unspecified (0.0.0.0) hosts are not discernible.
@@ -51,13 +41,13 @@ func CreateResource(job, instance string, serviceDiscoveryLabels labels.Labels) 
 	attrs := resource.Attributes()
 	attrs.PutStr(conventions.AttributeServiceName, job)
 	if isDiscernibleHost(host) {
-		if !removeOldSemconvFeatureGate.IsEnabled() {
+		if !removeOldSemconvFeatureGateEnabled {
 			attrs.PutStr(oldconventions.AttributeNetHostName, host)
 		}
 		attrs.PutStr(conventions.AttributeServerAddress, host)
 	}
 	attrs.PutStr(conventions.AttributeServiceInstanceID, instance)
-	if !removeOldSemconvFeatureGate.IsEnabled() {
+	if !removeOldSemconvFeatureGateEnabled {
 		attrs.PutStr(conventions.AttributeNetHostPort, port)
 		attrs.PutStr(conventions.AttributeHTTPScheme, serviceDiscoveryLabels.Get(model.SchemeLabel))
 	}

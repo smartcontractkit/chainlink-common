@@ -26,6 +26,7 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	config_util "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/prometheus/prometheus/config"
@@ -2346,12 +2347,12 @@ func TestTargetScraperScrapeOK(t *testing.T) {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if protobufParsing {
 				accept := r.Header.Get("Accept")
-				require.True(t, strings.HasPrefix(accept, "application/vnd.google.protobuf;"),
+				assert.True(t, strings.HasPrefix(accept, "application/vnd.google.protobuf;"),
 					"Expected Accept header to prefer application/vnd.google.protobuf.")
 			}
 
 			timeout := r.Header.Get("X-Prometheus-Scrape-Timeout-Seconds")
-			require.Equal(t, expectedTimeout, timeout, "Expected scrape timeout header.")
+			assert.Equal(t, expectedTimeout, timeout, "Expected scrape timeout header.")
 
 			w.Header().Set("Content-Type", `text/plain; version=0.0.4`)
 			w.Write([]byte("metric_a 1\nmetric_b 2\n"))
@@ -3414,7 +3415,7 @@ func TestScrapeLoopCompression(t *testing.T) {
 			scraped := make(chan bool)
 
 			ts := newHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, tc.acceptEncoding, r.Header.Get("Accept-Encoding"), "invalid value of the Accept-Encoding header")
+				assert.Equal(t, tc.acceptEncoding, r.Header.Get("Accept-Encoding"), "invalid value of the Accept-Encoding header")
 				fmt.Fprint(w, metricsText)
 				close(scraped)
 			}))

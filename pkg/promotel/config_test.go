@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver"
 )
 
 func TestConfig(t *testing.T) {

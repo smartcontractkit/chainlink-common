@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/textparse"
 	"github.com/prometheus/prometheus/storage"
+
+	internaltextparse "github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/textparse"
 )
 
 type GathereLoop struct {
@@ -24,10 +26,10 @@ type GathereLoop struct {
 func (gl *GathereLoop) newParser() (textparse.Parser, error) {
 	mfs, err := gl.g.Gather()
 	if err != nil {
-		gl.l.Log("msg", "Error while gathering metrics", "err", err)
+		_ = gl.l.Log("msg", "Error while gathering metrics", "err", err)
 		return nil, err
 	}
-	return textparse.NewProtobufParserShim(gl.scrapeClassicHistograms, gl.symbolTable, mfs), err
+	return internaltextparse.NewProtobufParserShim(gl.scrapeClassicHistograms, gl.symbolTable, mfs), err
 
 }
 
@@ -37,6 +39,13 @@ func (gl *GathereLoop) Run(errc chan<- error) {
 
 func (gl *GathereLoop) Stop() {
 	gl.scrapeLoop.stop()
+}
+
+// UnregisterMetrics
+func (gl *GathereLoop) UnregisterMetrics() {
+	if gl.scrapeLoop.metrics != nil {
+		gl.scrapeLoop.metrics.Unregister()
+	}
 }
 
 func (gl *GathereLoop) ScrapeAndReport(

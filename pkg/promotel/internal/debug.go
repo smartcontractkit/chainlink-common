@@ -160,6 +160,8 @@ func (b *dataBuffer) logNumberDataPoints(ps pmetric.NumberDataPointSlice) {
 			b.logEntry("Value: %d", p.IntValue())
 		case pmetric.NumberDataPointValueTypeDouble:
 			b.logEntry("Value: %f", p.DoubleValue())
+		case pmetric.NumberDataPointValueTypeEmpty:
+			b.logEntry("Value: Empty")
 		}
 
 		b.logExemplars("Exemplars", p.Exemplars())
@@ -300,6 +302,8 @@ func (b *dataBuffer) logExemplars(description string, se pmetric.ExemplarSlice) 
 			b.logEntry("     -> Value: %d", e.IntValue())
 		case pmetric.ExemplarValueTypeDouble:
 			b.logEntry("     -> Value: %f", e.DoubleValue())
+		case pmetric.ExemplarValueTypeEmpty:
+			b.logEntry("     -> Value: Empty")
 		}
 		b.logAttributes("     -> FilteredAttributes", e.FilteredAttributes())
 	}

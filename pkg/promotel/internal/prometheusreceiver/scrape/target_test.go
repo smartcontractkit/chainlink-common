@@ -15,6 +15,7 @@ import (
 
 	config_util "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/prometheus/prometheus/config"
@@ -135,7 +136,7 @@ func TestNewHTTPBearerToken(t *testing.T) {
 			func(w http.ResponseWriter, r *http.Request) {
 				expected := "Bearer 1234"
 				received := r.Header.Get("Authorization")
-				require.Equal(t, expected, received, "Authorization header was not set correctly.")
+				assert.Equal(t, expected, received, "Authorization header was not set correctly.")
 			},
 		),
 	)
@@ -156,7 +157,7 @@ func TestNewHTTPBearerTokenFile(t *testing.T) {
 			func(w http.ResponseWriter, r *http.Request) {
 				expected := "Bearer 12345"
 				received := r.Header.Get("Authorization")
-				require.Equal(t, expected, received, "Authorization header was not set correctly.")
+				assert.Equal(t, expected, received, "Authorization header was not set correctly.")
 			},
 		),
 	)
@@ -176,9 +177,9 @@ func TestNewHTTPBasicAuth(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				username, password, ok := r.BasicAuth()
-				require.True(t, ok, "Basic authorization header was not set correctly.")
-				require.Equal(t, "user", username)
-				require.Equal(t, "password123", password)
+				assert.True(t, ok, "Basic authorization header was not set correctly.")
+				assert.Equal(t, "user", username)
+				assert.Equal(t, "password123", password)
 			},
 		),
 	)

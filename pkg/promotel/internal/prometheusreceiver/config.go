@@ -30,24 +30,14 @@ type Config struct {
 	// ReportExtraScrapeMetrics - enables reporting of additional metrics for Prometheus client like scrape_body_size_bytes
 	ReportExtraScrapeMetrics bool `mapstructure:"report_extra_scrape_metrics"`
 
+	TargetAllocator any `mapstructure:"target_allocator"`
+
 	Registry *prometheus.Registry `mapstructure:"-"`
 }
 
 // Validate checks the receiver configuration is valid.
 func (cfg *Config) Validate() error {
 	return nil
-}
-
-func containsScrapeConfig(cfg *Config) bool {
-	if cfg.PrometheusConfig == nil {
-		return false
-	}
-	scrapeConfigs, err := (*promconfig.Config)(cfg.PrometheusConfig).GetScrapeConfigs()
-	if err != nil {
-		return false
-	}
-
-	return len(scrapeConfigs) > 0
 }
 
 // PromConfig is a redeclaration of promconfig.Config because we need custom unmarshaling
@@ -131,11 +121,7 @@ func validateHTTPClientConfig(cfg *commonconfig.HTTPClientConfig) error {
 			return fmt.Errorf("error checking authorization credentials file %q: %w", cfg.Authorization.CredentialsFile, err)
 		}
 	}
-
-	if err := checkTLSConfig(cfg.TLSConfig); err != nil {
-		return err
-	}
-	return nil
+	return checkTLSConfig(cfg.TLSConfig)
 }
 
 func checkFile(fn string) error {

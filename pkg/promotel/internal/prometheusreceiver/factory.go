@@ -1,4 +1,4 @@
-package prometheusreceiver 
+package prometheusreceiver
 
 import (
 	"context"
@@ -8,27 +8,10 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // init() of this package registers service discovery impl.
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/internal/metadata"
-)
-
-// This file implements config for Prometheus receiver.
-var useCreatedMetricGate = featuregate.GlobalRegistry().MustRegister(
-	"receiver.prometheusreceiver.UseCreatedMetric",
-	featuregate.StageAlpha,
-	featuregate.WithRegisterDescription("When enabled, the Prometheus receiver will"+
-		" retrieve the start time for Summary, Histogram and Sum metrics from _created metric"),
-)
-
-var enableNativeHistogramsGate = featuregate.GlobalRegistry().MustRegister(
-	"receiver.prometheusreceiver.EnableNativeHistograms",
-	featuregate.StageAlpha,
-	featuregate.WithRegisterDescription("When enabled, the Prometheus receiver will convert"+
-		" Prometheus native histograms to OTEL exponential histograms and ignore"+
-		" those Prometheus classic histograms that have a native histogram alternative"),
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/internal/metadata"
 )
 
 // NewFactory creates a new Prometheus receiver factory.

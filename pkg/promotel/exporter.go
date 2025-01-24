@@ -29,7 +29,6 @@ func (me *metricExporter) Start(ctx context.Context) error {
 
 func (me *metricExporter) Close() error {
 	return me.exporter.Shutdown(context.Background())
-
 }
 
 func (me *metricExporter) Consumer() consumer.Metrics {

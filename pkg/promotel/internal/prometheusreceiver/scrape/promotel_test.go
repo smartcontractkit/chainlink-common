@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/prometheus/model/metadata"
 	"github.com/prometheus/prometheus/storage"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 // TestScrapeLoopScrapeAndReport exercises scrapeAndReport with various scenarios

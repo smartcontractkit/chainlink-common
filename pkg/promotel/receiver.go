@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 type Runnable interface {
@@ -36,7 +36,6 @@ func (p *metricReceiver) Start(ctx context.Context) error {
 
 func (p *metricReceiver) Close() error {
 	return p.receiver.Shutdown(context.Background())
-
 }
 
 func NewMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, consumerFunc consumer.ConsumeMetricsFunc, logger *zap.Logger) (Runnable, error) {

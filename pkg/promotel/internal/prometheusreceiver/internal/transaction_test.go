@@ -25,7 +25,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 const (
@@ -124,8 +124,8 @@ func testTransactionAppendNoMetricName(t *testing.T, enableNativeHistograms bool
 	})
 	tr := newTransaction(scrapeCtx, &startTimeAdjuster{startTime: startTimestamp}, consumertest.NewNop(), labels.EmptyLabels(), receivertest.NewNopSettings(), nopObsRecv(t), false, enableNativeHistograms)
 	_, err := tr.Append(0, jobNotFoundLb, time.Now().Unix()*1000, 1.0)
-	assert.ErrorIs(t, err, errMetricNameNotFound)
-	assert.ErrorIs(t, tr.Commit(), errNoDataToBuild)
+	require.ErrorIs(t, err, errMetricNameNotFound)
+	require.ErrorIs(t, tr.Commit(), errNoDataToBuild)
 }
 
 func TestTransactionAppendEmptyMetricName(t *testing.T) {

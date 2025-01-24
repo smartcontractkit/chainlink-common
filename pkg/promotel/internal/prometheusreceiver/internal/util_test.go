@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 var testMetadata = map[string]scrape.MetricMetadata{

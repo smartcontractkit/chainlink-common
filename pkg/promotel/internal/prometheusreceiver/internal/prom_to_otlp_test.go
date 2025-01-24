@@ -5,7 +5,6 @@ import (
 
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	conventions "go.opentelemetry.io/collector/semconv/v1.27.0"
 )
@@ -351,7 +350,7 @@ func TestCreateNodeAndResourcePromToOTLP(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			SetFeatureGateForTest(t, removeOldSemconvFeatureGate, tt.removeOldSemconvFeatureGate)
+			SetFeatureGateForTest(t, &removeOldSemconvFeatureGateEnabled, tt.removeOldSemconvFeatureGate)
 			got := CreateResource(tt.job, tt.instance, tt.sdLabels)
 			require.Equal(t, tt.want.Attributes().AsRaw(), got.Attributes().AsRaw())
 		})
@@ -360,10 +359,10 @@ func TestCreateNodeAndResourcePromToOTLP(t *testing.T) {
 
 // Force the state of feature gate for a test
 // usage: defer SetFeatureGateForTest("gateName", true)()
-func SetFeatureGateForTest(t testing.TB, gate *featuregate.Gate, enabled bool) func() {
-	originalValue := gate.IsEnabled()
-	require.NoError(t, featuregate.GlobalRegistry().Set(gate.ID(), enabled))
+func SetFeatureGateForTest(t testing.TB, gate *bool, enabled bool) func() {
+	originalValue := removeOldSemconvFeatureGateEnabled
+	removeOldSemconvFeatureGateEnabled = enabled
 	return func() {
-		require.NoError(t, featuregate.GlobalRegistry().Set(gate.ID(), originalValue))
+		removeOldSemconvFeatureGateEnabled = originalValue
 	}
 }

@@ -23,8 +23,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus"
 
-	mdata "github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/internal/metadata"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	mdata "github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/internal/metadata"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 type resourceKey struct {

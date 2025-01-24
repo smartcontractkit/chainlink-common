@@ -2,11 +2,9 @@ package prometheusreceiver
 
 import (
 	"context"
-	"reflect"
 	"regexp"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,8 +14,8 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/internal"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 const (
@@ -33,14 +31,10 @@ type pReceiver struct {
 	configLoaded   chan struct{}
 	loadConfigOnce sync.Once
 
-	settings      receiver.Settings
-	scrapeManager *scrape.Manager
-	//discoveryManager       *discovery.Manager
-	//targetAllocatorManager *targetallocator.Manager
+	settings          receiver.Settings
 	registerer        prometheus.Registerer
 	gatherer          prometheus.Gatherer
 	unregisterMetrics func()
-	skipOffsetting    bool // for testing only
 }
 
 func NewPrometheusReceiver(set receiver.Settings, cfg *Config, next consumer.Metrics) *pReceiver {
@@ -96,11 +90,6 @@ func (r *pReceiver) Start(ctx context.Context, host component.Host) error {
 		return err
 	}
 
-	//err = r.targetAllocatorManager.Start(ctx, host, r.scrapeManager, r.discoveryManager)
-	// if err != nil {
-	// 	return err
-	// }
-
 	r.loadConfigOnce.Do(func() {
 		close(r.configLoaded)
 	})
@@ -123,14 +112,6 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger log.Log
 	// 	// the error message is logged separately.
 	// 	return errors.New("failed to create discovery manager")
 	// }
-
-	// go func() {
-	// 	r.settings.Logger.Info("Starting discovery manager")
-	// 	if err = r.discoveryManager.Run(); err != nil && !errors.Is(err, context.Canceled) {
-	// 		r.settings.Logger.Error("Discovery manager failed", zap.Error(err))
-	// 		componentstatus.ReportStatus(host, componentstatus.NewFatalErrorEvent(err))
-	// 	}
-	// }()
 
 	var startTimeMetricRegex *regexp.Regexp
 	var err error
@@ -156,44 +137,13 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger log.Log
 		return err
 	}
 
-	opts := &scrape.Options{
-		ExtraMetrics: r.cfg.ReportExtraScrapeMetrics,
-		// HTTPClientOptions: []commonconfig.HTTPClientOption{
-		// 	commonconfig.WithUserAgent(r.settings.BuildInfo.Command + "/" + r.settings.BuildInfo.Version),
-		// },
-	}
-
-	// if enableNativeHistogramsGate.IsEnabled() {
-	// 	opts.EnableNativeHistogramsIngestion = true
-	// }
-
-	// for testing only
-	if r.skipOffsetting {
-		optsValue := reflect.ValueOf(opts).Elem()
-		field := optsValue.FieldByName("skipOffsetting")
-		reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).
-			Elem().
-			Set(reflect.ValueOf(true))
-	}
-
-	// scrapeManager, err := scrape.NewManager(opts, logger, store, r.registerer)
-	// if err != nil {
-	// 	return err
-	// }
-	// r.scrapeManager = scrapeManager
-
-	// r.unregisterMetrics = func() {
-	// 	refreshSdMetrics.Unregister()
-	// 	for _, sdMetric := range sdMetrics {
-	// 		sdMetric.Unregister()
-	// 	}
-	// 	r.discoveryManager.UnregisterMetrics()
-	// 	r.scrapeManager.UnregisterMetrics()
-	// }
-
 	loop, err := scrape.NewGathererLoop(ctx, nil, store, r.registerer, r.gatherer, 10*time.Millisecond)
 	if err != nil {
 		return err
+	}
+
+	r.unregisterMetrics = func() {
+		loop.UnregisterMetrics()
 	}
 
 	go func() {
@@ -230,12 +180,6 @@ func (r *pReceiver) Shutdown(context.Context) error {
 	if r.cancelFunc != nil {
 		r.cancelFunc()
 	}
-	if r.scrapeManager != nil {
-		r.scrapeManager.Stop()
-	}
-	// if r.targetAllocatorManager != nil {
-	// 	r.targetAllocatorManager.Shutdown()
-	// }
 	if r.unregisterMetrics != nil {
 		r.unregisterMetrics()
 	}

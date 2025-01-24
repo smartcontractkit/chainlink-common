@@ -1,4 +1,3 @@
-
 package internal_test
 
 import (

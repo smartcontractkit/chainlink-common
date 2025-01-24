@@ -1,9 +1,7 @@
 package promotel_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -11,18 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/prometheus/model/exemplar"
 	"github.com/prometheus/prometheus/model/histogram"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/metadata"
 	"github.com/prometheus/prometheus/storage"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 // TestScrapeLoopScrapeAndReport exercises scrapeAndReport with various scenarios
@@ -227,23 +223,4 @@ func (a *testAppender) String() string {
 		sb.WriteString(fmt.Sprintf("rolledback: %s %f %d\n", s.metric, s.f, s.t))
 	}
 	return sb.String()
-}
-
-// protoMarshalDelimited marshals a MetricFamily into a delimited
-// Prometheus proto exposition format bytes (known as 'encoding=delimited`)
-//
-// See also https://eli.thegreenplace.net/2011/08/02/length-prefix-framing-for-protocol-buffers
-func protoMarshalDelimited(t *testing.T, mf *dto.MetricFamily) []byte {
-	t.Helper()
-
-	protoBuf, err := proto.Marshal(mf)
-	require.NoError(t, err)
-
-	varintBuf := make([]byte, binary.MaxVarintLen32)
-	varintLength := binary.PutUvarint(varintBuf, uint64(len(protoBuf)))
-
-	buf := &bytes.Buffer{}
-	buf.Write(varintBuf[:varintLength])
-	buf.Write(protoBuf)
-	return buf.Bytes()
 }

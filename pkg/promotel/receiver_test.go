@@ -14,7 +14,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver"
 )
 
 // TestPrometheusReceiver verifies the initialization, startup, and shutdown

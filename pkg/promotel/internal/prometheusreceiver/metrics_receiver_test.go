@@ -2,7 +2,6 @@ package prometheusreceiver_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
-	promreceiver "github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
+	promreceiver "github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver"
 )
 
 func TestReceiverEndToEnd(t *testing.T) {
@@ -40,21 +39,27 @@ func TestReceiverEndToEnd(t *testing.T) {
 	assert.Eventually(t, func() bool {
 		// This is the receiver's pov as to what should have been collected from the server
 		metrics := cms.AllMetrics()
-		if len(metrics) > 0 {
-			// If we don't have enough scrapes yet lets return false and wait for another tick
-			return true
-		}
-		return false
+		return len(metrics) > 0
 	}, 30*time.Second, 500*time.Millisecond)
 
 	// This begins the processing of the scrapes collected by the receiver
 	metrics := cms.AllMetrics()
 	// split and store results by target name
 	pResults := splitMetricsByTarget(metrics)
-	for name, scrapes := range pResults {
-		// validate scrapes here
-		fmt.Printf("name %s, \nscrapes %+v", name, scrapes)
+	for _, scrapes := range pResults {
 		assert.NotEmpty(t, scrapes)
+		for _, scrape := range scrapes {
+			// Verify that each scrape contains expected metrics
+			ilms := scrape.ScopeMetrics()
+			for j := 0; j < ilms.Len(); j++ {
+				metrics := ilms.At(j).Metrics()
+				assert.NotEmpty(t, metrics, "expected non-empty metrics")
+				for k := 0; k < metrics.Len(); k++ {
+					metric := metrics.At(k)
+					assert.NotEmpty(t, metric.Name(), "expected metric to have a name")
+				}
+			}
+		}
 	}
 }
 

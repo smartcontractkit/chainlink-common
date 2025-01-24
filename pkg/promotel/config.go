@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"gopkg.in/yaml.v3"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver"
 )
 
 type ReceiverConfig = component.Config

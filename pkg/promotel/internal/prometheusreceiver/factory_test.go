@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/internal/metadata"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/internal/metadata"
 )
 
 func TestCreateDefaultConfig(t *testing.T) {

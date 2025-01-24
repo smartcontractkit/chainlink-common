@@ -63,7 +63,6 @@ require (
 	go.opentelemetry.io/collector/exporter v0.115.0
 	go.opentelemetry.io/collector/exporter/exportertest v0.115.0
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.115.0
-	go.opentelemetry.io/collector/featuregate v1.21.0
 	go.opentelemetry.io/collector/otelcol v0.115.0
 	go.opentelemetry.io/collector/pdata v1.21.0
 	go.opentelemetry.io/collector/processor v0.115.0
@@ -276,6 +275,7 @@ require (
 	go.opentelemetry.io/collector/extension/experimental/storage v0.115.0 // indirect
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.115.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.115.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.21.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.115.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.115.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.115.0 // indirect
@@ -316,8 +316,3 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
-
-replace github.com/prometheus/prometheus v0.54.1 => github.com/pkcll/prometheus v0.54.1-promotel-protobufparse
-
-// replace github.com/prometheus/prometheus v0.54.1 => /Users/pk/repos/external/prometheus
-// replace github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.0 => /Users/pk/repos/opentelemetry-collector-contrib/receiver/prometheusreceiver

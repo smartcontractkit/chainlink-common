@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	promModel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +21,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
 )
 
 func TestConfig(t *testing.T) {
@@ -31,11 +31,6 @@ func TestConfig(t *testing.T) {
 
 	c0 := cfg.(*prometheusreceiver.Config)
 	assert.NotNil(t, c0.PrometheusConfig)
-	assert.Equal(t, "http://localhost:8080", c0.TargetAllocator.Endpoint)
-	assert.Equal(t, 5*time.Second, c0.TargetAllocator.Timeout)
-	assert.Equal(t, "client.crt", c0.TargetAllocator.TLSSetting.CertFile)
-	assert.Equal(t, 30*time.Second, c0.TargetAllocator.Interval)
-	assert.Equal(t, "collector-1", c0.TargetAllocator.CollectorID)
 	assert.NotNil(t, c0.PrometheusConfig)
 
 	cfg, err = promotel.LoadTestConfig(configFileName, "withScrape")
@@ -43,9 +38,6 @@ func TestConfig(t *testing.T) {
 
 	c1 := cfg.(*prometheusreceiver.Config)
 	assert.NotNil(t, c0.PrometheusConfig)
-	assert.Equal(t, "http://localhost:8080", c0.TargetAllocator.Endpoint)
-	assert.Equal(t, 30*time.Second, c0.TargetAllocator.Interval)
-	assert.Equal(t, "collector-1", c0.TargetAllocator.CollectorID)
 
 	assert.Len(t, c1.PrometheusConfig.ScrapeConfigs, 1)
 	assert.Equal(t, "demo", c1.PrometheusConfig.ScrapeConfigs[0].JobName)

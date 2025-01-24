@@ -5,13 +5,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v3"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
+	"gopkg.in/yaml.v3"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
 )
 
 type ReceiverConfig = component.Config

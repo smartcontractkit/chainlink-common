@@ -3,9 +3,7 @@ package promotel
 import (
 	"context"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/scrape"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -13,6 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver/scrape"
 )
 
 type Runnable interface {

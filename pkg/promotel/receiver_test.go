@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -14,6 +13,8 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/prometheusreceiver"
 )
 
 // TestPrometheusReceiver verifies the initialization, startup, and shutdown

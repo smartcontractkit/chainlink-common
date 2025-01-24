@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737567934141,
+  "lastUpdate": 1737736351693,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9450,6 +9450,48 @@ window.BENCHMARK_DATA = {
             "value": 28459,
             "unit": "ns/op",
             "extra": "42548 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fergal.gribben@smartcontract.com",
+            "name": "Fergal",
+            "username": "ferglor"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a36a3f72228943aab811ad4f284c8131a9c447f9",
+          "message": "Pass a runtime to the test runner (#1010)",
+          "timestamp": "2025-01-24T16:31:22Z",
+          "tree_id": "755cdd4807a09bf2b5a6374dfcb2f9c924b8384f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a36a3f72228943aab811ad4f284c8131a9c447f9"
+        },
+        "date": 1737736350915,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 455.1,
+            "unit": "ns/op",
+            "extra": "2652991 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 515.3,
+            "unit": "ns/op",
+            "extra": "2331381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28334,
+            "unit": "ns/op",
+            "extra": "42116 times\n4 procs"
           }
         ]
       }

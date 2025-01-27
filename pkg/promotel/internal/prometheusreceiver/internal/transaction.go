@@ -34,7 +34,7 @@ type transaction struct {
 	isNew                  bool
 	trimSuffixes           bool
 	enableNativeHistograms bool
-	ctx                    context.Context
+	ctx                    context.Context // nolint
 	families               map[resourceKey]map[scopeID]map[string]*metricFamily
 	mc                     scrape.MetricMetadataStore
 	sink                   consumer.Metrics
@@ -217,7 +217,7 @@ func (t *transaction) getOrCreateMetricFamily(key resourceKey, scope scopeID, mn
 		if _, ok := t.mc.GetMetadata(mn); !ok {
 			fn = normalizeMetricName(mn)
 		}
-		if mf, ok := t.families[key][scope][fn]; ok && mf.includesMetric(mn) {
+		if mf, ok := t.families[key][scope][fn]; ok && mf.includesMetric(mn) { // nolint
 			curMf = mf
 		} else {
 			curMf = newMetricFamily(mn, t.mc, t.logger)

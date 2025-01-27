@@ -18,7 +18,7 @@ import (
 
 func TestReceiverEndToEnd(t *testing.T) {
 	//cfg, err := setupTestConfig("127.0.0.1:8888", "/metrics")
-	//assert.NoError(t, err)
+	//require.NoError(t, err)
 	ctx := context.Background()
 	config := &promreceiver.Config{
 		PrometheusConfig:     (*promreceiver.PromConfig)(&promcfg.Config{}),

@@ -1,9 +1,7 @@
 package scrape_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -11,11 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/prometheus/model/exemplar"
 	"github.com/prometheus/prometheus/model/histogram"
 	"github.com/prometheus/prometheus/model/labels"
@@ -64,7 +60,7 @@ func TestScrapeLoopScrapeAndReport(t *testing.T) {
 			// verify metrics value
 			require.Len(t, mf.GetMetric(), 1)
 			require.Equal(t, "value_a", mf.GetMetric()[0].GetLabel()[0].GetValue())
-			require.Equal(t, 42.0, mf.GetMetric()[0].GetCounter().GetValue())
+			require.Equal(t, 42.0, mf.GetMetric()[0].GetCounter().GetValue()) // nolint
 			foundMetric = true
 			break
 		}
@@ -79,7 +75,7 @@ func TestScrapeLoopScrapeAndReport(t *testing.T) {
 	for _, s := range allSamples {
 		if s.metric.Get("__name__") == "metric_a" && s.metric.Get("label_a") == "value_a" {
 			found = true
-			require.Equal(t, 42.0, s.f)
+			require.Equal(t, 42.0, s.f) // nolint
 		}
 	}
 	require.True(t, found, "Expected to see the 'metric_a' counter metric.")
@@ -228,23 +224,4 @@ func (a *testAppender) String() string {
 		sb.WriteString(fmt.Sprintf("rolledback: %s %f %d\n", s.metric, s.f, s.t))
 	}
 	return sb.String()
-}
-
-// protoMarshalDelimited marshals a MetricFamily into a delimited
-// Prometheus proto exposition format bytes (known as 'encoding=delimited`)
-//
-// See also https://eli.thegreenplace.net/2011/08/02/length-prefix-framing-for-protocol-buffers
-func protoMarshalDelimited(t *testing.T, mf *dto.MetricFamily) []byte {
-	t.Helper()
-
-	protoBuf, err := proto.Marshal(mf)
-	require.NoError(t, err)
-
-	varintBuf := make([]byte, binary.MaxVarintLen32)
-	varintLength := binary.PutUvarint(varintBuf, uint64(len(protoBuf)))
-
-	buf := &bytes.Buffer{}
-	buf.Write(varintBuf[:varintLength])
-	buf.Write(protoBuf)
-	return buf.Bytes()
 }

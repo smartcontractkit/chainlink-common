@@ -1,6 +1,7 @@
 package promotel
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -105,7 +106,7 @@ func validateConfig(config component.Config) error {
 		return fmt.Errorf("expected config to be of type *prometheusreceiver.Config, got %T", config)
 	}
 	if cfg.PrometheusConfig == nil {
-		return fmt.Errorf("PrometheusConfig is nil")
+		return errors.New("PrometheusConfig is nil")
 	}
 	for _, scrapeConfig := range cfg.PrometheusConfig.ScrapeConfigs {
 		if scrapeConfig.JobName == "" {
@@ -115,7 +116,7 @@ func validateConfig(config component.Config) error {
 			return fmt.Errorf("unexpected scrape_interval: %s", scrapeConfig.ScrapeInterval)
 		}
 		if scrapeConfig.MetricsPath == "" {
-			return fmt.Errorf("metrics_path is empty")
+			return errors.New("metrics_path is empty")
 		}
 		for _, cfg := range scrapeConfig.ServiceDiscoveryConfigs {
 			staticConfig, ok := cfg.(discovery.StaticConfig)
@@ -124,10 +125,10 @@ func validateConfig(config component.Config) error {
 			}
 			for _, c := range staticConfig {
 				if c.Targets == nil {
-					return fmt.Errorf("targets is nil")
+					return errors.New("targets is nil")
 				}
 				if len(c.Targets) == 0 {
-					return fmt.Errorf("targets is empty")
+					return errors.New("targets is empty")
 				}
 			}
 			if len(staticConfig) == 0 || len(staticConfig[0].Targets) == 0 || staticConfig[0].Targets[0].String() == "" {

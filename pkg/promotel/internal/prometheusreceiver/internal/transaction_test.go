@@ -64,7 +64,7 @@ func TestTransactionCommitWithoutAdding(t *testing.T) {
 
 func testTransactionCommitWithoutAdding(t *testing.T, enableNativeHistograms bool) {
 	tr := newTransaction(scrapeCtx, &startTimeAdjuster{startTime: startTimestamp}, consumertest.NewNop(), labels.EmptyLabels(), receivertest.NewNopSettings(), nopObsRecv(t), false, enableNativeHistograms)
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, tr.Commit())
 }
 
 func TestTransactionRollbackDoesNothing(t *testing.T) {
@@ -77,7 +77,7 @@ func TestTransactionRollbackDoesNothing(t *testing.T) {
 
 func testTransactionRollbackDoesNothing(t *testing.T, enableNativeHistograms bool) {
 	tr := newTransaction(scrapeCtx, &startTimeAdjuster{startTime: startTimestamp}, consumertest.NewNop(), labels.EmptyLabels(), receivertest.NewNopSettings(), nopObsRecv(t), false, enableNativeHistograms)
-	assert.NoError(t, tr.Rollback())
+	require.NoError(t, tr.Rollback())
 }
 
 func TestTransactionUpdateMetadataDoesNothing(t *testing.T) {
@@ -91,7 +91,7 @@ func TestTransactionUpdateMetadataDoesNothing(t *testing.T) {
 func testTransactionUpdateMetadataDoesNothing(t *testing.T, enableNativeHistograms bool) {
 	tr := newTransaction(scrapeCtx, &startTimeAdjuster{startTime: startTimestamp}, consumertest.NewNop(), labels.EmptyLabels(), receivertest.NewNopSettings(), nopObsRecv(t), false, enableNativeHistograms)
 	_, err := tr.UpdateMetadata(0, labels.New(), metadata.Metadata{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestTransactionAppendNoTarget(t *testing.T) {
@@ -162,14 +162,14 @@ func testTransactionAppendResource(t *testing.T, enableNativeHistograms bool) {
 		model.JobLabel:        "test",
 		model.MetricNameLabel: "counter_test",
 	}), time.Now().Unix()*1000, 1.0)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = tr.Append(0, labels.FromMap(map[string]string{
 		model.InstanceLabel:   "localhost:8080",
 		model.JobLabel:        "test",
 		model.MetricNameLabel: startTimeMetricName,
 	}), time.Now().UnixMilli(), 1.0)
-	assert.NoError(t, err)
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tr.Commit())
 	expectedResource := CreateResource("test", "localhost:8080", labels.FromStrings(model.SchemeLabel, "http"))
 	mds := sink.AllMetrics()
 	require.Len(t, mds, 1)
@@ -193,14 +193,14 @@ func testTransactionAppendMultipleResources(t *testing.T, enableNativeHistograms
 		model.JobLabel:        "test-1",
 		model.MetricNameLabel: "counter_test",
 	}), time.Now().Unix()*1000, 1.0)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = tr.Append(0, labels.FromMap(map[string]string{
 		model.InstanceLabel:   "localhost:8080",
 		model.JobLabel:        "test-2",
 		model.MetricNameLabel: startTimeMetricName,
 	}), time.Now().UnixMilli(), 1.0)
-	assert.NoError(t, err)
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tr.Commit())
 
 	expectedResources := []pcommon.Resource{
 		CreateResource("test-1", "localhost:8080", labels.FromStrings(model.SchemeLabel, "http")),
@@ -244,8 +244,8 @@ func testReceiverVersionAndNameAreAttached(t *testing.T, enableNativeHistograms 
 		model.JobLabel:        "test",
 		model.MetricNameLabel: "counter_test",
 	}), time.Now().Unix()*1000, 1.0)
-	assert.NoError(t, err)
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tr.Commit())
 
 	expectedResource := CreateResource("test", "localhost:8080", labels.FromStrings(model.SchemeLabel, "http"))
 	mds := sink.AllMetrics()
@@ -276,7 +276,7 @@ func testTransactionCommitErrorWhenAdjusterError(t *testing.T, enableNativeHisto
 	adjusterErr := errors.New("adjuster error")
 	tr := newTransaction(scrapeCtx, &errorAdjuster{err: adjusterErr}, sink, labels.EmptyLabels(), receivertest.NewNopSettings(), nopObsRecv(t), false, enableNativeHistograms)
 	_, err := tr.Append(0, goodLabels, time.Now().Unix()*1000, 1.0)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.ErrorIs(t, tr.Commit(), adjusterErr)
 }
 
@@ -341,7 +341,7 @@ func testTransactionAppendHistogramNoLe(t *testing.T, enableNativeHistograms boo
 	assert.Equal(t, 1, observedLogs.Len())
 	assert.Equal(t, 1, observedLogs.FilterMessage("failed to add datapoint").Len())
 
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, tr.Commit())
 	assert.Empty(t, sink.AllMetrics())
 }
 
@@ -380,7 +380,7 @@ func testTransactionAppendSummaryNoQuantile(t *testing.T, enableNativeHistograms
 	assert.Equal(t, 1, observedLogs.Len())
 	assert.Equal(t, 1, observedLogs.FilterMessage("failed to add datapoint").Len())
 
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, tr.Commit())
 	assert.Empty(t, sink.AllMetrics())
 }
 
@@ -414,7 +414,7 @@ func testTransactionAppendValidAndInvalid(t *testing.T, enableNativeHistograms b
 		model.JobLabel:        "test",
 		model.MetricNameLabel: "counter_test",
 	}), time.Now().Unix()*1000, 1.0)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// summary without quantiles, should be ignored
 	summarylabels := labels.FromStrings(
@@ -429,7 +429,7 @@ func testTransactionAppendValidAndInvalid(t *testing.T, enableNativeHistograms b
 	assert.Equal(t, 1, observedLogs.Len())
 	assert.Equal(t, 1, observedLogs.FilterMessage("failed to add datapoint").Len())
 
-	assert.NoError(t, tr.Commit())
+	require.NoError(t, tr.Commit())
 	expectedResource := CreateResource("test", "localhost:8080", labels.FromStrings(model.SchemeLabel, "http"))
 	mds := sink.AllMetrics()
 	require.Len(t, mds, 1)
@@ -471,7 +471,7 @@ func testTransactionAppendWithEmptyLabelArrayFallbackToTargetLabels(t *testing.T
 	_, err := tr.Append(0, labels.FromMap(map[string]string{
 		model.MetricNameLabel: "counter_test",
 	}), time.Now().Unix()*1000, 1.0)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestAppendExemplarWithNoMetricName(t *testing.T) {
@@ -558,7 +558,7 @@ func testAppendExemplarWithoutAddingMetric(t *testing.T, enableNativeHistograms 
 		"a", "b",
 	)
 	_, err := tr.AppendExemplar(0, labels, exemplar.Exemplar{Value: 0})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestAppendExemplarWithNoLabels(t *testing.T) {
@@ -1866,14 +1866,14 @@ func (tt buildTestData) run(t *testing.T, enableNativeHistograms bool) {
 			default:
 				_, err = tr.Append(0, pt.lb, pt.t, pt.v)
 			}
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			for _, e := range pt.exemplars {
 				_, err := tr.AppendExemplar(0, pt.lb, e)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		}
-		assert.NoError(t, tr.Commit())
+		require.NoError(t, tr.Commit())
 		mds := sink.AllMetrics()
 		if wants[i].ResourceMetrics().Len() == 0 {
 			// Receiver does not emit empty metrics, so will not have anything in the sink.

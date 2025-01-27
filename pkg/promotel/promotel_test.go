@@ -59,7 +59,7 @@ func TestScrapeLoopScrapeAndReport(t *testing.T) {
 			// verify metrics value
 			require.Len(t, mf.GetMetric(), 1)
 			require.Equal(t, "value_a", mf.GetMetric()[0].GetLabel()[0].GetValue())
-			require.Equal(t, 42.0, mf.GetMetric()[0].GetCounter().GetValue())
+			require.Equal(t, 42.0, mf.GetMetric()[0].GetCounter().GetValue()) // nolint
 			foundMetric = true
 			break
 		}
@@ -74,7 +74,7 @@ func TestScrapeLoopScrapeAndReport(t *testing.T) {
 	for _, s := range allSamples {
 		if s.metric.Get("__name__") == "metric_a" && s.metric.Get("label_a") == "value_a" {
 			found = true
-			require.Equal(t, 42.0, s.f)
+			require.Equal(t, 42.0, s.f) // nolint
 		}
 	}
 	require.True(t, found, "Expected to see the 'metric_a' counter metric.")

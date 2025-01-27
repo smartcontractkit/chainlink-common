@@ -242,7 +242,7 @@ func convertDeltaBuckets(spans []histogram.Span, deltas []int64, buckets pcommon
 		for i := uint32(0); i < span.Length; i++ {
 			bucketCount += deltas[bucketIdx]
 			bucketIdx++
-			buckets.Append(uint64(bucketCount))
+			buckets.Append(uint64(bucketCount)) // nolint
 		}
 	}
 }

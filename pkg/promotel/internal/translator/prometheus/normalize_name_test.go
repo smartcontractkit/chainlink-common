@@ -175,7 +175,8 @@ func TestBuildCompliantNameWithNormalize(t *testing.T) {
 }
 
 func TestBuildCompliantNameWithSuffixesFeatureGateDisabled(t *testing.T) {
-	defer func() { normalizeNameGateEnabled = false }()
+	normalizeNameGateEnabled = false
+	defer func() { normalizeNameGateEnabled = true }()
 	addUnitAndTypeSuffixes := true
 	require.Equal(t, "system_io", BuildCompliantName(createCounter("system.io", "By"), "", addUnitAndTypeSuffixes))
 	require.Equal(t, "system_network_io", BuildCompliantName(createCounter("network.io", "By"), "system", addUnitAndTypeSuffixes))
@@ -187,7 +188,8 @@ func TestBuildCompliantNameWithSuffixesFeatureGateDisabled(t *testing.T) {
 }
 
 func TestBuildCompliantNameWithoutSuffixes(t *testing.T) {
-	defer func() { normalizeNameGateEnabled = false }()
+	normalizeNameGateEnabled = false
+	defer func() { normalizeNameGateEnabled = true }()
 	addUnitAndTypeSuffixes := false
 	require.Equal(t, "system_io", BuildCompliantName(createCounter("system.io", "By"), "", addUnitAndTypeSuffixes))
 	require.Equal(t, "system_network_io", BuildCompliantName(createCounter("network.io", "By"), "system", addUnitAndTypeSuffixes))

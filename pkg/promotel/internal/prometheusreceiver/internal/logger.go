@@ -1,4 +1,4 @@
-package internal 
+package internal
 
 import (
 	gokitLog "github.com/go-kit/log"

@@ -55,7 +55,6 @@ func newPrometheusReceiver(set receiver.Settings, cfg *Config, next consumer.Met
 		gatherer = prometheus.DefaultGatherer
 	}
 
-	//baseCfg := promconfig.Config(*cfg.PrometheusConfig)
 	pr := &pReceiver{
 		cfg:          cfg,
 		consumer:     next,
@@ -64,14 +63,7 @@ func newPrometheusReceiver(set receiver.Settings, cfg *Config, next consumer.Met
 		registerer: prometheus.WrapRegistererWith(
 			prometheus.Labels{"receiver": set.ID.String()},
 			registerer),
-		// Added
 		gatherer: gatherer,
-		// targetAllocatorManager: targetallocator.NewManager(
-		// 	set,
-		// 	cfg.TargetAllocator,
-		// 	&baseCfg,
-		// 	enableNativeHistogramsGate.IsEnabled(),
-		// ),
 	}
 	return pr
 }
@@ -98,21 +90,6 @@ func (r *pReceiver) Start(ctx context.Context, host component.Host) error {
 }
 
 func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger log.Logger, host component.Host) error {
-	// Some SD mechanisms use the "refresh" package, which has its own metrics.
-	// refreshSdMetrics := discovery.NewRefreshMetrics(r.registerer)
-
-	// Register the metrics specific for each SD mechanism, and the ones for the refresh package.
-	// sdMetrics, err := discovery.RegisterSDMetrics(r.registerer, refreshSdMetrics)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to register service discovery metrics: %w", err)
-	// }
-	// r.discoveryManager = discovery.NewManager(ctx, logger, r.registerer, sdMetrics)
-	// if r.discoveryManager == nil {
-	// 	// NewManager can sometimes return nil if it encountered an error, but
-	// 	// the error message is logged separately.
-	// 	return errors.New("failed to create discovery manager")
-	// }
-
 	var startTimeMetricRegex *regexp.Regexp
 	var err error
 	if r.cfg.StartTimeMetricRegex != "" {
@@ -147,14 +124,14 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger log.Log
 	}
 
 	go func() {
-		// The scrape manager needs to wait for the configuration to be loaded before beginning
 		<-r.configLoaded
 		r.settings.Logger.Info("Starting gatherer loop")
+		// Run loop directly instead of scrape manager
+		loop.Run(nil)
 		// if err := r.scrapeManager.Run(r.discoveryManager.SyncCh()); err != nil {
 		// 	r.settings.Logger.Error("Scrape manager failed", zap.Error(err))
 		// 	componentstatus.ReportStatus(host, componentstatus.NewFatalErrorEvent(err))
 		// }
-		loop.Run(nil)
 	}()
 	return nil
 }

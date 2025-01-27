@@ -565,7 +565,7 @@ func TestManagerTargetsUpdates(t *testing.T) {
 	require.NoError(t, err)
 
 	ts := make(chan map[string][]*targetgroup.Group)
-	go m.Run(ts)
+	go func() { _ = m.Run(ts) }()
 	defer m.Stop()
 
 	tgSent := make(map[string][]*targetgroup.Group)
@@ -665,7 +665,7 @@ scrape_configs:
 		scrapeManager.scrapePools = map[string]*scrapePool{}
 		for _, sc := range cfg.ScrapeConfigs {
 			_, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			defer cancel() // nolint
 			sp := &scrapePool{
 				appendable:    &nopAppendable{},
 				activeTargets: map[uint64]*Target{},
@@ -682,7 +682,7 @@ scrape_configs:
 				staticConfig := c.(discovery.StaticConfig)
 				for _, group := range staticConfig {
 					for i := range group.Targets {
-						sp.activeTargets[uint64(i)] = &Target{}
+						sp.activeTargets[uint64(i)] = &Target{} // nolint
 					}
 				}
 			}

@@ -157,14 +157,14 @@ func (m *Manager) reload() {
 		if _, ok := m.scrapePools[setName]; !ok {
 			scrapeConfig, ok := m.scrapeConfigs[setName]
 			if !ok {
-				level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
+				_ = level.Error(m.logger).Log("msg", "error reloading target set", "err", "invalid config id:"+setName)
 				continue
 			}
 			m.metrics.targetScrapePools.Inc()
 			sp, err := newScrapePool(scrapeConfig, m.append, m.offsetSeed, log.With(m.logger, "scrape_pool", setName), m.buffers, m.opts, m.metrics)
 			if err != nil {
 				m.metrics.targetScrapePoolsFailed.Inc()
-				level.Error(m.logger).Log("msg", "error creating new scrape pool", "err", err, "scrape_pool", setName)
+				_ = level.Error(m.logger).Log("msg", "error creating new scrape pool", "err", err, "scrape_pool", setName)
 				continue
 			}
 			m.scrapePools[setName] = sp
@@ -242,7 +242,7 @@ func (m *Manager) ApplyConfig(cfg *config.Config) error {
 		case !reflect.DeepEqual(sp.config, cfg):
 			err := sp.reload(cfg)
 			if err != nil {
-				level.Error(m.logger).Log("msg", "error reloading scrape pool", "err", err, "scrape_pool", name)
+				_ = level.Error(m.logger).Log("msg", "error reloading scrape pool", "err", err, "scrape_pool", name)
 				failed = true
 			}
 		}

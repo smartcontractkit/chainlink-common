@@ -19,7 +19,7 @@ import (
 func TestCreateDefaultConfig(t *testing.T) {
 	cfg := createDefaultConfig()
 	assert.NotNil(t, cfg, "failed to create default config")
-	assert.NoError(t, componenttest.CheckConfigStruct(cfg))
+	require.NoError(t, componenttest.CheckConfigStruct(cfg))
 }
 
 func TestCreateReceiver(t *testing.T) {
@@ -41,7 +41,7 @@ func TestFactoryCanParseServiceDiscoveryConfigs(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	assert.NoError(t, sub.Unmarshal(cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 }
 
 func TestMultipleCreate(t *testing.T) {

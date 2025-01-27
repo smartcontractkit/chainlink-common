@@ -1,4 +1,3 @@
-
 package internal
 
 import (
@@ -160,9 +159,9 @@ func exponentialHistogramPointSimplified(attributes []*kv, startTimestamp, times
 	var sum float64
 	var count uint64
 	for i := 0; i < bucketCount; i++ {
-		positive.BucketCounts().Append(uint64(i + 1))
-		negative.BucketCounts().Append(uint64(i + 1))
-		count += uint64(i+1) + uint64(i+1)
+		positive.BucketCounts().Append(uint64(i + 1)) // nolint
+		negative.BucketCounts().Append(uint64(i + 1)) // nolint
+		count += uint64(i+1) + uint64(i+1)            // nolint
 		sum += float64(i+1)*10 + float64(i+1)*10.0
 	}
 	hdp.SetCount(count)

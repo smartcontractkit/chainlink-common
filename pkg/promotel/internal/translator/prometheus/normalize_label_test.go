@@ -7,7 +7,8 @@ import (
 )
 
 func TestSanitize(t *testing.T) {
-	defer func() { dropSanitizationGateEnabled = false }()
+	dropSanitizationGateEnabled = false
+	defer func() { dropSanitizationGateEnabled = true }()
 
 	require.Equal(t, "", NormalizeLabel(""), "")
 	require.Equal(t, "key_test", NormalizeLabel("_test"))
@@ -18,7 +19,8 @@ func TestSanitize(t *testing.T) {
 }
 
 func TestSanitizeDropSanitization(t *testing.T) {
-	defer func() { dropSanitizationGateEnabled = false }()
+	dropSanitizationGateEnabled = true
+	defer func() { dropSanitizationGateEnabled = true }()
 
 	require.Equal(t, "", NormalizeLabel(""))
 	require.Equal(t, "_test", NormalizeLabel("_test"))

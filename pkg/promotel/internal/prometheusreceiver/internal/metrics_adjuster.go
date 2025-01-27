@@ -110,6 +110,7 @@ func (tsm *timeseriesMap) get(metric pmetric.Metric, kv pcommon.Map) (*timeserie
 		// * CumulativeHistogram
 		// * GaugeHistogram
 		key.aggTemporality = metric.ExponentialHistogram().AggregationTemporality()
+	default:
 	}
 
 	tsm.mark = true

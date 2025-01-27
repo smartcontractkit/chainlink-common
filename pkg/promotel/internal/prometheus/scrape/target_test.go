@@ -147,7 +147,7 @@ func TestNewHTTPBearerToken(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.NoError(t, err)
 }
 
@@ -168,7 +168,7 @@ func TestNewHTTPBearerTokenFile(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.NoError(t, err)
 }
 
@@ -193,7 +193,7 @@ func TestNewHTTPBasicAuth(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.NoError(t, err)
 }
 
@@ -202,7 +202,7 @@ func TestNewHTTPCACert(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", `text/plain; version=0.0.4`)
-				w.Write([]byte{})
+				_, _ = w.Write([]byte{})
 			},
 		),
 	)
@@ -217,7 +217,7 @@ func TestNewHTTPCACert(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.NoError(t, err)
 }
 
@@ -226,7 +226,7 @@ func TestNewHTTPClientCert(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", `text/plain; version=0.0.4`)
-				w.Write([]byte{})
+				_, _ = w.Write([]byte{})
 			},
 		),
 	)
@@ -246,7 +246,7 @@ func TestNewHTTPClientCert(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.NoError(t, err)
 }
 
@@ -255,7 +255,7 @@ func TestNewHTTPWithServerName(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", `text/plain; version=0.0.4`)
-				w.Write([]byte{})
+				w.Write([]byte{}) // nolint
 			},
 		),
 	)
@@ -271,7 +271,7 @@ func TestNewHTTPWithServerName(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.NoError(t, err)
 }
 
@@ -280,7 +280,7 @@ func TestNewHTTPWithBadServerName(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", `text/plain; version=0.0.4`)
-				w.Write([]byte{})
+				w.Write([]byte{}) // nolint
 			},
 		),
 	)
@@ -296,12 +296,12 @@ func TestNewHTTPWithBadServerName(t *testing.T) {
 	}
 	c, err := config_util.NewClientFromConfig(cfg, "test")
 	require.NoError(t, err)
-	_, err = c.Get(server.URL)
+	_, err = c.Get(server.URL) // nolint
 	require.Error(t, err)
 }
 
 func newTLSConfig(certName string, t *testing.T) *tls.Config {
-	tlsConfig := &tls.Config{}
+	tlsConfig := &tls.Config{} // nolint
 	caCertPool := x509.NewCertPool()
 	caCert, err := os.ReadFile(caCertPath)
 	require.NoError(t, err, "Couldn't read CA cert.")

@@ -175,8 +175,8 @@ func TestGetBoundary(t *testing.T) {
 				return
 			}
 
-			assert.NoError(t, err)
-			assert.Equal(t, tt.wantValue, value)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantValue, value) // nolint
 		})
 	}
 }

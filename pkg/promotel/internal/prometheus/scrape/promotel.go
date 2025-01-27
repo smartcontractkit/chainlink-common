@@ -30,7 +30,6 @@ func (gl *GathereLoop) newParser() (textparse.Parser, error) {
 		return nil, err
 	}
 	return internaltextparse.NewProtobufParserShim(gl.scrapeClassicHistograms, gl.symbolTable, mfs), err
-
 }
 
 func (gl *GathereLoop) Run(errc chan<- error) {

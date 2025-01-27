@@ -158,8 +158,8 @@ func (t *Target) offset(interval time.Duration, offsetSeed uint64) time.Duration
 	// Base is a pinned to absolute time, no matter how often offset is called.
 	var (
 		base   = int64(interval) - now%int64(interval)
-		offset = (t.hash() ^ offsetSeed) % uint64(interval)
-		next   = base + int64(offset)
+		offset = (t.hash() ^ offsetSeed) % uint64(interval) // nolint
+		next   = base + int64(offset)                       // nolint
 	)
 
 	if next > int64(interval) {
@@ -461,13 +461,13 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig, noDefaultPort 
 	// If the address is not valid, we don't append a port either.
 	addPort := func(s string) (string, string, bool) {
 		// If we can split, a port exists and we don't have to add one.
-		if host, port, err := net.SplitHostPort(s); err == nil {
+		if host, port, err := net.SplitHostPort(s); err == nil { // nolint
 			return host, port, false
 		}
 		// If adding a port makes it valid, the previous error
 		// was not due to an invalid address and we can append a port.
-		_, _, err := net.SplitHostPort(s + ":1234")
-		return "", "", err == nil
+		_, _, e := net.SplitHostPort(s + ":1234")
+		return "", "", e == nil
 	}
 
 	addr := lb.Get(model.AddressLabel)
@@ -503,7 +503,7 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig, noDefaultPort 
 		}
 	}
 
-	if err := config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
+	if err := config.CheckTargetAddress(model.LabelValue(addr)); err != nil { // nolint
 		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 

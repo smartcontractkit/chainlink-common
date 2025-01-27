@@ -62,11 +62,11 @@ func getSortedNotUsefulLabels(mType pmetric.MetricType) []string {
 func timestampFromFloat64(ts float64) pcommon.Timestamp {
 	secs := int64(ts)
 	nanos := int64((ts - float64(secs)) * 1e9)
-	return pcommon.Timestamp(secs*1e9 + nanos)
+	return pcommon.Timestamp(secs*1e9 + nanos) // nolint
 }
 
 func timestampFromMs(timeAtMs int64) pcommon.Timestamp {
-	return pcommon.Timestamp(timeAtMs * 1e6)
+	return pcommon.Timestamp(timeAtMs * 1e6) // nolint
 }
 
 func getBoundary(metricType pmetric.MetricType, labels labels.Labels) (float64, error) {

@@ -159,7 +159,7 @@ func (hw *hashWriter) writeValueHash(v pcommon.Value) {
 		}
 	case pcommon.ValueTypeInt:
 		hw.byteBuf = append(hw.byteBuf, valIntPrefix...)
-		hw.byteBuf = binary.LittleEndian.AppendUint64(hw.byteBuf, uint64(v.Int()))
+		hw.byteBuf = binary.LittleEndian.AppendUint64(hw.byteBuf, uint64(v.Int())) // nolint
 	case pcommon.ValueTypeDouble:
 		hw.byteBuf = append(hw.byteBuf, valDoublePrefix...)
 		hw.byteBuf = binary.LittleEndian.AppendUint64(hw.byteBuf, math.Float64bits(v.Double()))

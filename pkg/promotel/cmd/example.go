@@ -84,7 +84,7 @@ func startMetricReceiver(reg prometheus.Gatherer, logger *zap.Logger, next consu
 	}
 
 	// Gather metrics via promotel
-	// MetricReceiver fetches metrics from pormetheus.Gatherer, then converts it to OTel format and writes formatted metrics to stdout
+	// MetricReceiver fetches metrics from prometheus.Gatherer, then converts it to OTel format and writes formatted metrics to stdout
 	receiver, err := promotel.NewMetricReceiver(config, reg, next, logger)
 
 	if err != nil {

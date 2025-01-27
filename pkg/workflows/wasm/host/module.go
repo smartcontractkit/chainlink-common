@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v23"
+	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -187,6 +187,9 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 	cfg.CacheConfigLoadDefault()
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
+
+	// Load testing shows that leaving native unwind info enabled causes a very large slowdown when loading multiple modules.
+	cfg.SetNativeUnwindInfo(false)
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {

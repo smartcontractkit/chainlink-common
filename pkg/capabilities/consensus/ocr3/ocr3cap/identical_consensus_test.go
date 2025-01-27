@@ -75,7 +75,6 @@ func TestIdenticalConsensus(t *testing.T) {
 				Config: map[string]any{
 					"encoder":            "EVM",
 					"encoder_config":     map[string]any{},
-					"aggregation_config": map[string]any{},
 					"aggregation_method": "identical",
 					"aggregation_config": map[string]any{
 						"KeyOverrides":            []string{"evm"},

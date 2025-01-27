@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheus/scrape"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 type Runnable interface {

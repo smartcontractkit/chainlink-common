@@ -10,7 +10,7 @@ import (
 	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 	"go.uber.org/zap"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheus/pdatautil"
 )
 
 // Notes on garbage collection (gc):

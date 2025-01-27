@@ -3,7 +3,7 @@ package internal
 import (
 	"github.com/prometheus/common/model"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheus/scrape"
 )
 
 type dataPoint struct {

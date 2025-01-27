@@ -14,8 +14,8 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheus/scrape"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/internal"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/scrape"
 )
 
 const (

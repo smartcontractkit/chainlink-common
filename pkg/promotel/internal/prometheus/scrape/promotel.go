@@ -15,7 +15,7 @@ import (
 	"github.com/prometheus/prometheus/model/textparse"
 	"github.com/prometheus/prometheus/storage"
 
-	internaltextparse "github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheusreceiver/textparse"
+	internaltextparse "github.com/smartcontractkit/chainlink-common/pkg/promotel/internal/prometheus/textparse"
 )
 
 type GathereLoop struct {

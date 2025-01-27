@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737980782819,
+  "lastUpdate": 1737982685095,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9534,6 +9534,48 @@ window.BENCHMARK_DATA = {
             "value": 28441,
             "unit": "ns/op",
             "extra": "42537 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a8fa42cc0f360a7db51054fea0a284b5d2f8ac51",
+          "message": "switch off native unwind info (requires wasmtime version update) (#1012)",
+          "timestamp": "2025-01-27T12:55:41Z",
+          "tree_id": "f56b3768777d0fab3f61ca2f3a890b6aa2fb9204",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a8fa42cc0f360a7db51054fea0a284b5d2f8ac51"
+        },
+        "date": 1737982684307,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.8,
+            "unit": "ns/op",
+            "extra": "2628187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 516.7,
+            "unit": "ns/op",
+            "extra": "2325948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28176,
+            "unit": "ns/op",
+            "extra": "42590 times\n4 procs"
           }
         ]
       }

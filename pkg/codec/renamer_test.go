@@ -28,9 +28,9 @@ func TestRenamer(t *testing.T) {
 		D string
 	}
 
-	renamer := codec.NewRenamer(map[string]string{"A": "X", "C": "Z"})
-	invalidRenamer := codec.NewRenamer(map[string]string{"W": "X", "C": "Z"})
-	nestedRenamer := codec.NewRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"})
+	renamer := codec.NewPathTraverseRenamer(map[string]string{"A": "X", "C": "Z"}, true)
+	invalidRenamer := codec.NewPathTraverseRenamer(map[string]string{"W": "X", "C": "Z"}, true)
+	nestedRenamer := codec.NewPathTraverseRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"}, true)
 	t.Run("RetypeToOffChain renames fields keeping structure", func(t *testing.T) {
 		offChainType, err := renamer.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)

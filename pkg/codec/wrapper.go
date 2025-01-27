@@ -5,12 +5,18 @@ import (
 	"reflect"
 )
 
+// NewWrapperModifier creates a modifier that will wrap specified on-chain fields in a struct.
 func NewWrapperModifier(fields map[string]string) Modifier {
+	return NewPathTraverseWrapperModifier(fields, false)
+}
+
+func NewPathTraverseWrapperModifier(fields map[string]string, enablePathTraverse bool) Modifier {
 	m := &wrapperModifier{
 		modifierBase: modifierBase[string]{
-			fields:           fields,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fields,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 	}
 
@@ -29,12 +35,40 @@ type wrapperModifier struct {
 	modifierBase[string]
 }
 
-func (t *wrapperModifier) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, unwrapFieldMapAction)
+func (m *wrapperModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(offChainValue, m.offToOnChainType, m.fields, unwrapFieldMapAction)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
-func (t *wrapperModifier) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields, wrapFieldMapAction)
+func (m *wrapperModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(onChainValue, m.onToOffChainType, m.fields, wrapFieldMapAction)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 func wrapFieldMapAction(typesMap map[string]any, fieldName string, wrappedFieldName string) error {

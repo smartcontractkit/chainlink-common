@@ -127,7 +127,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 	t.Run("CreateType works for nested struct values and modifiers", func(t *testing.T) {
 		itemType := strings.Join([]string{TestItemWithConfigExtra, "AccountStruct", "Account"}, ".")
 		ts := CreateTestStruct(0, biit)
-		c := biit.GetCodec(t)
+		c := biit.GetNestableCodec(t)
 
 		encoded, err := c.Encode(tests.Context(t), ts.AccountStruct.Account, itemType)
 		require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 	t.Run("CreateType works for nested struct values", func(t *testing.T) {
 		itemType := strings.Join([]string{TestItemType, "NestedDynamicStruct", "Inner", "S"}, ".")
 		ts := CreateTestStruct(0, biit)
-		c := biit.GetCodec(t)
+		c := biit.GetNestableCodec(t)
 
 		encoded, err := c.Encode(tests.Context(t), ts.NestedDynamicStruct.Inner.S, itemType)
 		require.NoError(t, err)
@@ -336,6 +336,60 @@ func (b *bigEndianInterfaceTester) GetCodec(t *testing.T) types.Codec {
 	require.NoError(t, err)
 
 	byTypeMod, err := codec.NewByItemTypeModifier(map[string]codec.Modifier{
+		TestItemType:            codec.MultiModifier{},
+		TestItemSliceType:       codec.MultiModifier{},
+		TestItemArray1Type:      codec.MultiModifier{},
+		TestItemArray2Type:      codec.MultiModifier{},
+		TestItemWithConfigExtra: mod,
+		NilType:                 codec.MultiModifier{},
+	})
+	require.NoError(t, err)
+
+	modCodec, err := codec.NewModifierCodec(c, byTypeMod, codec.BigIntHook)
+	require.NoError(t, err)
+
+	_, err = mod.RetypeToOffChain(reflect.PointerTo(testStruct.GetType()), "")
+	require.NoError(t, err)
+
+	return modCodec
+}
+
+func (b *bigEndianInterfaceTester) GetNestableCodec(t *testing.T) types.Codec {
+	testStruct := newTestStructCodec(t, binary.BigEndian())
+	size, err := binary.BigEndian().Int(1)
+	require.NoError(t, err)
+	slice, err := encodings.NewSlice(testStruct, size)
+	require.NoError(t, err)
+	arr1, err := encodings.NewArray(1, testStruct)
+	require.NoError(t, err)
+	arr2, err := encodings.NewArray(2, testStruct)
+	require.NoError(t, err)
+
+	ts := CreateTestStruct(0, b)
+
+	tc := &encodings.CodecFromTypeCodec{
+		TestItemType:            testStruct,
+		TestItemSliceType:       slice,
+		TestItemArray1Type:      arr1,
+		TestItemArray2Type:      arr2,
+		TestItemWithConfigExtra: testStruct,
+		NilType:                 encodings.Empty{},
+	}
+
+	require.NoError(t, err)
+
+	var c types.RemoteCodec = tc
+	if b.lenient {
+		c = (*encodings.LenientCodecFromTypeCodec)(tc)
+	}
+
+	mod, err := codec.NewPathTraverseHardCoder(map[string]any{
+		"BigField":              ts.BigField.String(),
+		"AccountStruct.Account": ts.AccountStruct.Account,
+	}, map[string]any{"ExtraField": AnyExtraValue}, true, codec.BigIntHook)
+	require.NoError(t, err)
+
+	byTypeMod, err := codec.NewNestableByItemTypeModifier(map[string]codec.Modifier{
 		TestItemType:            codec.MultiModifier{},
 		TestItemSliceType:       codec.MultiModifier{},
 		TestItemArray1Type:      codec.MultiModifier{},

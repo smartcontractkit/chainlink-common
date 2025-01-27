@@ -3,8 +3,8 @@ package encodings
 import (
 	"fmt"
 	"reflect"
-	"strings"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -122,10 +122,8 @@ func (s *structCodec) SizeAtTopLevel(numItems int) (int, error) {
 }
 
 func (s *structCodec) FieldCodec(itemType string) (TypeCodec, error) {
-	path := extendedItemType(itemType)
-
 	// itemType could recurse into nested structs
-	fieldName, tail := path.next()
+	fieldName, tail := codec.ItemTyper(itemType).Next()
 	if fieldName == "" {
 		return nil, fmt.Errorf("%w: field name required", types.ErrInvalidType)
 	}
@@ -135,8 +133,13 @@ func (s *structCodec) FieldCodec(itemType string) (TypeCodec, error) {
 		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
 	}
 
+	if idx >= len(s.fields) {
+		return nil, fmt.Errorf("%w: invalid field index for type %s", types.ErrInvalidType, itemType)
+	}
+
 	codec := s.fields[idx]
 
+	// if itemType wasn't referencing a nested field
 	if tail == "" {
 		return codec, nil
 	}
@@ -147,19 +150,4 @@ func (s *structCodec) FieldCodec(itemType string) (TypeCodec, error) {
 	}
 
 	return structType.FieldCodec(tail)
-}
-
-type extendedItemType string
-
-func (t extendedItemType) next() (string, string) {
-	if string(t) == "" {
-		return "", ""
-	}
-
-	path := strings.Split(string(t), ".")
-	if len(path) == 1 {
-		return path[0], ""
-	}
-
-	return path[0], strings.Join(path[1:], ".")
 }

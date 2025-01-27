@@ -469,6 +469,52 @@ func TestHardCoder(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int32(123), reflect.ValueOf(offChain).FieldByName("B").Interface())
 	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works for itemType path", func(t *testing.T) {
+		nestedHardCoder, err := codec.NewPathTraverseHardCoder(map[string]any{
+			"A":   "Top",
+			"B.A": "Foo",
+			"B.C": []int32{2, 3},
+			"C.A": "Foo",
+			"C.C": []int32{2, 3},
+		}, map[string]any{
+			"B.Z": "Bar",
+			"B.Q": []struct {
+				A int
+				B string
+			}{{1, "a"}, {2, "b"}},
+			"C.Z": "Bar",
+			"C.Q": []struct {
+				A int
+				B string
+			}{{1, "a"}, {2, "b"}},
+		}, true)
+		require.NoError(t, err)
+
+		offChainType, err := nestedHardCoder.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+
+		_, err = nestedHardCoder.RetypeToOffChain(reflect.TypeOf(""), "B.A")
+		require.NoError(t, err)
+
+		iInput := reflect.Indirect(reflect.New(offChainType))
+		iB := iInput.FieldByName("B")
+		iB.FieldByName("B").SetInt(1)
+		iC := iInput.FieldByName("C")
+		iC.Set(reflect.MakeSlice(iC.Type(), 2, 2))
+		iC.Index(0).FieldByName("B").SetInt(2)
+		iC.Index(1).FieldByName("B").SetInt(3)
+		iInput.FieldByName("D").SetInt(1)
+
+		actual, err := nestedHardCoder.TransformToOnChain(iInput.FieldByName("B").FieldByName("A").Interface(), "B.A")
+		require.NoError(t, err)
+
+		expected := "Foo"
+		assert.Equal(t, expected, actual)
+
+		_, err = nestedHardCoder.TransformToOffChain(expected, "B.A")
+		require.NoError(t, err)
+	})
 }
 
 // Since we're using the on-chain values that have their hard-coded values set to

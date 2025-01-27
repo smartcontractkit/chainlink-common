@@ -151,17 +151,19 @@ func decode(c map[string]TypeCodec, raw []byte, into any, itemType string, exact
 
 func getCodec(c map[string]TypeCodec, itemType string) (TypeCodec, error) {
 	// itemType could recurse into nested structs
-	path := extendedItemType(itemType)
-
-	// itemType could recurse into nested structs
-	head, tail := path.next()
+	head, tail := codec.ItemTyper(itemType).Next()
 	if head == "" {
 		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
 	}
 
 	ntcwt, ok := c[head]
 	if !ok {
-		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+		if ntcwt, ok = c[itemType]; !ok {
+			return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+		}
+
+		// in this case, the codec is structured to not have nestable keys
+		return ntcwt, nil
 	}
 
 	if tail == "" {

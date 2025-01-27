@@ -12,6 +12,7 @@ import (
 )
 
 type modifierBase[T any] struct {
+	enablePathTraverse  bool
 	fields              map[string]T
 	onToOffChainType    map[reflect.Type]reflect.Type
 	offToOnChainType    map[reflect.Type]reflect.Type
@@ -34,6 +35,12 @@ func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType st
 			err = fmt.Errorf("%w: %v", types.ErrInvalidType, r)
 		}
 	}()
+
+	// path traverse allows an item type of Struct.FieldA.NestedField to isolate modifiers
+	// associated with the nested field `NestedField`.
+	if !m.enablePathTraverse {
+		itemType = ""
+	}
 
 	// if itemType is empty, store the type mappings
 	// if itemType is not empty, assume a sub-field property is expected to be extracted
@@ -90,13 +97,21 @@ func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType st
 			return nil, err
 		}
 	default:
+		// if the types don't match, it means we are attempting to traverse the main struct
+		if onChainType != m.onChainStructType {
+			return onChainType, nil
+		}
+
 		return nil, fmt.Errorf("%w: cannot retype the kind %v", types.ErrInvalidType, onChainStructType.Kind())
 	}
 
 	m.onToOffChainType[onChainStructType] = offChainType
 	m.offToOnChainType[offChainType] = onChainStructType
-	m.onChainStructType = onChainType
-	m.offChainStructType = offChainType
+
+	if m.onChainStructType == nil {
+		m.onChainStructType = onChainType
+		m.offChainStructType = offChainType
+	}
 
 	return typeForPath(offChainType, itemType)
 }
@@ -176,6 +191,31 @@ func (m *modifierBase[T]) offToOnChainTyper(offChainType reflect.Type, itemType 
 	}
 
 	return typeForPath(onChainType, itemType)
+}
+
+func (m *modifierBase[T]) selectType(inputValue any, savedType reflect.Type, itemType string) (any, string, error) {
+	// set itemType to an ignore value if path traversal is not enabled
+	if !m.enablePathTraverse {
+		return inputValue, "", nil
+	}
+
+	// the offChainValue might be a subfield value; get the true offChainStruct type already stored and set the value
+	baseStructValue := inputValue
+
+	// path traversal is expected, but offChainValue is the value of a field, not the actual struct
+	// create a new struct from the stored offChainStruct with the provided value applied and all other fields set to
+	// their zero value.
+	if itemType != "" {
+		into := reflect.New(savedType)
+
+		if err := applyValueForPath(into, reflect.ValueOf(inputValue), itemType); err != nil {
+			return nil, itemType, err
+		}
+
+		baseStructValue = reflect.Indirect(into).Interface()
+	}
+
+	return baseStructValue, itemType, nil
 }
 
 // subkeysLast returns a list of keys that will always have a sub-key after the key if both are present
@@ -337,7 +377,7 @@ func typeForPath(from reflect.Type, itemType string) (reflect.Type, error) {
 	case reflect.Array, reflect.Slice:
 		return nil, fmt.Errorf("%w: cannot extract a field from an array or slice", types.ErrInvalidType)
 	case reflect.Struct:
-		head, tail := extendedItemType(itemType).next()
+		head, tail := ItemTyper(itemType).Next()
 
 		field, ok := from.FieldByName(head)
 		if !ok {
@@ -354,6 +394,84 @@ func typeForPath(from reflect.Type, itemType string) (reflect.Type, error) {
 	}
 }
 
+func valueForPath(from reflect.Value, itemType string) (any, error) {
+	if itemType == "" {
+		return from.Interface(), nil
+	}
+
+	switch from.Kind() {
+	case reflect.Pointer:
+		elem, err := valueForPath(from.Elem(), itemType)
+		if err != nil {
+			return nil, err
+		}
+
+		return elem, nil
+	case reflect.Array, reflect.Slice:
+		return nil, fmt.Errorf("%w: cannot extract a field from an array or slice", types.ErrInvalidType)
+	case reflect.Struct:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := from.FieldByName(head)
+		if !field.IsValid() {
+			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
+		}
+
+		if tail == "" {
+			return field.Interface(), nil
+		}
+
+		return valueForPath(field, tail)
+	default:
+		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
+	}
+}
+
+func applyValueForPath(vInto, vField reflect.Value, itemType string) error {
+	switch vInto.Kind() {
+	case reflect.Pointer:
+		if !vInto.Elem().IsValid() {
+			into := reflect.New(vInto.Type().Elem())
+
+			vInto.Set(into)
+		}
+
+		err := applyValueForPath(vInto.Elem(), vField, itemType)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	case reflect.Array, reflect.Slice:
+		return fmt.Errorf("%w: cannot set a field from an array or slice", types.ErrInvalidType)
+	case reflect.Struct:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := vInto.FieldByName(head)
+		if !field.IsValid() {
+			return fmt.Errorf("%w: invalid field for type %s and name %s", types.ErrInvalidType, vInto, head)
+		}
+
+		if tail == "" {
+			if field.Type() != vField.Type() {
+				return fmt.Errorf("%w: value type mismatch for field %s", types.ErrInvalidType, head)
+			}
+
+			if !field.CanSet() {
+				return fmt.Errorf("%w: cannot set field %s", types.ErrInvalidType, head)
+			}
+
+			field.Set(vField)
+
+			return nil
+		}
+
+		return applyValueForPath(field, vField, tail)
+	default:
+		return fmt.Errorf("%w: cannot set a field from kind %s", types.ErrInvalidType, vInto.Kind())
+	}
+}
+
 type PathMappingError struct {
 	Err  error
 	Path string
@@ -367,9 +485,9 @@ func (e PathMappingError) Cause() error {
 	return e.Err
 }
 
-type extendedItemType string
+type ItemTyper string
 
-func (t extendedItemType) next() (string, string) {
+func (t ItemTyper) Next() (string, string) {
 	if string(t) == "" {
 		return "", ""
 	}

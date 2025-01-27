@@ -2,7 +2,6 @@ package codec
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"unicode"
@@ -11,11 +10,16 @@ import (
 )
 
 func NewRenamer(fields map[string]string) Modifier {
+	return NewPathTraverseRenamer(fields, false)
+}
+
+func NewPathTraverseRenamer(fields map[string]string, enablePathTraverse bool) Modifier {
 	m := &renamer{
 		modifierBase: modifierBase[string]{
-			fields:           fields,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fields,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 	}
 	m.modifyFieldForInput = func(pkgPath string, field *reflect.StructField, _, newName string) error {
@@ -33,8 +37,13 @@ type renamer struct {
 }
 
 func (r *renamer) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	// set itemType to an ignore value if path traversal is not enabled
+	if !r.modifierBase.enablePathTraverse {
+		itemType = ""
+	}
+
 	// itemType references the on-chain type
-	// remap to the off-chain field name
+	// rename field/subfield path in itemType to match the modifier renaming
 	if itemType != "" {
 		var ref string
 
@@ -63,9 +72,12 @@ func (r *renamer) TransformToOffChain(onChainValue any, itemType string) (any, e
 }
 
 func (r *renamer) TransformToOnChain(offChainValue any, itemType string) (any, error) {
-	log.Println(itemType)
+	// set itemType to an ignore value if path traversal is not enabled
+	if !r.modifierBase.enablePathTraverse {
+		itemType = ""
+	}
+
 	if itemType != "" {
-		log.Println(itemType)
 		var ref string
 
 		parts := strings.Split(itemType, ".")

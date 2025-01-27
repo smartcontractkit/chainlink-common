@@ -2,6 +2,7 @@ package codec_test
 
 import (
 	"errors"
+	"log"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,29 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
+
+func ExampleNewWrapperModifier() {
+	type nestedOnChain struct {
+		C int
+	}
+
+	type onChain struct {
+		A string
+		B nestedOnChain
+	}
+
+	// specify the fields to be wrapped and the name of the new field with a map
+	fields := map[string]string{"A": "X", "B.C": "Y"}
+	wrapper := codec.NewWrapperModifier(fields)
+
+	offChainType, _ := wrapper.RetypeToOffChain(reflect.TypeOf(onChain{}), "")
+
+	// expected off-chain type:
+	// struct { A struct { X string }; B struct { C struct { Y int } } }
+	//
+	// both A and B.C were wrapped in a new struct with the respective specified field names
+	log.Println(offChainType)
+}
 
 func TestWrapper(t *testing.T) {
 	t.Parallel()
@@ -74,6 +98,8 @@ func TestWrapper(t *testing.T) {
 		offChainType, err := nestedWrapper.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 		assert.Equal(t, 4, offChainType.NumField())
+
+		t.Log(offChainType)
 
 		f0 := offChainType.Field(0)
 		f0PreRetype := reflect.TypeOf(nestedTestStruct{}).Field(0)

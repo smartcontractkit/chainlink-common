@@ -253,10 +253,6 @@ func newScrapeMetrics(reg prometheus.Registerer) (*scrapeMetrics, error) {
 	return sm, nil
 }
 
-func (sm *scrapeMetrics) setTargetMetadataCacheGatherer(gatherer TargetsGatherer) {
-	sm.targetMetadataCache.TargetsGatherer = gatherer
-}
-
 // Unregister unregisters all metrics.
 func (sm *scrapeMetrics) Unregister() {
 	sm.reg.Unregister(sm.targetMetadataCache)

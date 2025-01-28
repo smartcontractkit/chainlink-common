@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737982685095,
+  "lastUpdate": 1738093149730,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9576,6 +9576,48 @@ window.BENCHMARK_DATA = {
             "value": 28176,
             "unit": "ns/op",
             "extra": "42590 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "fergal.gribben@smartcontract.com",
+            "name": "Fergal",
+            "username": "ferglor"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b32b200b4c35630c680403c0be8d5bd303713ded",
+          "message": "testutils: Convert the workflow spec to and from proto in ensureGraph (#1014)\n\n* Convert the workflow spec to and from proto\n\n* Add comment",
+          "timestamp": "2025-01-28T11:38:11-08:00",
+          "tree_id": "2dd72038f272bc89d172265af994879c397eef55",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b32b200b4c35630c680403c0be8d5bd303713ded"
+        },
+        "date": 1738093149128,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 455.7,
+            "unit": "ns/op",
+            "extra": "2227364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.3,
+            "unit": "ns/op",
+            "extra": "2354854 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28230,
+            "unit": "ns/op",
+            "extra": "42496 times\n4 procs"
           }
         ]
       }

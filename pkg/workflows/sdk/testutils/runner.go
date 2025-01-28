@@ -80,6 +80,8 @@ func (r *Runner) Err() error {
 }
 
 func (r *Runner) ensureGraph(spec sdk.WorkflowSpec) error {
+	// BuildDependencyGraph expects non-aliased types as inputs in order to be able to generate the graph correctly.
+	// Serialize and deserialize the workflow to automatically convert the Spec to a supported format.
 	proto, err := wasmpb.WorkflowSpecToProto(&spec)
 	if err != nil {
 		return err

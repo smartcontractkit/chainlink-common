@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
 func NewRunner(ctx context.Context, runtime sdk.Runtime) *Runner {
@@ -79,7 +80,19 @@ func (r *Runner) Err() error {
 }
 
 func (r *Runner) ensureGraph(spec sdk.WorkflowSpec) error {
-	g, err := workflows.BuildDependencyGraph(spec)
+	// BuildDependencyGraph expects non-aliased types as inputs in order to be able to generate the graph correctly.
+	// Serialize and deserialize the workflow to automatically convert the Spec to a supported format.
+	proto, err := wasmpb.WorkflowSpecToProto(&spec)
+	if err != nil {
+		return err
+	}
+
+	newspec, err := wasmpb.ProtoToWorkflowSpec(proto)
+	if err != nil {
+		return err
+	}
+
+	g, err := workflows.BuildDependencyGraph(*newspec)
 	if err != nil {
 		return err
 	}

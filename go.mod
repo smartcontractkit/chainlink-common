@@ -30,6 +30,7 @@ require (
 	github.com/marcboeker/go-duckdb v1.8.3
 	github.com/pelletier/go-toml/v2 v2.2.0
 	github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.0-promotel-v1.0.0
+	github.com/pkcll/prometheus v0.54.1-promotel-v1.0.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.60.1
@@ -279,4 +280,3 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
-

@@ -641,6 +641,8 @@ github.com/pierrec/lz4/v4 v4.1.21 h1:yOVMLb6qSIDP67pl/5F7RepeKYu/VmTyEXvuMI5d9mQ
 github.com/pierrec/lz4/v4 v4.1.21/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
 github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.0-promotel-v1.0.0 h1:ghQhu2wwJuQrtGTfoNijEG0UejdPzDAGUfpwQUoIbx0=
 github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.0-promotel-v1.0.0/go.mod h1:KFapOsRoV+AZNQGU0PR/9I2uvLY66vlbhVt+Fbol9vo=
+github.com/pkcll/prometheus v0.54.1-promotel-v1.0.0 h1:l/D4DS8vkMQ9QQERH/b5wcw3Kydu4rFaghIfy2hGP4s=
+github.com/pkcll/prometheus v0.54.1-promotel-v1.0.0/go.mod h1:l2cSWikV7trFiHhYm20COxoV7Ea5YCCs/h+UY00XI7Q=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjLxUqIJNnCWiEdr3bn6IUYi15bNlnbCCU=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

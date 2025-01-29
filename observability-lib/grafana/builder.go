@@ -84,6 +84,9 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.timeSeriesPanelBuilder != nil {
 			item.timeSeriesPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.timeSeriesPanelBuilder)
+		} else if item.barGaugePanelBuilder != nil {
+			item.barGaugePanelBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.barGaugePanelBuilder)
 		} else if item.gaugePanelBuilder != nil {
 			item.gaugePanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.gaugePanelBuilder)

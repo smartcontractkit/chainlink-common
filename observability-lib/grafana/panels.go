@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
+	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
@@ -143,6 +144,7 @@ type Panel struct {
 	statPanelBuilder       *stat.PanelBuilder
 	timeSeriesPanelBuilder *timeseries.PanelBuilder
 	gaugePanelBuilder      *gauge.PanelBuilder
+	barGaugePanelBuilder   *bargauge.PanelBuilder
 	tablePanelBuilder      *table.PanelBuilder
 	logPanelBuilder        *logs.PanelBuilder
 	heatmapBuilder         *heatmap.PanelBuilder
@@ -371,6 +373,69 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	return &Panel{
 		timeSeriesPanelBuilder: newPanel,
 		alertBuilders:          alertBuilders,
+	}
+}
+
+type BarGaugePanelOptions struct {
+	*PanelOptions
+	ShowUnfilled bool
+	Orientation  common.VizOrientation
+}
+
+func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := bargauge.NewPanelBuilder().
+		Datasource(datasourceRef(options.Datasource)).
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		Unit(options.Unit).
+		ReduceOptions(
+			common.NewReduceDataOptionsBuilder().
+				Calcs([]string{"lastNotNull"}).Values(false),
+		)
+
+	if options.ShowUnfilled {
+		newPanel.ShowUnfilled(options.ShowUnfilled)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
+
+	if options.Min != nil {
+		newPanel.Min(*options.Min)
+	}
+
+	if options.Max != nil {
+		newPanel.Max(*options.Max)
+	}
+
+	for _, q := range options.Query {
+		newPanel.WithTarget(newQuery(q))
+	}
+
+	if options.Threshold != nil {
+		newPanel.Thresholds(newThresholds(options.Threshold))
+	}
+
+	if options.Transform != nil {
+		newPanel.WithTransformation(newTransform(options.Transform))
+	}
+
+	if options.Orientation != "" {
+		newPanel.Orientation(options.Orientation)
+	}
+
+	return &Panel{
+		barGaugePanelBuilder: newPanel,
 	}
 }
 

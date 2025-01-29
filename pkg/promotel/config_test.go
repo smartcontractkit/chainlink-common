@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	promModel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,8 +20,6 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterbatcher"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
-
-	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
 )

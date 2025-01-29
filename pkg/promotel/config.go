@@ -6,13 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"gopkg.in/yaml.v3"
-
-	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 )
 
 type (

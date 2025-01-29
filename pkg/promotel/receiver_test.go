@@ -5,14 +5,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
-
-	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
 )

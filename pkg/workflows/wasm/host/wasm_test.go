@@ -950,6 +950,26 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 	})
 }
 
+func TestModule_DecompressedBinarySize(t *testing.T) {
+	t.Parallel()
+
+	// compressed binary size is 4.121 MB
+	// decompressed binary size is 23.7 MB
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+	t.Run("decompressed binary size is within the limit", func(t *testing.T) {
+		customDecompressedBinarySize := uint64(24 * 1024 * 1024)
+		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		require.NoError(t, err)
+	})
+
+	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
+		customDecompressedBinarySize := uint64(3 * 1024 * 1024)
+		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		decompressedSizeExceeded := fmt.Sprintf("decompressed binary size reached the maximum allowed size of %d bytes", customDecompressedBinarySize)
+		require.ErrorContains(t, err, decompressedSizeExceeded)
+	})
+}
+
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)

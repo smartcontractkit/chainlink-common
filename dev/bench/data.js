@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738093149730,
+  "lastUpdate": 1738166218505,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9618,6 +9618,48 @@ window.BENCHMARK_DATA = {
             "value": 28230,
             "unit": "ns/op",
             "extra": "42496 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "david@makewhat.is",
+            "name": "David Johansen",
+            "username": "makewhatis"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bcca537b302e4863fc95825a3492c37124af992f",
+          "message": "Add support for BarGauge panels (#1015)\n\n* add support for bargauge",
+          "timestamp": "2025-01-29T16:56:04+01:00",
+          "tree_id": "7bc3ef0c93571ef19c2933b1fe8fc88d856d8141",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bcca537b302e4863fc95825a3492c37124af992f"
+        },
+        "date": 1738166217967,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453,
+            "unit": "ns/op",
+            "extra": "2493921 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 509.6,
+            "unit": "ns/op",
+            "extra": "2344362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28179,
+            "unit": "ns/op",
+            "extra": "42436 times\n4 procs"
           }
         ]
       }

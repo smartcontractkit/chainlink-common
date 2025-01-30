@@ -64,20 +64,22 @@ func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID st
 	var alertsRule []alerting.Rule
 	var errGetAlertRules error
 
+	// check for alert rules by dashboard UID
 	if dashboardUID != nil {
 		alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*dashboardUID)
 		if errGetAlertRules != nil {
 			return nil, errGetAlertRules
 		}
-	} else {
-		if alertGroups != nil && len(alertGroups) > 0 {
-			for _, alertGroup := range alertGroups {
-				alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
-				if errGetAlertRulesPerGroup != nil {
-					return nil, errGetAlertRulesPerGroup
-				}
-				alertsRule = append(alertsRule, alertsRulePerGroup...)
+	}
+
+	// check for alert rules by folder UID and group name
+	if alertGroups != nil && len(alertGroups) > 0 {
+		for _, alertGroup := range alertGroups {
+			alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
+			if errGetAlertRulesPerGroup != nil {
+				return nil, errGetAlertRulesPerGroup
 			}
+			alertsRule = append(alertsRule, alertsRulePerGroup...)
 		}
 	}
 

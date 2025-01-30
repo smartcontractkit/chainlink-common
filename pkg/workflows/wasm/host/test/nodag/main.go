@@ -10,26 +10,24 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 )
 
-func InitWorkflow(config []byte) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory()
-	// add triggers
-	triggerCfg := basictrigger.TriggerConfig{Name: "trigger", Number: 100}
-	_ = triggerCfg.New(workflow) // TODO: let AddRunFunctionForTrigger() add this to workflow spec
-	sdk.AddRunFunctionForTrigger(workflow, "trigger", triggerCfg, RunWorkflow)
-	return workflow
+func main() {
+	runner := wasm.NewRunnerV2()
+	triggerCfg := basictrigger.TriggerConfig{Number: 100}
+	_ = wasm.SubscribeToTrigger(runner, "basic-trigger@1.0.0", triggerCfg, OnBasicTriggerEvent)
+	runner.Run()
 }
 
-func RunWorkflow(runtime sdk.RuntimeV2, triggerOutputs basictrigger.TriggerOutputs) error {
-	// two action calls "futures"
-	actionCall1, _ := wasm.NewCapabilityCall[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
-		"ref_action1", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
+func OnBasicTriggerEvent(runtime sdk.RuntimeV2, triggerOutputs basictrigger.TriggerOutputs) error {
+	// two async capability calls
+	actionCall1, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
+		runtime, "ref_action1", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
 	)
-	actionCall2, _ := wasm.NewCapabilityCall[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
-		"ref_action2", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
+	actionCall2, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
+		runtime, "ref_action2", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
 	)
 
 	// blocking "await" on multiple calls at once
-	err := runtime.CallCapabilities(actionCall1, actionCall2)
+	err := runtime.AwaitCapabilities(actionCall1, actionCall2)
 	if err != nil {
 		return err
 	}
@@ -40,16 +38,10 @@ func RunWorkflow(runtime sdk.RuntimeV2, triggerOutputs basictrigger.TriggerOutpu
 	if len(actionOutputs1.AdaptedThing) <= len(actionOutputs2.AdaptedThing) {
 		// a single target call
 		inputStr := "abcd"
-		targetCall, _ := wasm.NewCapabilityCall[basictarget.TargetInputs, basictarget.TargetConfig, any](
-			"ref_target1", "basictarget@1.0.0", basictarget.TargetInputs{CoolInput: &inputStr}, basictarget.TargetConfig{},
+		targetCall, _ := wasm.CallCapability[basictarget.TargetInputs, basictarget.TargetConfig, any](
+			runtime, "ref_target1", "basictarget@1.0.0", basictarget.TargetInputs{CoolInput: &inputStr}, basictarget.TargetConfig{},
 		)
-		return runtime.CallCapabilities(targetCall)
+		return runtime.AwaitCapabilities(targetCall)
 	}
 	return nil
-}
-
-func main() {
-	runner := wasm.NewRunnerV2()
-	workflow := InitWorkflow(runner.Config())
-	runner.Run(workflow)
 }

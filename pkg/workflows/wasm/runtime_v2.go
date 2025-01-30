@@ -12,50 +12,58 @@ import (
 )
 
 type RuntimeV2 struct {
-	sendResponseFn func(payload *wasmpb.Response)
-	refToResponse  map[string]capabilities.CapabilityResponse
-	hostRequestID  string
+	callCapFn     func(payload *wasmpb.CapabilityCall) error
+	awaitCapsFn   func(payload *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error)
+	refToResponse map[string]capabilities.CapabilityResponse
 }
 
 var _ sdk.RuntimeV2 = (*RuntimeV2)(nil)
 
-func (r *RuntimeV2) CallCapabilities(calls ...sdk.CapabilityCallPromise) error {
-	missingRequests := make(map[string]*pb.CapabilityRequest)
+func (r *RuntimeV2) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error {
+	pendingRequests := []string{}
 	for _, call := range calls {
-		ref, _, request := call.CallInfo()
+		ref, _, _ := call.CallInfo()
 		if response, ok := r.refToResponse[ref]; ok {
 			call.Fulfill(response, nil)
 		} else {
-			missingRequests[ref] = pb.CapabilityRequestToProto(request)
+			pendingRequests = append(pendingRequests, ref)
 		}
 	}
-	if len(missingRequests) == 0 {
+	if len(pendingRequests) == 0 {
 		// all already fulfilled
 		return nil
 	}
-	if len(missingRequests) != len(calls) {
-		// only all-or-nothing
-		return fmt.Errorf("partially missing responses")
+
+	resp, err := r.awaitCapsFn(&wasmpb.AwaitRequest{Refs: pendingRequests})
+	if err != nil {
+		return err
 	}
-	// send back a response with all pending capability calls and terminate execution
-	capCallsProtos := map[string]*wasmpb.CapabilityCall{}
 	for _, call := range calls {
-		ref, capId, request := call.CallInfo()
-		capCallsProtos[ref] = &wasmpb.CapabilityCall{
-			CapabilityId: capId,
-			Request:      pb.CapabilityRequestToProto(request),
+		ref, _, _ := call.CallInfo()
+		if response, ok := resp.RefToResponse[ref]; ok {
+			capResp, err2 := pb.CapabilityResponseFromProto(response)
+			if err2 != nil {
+				return err2
+			}
+			call.Fulfill(capResp, nil)
+		} else {
+			return fmt.Errorf("missing response for ref %s", ref)
 		}
 	}
-	// this will never return
-	r.sendResponseFn(&wasmpb.Response{
-		Id: r.hostRequestID,
-		Message: &wasmpb.Response_RunResponse{
-			RunResponse: &wasmpb.RunResponse{
-				RefToCapCall: capCallsProtos,
-			},
-		},
+	return nil
+}
+
+func (r *RuntimeV2) CallCapability(call sdk.CapabilityCallPromise) error {
+	ref, capId, request := call.CallInfo()
+	if response, ok := r.refToResponse[ref]; ok {
+		call.Fulfill(response, nil)
+		return nil
+	}
+	return r.callCapFn(&wasmpb.CapabilityCall{
+		CapabilityId: capId,
+		Ref:          ref,
+		Request:      pb.CapabilityRequestToProto(request),
 	})
-	return fmt.Errorf("should never reach here")
 }
 
 type CapCall[Outputs any] struct {
@@ -88,7 +96,7 @@ func (c *CapCall[Outputs]) Result() (Outputs, error) {
 }
 
 // TODO: maybe we could generate those for every capability individually?
-func NewCapabilityCall[Inputs any, Config any, Outputs any](ref string, capId string, inputs Inputs, config Config) (*CapCall[Outputs], error) {
+func CallCapability[Inputs any, Config any, Outputs any](runtime sdk.RuntimeV2, ref string, capId string, inputs Inputs, config Config) (*CapCall[Outputs], error) {
 	inputsVal, err := values.CreateMapFromStruct(inputs)
 	if err != nil {
 		return nil, err
@@ -97,8 +105,7 @@ func NewCapabilityCall[Inputs any, Config any, Outputs any](ref string, capId st
 	if err != nil {
 		return nil, err
 	}
-
-	return &CapCall[Outputs]{
+	call := &CapCall[Outputs]{
 		ref:   ref,
 		capId: capId,
 		capRequest: capabilities.CapabilityRequest{
@@ -106,5 +113,7 @@ func NewCapabilityCall[Inputs any, Config any, Outputs any](ref string, capId st
 			Inputs: inputsVal,
 			Config: configVal,
 		},
-	}, nil
+	}
+	runtime.CallCapability(call)
+	return call, nil
 }

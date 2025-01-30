@@ -1,6 +1,8 @@
 package wasm
 
 import (
+	"encoding/binary"
+	"fmt"
 	"os"
 	"unsafe"
 
@@ -22,6 +24,12 @@ func fetch(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Poin
 
 //go:wasmimport env emit
 func emit(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
+
+//go:wasmimport env callcap
+func callcap(reqptr unsafe.Pointer, reqptrlen int32) int32
+
+//go:wasmimport env awaitcaps
+func awaitcaps(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32
 
 func NewRunner() *Runner {
 	l := logger.NewWithSync(&wasmWriteSyncer{})
@@ -48,13 +56,66 @@ func NewRunnerV2() *RunnerV2 {
 		sendResponse: sendResponseFn,
 		runtimeFactory: func(sdkConfig *RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2 {
 			return &RuntimeV2{
-				sendResponseFn: sendResponseFn,
-				refToResponse:  refToResponse,
-				hostRequestID:  hostReqID,
+				callCapFn:     callCapFn,
+				awaitCapsFn:   awaitCapsFn,
+				refToResponse: refToResponse,
 			}
 		},
-		args: os.Args,
+		args:     os.Args,
+		triggers: map[string]triggerInfo{},
 	}
+}
+
+func awaitCapsFn(payload *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error) {
+	pb, err := proto.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	ptr, ptrlen, err := bufferToPointerLen(pb)
+	if err != nil {
+		return nil, err
+	}
+
+	respBuffer := make([]byte, 100000) // TODO max size?
+	respptr, _, err := bufferToPointerLen(respBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	resplenBuffer := make([]byte, uint32Size)
+	resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	errno := awaitcaps(respptr, resplenptr, ptr, ptrlen)
+	if errno != 0 {
+		return nil, fmt.Errorf("awaitcaps failed with errno %d", errno)
+	}
+
+	responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+	response := &wasmpb.AwaitResponse{}
+	err = proto.Unmarshal(respBuffer[:responseSize], response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal fetch response: %w", err)
+	}
+	return response, nil
+}
+
+func callCapFn(response *wasmpb.CapabilityCall) error {
+	pb, err := proto.Marshal(response)
+	if err != nil {
+		return err
+	}
+	ptr, ptrlen, err := bufferToPointerLen(pb)
+	if err != nil {
+		return err
+	}
+	errno := callcap(ptr, ptrlen)
+	if errno != 0 {
+		return fmt.Errorf("callcap failed with errno %d", errno)
+	}
+	return nil
 }
 
 // sendResponseFn implements sendResponse for import into WASM.

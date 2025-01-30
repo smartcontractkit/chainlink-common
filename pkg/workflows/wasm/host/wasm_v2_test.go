@@ -23,12 +23,24 @@ const (
 func Test_V2_Run(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
+	calls := make(chan *wasmpb.CapabilityCall, 10)
+	awaitReq := make(chan *wasmpb.AwaitRequest, 1)
+	awaitResp := make(chan *wasmpb.AwaitResponse, 1)
 	mc := &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
+		CallCapAsync: func(req *wasmpb.CapabilityCall) error {
+			calls <- req
+			return nil
+		},
+		AwaitCaps: func(req *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error) {
+			awaitReq <- req
+			return <-awaitResp, nil
+		},
 	}
-	capResponsesSoFar := map[string]*pb.CapabilityResponse{}
-	triggerRef := "trigger"
+	capResponses := map[string]*pb.CapabilityResponse{}
+	triggerID := "basic-trigger@1.0.0"
+	triggerRef := "trigger-0"
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
 	// (1) Engine calls GetWorkflowSpec() first.
@@ -41,6 +53,7 @@ func Test_V2_Run(t *testing.T) {
 	//      |
 	//  (promise)
 	require.Len(t, spec.Triggers, 1)
+	require.Equal(t, triggerID, spec.Triggers[0].ID)
 	require.Equal(t, triggerRef, spec.Triggers[0].Ref)
 	require.Len(t, spec.Actions, 0)
 	require.Len(t, spec.Consensus, 0)
@@ -52,17 +65,19 @@ func Test_V2_Run(t *testing.T) {
 
 	// (3) When a TriggerEvent occurs, Engine calls Run() with that Event.
 	triggerEvent := &pb.TriggerEvent{
-		TriggerType: "my_trigger@1.0.0",
+		TriggerType: triggerID,
 		Outputs:     values.ProtoMap(values.EmptyMap()),
 	}
 
-	req := newRunRequest(triggerRef, triggerEvent, capResponsesSoFar)
-	resp, err := m.Run(ctx, req)
-	require.NoError(t, err)
-	runResp := resp.GetRunResponse()
-	require.NotNil(t, runResp)
+	doneCh := make(chan struct{})
+	go func() {
+		req := newRunRequest(triggerRef, triggerEvent, capResponses)
+		_, err := m.Run(ctx, req)
+		require.NoError(t, err)
+		close(doneCh)
+	}()
 
-	// (4) In the first response, the Workflow requests two action capability calls.
+	// (4) The workflow makes two capability calls and then awaits them.
 	//
 	//     [trigger]
 	//         |
@@ -71,20 +86,19 @@ func Test_V2_Run(t *testing.T) {
 	// [action1] [action2]
 	//      \     /
 	//     (promise)
-	require.Len(t, runResp.RefToCapCall, 2)
-	require.Contains(t, runResp.RefToCapCall, "ref_action1")
-	require.Contains(t, runResp.RefToCapCall, "ref_action2")
+	call1 := <-calls
+	require.Equal(t, "ref_action1", call1.Ref)
+	call2 := <-calls
+	require.Equal(t, "ref_action2", call2.Ref)
 
-	// (5) Engine now makes capability calls and when they are ready, it invokes Run() again with both responses.
-	capResponsesSoFar["ref_action1"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
-	capResponsesSoFar["ref_action2"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
-	req = newRunRequest(triggerRef, triggerEvent, capResponsesSoFar)
-	resp, err = m.Run(ctx, req)
-	require.NoError(t, err)
-	runResp = resp.GetRunResponse()
-	require.NotNil(t, runResp)
+	// (5) Engine performs async capability calls.
+	capResponses["ref_action1"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
+	capResponses["ref_action2"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
+	awaitReqMsg := <-awaitReq
+	require.Len(t, awaitReqMsg.Refs, 2)
+	awaitResp <- &wasmpb.AwaitResponse{RefToResponse: capResponses}
 
-	// (6) Workflow now requests a target capability call.
+	// (6) Workflow now makes a target capability call.
 	//
 	//     [trigger]
 	//         |
@@ -97,16 +111,16 @@ func Test_V2_Run(t *testing.T) {
 	//     [target1]
 	//         |
 	//     (promise)
-	require.Len(t, runResp.RefToCapCall, 1)
-	require.Contains(t, runResp.RefToCapCall, "ref_target1")
+	call3 := <-calls
+	require.Equal(t, "ref_target1", call3.Ref)
 
-	// (7) After calling the target, Engine makes one last Run() call and expects the workflow to complete without errors.
-	capResponsesSoFar["ref_target1"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
-	req = newRunRequest(triggerRef, triggerEvent, capResponsesSoFar)
-	resp, err = m.Run(ctx, req)
-	require.NoError(t, err)
-	runResp = resp.GetRunResponse()
-	require.Nil(t, runResp)
+	// (7) Engine performs the call.
+	capResponses["ref_target1"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
+	awaitReqMsg = <-awaitReq
+	require.Len(t, awaitReqMsg.Refs, 1)
+	awaitResp <- &wasmpb.AwaitResponse{RefToResponse: capResponses}
+
+	<-doneCh
 }
 
 func newRunRequest(triggerRef string, triggerEvent *pb.TriggerEvent, capResponsesSoFar map[string]*pb.CapabilityResponse) *wasmpb.Request {

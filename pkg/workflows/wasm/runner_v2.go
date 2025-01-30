@@ -19,11 +19,39 @@ type RunnerV2 struct {
 	runtimeFactory func(sdkConfig *RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2
 	args           []string
 	req            *wasmpb.Request
+	triggers       map[string]triggerInfo
 }
 
-var _ sdk.Runner = (*RunnerV2)(nil)
+type triggerInfo struct {
+	id        string
+	config    *values.Map
+	handlerFn func(runtime sdk.RuntimeV2, triggerEvent capabilities.TriggerEvent) error
+}
 
-func (r *RunnerV2) Run(factory *sdk.WorkflowSpecFactory) {
+func SubscribeToTrigger[TriggerConfig any, TriggerOutputs any](runner *RunnerV2, id string, triggerCfg TriggerConfig, handler func(runtime sdk.RuntimeV2, triggerOutputs TriggerOutputs) error) error {
+	ref := fmt.Sprintf("trigger-%v", len(runner.triggers))
+
+	wrappedConfig, err := values.WrapMap(triggerCfg)
+	if err != nil {
+		return fmt.Errorf("could not wrap config into map: %w", err)
+	}
+
+	runner.triggers[ref] = triggerInfo{
+		id:     id,
+		config: wrappedConfig,
+		handlerFn: func(runtime sdk.RuntimeV2, triggerEvent capabilities.TriggerEvent) error {
+			var triggerOutputs TriggerOutputs
+			err := triggerEvent.Outputs.UnwrapTo(&triggerOutputs)
+			if err != nil {
+				return err
+			}
+			return handler(runtime, triggerOutputs)
+		},
+	}
+	return nil
+}
+
+func (r *RunnerV2) Run() {
 	if r.req == nil {
 		success := r.cacheRequest()
 		if !success {
@@ -52,18 +80,18 @@ func (r *RunnerV2) Run(factory *sdk.WorkflowSpecFactory) {
 
 	switch {
 	case req.GetSpecRequest() != nil:
-		rsp, innerErr := r.handleSpecRequest(factory, req.Id)
+		rsp, innerErr := r.handleSpecRequest(req.Id)
 		if innerErr != nil {
 			resp.ErrMsg = innerErr.Error()
 		} else {
 			resp = rsp
 		}
 	case req.GetRunRequest() != nil:
-		rsp, innerErr := r.handleRunRequest(factory, req.Id, req.GetRunRequest())
+		rsp, innerErr := r.handleRunRequest(req.Id, req.GetRunRequest())
 		if innerErr != nil {
 			resp.ErrMsg = innerErr.Error()
 		} else {
-			resp = rsp // should happen only when workflow is done processing (i.e. no more capability calls)
+			resp = rsp
 		}
 	default:
 		resp.ErrMsg = "invalid request: message must be SpecRequest or RunRequest"
@@ -92,7 +120,6 @@ func (r *RunnerV2) ExitWithError(err error) {
 	}
 
 	r.sendResponse(errorResponse(r.req.Id, err))
-	return
 }
 
 func (r *RunnerV2) cacheRequest() bool {
@@ -133,15 +160,21 @@ func (r *RunnerV2) parseRequest() (*wasmpb.Request, error) {
 	return req, err
 }
 
-func (r *RunnerV2) handleSpecRequest(factory *sdk.WorkflowSpecFactory, id string) (*wasmpb.Response, error) {
-	spec, err := factory.Spec()
-	if err != nil {
-		return nil, fmt.Errorf("error getting spec from factory: %w", err)
+func (r *RunnerV2) handleSpecRequest(id string) (*wasmpb.Response, error) {
+	specpb := &wasmpb.WorkflowSpec{
+		Name:      "name_TODO",
+		Owner:     "owner_TODO",
+		IsDynamic: true,
 	}
 
-	specpb, err := wasmpb.WorkflowSpecToProto(&spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to translate workflow spec to proto: %w", err)
+	for ref, info := range r.triggers {
+		specpb.Triggers = append(specpb.Triggers, &wasmpb.StepDefinition{
+			Id:             info.id,
+			Ref:            ref,
+			Inputs:         &wasmpb.StepInputs{},
+			Config:         values.ProtoMap(info.config),
+			CapabilityType: string(capabilities.CapabilityTypeTrigger),
+		})
 	}
 
 	return &wasmpb.Response{
@@ -152,7 +185,7 @@ func (r *RunnerV2) handleSpecRequest(factory *sdk.WorkflowSpecFactory, id string
 	}, nil
 }
 
-func (r *RunnerV2) handleRunRequest(factory *sdk.WorkflowSpecFactory, id string, runReq *wasmpb.RunRequest) (*wasmpb.Response, error) {
+func (r *RunnerV2) handleRunRequest(id string, runReq *wasmpb.RunRequest) (*wasmpb.Response, error) {
 	// Extract config from the request
 	drc := defaultRuntimeConfig(id, nil)
 
@@ -180,11 +213,11 @@ func (r *RunnerV2) handleRunRequest(factory *sdk.WorkflowSpecFactory, id string,
 
 	// execute workflow
 	runtime := r.runtimeFactory(drc, refToResponse, r.req.Id)
-	runFn := factory.GetRunFn(runReq.TriggerRef)
-	if runFn == nil {
+	triggerInfo := r.triggers[runReq.TriggerRef]
+	if triggerInfo.handlerFn == nil {
 		return nil, fmt.Errorf("could not find run function for ref %s", runReq.TriggerRef)
 	}
-	err = runFn(runtime, event)
+	err = triggerInfo.handlerFn(runtime, event)
 	if err != nil {
 		return nil, fmt.Errorf("error executing workflow: %w", err)
 	}

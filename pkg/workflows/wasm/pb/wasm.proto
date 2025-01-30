@@ -64,17 +64,21 @@ message Response {
   oneof message {
     ComputeResponse computeResponse = 3;
     WorkflowSpec specResponse = 4;
-    RunResponse runResponse = 5;
   }
-}
-
-message RunResponse {
-  map<string, CapabilityCall> refToCapCall = 1;
 }
 
 message CapabilityCall {
   string capabilityId = 1;
-  capabilities.CapabilityRequest request = 2;
+  string ref = 2;
+  capabilities.CapabilityRequest request = 3;
+}
+
+message AwaitRequest {
+ repeated string refs = 1;
+}
+
+message AwaitResponse {
+  map<string, capabilities.CapabilityResponse> refToResponse = 1;
 }
 
 // NOTE: This message was added because it is needed to be used as part of the request and for metrics.

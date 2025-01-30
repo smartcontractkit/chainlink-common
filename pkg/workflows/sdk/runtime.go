@@ -46,7 +46,8 @@ type FetchResponse struct {
 }
 
 type RuntimeV2 interface {
-	CallCapabilities(calls ...CapabilityCallPromise) error
+	CallCapability(call CapabilityCallPromise) error
+	AwaitCapabilities(calls ...CapabilityCallPromise) error
 }
 
 // weakly-typed, for the runtime to fulfill

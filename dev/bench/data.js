@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738166218505,
+  "lastUpdate": 1738234025136,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9660,6 +9660,48 @@ window.BENCHMARK_DATA = {
             "value": 28179,
             "unit": "ns/op",
             "extra": "42436 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "82e554262f7da72a87944c0b062e47396efea03a",
+          "message": "[CAPPL-499] validate decompressed binary size (#1017)\n\nfeat: validate decompresed binary size",
+          "timestamp": "2025-01-30T11:46:13+01:00",
+          "tree_id": "3152ead216479248592ec1f1a6a1f01359622de0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/82e554262f7da72a87944c0b062e47396efea03a"
+        },
+        "date": 1738234024481,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 454.1,
+            "unit": "ns/op",
+            "extra": "2619811 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 510,
+            "unit": "ns/op",
+            "extra": "2258566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28229,
+            "unit": "ns/op",
+            "extra": "42547 times\n4 procs"
           }
         ]
       }

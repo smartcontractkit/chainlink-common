@@ -134,17 +134,17 @@ func (s *structCodec) FieldCodec(itemType string) (TypeCodec, error) {
 	}
 
 	if idx >= len(s.fields) {
-		return nil, fmt.Errorf("%w: invalid field index for type %s", types.ErrInvalidType, itemType)
+		return nil, fmt.Errorf("%w: field index out of range for type %s; cannot access field value", types.ErrInvalidType, itemType)
 	}
 
-	codec := s.fields[idx]
+	fieldCodec := s.fields[idx]
 
 	// if itemType wasn't referencing a nested field
 	if tail == "" {
-		return codec, nil
+		return fieldCodec, nil
 	}
 
-	structType, ok := codec.(StructTypeCodec)
+	structType, ok := fieldCodec.(StructTypeCodec)
 	if !ok {
 		return nil, fmt.Errorf("%w: extended path not traversable for type %s", types.ErrInvalidType, itemType)
 	}

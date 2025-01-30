@@ -22,9 +22,10 @@ func NewPathTraverseEpochToTimeModifier(fields []string, enablePathTraverse bool
 
 	m := &timeToUnixModifier{
 		modifierBase: modifierBase[bool]{
-			fields:           fieldMap,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fieldMap,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 	}
 

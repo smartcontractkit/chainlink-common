@@ -9,8 +9,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// PreCodec creates a modifier that will run a preliminary encoding/decoding step.
-// This is useful when wanting to move nested data as generic bytes.
+// NewPreCodec creates a modifier that will run a preliminary encoding/decoding step. This is useful when wanting to
+// move nested data as generic bytes.
 func NewPreCodec(
 	fields map[string]string,
 	codecs map[string]types.RemoteCodec,
@@ -18,6 +18,8 @@ func NewPreCodec(
 	return NewPathTraversePreCodec(fields, codecs, false)
 }
 
+// NewPathTraversePreCodec creates a PreCodec modifier with itemType path traversal enabled or disabled. The standard
+// constructor. NewPreCodec has path traversal off by default.
 func NewPathTraversePreCodec(
 	fields map[string]string,
 	codecs map[string]types.RemoteCodec,

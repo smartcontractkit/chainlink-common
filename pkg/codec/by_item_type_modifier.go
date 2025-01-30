@@ -14,7 +14,7 @@ func NewByItemTypeModifier(modByItemType map[string]Modifier) (Modifier, error) 
 	}
 
 	return &byItemTypeModifier{
-		modByitemType: modByItemType,
+		modByItemType: modByItemType,
 		enableNesting: false,
 	}, nil
 }
@@ -28,13 +28,13 @@ func NewNestableByItemTypeModifier(modByItemType map[string]Modifier) (Modifier,
 	}
 
 	return &byItemTypeModifier{
-		modByitemType: modByItemType,
+		modByItemType: modByItemType,
 		enableNesting: true,
 	}, nil
 }
 
 type byItemTypeModifier struct {
-	modByitemType map[string]Modifier
+	modByItemType map[string]Modifier
 	enableNesting bool
 }
 
@@ -49,7 +49,7 @@ func (m *byItemTypeModifier) RetypeToOffChain(onChainType reflect.Type, itemType
 		head, tail = ItemTyper(itemType).Next()
 	}
 
-	mod, ok := m.modByitemType[head]
+	mod, ok := m.modByItemType[head]
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
 	}
@@ -77,7 +77,7 @@ func (m *byItemTypeModifier) transform(
 		head, tail = ItemTyper(itemType).Next()
 	}
 
-	mod, ok := m.modByitemType[head]
+	mod, ok := m.modByItemType[head]
 	if !ok {
 		return nil, fmt.Errorf("%w: cannot find modifier for %s", types.ErrInvalidType, itemType)
 	}

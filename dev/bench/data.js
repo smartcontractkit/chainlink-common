@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738269052831,
+  "lastUpdate": 1738340574446,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9786,6 +9786,48 @@ window.BENCHMARK_DATA = {
             "value": 28234,
             "unit": "ns/op",
             "extra": "42566 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4974de13af77b88d083cff16d88153b129500112",
+          "message": "chore: make MaxDecompressedBinarySize inclusive limit (#1019)",
+          "timestamp": "2025-01-31T08:22:03-08:00",
+          "tree_id": "de88e9b5a31b6e00fafe51553cd16ffb182e1417",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4974de13af77b88d083cff16d88153b129500112"
+        },
+        "date": 1738340573890,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 457.7,
+            "unit": "ns/op",
+            "extra": "2630871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 511.7,
+            "unit": "ns/op",
+            "extra": "2348233 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28198,
+            "unit": "ns/op",
+            "extra": "42597 times\n4 procs"
           }
         ]
       }

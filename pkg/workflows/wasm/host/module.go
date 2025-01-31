@@ -205,7 +205,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
 		}
 
-		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(modCfg.MaxDecompressedBinarySize))
+		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(modCfg.MaxDecompressedBinarySize+1))
 		decompedBinary, err := io.ReadAll(rdr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress binary: %w", err)
@@ -217,8 +217,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	// Validate the decompressed binary size.
 	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
 	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
-	// Because of this, we treat the limit as a non-inclusive limit. If the limit is reached, we return an error.
-	if uint64(len(binary)) >= modCfg.MaxDecompressedBinarySize {
+	if uint64(len(binary)) > modCfg.MaxDecompressedBinarySize {
 		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", modCfg.MaxDecompressedBinarySize)
 	}
 

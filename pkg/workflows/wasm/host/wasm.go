@@ -13,8 +13,9 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
-	m, err := NewModule(modCfg, binary, WithDeterminism())
+func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte,
+	wasmtimeModuleFactory WasmtimeModuleFactoryFn) (*sdk.WorkflowSpec, error) {
+	m, err := NewModule(modCfg, binary, wasmtimeModuleFactory, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
 	}

@@ -1,14 +1,12 @@
 package host
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"regexp"
 
@@ -16,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/andybalholm/brotli"
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
@@ -105,6 +102,8 @@ type ModuleConfig struct {
 	Determinism *DeterminismConfig
 }
 
+type WasmtimeModuleFactoryFn func(engine *wasmtime.Engine, binary []byte, isUncompressed bool, maxCompressedBinarySize uint64, maxDecompressedBinarySize uint64) (*wasmtime.Module, error)
+
 type Module struct {
 	engine  *wasmtime.Engine
 	module  *wasmtime.Module
@@ -133,7 +132,8 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+func NewModule(modCfg *ModuleConfig, binary []byte, wasmtimeModuleFactory WasmtimeModuleFactoryFn,
+	opts ...func(*ModuleConfig)) (*Module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -198,30 +198,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	cfg.SetNativeUnwindInfo(false)
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
-	if !modCfg.IsUncompressed {
-		// validate the binary size before decompressing
-		// this is to prevent decompression bombs
-		if uint64(len(binary)) > modCfg.MaxCompressedBinarySize {
-			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
-		}
 
-		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(modCfg.MaxDecompressedBinarySize+1))
-		decompedBinary, err := io.ReadAll(rdr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress binary: %w", err)
-		}
-
-		binary = decompedBinary
-	}
-
-	// Validate the decompressed binary size.
-	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
-	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
-	if uint64(len(binary)) > modCfg.MaxDecompressedBinarySize {
-		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", modCfg.MaxDecompressedBinarySize)
-	}
-
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := wasmtimeModuleFactory(engine, binary, modCfg.IsUncompressed, modCfg.MaxCompressedBinarySize, modCfg.MaxDecompressedBinarySize)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}

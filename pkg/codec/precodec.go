@@ -122,7 +122,11 @@ func (pc *preCodec) decodeFieldMapAction(extractMap map[string]any, key string, 
 	if err != nil {
 		return err
 	}
-	err = codec.Decode(context.Background(), extractMap[key].([]byte), &to, "")
+	raw, ok := extractMap[key].([]byte)
+	if !ok {
+		return fmt.Errorf("expected field %s to be []byte but got %T", key, extractMap[key])
+	}
+	err = codec.Decode(context.Background(), raw, &to, "")
 	if err != nil {
 		return err
 	}

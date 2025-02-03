@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738340574446,
+  "lastUpdate": 1738589575934,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9828,6 +9828,48 @@ window.BENCHMARK_DATA = {
             "value": 28198,
             "unit": "ns/op",
             "extra": "42597 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f22f85eca3d55adcfa914164c1921278a839b9a3",
+          "message": "Nested Value Codec Access (#990)\n\n* rename modifier functional for nested fields\n\n* complete path traverse modifier update with backward compatibility\n\n* address comments\n\n---------\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2025-02-03T14:31:51+01:00",
+          "tree_id": "537b227e232e6062bd63027863d7e167f8e2f960",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f22f85eca3d55adcfa914164c1921278a839b9a3"
+        },
+        "date": 1738589575409,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.8,
+            "unit": "ns/op",
+            "extra": "2658900 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 541.7,
+            "unit": "ns/op",
+            "extra": "2358926 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28201,
+            "unit": "ns/op",
+            "extra": "42379 times\n4 procs"
           }
         ]
       }

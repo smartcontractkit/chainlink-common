@@ -25,7 +25,18 @@ type AddressModifier interface {
 //
 // The fields parameter specifies which fields within a struct should be modified. The AddressModifier
 // is injected into the modifier to handle chain-specific logic during the contractReader relayer configuration.
-func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) Modifier {
+func NewAddressBytesToStringModifier(
+	fields []string,
+	modifier AddressModifier,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, modifier, false)
+}
+
+func NewPathTraverseAddressBytesToStringModifier(
+	fields []string,
+	modifier AddressModifier,
+	enablePathTraverse bool,
+) Modifier {
 	// bool is a placeholder value
 	fieldMap := map[string]bool{}
 	for _, field := range fields {
@@ -35,9 +46,10 @@ func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) 
 	m := &bytesToStringModifier{
 		modifier: modifier,
 		modifierBase: modifierBase[bool]{
-			fields:           fieldMap,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fieldMap,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 	}
 
@@ -60,7 +72,7 @@ type bytesToStringModifier struct {
 	modifierBase[bool]
 }
 
-func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (tpe reflect.Type, err error) {
+func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (tpe reflect.Type, err error) {
 	defer func() {
 		// StructOf can panic if the fields are not valid
 		if r := recover(); r != nil {
@@ -70,11 +82,11 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 	}()
 
 	// Attempt to retype using the shared functionality in modifierBase
-	offChainType, err := t.modifierBase.RetypeToOffChain(onChainType, "")
+	offChainType, err := m.modifierBase.RetypeToOffChain(onChainType, "")
 	if err != nil {
 		// Handle additional cases specific to bytesToStringModifier
 		if onChainType.Kind() == reflect.Array {
-			addrType := reflect.ArrayOf(t.modifier.Length(), reflect.TypeOf(byte(0)))
+			addrType := reflect.ArrayOf(m.modifier.Length(), reflect.TypeOf(byte(0)))
 			// Check for nested byte arrays (e.g., [n][20]byte)
 			if onChainType.Elem() == addrType.Elem() {
 				return reflect.ArrayOf(onChainType.Len(), reflect.TypeOf("")), nil
@@ -86,16 +98,44 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 }
 
 // TransformToOnChain uses the AddressModifier for string-to-address conversion.
-func (t *bytesToStringModifier) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, noop, stringToAddressHookForOnChain(t.modifier))
+func (m *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(offChainValue, m.offToOnChainType, m.fields, noop, stringToAddressHookForOnChain(m.modifier))
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 // TransformToOffChain uses the AddressModifier for address-to-string conversion.
-func (t *bytesToStringModifier) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields,
-		addressTransformationAction(t.modifier.Length()),
-		addressToStringHookForOffChain(t.modifier),
+func (m *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(onChainValue, m.onToOffChainType, m.fields,
+		addressTransformationAction(m.modifier.Length()),
+		addressToStringHookForOffChain(m.modifier),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 // addressTransformationAction performs conversions over the fields we want to modify.

@@ -9,14 +9,28 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// PreCodec creates a modifier that will run a preliminary encoding/decoding step.
-// This is useful when wanting to move nested data as generic bytes.
-func NewPreCodec(fields map[string]string, codecs map[string]types.RemoteCodec) (Modifier, error) {
+// NewPreCodec creates a modifier that will run a preliminary encoding/decoding step. This is useful when wanting to
+// move nested data as generic bytes.
+func NewPreCodec(
+	fields map[string]string,
+	codecs map[string]types.RemoteCodec,
+) (Modifier, error) {
+	return NewPathTraversePreCodec(fields, codecs, false)
+}
+
+// NewPathTraversePreCodec creates a PreCodec modifier with itemType path traversal enabled or disabled. The standard
+// constructor. NewPreCodec has path traversal off by default.
+func NewPathTraversePreCodec(
+	fields map[string]string,
+	codecs map[string]types.RemoteCodec,
+	enablePathTraverse bool,
+) (Modifier, error) {
 	m := &preCodec{
 		modifierBase: modifierBase[string]{
-			fields:           fields,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fields,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 		codecs: codecs,
 	}
@@ -56,11 +70,41 @@ type preCodec struct {
 	codecs map[string]types.RemoteCodec
 }
 
-func (pc *preCodec) TransformToOffChain(onChainValue any, _ string) (any, error) {
+func (pc *preCodec) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	// set itemType to an ignore value if path traversal is not enabled
+	if !pc.modifierBase.enablePathTraverse {
+		itemType = ""
+	}
+
 	allHooks := make([]mapstructure.DecodeHookFunc, 1)
 	allHooks[0] = hardCodeManyHook
 
-	return transformWithMaps(onChainValue, pc.onToOffChainType, pc.fields, pc.decodeFieldMapAction, allHooks...)
+	// the offChainValue might be a subfield value; get the true offChainStruct type already stored and set the value
+	onChainStructValue := onChainValue
+
+	// path traversal is expected, but offChainValue is the value of a field, not the actual struct
+	// create a new struct from the stored offChainStruct with the provided value applied and all other fields set to
+	// their zero value.
+	if itemType != "" {
+		into := reflect.New(pc.onChainStructType)
+
+		if err := applyValueForPath(into, reflect.ValueOf(onChainValue), itemType); err != nil {
+			return nil, err
+		}
+
+		onChainStructValue = reflect.Indirect(into).Interface()
+	}
+
+	modified, err := transformWithMaps(onChainStructValue, pc.onToOffChainType, pc.fields, pc.decodeFieldMapAction, allHooks...)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 func (pc *preCodec) decodeFieldMapAction(extractMap map[string]any, key string, typeDef string) error {
@@ -86,11 +130,41 @@ func (pc *preCodec) decodeFieldMapAction(extractMap map[string]any, key string, 
 	return nil
 }
 
-func (pc *preCodec) TransformToOnChain(offChainValue any, _ string) (any, error) {
+func (pc *preCodec) TransformToOnChain(offChainValue any, itemType string) (any, error) {
 	allHooks := make([]mapstructure.DecodeHookFunc, 1)
 	allHooks[0] = hardCodeManyHook
 
-	return transformWithMaps(offChainValue, pc.offToOnChainType, pc.fields, pc.encodeFieldMapAction, allHooks...)
+	// set itemType to an ignore value if path traversal is not enabled
+	if !pc.modifierBase.enablePathTraverse {
+		itemType = ""
+	}
+
+	// the offChainValue might be a subfield value; get the true offChainStruct type already stored and set the value
+	offChainStructValue := offChainValue
+
+	// path traversal is expected, but offChainValue is the value of a field, not the actual struct
+	// create a new struct from the stored offChainStruct with the provided value applied and all other fields set to
+	// their zero value.
+	if itemType != "" {
+		into := reflect.New(pc.offChainStructType)
+
+		if err := applyValueForPath(into, reflect.ValueOf(offChainValue), itemType); err != nil {
+			return nil, err
+		}
+
+		offChainStructValue = reflect.Indirect(into).Interface()
+	}
+
+	modified, err := transformWithMaps(offChainStructValue, pc.offToOnChainType, pc.fields, pc.encodeFieldMapAction, allHooks...)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 func (pc *preCodec) encodeFieldMapAction(extractMap map[string]any, key string, typeDef string) error {

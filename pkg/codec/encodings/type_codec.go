@@ -33,6 +33,11 @@ type TopLevelCodec interface {
 	SizeAtTopLevel(numItems int) (int, error)
 }
 
+type StructTypeCodec interface {
+	TypeCodec
+	FieldCodec(string) (TypeCodec, error)
+}
+
 // CodecFromTypeCodec maps TypeCodec to types.RemoteCodec, using the key as the itemType
 // If the TypeCodec is a TopLevelCodec, GetMaxEncodingSize and GetMaxDecodingSize will call SizeAtTopLevel instead of Size.
 type CodecFromTypeCodec map[string]TypeCodec
@@ -45,9 +50,9 @@ type LenientCodecFromTypeCodec map[string]TypeCodec
 var _ types.RemoteCodec = &LenientCodecFromTypeCodec{}
 
 func (c CodecFromTypeCodec) CreateType(itemType string, _ bool) (any, error) {
-	ntcwt, ok := c[itemType]
-	if !ok {
-		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+	ntcwt, err := getCodec(c, itemType)
+	if err != nil {
+		return nil, err
 	}
 
 	tpe := ntcwt.GetType()
@@ -59,9 +64,9 @@ func (c CodecFromTypeCodec) CreateType(itemType string, _ bool) (any, error) {
 }
 
 func (c CodecFromTypeCodec) Encode(_ context.Context, item any, itemType string) ([]byte, error) {
-	ntcwt, ok := c[itemType]
-	if !ok {
-		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+	ntcwt, err := getCodec(c, itemType)
+	if err != nil {
+		return nil, err
 	}
 
 	if item != nil {
@@ -86,14 +91,15 @@ func (c CodecFromTypeCodec) Encode(_ context.Context, item any, itemType string)
 }
 
 func (c CodecFromTypeCodec) GetMaxEncodingSize(_ context.Context, n int, itemType string) (int, error) {
-	ntcwt, ok := c[itemType]
-	if !ok {
-		return 0, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+	ntcwt, err := getCodec(c, itemType)
+	if err != nil {
+		return 0, err
 	}
 
 	if lp, ok := ntcwt.(TopLevelCodec); ok {
 		return lp.SizeAtTopLevel(n)
 	}
+
 	return ntcwt.Size(n)
 }
 
@@ -121,11 +127,16 @@ func (c LenientCodecFromTypeCodec) Decode(ctx context.Context, raw []byte, into 
 	return decode(c, raw, into, itemType, false)
 }
 
+func (c CodecFromTypeCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	return c.GetMaxEncodingSize(ctx, n, itemType)
+}
+
 func decode(c map[string]TypeCodec, raw []byte, into any, itemType string, exactSize bool) error {
-	ntcwt, ok := c[itemType]
-	if !ok {
-		return fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+	ntcwt, err := getCodec(c, itemType)
+	if err != nil {
+		return err
 	}
+
 	val, remaining, err := ntcwt.Decode(raw)
 	if err != nil {
 		return err
@@ -138,6 +149,31 @@ func decode(c map[string]TypeCodec, raw []byte, into any, itemType string, exact
 	return codec.Convert(reflect.ValueOf(val), reflect.ValueOf(into), nil)
 }
 
-func (c CodecFromTypeCodec) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
-	return c.GetMaxEncodingSize(ctx, n, itemType)
+func getCodec(c map[string]TypeCodec, itemType string) (TypeCodec, error) {
+	// itemType could recurse into nested structs
+	head, tail := codec.ItemTyper(itemType).Next()
+	if head == "" {
+		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+	}
+
+	ntcwt, ok := c[head]
+	if !ok {
+		if ntcwt, ok = c[itemType]; !ok {
+			return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+		}
+
+		// in this case, the codec is structured to not have nestable keys
+		return ntcwt, nil
+	}
+
+	if tail == "" {
+		return ntcwt, nil
+	}
+
+	structType, ok := ntcwt.(StructTypeCodec)
+	if !ok {
+		return nil, fmt.Errorf("%w: extended path not traversable for type %s", types.ErrInvalidType, itemType)
+	}
+
+	return structType.FieldCodec(tail)
 }

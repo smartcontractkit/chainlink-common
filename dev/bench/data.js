@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738589575934,
+  "lastUpdate": 1738603812848,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9870,6 +9870,48 @@ window.BENCHMARK_DATA = {
             "value": 28201,
             "unit": "ns/op",
             "extra": "42379 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aea9294a7d555844336a92c9ffe41219dfb26c68",
+          "message": "Add typecheck to Precodec modifier decodeFieldMapAction (#1020)",
+          "timestamp": "2025-02-03T17:29:07Z",
+          "tree_id": "68743eb788dcc72dc7272a19c4fb5867deb4c96c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aea9294a7d555844336a92c9ffe41219dfb26c68"
+        },
+        "date": 1738603811549,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.6,
+            "unit": "ns/op",
+            "extra": "2612893 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 520.9,
+            "unit": "ns/op",
+            "extra": "2321566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28248,
+            "unit": "ns/op",
+            "extra": "42511 times\n4 procs"
           }
         ]
       }

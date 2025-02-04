@@ -12,9 +12,6 @@ import (
 
 func NewNotificationTemplatesFromFile(filePath string) (map[string]alerting.NotificationTemplate, error) {
 	fileName := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
-	if fileName == "notification-templates" {
-		fileName = "chainlink"
-	}
 
 	notificationTemplates := make(map[string]alerting.NotificationTemplate)
 	yamlFileToMapRes, errFileToMap := yamlFileToMap(filePath)

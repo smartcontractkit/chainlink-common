@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "capabilities/consensus/ocr3/types";
+
+package ocr3_config_types;
+
+message ReportingPluginConfig {
+  uint32 maxQueryLengthBytes = 1;
+  uint32 maxObservationLengthBytes = 2;
+  uint32 maxReportLengthBytes = 3;
+  uint32 maxRequestBatchSize = 4;
+  bool uniqueReports = 6;
+}

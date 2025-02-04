@@ -199,12 +199,12 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 		options.QueryRefCondition = "A"
 	}
 
-	annotations := maps.Clone(options.Annotations)
-	maps.Copy(annotations, map[string]string{
+	annotations := map[string]string{
 		"summary":     options.Summary,
 		"description": options.Description,
 		"runbook_url": options.RunbookURL,
-	})
+	}
+	maps.Copy(annotations, options.Annotations)
 
 	if options.PanelTitle != "" {
 		annotations["panel_title"] = options.PanelTitle

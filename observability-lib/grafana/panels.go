@@ -279,6 +279,7 @@ type TimeSeriesPanelOptions struct {
 	ToolTipOptions    *ToolTipOptions
 	ThresholdStyle    common.GraphThresholdsStyleMode
 	DrawStyle         common.GraphDrawStyle
+	StackingMode      common.StackingMode
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -300,6 +301,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		options.ToolTipOptions = &ToolTipOptions{}
 	}
 
+	if options.StackingMode == "" {
+		options.StackingMode = common.StackingModeNone
+	}
+
 	newPanel := timeseries.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
 		Title(*options.Title).
@@ -315,7 +320,11 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
 			Type(options.ScaleDistribution),
 		).
-		Tooltip(newToolTip(options.ToolTipOptions))
+		Tooltip(newToolTip(options.ToolTipOptions)).
+		// Time Series Panel Options
+		Stacking(common.NewStackingConfigBuilder().
+			Mode(options.StackingMode),
+		)
 
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)

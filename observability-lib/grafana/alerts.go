@@ -35,6 +35,7 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 		RefId(query.RefID)
 
 	if query.Instant {
+		model.QueryType("instant")
 		model.Instant()
 	}
 

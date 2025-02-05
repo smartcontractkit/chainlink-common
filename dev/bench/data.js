@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738603812848,
+  "lastUpdate": 1738764749739,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9912,6 +9912,48 @@ window.BENCHMARK_DATA = {
             "value": 28248,
             "unit": "ns/op",
             "extra": "42511 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yikjiun.lee@smartcontract.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8f50d72601bb805041e3082501a9c0bf6138794c",
+          "message": "Various updates to Observability Library (#1022)\n\n- Fix alert query type not instant when the query is instant\r\n- Add disable resolve message and uid to contact point\r\n- Add stacking mode to time series panel\r\n- Add multi and include all to custom variable\r\n- Use csv when the variable key and value is the same\r\n- Fix delete notification template status code should be 204\r\n- Add annotations to alerts\r\n- Derive notification templates name from file name",
+          "timestamp": "2025-02-05T15:11:37+01:00",
+          "tree_id": "5b7cc5644e0ba3af46fb1c7dcc3d44cc87c89f18",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8f50d72601bb805041e3082501a9c0bf6138794c"
+        },
+        "date": 1738764749110,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 462.5,
+            "unit": "ns/op",
+            "extra": "2458044 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 512.5,
+            "unit": "ns/op",
+            "extra": "2337364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28391,
+            "unit": "ns/op",
+            "extra": "42544 times\n4 procs"
           }
         ]
       }

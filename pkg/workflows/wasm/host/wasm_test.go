@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -84,7 +85,11 @@ func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) 
 
 	cb, err := io.ReadAll(&b)
 	require.NoError(t, err)
-	return cb
+
+	seriliasedWasmBinary, err := createSerialisedWasmBinary(cb, uncompressed)
+	require.NoError(t, err)
+
+	return seriliasedWasmBinary
 }
 
 func Test_GetWorkflowSpec(t *testing.T) {
@@ -98,9 +103,8 @@ func Test_GetWorkflowSpec(t *testing.T) {
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		binary,
 		[]byte(""),
-		WasmtimeModuleFactory,
+		wasmtimeModuleFactory(binary),
 	)
 	require.NoError(t, err)
 }
@@ -116,8 +120,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 			Logger:         logger.Test(t),
 			IsUncompressed: false,
 		},
-		binary,
-		[]byte(""), WasmtimeModuleFactory,
+		[]byte(""), wasmtimeModuleFactory(binary),
 	)
 	require.NoError(t, err)
 }
@@ -132,8 +135,7 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		failBinary,
-		[]byte(""), WasmtimeModuleFactory,
+		[]byte(""), wasmtimeModuleFactory(failBinary),
 	)
 	// panic
 	assert.ErrorContains(t, err, "status 2")
@@ -152,8 +154,8 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		binary, // use the success binary with a zero timeout
-		[]byte(""), WasmtimeModuleFactory,
+		// use the success binary with a zero timeout
+		[]byte(""), wasmtimeModuleFactory(binary),
 	)
 	// panic
 	assert.ErrorContains(t, err, "wasm trap: interrupt")
@@ -170,8 +172,7 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		binary,
-		[]byte(""), WasmtimeModuleFactory,
+		[]byte(""), wasmtimeModuleFactory(binary),
 	)
 	assert.ErrorContains(t, err, "oops")
 }
@@ -188,7 +189,7 @@ func Test_Compute_Logs(t *testing.T) {
 		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, nil
 		},
-	}, binary, WasmtimeModuleFactory)
+	}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -286,7 +287,7 @@ func Test_Compute_Emit(t *testing.T) {
 				assert.Equal(t, "workflow-execution-id", kvs["workflow_execution_id"])
 				return nil
 			}),
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -314,7 +315,7 @@ func Test_Compute_Emit(t *testing.T) {
 
 				return assert.AnError
 			}),
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -347,7 +348,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, labels map[string]string) error {
 				return nil
 			}), // never called
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -382,7 +383,7 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 	m, err := NewModule(&ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
-	}, binary, WasmtimeModuleFactory)
+	}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -429,7 +430,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -480,7 +481,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -525,7 +526,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return nil, assert.AnError
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -583,7 +584,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -632,7 +633,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					return &wasmpb.FetchResponse{}, nil
 				}
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -684,7 +685,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 1,
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -728,7 +729,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -773,7 +774,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 6,
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -818,7 +819,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 6,
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -852,7 +853,7 @@ func TestModule_Errors(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	_, err = m.Run(ctx, nil)
@@ -899,7 +900,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -918,7 +919,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 	t.Run("compressed binary size is smaller than the default 10mb limit", func(t *testing.T) {
 		binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+		_, err := NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 	})
 
@@ -931,7 +932,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, bwr.Close())
 
-		_, err = NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+		_, err = NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", defaultMaxCompressedBinarySize)
 		require.ErrorContains(t, err, default10mbLimit)
 	})
@@ -946,7 +947,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, bwr.Close())
 
-		_, err = NewModule(&ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+		_, err = NewModule(&ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", customMaxCompressedBinarySize)
 		require.ErrorContains(t, err, default10mbLimit)
 	})
@@ -960,13 +961,13 @@ func TestModule_DecompressedBinarySize(t *testing.T) {
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 	t.Run("decompressed binary size is within the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(24 * 1024 * 1024)
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 	})
 
 	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(3 * 1024 * 1024)
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 		decompressedSizeExceeded := fmt.Sprintf("decompressed binary size reached the maximum allowed size of %d bytes", customDecompressedBinarySize)
 		require.ErrorContains(t, err, decompressedSizeExceeded)
 	})
@@ -978,7 +979,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	d := 1 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1004,7 +1005,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1024,7 +1025,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1052,7 +1053,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1080,7 +1081,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1108,7 +1109,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary, WasmtimeModuleFactory)
+	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, wasmtimeModuleFactory(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1161,7 +1162,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 			Determinism: &DeterminismConfig{
 				Seed: 42,
 			},
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -1177,7 +1178,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-		}, binary, WasmtimeModuleFactory)
+		}, wasmtimeModuleFactory(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -1193,33 +1194,41 @@ type Entry struct {
 	Fields []zapcore.Field
 }
 
-func WasmtimeModuleFactory(engine *wasmtime.Engine, binary []byte, isUncompressed bool, maxCompressedBinarySize uint64, maxDecompressedBinarySize uint64) (*wasmtime.Module, error) {
-	if !isUncompressed {
-		// validate the binary size before decompressing
-		// this is to prevent decompression bombs
-		if uint64(len(binary)) > maxCompressedBinarySize {
-			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", maxCompressedBinarySize)
-		}
-
-		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(maxDecompressedBinarySize+1))
-		decompedBinary, err := io.ReadAll(rdr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress binary: %w", err)
-		}
-
-		binary = decompedBinary
+func createSerialisedWasmBinary(binary []byte, isUncompressed bool) ([]byte, error) {
+	cfg, err := GetEngineConfiguration(0)
+	if err != nil {
+		return nil, fmt.Errorf("error getting engine configuration: %w", err)
 	}
 
-	// Validate the decompressed binary size.
-	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
-	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
-	if uint64(len(binary)) > maxDecompressedBinarySize {
-		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", maxDecompressedBinarySize)
+	engine := wasmtime.NewEngineWithConfig(cfg)
+
+	decompressedBinary, err := ValidateAndDecompressBinary(binary, isUncompressed, math.MaxUint64, math.MaxUint64)
+	if err != nil {
+		return nil, fmt.Errorf("error validating and decompressing binary: %w", err)
 	}
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := wasmtime.NewModule(engine, decompressedBinary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
-	return mod, nil
+	return mod.Serialize()
+}
+
+func wasmtimeModuleFactory(serialisedWasmBinary []byte) func(uint64) (*WasmTimeModule, error) {
+
+	return func(initialFuel uint64) (*WasmTimeModule, error) {
+
+		cfg, err := GetEngineConfiguration(initialFuel)
+		if err != nil {
+			return nil, fmt.Errorf("error getting engine configuration: %w", err)
+		}
+		engine := wasmtime.NewEngineWithConfig(cfg)
+
+		module, err := wasmtime.NewModuleDeserialize(engine, serialisedWasmBinary)
+		if err != nil {
+			return nil, fmt.Errorf("error deserializing module: %w", err)
+		}
+
+		return NewWasmTimeModule(engine, module, cfg), nil
+	}
 }

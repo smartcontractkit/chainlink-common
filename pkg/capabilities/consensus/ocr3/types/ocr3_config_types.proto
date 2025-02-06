@@ -7,10 +7,9 @@ package ocr3_config_types;
 message ReportingPluginConfig {
   uint32 maxQueryLengthBytes = 1;
   uint32 maxObservationLengthBytes = 2;
-  uint32 maxReportLengthBytes = 3;
-  uint32 maxOutcomeLengthBytes = 4;
+  uint32 maxOutcomeLengthBytes = 3;
+  uint32 maxReportLengthBytes = 4;
   uint32 maxReportCount = 5;
   uint32 maxBatchSize = 6;
   uint64 outcomePruningThreshold = 7;
-  bool uniqueReports = 8;
 }

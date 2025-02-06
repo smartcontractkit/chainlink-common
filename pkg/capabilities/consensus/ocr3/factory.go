@@ -13,6 +13,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
+const (
+	defaultMaxPhaseOutputBytes = 1000000 // 1 MB
+	defaultMaxReportCount      = 20
+)
+
 type factory struct {
 	store                   *requests.Store
 	capability              *capability
@@ -36,6 +41,27 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	err := proto.Unmarshal(config.OffchainConfig, &configProto)
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
+	}
+	if configProto.MaxQueryLengthBytes <= 0 {
+		configProto.MaxQueryLengthBytes = defaultMaxPhaseOutputBytes
+	}
+	if configProto.MaxObservationLengthBytes <= 0 {
+		configProto.MaxObservationLengthBytes = defaultMaxPhaseOutputBytes
+	}
+	if configProto.MaxOutcomeLengthBytes <= 0 {
+		configProto.MaxOutcomeLengthBytes = defaultMaxPhaseOutputBytes
+	}
+	if configProto.MaxReportLengthBytes <= 0 {
+		configProto.MaxReportLengthBytes = defaultMaxPhaseOutputBytes
+	}
+	if configProto.MaxBatchSize <= 0 {
+		configProto.MaxBatchSize = defaultBatchSize
+	}
+	if configProto.OutcomePruningThreshold <= 0 {
+		configProto.OutcomePruningThreshold = defaultOutcomePruningThreshold
+	}
+	if configProto.MaxReportCount <= 0 {
+		configProto.MaxReportCount = defaultMaxReportCount
 	}
 	rp, err := newReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
 	rpInfo := ocr3types.ReportingPluginInfo{

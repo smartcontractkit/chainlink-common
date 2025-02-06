@@ -3,10 +3,12 @@ package ocr3
 import (
 	"context"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -37,19 +39,24 @@ func newFactory(s *requests.Store, c *capability, batchSize int, outcomePruningT
 	}, nil
 }
 
-func (o *factory) NewReportingPlugin(ctx context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
+	var configProto types.ReportingPluginConfig
+	err := proto.Unmarshal(config.OffchainConfig, &configProto)
+	if err != nil {
+		return nil, ocr3types.ReportingPluginInfo{}, err
+	}
 	rp, err := newReportingPlugin(o.store, o.capability, o.batchSize, config, o.outcomePruningThreshold, o.lggr)
-	info := ocr3types.ReportingPluginInfo{
+	rpInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{
-			MaxQueryLength:       defaultMaxPhaseOutputBytes,
-			MaxObservationLength: defaultMaxPhaseOutputBytes,
+			MaxQueryLength:       int(configProto.MaxQueryLengthBytes),
+			MaxObservationLength: int(configProto.MaxObservationLengthBytes),
 			MaxOutcomeLength:     defaultMaxPhaseOutputBytes,
-			MaxReportLength:      defaultMaxPhaseOutputBytes,
+			MaxReportLength:      int(configProto.MaxReportLengthBytes),
 			MaxReportCount:       defaultMaxReportCount,
 		},
 	}
-	return rp, info, err
+	return rp, rpInfo, err
 }
 
 func (o *factory) Start(ctx context.Context) error {

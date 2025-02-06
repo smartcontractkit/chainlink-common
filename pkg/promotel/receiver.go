@@ -5,13 +5,12 @@ import (
 
 	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/scrape"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
-	"go.uber.org/zap"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
 )
 
@@ -38,15 +37,19 @@ func (p *metricReceiver) Close() error {
 	return p.receiver.Shutdown(context.Background())
 }
 
-func NewMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, consumerFunc consumer.ConsumeMetricsFunc, logger *zap.Logger) (Runnable, error) {
-	// Scrape from the provided gatherer
-	scrape.SetDefaultGatherer(g)
-
-	factory := prometheusreceiver.NewFactory()
+func NewMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, r prometheus.Registerer, consumerFunc consumer.ConsumeMetricsFunc, logger logger.Logger) (Runnable, error) {
+	factory := prometheusreceiver.NewFactoryWithOptions(
+		prometheusreceiver.WithGatherer(g),
+		prometheusreceiver.WithRegisterer(r),
+	)
+	settings, err := internal.NewReceiverSettings()
+	if err != nil {
+		return nil, err
+	}
 	// Creates a metrics receiver with the context, settings, config, and consumer
 	receiver, err := factory.CreateMetrics(
 		context.Background(),
-		internal.NewReceiverSettings(logger),
+		settings,
 		config,
 		internal.NewConsumer(consumerFunc))
 	if err != nil {
@@ -57,10 +60,10 @@ func NewMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, consumerFun
 	return &metricReceiver{factory, host, receiver}, nil
 }
 
-func NewDebugMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, logger *zap.Logger) (MetricReceiver, error) {
+func NewDebugMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger) (MetricReceiver, error) {
 	debugExporter := internal.NewDebugExporter(logger)
 	// Creates a no-operation consumer
-	return NewMetricReceiver(config, g, func(_ context.Context, md pmetric.Metrics) error {
+	return NewMetricReceiver(config, g, r, func(_ context.Context, md pmetric.Metrics) error {
 		// Writes metrics data to stdout
 		return debugExporter.Export(md)
 	}, logger)

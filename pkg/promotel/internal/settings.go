@@ -11,18 +11,20 @@ import (
 var defaultComponentType = component.MustNewType("nop")
 
 // NewReceiverSettings returns a new settings for factory.CreateMetrics function
-func NewReceiverSettings(logger *zap.Logger) receiver.Settings {
+func NewReceiverSettings() (receiver.Settings, error) {
+	l, err := zap.NewProduction()
 	return receiver.Settings{
 		ID:                component.NewIDWithName(defaultComponentType, uuid.NewString()),
-		TelemetrySettings: NewTelemetrySettings(logger),
+		TelemetrySettings: NewTelemetrySettings(l),
 		BuildInfo:         component.NewDefaultBuildInfo(),
-	}
+	}, err
 }
 
-func NewExporterSettings(logger *zap.Logger) exporter.Settings {
+func NewExporterSettings() (exporter.Settings, error) {
+	l, err := zap.NewProduction()
 	return exporter.Settings{
 		ID:                component.NewIDWithName(defaultComponentType, uuid.NewString()),
-		TelemetrySettings: NewTelemetrySettings(logger),
+		TelemetrySettings: NewTelemetrySettings(l),
 		BuildInfo:         component.NewDefaultBuildInfo(),
-	}
+	}, err
 }

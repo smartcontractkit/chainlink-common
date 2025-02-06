@@ -7,8 +7,8 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
-	"go.uber.org/zap"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
 )
 
@@ -36,12 +36,16 @@ func (me *metricExporter) Consumer() consumer.Metrics {
 	return me.exporter
 }
 
-func NewMetricExporter(config ExporterConfig, logger *zap.Logger) (MetricExporter, error) {
+func NewMetricExporter(config ExporterConfig, logger logger.Logger) (MetricExporter, error) {
 	factory := otlpexporter.NewFactory()
 	// Creates a metrics receiver with the context, settings, config, and consumer
+	settings, err := internal.NewExporterSettings()
+	if err != nil {
+		return nil, err
+	}
 	exporter, err := factory.CreateMetrics(
 		context.Background(),
-		internal.NewExporterSettings(logger),
+		settings,
 		config)
 	if err != nil {
 		return nil, err

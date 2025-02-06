@@ -10,6 +10,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 type Exporter interface {
@@ -17,12 +19,12 @@ type Exporter interface {
 }
 
 type DebugExporter struct {
-	logger           *zap.Logger
+	logger           logger.Logger
 	metricsMarshaler pmetric.Marshaler
 	verbosity        configtelemetry.Level
 }
 
-func NewDebugExporter(logger *zap.Logger) Exporter {
+func NewDebugExporter(logger logger.Logger) Exporter {
 	return &DebugExporter{
 		logger:           logger,
 		metricsMarshaler: &pmetric.JSONMarshaler{},

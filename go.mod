@@ -29,8 +29,7 @@ require (
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/marcboeker/go-duckdb v1.8.3
 	github.com/pelletier/go-toml/v2 v2.2.0
-	github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.4-0.20250205153217-c04cebb02246
-	github.com/pkcll/prometheus v0.54.3-0.20250205152829-6e977873d1b5
+	github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.7
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.62.0
@@ -216,6 +215,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/ovh/go-ovh v1.6.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
+	github.com/pkcll/prometheus v0.54.3-0.20250205152829-6e977873d1b5 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect

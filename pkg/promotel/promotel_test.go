@@ -49,11 +49,13 @@ func TestExample(t *testing.T) {
 		return false
 	}
 	foundCh := make(chan struct{})
-	nextFunc := func(_ context.Context, md pmetric.Metrics) error {
+	// TODO: add mocked GRPC endpoint for exporter
+	exporter := startExporter(context.Background(), logger)
+	nextFunc := func(ctx context.Context, md pmetric.Metrics) error {
 		if findMetric(testCounterMetricName, md) {
 			foundCh <- struct{}{}
 		}
-		return nil
+		return exporter.Consumer().ConsumeMetrics(ctx, md)
 	}
 	receiver := startMetricReceiver(g, r, logger, nextFunc)
 

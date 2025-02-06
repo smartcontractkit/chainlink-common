@@ -21,7 +21,9 @@ type VariableOption struct {
 
 type CustomVariableOptions struct {
 	*VariableOption
-	Values map[string]any
+	Values     map[string]any
+	Multi      bool
+	IncludeAll bool
 }
 
 func NewCustomVariable(options *CustomVariableOptions) *dashboard.CustomVariableBuilder {
@@ -38,7 +40,9 @@ func NewCustomVariable(options *CustomVariableOptions) *dashboard.CustomVariable
 			Selected: cog.ToPtr[bool](true),
 			Text:     dashboard.StringOrArrayOfString{String: cog.ToPtr(options.CurrentText)},
 			Value:    dashboard.StringOrArrayOfString{String: cog.ToPtr(options.CurrentValue)},
-		})
+		}).
+		Multi(options.Multi).
+		IncludeAll(options.IncludeAll)
 
 	optionsList := []dashboard.VariableOption{
 		{
@@ -63,7 +67,11 @@ func NewCustomVariable(options *CustomVariableOptions) *dashboard.CustomVariable
 		// Escape commas and colons in the value which are reserved characters for values string
 		cleanValue := strings.ReplaceAll(value.(string), ",", "\\,")
 		cleanValue = strings.ReplaceAll(cleanValue, ":", "\\:")
-		valuesString += key + " : " + cleanValue + " , "
+		valuesString += key
+		if key != cleanValue {
+			valuesString += " : " + cleanValue
+		}
+		valuesString += ", "
 	}
 	variable.Values(dashboard.StringOrMap{String: cog.ToPtr(strings.TrimSuffix(valuesString, ", "))})
 

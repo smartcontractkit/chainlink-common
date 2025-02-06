@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"maps"
+
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/expr"
@@ -35,6 +37,7 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 		RefId(query.RefID)
 
 	if query.Instant {
+		model.QueryType("instant")
 		model.Instant()
 	}
 
@@ -170,6 +173,7 @@ type AlertOptions struct {
 	For               string
 	NoDataState       alerting.RuleNoDataState
 	RuleExecErrState  alerting.RuleExecErrState
+	Annotations       map[string]string
 	Tags              map[string]string
 	Query             []RuleQuery
 	QueryRefCondition string
@@ -200,6 +204,7 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 		"description": options.Description,
 		"runbook_url": options.RunbookURL,
 	}
+	maps.Copy(annotations, options.Annotations)
 
 	if options.PanelTitle != "" {
 		annotations["panel_title"] = options.PanelTitle

@@ -55,7 +55,7 @@ func TestExample(t *testing.T) {
 		if findMetric(testCounterMetricName, md) {
 			foundCh <- struct{}{}
 		}
-		return exporter.Consumer().ConsumeMetrics(ctx, md)
+		return exporter.Export(ctx, md)
 	}
 	receiver := startMetricReceiver(g, r, logger, nextFunc)
 
@@ -116,7 +116,7 @@ func startExporter(ctx context.Context, logger logger.Logger) promotel.MetricExp
 	return exporter
 }
 
-func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger, next consumer.ConsumeMetricsFunc) promotel.Runnable {
+func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger, next promotel.NextFunc) promotel.Runnable {
 	logger.Info("Starting promotel metric receiver")
 	config, err := promotel.NewDefaultReceiverConfig()
 	if err != nil {
@@ -125,7 +125,7 @@ func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger 
 
 	// Gather metrics via promotel
 	// MetricReceiver fetches metrics from prometheus.Gatherer, then converts it to OTel format and writes formatted metrics to stdout
-	receiver, err := promotel.NewMetricReceiver(config, g, r, next, logger)
+	receiver, err := promotel.NewMetricReceiver(config, g, r, consumer.ConsumeMetricsFunc(next), logger)
 	if err != nil {
 		logger.Fatal("Failed to create debug metric receiver", zap.Error(err))
 	}

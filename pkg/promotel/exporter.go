@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
@@ -15,6 +16,7 @@ import (
 type MetricExporter interface {
 	Runnable
 	Consumer() consumer.Metrics
+	Export(ctx context.Context, md pmetric.Metrics) error
 }
 
 type metricExporter struct {
@@ -22,6 +24,8 @@ type metricExporter struct {
 	host     component.Host
 	exporter exporter.Metrics
 }
+
+type NextFunc consumer.ConsumeMetricsFunc
 
 func (me *metricExporter) Start(ctx context.Context) error {
 	return me.exporter.Start(ctx, me.host)
@@ -32,8 +36,11 @@ func (me *metricExporter) Close() error {
 }
 
 func (me *metricExporter) Consumer() consumer.Metrics {
-	// Writes metrics data to stdout
 	return me.exporter
+}
+
+func (me *metricExporter) Export(ctx context.Context, md pmetric.Metrics) error {
+	return me.exporter.ConsumeMetrics(ctx, md)
 }
 
 func NewMetricExporter(config ExporterConfig, logger logger.Logger) (MetricExporter, error) {

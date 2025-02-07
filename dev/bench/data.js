@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738764749739,
+  "lastUpdate": 1738939143785,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9954,6 +9954,48 @@ window.BENCHMARK_DATA = {
             "value": 28391,
             "unit": "ns/op",
             "extra": "42544 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "clement.erena78@gmail.com",
+            "name": "Clement",
+            "username": "Atrax1"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "760701bde4a15406116beab42844d6367edd6c1c",
+          "message": "feat(observability-lib): add interval to panel option (#1024)",
+          "timestamp": "2025-02-07T15:36:52+01:00",
+          "tree_id": "817067feaed007093b92983970526b553e993590",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/760701bde4a15406116beab42844d6367edd6c1c"
+        },
+        "date": 1738939143132,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 450.3,
+            "unit": "ns/op",
+            "extra": "2566411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 528,
+            "unit": "ns/op",
+            "extra": "2405812 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28209,
+            "unit": "ns/op",
+            "extra": "41899 times\n4 procs"
           }
         ]
       }

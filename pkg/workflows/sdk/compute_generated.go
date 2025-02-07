@@ -53,7 +53,7 @@ func Compute1WithConfig[I0 any, O any, C any](w *WorkflowSpecFactory, ref string
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -110,7 +110,7 @@ func Compute1WithConfig[I0 any, O any, C any](w *WorkflowSpecFactory, ref string
 // Compute1WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute1WithMetadata[I0 any, O any](w *WorkflowSpecFactory, ref string, input Compute1Inputs[I0], compute func(Runtime, I0, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -205,7 +205,7 @@ func Compute2WithConfig[I0 any, I1 any, O any, C any](w *WorkflowSpecFactory, re
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -262,7 +262,7 @@ func Compute2WithConfig[I0 any, I1 any, O any, C any](w *WorkflowSpecFactory, re
 // Compute2WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute2WithMetadata[I0 any, I1 any, O any](w *WorkflowSpecFactory, ref string, input Compute2Inputs[I0, I1], compute func(Runtime, I0, I1, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -360,7 +360,7 @@ func Compute3WithConfig[I0 any, I1 any, I2 any, O any, C any](w *WorkflowSpecFac
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -417,7 +417,7 @@ func Compute3WithConfig[I0 any, I1 any, I2 any, O any, C any](w *WorkflowSpecFac
 // Compute3WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute3WithMetadata[I0 any, I1 any, I2 any, O any](w *WorkflowSpecFactory, ref string, input Compute3Inputs[I0, I1, I2], compute func(Runtime, I0, I1, I2, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -518,7 +518,7 @@ func Compute4WithConfig[I0 any, I1 any, I2 any, I3 any, O any, C any](w *Workflo
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -575,7 +575,7 @@ func Compute4WithConfig[I0 any, I1 any, I2 any, I3 any, O any, C any](w *Workflo
 // Compute4WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute4WithMetadata[I0 any, I1 any, I2 any, I3 any, O any](w *WorkflowSpecFactory, ref string, input Compute4Inputs[I0, I1, I2, I3], compute func(Runtime, I0, I1, I2, I3, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -679,7 +679,7 @@ func Compute5WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, O any, C any](w 
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -736,7 +736,7 @@ func Compute5WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, O any, C any](w 
 // Compute5WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute5WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, O any](w *WorkflowSpecFactory, ref string, input Compute5Inputs[I0, I1, I2, I3, I4], compute func(Runtime, I0, I1, I2, I3, I4, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -843,7 +843,7 @@ func Compute6WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any, C
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -900,7 +900,7 @@ func Compute6WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any, C
 // Compute6WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute6WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, O any](w *WorkflowSpecFactory, ref string, input Compute6Inputs[I0, I1, I2, I3, I4, I5], compute func(Runtime, I0, I1, I2, I3, I4, I5, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -1010,7 +1010,7 @@ func Compute7WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, 
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -1067,7 +1067,7 @@ func Compute7WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, 
 // Compute7WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute7WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, O any](w *WorkflowSpecFactory, ref string, input Compute7Inputs[I0, I1, I2, I3, I4, I5, I6], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -1180,7 +1180,7 @@ func Compute8WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, 
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -1237,7 +1237,7 @@ func Compute8WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, 
 // Compute8WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute8WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, O any](w *WorkflowSpecFactory, ref string, input Compute8Inputs[I0, I1, I2, I3, I4, I5, I6, I7], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -1353,7 +1353,7 @@ func Compute9WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, 
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -1410,7 +1410,7 @@ func Compute9WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, 
 // Compute9WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute9WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, O any](w *WorkflowSpecFactory, ref string, input Compute9Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, I8, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
@@ -1529,7 +1529,7 @@ func Compute10WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any,
 	}
 
 	def := StepDefinition{
-		ID:             "custom-compute@1.0.0",
+		ID:             "custom_compute@1.0.0",
 		Ref:            ref,
 		Inputs:         input.ToSteps(),
 		Config:         cm,
@@ -1586,7 +1586,7 @@ func Compute10WithConfig[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any,
 // Compute10WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute10WithMetadata[I0 any, I1 any, I2 any, I3 any, I4 any, I5 any, I6 any, I7 any, I8 any, I9 any, O any](w *WorkflowSpecFactory, ref string, input Compute10Inputs[I0, I1, I2, I3, I4, I5, I6, I7, I8, I9], compute func(Runtime, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
 	def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{

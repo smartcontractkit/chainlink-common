@@ -382,7 +382,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "custom-compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "compute",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs.cool_output)"},
@@ -394,7 +394,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					CapabilityType: capabilities.CapabilityTypeAction,
 				},
 				{
-					ID:  "custom-compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "compute again",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs.cool_output.0)"},
@@ -437,7 +437,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "custom-compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "compute",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": []any{"$(trigger.outputs.cool_output)"}},
@@ -449,7 +449,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					CapabilityType: capabilities.CapabilityTypeAction,
 				},
 				{
-					ID:  "custom-compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "compute again",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{"Arg0": "$(trigger.outputs.cool_output)"},
@@ -492,7 +492,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 			},
 			Actions: []sdk.StepDefinition{
 				{
-					ID:  "custom-compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "compute",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{
@@ -507,7 +507,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 					CapabilityType: capabilities.CapabilityTypeAction,
 				},
 				{
-					ID:  "custom-compute@1.0.0",
+					ID:  "custom_compute@1.0.0",
 					Ref: "compute again",
 					Inputs: sdk.StepInputs{
 						Mapping: map[string]any{

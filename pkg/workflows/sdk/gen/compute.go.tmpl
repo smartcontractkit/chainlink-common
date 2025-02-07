@@ -57,7 +57,7 @@ func Compute{{.}}WithConfig[{{range  RangeNum .}}I{{.}} any, {{ end }}O any, C a
     }
 
     def := StepDefinition{
-       ID: "custom-compute@1.0.0",
+       ID: "custom_compute@1.0.0",
        Ref: ref,
        Inputs: input.ToSteps(),
        Config: cm,
@@ -114,7 +114,7 @@ func Compute{{.}}WithConfig[{{range  RangeNum .}}I{{.}} any, {{ end }}O any, C a
 // Compute{{.}}WithMetadata DO NOT USE, this functions is for internal local testing while other tools are being developed and is temporary
 func Compute{{.}}WithMetadata[{{range  RangeNum .}}I{{.}} any, {{ end }}O any](w *WorkflowSpecFactory, ref string, input Compute{{.}}Inputs[{{range RangeNum . }}I{{.}},{{ end }}], compute func(Runtime, {{range RangeNum . }}I{{.}},{{ end }} capabilities.RequestMetadata) (O, error)) ComputeOutputCap[O] {
     def := StepDefinition{
-		ID:     "custom-compute@1.0.0",
+		ID:     "custom_compute@1.0.0",
 		Ref:    ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{

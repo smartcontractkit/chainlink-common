@@ -23,6 +23,7 @@ const (
 	OnRampReader_Address_FullMethodName                       = "/loop.internal.pb.ccip.OnRampReader/Address"
 	OnRampReader_GetDynamicConfig_FullMethodName              = "/loop.internal.pb.ccip.OnRampReader/GetDynamicConfig"
 	OnRampReader_GetSendRequestsBetweenSeqNums_FullMethodName = "/loop.internal.pb.ccip.OnRampReader/GetSendRequestsBetweenSeqNums"
+	OnRampReader_GetSendRequestsForSeqNums_FullMethodName     = "/loop.internal.pb.ccip.OnRampReader/GetSendRequestsForSeqNums"
 	OnRampReader_IsSourceChainHealthy_FullMethodName          = "/loop.internal.pb.ccip.OnRampReader/IsSourceChainHealthy"
 	OnRampReader_IsSourceCursed_FullMethodName                = "/loop.internal.pb.ccip.OnRampReader/IsSourceCursed"
 	OnRampReader_RouterAddress_FullMethodName                 = "/loop.internal.pb.ccip.OnRampReader/RouterAddress"
@@ -37,6 +38,7 @@ type OnRampReaderClient interface {
 	Address(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*OnrampAddressResponse, error)
 	GetDynamicConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetDynamicConfigResponse, error)
 	GetSendRequestsBetweenSeqNums(ctx context.Context, in *GetSendRequestsBetweenSeqNumsRequest, opts ...grpc.CallOption) (*GetSendRequestsBetweenSeqNumsResponse, error)
+	GetSendRequestsForSeqNums(ctx context.Context, in *GetSendRequestsForSeqNumsRequest, opts ...grpc.CallOption) (*GetSendRequestsForSeqNumsResponse, error)
 	IsSourceChainHealthy(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsSourceChainHealthyResponse, error)
 	IsSourceCursed(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*IsSourceCursedResponse, error)
 	RouterAddress(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RouterAddressResponse, error)
@@ -73,6 +75,15 @@ func (c *onRampReaderClient) GetDynamicConfig(ctx context.Context, in *emptypb.E
 func (c *onRampReaderClient) GetSendRequestsBetweenSeqNums(ctx context.Context, in *GetSendRequestsBetweenSeqNumsRequest, opts ...grpc.CallOption) (*GetSendRequestsBetweenSeqNumsResponse, error) {
 	out := new(GetSendRequestsBetweenSeqNumsResponse)
 	err := c.cc.Invoke(ctx, OnRampReader_GetSendRequestsBetweenSeqNums_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *onRampReaderClient) GetSendRequestsForSeqNums(ctx context.Context, in *GetSendRequestsForSeqNumsRequest, opts ...grpc.CallOption) (*GetSendRequestsForSeqNumsResponse, error) {
+	out := new(GetSendRequestsForSeqNumsResponse)
+	err := c.cc.Invoke(ctx, OnRampReader_GetSendRequestsForSeqNums_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +142,7 @@ type OnRampReaderServer interface {
 	Address(context.Context, *emptypb.Empty) (*OnrampAddressResponse, error)
 	GetDynamicConfig(context.Context, *emptypb.Empty) (*GetDynamicConfigResponse, error)
 	GetSendRequestsBetweenSeqNums(context.Context, *GetSendRequestsBetweenSeqNumsRequest) (*GetSendRequestsBetweenSeqNumsResponse, error)
+	GetSendRequestsForSeqNums(context.Context, *GetSendRequestsForSeqNumsRequest) (*GetSendRequestsForSeqNumsResponse, error)
 	IsSourceChainHealthy(context.Context, *emptypb.Empty) (*IsSourceChainHealthyResponse, error)
 	IsSourceCursed(context.Context, *emptypb.Empty) (*IsSourceCursedResponse, error)
 	RouterAddress(context.Context, *emptypb.Empty) (*RouterAddressResponse, error)
@@ -151,6 +163,9 @@ func (UnimplementedOnRampReaderServer) GetDynamicConfig(context.Context, *emptyp
 }
 func (UnimplementedOnRampReaderServer) GetSendRequestsBetweenSeqNums(context.Context, *GetSendRequestsBetweenSeqNumsRequest) (*GetSendRequestsBetweenSeqNumsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSendRequestsBetweenSeqNums not implemented")
+}
+func (UnimplementedOnRampReaderServer) GetSendRequestsForSeqNums(context.Context, *GetSendRequestsForSeqNumsRequest) (*GetSendRequestsForSeqNumsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSendRequestsForSeqNums not implemented")
 }
 func (UnimplementedOnRampReaderServer) IsSourceChainHealthy(context.Context, *emptypb.Empty) (*IsSourceChainHealthyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsSourceChainHealthy not implemented")
@@ -230,6 +245,24 @@ func _OnRampReader_GetSendRequestsBetweenSeqNums_Handler(srv interface{}, ctx co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OnRampReaderServer).GetSendRequestsBetweenSeqNums(ctx, req.(*GetSendRequestsBetweenSeqNumsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OnRampReader_GetSendRequestsForSeqNums_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSendRequestsForSeqNumsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OnRampReaderServer).GetSendRequestsForSeqNums(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OnRampReader_GetSendRequestsForSeqNums_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OnRampReaderServer).GetSendRequestsForSeqNums(ctx, req.(*GetSendRequestsForSeqNumsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -342,6 +375,10 @@ var OnRampReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSendRequestsBetweenSeqNums",
 			Handler:    _OnRampReader_GetSendRequestsBetweenSeqNums_Handler,
+		},
+		{
+			MethodName: "GetSendRequestsForSeqNums",
+			Handler:    _OnRampReader_GetSendRequestsForSeqNums_Handler,
 		},
 		{
 			MethodName: "IsSourceChainHealthy",

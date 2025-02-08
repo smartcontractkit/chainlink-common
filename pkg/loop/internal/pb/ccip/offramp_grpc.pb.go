@@ -20,22 +20,23 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	OffRampReader_Address_FullMethodName                      = "/loop.internal.pb.ccip.OffRampReader/Address"
-	OffRampReader_ChangeConfig_FullMethodName                 = "/loop.internal.pb.ccip.OffRampReader/ChangeConfig"
-	OffRampReader_CurrentRateLimiterState_FullMethodName      = "/loop.internal.pb.ccip.OffRampReader/CurrentRateLimiterState"
-	OffRampReader_DecodeExecutionReport_FullMethodName        = "/loop.internal.pb.ccip.OffRampReader/DecodeExecutionReport"
-	OffRampReader_EncodeExecutionReport_FullMethodName        = "/loop.internal.pb.ccip.OffRampReader/EncodeExecutionReport"
-	OffRampReader_GasPriceEstimator_FullMethodName            = "/loop.internal.pb.ccip.OffRampReader/GasPriceEstimator"
-	OffRampReader_GetExecutionState_FullMethodName            = "/loop.internal.pb.ccip.OffRampReader/GetExecutionState"
-	OffRampReader_GetExecutionStateChanges_FullMethodName     = "/loop.internal.pb.ccip.OffRampReader/GetExecutionStateChanges"
-	OffRampReader_GetRouter_FullMethodName                    = "/loop.internal.pb.ccip.OffRampReader/GetRouter"
-	OffRampReader_GetSourceToDestTokensMapping_FullMethodName = "/loop.internal.pb.ccip.OffRampReader/GetSourceToDestTokensMapping"
-	OffRampReader_GetStaticConfig_FullMethodName              = "/loop.internal.pb.ccip.OffRampReader/GetStaticConfig"
-	OffRampReader_GetTokens_FullMethodName                    = "/loop.internal.pb.ccip.OffRampReader/GetTokens"
-	OffRampReader_ListSenderNonces_FullMethodName             = "/loop.internal.pb.ccip.OffRampReader/ListSenderNonces"
-	OffRampReader_OffchainConfig_FullMethodName               = "/loop.internal.pb.ccip.OffRampReader/OffchainConfig"
-	OffRampReader_OnchainConfig_FullMethodName                = "/loop.internal.pb.ccip.OffRampReader/OnchainConfig"
-	OffRampReader_Close_FullMethodName                        = "/loop.internal.pb.ccip.OffRampReader/Close"
+	OffRampReader_Address_FullMethodName                            = "/loop.internal.pb.ccip.OffRampReader/Address"
+	OffRampReader_ChangeConfig_FullMethodName                       = "/loop.internal.pb.ccip.OffRampReader/ChangeConfig"
+	OffRampReader_CurrentRateLimiterState_FullMethodName            = "/loop.internal.pb.ccip.OffRampReader/CurrentRateLimiterState"
+	OffRampReader_DecodeExecutionReport_FullMethodName              = "/loop.internal.pb.ccip.OffRampReader/DecodeExecutionReport"
+	OffRampReader_EncodeExecutionReport_FullMethodName              = "/loop.internal.pb.ccip.OffRampReader/EncodeExecutionReport"
+	OffRampReader_GasPriceEstimator_FullMethodName                  = "/loop.internal.pb.ccip.OffRampReader/GasPriceEstimator"
+	OffRampReader_GetExecutionState_FullMethodName                  = "/loop.internal.pb.ccip.OffRampReader/GetExecutionState"
+	OffRampReader_GetExecutionStateChanges_FullMethodName           = "/loop.internal.pb.ccip.OffRampReader/GetExecutionStateChanges"
+	OffRampReader_GetExecutionStateChangesForSeqNums_FullMethodName = "/loop.internal.pb.ccip.OffRampReader/GetExecutionStateChangesForSeqNums"
+	OffRampReader_GetRouter_FullMethodName                          = "/loop.internal.pb.ccip.OffRampReader/GetRouter"
+	OffRampReader_GetSourceToDestTokensMapping_FullMethodName       = "/loop.internal.pb.ccip.OffRampReader/GetSourceToDestTokensMapping"
+	OffRampReader_GetStaticConfig_FullMethodName                    = "/loop.internal.pb.ccip.OffRampReader/GetStaticConfig"
+	OffRampReader_GetTokens_FullMethodName                          = "/loop.internal.pb.ccip.OffRampReader/GetTokens"
+	OffRampReader_ListSenderNonces_FullMethodName                   = "/loop.internal.pb.ccip.OffRampReader/ListSenderNonces"
+	OffRampReader_OffchainConfig_FullMethodName                     = "/loop.internal.pb.ccip.OffRampReader/OffchainConfig"
+	OffRampReader_OnchainConfig_FullMethodName                      = "/loop.internal.pb.ccip.OffRampReader/OnchainConfig"
+	OffRampReader_Close_FullMethodName                              = "/loop.internal.pb.ccip.OffRampReader/Close"
 )
 
 // OffRampReaderClient is the client API for OffRampReader service.
@@ -50,6 +51,7 @@ type OffRampReaderClient interface {
 	GasPriceEstimator(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GasPriceEstimatorResponse, error)
 	GetExecutionState(ctx context.Context, in *GetExecutionStateRequest, opts ...grpc.CallOption) (*GetExecutionStateResponse, error)
 	GetExecutionStateChanges(ctx context.Context, in *GetExecutionStateChangesRequest, opts ...grpc.CallOption) (*GetExecutionStateChangesResponse, error)
+	GetExecutionStateChangesForSeqNums(ctx context.Context, in *GetExecutionStateChangesForSeqNumsRequest, opts ...grpc.CallOption) (*GetExecutionStateChangesForSeqNumsResponse, error)
 	GetRouter(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetRouterResponse, error)
 	GetSourceToDestTokensMapping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSourceToDestTokensMappingResponse, error)
 	GetStaticConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetStaticConfigResponse, error)
@@ -140,6 +142,15 @@ func (c *offRampReaderClient) GetExecutionStateChanges(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *offRampReaderClient) GetExecutionStateChangesForSeqNums(ctx context.Context, in *GetExecutionStateChangesForSeqNumsRequest, opts ...grpc.CallOption) (*GetExecutionStateChangesForSeqNumsResponse, error) {
+	out := new(GetExecutionStateChangesForSeqNumsResponse)
+	err := c.cc.Invoke(ctx, OffRampReader_GetExecutionStateChangesForSeqNums_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *offRampReaderClient) GetRouter(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetRouterResponse, error) {
 	out := new(GetRouterResponse)
 	err := c.cc.Invoke(ctx, OffRampReader_GetRouter_FullMethodName, in, out, opts...)
@@ -224,6 +235,7 @@ type OffRampReaderServer interface {
 	GasPriceEstimator(context.Context, *emptypb.Empty) (*GasPriceEstimatorResponse, error)
 	GetExecutionState(context.Context, *GetExecutionStateRequest) (*GetExecutionStateResponse, error)
 	GetExecutionStateChanges(context.Context, *GetExecutionStateChangesRequest) (*GetExecutionStateChangesResponse, error)
+	GetExecutionStateChangesForSeqNums(context.Context, *GetExecutionStateChangesForSeqNumsRequest) (*GetExecutionStateChangesForSeqNumsResponse, error)
 	GetRouter(context.Context, *emptypb.Empty) (*GetRouterResponse, error)
 	GetSourceToDestTokensMapping(context.Context, *emptypb.Empty) (*GetSourceToDestTokensMappingResponse, error)
 	GetStaticConfig(context.Context, *emptypb.Empty) (*GetStaticConfigResponse, error)
@@ -262,6 +274,9 @@ func (UnimplementedOffRampReaderServer) GetExecutionState(context.Context, *GetE
 }
 func (UnimplementedOffRampReaderServer) GetExecutionStateChanges(context.Context, *GetExecutionStateChangesRequest) (*GetExecutionStateChangesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExecutionStateChanges not implemented")
+}
+func (UnimplementedOffRampReaderServer) GetExecutionStateChangesForSeqNums(context.Context, *GetExecutionStateChangesForSeqNumsRequest) (*GetExecutionStateChangesForSeqNumsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExecutionStateChangesForSeqNums not implemented")
 }
 func (UnimplementedOffRampReaderServer) GetRouter(context.Context, *emptypb.Empty) (*GetRouterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRouter not implemented")
@@ -440,6 +455,24 @@ func _OffRampReader_GetExecutionStateChanges_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OffRampReaderServer).GetExecutionStateChanges(ctx, req.(*GetExecutionStateChangesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OffRampReader_GetExecutionStateChangesForSeqNums_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExecutionStateChangesForSeqNumsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OffRampReaderServer).GetExecutionStateChangesForSeqNums(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OffRampReader_GetExecutionStateChangesForSeqNums_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OffRampReaderServer).GetExecutionStateChangesForSeqNums(ctx, req.(*GetExecutionStateChangesForSeqNumsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -626,6 +659,10 @@ var OffRampReader_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExecutionStateChanges",
 			Handler:    _OffRampReader_GetExecutionStateChanges_Handler,
+		},
+		{
+			MethodName: "GetExecutionStateChangesForSeqNums",
+			Handler:    _OffRampReader_GetExecutionStateChangesForSeqNums_Handler,
 		},
 		{
 			MethodName: "GetRouter",

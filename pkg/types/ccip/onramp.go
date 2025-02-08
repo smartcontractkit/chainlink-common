@@ -54,7 +54,10 @@ type OnRampReader interface {
 	Address(ctx context.Context) (Address, error)
 	GetDynamicConfig(ctx context.Context) (OnRampDynamicConfig, error)
 	// GetSendRequestsBetweenSeqNums returns all the finalized message send requests in the provided sequence numbers range (inclusive).
+	// Deprecated: use GetSendRequestsForSeqNrs instead
 	GetSendRequestsBetweenSeqNums(ctx context.Context, seqNumMin, seqNumMax uint64, finalized bool) ([]EVM2EVMMessageWithTxMeta, error)
+	// GetSendRequestsForSeqNums returns all the execution state change events for the provided message sequence ranges (inclusive).
+	GetSendRequestsForSeqNums(ctx context.Context, seqNums []SequenceNumberRange, finalized bool) ([]EVM2EVMMessageWithTxMeta, error)
 	// IsSourceChainHealthy returns true if the source chain is healthy.
 	IsSourceChainHealthy(ctx context.Context) (bool, error)
 	// IsSourceCursed returns true if the source chain is cursed. OnRamp communicates with the underlying RMN

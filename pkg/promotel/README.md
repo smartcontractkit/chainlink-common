@@ -86,7 +86,7 @@ func main() {
 	exporter, _ := promotel.NewMetricExporter(exporterConfig, logger) 
 	receiverConfig, _ := promotel.NewDefaultReceiverConfig()
     // Fetches metrics data directly from DefaultGatherer without making HTTP requests to 127.0.0.1:8888
-	receiver, _ := promotel.NewMetricReceiver(receiverConfig, prometheus.DefaultGatherer, exporter.Consumer().ConsumeMetrics, logger)
+	receiver, _ := promotel.NewMetricReceiver(receiverConfig, prometheus.DefaultGatherer, exporter.Export, logger)
 	fmt.Println("Starting promotel pipeline")
 	exporter.Start(context.Background())
 	receiver.Start(context.Background())

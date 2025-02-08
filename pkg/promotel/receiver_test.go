@@ -46,7 +46,7 @@ func TestMetricReceiver(t *testing.T) {
 	testConfig, err := promotel.LoadTestConfig(configFile, "withOnlyScrape")
 	require.NoError(t, err)
 	noopConsumerFunc := func(context.Context, pmetric.Metrics) error { return nil }
-	receiver, err := promotel.NewMetricReceiver(testConfig, prometheus.DefaultGatherer, prometheus.DefaultRegisterer, noopConsumerFunc, nil)
+	receiver, err := promotel.NewMetricReceiver(testConfig, prometheus.DefaultGatherer, prometheus.DefaultRegisterer, nil, noopConsumerFunc)
 	require.NoError(t, err)
 	require.NoError(t, receiver.Start(context.Background()))
 	require.NoError(t, receiver.Close())

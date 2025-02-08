@@ -5,26 +5,25 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/receiver"
-	"go.uber.org/zap"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 var defaultComponentType = component.MustNewType("nop")
 
 // NewReceiverSettings returns a new settings for factory.CreateMetrics function
-func NewReceiverSettings() (receiver.Settings, error) {
-	l, err := zap.NewProduction()
+func NewReceiverSettings(lggr logger.Logger) receiver.Settings {
 	return receiver.Settings{
 		ID:                component.NewIDWithName(defaultComponentType, uuid.NewString()),
-		TelemetrySettings: NewTelemetrySettings(l),
+		TelemetrySettings: NewTelemetrySettings(lggr),
 		BuildInfo:         component.NewDefaultBuildInfo(),
-	}, err
+	}
 }
 
-func NewExporterSettings() (exporter.Settings, error) {
-	l, err := zap.NewProduction()
+func NewExporterSettings(lggr logger.Logger) exporter.Settings {
 	return exporter.Settings{
 		ID:                component.NewIDWithName(defaultComponentType, uuid.NewString()),
-		TelemetrySettings: NewTelemetrySettings(l),
+		TelemetrySettings: NewTelemetrySettings(lggr),
 		BuildInfo:         component.NewDefaultBuildInfo(),
-	}, err
+	}
 }

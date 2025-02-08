@@ -27,6 +27,7 @@ type metricReceiver struct {
 	factory  receiver.Factory
 	host     component.Host
 	receiver receiver.Metrics
+	logger   logger.Logger
 }
 
 func (p *metricReceiver) Start(ctx context.Context) error {
@@ -37,34 +38,30 @@ func (p *metricReceiver) Close() error {
 	return p.receiver.Shutdown(context.Background())
 }
 
-func NewMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, r prometheus.Registerer, consumerFunc consumer.ConsumeMetricsFunc, logger logger.Logger) (Runnable, error) {
+func NewMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger, next NextFunc) (Runnable, error) {
 	factory := prometheusreceiver.NewFactoryWithOptions(
 		prometheusreceiver.WithGatherer(g),
 		prometheusreceiver.WithRegisterer(r),
 	)
-	settings, err := internal.NewReceiverSettings()
-	if err != nil {
-		return nil, err
-	}
 	// Creates a metrics receiver with the context, settings, config, and consumer
 	receiver, err := factory.CreateMetrics(
 		context.Background(),
-		settings,
+		internal.NewReceiverSettings(logger),
 		config,
-		internal.NewConsumer(consumerFunc))
+		internal.NewConsumer(consumer.ConsumeMetricsFunc(next)))
 	if err != nil {
 		return nil, err
 	}
 	// Creates a no-operation host for the receiver
 	host := internal.NewNopHost()
-	return &metricReceiver{factory, host, receiver}, nil
+	return &metricReceiver{factory, host, receiver, logger}, nil
 }
 
 func NewDebugMetricReceiver(config ReceiverConfig, g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger) (MetricReceiver, error) {
 	debugExporter := internal.NewDebugExporter(logger)
 	// Creates a no-operation consumer
-	return NewMetricReceiver(config, g, r, func(_ context.Context, md pmetric.Metrics) error {
+	return NewMetricReceiver(config, g, r, logger, func(_ context.Context, md pmetric.Metrics) error {
 		// Writes metrics data to stdout
 		return debugExporter.Export(md)
-	}, logger)
+	})
 }

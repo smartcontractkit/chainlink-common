@@ -8,7 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	dto "github.com/prometheus/client_model/go"
-	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 
@@ -18,9 +17,10 @@ import (
 
 func TestExample(t *testing.T) {
 	var (
-		g         = prometheus.DefaultGatherer
-		r         = prometheus.DefaultRegisterer
-		logger, _ = logger.New()
+		g = prometheus.DefaultGatherer
+		r = prometheus.DefaultRegisterer
+		// todo: use logger.TestObserved
+		logger = logger.Test(t)
 	)
 
 	go reportMetrics(r, logger)
@@ -125,7 +125,7 @@ func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger 
 
 	// Gather metrics via promotel
 	// MetricReceiver fetches metrics from prometheus.Gatherer, then converts it to OTel format and writes formatted metrics to stdout
-	receiver, err := promotel.NewMetricReceiver(config, g, r, consumer.ConsumeMetricsFunc(next), logger)
+	receiver, err := promotel.NewMetricReceiver(config, g, r, logger, next)
 	if err != nil {
 		logger.Fatal("Failed to create debug metric receiver", zap.Error(err))
 	}

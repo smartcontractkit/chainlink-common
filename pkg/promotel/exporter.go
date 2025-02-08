@@ -46,13 +46,9 @@ func (me *metricExporter) Export(ctx context.Context, md pmetric.Metrics) error 
 func NewMetricExporter(config ExporterConfig, logger logger.Logger) (MetricExporter, error) {
 	factory := otlpexporter.NewFactory()
 	// Creates a metrics receiver with the context, settings, config, and consumer
-	settings, err := internal.NewExporterSettings()
-	if err != nil {
-		return nil, err
-	}
 	exporter, err := factory.CreateMetrics(
 		context.Background(),
-		settings,
+		internal.NewExporterSettings(logger),
 		config)
 	if err != nil {
 		return nil, err

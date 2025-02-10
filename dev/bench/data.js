@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1738939143785,
+  "lastUpdate": 1739186068028,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -9996,6 +9996,48 @@ window.BENCHMARK_DATA = {
             "value": 28209,
             "unit": "ns/op",
             "extra": "41899 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "40efdbab0277d8976cfbd4d5850047ae9675f99f",
+          "message": "[CAPPL-308] Add non-data dependency to chain reader (#1025)",
+          "timestamp": "2025-02-10T11:13:30Z",
+          "tree_id": "83504eea2271720ee0f757ae87eb190795da5d6f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/40efdbab0277d8976cfbd4d5850047ae9675f99f"
+        },
+        "date": 1739186067430,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 448.3,
+            "unit": "ns/op",
+            "extra": "2695843 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 502,
+            "unit": "ns/op",
+            "extra": "2373164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28295,
+            "unit": "ns/op",
+            "extra": "42472 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1739186068028,
+  "lastUpdate": 1739190264280,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10038,6 +10038,48 @@ window.BENCHMARK_DATA = {
             "value": 28295,
             "unit": "ns/op",
             "extra": "42472 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d2aaa393ca5554abd4b5a6a88d81d63552a518ac",
+          "message": "Move StepDependency to Inputs (#1026)",
+          "timestamp": "2025-02-10T12:23:26Z",
+          "tree_id": "dccc79bd687eceaaa1bdc273b6e92a67c2a714d0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d2aaa393ca5554abd4b5a6a88d81d63552a518ac"
+        },
+        "date": 1739190263473,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 451.9,
+            "unit": "ns/op",
+            "extra": "2686108 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 570.1,
+            "unit": "ns/op",
+            "extra": "2282254 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28223,
+            "unit": "ns/op",
+            "extra": "42459 times\n4 procs"
           }
         ]
       }

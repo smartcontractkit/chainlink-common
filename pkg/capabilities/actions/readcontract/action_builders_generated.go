@@ -17,7 +17,6 @@ func (cfg Config) New(w *sdk.WorkflowSpecFactory, id string, ref string, input A
 			"ContractName":         cfg.ContractName,
 			"ContractReaderConfig": cfg.ContractReaderConfig,
 			"ReadIdentifier":       cfg.ReadIdentifier,
-			"StepDependency":       cfg.StepDependency,
 		},
 		CapabilityType: capabilities.CapabilityTypeAction,
 	}
@@ -79,6 +78,7 @@ func (c *simpleOutput) private() {}
 type ActionInput struct {
 	ConfidenceLevel sdk.CapDefinition[string]
 	Params          sdk.CapDefinition[InputParams]
+	StepDependency  sdk.CapDefinition[any]
 }
 
 func (input ActionInput) ToSteps() sdk.StepInputs {
@@ -86,6 +86,7 @@ func (input ActionInput) ToSteps() sdk.StepInputs {
 		Mapping: map[string]any{
 			"ConfidenceLevel": input.ConfidenceLevel.Ref(),
 			"Params":          input.Params.Ref(),
+			"StepDependency":  input.StepDependency.Ref(),
 		},
 	}
 }

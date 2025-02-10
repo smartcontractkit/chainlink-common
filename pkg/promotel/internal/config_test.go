@@ -1,11 +1,12 @@
-package promotel_test
+package internal_test
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	promModel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,33 +21,31 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterbatcher"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
+	"gopkg.in/yaml.v2"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
 )
 
-func TestConfig(t *testing.T) {
+func TestReceiverConfig(t *testing.T) {
 	configFileName := filepath.Join("testdata", "promconfig.yaml")
-	cfg, err := promotel.LoadTestConfig(configFileName, "")
+	c0, err := LoadTestReceiverConfig(configFileName, "")
 	require.NoError(t, err)
 
-	c0 := cfg.(*prometheusreceiver.Config)
 	assert.NotNil(t, c0.PrometheusConfig)
 	assert.NotNil(t, c0.PrometheusConfig)
 
-	cfg, err = promotel.LoadTestConfig(configFileName, "withScrape")
+	c1, err := LoadTestReceiverConfig(configFileName, "withScrape")
 	require.NoError(t, err)
 
-	c1 := cfg.(*prometheusreceiver.Config)
 	assert.NotNil(t, c0.PrometheusConfig)
 
 	assert.Len(t, c1.PrometheusConfig.ScrapeConfigs, 1)
 	assert.Equal(t, "demo", c1.PrometheusConfig.ScrapeConfigs[0].JobName)
 	assert.Equal(t, promModel.Duration(5*time.Second), c1.PrometheusConfig.ScrapeConfigs[0].ScrapeInterval)
 
-	cfg, err = promotel.LoadTestConfig(configFileName, "withOnlyScrape")
+	c2, err := LoadTestReceiverConfig(configFileName, "withOnlyScrape")
 	require.NoError(t, err)
 
-	c2 := cfg.(*prometheusreceiver.Config)
 	assert.Len(t, c2.PrometheusConfig.ScrapeConfigs, 1)
 	assert.Equal(t, "demo", c2.PrometheusConfig.ScrapeConfigs[0].JobName)
 	assert.Equal(t, promModel.Duration(5*time.Second), c2.PrometheusConfig.ScrapeConfigs[0].ScrapeInterval)
@@ -58,16 +57,22 @@ func TestUnmarshalDefaultConfig(t *testing.T) {
 	require.NoError(t, confmap.New().Unmarshal(&cfg))
 	assert.Equal(t, factory.CreateDefaultConfig(), cfg)
 
-	cfg, err := promotel.NewDefaultExporterConfig()
+	cfg, err := internal.TestDefaultExporterConfig()
 	require.NoError(t, err)
 	assert.Equal(t, "localhost:4317", cfg.(*otlpexporter.Config).ClientConfig.Endpoint)
 	assert.True(t, cfg.(*otlpexporter.Config).ClientConfig.TLSSetting.Insecure)
+
+	cfg, err = internal.NewDefaultExporterConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "localhost:4317", cfg.(*otlpexporter.Config).ClientConfig.Endpoint)
+	assert.True(t, cfg.(*otlpexporter.Config).ClientConfig.TLSSetting.Insecure)
+
 }
 
 func TestUnmarshalConfig(t *testing.T) {
 	cm, err := confmaptest.LoadConf(filepath.Join("testdata", "exporter-config.yaml"))
 	require.NoError(t, err)
-	cfg, err := promotel.NewExporterConfig(cm.ToStringMap())
+	cfg, err := internal.TestExporterConfig(cm.ToStringMap())
 	require.NoError(t, err)
 	assert.Equal(t,
 		&otlpexporter.Config{
@@ -121,4 +126,23 @@ func TestUnmarshalConfig(t *testing.T) {
 				Auth:            &configauth.Authentication{AuthenticatorID: component.MustNewID("nop")},
 			},
 		}, cfg)
+}
+
+// Used for tests
+func LoadTestReceiverConfig(fileName string, configName string) (*internal.ReceiverConfig, error) {
+	content, err := os.ReadFile(filepath.Clean(fileName))
+	if err != nil {
+		return nil, fmt.Errorf("unable to read the file %v: %w", fileName, err)
+	}
+	var rawConf map[string]any
+	if err = yaml.Unmarshal(content, &rawConf); err != nil {
+		return nil, err
+	}
+	cm := confmap.NewFromStringMap(rawConf)
+	componentType := component.MustNewType("prometheus")
+	sub, err := cm.Sub(component.NewIDWithName(componentType, configName).String())
+	if err != nil {
+		return nil, err
+	}
+	return internal.TestReceiverConfig(sub.ToStringMap())
 }

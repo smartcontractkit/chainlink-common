@@ -1,27 +1,64 @@
-package promotel
+package internal
 
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
-	"gopkg.in/yaml.v3"
 )
 
 type (
-	ReceiverConfig = component.Config
-	ExporterConfig = component.Config
+	ReceiverConfig = prometheusreceiver.Config
+	ExporterConfig = otlpexporter.Config
 )
 
-func NewReceiverConfig(rawConf map[string]any) (ReceiverConfig, error) {
-	factory := prometheusreceiver.NewFactory()
+func NewReceiverConfig() (*ReceiverConfig, error) {
+	factory := otlpexporter.NewFactory()
+	cfg, ok := factory.CreateDefaultConfig().(*prometheusreceiver.Config)
+	if !ok {
+		return &prometheusreceiver.Config{}, errors.New("failed to cast config to prometheusreceiver.Config")
+	}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
 
+func NewDefaultExporterConfig() (*ExporterConfig, error) {
+	factory := otlpexporter.NewFactory()
+	cfg, ok := factory.CreateDefaultConfig().(*otlpexporter.Config)
+	if !ok {
+		return &otlpexporter.Config{}, errors.New("failed to cast config to otlpexporter.Config")
+	}
+	cfg.ClientConfig.Endpoint = "localhost:4317"
+	cfg.ClientConfig.TLSSetting.Insecure = true
+	return cfg, nil
+}
+
+func NewMetricExporterConfig(endpoint string, TLSInsecure bool, headers map[string]string) (*ExporterConfig, error) {
+	cfg, err := NewDefaultExporterConfig()
+	if err != nil {
+		return cfg, err
+	}
+	cfg.ClientConfig.Endpoint = endpoint
+	h := make(map[string]configopaque.String)
+	for k, v := range headers {
+		h[k] = configopaque.String(v)
+	}
+	cfg.ClientConfig.Headers = h
+	cfg.ClientConfig.TLSSetting.Insecure = TLSInsecure
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+func TestReceiverConfig(rawConf map[string]any) (*ReceiverConfig, error) {
+	factory := prometheusreceiver.NewFactory()
 	cfg := confmap.NewFromStringMap(rawConf)
 	// Creates a default configuration for the receiver
 	config := factory.CreateDefaultConfig()
@@ -29,29 +66,17 @@ func NewReceiverConfig(rawConf map[string]any) (ReceiverConfig, error) {
 	if err := cfg.Unmarshal(config); err != nil {
 		return nil, err
 	}
-	if err := validateConfig(config); err != nil {
+	c, ok := config.(*prometheusreceiver.Config)
+	if !ok {
+		return &prometheusreceiver.Config{}, fmt.Errorf("failed to cast config to otlpexporter.Config")
+	}
+	if err := c.Validate(); err != nil {
 		return nil, err
 	}
-	return config, nil
+	return c, nil
 }
 
-func NewDefaultReceiverConfig() (ReceiverConfig, error) {
-	return NewReceiverConfig(map[string]any{
-		"config": map[string]any{
-			"scrape_configs": []map[string]any{{
-				"job_name":        "promotel",
-				"scrape_interval": "1s",
-				"static_configs":  []map[string]any{{"targets": []string{"127.0.0.1:8888"}}},
-				"metric_relabel_configs": []map[string]any{{
-					"action": "labeldrop",
-					"regex":  "service_instance_id|service_name",
-				}},
-			}},
-		},
-	})
-}
-
-func NewExporterConfig(rawConf map[string]any) (ExporterConfig, error) {
+func TestExporterConfig(rawConf map[string]any) (*ExporterConfig, error) {
 	factory := otlpexporter.NewFactory()
 
 	cfg := confmap.NewFromStringMap(rawConf)
@@ -64,84 +89,18 @@ func NewExporterConfig(rawConf map[string]any) (ExporterConfig, error) {
 	if err := component.ValidateConfig(config); err != nil {
 		return nil, err
 	}
-	return config, nil
+	c, ok := config.(*otlpexporter.Config)
+	if !ok {
+		return &otlpexporter.Config{}, fmt.Errorf("failed to cast config to otlpexporter.Config")
+	}
+	return c, nil
 }
 
-func NewDefaultExporterConfig() (ExporterConfig, error) {
-	return NewExporterConfig(map[string]any{
+func TestDefaultExporterConfig() (*ExporterConfig, error) {
+	return TestExporterConfig(map[string]any{
 		"endpoint": "localhost:4317",
 		"tls": map[string]any{
 			"insecure": true,
 		},
 	})
-}
-
-// Used for tests
-func LoadTestConfig(fileName string, configName string) (ReceiverConfig, error) {
-	content, err := os.ReadFile(filepath.Clean(fileName))
-	if err != nil {
-		return nil, fmt.Errorf("unable to read the file %v: %w", fileName, err)
-	}
-	var rawConf map[string]any
-	if err = yaml.Unmarshal(content, &rawConf); err != nil {
-		return nil, err
-	}
-	cm := confmap.NewFromStringMap(rawConf)
-	componentType := component.MustNewType("prometheus")
-	sub, err := cm.Sub(component.NewIDWithName(componentType, configName).String())
-	if err != nil {
-		return nil, err
-	}
-	return NewReceiverConfig(sub.ToStringMap())
-}
-
-func validateConfig(config component.Config) error {
-	if err := component.ValidateConfig(config); err != nil {
-		return err
-	}
-	cfg, ok := config.(*prometheusreceiver.Config)
-	if !ok {
-		return fmt.Errorf("expected config to be of type *prometheusreceiver.Config, got %T", config)
-	}
-	if cfg.PrometheusConfig == nil {
-		return errors.New("PrometheusConfig is nil")
-	}
-	for _, scrapeConfig := range cfg.PrometheusConfig.ScrapeConfigs {
-		if scrapeConfig.JobName == "" {
-			return fmt.Errorf("unexpected job_name: %s", scrapeConfig.JobName)
-		}
-		if scrapeConfig.ScrapeInterval == 0 {
-			return fmt.Errorf("unexpected scrape_interval: %s", scrapeConfig.ScrapeInterval)
-		}
-		if scrapeConfig.MetricsPath == "" {
-			return errors.New("metrics_path is empty")
-		}
-		for _, cfg := range scrapeConfig.ServiceDiscoveryConfigs {
-			staticConfig, ok := cfg.(discovery.StaticConfig)
-			if !ok {
-				return fmt.Errorf("expected static config, got %T", cfg)
-			}
-			for _, c := range staticConfig {
-				if c.Targets == nil {
-					return errors.New("targets is nil")
-				}
-				if len(c.Targets) == 0 {
-					return errors.New("targets is empty")
-				}
-			}
-			if len(staticConfig) == 0 || len(staticConfig[0].Targets) == 0 || staticConfig[0].Targets[0].String() == "" {
-				return fmt.Errorf("unexpected targets: %v", staticConfig[0].Targets[0].String())
-			}
-		}
-		for _, relabelConfig := range scrapeConfig.MetricRelabelConfigs {
-			if relabelConfig.Action == "" {
-				return fmt.Errorf("unexpected action: %s", relabelConfig.Action)
-			}
-			if relabelConfig.Regex.String() == "" {
-				return fmt.Errorf("unexpected regex: %s", relabelConfig.Regex.String())
-			}
-		}
-	}
-
-	return nil
 }

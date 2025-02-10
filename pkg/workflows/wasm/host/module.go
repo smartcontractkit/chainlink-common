@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v23"
+	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -71,12 +71,13 @@ func (r *store) delete(id string) {
 }
 
 var (
-	defaultTickInterval            = 100 * time.Millisecond
-	defaultTimeout                 = 10 * time.Second
-	defaultMinMemoryMBs            = uint64(128)
-	DefaultInitialFuel             = uint64(100_000_000)
-	defaultMaxFetchRequests        = 5
-	defaultMaxCompressedBinarySize = 10 * 1024 * 1024 // 10 MB
+	defaultTickInterval              = 100 * time.Millisecond
+	defaultTimeout                   = 10 * time.Second
+	defaultMinMemoryMBs              = uint64(128)
+	DefaultInitialFuel               = uint64(100_000_000)
+	defaultMaxFetchRequests          = 5
+	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
+	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
 )
 
 type DeterminismConfig struct {
@@ -84,16 +85,17 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval            time.Duration
-	Timeout                 *time.Duration
-	MaxMemoryMBs            uint64
-	MinMemoryMBs            uint64
-	InitialFuel             uint64
-	Logger                  logger.Logger
-	IsUncompressed          bool
-	Fetch                   func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
-	MaxFetchRequests        int
-	MaxCompressedBinarySize uint64
+	TickInterval              time.Duration
+	Timeout                   *time.Duration
+	MaxMemoryMBs              uint64
+	MinMemoryMBs              uint64
+	InitialFuel               uint64
+	Logger                    logger.Logger
+	IsUncompressed            bool
+	Fetch                     func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+	MaxFetchRequests          int
+	MaxCompressedBinarySize   uint64
+	MaxDecompressedBinarySize uint64
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -173,6 +175,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		modCfg.MaxCompressedBinarySize = uint64(defaultMaxCompressedBinarySize)
 	}
 
+	if modCfg.MaxDecompressedBinarySize == 0 {
+		modCfg.MaxDecompressedBinarySize = uint64(defaultMaxDecompressedBinarySize)
+	}
+
 	// Take the max of the min and the configured max memory mbs.
 	// We do this because Go requires a minimum of 16 megabytes to run,
 	// and local testing has shown that with less than the min, some
@@ -188,21 +194,31 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	cfg.CacheConfigLoadDefault()
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
+	// Load testing shows that leaving native unwind info enabled causes a very large slowdown when loading multiple modules.
+	cfg.SetNativeUnwindInfo(false)
+
 	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
 		// this is to prevent decompression bombs
 		if uint64(len(binary)) > modCfg.MaxCompressedBinarySize {
-			return nil, fmt.Errorf("binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
+			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
 		}
 
-		rdr := brotli.NewReader(bytes.NewBuffer(binary))
+		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(modCfg.MaxDecompressedBinarySize+1))
 		decompedBinary, err := io.ReadAll(rdr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress binary: %w", err)
 		}
 
 		binary = decompedBinary
+	}
+
+	// Validate the decompressed binary size.
+	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
+	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
+	if uint64(len(binary)) > modCfg.MaxDecompressedBinarySize {
+		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", modCfg.MaxDecompressedBinarySize)
 	}
 
 	mod, err := wasmtime.NewModule(engine, binary)

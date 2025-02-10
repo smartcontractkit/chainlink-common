@@ -11,6 +11,10 @@ import (
 
 // NewEpochToTimeModifier converts all fields from time.Time off-chain to int64.
 func NewEpochToTimeModifier(fields []string) Modifier {
+	return NewPathTraverseEpochToTimeModifier(fields, false)
+}
+
+func NewPathTraverseEpochToTimeModifier(fields []string, enablePathTraverse bool) Modifier {
 	fieldMap := map[string]bool{}
 	for _, field := range fields {
 		fieldMap[field] = true
@@ -18,9 +22,10 @@ func NewEpochToTimeModifier(fields []string) Modifier {
 
 	m := &timeToUnixModifier{
 		modifierBase: modifierBase[bool]{
-			fields:           fieldMap,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fieldMap,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 	}
 
@@ -40,14 +45,42 @@ type timeToUnixModifier struct {
 	modifierBase[bool]
 }
 
-func (t *timeToUnixModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+func (m *timeToUnixModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
 	// since the hook will convert time.Time to epoch, we don't need to worry about converting them in the maps
-	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, noop, EpochToTimeHook, BigIntHook)
+	modified, err := transformWithMaps(offChainValue, m.offToOnChainType, m.fields, noop, EpochToTimeHook, BigIntHook)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
-func (t *timeToUnixModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+func (m *timeToUnixModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
 	// since the hook will convert epoch to time.Time, we don't need to worry about converting them in the maps
-	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields, noop, EpochToTimeHook, BigIntHook)
+	modified, err := transformWithMaps(onChainValue, m.onToOffChainType, m.fields, noop, EpochToTimeHook, BigIntHook)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 func noop(_ map[string]any, _ string, _ bool) error {

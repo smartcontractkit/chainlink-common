@@ -10,10 +10,23 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// NewHardCoder creates a modifier that will hard-code values for on-chain and off-chain types
-// The modifier will override any values of the same name, if you need an overwritten value to be used in a different field,
-// NewRenamer must be used before NewHardCoder.
-func NewHardCoder(onChain map[string]any, offChain map[string]any, hooks ...mapstructure.DecodeHookFunc) (Modifier, error) {
+// NewHardCoder creates a modifier that will hard-code values for on-chain and off-chain types. The modifier will
+// override any values of the same name, if you need an overwritten value to be used in a different field. NewRenamer
+// must be used before NewHardCoder.
+func NewHardCoder(
+	onChain map[string]any,
+	offChain map[string]any,
+	hooks ...mapstructure.DecodeHookFunc,
+) (Modifier, error) {
+	return NewPathTraverseHardCoder(onChain, offChain, false, hooks...)
+}
+
+func NewPathTraverseHardCoder(
+	onChain map[string]any,
+	offChain map[string]any,
+	enablePathTraverse bool,
+	hooks ...mapstructure.DecodeHookFunc,
+) (Modifier, error) {
 	if err := verifyHardCodeKeys(onChain); err != nil {
 		return nil, err
 	} else if err = verifyHardCodeKeys(offChain); err != nil {
@@ -26,9 +39,10 @@ func NewHardCoder(onChain map[string]any, offChain map[string]any, hooks ...maps
 
 	m := &onChainHardCoder{
 		modifierBase: modifierBase[any]{
-			fields:           offChain,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             offChain,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 		onChain: onChain,
 		hooks:   myHooks,
@@ -81,15 +95,58 @@ func verifyHardCodeKeys(values map[string]any) error {
 	return nil
 }
 
-func (o *onChainHardCoder) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	return transformWithMaps(offChainValue, o.offToOnChainType, o.onChain, hardCode, o.hooks...)
+// TransformToOnChain will apply the hard-code modifier and hooks on the value identified by itemType. If path traverse
+// is not enabled, itemType is ignored.
+//
+// For path-traversal, the itemType may reference a field that does not exist in the off-chain type, but is being added
+// by the hard-code modifier. Ex. offChain A.B (does not have 'C') and onChain A.B.C ('C' gets hard-coded); if 'C' is
+// intended to be the result of the transformation, itemType must be A.B.C even though the off-chain type does not have
+// field 'C'.
+func (m *onChainHardCoder) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(offChainValue, m.offToOnChainType, m.onChain, hardCode, m.hooks...)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
-func (o *onChainHardCoder) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	allHooks := make([]mapstructure.DecodeHookFunc, len(o.hooks)+1)
-	copy(allHooks, o.hooks)
-	allHooks[len(o.hooks)] = hardCodeManyHook
-	return transformWithMaps(onChainValue, o.onToOffChainType, o.fields, hardCode, allHooks...)
+// TransformToOffChain will apply the hard-code modifier and hooks on the value identified by itemType. If path traverse
+// is not enabled, itemType is ignored.
+//
+// For path-traversal, the itemType may reference a field that does not exist in the on-chain type, but is being added
+// by the hard-code modifier. Ex. on-chain A.B (does not have 'C') and off-chain A.B.C ('C' gets hard-coded); if 'C' is
+// intended to be the result of the transformation, itemType must be A.B.C even though the on-chain type does not have
+// field 'C'.
+func (m *onChainHardCoder) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	onChainValue, itemType, err := m.modifierBase.selectType(onChainValue, m.onChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	allHooks := make([]mapstructure.DecodeHookFunc, len(m.hooks)+1)
+	copy(allHooks, m.hooks)
+	allHooks[len(m.hooks)] = hardCodeManyHook
+
+	modified, err := transformWithMaps(onChainValue, m.onToOffChainType, m.fields, hardCode, allHooks...)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 func hardCode(extractMap map[string]any, key string, item any) error {

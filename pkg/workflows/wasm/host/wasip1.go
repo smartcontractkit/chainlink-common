@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v23"
+	"github.com/bytecodealliance/wasmtime-go/v28"
 	"github.com/jonboulle/clockwork"
 )
 

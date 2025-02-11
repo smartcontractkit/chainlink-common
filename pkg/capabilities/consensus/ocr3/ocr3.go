@@ -38,10 +38,8 @@ type Config struct {
 }
 
 const (
-	defaultRequestExpiry           time.Duration = 20 * time.Second
-	defaultBatchSize                             = 20
-	defaultSendBufferSize                        = 10
-	defaultOutcomePruningThreshold               = 3600
+	defaultRequestExpiry  = 20 * time.Second
+	defaultSendBufferSize = 10
 )
 
 func NewOCR3(config Config) *Capability {

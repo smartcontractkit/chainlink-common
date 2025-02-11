@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	defaultMaxPhaseOutputBytes = 1000000 // 1 MB
-	defaultMaxReportCount      = 20
+	defaultMaxPhaseOutputBytes     = 1000000 // 1 MB
+	defaultMaxReportCount          = 20
+	defaultBatchSize               = 20
+	defaultOutcomePruningThreshold = 3600
 )
 
 type factory struct {
@@ -40,6 +42,7 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	var configProto types.ReportingPluginConfig
 	err := proto.Unmarshal(config.OffchainConfig, &configProto)
 	if err != nil {
+		// an empty byte array will be unmarshalled into zero values without error
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
 	if configProto.MaxQueryLengthBytes <= 0 {

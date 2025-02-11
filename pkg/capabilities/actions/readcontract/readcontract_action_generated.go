@@ -66,6 +66,9 @@ type Input struct {
 
 	// Params corresponds to the JSON schema field "Params".
 	Params InputParams `json:"Params" yaml:"Params" mapstructure:"Params"`
+
+	// an optional step reference that is a non-data dependency for the current step
+	StepDependency interface{} `json:"StepDependency,omitempty" yaml:"StepDependency,omitempty" mapstructure:"StepDependency,omitempty"`
 }
 
 type InputParams map[string]interface{}

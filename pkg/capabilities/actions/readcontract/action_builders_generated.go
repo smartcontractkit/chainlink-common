@@ -7,10 +7,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-func (cfg Config) New(w *sdk.WorkflowSpecFactory, ref string, input ActionInput) OutputCap {
+func (cfg Config) New(w *sdk.WorkflowSpecFactory, id string, ref string, input ActionInput) OutputCap {
 
 	def := sdk.StepDefinition{
-		ID: "read-contract-action@1.0.0", Ref: ref,
+		ID: id, Ref: ref,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
 			"ContractAddress":      cfg.ContractAddress,
@@ -78,6 +78,7 @@ func (c *simpleOutput) private() {}
 type ActionInput struct {
 	ConfidenceLevel sdk.CapDefinition[string]
 	Params          sdk.CapDefinition[InputParams]
+	StepDependency  sdk.CapDefinition[any]
 }
 
 func (input ActionInput) ToSteps() sdk.StepInputs {
@@ -85,6 +86,7 @@ func (input ActionInput) ToSteps() sdk.StepInputs {
 		Mapping: map[string]any{
 			"ConfidenceLevel": input.ConfidenceLevel.Ref(),
 			"Params":          input.Params.Ref(),
+			"StepDependency":  input.StepDependency.Ref(),
 		},
 	}
 }

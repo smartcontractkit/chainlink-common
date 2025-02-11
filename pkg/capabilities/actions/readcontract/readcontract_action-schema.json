@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/readcontract/read-contract-action@1.0.0",
+  "$id": "https://github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/readcontract/read-contract",
   "$defs": {
     "Config": {
       "type": "object",
@@ -29,7 +29,11 @@
         "Params": {
           "type": "object",
           "additionalProperties": true
-        }
+        },
+	"StepDependency": {
+	  "type": ["object", "string", "boolean", "null", "array"],
+	  "description": "an optional step reference that is a non-data dependency for the current step"
+	}
       },
       "required": ["ConfidenceLevel", "Params"]
     },

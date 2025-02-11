@@ -138,6 +138,7 @@ type PanelOptions struct {
 	Threshold     *ThresholdOptions
 	Transform     *TransformOptions
 	ColorScheme   dashboard.FieldColorModeId
+	Interval      string
 }
 
 type Panel struct {
@@ -219,6 +220,10 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		JustifyMode(options.JustifyMode).
 		Mappings(options.Mappings).
 		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
 
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)
@@ -326,6 +331,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 			Mode(options.StackingMode),
 		)
 
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)
 	}
@@ -407,6 +416,10 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 				Calcs([]string{"lastNotNull"}).Values(false),
 		)
 
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
 	if options.ShowUnfilled {
 		newPanel.ShowUnfilled(options.ShowUnfilled)
 	}
@@ -468,6 +481,10 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 				Calcs([]string{"lastNotNull"}).Values(false),
 		)
 
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)
 	}
@@ -517,6 +534,10 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		Height(options.Height).
 		Unit(options.Unit).
 		NoValue(options.NoValue)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
 
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)
@@ -593,6 +614,10 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		DedupStrategy(options.DedupStrategy).
 		SortOrder(options.SortOrder)
 
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)
 	}
@@ -646,6 +671,10 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 		Height(options.Height).
 		Unit(options.Unit).
 		NoValue(options.NoValue)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
 
 	if options.Decimals != nil {
 		newPanel.Decimals(*options.Decimals)
@@ -702,6 +731,10 @@ func NewTextPanel(options *TextPanelOptions) *Panel {
 		Height(options.Height).
 		Mode(options.Mode).
 		Content(options.Content)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
 
 	return &Panel{
 		textPanelBuilder: newPanel,

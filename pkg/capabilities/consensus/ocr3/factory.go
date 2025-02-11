@@ -2,8 +2,10 @@ package ocr3
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
@@ -18,11 +20,12 @@ const (
 	defaultMaxReportCount          = 20
 	defaultBatchSize               = 20
 	defaultOutcomePruningThreshold = 3600
+	defaultRequestExpiry           = 20 * time.Second
 )
 
 type factory struct {
 	store                   *requests.Store
-	capability              *capability
+	capability              *Capability
 	batchSize               int
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
@@ -30,7 +33,7 @@ type factory struct {
 	services.StateMachine
 }
 
-func newFactory(s *requests.Store, c *capability, lggr logger.Logger) (*factory, error) {
+func newFactory(s *requests.Store, c *Capability, lggr logger.Logger) (*factory, error) {
 	return &factory{
 		store:      s,
 		capability: c,
@@ -66,7 +69,11 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	if configProto.MaxReportCount <= 0 {
 		configProto.MaxReportCount = defaultMaxReportCount
 	}
-	rp, err := newReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
+	if configProto.RequestTimeout == nil {
+		configProto.RequestTimeout = durationpb.New(defaultRequestExpiry)
+	}
+	o.capability.SetRequestTimeout(configProto.RequestTimeout.AsDuration())
+	rp, err := newReportingPlugin(o.store, o.capability.config.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
 	rpInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{

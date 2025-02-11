@@ -42,8 +42,10 @@ type capability struct {
 	wg         sync.WaitGroup
 	lggr       logger.Logger
 
-	requestTimeout time.Duration
-	clock          clockwork.Clock
+	requestTimeout     time.Duration
+	requestTimeoutLock sync.RWMutex
+
+	clock clockwork.Clock
 
 	aggregatorFactory types.AggregatorFactory
 	aggregators       map[string]types.Aggregator
@@ -182,6 +184,12 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 	return nil
 }
 
+func (o *capability) setRequestTimeout(timeout time.Duration) {
+	o.requestTimeoutLock.Lock()
+	defer o.requestTimeoutLock.Unlock()
+	o.requestTimeout = timeout
+}
+
 // Execute enqueues a new consensus request, passing it to the reporting plugin as needed.
 // IMPORTANT: OCR3 only exposes signatures via the contractTransmitter, which is located
 // in a separate process to the reporting plugin LOOPP. However, only the reporting plugin
@@ -266,10 +274,12 @@ func (o *capability) queueRequestForProcessing(
 	// Use the capability-level request timeout unless the request's config specifies
 	// its own timeout, in which case we'll use that instead. This allows the workflow spec
 	// to configure more granular timeouts depending on the circumstances.
+	o.requestTimeoutLock.RLock()
 	requestTimeout := o.requestTimeout
 	if c.RequestTimeoutMS != 0 {
 		requestTimeout = time.Duration(c.RequestTimeoutMS) * time.Millisecond
 	}
+	o.requestTimeoutLock.RUnlock()
 
 	r := &requests.Request{
 		StopCh:                   make(chan struct{}),

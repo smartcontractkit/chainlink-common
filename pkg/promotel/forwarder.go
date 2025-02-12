@@ -25,8 +25,8 @@ type ForwarderOptions struct {
 	Endpoint    string
 	TLSInsecure bool
 	AuthHeaders map[string]string
-	Verbose     bool
 	Interval    time.Duration
+	Verbose     bool
 }
 
 type Forwarder struct {

@@ -20,8 +20,3 @@ lint: ## run golangci-lint
 test: ## run unit tests
 	go test -v ./...
 
-build: tidy ## build the demo
-	go build ./cmd/example.go
-
-run-example: ## run the example
-	go run ./cmd/example.go

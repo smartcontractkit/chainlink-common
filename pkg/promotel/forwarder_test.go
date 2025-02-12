@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stretchr/testify/require"
-	"github.com/zeebo/assert"
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -54,18 +52,16 @@ func TestExample(t *testing.T) {
 	forwarder, err := promotel.NewForwarder(g, r, lggr, promotel.ForwarderOptions{
 		Endpoint:    srv.URL,
 		TLSInsecure: true,
-		Verbose:     true,
 		Interval:    interval,
+		Verbose:     true,
 	})
-	require.NoError(t, err)
-	// Start the forwarder
-	go func() {
-		assert.NoError(t, forwarder.Start(ctx))
-	}()
-	// Gracefully shuts down the forwarder
-	defer func() {
-		assert.NoError(t, forwarder.Close())
-	}()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = forwarder.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer forwarder.Close()
 
 	select {
 	case <-ctx.Done():

@@ -17,7 +17,7 @@ type (
 )
 
 func NewReceiverConfig() (*ReceiverConfig, error) {
-	factory := otlpexporter.NewFactory()
+	factory := prometheusreceiver.NewFactory()
 	cfg, ok := factory.CreateDefaultConfig().(*prometheusreceiver.Config)
 	if !ok {
 		return &prometheusreceiver.Config{}, errors.New("failed to cast config to prometheusreceiver.Config")

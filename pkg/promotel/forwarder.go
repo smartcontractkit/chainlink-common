@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	period              = 15 * time.Second
 	heartbeatMetricName = "promotel_heartbeat"
+	hearbeatInterval    = 15 * time.Second
 	scopeName           = "PromOTELForwarder"
 )
 
@@ -118,15 +118,15 @@ func (f *Forwarder) startMetricExporter(ctx context.Context) {
 }
 
 func (f *Forwarder) reportHeartbeatMetric(ctx context.Context) {
-	ticker := time.NewTicker(period)
+	ticker := time.NewTicker(hearbeatInterval)
 	defer ticker.Stop()
 	for {
+		f.heartbeat.Inc()
+		f.lggr.Debug("Heartbeat promotel")
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			f.heartbeat.Inc()
-			f.lggr.Debug("Heartbeat promotel")
 		}
 	}
 }

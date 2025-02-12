@@ -2,7 +2,6 @@ package promotel_test
 
 import (
 	"context"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -47,10 +46,8 @@ func TestExample(t *testing.T) {
 		}
 	}()
 
-	srv := httptest.NewServer(nil)
-	// TODO: add mocked GRPC endpoint for exporter
 	forwarder, err := promotel.NewForwarder(g, r, lggr, promotel.ForwarderOptions{
-		Endpoint:    srv.URL,
+		Endpoint:    "localhost:4317",
 		TLSInsecure: true,
 		Interval:    interval,
 		Verbose:     true,

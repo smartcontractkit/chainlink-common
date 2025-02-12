@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common
 
-go 1.26.4
+go 1.27rc2
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0

@@ -1,17 +1,15 @@
-package promotel
+package internal
 
 import (
 	"context"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
 )
 
 type MetricExporter interface {
@@ -44,17 +42,17 @@ func (me *metricExporter) Export(ctx context.Context, md pmetric.Metrics) error 
 	return me.exporter.ConsumeMetrics(ctx, md)
 }
 
-func NewMetricExporter(config ExporterConfig, logger logger.Logger) (MetricExporter, error) {
+func NewMetricExporter(config *ExporterConfig, logger logger.Logger) (MetricExporter, error) {
 	factory := otlpexporter.NewFactory()
 	// Creates a metrics receiver with the context, settings, config, and consumer
 	exporter, err := factory.CreateMetrics(
 		context.Background(),
-		internal.NewExporterSettings(logger),
+		NewExporterSettings(logger),
 		config)
 	if err != nil {
 		return nil, err
 	}
 	// Creates a no-operation host for the receiver
-	host := internal.NewNopHost()
+	host := NewNopHost()
 	return &metricExporter{factory, host, exporter}, nil
 }

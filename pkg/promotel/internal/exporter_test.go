@@ -1,4 +1,4 @@
-package promotel
+package internal
 
 import (
 	"context"

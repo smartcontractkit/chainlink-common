@@ -1,4 +1,4 @@
-package promotel_test
+package internal_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
 )
 
 func TestExample(t *testing.T) {
@@ -94,8 +94,8 @@ func reportMetrics(reg prometheus.Registerer, logger logger.Logger) {
 	}
 }
 
-func startExporter(ctx context.Context, logger logger.Logger) promotel.MetricExporter {
-	expConfig, err := promotel.NewExporterConfig(map[string]any{
+func startExporter(ctx context.Context, logger logger.Logger) internal.MetricExporter {
+	expConfig, err := internal.TestExporterConfig(map[string]any{
 		"endpoint": "localhost:4317",
 		"tls": map[string]any{
 			"insecure": true,
@@ -105,7 +105,7 @@ func startExporter(ctx context.Context, logger logger.Logger) promotel.MetricExp
 		logger.Fatal("Failed to create exporter config", zap.Error(err))
 	}
 	// Sends metrics data in OTLP format to otel-collector endpoint
-	exporter, err := promotel.NewMetricExporter(expConfig, logger)
+	exporter, err := internal.NewMetricExporter(expConfig, logger)
 	if err != nil {
 		logger.Fatal("Failed to create metric exporter", zap.Error(err))
 	}
@@ -116,16 +116,16 @@ func startExporter(ctx context.Context, logger logger.Logger) promotel.MetricExp
 	return exporter
 }
 
-func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger, next promotel.NextFunc) promotel.Runnable {
+func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger, next internal.NextFunc) internal.Runnable {
 	logger.Info("Starting promotel metric receiver")
-	config, err := promotel.NewDefaultReceiverConfig()
+	config, err := internal.NewReceiverConfig()
 	if err != nil {
 		logger.Fatal("Failed to create config", zap.Error(err))
 	}
 
 	// Gather metrics via promotel
 	// MetricReceiver fetches metrics from prometheus.Gatherer, then converts it to OTel format and writes formatted metrics to stdout
-	receiver, err := promotel.NewMetricReceiver(config, g, r, logger, next)
+	receiver, err := internal.NewMetricReceiver(config, g, r, logger, next)
 	if err != nil {
 		logger.Fatal("Failed to create debug metric receiver", zap.Error(err))
 	}

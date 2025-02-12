@@ -1,8 +1,7 @@
-package promotel_test
+package internal_test
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 
 	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
@@ -13,7 +12,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/promotel"
+	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
 )
 
 // TestPrometheusReceiver verifies the initialization, startup, and shutdown
@@ -22,8 +21,7 @@ import (
 // gracefully stopping it.
 func TestPrometheusReceiver(t *testing.T) {
 	// Load configuration from a YAML file
-	configFile := filepath.Join("testdata", "promconfig.yaml")
-	testConfig, err := promotel.LoadTestConfig(configFile, "withOnlyScrape")
+	testConfig, err := internal.NewReceiverConfig()
 	require.NoError(t, err)
 	// Creates a new Prometheus receiver factory
 	factory := prometheusreceiver.NewFactory()
@@ -42,11 +40,10 @@ func TestPrometheusReceiver(t *testing.T) {
 }
 
 func TestMetricReceiver(t *testing.T) {
-	configFile := filepath.Join("testdata", "promconfig.yaml")
-	testConfig, err := promotel.LoadTestConfig(configFile, "withOnlyScrape")
+	testConfig, err := internal.NewReceiverConfig()
 	require.NoError(t, err)
 	noopConsumerFunc := func(context.Context, pmetric.Metrics) error { return nil }
-	receiver, err := promotel.NewMetricReceiver(testConfig, prometheus.DefaultGatherer, prometheus.DefaultRegisterer, nil, noopConsumerFunc)
+	receiver, err := internal.NewMetricReceiver(testConfig, prometheus.DefaultGatherer, prometheus.DefaultRegisterer, nil, noopConsumerFunc)
 	require.NoError(t, err)
 	require.NoError(t, receiver.Start(context.Background()))
 	require.NoError(t, receiver.Close())

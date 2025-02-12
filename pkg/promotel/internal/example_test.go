@@ -26,33 +26,12 @@ func TestExample(t *testing.T) {
 	go reportMetrics(r, logger)
 
 	// Fetches metrics from in memory prometheus.Gatherer and converts to OTel format
-	findMetric := func(name string, md pmetric.Metrics) bool {
-		// Logs the converted OTel metric
-		rms := md.ResourceMetrics()
-		for i := 0; i < rms.Len(); i++ {
-			rm := rms.At(i)
-			ilms := rm.ScopeMetrics()
-			for j := 0; j < ilms.Len(); j++ {
-				ilm := ilms.At(j)
-				metrics := ilm.Metrics()
-				for k := 0; k < metrics.Len(); k++ {
-					metric := metrics.At(k)
-					if metric.Name() == name {
-						v := metric.Sum().DataPoints().At(0).DoubleValue()
-						if v > 0 {
-							return true
-						}
-					}
-				}
-			}
-		}
-		return false
-	}
+
 	foundCh := make(chan struct{})
 	// TODO: add mocked GRPC endpoint for exporter
 	exporter := startExporter(context.Background(), logger)
 	nextFunc := func(ctx context.Context, md pmetric.Metrics) error {
-		if findMetric(testCounterMetricName, md) {
+		if findExpectedMetric(testCounterMetricName, md) {
 			foundCh <- struct{}{}
 		}
 		return exporter.Export(ctx, md)

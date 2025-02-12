@@ -42,5 +42,4 @@ func ReportTestMetrics(ctx context.Context, reg prometheus.Registerer, metricNam
 			time.Sleep(1 * time.Second)
 		}
 	}
-
 }

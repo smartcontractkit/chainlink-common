@@ -2,7 +2,6 @@ package internal
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"go.opentelemetry.io/collector/component"
@@ -68,7 +67,7 @@ func TestReceiverConfig(rawConf map[string]any) (*ReceiverConfig, error) {
 	}
 	c, ok := config.(*prometheusreceiver.Config)
 	if !ok {
-		return &prometheusreceiver.Config{}, fmt.Errorf("failed to cast config to otlpexporter.Config")
+		return &prometheusreceiver.Config{}, errors.New("failed to cast config to otlpexporter.Config")
 	}
 	if err := c.Validate(); err != nil {
 		return nil, err
@@ -91,7 +90,7 @@ func TestExporterConfig(rawConf map[string]any) (*ExporterConfig, error) {
 	}
 	c, ok := config.(*otlpexporter.Config)
 	if !ok {
-		return &otlpexporter.Config{}, fmt.Errorf("failed to cast config to otlpexporter.Config")
+		return &otlpexporter.Config{}, errors.New("failed to cast config to otlpexporter.Config")
 	}
 	return c, nil
 }

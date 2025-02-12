@@ -66,7 +66,6 @@ func TestUnmarshalDefaultConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "localhost:4317", cfg.(*otlpexporter.Config).ClientConfig.Endpoint)
 	assert.True(t, cfg.(*otlpexporter.Config).ClientConfig.TLSSetting.Insecure)
-
 }
 
 func TestUnmarshalConfig(t *testing.T) {

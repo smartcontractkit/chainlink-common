@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -33,10 +32,10 @@ func NewDebugExporter(logger logger.Logger) Exporter {
 }
 
 func (s *DebugExporter) Export(md pmetric.Metrics) error {
-	s.logger.Info("Metrics",
-		zap.Int("resource metrics", md.ResourceMetrics().Len()),
-		zap.Int("metrics", md.MetricCount()),
-		zap.Int("data points", md.DataPointCount()),
+	s.logger.Infow("Metrics",
+		"resource metrics", md.ResourceMetrics().Len(),
+		"metrics", md.MetricCount(),
+		"data points", md.DataPointCount(),
 	)
 
 	if s.verbosity == configtelemetry.LevelBasic {

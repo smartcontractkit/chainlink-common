@@ -85,7 +85,7 @@ func (f *Forwarder) run(ctx context.Context) {
 func (f *Forwarder) startMetricReceiver(ctx context.Context) {
 	f.lggr.Debug("Starting promotel metric receiver")
 	if err := f.receiver.Start(ctx); err != nil {
-		f.lggr.Errorw("Failed to start promotel metric receiver, closing forwarder", err)
+		f.lggr.Errorw("Failed to start promotel metric receiver, closing forwarder", "error", err)
 		f.Close()
 	}
 	select {

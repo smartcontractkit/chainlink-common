@@ -19,7 +19,6 @@ type baseConsumer struct {
 	consumer.ConsumeMetricsFunc
 }
 
-// NewNop returns a Consumer that just drops all received data and returns no error.
 func NewNopConsumer() consumer.Metrics {
 	return &baseConsumer{
 		ConsumeMetricsFunc: func(context.Context, pmetric.Metrics) error { return nil },

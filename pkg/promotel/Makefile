@@ -5,6 +5,7 @@ help: ## Print this help text
 	tidy \
 	fmt \
 	lint \
+	checks \
 	test
 
 tidy: fmt ## run go mod tidy
@@ -15,6 +16,12 @@ fmt: ## run go fmt
 
 lint: ## run golangci-lint
 	golangci-lint run ./... --config=../../.golangci.yml
+
+checks: ## run go checks
+	go mod verify
+	go vet ./...
+	go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000,-ST1003 ./...
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
 test: ## run unit tests
 	go test -v ./...

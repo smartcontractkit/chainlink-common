@@ -156,12 +156,12 @@ func newExporterConfig(opts ForwarderOptions) (*internal.ExporterConfig, error) 
 func newMetricExporter(opts ForwarderOptions, lggr logger.Logger) (internal.MetricExporter, error) {
 	expConfig, err := newExporterConfig(opts)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create exporter config %w", err)
+		return nil, fmt.Errorf("failed to create exporter config %w", err)
 	}
 	// Sends metrics data in OTLP format to otel-collector endpoint
 	exporter, err := internal.NewMetricExporter(expConfig, lggr)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create metric exporter %w", err)
+		return nil, fmt.Errorf("failed to create metric exporter %w", err)
 	}
 	return exporter, nil
 }
@@ -169,11 +169,11 @@ func newMetricExporter(opts ForwarderOptions, lggr logger.Logger) (internal.Metr
 func newMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, interval time.Duration, lggr logger.Logger, next internal.NextFunc) (internal.MetricReceiver, error) {
 	receiverConfig, err := internal.NewReceiverConfig()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create config %w", err)
+		return nil, fmt.Errorf("failed to create config %w", err)
 	}
 	receiver, err := internal.NewMetricReceiver(receiverConfig, g, r, interval, lggr, next)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create debug metric receiver %w", err)
+		return nil, fmt.Errorf("failed to create debug metric receiver %w", err)
 	}
 	return receiver, nil
 }

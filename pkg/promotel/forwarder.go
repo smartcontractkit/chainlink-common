@@ -12,6 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 const (
@@ -35,6 +36,7 @@ type Forwarder struct {
 	receiver  internal.MetricReceiver
 	closeOnce sync.Once
 	startOnce sync.Once
+	stopCh    services.StopChan
 }
 
 func NewForwarder(g prometheus.Gatherer, r prometheus.Registerer, lggr logger.Logger, opts ForwarderOptions) (*Forwarder, error) {
@@ -61,6 +63,7 @@ func NewForwarder(g prometheus.Gatherer, r prometheus.Registerer, lggr logger.Lo
 		}),
 		exporter: exporter,
 		receiver: receiver,
+		stopCh:   make(chan struct{}),
 	}, nil
 }
 
@@ -72,9 +75,11 @@ func (f *Forwarder) Start(ctx context.Context) error {
 }
 
 func (f *Forwarder) run(ctx context.Context) {
-	go f.reportHeartbeatMetric(ctx)
-	go f.startMetricExporter(ctx)
-	go f.startMetricReceiver(ctx)
+	newCtx, _ := f.stopCh.Ctx(ctx)
+	go f.reportHeartbeatMetric(newCtx)
+	go f.startMetricExporter(newCtx)
+	go f.startMetricReceiver(newCtx)
+	<-newCtx.Done()
 }
 
 func (f *Forwarder) startMetricReceiver(ctx context.Context) {
@@ -83,6 +88,15 @@ func (f *Forwarder) startMetricReceiver(ctx context.Context) {
 		f.lggr.Errorw("Failed to start promotel metric receiver, closing forwarder", err)
 		f.Close()
 	}
+	select {
+	case <-ctx.Done():
+		f.lggr.Debug("Context done, closing receiver")
+	case <-f.stopCh:
+		f.lggr.Debug("Stop channel closed, closing receiver")
+	}
+	if err := f.receiver.Close(); err != nil {
+		f.lggr.Errorw("Failed to close receiver", "error", err)
+	}
 }
 
 func (f *Forwarder) startMetricExporter(ctx context.Context) {
@@ -90,6 +104,16 @@ func (f *Forwarder) startMetricExporter(ctx context.Context) {
 	if err := f.exporter.Start(ctx); err != nil {
 		f.lggr.Error("Failed to start exporter, closing forwarder", err)
 		f.Close()
+		return
+	}
+	select {
+	case <-ctx.Done():
+		f.lggr.Debug("Context done, closing exporter")
+	case <-f.stopCh:
+		f.lggr.Debug("Stop channel closed, closing exporter")
+	}
+	if err := f.exporter.Close(); err != nil {
+		f.lggr.Errorw("Failed to close exporter", "error", err)
 	}
 }
 
@@ -109,12 +133,7 @@ func (f *Forwarder) reportHeartbeatMetric(ctx context.Context) {
 
 func (f *Forwarder) Close() error {
 	f.closeOnce.Do(func() {
-		if err := f.receiver.Close(); err != nil {
-			f.lggr.Errorw("Failed to close receiver", "error", err)
-		}
-		if err := f.exporter.Close(); err != nil {
-			f.lggr.Errorw("Failed to close exporter", "error", err)
-		}
+		close(f.stopCh)
 	})
 	return nil
 }

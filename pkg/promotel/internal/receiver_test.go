@@ -60,7 +60,7 @@ func TestMetricReceiver(t *testing.T) {
 		// todo: use logger.TestObserved
 		logger         = logger.Test(t)
 		timeout        = 10 * time.Second
-		testMetricName = "test_counter_metric"
+		testMetricName = t.Name() + "_test_counter_metric"
 		receiver       internal.MetricReceiver
 		interval       = 10 * time.Millisecond
 	)

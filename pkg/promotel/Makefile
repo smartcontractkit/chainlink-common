@@ -5,8 +5,7 @@ help: ## Print this help text
 	tidy \
 	fmt \
 	lint \
-	test \
-	run-example
+	test
 
 tidy: fmt ## run go mod tidy
 	go mod tidy
@@ -19,4 +18,3 @@ lint: ## run golangci-lint
 
 test: ## run unit tests
 	go test -v ./...
-

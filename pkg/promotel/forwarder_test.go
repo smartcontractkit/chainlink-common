@@ -21,7 +21,7 @@ func TestExample(t *testing.T) {
 		r = prometheus.DefaultRegisterer
 		// todo: use logger.TestObserved
 		lggr, observed = logger.TestObserved(t, zap.DebugLevel)
-		testMetricName = "test_counter_metric"
+		testMetricName = t.Name() + "_test_counter_metric"
 		interval       = 10 * time.Millisecond
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

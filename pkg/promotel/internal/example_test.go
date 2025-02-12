@@ -20,7 +20,7 @@ func TestExample(t *testing.T) {
 		r              = prometheus.DefaultRegisterer
 		logger         = logger.Test(t)
 		timeout        = 10 * time.Second
-		testMetricName = "test_counter_metric"
+		testMetricName = t.Name() + "_test_counter_metric"
 		doneCh         = make(chan struct{})
 		interval       = 10 * time.Millisecond
 	)

@@ -617,6 +617,8 @@ github.com/pierrec/lz4/v4 v4.1.22 h1:cKFw6uJDK+/gfw5BcDL0JL5aBsAFdsIT18eRtLj7VIU
 github.com/pierrec/lz4/v4 v4.1.22/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
 github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.7 h1:RtooYoXR9+zDhykK9EXeSthn+05i9Yv1eyH+0JfHg9g=
 github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.7/go.mod h1:zBXZLZS8AMHEvypXIleFzP76fwigAgcY+wr3xm2kUr0=
+github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.8-0.20250212041627-e2b5908d3616 h1:Oxm7bfn3eIm28ifHcf3jfeNV9xCVU1hSNAIpcPYcYIk=
+github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.8-0.20250212041627-e2b5908d3616/go.mod h1:zBXZLZS8AMHEvypXIleFzP76fwigAgcY+wr3xm2kUr0=
 github.com/pkcll/prometheus v0.54.3-0.20250205152829-6e977873d1b5 h1:ltpoggpdltDTnzEJf/JMcXgpR3a5TDJuPJrJuqmJ6qk=
 github.com/pkcll/prometheus v0.54.3-0.20250205152829-6e977873d1b5/go.mod h1:RegyVT8tfcdvyMNihsk/vndrwt6cREC7ZICbUYJS+Sw=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=

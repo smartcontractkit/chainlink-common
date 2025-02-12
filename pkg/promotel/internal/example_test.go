@@ -22,6 +22,7 @@ func TestExample(t *testing.T) {
 		timeout        = 10 * time.Second
 		testMetricName = "test_counter_metric"
 		doneCh         = make(chan struct{})
+		interval       = 10 * time.Millisecond
 	)
 	if deadline, ok := t.Deadline(); !ok {
 		timeout = time.Until(deadline)
@@ -49,7 +50,7 @@ func TestExample(t *testing.T) {
 		}
 		return exporter.Export(ctx, md)
 	}
-	receiver, err := internal.NewMetricReceiver(config, g, r, logger, nextFunc)
+	receiver, err := internal.NewMetricReceiver(config, g, r, interval, logger, nextFunc)
 	require.NoError(t, err)
 
 	// Start exporter

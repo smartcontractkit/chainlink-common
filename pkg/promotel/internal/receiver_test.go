@@ -47,7 +47,7 @@ func TestMetricReceiverStartClose(t *testing.T) {
 	testConfig, err := internal.NewReceiverConfig()
 	require.NoError(t, err)
 	noopConsumerFunc := func(context.Context, pmetric.Metrics) error { return nil }
-	receiver, err := internal.NewMetricReceiver(testConfig, prometheus.DefaultGatherer, prometheus.DefaultRegisterer, nil, noopConsumerFunc)
+	receiver, err := internal.NewMetricReceiver(testConfig, prometheus.DefaultGatherer, prometheus.DefaultRegisterer, 10*time.Second, nil, noopConsumerFunc)
 	require.NoError(t, err)
 	require.NoError(t, receiver.Start(context.Background()))
 	require.NoError(t, receiver.Close())
@@ -62,6 +62,7 @@ func TestMetricReceiver(t *testing.T) {
 		timeout        = 10 * time.Second
 		testMetricName = "test_counter_metric"
 		receiver       internal.MetricReceiver
+		interval       = 10 * time.Millisecond
 	)
 	if deadline, ok := t.Deadline(); !ok {
 		timeout = time.Until(deadline)
@@ -82,7 +83,7 @@ func TestMetricReceiver(t *testing.T) {
 	// Create new metric receiver
 	config, err := internal.NewReceiverConfig()
 	assert.NoError(t, err)
-	receiver, err = internal.NewMetricReceiver(config, g, r, logger, nextFunc)
+	receiver, err = internal.NewMetricReceiver(config, g, r, interval, logger, nextFunc)
 	assert.NoError(t, err)
 	// Start the metric receiver
 	go func() {

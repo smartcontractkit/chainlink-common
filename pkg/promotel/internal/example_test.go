@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promotel/internal"
@@ -17,100 +16,64 @@ import (
 
 func TestExample(t *testing.T) {
 	var (
-		g = prometheus.DefaultGatherer
-		r = prometheus.DefaultRegisterer
-		// todo: use logger.TestObserved
-		logger = logger.Test(t)
+		g              = prometheus.DefaultGatherer
+		r              = prometheus.DefaultRegisterer
+		logger         = logger.Test(t)
+		timeout        = 10 * time.Second
+		testMetricName = "test_counter_metric"
+		doneCh         = make(chan struct{})
 	)
-
-	go reportMetrics(r, logger)
-
-	// Fetches metrics from in memory prometheus.Gatherer and converts to OTel format
-
-	foundCh := make(chan struct{})
-	// TODO: add mocked GRPC endpoint for exporter
-	exporter := startExporter(context.Background(), logger)
-	nextFunc := func(ctx context.Context, md pmetric.Metrics) error {
-		if findExpectedMetric(testCounterMetricName, md) {
-			foundCh <- struct{}{}
-		}
-		return exporter.Export(ctx, md)
-	}
-	receiver := startMetricReceiver(g, r, logger, nextFunc)
-
-	defer receiver.Close()
-
-	timeout := 10 * time.Second
 	if deadline, ok := t.Deadline(); !ok {
 		timeout = time.Until(deadline)
 	}
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-	select {
-	case <-timer.C:
-		t.Fatal("Timed out waiting for metric")
-	case <-foundCh:
-		t.Log("Found metric")
-	}
-}
+	// Report metrics
+	go internal.ReportTestMetrics(ctx, r, testMetricName)
 
-const testCounterMetricName = "test_counter_metric"
+	// Create exporter
+	expConfig, err := internal.NewDefaultExporterConfig()
+	require.NoError(t, err)
 
-func reportMetrics(reg prometheus.Registerer, logger logger.Logger) {
-	testCounter := promauto.With(reg).NewCounter(prometheus.CounterOpts{
-		Name: testCounterMetricName,
-		ConstLabels: prometheus.Labels{
-			"app": "promotel-demo",
-		},
-	})
-	for {
-		testCounter.Inc()
-		m := &dto.Metric{}
-		_ = testCounter.Write(m)
-		logger.Info("Reported Prometheus metric ", zap.Any("name", testCounterMetricName), zap.Any("value", m.GetCounter().GetValue()))
-		time.Sleep(1 * time.Second)
-	}
-}
-
-func startExporter(ctx context.Context, logger logger.Logger) internal.MetricExporter {
-	expConfig, err := internal.TestExporterConfig(map[string]any{
-		"endpoint": "localhost:4317",
-		"tls": map[string]any{
-			"insecure": true,
-		},
-	})
-	if err != nil {
-		logger.Fatal("Failed to create exporter config", zap.Error(err))
-	}
 	// Sends metrics data in OTLP format to otel-collector endpoint
 	exporter, err := internal.NewMetricExporter(expConfig, logger)
-	if err != nil {
-		logger.Fatal("Failed to create metric exporter", zap.Error(err))
-	}
-	err = exporter.Start(ctx)
-	if err != nil {
-		logger.Fatal("Failed to start exporter", zap.Error(err))
-	}
-	return exporter
-}
+	require.NoError(t, err)
 
-func startMetricReceiver(g prometheus.Gatherer, r prometheus.Registerer, logger logger.Logger, next internal.NextFunc) internal.Runnable {
-	logger.Info("Starting promotel metric receiver")
+	// Create receiver
 	config, err := internal.NewReceiverConfig()
-	if err != nil {
-		logger.Fatal("Failed to create config", zap.Error(err))
+	require.NoError(t, err)
+	nextFunc := func(ctx context.Context, md pmetric.Metrics) error {
+		if internal.FindExpectedMetric(testMetricName, md) {
+			doneCh <- struct{}{}
+		}
+		return exporter.Export(ctx, md)
 	}
+	receiver, err := internal.NewMetricReceiver(config, g, r, logger, nextFunc)
+	require.NoError(t, err)
 
-	// Gather metrics via promotel
-	// MetricReceiver fetches metrics from prometheus.Gatherer, then converts it to OTel format and writes formatted metrics to stdout
-	receiver, err := internal.NewMetricReceiver(config, g, r, logger, next)
-	if err != nil {
-		logger.Fatal("Failed to create debug metric receiver", zap.Error(err))
+	// Start exporter
+	go func() {
+		assert.NoError(t, exporter.Start(ctx))
+	}()
+	// Gracefully shuts down the exporter
+	defer func() {
+		assert.NoError(t, exporter.Close())
+	}()
+
+	// Start receiver
+	go func() {
+		assert.NoError(t, receiver.Start(ctx))
+	}()
+	// Gracefully shuts down the receiver
+	defer func() {
+		assert.NoError(t, receiver.Close())
+	}()
+
+	select {
+	case <-ctx.Done():
+		t.Fatal("Timed out waiting for metric")
+	case <-doneCh:
+		t.Log("Found metric")
 	}
-	// Starts the promotel
-	if err := receiver.Start(context.Background()); err != nil {
-		logger.Fatal("Failed to start metric receiver", zap.Error(err))
-	}
-	return receiver
 }

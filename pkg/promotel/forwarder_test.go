@@ -17,9 +17,8 @@ import (
 
 func TestExample(t *testing.T) {
 	var (
-		g = prometheus.DefaultGatherer
-		r = prometheus.DefaultRegisterer
-		// todo: use logger.TestObserved
+		g              = prometheus.DefaultGatherer
+		r              = prometheus.DefaultRegisterer
 		lggr, observed = logger.TestObserved(t, zap.DebugLevel)
 		testMetricName = t.Name() + "_test_counter_metric"
 		interval       = 10 * time.Millisecond

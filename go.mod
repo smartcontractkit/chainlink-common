@@ -29,7 +29,7 @@ require (
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/marcboeker/go-duckdb v1.8.3
 	github.com/pelletier/go-toml/v2 v2.2.0
-	github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.8-0.20250212041627-e2b5908d3616
+	github.com/pkcll/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.115.8-0.20250212232520-c77eec2fc549
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.62.0
 	github.com/riferrei/srclient v0.5.4

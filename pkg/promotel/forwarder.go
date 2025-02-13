@@ -138,7 +138,7 @@ func (f *Forwarder) Close() error {
 	return nil
 }
 
-func DefaultExporterOptions() ForwarderOptions {
+func DefaultForwarderOptions() ForwarderOptions {
 	return ForwarderOptions{
 		Endpoint:    "localhost:4317",
 		TLSInsecure: true,

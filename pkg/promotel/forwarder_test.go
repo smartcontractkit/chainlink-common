@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -66,4 +67,14 @@ func TestExample(t *testing.T) {
 	case <-doneCh:
 		t.Log("Found metric.")
 	}
+}
+
+func TestDefaultForwarderOptions(t *testing.T) {
+	opts := promotel.DefaultForwarderOptions()
+	assert.Equal(t, "localhost:4317", opts.Endpoint)
+	assert.True(t, opts.TLSInsecure)
+	assert.Nil(t, opts.AuthHeaders)
+	assert.False(t, opts.Verbose)
+	assert.Equal(t, 15*time.Second, opts.Interval)
+
 }

@@ -64,6 +64,7 @@ type StandardCapabilities interface {
 		config string,
 		telemetryService core.TelemetryService,
 		store core.KeyValueStore,
+		keystore core.Keystore,
 		capabilityRegistry core.CapabilitiesRegistry,
 		errorLog core.ErrorLog,
 		pipelineRunner core.PipelineRunnerService,

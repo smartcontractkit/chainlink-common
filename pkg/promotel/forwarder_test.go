@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -52,12 +53,10 @@ func TestExample(t *testing.T) {
 		Interval:    interval,
 		Verbose:     true,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = forwarder.Start(ctx); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
+	require.NoError(t, forwarder.Start(ctx))
+
 	defer forwarder.Close()
 
 	select {

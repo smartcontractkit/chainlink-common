@@ -7,14 +7,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-// NewBoolToByteModifier converts on-chain uint8 to off-chain bool and vice versa.
-func NewBoolToByteModifier(fields []string) Modifier {
+// NewByteToBooleanModifier converts on-chain uint8 to off-chain bool and vice versa.
+func NewByteToBooleanModifier(fields []string) Modifier {
 	fieldMap := map[string]any{}
 	for _, field := range fields {
 		fieldMap[field] = true
 	}
 
-	m := &boolToByteModifier{
+	m := &byteToBooleanModifier{
 		modifierBase[any]{
 			fields:           fieldMap,
 			onToOffChainType: map[reflect.Type]reflect.Type{},
@@ -34,17 +34,17 @@ func NewBoolToByteModifier(fields []string) Modifier {
 	return m
 }
 
-// boolToByteModifier implements the two-phase transform logic using a helper hook.
-type boolToByteModifier struct {
+// byteToBooleanModifier implements the two-phase transform logic using a helper hook.
+type byteToBooleanModifier struct {
 	modifierBase[any]
 }
 
-func (m *boolToByteModifier) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	return transformWithMaps(offChainValue, m.offToOnChainType, m.fields, boolToByteHook)
+func (m *byteToBooleanModifier) TransformToOnChain(offChainValue any, _ string) (any, error) {
+	return transformWithMaps(offChainValue, m.offToOnChainType, m.fields, boolToByte)
 }
 
-func (m *boolToByteModifier) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	return transformWithMaps(onChainValue, m.onToOffChainType, m.fields, byteToBoolHook)
+func (m *byteToBooleanModifier) TransformToOffChain(onChainValue any, _ string) (any, error) {
+	return transformWithMaps(onChainValue, m.onToOffChainType, m.fields, byteToBool)
 }
 
 // convertUint8InTypeToBool examines the type `t`. If it is (or can be unwrapped to) a uint8,
@@ -66,10 +66,10 @@ func convertUint8InTypeToBool(t reflect.Type, field string) (reflect.Type, error
 	}
 }
 
-// boolToByteHook is the transform hook used in `transformWithMaps`. It
+// boolToByte is the transform hook used in `transformWithMaps`. It
 // transforms a `bool` into `uint8`. If you find a bool and the field is one of
 // your target fields, you convert it to 0 or 1. If not, you pass through unchanged.
-func boolToByteHook(m map[string]any, key string, _ any) error {
+func boolToByte(m map[string]any, key string, _ any) error {
 	var toReturn uint8
 	val := m[key]
 	if b, ok := val.(bool); ok {
@@ -95,9 +95,9 @@ func boolToByteHook(m map[string]any, key string, _ any) error {
 	return fmt.Errorf("%w: cannot convert bool to byte for field", types.ErrInvalidType)
 }
 
-// byteToBoolHook is the transform hook used in `transformWithMaps`. It
+// byteToBool is the transform hook used in `transformWithMaps`. It
 // transforms a `uint8` into a `bool`. If the byte is nonzero → true, else false.
-func byteToBoolHook(m map[string]any, key string, _ any) error {
+func byteToBool(m map[string]any, key string, _ any) error {
 	val := m[key]
 	switch x := val.(type) {
 	case uint8:

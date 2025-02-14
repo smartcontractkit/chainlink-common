@@ -99,6 +99,9 @@ func extractMap(extractMap map[string]any, key string, elementLocation *ElementE
 	}
 
 	rItem := reflect.ValueOf(item)
+	if rItem.Kind() == reflect.Pointer {
+		rItem = rItem.Elem()
+	}
 	switch rItem.Kind() {
 	case reflect.Array, reflect.Slice:
 	default:

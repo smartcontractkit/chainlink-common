@@ -75,16 +75,11 @@ func NewOCR3(config Config) *Capability {
 	return cp
 }
 
-func (o *Capability) SetRequestTimeout(timeout time.Duration) {
-	o.config.RequestTimeout = &timeout
-	o.config.capability.setRequestTimeout(timeout)
-}
-
 func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.ReportingPluginServiceConfig,
 	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
 	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
-	f, err := newFactory(o.config.store, o, o.config.Logger)
+	f, err := newFactory(o.config.store, o.config.capability, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}

@@ -26,6 +26,8 @@ type ReportingPluginConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// These fields are shadowing the `ReportingPluginLimits` fields.
+	// See: https://github.com/smartcontractkit/libocr/blob/master/offchainreporting2plus/ocr3types/plugin.go#L296
 	MaxQueryLengthBytes       uint32               `protobuf:"varint,1,opt,name=maxQueryLengthBytes,proto3" json:"maxQueryLengthBytes,omitempty"`
 	MaxObservationLengthBytes uint32               `protobuf:"varint,2,opt,name=maxObservationLengthBytes,proto3" json:"maxObservationLengthBytes,omitempty"`
 	MaxOutcomeLengthBytes     uint32               `protobuf:"varint,3,opt,name=maxOutcomeLengthBytes,proto3" json:"maxOutcomeLengthBytes,omitempty"`

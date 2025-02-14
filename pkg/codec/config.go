@@ -23,7 +23,7 @@ import (
 // - extract element -> [ElementExtractorModifierConfig]
 // - extract element from onchain slice or array -> [ElementExtractorFromOnchainModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
-// - bytes to boolean -> [ByteToBooleanModifier]
+// - bytes to boolean -> [ByteToBooleanModifierConfig]
 // - address to string -> [AddressBytesToStringModifierConfig]
 // - field wrapper -> [WrapperModifierConfig]
 // - precodec -> [PreCodecModifierConfig]
@@ -63,6 +63,10 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &WrapperModifierConfig{}
 		case ModifierPreCodec:
 			(*m)[i] = &PreCodecModifierConfig{}
+		case ModifierByteToBoolean:
+			(*m)[i] = &ByteToBooleanModifierConfig{}
+		case ModifierExtractElementFromOnchain:
+			(*m)[i] = &ElementExtractorFromOnchainModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -89,15 +93,17 @@ func (m *ModifiersConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc
 type ModifierType string
 
 const (
-	ModifierPreCodec        ModifierType = "precodec"
-	ModifierRename          ModifierType = "rename"
-	ModifierDrop            ModifierType = "drop"
-	ModifierHardCode        ModifierType = "hard code"
-	ModifierExtractElement  ModifierType = "extract element"
-	ModifierEpochToTime     ModifierType = "epoch to time"
-	ModifierExtractProperty ModifierType = "extract property"
-	ModifierAddressToString ModifierType = "address to string"
-	ModifierWrapper         ModifierType = "wrapper"
+	ModifierPreCodec                  ModifierType = "precodec"
+	ModifierRename                    ModifierType = "rename"
+	ModifierDrop                      ModifierType = "drop"
+	ModifierHardCode                  ModifierType = "hard code"
+	ModifierExtractElement            ModifierType = "extract element"
+	ModifierExtractElementFromOnchain ModifierType = "extract element from onchain"
+	ModifierByteToBoolean             ModifierType = "byte to boolean"
+	ModifierEpochToTime               ModifierType = "epoch to time"
+	ModifierExtractProperty           ModifierType = "extract property"
+	ModifierAddressToString           ModifierType = "address to string"
+	ModifierWrapper                   ModifierType = "wrapper"
 )
 
 type ModifierConfig interface {
@@ -155,18 +161,18 @@ func (d *DropModifierConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// ByteToBooleanModifier converts onchain uint8 fields to offchain bool fields and vice versa.
-type ByteToBooleanModifier struct {
+// ByteToBooleanModifierConfig converts onchain uint8 fields to offchain bool fields and vice versa.
+type ByteToBooleanModifierConfig struct {
 	Fields []string
 }
 
-func (d *ByteToBooleanModifier) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+func (d *ByteToBooleanModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	return NewByteToBooleanModifier(d.Fields), nil
 }
 
-func (d *ByteToBooleanModifier) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&modifierMarshaller[ByteToBooleanModifier]{
-		Type: ModifierDrop,
+func (d *ByteToBooleanModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[ByteToBooleanModifierConfig]{
+		Type: ModifierByteToBoolean,
 		T:    d,
 	})
 }
@@ -202,7 +208,7 @@ func (e *ElementExtractorFromOnchainModifierConfig) ToModifier(_ ...mapstructure
 
 func (e *ElementExtractorFromOnchainModifierConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[ElementExtractorFromOnchainModifierConfig]{
-		Type: ModifierExtractElement,
+		Type: ModifierExtractElementFromOnchain,
 		T:    e,
 	})
 }

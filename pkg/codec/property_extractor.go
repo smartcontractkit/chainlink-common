@@ -188,8 +188,7 @@ func extractWithMapsHelper(rItem reflect.Value, toType reflect.Type, field strin
 		if elm.Kind() == reflect.Struct {
 			tmp, err := extractElement(rItem.Interface(), field)
 			result := reflect.New(toType.Elem())
-			reflect.Indirect(result).Set(tmp)
-
+			err = mapstructure.Decode(tmp.Interface(), result.Interface())
 			return result, err
 		}
 

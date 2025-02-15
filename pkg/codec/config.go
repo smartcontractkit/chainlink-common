@@ -21,10 +21,12 @@ import (
 // - drop -> [DropModifierConfig]
 // - hard code -> [HardCodeModifierConfig]
 // - extract element -> [ElementExtractorModifierConfig]
+// - extract element from onchain slice or array -> [ElementExtractorFromOnchainModifierConfig]
 // - epoch to time -> [EpochToTimeModifierConfig]
+// - bytes to boolean -> [ByteToBooleanModifierConfig]
 // - address to string -> [AddressBytesToStringModifierConfig]
 // - field wrapper -> [WrapperModifierConfig]
-// - precodec -> [PrecodecModifierConfig]
+// - precodec -> [PreCodecModifierConfig]
 type ModifiersConfig []ModifierConfig
 
 func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
@@ -61,6 +63,10 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &WrapperModifierConfig{}
 		case ModifierPreCodec:
 			(*m)[i] = &PreCodecModifierConfig{}
+		case ModifierByteToBoolean:
+			(*m)[i] = &ByteToBooleanModifierConfig{}
+		case ModifierExtractElementFromOnchain:
+			(*m)[i] = &ElementExtractorFromOnchainModifierConfig{}
 		default:
 			return fmt.Errorf("%w: unknown modifier type: %s", types.ErrInvalidConfig, mType)
 		}
@@ -87,15 +93,17 @@ func (m *ModifiersConfig) ToModifier(onChainHooks ...mapstructure.DecodeHookFunc
 type ModifierType string
 
 const (
-	ModifierPreCodec        ModifierType = "precodec"
-	ModifierRename          ModifierType = "rename"
-	ModifierDrop            ModifierType = "drop"
-	ModifierHardCode        ModifierType = "hard code"
-	ModifierExtractElement  ModifierType = "extract element"
-	ModifierEpochToTime     ModifierType = "epoch to time"
-	ModifierExtractProperty ModifierType = "extract property"
-	ModifierAddressToString ModifierType = "address to string"
-	ModifierWrapper         ModifierType = "wrapper"
+	ModifierPreCodec                  ModifierType = "precodec"
+	ModifierRename                    ModifierType = "rename"
+	ModifierDrop                      ModifierType = "drop"
+	ModifierHardCode                  ModifierType = "hard code"
+	ModifierExtractElement            ModifierType = "extract element"
+	ModifierExtractElementFromOnchain ModifierType = "extract element from onchain"
+	ModifierByteToBoolean             ModifierType = "byte to boolean"
+	ModifierEpochToTime               ModifierType = "epoch to time"
+	ModifierExtractProperty           ModifierType = "extract property"
+	ModifierAddressToString           ModifierType = "address to string"
+	ModifierWrapper                   ModifierType = "wrapper"
 )
 
 type ModifierConfig interface {
@@ -153,6 +161,22 @@ func (d *DropModifierConfig) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// ByteToBooleanModifierConfig converts onchain uint8 fields to offchain bool fields and vice versa.
+type ByteToBooleanModifierConfig struct {
+	Fields []string
+}
+
+func (d *ByteToBooleanModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewByteToBooleanModifier(d.Fields), nil
+}
+
+func (d *ByteToBooleanModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[ByteToBooleanModifierConfig]{
+		Type: ModifierByteToBoolean,
+		T:    d,
+	})
+}
+
 // ElementExtractorModifierConfig is used to extract an element from a slice or array
 type ElementExtractorModifierConfig struct {
 	// Key is the name of the field to extract from and the value is which element to extract.
@@ -167,6 +191,24 @@ func (e *ElementExtractorModifierConfig) ToModifier(_ ...mapstructure.DecodeHook
 func (e *ElementExtractorModifierConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[ElementExtractorModifierConfig]{
 		Type: ModifierExtractElement,
+		T:    e,
+	})
+}
+
+// ElementExtractorFromOnchainModifierConfig is used to extract an element from an onchain slice or array.
+type ElementExtractorFromOnchainModifierConfig struct {
+	// Key is the name of the field to extract from and the value is which element to extract.
+	Extractions map[string]*ElementExtractorLocation
+}
+
+func (e *ElementExtractorFromOnchainModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	mapKeyToUpperFirst(e.Extractions)
+	return NewElementExtractorFromOnchain(e.Extractions), nil
+}
+
+func (e *ElementExtractorFromOnchainModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[ElementExtractorFromOnchainModifierConfig]{
+		Type: ModifierExtractElementFromOnchain,
 		T:    e,
 	})
 }

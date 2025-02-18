@@ -5,8 +5,10 @@ import (
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
+	"github.com/grafana/grafana-foundation-sdk/go/cog/plugins"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
 )
 
 type Builder struct {
@@ -31,6 +33,9 @@ type BuilderOptions struct {
 }
 
 func NewBuilder(options *BuilderOptions) *Builder {
+	plugins.RegisterDefaultPlugins()
+	cog.NewRuntime().RegisterPanelcfgVariant(businessvariable.VariantConfig())
+
 	builder := &Builder{}
 
 	if options.Name != "" {
@@ -102,6 +107,9 @@ func (b *Builder) AddPanel(panel ...*Panel) {
 		} else if item.textPanelBuilder != nil {
 			item.textPanelBuilder.Id(panelID)
 			b.dashboardBuilder.WithPanel(item.textPanelBuilder)
+		} else if item.businessVariablePanelBuilder != nil {
+			item.businessVariablePanelBuilder.Id(panelID)
+			b.dashboardBuilder.WithPanel(item.businessVariablePanelBuilder)
 		}
 		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
 			b.AddAlert(item.alertBuilders...)

@@ -13,6 +13,7 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/table"
 	"github.com/grafana/grafana-foundation-sdk/go/text"
 	"github.com/grafana/grafana-foundation-sdk/go/timeseries"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
 )
 
 type Query struct {
@@ -142,15 +143,16 @@ type PanelOptions struct {
 }
 
 type Panel struct {
-	statPanelBuilder       *stat.PanelBuilder
-	timeSeriesPanelBuilder *timeseries.PanelBuilder
-	gaugePanelBuilder      *gauge.PanelBuilder
-	barGaugePanelBuilder   *bargauge.PanelBuilder
-	tablePanelBuilder      *table.PanelBuilder
-	logPanelBuilder        *logs.PanelBuilder
-	heatmapBuilder         *heatmap.PanelBuilder
-	textPanelBuilder       *text.PanelBuilder
-	alertBuilders          []*alerting.RuleBuilder
+	statPanelBuilder             *stat.PanelBuilder
+	timeSeriesPanelBuilder       *timeseries.PanelBuilder
+	gaugePanelBuilder            *gauge.PanelBuilder
+	barGaugePanelBuilder         *bargauge.PanelBuilder
+	tablePanelBuilder            *table.PanelBuilder
+	logPanelBuilder              *logs.PanelBuilder
+	heatmapBuilder               *heatmap.PanelBuilder
+	textPanelBuilder             *text.PanelBuilder
+	businessVariablePanelBuilder *businessvariable.PanelBuilder
+	alertBuilders                []*alerting.RuleBuilder
 }
 
 // panel defaults
@@ -738,5 +740,35 @@ func NewTextPanel(options *TextPanelOptions) *Panel {
 
 	return &Panel{
 		textPanelBuilder: newPanel,
+	}
+}
+
+type BusinessVariablePanelOptions struct {
+	*PanelOptions
+	DisplayMode businessvariable.DisplayMode
+	Padding     *int
+	ShowLabel   bool
+	Variable    string
+}
+
+func NewBusinessVariablePanel(options *BusinessVariablePanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := businessvariable.NewPanelBuilder().
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		DisplayMode(options.DisplayMode).
+		ShowLabel(options.ShowLabel).
+		Variable(options.Variable)
+
+	if options.Padding != nil {
+		newPanel.Padding(*options.Padding)
+	}
+
+	return &Panel{
+		businessVariablePanelBuilder: newPanel,
 	}
 }

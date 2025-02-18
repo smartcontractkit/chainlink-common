@@ -80,7 +80,7 @@ func newThresholds(options *ThresholdOptions) *dashboard.ThresholdsConfigBuilder
 
 type TransformOptions struct {
 	ID      string
-	Options map[string]string
+	Options map[string]any
 }
 
 func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {

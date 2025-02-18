@@ -161,3 +161,14 @@ func NewDataSourceVariable(options *DataSourceVariableOptions) *dashboard.Dataso
 		Multi(options.Multi).
 		IncludeAll(options.IncludeAll)
 }
+
+type TextBoxVariableOptions struct {
+	*VariableOption
+}
+
+func NewTextBoxVariableOptions(options *TextBoxVariableOptions) *dashboard.TextBoxVariableBuilder {
+	return dashboard.NewTextBoxVariableBuilder(options.Name).
+		Label(options.Label).
+		Description(options.Description).
+		Hide(options.Hide)
+}

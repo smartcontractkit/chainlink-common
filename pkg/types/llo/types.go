@@ -48,6 +48,8 @@ const (
 	// ReportFormatEVMABIEncodeUnpacked supports encoding reports with a fixed
 	// schema followed by an arbitrary ABI-encoded payload
 	ReportFormatEVMABIEncodeUnpacked = 4
+	// ReportFormatProto is a generic protobuf encoding format
+	ReportFormatProto = 5
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -56,6 +58,8 @@ var ReportFormats = []ReportFormat{
 	ReportFormatEVMPremiumLegacy,
 	ReportFormatJSON,
 	ReportFormatRetirement,
+	ReportFormatEVMABIEncodeUnpacked,
+	ReportFormatProto,
 }
 
 func (rf ReportFormat) String() string {
@@ -68,6 +72,8 @@ func (rf ReportFormat) String() string {
 		return "retirement"
 	case ReportFormatEVMABIEncodeUnpacked:
 		return "evm_abi_encode_unpacked"
+	case ReportFormatProto:
+		return "proto"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -83,6 +89,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatRetirement, nil
 	case "evm_abi_encode_unpacked":
 		return ReportFormatEVMABIEncodeUnpacked, nil
+	case "proto":
+		return ReportFormatProto, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}

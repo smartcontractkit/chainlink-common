@@ -86,7 +86,6 @@ type QueryVariableOptions struct {
 	Regex         string
 	IncludeAll    bool
 	QueryWithType map[string]any
-	Hide          *dashboard.VariableHide
 }
 
 func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBuilder {
@@ -98,6 +97,7 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 	variable := dashboard.NewQueryVariableBuilder(options.Name).
 		Label(options.Label).
 		Description(options.Description).
+		Hide(options.Hide).
 		Datasource(datasourceRef(options.Datasource)).
 		Current(dashboard.VariableOption{
 			Selected: cog.ToPtr[bool](true),
@@ -105,7 +105,8 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentValue}},
 		}).
 		Sort(dashboard.VariableSortAlphabeticalAsc).
-		Multi(options.Multi)
+		Multi(options.Multi).
+		IncludeAll(options.IncludeAll)
 
 	if options.Query != "" {
 		variable.Query(dashboard.StringOrMap{String: cog.ToPtr[string](options.Query)})
@@ -115,14 +116,6 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 
 	if options.Regex != "" {
 		variable.Regex(options.Regex)
-	}
-
-	if options.IncludeAll {
-		variable.IncludeAll(options.IncludeAll)
-	}
-
-	if options.Hide != nil {
-		variable.Hide(*options.Hide)
 	}
 
 	return variable
@@ -148,4 +141,34 @@ func NewIntervalVariable(options *IntervalVariableOptions) *dashboard.IntervalVa
 			Text:     dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentText}},
 			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentValue}},
 		})
+}
+
+type DataSourceVariableOptions struct {
+	*VariableOption
+	Type       string
+	Regex      string
+	Multi      bool
+	IncludeAll bool
+}
+
+func NewDataSourceVariable(options *DataSourceVariableOptions) *dashboard.DatasourceVariableBuilder {
+	return dashboard.NewDatasourceVariableBuilder(options.Name).
+		Label(options.Label).
+		Description(options.Description).
+		Hide(options.Hide).
+		Type(options.Type).
+		Regex(options.Regex).
+		Multi(options.Multi).
+		IncludeAll(options.IncludeAll)
+}
+
+type TextBoxVariableOptions struct {
+	*VariableOption
+}
+
+func NewTextBoxVariableOptions(options *TextBoxVariableOptions) *dashboard.TextBoxVariableBuilder {
+	return dashboard.NewTextBoxVariableBuilder(options.Name).
+		Label(options.Label).
+		Description(options.Description).
+		Hide(options.Hide)
 }

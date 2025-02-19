@@ -215,7 +215,24 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 	}
 	responseCh, err := t.impl.RegisterTrigger(server.Context(), req)
 	if err != nil {
-		return fmt.Errorf("error registering trigger: %w", err)
+		// the first message sent to the client will be an ack or error message, this is done in order to syncronize the client and server and avoid
+		// errors to unregister not found triggers. If the error is not nil, we send an error message to the client and return the error
+		msg := &capabilitiespb.TriggerResponseMessage{
+			Message: &capabilitiespb.TriggerResponseMessage_Response{
+				Response: &capabilitiespb.TriggerResponse{
+					Error: err.Error(),
+				},
+			},
+		}
+		return server.Send(msg)
+	}
+
+	// Send ACK response to client
+	msg := &capabilitiespb.TriggerResponseMessage{
+		Message: &capabilitiespb.TriggerResponseMessage_Ack{},
+	}
+	if err = server.Send(msg); err != nil {
+		return fmt.Errorf("failed sending ACK response for trigger registration %s: %w", request, err)
 	}
 
 	defer func() {
@@ -268,6 +285,17 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
 	if err != nil {
 		return nil, fmt.Errorf("error registering trigger: %w", err)
+	}
+
+	// In order to ensure the registration is successful, we need to wait for the first message from the server.
+	// This will be an ack or error message. If the error is not nil, we return an error.
+	ackMsg, err := responseStream.Recv()
+	if err != nil {
+		return nil, fmt.Errorf("failed to receive registering trigger ack message: %w", err)
+	}
+
+	if ackMsg.GetAck() == nil {
+		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
 	return forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)

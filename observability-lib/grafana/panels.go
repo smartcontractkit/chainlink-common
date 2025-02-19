@@ -3,6 +3,7 @@ package grafana
 import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
+	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
@@ -16,12 +17,19 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
 )
 
+type QueryType string
+
+const (
+	QueryTypeInstant QueryType = "instant"
+)
+
 type Query struct {
-	Expr    string
-	Legend  string
-	Instant bool
-	Min     float64
-	Format  prometheus.PromQueryFormat
+	Expr      string
+	Legend    string
+	Instant   bool
+	Min       float64
+	Format    prometheus.PromQueryFormat
+	QueryType QueryType
 }
 
 func newQuery(query Query) *prometheus.DataqueryBuilder {
@@ -32,6 +40,9 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 
 	if query.Instant {
 		res.Instant()
+	}
+	if query.QueryType != "" {
+		res.QueryType(string(query.QueryType))
 	}
 
 	return res
@@ -567,8 +578,29 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 	}
 }
 
+type SortByOptions struct {
+	DisplayName string
+	Desc        *bool
+}
+
+type FooterReducer string
+
+const (
+	FooterReducerSum FooterReducer = "sum"
+)
+
+type FooterOptions struct {
+	Show             bool
+	Reducer          FooterReducer
+	Fields           []string
+	EnablePagination bool
+}
+
 type TablePanelOptions struct {
 	*PanelOptions
+	Filterable bool
+	Footer     *FooterOptions
+	SortBy     []*SortByOptions
 }
 
 func NewTablePanel(options *TablePanelOptions) *Panel {
@@ -582,7 +614,8 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		Span(options.Span).
 		Height(options.Height).
 		Unit(options.Unit).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		Filterable(options.Filterable)
 
 	if options.Interval != "" {
 		newPanel.Interval(options.Interval)
@@ -626,6 +659,35 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 
 	if options.ColorScheme != "" {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
+	if options.Footer != nil {
+		footer := common.NewTableFooterOptionsBuilder().
+			Show(options.Footer.Show).
+			EnablePagination(options.Footer.EnablePagination)
+
+		if options.Footer.Reducer != "" && options.Footer.Fields != nil {
+			footer.
+				Reducer([]string{string(options.Footer.Reducer)}).
+				Fields(options.Footer.Fields)
+		}
+
+		newPanel.Footer(footer)
+	}
+
+	if options.SortBy != nil {
+		var sortBy []cog.Builder[common.TableSortByFieldState]
+		for _, sb := range options.SortBy {
+			tableSortBy := common.NewTableSortByFieldStateBuilder().
+				DisplayName(sb.DisplayName)
+
+			if sb.Desc != nil {
+				tableSortBy.Desc(*sb.Desc)
+			}
+
+			sortBy = append(sortBy, tableSortBy)
+		}
+		newPanel.SortBy(sortBy)
 	}
 
 	return &Panel{

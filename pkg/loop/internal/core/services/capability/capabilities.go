@@ -227,14 +227,12 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 		if err = server.Send(msg); err != nil {
 			return fmt.Errorf("failed sending error response for trigger registration %s: %w", request, err)
 		}
-		return fmt.Errorf("error registering trigger: %w", err)
+		return nil
 	}
 
 	// Send ACK response to client
 	msg := &capabilitiespb.TriggerResponseMessage{
-		Message: &capabilitiespb.TriggerResponseMessage_Response{
-			Response: &capabilitiespb.TriggerResponse{},
-		},
+		Message: &capabilitiespb.TriggerResponseMessage_Ack{},
 	}
 	if err = server.Send(msg); err != nil {
 		return fmt.Errorf("failed sending ACK response for trigger registration %s: %w", request, err)
@@ -299,7 +297,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 		return nil, fmt.Errorf("failed to receive registering trigger ack message: %w", err)
 	}
 
-	if ackMsg.GetResponse().GetError() != "" {
+	if ackMsg.GetAck() == nil {
 		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 

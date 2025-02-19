@@ -224,10 +224,7 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 				},
 			},
 		}
-		if err = server.Send(msg); err != nil {
-			return fmt.Errorf("failed sending error response for trigger registration %s: %w", request, err)
-		}
-		return nil
+		return server.Send(msg)
 	}
 
 	// Send ACK response to client

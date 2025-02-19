@@ -86,6 +86,25 @@ func newTransform(transform *Transform) dashboard.DataTransformerConfig {
 	}
 }
 
+func newOverride(override *Override) (matcher dashboard.MatcherConfig, properties []dashboard.DynamicConfigValue) {
+	matcher = dashboard.MatcherConfig{
+		Id:      override.Matcher.ID,
+		Options: override.Matcher.Options,
+	}
+
+	for _, property := range override.Properties {
+		properties = append(
+			properties,
+			dashboard.DynamicConfigValue{
+				Id:    property.ID,
+				Value: property.Value,
+			},
+		)
+	}
+
+	return
+}
+
 type ToolTipOptions struct {
 	Mode      common.TooltipDisplayMode
 	Sort      common.SortOrder
@@ -133,6 +152,7 @@ type PanelOptions struct {
 	Query         []Query
 	Threshold     *ThresholdOptions
 	Transforms    []*Transform
+	Overrides     []*Override
 	ColorScheme   dashboard.FieldColorModeId
 	Interval      string
 }
@@ -264,6 +284,12 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		}
 	}
 
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
 	if options.ColorScheme != "" {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
@@ -372,6 +398,12 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		}
 	}
 
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
 	if options.ColorScheme != "" {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
@@ -455,6 +487,12 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 		}
 	}
 
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
 	if options.Orientation != "" {
 		newPanel.Orientation(options.Orientation)
 	}
@@ -518,6 +556,12 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		}
 	}
 
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
 	return &Panel{
 		gaugePanelBuilder: newPanel,
 	}
@@ -571,6 +615,12 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 	if options.Transforms != nil {
 		for _, transform := range options.Transforms {
 			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
 		}
 	}
 
@@ -655,6 +705,12 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		}
 	}
 
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
 	if options.ColorScheme != "" {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
@@ -709,6 +765,12 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 	if options.Transforms != nil {
 		for _, transform := range options.Transforms {
 			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
 		}
 	}
 

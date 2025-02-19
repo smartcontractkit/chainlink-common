@@ -536,7 +536,16 @@ type SortByOptions struct {
 	Desc        *bool
 }
 
+type FooterReducer string
+
+const (
+	FooterReducerSum FooterReducer = "sum"
+)
+
 type FooterOptions struct {
+	Show             bool
+	Reducer          FooterReducer
+	Fields           []string
 	EnablePagination bool
 }
 
@@ -598,10 +607,17 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 	}
 
 	if options.Footer != nil {
-		newPanel.Footer(
-			common.NewTableFooterOptionsBuilder().
-				EnablePagination(options.Footer.EnablePagination),
-		)
+		footer := common.NewTableFooterOptionsBuilder().
+			Show(options.Footer.Show).
+			EnablePagination(options.Footer.EnablePagination)
+
+		if options.Footer.Reducer != "" && options.Footer.Fields != nil {
+			footer.
+				Reducer([]string{string(options.Footer.Reducer)}).
+				Fields(options.Footer.Fields)
+		}
+
+		newPanel.Footer(footer)
 	}
 
 	if options.SortBy != nil {

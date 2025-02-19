@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 
@@ -64,6 +65,41 @@ func NewPathTraverseAddressBytesToStringModifier(
 	}
 
 	return m
+}
+
+func NewConstrainedLengthBytesToStringModifier(
+	fields []string,
+	maxLen int,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, &constrainedLengthBytesToStringModifier{maxLen: maxLen}, false)
+}
+
+func NewPathTraverseConstrainedLengthBytesToStringModifier(
+	fields []string,
+	maxLen int,
+	enablePathTraverse bool,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, &constrainedLengthBytesToStringModifier{maxLen: maxLen}, enablePathTraverse)
+}
+
+type constrainedLengthBytesToStringModifier struct {
+	maxLen int
+}
+
+func (m constrainedLengthBytesToStringModifier) EncodeAddress(bts []byte) (string, error) {
+	return string(bytes.Trim(bts, "\x00")), nil
+}
+
+func (m constrainedLengthBytesToStringModifier) DecodeAddress(str string) ([]byte, error) {
+	output := make([]byte, m.maxLen)
+
+	copy(output, []byte(str)[:])
+
+	return output, nil
+}
+
+func (m constrainedLengthBytesToStringModifier) Length() int {
+	return m.maxLen
 }
 
 type bytesToStringModifier struct {

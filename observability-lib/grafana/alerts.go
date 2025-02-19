@@ -9,6 +9,12 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 )
 
+type RuleQueryType string
+
+const (
+	RuleQueryTypeInstant RuleQueryType = "instant"
+)
+
 type RuleQuery struct {
 	Expr         string
 	RefID        string
@@ -16,6 +22,7 @@ type RuleQuery struct {
 	LegendFormat string
 	TimeRange    int64
 	Instant      bool
+	QueryType    RuleQueryType
 }
 
 func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
@@ -37,8 +44,11 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 		RefId(query.RefID)
 
 	if query.Instant {
-		model.QueryType("instant")
 		model.Instant()
+	}
+
+	if query.QueryType != "" {
+		model.QueryType(string(query.QueryType))
 	}
 
 	return res.Model(model)

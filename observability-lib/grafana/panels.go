@@ -3,6 +3,7 @@ package grafana
 import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
+	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
@@ -16,12 +17,19 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
 )
 
+type QueryType string
+
+const (
+	QueryTypeInstant QueryType = "instant"
+)
+
 type Query struct {
-	Expr    string
-	Legend  string
-	Instant bool
-	Min     float64
-	Format  prometheus.PromQueryFormat
+	Expr      string
+	Legend    string
+	Instant   bool
+	Min       float64
+	Format    prometheus.PromQueryFormat
+	QueryType QueryType
 }
 
 func newQuery(query Query) *prometheus.DataqueryBuilder {
@@ -32,6 +40,9 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 
 	if query.Instant {
 		res.Instant()
+	}
+	if query.QueryType != "" {
+		res.QueryType(string(query.QueryType))
 	}
 
 	return res
@@ -79,16 +90,30 @@ func newThresholds(options *ThresholdOptions) *dashboard.ThresholdsConfigBuilder
 	return builder
 }
 
-type TransformOptions struct {
-	ID      string
-	Options map[string]any
+func newTransform(transform *Transform) dashboard.DataTransformerConfig {
+	return dashboard.DataTransformerConfig{
+		Id:      transform.ID,
+		Options: transform.Options,
+	}
 }
 
-func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
-	return dashboard.DataTransformerConfig{
-		Id:      options.ID,
-		Options: options.Options,
+func newOverride(override *Override) (matcher dashboard.MatcherConfig, properties []dashboard.DynamicConfigValue) {
+	matcher = dashboard.MatcherConfig{
+		Id:      override.Matcher.ID,
+		Options: override.Matcher.Options,
 	}
+
+	for _, property := range override.Properties {
+		properties = append(
+			properties,
+			dashboard.DynamicConfigValue{
+				Id:    property.ID,
+				Value: property.Value,
+			},
+		)
+	}
+
+	return
 }
 
 type ToolTipOptions struct {
@@ -137,7 +162,8 @@ type PanelOptions struct {
 	MaxDataPoints *float64
 	Query         []Query
 	Threshold     *ThresholdOptions
-	Transform     *TransformOptions
+	Transforms    []*Transform
+	Overrides     []*Override
 	ColorScheme   dashboard.FieldColorModeId
 	Interval      string
 }
@@ -263,8 +289,16 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	if options.ColorScheme != "" {
@@ -369,8 +403,16 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		newPanel.DrawStyle(options.DrawStyle)
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	if options.ColorScheme != "" {
@@ -450,8 +492,16 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	if options.Orientation != "" {
@@ -511,8 +561,16 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	return &Panel{
@@ -520,8 +578,29 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 	}
 }
 
+type SortByOptions struct {
+	DisplayName string
+	Desc        *bool
+}
+
+type FooterReducer string
+
+const (
+	FooterReducerSum FooterReducer = "sum"
+)
+
+type FooterOptions struct {
+	Show             bool
+	Reducer          FooterReducer
+	Fields           []string
+	EnablePagination bool
+}
+
 type TablePanelOptions struct {
 	*PanelOptions
+	Filterable bool
+	Footer     *FooterOptions
+	SortBy     []*SortByOptions
 }
 
 func NewTablePanel(options *TablePanelOptions) *Panel {
@@ -535,7 +614,8 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		Span(options.Span).
 		Height(options.Height).
 		Unit(options.Unit).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		Filterable(options.Filterable)
 
 	if options.Interval != "" {
 		newPanel.Interval(options.Interval)
@@ -565,12 +645,49 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	if options.ColorScheme != "" {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
+	if options.Footer != nil {
+		footer := common.NewTableFooterOptionsBuilder().
+			Show(options.Footer.Show).
+			EnablePagination(options.Footer.EnablePagination)
+
+		if options.Footer.Reducer != "" && options.Footer.Fields != nil {
+			footer.
+				Reducer([]string{string(options.Footer.Reducer)}).
+				Fields(options.Footer.Fields)
+		}
+
+		newPanel.Footer(footer)
+	}
+
+	if options.SortBy != nil {
+		var sortBy []cog.Builder[common.TableSortByFieldState]
+		for _, sb := range options.SortBy {
+			tableSortBy := common.NewTableSortByFieldStateBuilder().
+				DisplayName(sb.DisplayName)
+
+			if sb.Desc != nil {
+				tableSortBy.Desc(*sb.Desc)
+			}
+
+			sortBy = append(sortBy, tableSortBy)
+		}
+		newPanel.SortBy(sortBy)
 	}
 
 	return &Panel{
@@ -644,8 +761,16 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	if options.ColorScheme != "" {
@@ -699,8 +824,16 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
 	}
 
 	if options.ColorScheme != "" {

@@ -2,6 +2,7 @@ package median
 
 import (
 	"context"
+	"errors"
 
 	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
@@ -34,7 +35,10 @@ func NewPluginMedianClient(brokerCfg net.BrokerConfig) *PluginMedianClient {
 	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog, opts ...core.PluginMedianOption) (types.ReportingPluginFactory, error) {
+	if len(opts) > 0 {
+		return nil, errors.New("options not supported in LOOP mode")
+	}
 	cc := m.NewClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		dataSourceID, dsRes, err := m.ServeNew("DataSource", func(s *grpc.Server) {
 			pb.RegisterDataSourceServer(s, newDataSourceServer(dataSource))

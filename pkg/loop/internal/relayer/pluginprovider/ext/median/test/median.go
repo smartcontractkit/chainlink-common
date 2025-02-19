@@ -116,7 +116,10 @@ func (s staticMedianFactoryServer) HealthReport() map[string]error {
 	return hp
 }
 
-func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog, opts ...core.PluginMedianOption) (types.ReportingPluginFactory, error) {
+	if len(opts) > 0 {
+		return nil, errors.New("options not supported in LOOP mode")
+	}
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values

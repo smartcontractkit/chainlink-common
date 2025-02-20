@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"io"
 	"fmt"
+	"io"
 	"reflect"
 	"testing"
 
@@ -262,4 +262,12 @@ func Criticalf(l Logger, format string, values ...interface{}) {
 func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalw(msg, keysAndValues...)
+}
+
+// Convert Logger to a zap.SugaredLogger for use in the opentelemetry collector component settings.
+func (l *logger) ToZapLogger(lggr Logger) *zap.Logger {
+	if l == nil || l.SugaredLogger == nil {
+		return nil
+	}
+	return l.SugaredLogger.Desugar()
 }

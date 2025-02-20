@@ -115,12 +115,16 @@ func (littleBigInt) serializeUnsigned(size int, i *big.Int) ([]byte, error) {
 }
 
 func (littleBigInt) deserializeSigned(size int, b []byte) *big.Int {
-	slices.Reverse(b)
-	bi, _ := bigbigendian.DeserializeSigned(size, b)
+	r := make([]byte, len(b))
+	copy(r, b)
+	slices.Reverse(r)
+	bi, _ := bigbigendian.DeserializeSigned(size, r)
 	return bi
 }
 
 func (littleBigInt) deserializeUnsigned(_ int, b []byte) *big.Int {
-	slices.Reverse(b)
-	return new(big.Int).SetBytes(b)
+	r := make([]byte, len(b))
+	copy(r, b)
+	slices.Reverse(r)
+	return new(big.Int).SetBytes(r)
 }

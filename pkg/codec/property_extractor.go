@@ -14,19 +14,25 @@ import (
 // This modifier is lossy, as TransformToOffchain will discard unwanted struct properties and
 // return a single element. Calling TransformToOnchain will result in unset properties.
 func NewPropertyExtractor(fieldName string) Modifier {
-	m := &propertyExtractor{
-		onToOffChainType: map[reflect.Type]reflect.Type{},
-		offToOnChainType: map[reflect.Type]reflect.Type{},
-		fieldName:        fieldName,
-	}
+	return NewPathTraversePropertyExtractor(fieldName, false)
+}
 
-	return m
+func NewPathTraversePropertyExtractor(fieldName string, enablePathTraverse bool) Modifier {
+	return &propertyExtractor{
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
+		fieldName:          fieldName,
+		enablePathTraverse: enablePathTraverse,
+	}
 }
 
 type propertyExtractor struct {
-	onToOffChainType map[reflect.Type]reflect.Type
-	offToOnChainType map[reflect.Type]reflect.Type
-	fieldName        string
+	fieldName          string
+	enablePathTraverse bool
+	onToOffChainType   map[reflect.Type]reflect.Type
+	offToOnChainType   map[reflect.Type]reflect.Type
+	onChainStructType  reflect.Type
+	offChainStructType reflect.Type
 }
 
 func (e *propertyExtractor) RetypeToOffChain(onChainType reflect.Type, itemType string) (reflect.Type, error) {
@@ -34,57 +40,142 @@ func (e *propertyExtractor) RetypeToOffChain(onChainType reflect.Type, itemType 
 		return nil, fmt.Errorf("%w: field name required for extraction", types.ErrInvalidConfig)
 	}
 
-	if cached, ok := e.onToOffChainType[onChainType]; ok {
+	// path traverse allows an item type of Struct.FieldA.NestedField to isolate modifiers
+	// associated with the nested field `NestedField`.
+	if !e.enablePathTraverse {
+		itemType = ""
+	}
+
+	// if itemType is empty, store the type mappings
+	// if itemType is not empty, assume a sub-field property is expected to be extracted
+	onChainStructType := onChainType
+	if itemType != "" {
+		onChainStructType = e.onChainStructType
+	}
+
+	if cached, ok := e.onToOffChainType[onChainStructType]; ok {
 		return cached, nil
 	}
 
+	var (
+		offChainType reflect.Type
+		err          error
+	)
+
 	switch onChainType.Kind() {
 	case reflect.Pointer:
-		elm, err := e.RetypeToOffChain(onChainType.Elem(), "")
-		if err != nil {
+		var elm reflect.Type
+
+		if elm, err = e.RetypeToOffChain(onChainStructType.Elem(), ""); err != nil {
 			return nil, err
 		}
 
-		ptr := reflect.PointerTo(elm)
-		e.onToOffChainType[onChainType] = ptr
-		e.offToOnChainType[ptr] = onChainType
-
-		return ptr, nil
+		offChainType = reflect.PointerTo(elm)
 	case reflect.Slice:
-		elm, err := e.RetypeToOffChain(onChainType.Elem(), "")
-		if err != nil {
+		var elm reflect.Type
+
+		if elm, err = e.RetypeToOffChain(onChainStructType.Elem(), ""); err != nil {
 			return nil, err
 		}
 
-		sliceType := reflect.SliceOf(elm)
-		e.onToOffChainType[onChainType] = sliceType
-		e.offToOnChainType[sliceType] = onChainType
-
-		return sliceType, nil
+		offChainType = reflect.SliceOf(elm)
 	case reflect.Array:
-		elm, err := e.RetypeToOffChain(onChainType.Elem(), "")
-		if err != nil {
+		var elm reflect.Type
+
+		if elm, err = e.RetypeToOffChain(onChainStructType.Elem(), ""); err != nil {
 			return nil, err
 		}
 
-		arrayType := reflect.ArrayOf(onChainType.Len(), elm)
-		e.onToOffChainType[onChainType] = arrayType
-		e.offToOnChainType[arrayType] = onChainType
-
-		return arrayType, nil
+		offChainType = reflect.ArrayOf(onChainStructType.Len(), elm)
 	case reflect.Struct:
-		return e.getPropTypeFromStruct(onChainType)
+		if offChainType, err = e.getPropTypeFromStruct(onChainStructType); err != nil {
+			return nil, err
+		}
 	default:
+		// if the types don't match, it means we are attempting to traverse the main struct
+		if onChainType != e.onChainStructType {
+			return onChainType, nil
+		}
+
 		return nil, fmt.Errorf("%w: cannot retype the kind %v", types.ErrInvalidType, onChainType.Kind())
 	}
+
+	e.onToOffChainType[onChainStructType] = offChainType
+	e.offToOnChainType[offChainType] = onChainStructType
+
+	if e.onChainStructType == nil {
+		e.onChainStructType = onChainType
+		e.offChainStructType = offChainType
+	}
+
+	return typeForPath(offChainType, itemType)
 }
 
-func (e *propertyExtractor) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	return extractOrExpandWithMaps(offChainValue, e.offToOnChainType, e.fieldName, expandWithMapsHelper)
+func (e *propertyExtractor) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	offChainValue, itemType, err := e.selectType(offChainValue, e.offChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := extractOrExpandWithMaps(offChainValue, e.offToOnChainType, e.fieldName, expandWithMapsHelper)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		// add the field name because the offChainType was nested into a new struct
+		itemType = fmt.Sprintf("%s.%s", e.fieldName, itemType)
+
+		return valueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
-func (e *propertyExtractor) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	return extractOrExpandWithMaps(onChainValue, e.onToOffChainType, e.fieldName, extractWithMapsHelper)
+func (e *propertyExtractor) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	onChainValue, itemType, err := e.selectType(onChainValue, e.onChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := extractOrExpandWithMaps(onChainValue, e.onToOffChainType, e.fieldName, extractWithMapsHelper)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		// remove the head from the itemType because a field was extracted
+		_, tail := ItemTyper(itemType).Next()
+
+		return valueForPath(reflect.ValueOf(modified), tail)
+	}
+
+	return modified, nil
+}
+
+func (e *propertyExtractor) selectType(inputValue any, savedType reflect.Type, itemType string) (any, string, error) {
+	// set itemType to an ignore value if path traversal is not enabled
+	if !e.enablePathTraverse {
+		return inputValue, "", nil
+	}
+
+	// the offChainValue might be a subfield value; get the true offChainStruct type already stored and set the value
+	baseStructValue := inputValue
+
+	// path traversal is expected, but offChainValue is the value of a field, not the actual struct
+	// create a new struct from the stored offChainStruct with the provided value applied and all other fields set to
+	// their zero value.
+	if itemType != "" {
+		into := reflect.New(savedType)
+
+		if err := applyValueForPath(into, reflect.ValueOf(inputValue), itemType); err != nil {
+			return nil, itemType, err
+		}
+
+		baseStructValue = reflect.Indirect(into).Interface()
+	}
+
+	return baseStructValue, itemType, nil
 }
 
 func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (reflect.Type, error) {
@@ -109,9 +200,6 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 	if !ok {
 		return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
 	}
-
-	e.onToOffChainType[onChainType] = field.Type
-	e.offToOnChainType[field.Type] = onChainType
 
 	return field.Type, nil
 }
@@ -186,9 +274,18 @@ func extractWithMapsHelper(rItem reflect.Value, toType reflect.Type, field strin
 	case reflect.Pointer:
 		elm := rItem.Elem()
 		if elm.Kind() == reflect.Struct {
-			tmp, err := extractElement(rItem.Interface(), field)
+			var (
+				tmp reflect.Value
+				err error
+			)
+
+			if tmp, err = extractElement(rItem.Interface(), field); err != nil {
+				return rItem, err
+			}
+
 			result := reflect.New(toType.Elem())
 			err = mapstructure.Decode(tmp.Interface(), result.Interface())
+
 			return result, err
 		}
 

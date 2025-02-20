@@ -337,11 +337,12 @@ func (e *EpochToTimeModifierConfig) MarshalJSON() ([]byte, error) {
 }
 
 type PropertyExtractorConfig struct {
-	FieldName string
+	FieldName          string
+	EnablePathTraverse bool
 }
 
 func (c *PropertyExtractorConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
-	return NewPropertyExtractor(upperFirstCharacter(c.FieldName)), nil
+	return NewPathTraversePropertyExtractor(upperFirstCharacter(c.FieldName), c.EnablePathTraverse), nil
 }
 
 func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {

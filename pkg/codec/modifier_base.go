@@ -422,6 +422,19 @@ func valueForPath(from reflect.Value, itemType string) (any, error) {
 		}
 
 		return valueForPath(field, tail)
+	case reflect.Map:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := from.MapIndex(reflect.ValueOf(head))
+		if !field.IsValid() {
+			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
+		}
+
+		if tail == "" {
+			return field.Interface(), nil
+		}
+
+		return valueForPath(reflect.ValueOf(field.Interface()), tail)
 	default:
 		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
 	}

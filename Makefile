@@ -14,8 +14,8 @@ docs:
 
 .PHONY: install-protoc
 install-protoc:
-	script/install-protoc.sh 25.1 /
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0 
+	script/install-protoc.sh 29.3 /
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5 
 
 .PHONY: mockery
 mockery: $(mockery) ## Install mockery.

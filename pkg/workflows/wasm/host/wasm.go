@@ -9,12 +9,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
-	m, err := NewModule(modCfg, binary, WithDeterminism())
+func GetWorkflowSpec(ctx context.Context, lggr logger.Logger, modCfg *ModuleConfig, workflowID string, wasmStore WasmBinaryStore, config []byte) (*sdk.WorkflowSpec, error) {
+	m, err := NewModule(ctx, lggr, modCfg, workflowID, wasmStore, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
 	}
@@ -42,4 +43,30 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 	m.Close()
 
 	return wasmpb.ProtoToWorkflowSpec(sr)
+}
+
+func NewSingleBinaryWasmBinaryStore(binary []byte) WasmBinaryStore {
+	// Create a mock implementation of the wasmBinaryStore interface
+	binaryStore := &SingleBinaryWasmBinaryStore{
+		binary: binary,
+	}
+	return binaryStore
+}
+
+// SingleBinaryWasmBinaryStore is a mock implementation of the wasmBinaryStore interface
+type SingleBinaryWasmBinaryStore struct {
+	binary []byte
+}
+
+func (m *SingleBinaryWasmBinaryStore) GetSerialisedModulePath(workflowID string) (string, bool, error) {
+	return "", false, nil
+}
+
+func (m *SingleBinaryWasmBinaryStore) StoreSerialisedModule(workflowID string, binaryID string, module []byte) error {
+	//noop
+	return nil
+}
+
+func (m *SingleBinaryWasmBinaryStore) GetWasmBinary(ctx context.Context, workflowID string) ([]byte, error) {
+	return m.binary, nil
 }

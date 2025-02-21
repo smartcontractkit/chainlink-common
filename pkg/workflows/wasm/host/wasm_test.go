@@ -93,11 +93,12 @@ func Test_GetWorkflowSpec(t *testing.T) {
 
 	_, err := GetWorkflowSpec(
 		ctx,
+		logger.Test(t),
 		&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		binary,
+		"", NewSingleBinaryWasmBinaryStore(binary),
 		[]byte(""),
 	)
 	require.NoError(t, err)
@@ -110,11 +111,12 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 
 	_, err := GetWorkflowSpec(
 		ctx,
+		logger.Test(t),
 		&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: false,
 		},
-		binary,
+		"", NewSingleBinaryWasmBinaryStore(binary),
 		[]byte(""),
 	)
 	require.NoError(t, err)
@@ -126,11 +128,12 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 
 	_, err := GetWorkflowSpec(
 		ctx,
+		logger.Test(t),
 		&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		failBinary,
+		"", NewSingleBinaryWasmBinaryStore(failBinary),
 		[]byte(""),
 	)
 	// panic
@@ -145,12 +148,13 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	d := time.Duration(0)
 	_, err := GetWorkflowSpec(
 		ctx,
+		logger.Test(t),
 		&ModuleConfig{
 			Timeout:        &d,
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		binary, // use the success binary with a zero timeout
+		"", NewSingleBinaryWasmBinaryStore(binary), // use the success binary with a zero timeout
 		[]byte(""),
 	)
 	// panic
@@ -164,11 +168,12 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 
 	_, err := GetWorkflowSpec(
 		ctx,
+		logger.Test(t),
 		&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		},
-		binary,
+		"", NewSingleBinaryWasmBinaryStore(binary),
 		[]byte(""),
 	)
 	assert.ErrorContains(t, err, "oops")
@@ -180,13 +185,13 @@ func Test_Compute_Logs(t *testing.T) {
 	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
 
 	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-	m, err := NewModule(&ModuleConfig{
+	m, err := NewModule(ctx, logger, &ModuleConfig{
 		Logger:         logger,
 		IsUncompressed: true,
 		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 			return nil, nil
 		},
-	}, binary)
+	}, "wf1", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -208,8 +213,21 @@ func Test_Compute_Logs(t *testing.T) {
 	_, err = m.Run(ctx, req)
 	assert.Nil(t, err)
 
-	require.Len(t, logs.AllUntimed(), 2)
+	require.Len(t, logs.AllUntimed(), 4)
 	expectedEntries := []Entry{
+		{
+			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "loading module from binary"},
+			Fields: []zapcore.Field{
+				zap.String("workflowID", "wf1"),
+			},
+		},
+		{
+			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "finished loading module from binary"},
+			Fields: []zapcore.Field{
+				zap.String("workflowID", "wf1"),
+			},
+		},
+
 		{
 			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
 			Fields: []zapcore.Field{
@@ -266,7 +284,7 @@ func Test_Compute_Emit(t *testing.T) {
 		ctx := tests.Context(t)
 		ctxValue := "test-value"
 		ctx = context.WithValue(ctx, ctxKey, ctxValue)
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -284,7 +302,7 @@ func Test_Compute_Emit(t *testing.T) {
 				assert.Equal(t, "workflow-execution-id", kvs["workflow_execution_id"])
 				return nil
 			}),
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -295,8 +313,9 @@ func Test_Compute_Emit(t *testing.T) {
 
 	t.Run("failure on emit writes to error chain and logs", func(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
+		ctx := tests.Context(t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -312,12 +331,11 @@ func Test_Compute_Emit(t *testing.T) {
 
 				return assert.AnError
 			}),
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
 
-		ctx := tests.Context(t)
 		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, assert.AnError.Error())
@@ -337,15 +355,16 @@ func Test_Compute_Emit(t *testing.T) {
 
 	t.Run("failure on emit due to missing workflow identifying metadata", func(t *testing.T) {
 		lggr := logger.Test(t)
+		ctx := tests.Context(t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
 			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, labels map[string]string) error {
 				return nil
 			}), // never called
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -365,7 +384,6 @@ func Test_Compute_Emit(t *testing.T) {
 			},
 		}
 
-		ctx := tests.Context(t)
 		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "failed to create emission")
@@ -377,10 +395,10 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 	binary := createTestBinary(computePanicBinaryCmd, computePanicBinaryLocation, true, t)
 
 	ctx := tests.Context(t)
-	m, err := NewModule(&ModuleConfig{
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
-	}, binary)
+	}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -417,7 +435,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -427,7 +445,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -468,7 +486,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -478,7 +496,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -517,13 +535,13 @@ func Test_Compute_Fetch(t *testing.T) {
 		ctx := tests.Context(t)
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger, &ModuleConfig{
 			Logger:         logger,
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
 				return nil, assert.AnError
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -545,9 +563,21 @@ func Test_Compute_Fetch(t *testing.T) {
 		_, err = m.Run(ctx, req)
 		assert.NotNil(t, err)
 		assert.ErrorContains(t, err, assert.AnError.Error())
-		require.Len(t, logs.AllUntimed(), 1)
+		require.Len(t, logs.AllUntimed(), 3)
 
 		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "loading module from binary"},
+				Fields: []zapcore.Field{
+					zap.String("workflowID", "wf1"),
+				},
+			},
+			{
+				Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "finished loading module from binary"},
+				Fields: []zapcore.Field{
+					zap.String("workflowID", "wf1"),
+				},
+			},
 			{
 				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error calling fetch: %s", assert.AnError)},
 			},
@@ -560,6 +590,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_context_propagation", func(t *testing.T) {
 		t.Parallel()
+		ctx := tests.Context(t)
 		type testkey string
 		var key testkey = "test-key"
 		var expectedValue string = "test-value"
@@ -571,7 +602,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -581,7 +612,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -604,7 +635,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 
-		ctx := context.WithValue(tests.Context(t), key, expectedValue)
+		ctx = context.WithValue(tests.Context(t), key, expectedValue)
 		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
@@ -619,7 +650,8 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_context_cancelation", func(t *testing.T) {
 		t.Parallel()
-		m, err := NewModule(&ModuleConfig{
+		ctx := tests.Context(t)
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -630,7 +662,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					return &wasmpb.FetchResponse{}, nil
 				}
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -671,7 +703,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -682,7 +714,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 1,
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -716,7 +748,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -726,7 +758,7 @@ func Test_Compute_Fetch(t *testing.T) {
 					StatusCode:     uint32(expected.StatusCode),
 				}, nil
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -760,7 +792,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -771,7 +803,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 6,
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -805,7 +837,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			Headers:        map[string]any{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -816,7 +848,7 @@ func Test_Compute_Fetch(t *testing.T) {
 				}, nil
 			},
 			MaxFetchRequests: 6,
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -850,7 +882,7 @@ func TestModule_Errors(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	_, err = m.Run(ctx, nil)
@@ -897,7 +929,7 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -912,11 +944,12 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 
 func TestModule_CompressedBinarySize(t *testing.T) {
 	t.Parallel()
+	ctx := tests.Context(t)
 
 	t.Run("compressed binary size is smaller than the default 10mb limit", func(t *testing.T) {
 		binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		_, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 	})
 
@@ -929,7 +962,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, bwr.Close())
 
-		_, err = NewModule(&ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		_, err = NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", defaultMaxCompressedBinarySize)
 		require.ErrorContains(t, err, default10mbLimit)
 	})
@@ -944,7 +977,7 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, bwr.Close())
 
-		_, err = NewModule(&ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, binary)
+		_, err = NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 		default10mbLimit := fmt.Sprintf("binary size exceeds the maximum allowed size of %d bytes", customMaxCompressedBinarySize)
 		require.ErrorContains(t, err, default10mbLimit)
 	})
@@ -952,19 +985,20 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 
 func TestModule_DecompressedBinarySize(t *testing.T) {
 	t.Parallel()
+	ctx := tests.Context(t)
 
 	// compressed binary size is 4.121 MB
 	// decompressed binary size is 23.7 MB
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 	t.Run("decompressed binary size is within the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(24 * 1024 * 1024)
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		_, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 	})
 
 	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
 		customDecompressedBinarySize := uint64(3 * 1024 * 1024)
-		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		_, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 		decompressedSizeExceeded := fmt.Sprintf("decompressed binary size reached the maximum allowed size of %d bytes", customDecompressedBinarySize)
 		require.ErrorContains(t, err, decompressedSizeExceeded)
 	})
@@ -976,7 +1010,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	d := 1 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1002,7 +1036,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1022,7 +1056,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1050,7 +1084,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1078,7 +1112,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	ctx := tests.Context(t)
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1104,9 +1138,10 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	t.Parallel()
 	ctx := tests.Context(t)
+
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, "", NewSingleBinaryWasmBinaryStore(binary))
 	require.NoError(t, err)
 
 	m.Start()
@@ -1153,13 +1188,13 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		ctx := tests.Context(t)
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Determinism: &DeterminismConfig{
 				Seed: 42,
 			},
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()
@@ -1172,10 +1207,10 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		ctx := tests.Context(t)
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, logger.Test(t), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-		}, binary)
+		}, "", NewSingleBinaryWasmBinaryStore(binary))
 		require.NoError(t, err)
 
 		m.Start()

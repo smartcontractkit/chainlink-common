@@ -77,6 +77,7 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			ReportId:                 rq.ReportID,
 			KeyId:                    rq.KeyID,
 		})
+		r.lggr.Debugw("Query adding KEYID", "workflowExecutionID", rq.WorkflowExecutionID, "keyID", rq.KeyID)
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 
@@ -385,6 +386,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			Id:      weid,
 		}
 		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
+		lggr.Debugw("Outcome adding KEYID", "workflowExecutionID", weid.WorkflowExecutionId, "keyID", weid.KeyId)
 		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
 
 		previousOutcome.Outcomes[weid.WorkflowId] = outcome
@@ -531,6 +533,7 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 			}
 		}
 
+		lggr.Debugw("Reports passing KEYID to marshal", "workflowExecutionID", id.WorkflowExecutionId, "keyID", id.KeyId)
 		infob, err := marshalReportInfo(info, id.KeyId)
 		if err != nil {
 			lggr.Errorw("could not marshal id into ReportWithInfo", "error", err)

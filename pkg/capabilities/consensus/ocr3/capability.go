@@ -233,6 +233,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		}
 
 		config, err := o.ValidateConfig(r.Config)
+		o.lggr.Debugw("Execute - received request KEYID", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "keyID", config.KeyID, "pre-parsed", r.Config.Underlying)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
@@ -288,7 +289,7 @@ func (o *capability) queueRequestForProcessing(
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}
 
-	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
+	o.lggr.Debugw("Execute - adding to store KEYID", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations, "keyID", r.KeyID)
 
 	o.reqHandler.SendRequest(ctx, r)
 	return callbackCh, nil

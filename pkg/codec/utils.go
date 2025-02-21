@@ -442,7 +442,18 @@ func applyValue(vInto, vField reflect.Value) error {
 			vInto.Elem().Set(vField)
 		}
 	default:
-		return fmt.Errorf("input must be a pointer to set value")
+		if vInto.CanSet() {
+			switch vField.Kind() {
+			case reflect.Ptr:
+				vInto.Set(vField.Elem())
+			default:
+				vInto.Set(vField)
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("value is not settable")
 	}
 
 	return nil

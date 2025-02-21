@@ -101,7 +101,7 @@ func (pc *preCodec) TransformToOffChain(onChainValue any, itemType string) (any,
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -165,7 +165,7 @@ func (pc *preCodec) TransformToOnChain(offChainValue any, itemType string) (any,
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

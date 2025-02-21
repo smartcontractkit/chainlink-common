@@ -394,52 +394,6 @@ func typeForPath(from reflect.Type, itemType string) (reflect.Type, error) {
 	}
 }
 
-func valueForPath(from reflect.Value, itemType string) (any, error) {
-	if itemType == "" {
-		return from.Interface(), nil
-	}
-
-	switch from.Kind() {
-	case reflect.Pointer:
-		elem, err := valueForPath(from.Elem(), itemType)
-		if err != nil {
-			return nil, err
-		}
-
-		return elem, nil
-	case reflect.Array, reflect.Slice:
-		return nil, fmt.Errorf("%w: cannot extract a field from an array or slice", types.ErrInvalidType)
-	case reflect.Struct:
-		head, tail := ItemTyper(itemType).Next()
-
-		field := from.FieldByName(head)
-		if !field.IsValid() {
-			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
-		}
-
-		if tail == "" {
-			return field.Interface(), nil
-		}
-
-		return valueForPath(field, tail)
-	case reflect.Map:
-		head, tail := ItemTyper(itemType).Next()
-
-		field := from.MapIndex(reflect.ValueOf(head))
-		if !field.IsValid() {
-			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
-		}
-
-		if tail == "" {
-			return field.Interface(), nil
-		}
-
-		return valueForPath(reflect.ValueOf(field.Interface()), tail)
-	default:
-		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
-	}
-}
-
 type PathMappingError struct {
 	Err  error
 	Path string

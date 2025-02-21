@@ -126,7 +126,7 @@ func (e *propertyExtractor) TransformToOnChain(offChainValue any, itemType strin
 		// add the field name because the offChainType was nested into a new struct
 		itemType = fmt.Sprintf("%s.%s", e.fieldName, itemType)
 
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -147,7 +147,7 @@ func (e *propertyExtractor) TransformToOffChain(onChainValue any, itemType strin
 		// remove the head from the itemType because a field was extracted
 		_, tail := ItemTyper(itemType).Next()
 
-		return valueForPath(reflect.ValueOf(modified), tail)
+		return ValueForPath(reflect.ValueOf(modified), tail)
 	}
 
 	return modified, nil

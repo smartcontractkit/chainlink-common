@@ -146,7 +146,7 @@ func (m *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType s
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -168,7 +168,7 @@ func (m *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType s
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

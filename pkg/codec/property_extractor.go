@@ -168,7 +168,7 @@ func (e *propertyExtractor) selectType(inputValue any, savedType reflect.Type, i
 	if itemType != "" {
 		into := reflect.New(savedType)
 
-		if err := applyValueForPath(into, reflect.ValueOf(inputValue), itemType); err != nil {
+		if err := SetValueAtPath(into, reflect.ValueOf(inputValue), itemType); err != nil {
 			return nil, itemType, err
 		}
 

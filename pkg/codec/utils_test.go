@@ -328,3 +328,46 @@ func TestEpochToTimeHook(t *testing.T) {
 		require.Equal(t, expected, output)
 	})
 }
+
+func TestSetValueAtPath(t *testing.T) {
+	t.Parallel()
+
+	t.Run("works for basic structs", func(t *testing.T) {
+		t.Parallel()
+
+		type basicStruct struct {
+			A *int
+			B string
+		}
+
+		into := reflect.New(reflect.TypeOf(&basicStruct{}))
+
+		require.NoError(t, SetValueAtPath(into, reflect.ValueOf(int(42)), "A"))
+
+		output := into.Elem().Interface()
+
+		assert.Equal(t, *output.(*basicStruct).A, int(42))
+	})
+
+	t.Run("works for structs with nested structs", func(t *testing.T) {
+		t.Parallel()
+
+		type nested struct {
+			X *int
+			Y *big.Int
+		}
+
+		type nestableStruct struct {
+			A nested
+			B string
+		}
+
+		into := reflect.New(reflect.TypeOf(nestableStruct{}))
+
+		require.NoError(t, SetValueAtPath(into, reflect.ValueOf(big.NewInt(42)), "A.Y"))
+
+		output := into.Interface()
+
+		assert.Equal(t, output.(*nestableStruct).A.Y.String(), big.NewInt(42).String())
+	})
+}

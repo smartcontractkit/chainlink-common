@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	unknownID = "__UNKNOWN__"
+	UnknownID = "__UNKNOWN__"
 
 	CodeInvalidResponse = 110
 	CodeInvalidRequest  = 111
@@ -47,9 +47,9 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 		if err := recover(); err != nil {
 			asErr, ok := err.(error)
 			if ok {
-				r.sendResponse(errorResponse(r.req.Id, asErr))
+				r.sendResponse(ErrorResponse(r.req.Id, asErr))
 			} else {
-				r.sendResponse(errorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
+				r.sendResponse(ErrorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
 			}
 		}
 	}()
@@ -99,11 +99,11 @@ func (r *Runner) ExitWithError(err error) {
 		}
 	}
 
-	r.sendResponse(errorResponse(r.req.Id, err))
+	r.sendResponse(ErrorResponse(r.req.Id, err))
 	return
 }
 
-func errorResponse(id string, err error) *wasmpb.Response {
+func ErrorResponse(id string, err error) *wasmpb.Response {
 	return &wasmpb.Response{
 		Id:     id,
 		ErrMsg: err.Error(),
@@ -114,7 +114,7 @@ func (r *Runner) cacheRequest() bool {
 	if r.req == nil {
 		req, err := r.parseRequest()
 		if err != nil {
-			r.sendResponse(errorResponse(unknownID, err))
+			r.sendResponse(ErrorResponse(UnknownID, err))
 			return false
 		}
 
@@ -188,7 +188,7 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 	}
 
 	// Extract the config from the request
-	drc := defaultRuntimeConfig(id, &creq.Metadata)
+	drc := DefaultRuntimeConfig(id, &creq.Metadata)
 	if rc := computeReq.GetRuntimeConfig(); rc != nil {
 		if rc.MaxFetchResponseSizeBytes != 0 {
 			drc.MaxFetchResponseSizeBytes = rc.MaxFetchResponseSizeBytes

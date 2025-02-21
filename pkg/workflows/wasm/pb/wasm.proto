@@ -19,6 +19,7 @@ message RunRequest {
   string triggerRef = 1;
   capabilities.TriggerEvent triggerEvent = 2;
   map<string, capabilities.CapabilityResponse> refToResponse = 3;
+  uint8 mode = 4; // 0 = common, 1 = local
 }
 
 message Request {

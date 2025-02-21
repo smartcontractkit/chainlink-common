@@ -1,4 +1,4 @@
-package wasm
+package v2
 
 import (
 	"encoding/base64"
@@ -11,12 +11,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
 type RunnerV2 struct {
 	sendResponse   func(payload *wasmpb.Response)
-	runtimeFactory func(sdkConfig *RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2
+	runtimeFactory func(sdkConfig *wasm.RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2
 	args           []string
 	req            *wasmpb.Request
 	triggers       map[string]triggerInfo
@@ -67,9 +68,9 @@ func (r *RunnerV2) Run() {
 		if err := recover(); err != nil {
 			asErr, ok := err.(error)
 			if ok {
-				r.sendResponse(errorResponse(r.req.Id, asErr))
+				r.sendResponse(wasm.ErrorResponse(r.req.Id, asErr))
 			} else {
-				r.sendResponse(errorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
+				r.sendResponse(wasm.ErrorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
 			}
 		}
 	}()
@@ -119,14 +120,14 @@ func (r *RunnerV2) ExitWithError(err error) {
 		}
 	}
 
-	r.sendResponse(errorResponse(r.req.Id, err))
+	r.sendResponse(wasm.ErrorResponse(r.req.Id, err))
 }
 
 func (r *RunnerV2) cacheRequest() bool {
 	if r.req == nil {
 		req, err := r.parseRequest()
 		if err != nil {
-			r.sendResponse(errorResponse(unknownID, err))
+			r.sendResponse(wasm.ErrorResponse(wasm.UnknownID, err))
 			return false
 		}
 
@@ -187,7 +188,7 @@ func (r *RunnerV2) handleSpecRequest(id string) (*wasmpb.Response, error) {
 
 func (r *RunnerV2) handleRunRequest(id string, runReq *wasmpb.RunRequest) (*wasmpb.Response, error) {
 	// Extract config from the request
-	drc := defaultRuntimeConfig(id, nil)
+	drc := wasm.DefaultRuntimeConfig(id, nil)
 
 	refToResponse := map[string]capabilities.CapabilityResponse{}
 	for ref, resp := range runReq.RefToResponse {

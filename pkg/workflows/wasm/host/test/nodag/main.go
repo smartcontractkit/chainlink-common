@@ -7,22 +7,22 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
+	v2 "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2"
 )
 
 func main() {
-	runner := wasm.NewRunnerV2()
+	runner := v2.NewRunnerV2()
 	triggerCfg := basictrigger.TriggerConfig{Number: 100}
-	_ = wasm.SubscribeToTrigger(runner, "basic-trigger@1.0.0", triggerCfg, OnBasicTriggerEvent)
+	_ = v2.SubscribeToTrigger(runner, "basic-trigger@1.0.0", triggerCfg, OnBasicTriggerEvent)
 	runner.Run()
 }
 
 func OnBasicTriggerEvent(runtime sdk.RuntimeV2, triggerOutputs basictrigger.TriggerOutputs) error {
 	// two async capability calls
-	actionCall1, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
+	actionCall1, _ := v2.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
 		runtime, "ref_action1", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
 	)
-	actionCall2, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
+	actionCall2, _ := v2.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
 		runtime, "ref_action2", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
 	)
 
@@ -38,7 +38,7 @@ func OnBasicTriggerEvent(runtime sdk.RuntimeV2, triggerOutputs basictrigger.Trig
 	if len(actionOutputs1.AdaptedThing) <= len(actionOutputs2.AdaptedThing) {
 		// a single target call
 		inputStr := "abcd"
-		targetCall, _ := wasm.CallCapability[basictarget.TargetInputs, basictarget.TargetConfig, any](
+		targetCall, _ := v2.CallCapability[basictarget.TargetInputs, basictarget.TargetConfig, any](
 			runtime, "ref_target1", "basictarget@1.0.0", basictarget.TargetInputs{CoolInput: &inputStr}, basictarget.TargetConfig{},
 		)
 		return runtime.AwaitCapabilities(targetCall)

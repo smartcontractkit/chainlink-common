@@ -1,4 +1,4 @@
-package wasm
+package v2
 
 import (
 	"fmt"

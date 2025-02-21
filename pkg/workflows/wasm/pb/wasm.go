@@ -132,6 +132,7 @@ func ProtoToWorkflowSpec(spec *WorkflowSpec) (*sdk.WorkflowSpec, error) {
 		Actions:   []sdk.StepDefinition{},
 		Consensus: []sdk.StepDefinition{},
 		Targets:   []sdk.StepDefinition{},
+		IsDynamic: spec.IsDynamic,
 	}
 
 	for _, t := range spec.Triggers {

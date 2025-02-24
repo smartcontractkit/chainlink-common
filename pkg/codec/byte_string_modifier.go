@@ -2,11 +2,77 @@ package codec
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
+
+type ExampleAddressModifier struct{}
+
+func (m *ExampleAddressModifier) EncodeAddress(bts []byte) (string, error) {
+	if len(bts) > 32 {
+		return "", errors.New("upexpected address byte length")
+	}
+
+	normalized := make([]byte, 32)
+
+	// apply byts as big endian
+	copy(normalized[:], bts[:])
+
+	return base64.StdEncoding.EncodeToString(normalized), nil
+}
+
+func (m *ExampleAddressModifier) DecodeAddress(str string) ([]byte, error) {
+	decodedBytes, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(decodedBytes) != 32 {
+		return nil, errors.New("unexpected address byte length")
+	}
+
+	return decodedBytes, nil
+}
+
+func (m *ExampleAddressModifier) Length() int {
+	return 32
+}
+
+func ExampleAddressBytesToStringModifier() {
+	type onChainNested struct {
+		X []byte
+	}
+
+	type onChain struct {
+		A [32]byte
+		B onChainNested
+	}
+
+	encoder := &ExampleAddressModifier{}
+	mod := NewPathTraverseAddressBytesToStringModifier([]string{"B.X"}, encoder, true)
+
+	// call RetypeToOffChain first with empty itemType to set base types
+	offChainType, _ := mod.RetypeToOffChain(reflect.TypeOf(&onChain{}), "")
+
+	fmt.Println("offChainType:")
+	fmt.Println(offChainType)
+	// offChainType:
+	// struct { A: string; B: struct { X: string } }
+
+	// calls to transform can transform the entire struct or nested fields specified by itemType
+	onChainAddress := [32]byte{}
+	_, _ = rand.Read(onChainAddress[:])
+
+	offChainAddress, _ := mod.TransformToOffChain(onChainAddress, "A")
+
+	// the onChainAddress value is modified to the offChainType
+	fmt.Println(offChainAddress)
+}
 
 // AddressModifier defines the interface for encoding, decoding, and handling addresses.
 // This interface allows for chain-specific logic to be injected into the modifier without

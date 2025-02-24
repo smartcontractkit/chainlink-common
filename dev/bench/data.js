@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1739190264280,
+  "lastUpdate": 1740431284506,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10080,6 +10080,48 @@ window.BENCHMARK_DATA = {
             "value": 28223,
             "unit": "ns/op",
             "extra": "42459 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dc2073fe0d21eb352e37792b3ebdeda2616698ac",
+          "message": "add bytes to string modifier for solana contracts (#1040)\n\n* add bytes to string modifier for solana contracts\n\n* property extractor path traversal\n\n* update modifiers and value extraction\n\n* fix bug on settable struct\n\n* export value util functions for values at path\n\n* add example to address modifier\n\n* move and rename examples for CI to pass\n\n* move example to test file",
+          "timestamp": "2025-02-24T13:05:53-08:00",
+          "tree_id": "bc0b172d92bd8df09addcb1e7b99ff1f141ff4b6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/dc2073fe0d21eb352e37792b3ebdeda2616698ac"
+        },
+        "date": 1740431283832,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.4,
+            "unit": "ns/op",
+            "extra": "3396902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.3,
+            "unit": "ns/op",
+            "extra": "3007951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28292,
+            "unit": "ns/op",
+            "extra": "42489 times\n4 procs"
           }
         ]
       }

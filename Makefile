@@ -34,7 +34,7 @@ rm-builders:
 
 .PHONY: generate
 generate: mockery install-protoc gomods
-	gomods -w go generate -x ./...
+	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -w go generate -x ./...
 	mockery
 
 .PHONY: lint-workspace lint

@@ -23,10 +23,11 @@ import (
 
 type mockTrigger struct {
 	capabilities.BaseCapability
-	callback        chan capabilities.TriggerResponse
-	triggerActive   bool
-	unregisterCalls chan bool
-	registerCalls   chan bool
+	callback            chan capabilities.TriggerResponse
+	triggerActive       bool
+	unregisterCalls     chan bool
+	registerCalls       chan bool
+	failedToRegisterErr *string
 
 	mu sync.Mutex
 }
@@ -37,6 +38,10 @@ func (m *mockTrigger) RegisterTrigger(ctx context.Context, request capabilities.
 
 	if m.triggerActive {
 		return nil, errors.New("already registered")
+	}
+
+	if m.failedToRegisterErr != nil {
+		return nil, errors.New(*m.failedToRegisterErr)
 	}
 
 	m.triggerActive = true
@@ -168,6 +173,28 @@ func newCapabilityPlugin(t *testing.T, capability capabilities.BaseCapability) (
 	require.NoError(t, err)
 
 	return regClient.(capabilities.BaseCapability), client, server, nil
+}
+
+func Test_RegisterTrigger(t *testing.T) {
+	testContext := tests.Context(t)
+	t.Run("async RegisterTrigger implementation returns error to server", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(testContext)
+		defer cancel()
+
+		errMsg := "boom"
+		mtr := mustMockTrigger(t)
+		mtr.failedToRegisterErr = &errMsg
+
+		tr, _, _, err := newCapabilityPlugin(t, mtr)
+		require.NoError(t, err)
+
+		ctr := tr.(capabilities.TriggerCapability)
+
+		_, err = ctr.RegisterTrigger(
+			ctx,
+			capabilities.TriggerRegistrationRequest{})
+		require.ErrorContains(t, err, fmt.Sprintf("failed registering trigger: %s", errMsg))
+	})
 }
 
 func Test_Capabilities(t *testing.T) {

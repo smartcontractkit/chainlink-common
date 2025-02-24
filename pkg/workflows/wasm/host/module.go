@@ -11,7 +11,6 @@ import (
 	"io"
 	"math"
 	"regexp"
-
 	"strings"
 	"sync"
 	"time"
@@ -104,7 +103,7 @@ type ModuleConfig struct {
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
 
-	CallCapAsync func(req *wasmpb.CapabilityCall) error
+	CallCapAsync func(req *wasmpb.CapabilityCall) (int32, error)
 	AwaitCaps    func(req *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error)
 }
 
@@ -672,26 +671,26 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 	}
 }
 
-func createCallCapFn(logger logger.Logger, callCapAsync func(req *wasmpb.CapabilityCall) error) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+func createCallCapFn(logger logger.Logger, callCapAsync func(req *wasmpb.CapabilityCall) (int32, error)) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
 			logger.Errorf("error calling wasmRead: %s", innerErr)
-			return 1
+			return -1
 		}
 
 		req := &wasmpb.CapabilityCall{}
 		innerErr = proto.Unmarshal(b, req)
 		if innerErr != nil {
 			logger.Errorf("error calling proto unmarshal: %s", innerErr)
-			return 1
+			return -2
 		}
-		err := callCapAsync(req)
+		ref, err := callCapAsync(req)
 		if err != nil {
 			logger.Errorf("error calling callCapAsync: %s", err)
-			return 1
+			return -3
 		}
-		return 0
+		return ref
 	}
 }
 

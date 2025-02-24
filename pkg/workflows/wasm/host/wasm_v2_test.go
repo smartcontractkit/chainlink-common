@@ -26,19 +26,22 @@ func Test_V2_Run(t *testing.T) {
 	calls := make(chan *wasmpb.CapabilityCall, 10)
 	awaitReq := make(chan *wasmpb.AwaitRequest, 1)
 	awaitResp := make(chan *wasmpb.AwaitResponse, 1)
+	// TODO this shouldn't live here
+	on := int32(0)
 	mc := &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
-		CallCapAsync: func(req *wasmpb.CapabilityCall) error {
+		CallCapAsync: func(req *wasmpb.CapabilityCall) (int32, error) {
 			calls <- req
-			return nil
+			on++
+			return on, nil
 		},
 		AwaitCaps: func(req *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error) {
 			awaitReq <- req
 			return <-awaitResp, nil
 		},
 	}
-	capResponses := map[string]*pb.CapabilityResponse{}
+	capResponses := map[int32]*pb.CapabilityResponse{}
 	triggerID := "basic-trigger@1.0.0"
 	triggerRef := "trigger-0"
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
@@ -87,13 +90,13 @@ func Test_V2_Run(t *testing.T) {
 	//      \     /
 	//     (promise)
 	call1 := <-calls
-	require.Equal(t, "ref_action1", call1.Ref)
+	require.Equal(t, "basicaction@1.0.0", call1.CapabilityId)
 	call2 := <-calls
-	require.Equal(t, "ref_action2", call2.Ref)
+	require.Equal(t, "basicaction@1.0.0", call2.CapabilityId)
 
 	// (5) Engine performs async capability calls.
-	capResponses["ref_action1"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
-	capResponses["ref_action2"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
+	capResponses[1] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
+	capResponses[2] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
 	awaitReqMsg := <-awaitReq
 	require.Len(t, awaitReqMsg.Refs, 2)
 	awaitResp <- &wasmpb.AwaitResponse{RefToResponse: capResponses}
@@ -112,10 +115,10 @@ func Test_V2_Run(t *testing.T) {
 	//         |
 	//     (promise)
 	call3 := <-calls
-	require.Equal(t, "ref_target1", call3.Ref)
+	require.Equal(t, "basictarget@1.0.0", call3.CapabilityId)
 
 	// (7) Engine performs the call.
-	capResponses["ref_target1"] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
+	capResponses[3] = pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: &values.Map{}})
 	awaitReqMsg = <-awaitReq
 	require.Len(t, awaitReqMsg.Refs, 1)
 	awaitResp <- &wasmpb.AwaitResponse{RefToResponse: capResponses}
@@ -123,7 +126,7 @@ func Test_V2_Run(t *testing.T) {
 	<-doneCh
 }
 
-func newRunRequest(triggerRef string, triggerEvent *pb.TriggerEvent, capResponsesSoFar map[string]*pb.CapabilityResponse) *wasmpb.Request {
+func newRunRequest(triggerRef string, triggerEvent *pb.TriggerEvent, capResponsesSoFar map[int32]*pb.CapabilityResponse) *wasmpb.Request {
 	return &wasmpb.Request{
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_RunRequest{

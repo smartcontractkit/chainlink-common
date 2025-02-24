@@ -16,7 +16,7 @@ import (
 
 type RunnerV2 struct {
 	sendResponse   func(payload *wasmpb.Response)
-	runtimeFactory func(sdkConfig *RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2
+	runtimeFactory func(sdkConfig *RuntimeConfig, refToResponse map[int32]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2
 	args           []string
 	req            *wasmpb.Request
 	triggers       map[string]triggerInfo
@@ -189,7 +189,7 @@ func (r *RunnerV2) handleRunRequest(id string, runReq *wasmpb.RunRequest) (*wasm
 	// Extract config from the request
 	drc := defaultRuntimeConfig(id, nil)
 
-	refToResponse := map[string]capabilities.CapabilityResponse{}
+	refToResponse := map[int32]capabilities.CapabilityResponse{}
 	for ref, resp := range runReq.RefToResponse {
 		unmarshalled, err := pb.CapabilityResponseFromProto(resp)
 		if err != nil {

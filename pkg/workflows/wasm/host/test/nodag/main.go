@@ -1,5 +1,3 @@
-//go:build wasip1
-
 package main
 
 import (
@@ -20,10 +18,10 @@ func main() {
 func OnBasicTriggerEvent(runtime sdk.RuntimeV2, triggerOutputs basictrigger.TriggerOutputs) error {
 	// two async capability calls
 	actionCall1, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
-		runtime, "ref_action1", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
+		runtime, "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
 	)
 	actionCall2, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
-		runtime, "ref_action2", "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
+		runtime, "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
 	)
 
 	// blocking "await" on multiple calls at once
@@ -39,7 +37,7 @@ func OnBasicTriggerEvent(runtime sdk.RuntimeV2, triggerOutputs basictrigger.Trig
 		// a single target call
 		inputStr := "abcd"
 		targetCall, _ := wasm.CallCapability[basictarget.TargetInputs, basictarget.TargetConfig, any](
-			runtime, "ref_target1", "basictarget@1.0.0", basictarget.TargetInputs{CoolInput: &inputStr}, basictarget.TargetConfig{},
+			runtime, "basictarget@1.0.0", basictarget.TargetInputs{CoolInput: &inputStr}, basictarget.TargetConfig{},
 		)
 		return runtime.AwaitCapabilities(targetCall)
 	}

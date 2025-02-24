@@ -54,7 +54,7 @@ func NewRunner() *Runner {
 func NewRunnerV2() *RunnerV2 {
 	return &RunnerV2{
 		sendResponse: sendResponseFn,
-		runtimeFactory: func(sdkConfig *RuntimeConfig, refToResponse map[string]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2 {
+		runtimeFactory: func(sdkConfig *RuntimeConfig, refToResponse map[int32]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2 {
 			return &RuntimeV2{
 				callCapFn:     callCapFn,
 				awaitCapsFn:   awaitCapsFn,
@@ -102,20 +102,20 @@ func awaitCapsFn(payload *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error) {
 	return response, nil
 }
 
-func callCapFn(response *wasmpb.CapabilityCall) error {
+func callCapFn(response *wasmpb.CapabilityCall) (int32, error) {
 	pb, err := proto.Marshal(response)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	ptr, ptrlen, err := bufferToPointerLen(pb)
 	if err != nil {
-		return err
+		return -1, err
 	}
-	errno := callcap(ptr, ptrlen)
-	if errno != 0 {
-		return fmt.Errorf("callcap failed with errno %d", errno)
+	id := callcap(ptr, ptrlen)
+	if id < 0 {
+		return -1, fmt.Errorf("callcap failed with errno %d", id)
 	}
-	return nil
+	return id, nil
 }
 
 // sendResponseFn implements sendResponse for import into WASM.

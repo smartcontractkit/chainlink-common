@@ -12,15 +12,15 @@ import (
 )
 
 type RuntimeV2 struct {
-	callCapFn     func(payload *wasmpb.CapabilityCall) error
+	callCapFn     func(payload *wasmpb.CapabilityCall) (int32, error)
 	awaitCapsFn   func(payload *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error)
-	refToResponse map[string]capabilities.CapabilityResponse
+	refToResponse map[int32]capabilities.CapabilityResponse
 }
 
 var _ sdk.RuntimeV2 = (*RuntimeV2)(nil)
 
 func (r *RuntimeV2) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error {
-	pendingRequests := []string{}
+	pendingRequests := []int32{}
 	for _, call := range calls {
 		ref, _, _ := call.CallInfo()
 		if response, ok := r.refToResponse[ref]; ok {
@@ -53,21 +53,20 @@ func (r *RuntimeV2) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error 
 	return nil
 }
 
-func (r *RuntimeV2) CallCapability(call sdk.CapabilityCallPromise) error {
+func (r *RuntimeV2) CallCapability(call sdk.CapabilityCallPromise) (int32, error) {
 	ref, capId, request := call.CallInfo()
 	if response, ok := r.refToResponse[ref]; ok {
 		call.Fulfill(response, nil)
-		return nil
+		return ref, nil
 	}
 	return r.callCapFn(&wasmpb.CapabilityCall{
 		CapabilityId: capId,
-		Ref:          ref,
 		Request:      pb.CapabilityRequestToProto(request),
 	})
 }
 
 type CapCall[Outputs any] struct {
-	ref        string
+	ref        int32
 	capId      string
 	capRequest capabilities.CapabilityRequest
 	outputs    Outputs
@@ -76,7 +75,7 @@ type CapCall[Outputs any] struct {
 	mu         sync.Mutex
 }
 
-func (c *CapCall[Outputs]) CallInfo() (ref string, capId string, request capabilities.CapabilityRequest) {
+func (c *CapCall[Outputs]) CallInfo() (ref int32, capId string, request capabilities.CapabilityRequest) {
 	return c.ref, c.capId, c.capRequest
 }
 
@@ -96,7 +95,7 @@ func (c *CapCall[Outputs]) Result() (Outputs, error) {
 }
 
 // TODO: maybe we could generate those for every capability individually?
-func CallCapability[Inputs any, Config any, Outputs any](runtime sdk.RuntimeV2, ref string, capId string, inputs Inputs, config Config) (*CapCall[Outputs], error) {
+func CallCapability[Inputs any, Config any, Outputs any](runtime sdk.RuntimeV2, capId string, inputs Inputs, config Config) (*CapCall[Outputs], error) {
 	inputsVal, err := values.CreateMapFromStruct(inputs)
 	if err != nil {
 		return nil, err
@@ -106,7 +105,6 @@ func CallCapability[Inputs any, Config any, Outputs any](runtime sdk.RuntimeV2, 
 		return nil, err
 	}
 	call := &CapCall[Outputs]{
-		ref:   ref,
 		capId: capId,
 		capRequest: capabilities.CapabilityRequest{
 			// TODO: Metadata?
@@ -114,6 +112,6 @@ func CallCapability[Inputs any, Config any, Outputs any](runtime sdk.RuntimeV2, 
 			Config: configVal,
 		},
 	}
-	runtime.CallCapability(call)
-	return call, nil
+	call.ref, err = runtime.CallCapability(call)
+	return call, err
 }

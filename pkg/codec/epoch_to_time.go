@@ -58,7 +58,7 @@ func (m *timeToUnixModifier) TransformToOnChain(offChainValue any, itemType stri
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -77,7 +77,7 @@ func (m *timeToUnixModifier) TransformToOffChain(onChainValue any, itemType stri
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

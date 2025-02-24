@@ -114,7 +114,7 @@ func (m *onChainHardCoder) TransformToOnChain(offChainValue any, itemType string
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -143,7 +143,7 @@ func (m *onChainHardCoder) TransformToOffChain(onChainValue any, itemType string
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

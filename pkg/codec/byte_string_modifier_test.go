@@ -1,8 +1,10 @@
 package codec_test
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -338,4 +340,35 @@ func TestAddressBytesToString(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot convert bytes for field T")
 	})
+}
+
+func ExampleNewPathTraverseAddressBytesToStringModifier() {
+	type onChainNested struct {
+		X []byte
+	}
+
+	type onChain struct {
+		A [32]byte
+		B onChainNested
+	}
+
+	encoder := &codec.ExampleAddressModifier{}
+	mod := codec.NewPathTraverseAddressBytesToStringModifier([]string{"B.X"}, encoder, true)
+
+	// call RetypeToOffChain first with empty itemType to set base types
+	offChainType, _ := mod.RetypeToOffChain(reflect.TypeOf(&onChain{}), "")
+
+	fmt.Println("offChainType:")
+	fmt.Println(offChainType)
+	// offChainType:
+	// struct { A: string; B: struct { X: string } }
+
+	// calls to transform can transform the entire struct or nested fields specified by itemType
+	onChainAddress := [32]byte{}
+	_, _ = rand.Read(onChainAddress[:])
+
+	offChainAddress, _ := mod.TransformToOffChain(onChainAddress, "A")
+
+	// the onChainAddress value is modified to the offChainType
+	fmt.Println(offChainAddress)
 }

@@ -208,7 +208,7 @@ func (m *modifierBase[T]) selectType(inputValue any, savedType reflect.Type, ite
 	if itemType != "" {
 		into := reflect.New(savedType)
 
-		if err := applyValueForPath(into, reflect.ValueOf(inputValue), itemType); err != nil {
+		if err := SetValueAtPath(into, reflect.ValueOf(inputValue), itemType); err != nil {
 			return nil, itemType, err
 		}
 
@@ -391,84 +391,6 @@ func typeForPath(from reflect.Type, itemType string) (reflect.Type, error) {
 		return typeForPath(field.Type, tail)
 	default:
 		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
-	}
-}
-
-func valueForPath(from reflect.Value, itemType string) (any, error) {
-	if itemType == "" {
-		return from.Interface(), nil
-	}
-
-	switch from.Kind() {
-	case reflect.Pointer:
-		elem, err := valueForPath(from.Elem(), itemType)
-		if err != nil {
-			return nil, err
-		}
-
-		return elem, nil
-	case reflect.Array, reflect.Slice:
-		return nil, fmt.Errorf("%w: cannot extract a field from an array or slice", types.ErrInvalidType)
-	case reflect.Struct:
-		head, tail := ItemTyper(itemType).Next()
-
-		field := from.FieldByName(head)
-		if !field.IsValid() {
-			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
-		}
-
-		if tail == "" {
-			return field.Interface(), nil
-		}
-
-		return valueForPath(field, tail)
-	default:
-		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
-	}
-}
-
-func applyValueForPath(vInto, vField reflect.Value, itemType string) error {
-	switch vInto.Kind() {
-	case reflect.Pointer:
-		if !vInto.Elem().IsValid() {
-			into := reflect.New(vInto.Type().Elem())
-
-			vInto.Set(into)
-		}
-
-		err := applyValueForPath(vInto.Elem(), vField, itemType)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	case reflect.Array, reflect.Slice:
-		return fmt.Errorf("%w: cannot set a field from an array or slice", types.ErrInvalidType)
-	case reflect.Struct:
-		head, tail := ItemTyper(itemType).Next()
-
-		field := vInto.FieldByName(head)
-		if !field.IsValid() {
-			return fmt.Errorf("%w: invalid field for type %s and name %s", types.ErrInvalidType, vInto, head)
-		}
-
-		if tail == "" {
-			if field.Type() != vField.Type() {
-				return fmt.Errorf("%w: value type mismatch for field %s", types.ErrInvalidType, head)
-			}
-
-			if !field.CanSet() {
-				return fmt.Errorf("%w: cannot set field %s", types.ErrInvalidType, head)
-			}
-
-			field.Set(vField)
-
-			return nil
-		}
-
-		return applyValueForPath(field, vField, tail)
-	default:
-		return fmt.Errorf("%w: cannot set a field from kind %s", types.ErrInvalidType, vInto.Kind())
 	}
 }
 

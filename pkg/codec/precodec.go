@@ -88,7 +88,7 @@ func (pc *preCodec) TransformToOffChain(onChainValue any, itemType string) (any,
 	if itemType != "" {
 		into := reflect.New(pc.onChainStructType)
 
-		if err := applyValueForPath(into, reflect.ValueOf(onChainValue), itemType); err != nil {
+		if err := SetValueAtPath(into, reflect.ValueOf(onChainValue), itemType); err != nil {
 			return nil, err
 		}
 
@@ -101,7 +101,7 @@ func (pc *preCodec) TransformToOffChain(onChainValue any, itemType string) (any,
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -152,7 +152,7 @@ func (pc *preCodec) TransformToOnChain(offChainValue any, itemType string) (any,
 	if itemType != "" {
 		into := reflect.New(pc.offChainStructType)
 
-		if err := applyValueForPath(into, reflect.ValueOf(offChainValue), itemType); err != nil {
+		if err := SetValueAtPath(into, reflect.ValueOf(offChainValue), itemType); err != nil {
 			return nil, err
 		}
 
@@ -165,7 +165,7 @@ func (pc *preCodec) TransformToOnChain(offChainValue any, itemType string) (any,
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

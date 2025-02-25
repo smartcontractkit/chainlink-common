@@ -103,6 +103,9 @@ type ModuleConfig struct {
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
+
+	CallCapAsync func(req *wasmpb.CapabilityCall) error
+	AwaitCaps    func(req *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error)
 }
 
 type Module struct {
@@ -269,6 +272,24 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
+	}
+
+	err = linker.FuncWrap(
+		"env",
+		"callcap",
+		createCallCapFn(logger, modCfg.CallCapAsync),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping callcap func: %w", err)
+	}
+
+	err = linker.FuncWrap(
+		"env",
+		"awaitcaps",
+		createAwaitCapsFn(logger, modCfg.AwaitCaps, wasmRead, wasmWrite, wasmWriteUInt32),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping awaitcaps func: %w", err)
 	}
 
 	m := &Module{
@@ -647,6 +668,71 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 		default:
 			logger.Infow(sanitizedMsg, args...)
 		}
+	}
+}
+
+func createCallCapFn(logger logger.Logger, callCapAsync func(req *wasmpb.CapabilityCall) error) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+		b, innerErr := wasmRead(caller, ptr, ptrlen)
+		if innerErr != nil {
+			logger.Errorf("error calling wasmRead: %s", innerErr)
+			return 1
+		}
+
+		req := &wasmpb.CapabilityCall{}
+		innerErr = proto.Unmarshal(b, req)
+		if innerErr != nil {
+			logger.Errorf("error calling proto unmarshal: %s", innerErr)
+			return 1
+		}
+		err := callCapAsync(req)
+		if err != nil {
+			logger.Errorf("error calling callCapAsync: %s", err)
+			return 1
+		}
+		return 0
+	}
+}
+
+func createAwaitCapsFn(
+	l logger.Logger,
+	awaitCaps func(req *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error),
+	reader unsafeReaderFunc,
+	writer unsafeWriterFunc,
+	sizeWriter unsafeFixedLengthWriterFunc,
+) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
+	return func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
+		// TODO error handling
+		b, err := reader(caller, msgptr, msglen)
+		if err != nil {
+			return 1
+		}
+
+		req := &wasmpb.AwaitRequest{}
+		err = proto.Unmarshal(b, req)
+		if err != nil {
+			return 1
+		}
+
+		resp, err := awaitCaps(req)
+		if err != nil {
+			return 1
+		}
+
+		respBytes, err := proto.Marshal(resp)
+		if err != nil {
+			return 1
+		}
+
+		if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
+			return 1
+		}
+
+		if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
+			return 1
+		}
+
+		return ErrnoSuccess
 	}
 }
 

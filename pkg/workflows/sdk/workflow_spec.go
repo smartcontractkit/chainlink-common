@@ -26,6 +26,7 @@ type WorkflowSpec struct {
 	Actions   []StepDefinition
 	Consensus []StepDefinition
 	Targets   []StepDefinition
+	IsDynamic bool
 }
 
 func (w *WorkflowSpec) Steps() []StepDefinition {

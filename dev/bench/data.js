@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740431284506,
+  "lastUpdate": 1740478052121,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10122,6 +10122,48 @@ window.BENCHMARK_DATA = {
             "value": 28292,
             "unit": "ns/op",
             "extra": "42489 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f0e1dd7b79421faa83946e194507b95eb95df999",
+          "message": "fix: syncronize RegisterTrigger client and server using a first ack/err message (#1048)",
+          "timestamp": "2025-02-25T11:06:21+01:00",
+          "tree_id": "27e2c1671e3a8e781979aba753b9e485123c119a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f0e1dd7b79421faa83946e194507b95eb95df999"
+        },
+        "date": 1740478050868,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369.7,
+            "unit": "ns/op",
+            "extra": "3442149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.5,
+            "unit": "ns/op",
+            "extra": "3042092 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28224,
+            "unit": "ns/op",
+            "extra": "42439 times\n4 procs"
           }
         ]
       }

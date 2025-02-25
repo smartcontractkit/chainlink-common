@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -51,11 +52,11 @@ func NewRunner() *Runner {
 	}
 }
 
-func NewRunnerV2() *RunnerV2 {
-	return &RunnerV2{
+func NewDonRunner() sdk.DonRunner {
+	return &donRunner{
 		sendResponse: sendResponseFn,
-		runtimeFactory: func(sdkConfig *RuntimeConfig, refToResponse map[int32]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2 {
-			return &RuntimeV2{
+		runtimeFactory: func(sdkConfig *RuntimeConfig, refToResponse map[int32]capabilities.CapabilityResponse, hostReqID string) *donRuntime {
+			return &donRuntime{
 				callCapFn:     callCapFn,
 				awaitCapsFn:   awaitCapsFn,
 				refToResponse: refToResponse,

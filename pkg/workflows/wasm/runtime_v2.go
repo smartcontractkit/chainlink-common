@@ -11,16 +11,38 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-type RuntimeV2 struct {
+type donRuntime struct {
 	callCapFn     func(payload *wasmpb.CapabilityCall) (int32, error)
 	awaitCapsFn   func(payload *wasmpb.AwaitRequest) (*wasmpb.AwaitResponse, error)
 	refToResponse map[int32]capabilities.CapabilityResponse
 }
 
-var _ sdk.RuntimeV2 = (*RuntimeV2)(nil)
+func (r *donRuntime) RunInNodeModeWithConsensus(fn func(nodeRuntime sdk.NodeRuntime) (values.Value, error), consensus sdk.Consensus) sdk.Promise[values.Value] {
+	//TODO implement me
+	panic("implement me")
+}
 
-func (r *RuntimeV2) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error {
-	pendingRequests := []int32{}
+func (r *donRuntime) CallCapability(capId string, request capabilities.CapabilityRequest) sdk.Promise[values.Value] {
+	id, err := r.callCapFn(&wasmpb.CapabilityCall{
+		CapabilityId: capId,
+		Request:      pb.CapabilityRequestToProto(request),
+	})
+
+	promise := &CapCall[values.Value]{
+		ref:        id,
+		capRequest: request,
+		runtime:    r,
+	}
+
+	if err != nil {
+		promise.Fulfill(capabilities.CapabilityResponse{}, err)
+	}
+
+	return promise
+}
+
+func (r *donRuntime) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error {
+	var pendingRequests []int32
 	for _, call := range calls {
 		ref, _, _ := call.CallInfo()
 		if response, ok := r.refToResponse[ref]; ok {
@@ -53,17 +75,7 @@ func (r *RuntimeV2) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error 
 	return nil
 }
 
-func (r *RuntimeV2) CallCapability(call sdk.CapabilityCallPromise) (int32, error) {
-	ref, capId, request := call.CallInfo()
-	if response, ok := r.refToResponse[ref]; ok {
-		call.Fulfill(response, nil)
-		return ref, nil
-	}
-	return r.callCapFn(&wasmpb.CapabilityCall{
-		CapabilityId: capId,
-		Request:      pb.CapabilityRequestToProto(request),
-	})
-}
+var _ sdk.DonRuntime = (*donRuntime)(nil)
 
 type CapCall[Outputs any] struct {
 	ref        int32
@@ -73,6 +85,17 @@ type CapCall[Outputs any] struct {
 	err        error
 	fulfilled  bool
 	mu         sync.Mutex
+	runtime    sdk.RuntimeBase
+}
+
+func (c *CapCall[Outputs]) Await() (Outputs, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.fulfilled {
+		_ = c.runtime.AwaitCapabilities(c)
+	}
+
+	return c.outputs, c.err
 }
 
 func (c *CapCall[Outputs]) CallInfo() (ref int32, capId string, request capabilities.CapabilityRequest) {
@@ -82,36 +105,10 @@ func (c *CapCall[Outputs]) CallInfo() (ref int32, capId string, request capabili
 func (c *CapCall[Outputs]) Fulfill(response capabilities.CapabilityResponse, err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.fulfilled = true
+	if err != nil {
+		c.err = err
+		return
+	}
 	c.err = response.Value.UnwrapTo(&c.outputs)
-}
-
-func (c *CapCall[Outputs]) Result() (Outputs, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if !c.fulfilled {
-		return c.outputs, fmt.Errorf("not yet fulfilled")
-	}
-	return c.outputs, c.err
-}
-
-// TODO: maybe we could generate those for every capability individually?
-func CallCapability[Inputs any, Config any, Outputs any](runtime sdk.RuntimeV2, capId string, inputs Inputs, config Config) (*CapCall[Outputs], error) {
-	inputsVal, err := values.CreateMapFromStruct(inputs)
-	if err != nil {
-		return nil, err
-	}
-	configVal, err := values.CreateMapFromStruct(config)
-	if err != nil {
-		return nil, err
-	}
-	call := &CapCall[Outputs]{
-		capId: capId,
-		capRequest: capabilities.CapabilityRequest{
-			// TODO: Metadata?
-			Inputs: inputsVal,
-			Config: configVal,
-		},
-	}
-	call.ref, err = runtime.CallCapability(call)
-	return call, err
 }

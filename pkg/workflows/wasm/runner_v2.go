@@ -14,9 +14,9 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-type RunnerV2 struct {
+type donRunner struct {
 	sendResponse   func(payload *wasmpb.Response)
-	runtimeFactory func(sdkConfig *RuntimeConfig, refToResponse map[int32]capabilities.CapabilityResponse, hostReqID string) *RuntimeV2
+	runtimeFactory func(sdkConfig *RuntimeConfig, refToResponse map[int32]capabilities.CapabilityResponse, hostReqID string) *donRuntime
 	args           []string
 	req            *wasmpb.Request
 	triggers       map[string]triggerInfo
@@ -25,33 +25,23 @@ type RunnerV2 struct {
 type triggerInfo struct {
 	id        string
 	config    *values.Map
-	handlerFn func(runtime sdk.RuntimeV2, triggerEvent capabilities.TriggerEvent) error
+	handlerFn func(runtime sdk.DonRuntime, triggerEvent capabilities.TriggerEvent) (*values.Map, error)
 }
 
-func SubscribeToTrigger[TriggerConfig any, TriggerOutputs any](runner *RunnerV2, id string, triggerCfg TriggerConfig, handler func(runtime sdk.RuntimeV2, triggerOutputs TriggerOutputs) error) error {
-	ref := fmt.Sprintf("trigger-%v", len(runner.triggers))
+func (r *donRunner) SubscribeToTrigger(id string, wrappedConfig *values.Map, handler func(runtime sdk.DonRuntime, triggerOutputs *values.Map) (*values.Map, error)) error {
+	ref := fmt.Sprintf("trigger-%v", len(r.triggers))
 
-	wrappedConfig, err := values.WrapMap(triggerCfg)
-	if err != nil {
-		return fmt.Errorf("could not wrap config into map: %w", err)
-	}
-
-	runner.triggers[ref] = triggerInfo{
+	r.triggers[ref] = triggerInfo{
 		id:     id,
 		config: wrappedConfig,
-		handlerFn: func(runtime sdk.RuntimeV2, triggerEvent capabilities.TriggerEvent) error {
-			var triggerOutputs TriggerOutputs
-			err := triggerEvent.Outputs.UnwrapTo(&triggerOutputs)
-			if err != nil {
-				return err
-			}
-			return handler(runtime, triggerOutputs)
+		handlerFn: func(runtime sdk.DonRuntime, triggerEvent capabilities.TriggerEvent) (*values.Map, error) {
+			return handler(runtime, triggerEvent.Outputs)
 		},
 	}
 	return nil
 }
 
-func (r *RunnerV2) Run() {
+func (r *donRunner) Run() {
 	if r.req == nil {
 		success := r.cacheRequest()
 		if !success {
@@ -88,6 +78,7 @@ func (r *RunnerV2) Run() {
 		}
 	case req.GetRunRequest() != nil:
 		rsp, innerErr := r.handleRunRequest(req.Id, req.GetRunRequest())
+		fmt.Printf("Got response %+v\n", rsp)
 		if innerErr != nil {
 			resp.ErrMsg = innerErr.Error()
 		} else {
@@ -100,7 +91,7 @@ func (r *RunnerV2) Run() {
 	r.sendResponse(resp)
 }
 
-func (r *RunnerV2) Config() []byte {
+func (r *donRunner) Config() []byte {
 	if r.req == nil {
 		success := r.cacheRequest()
 		if !success {
@@ -111,7 +102,7 @@ func (r *RunnerV2) Config() []byte {
 	return r.req.Config
 }
 
-func (r *RunnerV2) ExitWithError(err error) {
+func (r *donRunner) ExitWithError(err error) {
 	if r.req == nil {
 		success := r.cacheRequest()
 		if !success {
@@ -122,7 +113,7 @@ func (r *RunnerV2) ExitWithError(err error) {
 	r.sendResponse(errorResponse(r.req.Id, err))
 }
 
-func (r *RunnerV2) cacheRequest() bool {
+func (r *donRunner) cacheRequest() bool {
 	if r.req == nil {
 		req, err := r.parseRequest()
 		if err != nil {
@@ -135,7 +126,7 @@ func (r *RunnerV2) cacheRequest() bool {
 	return true
 }
 
-func (r *RunnerV2) parseRequest() (*wasmpb.Request, error) {
+func (r *donRunner) parseRequest() (*wasmpb.Request, error) {
 	// We expect exactly 2 args, i.e. `wasm <blob>`,
 	// where <blob> is a base64 encoded protobuf message.
 	if len(r.args) != 2 {
@@ -160,7 +151,7 @@ func (r *RunnerV2) parseRequest() (*wasmpb.Request, error) {
 	return req, err
 }
 
-func (r *RunnerV2) handleSpecRequest(id string) (*wasmpb.Response, error) {
+func (r *donRunner) handleSpecRequest(id string) (*wasmpb.Response, error) {
 	specpb := &wasmpb.WorkflowSpec{
 		Name:      "name_TODO",
 		Owner:     "owner_TODO",
@@ -185,7 +176,7 @@ func (r *RunnerV2) handleSpecRequest(id string) (*wasmpb.Response, error) {
 	}, nil
 }
 
-func (r *RunnerV2) handleRunRequest(id string, runReq *wasmpb.RunRequest) (*wasmpb.Response, error) {
+func (r *donRunner) handleRunRequest(id string, runReq *wasmpb.RunRequest) (*wasmpb.Response, error) {
 	// Extract config from the request
 	drc := defaultRuntimeConfig(id, nil)
 
@@ -217,13 +208,23 @@ func (r *RunnerV2) handleRunRequest(id string, runReq *wasmpb.RunRequest) (*wasm
 	if triggerInfo.handlerFn == nil {
 		return nil, fmt.Errorf("could not find run function for ref %s", runReq.TriggerRef)
 	}
-	err = triggerInfo.handlerFn(runtime, event)
+	result, err := triggerInfo.handlerFn(runtime, event)
 	if err != nil {
 		return nil, fmt.Errorf("error executing workflow: %w", err)
 	}
 
-	// successful execution termination
+	val, err := values.CreateMapFromStruct(result)
+	var errString string
+	if err != nil {
+		errString = err.Error()
+	}
+	cr := pb.CapabilityResponseToProto(capabilities.CapabilityResponse{Value: val})
+	cr.Error = errString
+	// This seems wrong...
 	return &wasmpb.Response{
+		Message: &wasmpb.Response_ComputeResponse{
+			ComputeResponse: &wasmpb.ComputeResponse{Response: cr},
+		},
 		Id: id,
 	}, nil
 }

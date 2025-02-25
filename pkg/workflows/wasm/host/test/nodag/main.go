@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
@@ -9,37 +11,31 @@ import (
 )
 
 func main() {
-	runner := wasm.NewRunnerV2()
-	triggerCfg := basictrigger.TriggerConfig{Number: 100}
-	_ = wasm.SubscribeToTrigger(runner, "basic-trigger@1.0.0", triggerCfg, OnBasicTriggerEvent)
+	runner := wasm.NewDonRunner()
+	err := basictrigger.Subscribe(runner, &basictrigger.TriggerConfig{Number: 100}, OnBasicTriggerEvent)
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+	}
 	runner.Run()
 }
 
-func OnBasicTriggerEvent(runtime sdk.RuntimeV2, triggerOutputs basictrigger.TriggerOutputs) error {
+func OnBasicTriggerEvent(runtime sdk.DonRuntime, triggerOutputs *basictrigger.TriggerOutputs) (struct{}, error) {
 	// two async capability calls
-	actionCall1, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
-		runtime, "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
-	)
-	actionCall2, _ := wasm.CallCapability[basicaction.ActionInputs, basicaction.ActionConfig, basicaction.ActionOutputs](
-		runtime, "basicaction@1.0.0", basicaction.ActionInputs{}, basicaction.ActionConfig{},
-	)
+	capability := &basicaction.Basic{Config: basicaction.ActionConfig{}}
+	actionCall1 := capability.Call(runtime, &basicaction.ActionInput{})
+	actionCall2 := capability.Call(runtime, &basicaction.ActionInput{})
 
-	// blocking "await" on multiple calls at once
-	err := runtime.AwaitCapabilities(actionCall1, actionCall2)
-	if err != nil {
-		return err
-	}
+	// TODO in examples use one at a time
+	_ = runtime.AwaitCapabilities(actionCall1, actionCall2)
 
-	// some compute before calling a target
-	actionOutputs1, _ := actionCall1.Result()
-	actionOutputs2, _ := actionCall2.Result()
+	actionOutputs1, _ := actionCall1.Await()
+	actionOutputs2, _ := actionCall2.Await()
 	if len(actionOutputs1.AdaptedThing) <= len(actionOutputs2.AdaptedThing) {
 		// a single target call
 		inputStr := "abcd"
-		targetCall, _ := wasm.CallCapability[basictarget.TargetInputs, basictarget.TargetConfig, any](
-			runtime, "basictarget@1.0.0", basictarget.TargetInputs{CoolInput: &inputStr}, basictarget.TargetConfig{},
-		)
-		return runtime.AwaitCapabilities(targetCall)
+		target := basictarget.BasicTarget{Config: basictarget.TargetConfig{}}
+		return struct{}{}, target.Write(runtime, &basictarget.TargetInputs{CoolInput: &inputStr}).Await()
+
 	}
-	return nil
+	return struct{}{}, nil
 }

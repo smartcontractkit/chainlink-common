@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740478052121,
+  "lastUpdate": 1740488644741,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10164,6 +10164,48 @@ window.BENCHMARK_DATA = {
             "value": 28224,
             "unit": "ns/op",
             "extra": "42439 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yikjiun.lee@smartcontract.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "12124a68b50cda36dfc2644be5d9130185854719",
+          "message": "feat(obs-lib): add filterable and min width property (#1044)",
+          "timestamp": "2025-02-25T21:03:02+08:00",
+          "tree_id": "cdd5528bcd67e639a5280ec2f20b0cab3f86d3b7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/12124a68b50cda36dfc2644be5d9130185854719"
+        },
+        "date": 1740488644099,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 348.7,
+            "unit": "ns/op",
+            "extra": "3435444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.5,
+            "unit": "ns/op",
+            "extra": "2715170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28217,
+            "unit": "ns/op",
+            "extra": "42459 times\n4 procs"
           }
         ]
       }

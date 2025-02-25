@@ -7,7 +7,7 @@ import (
 
 type RuntimeBase interface {
 	// CallCapability is meant to be called by generated code
-	CallCapability(capId string, request capabilities.CapabilityRequest) Promise[values.Value]
+	CallCapability(capId string, request capabilities.CapabilityRequest) Promise[*values.Map]
 
 	// AwaitCapabilities is meant to be called by generated code
 	AwaitCapabilities(calls ...CapabilityCallPromise) error
@@ -59,10 +59,6 @@ func RunInNodeModeWithConsensus[T any](runtime DonRuntime, fn func(nodeRuntime N
 	return t, err
 }
 
-type EmptyPromise interface {
-	Await() error
-}
-
 type Promise[T any] interface {
 	Await() (T, error)
 
@@ -77,10 +73,6 @@ type emptyPromise struct {
 func (e *emptyPromise) Await() error {
 	_, err := e.underlying.Await()
 	return err
-}
-
-func ToEmptyPromise(p Promise[struct{}]) EmptyPromise {
-	return &emptyPromise{underlying: p}
 }
 
 func Then[I, O any](p Promise[I], fn func(I) (O, error)) Promise[O] {

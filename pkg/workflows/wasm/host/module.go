@@ -366,7 +366,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
-	wasi.InheritStdout()
+
 	defer wasi.Close()
 
 	wasi.SetArgv([]string{"wasi", reqstr})

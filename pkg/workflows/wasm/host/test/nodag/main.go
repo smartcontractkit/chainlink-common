@@ -31,11 +31,15 @@ func OnBasicTriggerEvent(runtime sdk.DonRuntime, triggerOutputs *basictrigger.Tr
 	actionOutputs1, _ := actionCall1.Await()
 	actionOutputs2, _ := actionCall2.Await()
 	if len(actionOutputs1.AdaptedThing) <= len(actionOutputs2.AdaptedThing) {
+		fmt.Println("smaller")
 		// a single target call
 		inputStr := "abcd"
 		target := basictarget.BasicTarget{Config: basictarget.TargetConfig{}}
-		return struct{}{}, target.Write(runtime, &basictarget.TargetInputs{CoolInput: &inputStr}).Await()
-
+		w, err := target.Write(runtime, &basictarget.TargetInputs{CoolInput: &inputStr}).Await()
+		fmt.Printf("done waiting w: %v, err: %v\n", w, err)
+		return w, err
 	}
+	fmt.Println("Done")
+
 	return struct{}{}, nil
 }

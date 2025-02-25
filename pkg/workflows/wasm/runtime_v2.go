@@ -22,13 +22,13 @@ func (r *donRuntime) RunInNodeModeWithConsensus(fn func(nodeRuntime sdk.NodeRunt
 	panic("implement me")
 }
 
-func (r *donRuntime) CallCapability(capId string, request capabilities.CapabilityRequest) sdk.Promise[values.Value] {
+func (r *donRuntime) CallCapability(capId string, request capabilities.CapabilityRequest) sdk.Promise[*values.Map] {
 	id, err := r.callCapFn(&wasmpb.CapabilityCall{
 		CapabilityId: capId,
 		Request:      pb.CapabilityRequestToProto(request),
 	})
 
-	promise := &CapCall[values.Value]{
+	promise := &CapCall{
 		ref:        id,
 		capRequest: request,
 		runtime:    r,
@@ -64,10 +64,7 @@ func (r *donRuntime) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error
 		ref, _, _ := call.CallInfo()
 		if response, ok := resp.RefToResponse[ref]; ok {
 			capResp, err2 := pb.CapabilityResponseFromProto(response)
-			if err2 != nil {
-				return err2
-			}
-			call.Fulfill(capResp, nil)
+			call.Fulfill(capResp, err2)
 		} else {
 			return fmt.Errorf("missing response for ref %s", ref)
 		}
@@ -77,20 +74,20 @@ func (r *donRuntime) AwaitCapabilities(calls ...sdk.CapabilityCallPromise) error
 
 var _ sdk.DonRuntime = (*donRuntime)(nil)
 
-type CapCall[Outputs any] struct {
+type CapCall struct {
 	ref        int32
 	capId      string
 	capRequest capabilities.CapabilityRequest
-	outputs    Outputs
+	outputs    *values.Map
 	err        error
 	fulfilled  bool
 	mu         sync.Mutex
 	runtime    sdk.RuntimeBase
 }
 
-func (c *CapCall[Outputs]) Await() (Outputs, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *CapCall) Await() (*values.Map, error) {
+	// lock not needed, if c is fulfilled nothing will change it.
+	// if it's not, awaiting a second time won't cause problems.
 	if !c.fulfilled {
 		_ = c.runtime.AwaitCapabilities(c)
 	}
@@ -98,17 +95,18 @@ func (c *CapCall[Outputs]) Await() (Outputs, error) {
 	return c.outputs, c.err
 }
 
-func (c *CapCall[Outputs]) CallInfo() (ref int32, capId string, request capabilities.CapabilityRequest) {
+func (c *CapCall) CallInfo() (ref int32, capId string, request capabilities.CapabilityRequest) {
 	return c.ref, c.capId, c.capRequest
 }
 
-func (c *CapCall[Outputs]) Fulfill(response capabilities.CapabilityResponse, err error) {
+func (c *CapCall) Fulfill(response capabilities.CapabilityResponse, err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.fulfillNoLock(response, err)
+}
+
+func (c *CapCall) fulfillNoLock(response capabilities.CapabilityResponse, err error) {
 	c.fulfilled = true
-	if err != nil {
-		c.err = err
-		return
-	}
-	c.err = response.Value.UnwrapTo(&c.outputs)
+	c.err = err
+	c.outputs = response.Value
 }

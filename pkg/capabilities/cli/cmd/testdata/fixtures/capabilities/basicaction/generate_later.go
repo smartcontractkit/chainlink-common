@@ -17,7 +17,7 @@ func (b *Basic) Call(runtime sdk.DonRuntime, input *ActionInput) sdk.Promise[*Ac
 		Config: config,
 		Inputs: wrappedInput,
 	})
-	return sdk.Then(result, func(response values.Value) (*ActionOutputs, error) {
+	return sdk.Then(result, func(response *values.Map) (*ActionOutputs, error) {
 		output := &ActionOutputs{}
 		err := response.UnwrapTo(output)
 		return output, err

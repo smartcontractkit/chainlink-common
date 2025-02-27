@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740664315501,
+  "lastUpdate": 1740688298173,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10248,6 +10248,48 @@ window.BENCHMARK_DATA = {
             "value": 28407,
             "unit": "ns/op",
             "extra": "41950 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "samsondav@protonmail.com",
+            "name": "Sam",
+            "username": "samsondav"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2537a8c226bba0b2fe4ce7a0780f3fa6e6967a8e",
+          "message": "Add interface support for MedianPluginOption (#1039)\n\n* Add support for MedianPluginOption\n\n* Try loopifying it",
+          "timestamp": "2025-02-27T15:30:31-05:00",
+          "tree_id": "64407dbb94a55a2da56b370b7664e0c1cb590564",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2537a8c226bba0b2fe4ce7a0780f3fa6e6967a8e"
+        },
+        "date": 1740688297460,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 407.8,
+            "unit": "ns/op",
+            "extra": "3287083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.9,
+            "unit": "ns/op",
+            "extra": "2892010 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28068,
+            "unit": "ns/op",
+            "extra": "42597 times\n4 procs"
           }
         ]
       }

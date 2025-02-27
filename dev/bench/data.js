@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740488644741,
+  "lastUpdate": 1740664315501,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10206,6 +10206,48 @@ window.BENCHMARK_DATA = {
             "value": 28217,
             "unit": "ns/op",
             "extra": "42459 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1cc8c4f04c3f696e21fbe90c57fa7340908cfb4c",
+          "message": "[CAPPL-595] LLO-compatible trigger event structs (#1051)\n\n* [CAPPL-595] LLO-compatible trigger service (stubs only)\n\nTo onblock LLO-side changes\n\n* Update pkg/capabilities/datastreams/types.go\n\n* Formatting\n\n---------\n\nCo-authored-by: Sam <samsondav@protonmail.com>",
+          "timestamp": "2025-02-27T08:50:39-05:00",
+          "tree_id": "49ea23c33dc14b3d1c20bf862e79e0761a41e293",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1cc8c4f04c3f696e21fbe90c57fa7340908cfb4c"
+        },
+        "date": 1740664314788,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.7,
+            "unit": "ns/op",
+            "extra": "3193326 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 397.9,
+            "unit": "ns/op",
+            "extra": "3024002 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28407,
+            "unit": "ns/op",
+            "extra": "41950 times\n4 procs"
           }
         ]
       }

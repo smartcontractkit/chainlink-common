@@ -38,7 +38,7 @@ func Test_Runner_Config_InvalidRequest(t *testing.T) {
 	}
 	c := runner.Config()
 	assert.Nil(t, c)
-	assert.Equal(t, unknownID, gotResponse.Id)
+	assert.Equal(t, UnknownID, gotResponse.Id)
 	assert.Contains(t, gotResponse.ErrMsg, "could not decode request")
 }
 
@@ -54,7 +54,7 @@ func Test_Runner_Config_InvalidRequest_NotEnoughArgs(t *testing.T) {
 	}
 	c := runner.Config()
 	assert.Nil(t, c)
-	assert.Equal(t, unknownID, gotResponse.Id)
+	assert.Equal(t, UnknownID, gotResponse.Id)
 	assert.Contains(t, gotResponse.ErrMsg, "request must contain a payload")
 }
 

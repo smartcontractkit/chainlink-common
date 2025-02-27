@@ -15,6 +15,13 @@ message ComputeRequest {
   RuntimeConfig runtimeConfig = 2;
 }
 
+message RunRequest {
+  string triggerRef = 1;
+  capabilities.TriggerEvent triggerEvent = 2;
+  map<string, capabilities.CapabilityResponse> refToResponse = 3;
+  uint8 mode = 4; // 0 = common, 1 = local
+}
+
 message Request {
   string id = 1;
   bytes config = 2;
@@ -22,6 +29,7 @@ message Request {
   oneof message {
     ComputeRequest computeRequest = 3;
     google.protobuf.Empty specRequest = 4;
+    RunRequest runRequest = 5;
   }
 }
 
@@ -47,6 +55,7 @@ message WorkflowSpec {
   repeated StepDefinition actions = 4;
   repeated StepDefinition consensus = 5;
   repeated StepDefinition targets = 6;
+  bool isDynamic = 7; // aka "no-DAG"
 }
 
 message Response {
@@ -57,6 +66,20 @@ message Response {
     ComputeResponse computeResponse = 3;
     WorkflowSpec specResponse = 4;
   }
+}
+
+message CapabilityCall {
+  string capabilityId = 1;
+  string ref = 2;
+  capabilities.CapabilityRequest request = 3;
+}
+
+message AwaitRequest {
+ repeated string refs = 1;
+}
+
+message AwaitResponse {
+  map<string, capabilities.CapabilityResponse> refToResponse = 1;
 }
 
 // NOTE: This message was added because it is needed to be used as part of the request and for metrics.

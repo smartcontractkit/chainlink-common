@@ -37,7 +37,7 @@ const (
 	defaultMaxFetchResponseSizeBytes = 5 * 1024
 )
 
-func defaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeConfig {
+func DefaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeConfig {
 	return &RuntimeConfig{
 		MaxFetchResponseSizeBytes: defaultMaxFetchResponseSizeBytes,
 		RequestID:                 &id,
@@ -123,20 +123,20 @@ func createEmitFn(
 		// Prepare the request to be sent to the host memory by allocating space for the
 		// response and response length buffers.
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _, err := bufferToPointerLen(respBuffer)
+		respptr, _, err := BufferToPointerLen(respBuffer)
 		if err != nil {
 			return err
 		}
 
 		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+		resplenptr, _, err := BufferToPointerLen(resplenBuffer)
 		if err != nil {
 			return err
 		}
 
 		// The request buffer is the wasm memory, get a pointer to the first element and the length
 		// of the protobuf message.
-		reqptr, reqptrlen, err := bufferToPointerLen(b)
+		reqptr, reqptrlen, err := BufferToPointerLen(b)
 		if err != nil {
 			return err
 		}
@@ -201,19 +201,19 @@ func createFetchFn(
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
 		}
-		reqptr, reqptrlen, err := bufferToPointerLen(b)
+		reqptr, reqptrlen, err := BufferToPointerLen(b)
 		if err != nil {
 			return sdk.FetchResponse{}, err
 		}
 
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _, err := bufferToPointerLen(respBuffer)
+		respptr, _, err := BufferToPointerLen(respBuffer)
 		if err != nil {
 			return sdk.FetchResponse{}, err
 		}
 
 		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+		resplenptr, _, err := BufferToPointerLen(resplenBuffer)
 		if err != nil {
 			return sdk.FetchResponse{}, err
 		}
@@ -250,8 +250,8 @@ func createFetchFn(
 	return fetchFn
 }
 
-// bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
-func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32, error) {
+// BufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
+func BufferToPointerLen(buf []byte) (unsafe.Pointer, int32, error) {
 	if len(buf) == 0 {
 		return nil, 0, fmt.Errorf("buffer cannot be empty")
 	}

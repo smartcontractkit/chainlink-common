@@ -79,9 +79,9 @@ func Test_toEmitLabels(t *testing.T) {
 	})
 }
 
-func Test_bufferToPointerLen(t *testing.T) {
+func Test_BufferToPointerLen(t *testing.T) {
 	t.Run("fails when no buffer", func(t *testing.T) {
-		_, _, err := bufferToPointerLen([]byte{})
+		_, _, err := BufferToPointerLen([]byte{})
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "buffer cannot be empty")
 	})

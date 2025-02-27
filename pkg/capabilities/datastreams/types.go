@@ -81,7 +81,7 @@ type StreamsTriggerEvent struct {
 
 type LLOStreamsTriggerEvent struct {
 	Payload              []*LLOStreamDecimal
-	ObservationTimestamp int64
+	ObservationTimestampNanoseconds uint64
 }
 
 type LLOStreamDecimal struct {

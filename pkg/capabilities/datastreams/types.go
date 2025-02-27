@@ -79,6 +79,17 @@ type StreamsTriggerEvent struct {
 	Timestamp int64
 }
 
+type LLOStreamsTriggerEvent struct {
+	Payload              []*LLOStreamDecimal
+	ObservationTimestamp int64
+}
+
+type LLOStreamDecimal struct {
+	StreamID uint32
+	Decimal  []byte
+	// future: may add aggregation type {MODE, MEDIAN, etc...}
+}
+
 type ReportCodec interface {
 	// unwrap StreamsTriggerEvent and convert to a list of FeedReport
 	Unwrap(wrapped values.Value) ([]FeedReport, error)

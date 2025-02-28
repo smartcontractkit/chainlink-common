@@ -84,6 +84,8 @@ type QueryVariableOptions struct {
 	Query         string
 	Multi         bool
 	Regex         string
+	Sort          dashboard.VariableSort
+	Refresh       *dashboard.VariableRefresh
 	IncludeAll    bool
 	QueryWithType map[string]any
 }
@@ -92,6 +94,9 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 	if options.CurrentText == "" && options.CurrentValue == "" {
 		options.CurrentText = "All"
 		options.CurrentValue = "$__all"
+	}
+	if options.Refresh == nil {
+		options.Refresh = Pointer(dashboard.VariableRefreshOnDashboardLoad)
 	}
 
 	variable := dashboard.NewQueryVariableBuilder(options.Name).
@@ -104,7 +109,8 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 			Text:     dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentText}},
 			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentValue}},
 		}).
-		Sort(dashboard.VariableSortAlphabeticalAsc).
+		Sort(options.Sort).
+		Refresh(*options.Refresh).
 		Multi(options.Multi).
 		IncludeAll(options.IncludeAll)
 

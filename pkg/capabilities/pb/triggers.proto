@@ -21,6 +21,6 @@ message OCRAttributedOnchainSignature {
 
 message OCRTriggerReport {
   string eventID = 1;     // unique, scoped to the trigger capability
-  int64 timestamp = 2;    // used to enforce freshness
+  uint64 timestamp = 2;    // used to enforce freshness
   values.Map outputs = 3; // contains trigger-specific data
 }

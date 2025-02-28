@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740688298173,
+  "lastUpdate": 1740755780673,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10290,6 +10290,48 @@ window.BENCHMARK_DATA = {
             "value": 28068,
             "unit": "ns/op",
             "extra": "42597 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "samsondav@protonmail.com",
+            "name": "Sam",
+            "username": "samsondav"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8777dbcefd5c24350012ac96d5a5ff1b92b4b531",
+          "message": "Switch timestamp to uint64 (#1054)",
+          "timestamp": "2025-02-28T10:15:13-05:00",
+          "tree_id": "d864a7d9080d339c3fe45ad4e8f1614ff7229edd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8777dbcefd5c24350012ac96d5a5ff1b92b4b531"
+        },
+        "date": 1740755780001,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 370.6,
+            "unit": "ns/op",
+            "extra": "3384793 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 395.4,
+            "unit": "ns/op",
+            "extra": "3007392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28113,
+            "unit": "ns/op",
+            "extra": "42639 times\n4 procs"
           }
         ]
       }

@@ -206,7 +206,9 @@ func createFetchFn(
 			return sdk.FetchResponse{}, err
 		}
 
+		l.Info("=== before MaxFetchResponseSizeBytes is ", sdkConfig.MaxFetchResponseSizeBytes)
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
+		l.Info("=== after MaxFetchResponseSizeBytes is ", sdkConfig.MaxFetchResponseSizeBytes)
 		respptr, _, err := bufferToPointerLen(respBuffer)
 		if err != nil {
 			return sdk.FetchResponse{}, err

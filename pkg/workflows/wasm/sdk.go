@@ -206,9 +206,7 @@ func createFetchFn(
 			return sdk.FetchResponse{}, err
 		}
 
-		l.Info("=== before MaxFetchResponseSizeBytes is ", sdkConfig.MaxFetchResponseSizeBytes)
 		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		l.Info("=== after MaxFetchResponseSizeBytes is ", sdkConfig.MaxFetchResponseSizeBytes)
 		respptr, _, err := bufferToPointerLen(respBuffer)
 		if err != nil {
 			return sdk.FetchResponse{}, err
@@ -225,11 +223,8 @@ func createFetchFn(
 			return sdk.FetchResponse{}, fmt.Errorf("fetch failed with errno %d", errno)
 		}
 
-		l.Info("=== before responseSize is ", len(respBuffer))
-
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 		response := &wasmpb.FetchResponse{}
-		l.Info("=== after responseSize is ", len(respBuffer), " responseSize is ", responseSize)
 		err = proto.Unmarshal(respBuffer[:responseSize], response)
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to unmarshal fetch response: %w", err)

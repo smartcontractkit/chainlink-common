@@ -34,7 +34,7 @@ type RuntimeConfig struct {
 }
 
 const (
-	defaultMaxFetchResponseSizeBytes = 5 * 1024 * 6
+	defaultMaxFetchResponseSizeBytes = 5 * 1024 * 1024
 )
 
 func defaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeConfig {

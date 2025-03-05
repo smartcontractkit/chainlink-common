@@ -222,7 +222,6 @@ func createFetchFn(
 		if errno != 0 {
 			return sdk.FetchResponse{}, fmt.Errorf("fetch failed with errno %d", errno)
 		}
-
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 		response := &wasmpb.FetchResponse{}
 		err = proto.Unmarshal(respBuffer[:responseSize], response)

@@ -26,7 +26,7 @@ func NewRunner() *Runner {
 	l := logger.NewWithSync(&wasmWriteSyncer{})
 
 	return &Runner{
-		sendResponse: sendResponseFn,
+		sendResponse: SendResponseFn,
 		sdkFactory: func(sdkConfig *RuntimeConfig, opts ...func(*RuntimeConfig)) *Runtime {
 			for _, opt := range opts {
 				opt(sdkConfig)
@@ -42,8 +42,8 @@ func NewRunner() *Runner {
 	}
 }
 
-// sendResponseFn implements sendResponse for import into WASM.
-func sendResponseFn(response *wasmpb.Response) {
+// SendResponseFn implements sendResponse for import into WASM.
+func SendResponseFn(response *wasmpb.Response) {
 	pb, err := proto.Marshal(response)
 	if err != nil {
 		// We somehow couldn't marshal the response, so let's
@@ -52,13 +52,13 @@ func sendResponseFn(response *wasmpb.Response) {
 		os.Exit(CodeInvalidResponse)
 	}
 
-	// unknownID will only be set when we've failed to parse
+	// UnknownID will only be set when we've failed to parse
 	// the request. Like before, let's bubble this up.
-	if response.Id == unknownID {
+	if response.Id == UnknownID {
 		os.Exit(CodeInvalidRequest)
 	}
 
-	ptr, ptrlen, err := bufferToPointerLen(pb)
+	ptr, ptrlen, err := BufferToPointerLen(pb)
 	if err != nil {
 		os.Exit(CodeInvalidResponse)
 	}
@@ -79,7 +79,7 @@ type wasmWriteSyncer struct{}
 
 // Write is used to proxy log requests from the WASM binary back to the host
 func (wws *wasmWriteSyncer) Write(p []byte) (n int, err error) {
-	ptr, ptrlen, err := bufferToPointerLen(p)
+	ptr, ptrlen, err := BufferToPointerLen(p)
 	if err != nil {
 		return int(ptrlen), err
 	}

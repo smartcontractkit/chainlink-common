@@ -1,46 +1,76 @@
 package sdk
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-// BreakErr can be used inside the compute capability function to stop the execution of the workflow.
-var BreakErr = capabilities.ErrStopExecution
-
-type MessageEmitter interface {
-	// Emit sends a message to the labeler's destination.
-	Emit(string) error
-
-	// With sets the labels for the message to be emitted.  Labels are passed as key-value pairs
-	// and are cumulative.
-	With(kvs ...string) MessageEmitter
+type RuntimeBase interface {
+	// CallCapability is meant to be called by generated code
+	CallCapability(request *pb.CapabilityRequest) Promise[*pb.CapabilityResponse]
 }
 
-// Runtime exposes external system calls to workflow authors.
-// - `Logger` can be used to log messages
-// - `Emitter` can be used to send messages to beholder
-// - `Fetch` can be used to make external HTTP calls
-type Runtime interface {
-	Logger() logger.Logger
-	Fetch(req FetchRequest) (FetchResponse, error)
-
-	// Emitter sends the given message and labels to the configured collector.
-	Emitter() MessageEmitter
+type NodeRuntime interface {
+	RuntimeBase
+	IsNodeRuntime()
 }
 
-type FetchRequest struct {
-	URL       string         `json:"url"`                 // URL to query, only http and https protocols are supported.
-	Method    string         `json:"method,omitempty"`    // HTTP verb, defaults to GET.
-	Headers   map[string]any `json:"headers,omitempty"`   // HTTP headers, defaults to empty.
-	Body      []byte         `json:"body,omitempty"`      // HTTP request body
-	TimeoutMs uint32         `json:"timeoutMs,omitempty"` // Timeout in milliseconds
+type DonRuntime interface {
+	RuntimeBase
+
+	// RunInNodeModeWithBuiltInConsensus is meant to be used by the helper method nodag.RunInNodeModeWithBuiltInConsensus
+	RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest) Promise[values.Value]
 }
 
-type FetchResponse struct {
-	ExecutionError bool           `json:"executionError"`         // true if there were non-HTTP errors. false if HTTP request was sent regardless of status (2xx, 4xx, 5xx)
-	ErrorMessage   string         `json:"errorMessage,omitempty"` // error message in case of failure
-	StatusCode     uint8          `json:"statusCode"`             // HTTP status code
-	Headers        map[string]any `json:"headers,omitempty"`      // HTTP headers
-	Body           []byte         `json:"body,omitempty"`         // HTTP response body
+type PrimitiveConsensusWithDefault struct {
+	*pb.PrimitiveConsensus
+	DefaultValue any
+}
+
+type BuiltInConsensus interface {
+	*pb.PrimitiveConsensus | *PrimitiveConsensusWithDefault
+}
+
+func RunInNodeModeWithBuiltInConsensus[T any, C BuiltInConsensus](runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), consensus C) Promise[T] {
+	observationFn := func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest {
+		result, err := fn(nodeRuntime)
+		if err != nil {
+			return &pb.BuiltInConsensusRequest{
+				Observation: &pb.BuiltInConsensusRequest_Error{Error: err.Error()},
+			}
+		}
+
+		wrapped, err := values.Wrap(result)
+		if err != nil {
+			return &pb.BuiltInConsensusRequest{
+				Observation: &pb.BuiltInConsensusRequest_Error{Error: err.Error()},
+			}
+		}
+
+		var primitiveConsensus *pb.PrimitiveConsensus
+		var defaultValue values.Value
+		switch c := any(consensus).(type) {
+		case *PrimitiveConsensusWithDefault:
+			defaultValue, err = values.Wrap(c.DefaultValue)
+			if err != nil {
+				return &pb.BuiltInConsensusRequest{Observation: &pb.BuiltInConsensusRequest_Error{Error: err.Error()}}
+			}
+			primitiveConsensus = c.PrimitiveConsensus
+		case *pb.PrimitiveConsensus:
+			primitiveConsensus = c
+		}
+
+		return &pb.BuiltInConsensusRequest{
+			PrimitiveConsensus: primitiveConsensus,
+			Observation:        &pb.BuiltInConsensusRequest_Value{Value: values.Proto(wrapped)},
+			DefaultValue:       values.Proto(defaultValue),
+		}
+	}
+
+	return Then(runtime.RunInNodeModeWithBuiltInConsensus(observationFn), func(v values.Value) (T, error) {
+		// TODO this is wrong, but good enough for now...
+		var t T
+		err := v.UnwrapTo(&t)
+		return t, err
+	})
 }

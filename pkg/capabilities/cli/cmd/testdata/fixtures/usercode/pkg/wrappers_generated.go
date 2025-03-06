@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/usercode/pkg2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 // MyNestedTypeWrapper allows access to field from an sdk.CapDefinition[MyNestedType]

@@ -22,7 +22,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/referenceactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 

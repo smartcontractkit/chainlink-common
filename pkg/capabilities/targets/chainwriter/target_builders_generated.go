@@ -5,7 +5,7 @@ package chainwriter
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func (cfg TargetConfig) New(w *sdk.WorkflowSpecFactory, id string, input TargetInput) {

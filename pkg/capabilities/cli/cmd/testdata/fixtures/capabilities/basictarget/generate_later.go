@@ -3,7 +3,7 @@ package basictarget
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 type BasicTarget struct {

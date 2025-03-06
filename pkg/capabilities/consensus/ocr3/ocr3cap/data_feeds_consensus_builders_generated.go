@@ -5,7 +5,7 @@ package ocr3cap
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func (cfg DataFeedsConsensusConfig) New(w *sdk.WorkflowSpecFactory, ref string, input DataFeedsConsensusInput) SignedReportCap {

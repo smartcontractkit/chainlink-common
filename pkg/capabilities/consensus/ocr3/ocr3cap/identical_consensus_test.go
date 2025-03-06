@@ -10,7 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 

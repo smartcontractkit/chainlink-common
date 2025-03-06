@@ -4,7 +4,7 @@ package streams
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func (cfg TriggerConfig) New(w *sdk.WorkflowSpecFactory) FeedCap {

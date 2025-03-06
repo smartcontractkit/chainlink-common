@@ -4,7 +4,7 @@ import (
 {{- if not (.CapabilityType|IsCommon) }}
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 {{- end }}
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+    sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 
     {{- range .ExtraImports }}
     {{.}}

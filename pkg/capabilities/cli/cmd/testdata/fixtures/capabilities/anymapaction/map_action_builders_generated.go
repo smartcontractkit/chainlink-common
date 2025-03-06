@@ -4,7 +4,7 @@ package anymapaction
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func (cfg MapActionConfig) New(w *sdk.WorkflowSpecFactory, ref string, input MapActionInput) MapActionOutputsCap {

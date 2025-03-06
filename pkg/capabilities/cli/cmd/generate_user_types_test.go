@@ -10,7 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/usercode/pkg"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/usercode/pkg2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 //go:generate go run github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/generate-user-types -dir ./testdata/fixtures/usercode/pkg -skip_cap time.Time

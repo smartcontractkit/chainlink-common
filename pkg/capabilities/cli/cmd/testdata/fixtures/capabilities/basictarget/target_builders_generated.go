@@ -4,7 +4,7 @@ package basictarget
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func (cfg TargetConfig) New(w *sdk.WorkflowSpecFactory, input TargetInput) {

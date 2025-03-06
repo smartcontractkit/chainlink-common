@@ -4,7 +4,7 @@ package basicaction
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func (cfg ActionConfig) New(w *sdk.WorkflowSpecFactory, ref string, input ActionInput) ActionOutputsCap {

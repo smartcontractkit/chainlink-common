@@ -2,7 +2,7 @@ package basictrigger
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func Subscribe[T any](runner sdk.DonRunner, config *TriggerConfig, handler func(sdk.DonRuntime, *TriggerOutputs) (T, error)) error {

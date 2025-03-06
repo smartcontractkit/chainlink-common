@@ -3,7 +3,7 @@
 package pkg2
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 // OtherPackageWrapper allows access to field from an sdk.CapDefinition[OtherPackage]

@@ -149,6 +149,11 @@ func createEmitFn(
 
 		// Attempt to read and handle the response from the host memory
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+
+		if responseSize > uint32(sdkConfig.MaxFetchResponseSizeBytes) {
+			return NewEmissionError(fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxFetchResponseSizeBytes))
+		}
+
 		response := &wasmpb.EmitMessageResponse{}
 		if err := proto.Unmarshal(respBuffer[:responseSize], response); err != nil {
 			l.Errorw("failed to unmarshal emit response", "error", err.Error())
@@ -223,6 +228,11 @@ func createFetchFn(
 			return sdk.FetchResponse{}, fmt.Errorf("fetch failed with errno %d", errno)
 		}
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+
+		if responseSize > uint32(sdkConfig.MaxFetchResponseSizeBytes) {
+			return sdk.FetchResponse{}, fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxFetchResponseSizeBytes)
+		}
+
 		response := &wasmpb.FetchResponse{}
 		err = proto.Unmarshal(respBuffer[:responseSize], response)
 		if err != nil {

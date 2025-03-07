@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -953,17 +954,18 @@ func TestModule_CompressedBinarySize(t *testing.T) {
 func TestModule_DecompressedBinarySize(t *testing.T) {
 	t.Parallel()
 
-	// compressed binary size is 4.121 MB
-	// decompressed binary size is 23.7 MB
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+	rdr := brotli.NewReader(bytes.NewBuffer(binary))
+	decompedBinary, err := io.ReadAll(rdr)
+	require.NoError(t, err)
 	t.Run("decompressed binary size is within the limit", func(t *testing.T) {
-		customDecompressedBinarySize := uint64(24 * 1024 * 1024)
+		customDecompressedBinarySize := uint64(len(decompedBinary))
 		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
 		require.NoError(t, err)
 	})
 
 	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
-		customDecompressedBinarySize := uint64(3 * 1024 * 1024)
+		customDecompressedBinarySize := uint64(len(decompedBinary) - 1)
 		_, err := NewModule(&ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
 		decompressedSizeExceeded := fmt.Sprintf("decompressed binary size reached the maximum allowed size of %d bytes", customDecompressedBinarySize)
 		require.ErrorContains(t, err, decompressedSizeExceeded)
@@ -1183,6 +1185,154 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "expected deterministic output")
+	})
+}
+
+func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
+	t.Parallel()
+
+	t.Run("FetchResponse size within the limit", func(t *testing.T) {
+		ctx := tests.Context(t)
+		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
+
+		fetchFn := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{
+				Body: make([]byte, 2*1024),
+			}, nil
+		}
+
+		maxFetchResponseSizeBytes := uint64(10 * 1024)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("FetchResponse size outside the limit", func(t *testing.T) {
+		ctx := tests.Context(t)
+		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
+
+		fetchFn := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			return &wasmpb.FetchResponse{
+				Body: make([]byte, 2*1024),
+			}, nil
+		}
+
+		// setting a lower limit than the size of the fetch response
+		maxFetchResponseSizeBytes := uint64(1024)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+
+		// a response with a 2KB body when marshaled is 2051 bytes
+		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 2051, maxFetchResponseSizeBytes))
+	})
+
+	t.Run("Emitted message size within the limit", func(t *testing.T) {
+		ctx := tests.Context(t)
+		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
+
+		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+			return errors.New("some error")
+		})
+		// an emitter response with an error "some error" when marshaled is 14 bytes
+		// setting a maxFetchResponseSizeBytes that should handle that payload
+		maxFetchResponseSizeBytes := uint64(14)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId:         "transform",
+							WorkflowId:          "workflow-id",
+							WorkflowName:        "workflow-name",
+							WorkflowOwner:       "workflow-owner",
+							WorkflowExecutionId: "workflow-execution-id",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		assert.ErrorContains(t, err, "some error")
+	})
+	t.Run("Emitted message size outside the limit", func(t *testing.T) {
+		ctx := tests.Context(t)
+		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
+
+		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+			return errors.New("some error")
+		})
+
+		// setting a lower limit than the size of the emitted message
+		maxFetchResponseSizeBytes := uint64(1)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId:         "transform",
+							WorkflowId:          "workflow-id",
+							WorkflowName:        "workflow-name",
+							WorkflowOwner:       "workflow-owner",
+							WorkflowExecutionId: "workflow-execution-id",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		// an emitter response with an error "some error" when marshaled is 14 bytes
+		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 14, maxFetchResponseSizeBytes))
 	})
 }
 

@@ -109,8 +109,8 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 		}
 	}
 
+	// if value for extraction is nested under a slice return [][] with type of the value to be extracted
 	var prevIsSlice bool
-
 	if prevLocations != nil && len(parts) > 1 {
 		prevLocation, ok := prevLocations.fieldByName(parts[len(parts)-1])
 		if !ok {

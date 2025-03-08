@@ -97,17 +97,43 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 	fieldName := parts[len(parts)-1]
 	parts = parts[:len(parts)-1]
 
+	var field *reflect.StructField
+	var ok bool
+
 	curLocations := filedLocations
+	prevLocations := curLocations
 	for _, part := range parts {
+		prevLocations = curLocations
 		if curLocations, err = curLocations.populateSubFields(part); err != nil {
 			return nil, err
 		}
 	}
 
+	var prevIsSlice bool
+
+	if prevLocations != nil && len(parts) > 1 {
+		prevLocation, ok := prevLocations.fieldByName(parts[len(parts)-1])
+		if !ok {
+			return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
+		}
+
+		if prevLocation.Type.Kind() == reflect.Ptr {
+			if prevLocation.Type.Elem().Kind() == reflect.Slice {
+				prevIsSlice = true
+			}
+		} else if prevLocation.Type.Kind() == reflect.Slice {
+			prevIsSlice = true
+		}
+	}
+
 	curLocations.updateTypeFromSubkeyMods(fieldName)
-	field, ok := curLocations.fieldByName(fieldName)
+	field, ok = curLocations.fieldByName(fieldName)
 	if !ok {
 		return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
+	}
+
+	if prevIsSlice {
+		field.Type = reflect.SliceOf(field.Type)
 	}
 
 	e.onToOffChainType[onChainType] = field.Type
@@ -120,10 +146,16 @@ type transformHelperFunc func(reflect.Value, reflect.Type, string) (reflect.Valu
 
 func extractOrExpandWithMaps(input any, typeMap map[reflect.Type]reflect.Type, field string, fn transformHelperFunc) (any, error) {
 	rItem := reflect.ValueOf(input)
-
 	toType, ok := typeMap[rItem.Type()]
 	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
+		if rItem.Kind() == reflect.Struct && rItem.NumField() == 1 {
+			toType, ok = typeMap[rItem.Field(0).Type()]
+			if !ok {
+				return reflect.Value{}, fmt.Errorf("%w: cannot retype1 %v", types.ErrInvalidType, rItem.Type())
+			}
+		} else {
+			return reflect.Value{}, fmt.Errorf("%w: cannot retype1 %v", types.ErrInvalidType, rItem.Type())
+		}
 	}
 
 	output, err := fn(rItem, toType, field)
@@ -247,7 +279,32 @@ func extractElement(src any, field string) (reflect.Value, error) {
 	}
 
 	if len(extractMaps) != 1 {
-		return reflect.Value{}, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, field)
+		var sliceValue reflect.Value
+		var sliceInitialized bool
+		fmt.Println("otkud znam 2", len(extractMaps))
+
+		for _, fields := range extractMaps {
+			val, ok := fields[name]
+			if !ok {
+				continue
+			}
+
+			rv := reflect.ValueOf(val)
+			// If this is the first item found, initialize the typed slice
+			if !sliceInitialized {
+				sliceType := reflect.SliceOf(rv.Type())
+				sliceValue = reflect.MakeSlice(sliceType, 0, 0)
+				sliceInitialized = true
+			}
+
+			sliceValue = reflect.Append(sliceValue, rv)
+		}
+
+		if !sliceInitialized || sliceValue.Len() == 0 {
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q", types.ErrInvalidType, field)
+		}
+
+		return sliceValue, nil
 	}
 
 	em := extractMaps[0]

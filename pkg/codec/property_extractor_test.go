@@ -18,9 +18,18 @@ func TestPropertyExtractor(t *testing.T) {
 		B int64
 	}
 
+	type testStruct2 struct {
+		D [16]uint8
+	}
+
+	type testStruct3 struct {
+		E []testStruct2
+	}
+
 	type nestedTestStruct struct {
 		A string
 		B testStruct
+		C testStruct3
 	}
 
 	onChainType := reflect.TypeOf(nestedTestStruct{})
@@ -31,6 +40,13 @@ func TestPropertyExtractor(t *testing.T) {
 
 	t.Run("RetypeToOffChain sets the type for offchain to the onchain property", func(t *testing.T) {
 		offChainType, err := extractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+		require.Equal(t, reflect.TypeOf(""), offChainType)
+	})
+
+	t.Run("RetypeToOffChain sets the type for offchain to the onchain property for slices", func(t *testing.T) {
+		e := codec.NewPropertyExtractor("C.E.D")
+		offChainType, err := e.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
 		require.Equal(t, reflect.TypeOf(""), offChainType)
 	})

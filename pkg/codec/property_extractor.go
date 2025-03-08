@@ -151,10 +151,10 @@ func extractOrExpandWithMaps(input any, typeMap map[reflect.Type]reflect.Type, f
 		if rItem.Kind() == reflect.Struct && rItem.NumField() == 1 {
 			toType, ok = typeMap[rItem.Field(0).Type()]
 			if !ok {
-				return reflect.Value{}, fmt.Errorf("%w: cannot retype1 %v", types.ErrInvalidType, rItem.Type())
+				return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
 			}
 		} else {
-			return reflect.Value{}, fmt.Errorf("%w: cannot retype1 %v", types.ErrInvalidType, rItem.Type())
+			return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
 		}
 	}
 
@@ -281,8 +281,6 @@ func extractElement(src any, field string) (reflect.Value, error) {
 	if len(extractMaps) != 1 {
 		var sliceValue reflect.Value
 		var sliceInitialized bool
-		fmt.Println("otkud znam 2", len(extractMaps))
-
 		for _, fields := range extractMaps {
 			val, ok := fields[name]
 			if !ok {

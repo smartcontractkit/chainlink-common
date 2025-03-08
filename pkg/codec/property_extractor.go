@@ -13,6 +13,7 @@ import (
 // NewPropertyExtractor creates a modifier that will extract a single property from a struct.
 // This modifier is lossy, as TransformToOffchain will discard unwanted struct properties and
 // return a single element. Calling TransformToOnchain will result in unset properties.
+// Extracting a field which is nested under a slice of structs will return a slice containing the extracted property for every element of the slice, this is completely lossy and cannot be transformed back.
 func NewPropertyExtractor(fieldName string) Modifier {
 	m := &propertyExtractor{
 		onToOffChainType: map[reflect.Type]reflect.Type{},

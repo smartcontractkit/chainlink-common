@@ -37,6 +37,7 @@ func TestPropertyExtractor(t *testing.T) {
 	extractor := codec.NewPropertyExtractor("A")
 	invalidExtractor := codec.NewPropertyExtractor("A.B")
 	nestedExtractor := codec.NewPropertyExtractor("B.B")
+	nestedExtractorFieldUnderSlice := codec.NewPropertyExtractor("C.E.D")
 
 	t.Run("RetypeToOffChain sets the type for offchain to the onchain property", func(t *testing.T) {
 		offChainType, err := extractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
@@ -44,11 +45,10 @@ func TestPropertyExtractor(t *testing.T) {
 		require.Equal(t, reflect.TypeOf(""), offChainType)
 	})
 
-	t.Run("RetypeToOffChain sets the type for offchain to the onchain property for slices", func(t *testing.T) {
-		e := codec.NewPropertyExtractor("C.E.D")
-		offChainType, err := e.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+	t.Run("RetypeToOffChain sets the type for offchain to the onchain property for extracting fields nested under slices", func(t *testing.T) {
+		offChainType, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
 		require.NoError(t, err)
-		require.Equal(t, reflect.TypeOf(""), offChainType)
+		require.Equal(t, reflect.TypeOf([][16]uint8{}), offChainType)
 	})
 
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
@@ -139,6 +139,30 @@ func TestPropertyExtractor(t *testing.T) {
 		}
 
 		assert.Equal(t, expected, lossyOnChain)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on nested fields under slices", func(t *testing.T) {
+		_, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+
+		onChainValue := nestedTestStruct{
+			A: "test",
+			B: testStruct{
+				A: true,
+				B: 42,
+			},
+			C: testStruct3{
+				E: []testStruct2{
+					{D: [16]uint8{1}},
+					{D: [16]uint8{2}},
+				},
+			},
+		}
+
+		// can't be transformed back to on-chain, its completely lossy
+		offChainValue, err := nestedExtractorFieldUnderSlice.TransformToOffChain(onChainValue, "")
+		require.NoError(t, err)
+		require.Equal(t, [][16]uint8{{1}, {2}}, offChainValue)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {

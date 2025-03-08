@@ -36,7 +36,7 @@ func TestTransmitter(t *testing.T) {
 
 	weid := uuid.New().String()
 
-	cp := newCapability(
+	cp := NewCapability(
 		s,
 		clockwork.NewFakeClock(),
 		10*time.Second,
@@ -125,7 +125,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 
 	weid := uuid.New().String()
 
-	cp := newCapability(
+	cp := NewCapability(
 		s,
 		clockwork.NewFakeClock(),
 		10*time.Second,

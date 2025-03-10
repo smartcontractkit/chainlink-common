@@ -392,6 +392,7 @@ func (c *ConstrainedBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
 // WrapperModifierConfig replaces each field based on cfg map keys with a struct containing one field with the value of the original field which has is named based on map values.
 // Wrapper modifier does not maintain the original pointers.
 // Wrapper modifier config shouldn't edit fields that affect each other since the results are not deterministic.
+// To wrap the whole value instead of fields, the config map should only have one entry where the key is an empty string "", and the value is the name of the field that will contain the value.
 //
 //		Example #1:
 //
@@ -451,6 +452,9 @@ type WrapperModifierConfig struct {
 func (r *WrapperModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
 	fields := map[string]string{}
 	for i, f := range r.Fields {
+		if i == "" && len(r.Fields) != 1 {
+			return nil, fmt.Errorf("%w: wrapper modifier config should have only one field with an empty key to wrap the whole value", types.ErrInvalidConfig)
+		}
 		// using a private variable will make the field not serialize, essentially dropping the field
 		fields[upperFirstCharacter(f)] = fmt.Sprintf("dropFieldPrivateName-%s", i)
 	}

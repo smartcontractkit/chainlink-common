@@ -9,7 +9,7 @@ import (
 
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 )
 
 const (

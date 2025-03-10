@@ -14,10 +14,10 @@ import (
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/streams"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	workflows "github.com/smartcontractkit/chainlink-common/pkg/workflows/legacy"
 	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/listtrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testdata/fixtures/capabilities/listtrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testdata/fixtures/capabilities/notstreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
 

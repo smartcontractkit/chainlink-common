@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testdata/fixtures/capabilities/notstreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testdata/fixtures/capabilities/notstreams"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 

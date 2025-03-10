@@ -9,10 +9,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	workflows "github.com/smartcontractkit/chainlink-common/pkg/workflows/legacy"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 )
 
 func NewRunner(ctx context.Context, runtime sdk.Runtime) *Runner {

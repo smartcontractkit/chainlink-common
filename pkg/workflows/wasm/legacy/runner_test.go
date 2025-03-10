@@ -23,7 +23,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 )
 
 func Test_Runner_Config_InvalidRequest(t *testing.T) {

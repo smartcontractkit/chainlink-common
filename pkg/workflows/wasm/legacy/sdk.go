@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 )
 
 // Length of responses are encoded into 4 byte buffers in little endian.  uint32Size is the size

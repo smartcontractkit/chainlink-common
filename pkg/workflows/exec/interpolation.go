@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	workflows "github.com/smartcontractkit/chainlink-common/pkg/workflows/legacy"
 )
 
 // InterpolateKey takes a multi-part, dot-separated key and attempts to replace

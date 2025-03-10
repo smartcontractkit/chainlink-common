@@ -78,7 +78,7 @@ var (
 	defaultMaxFetchRequests          = 5
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
-	defaultMaxFetchResponseSizeBytes = 5 * 1024 * 1024   // 5 MB
+	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
 )
 
 type DeterminismConfig struct {
@@ -97,7 +97,7 @@ type ModuleConfig struct {
 	MaxFetchRequests          int
 	MaxCompressedBinarySize   uint64
 	MaxDecompressedBinarySize uint64
-	MaxFetchResponseSizeBytes uint64
+	MaxResponseSizeBytes      uint64
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -181,8 +181,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		modCfg.MaxDecompressedBinarySize = uint64(defaultMaxDecompressedBinarySize)
 	}
 
-	if modCfg.MaxFetchResponseSizeBytes == 0 {
-		modCfg.MaxFetchResponseSizeBytes = uint64(defaultMaxFetchResponseSizeBytes)
+	if modCfg.MaxResponseSizeBytes == 0 {
+		modCfg.MaxResponseSizeBytes = uint64(defaultMaxResponseSizeBytes)
 	}
 
 	// Take the max of the min and the configured max memory mbs.
@@ -346,7 +346,7 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	computeRequest := request.GetComputeRequest()
 	if computeRequest != nil {
 		computeRequest.RuntimeConfig = &wasmpb.RuntimeConfig{
-			MaxFetchResponseSizeBytes: int64(m.cfg.MaxFetchResponseSizeBytes),
+			MaxResponseSizeBytes: int64(m.cfg.MaxResponseSizeBytes),
 		}
 	}
 

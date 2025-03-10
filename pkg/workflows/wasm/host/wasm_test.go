@@ -496,7 +496,7 @@ func Test_Compute_Fetch(t *testing.T) {
 						},
 					},
 					RuntimeConfig: &wasmpb.RuntimeConfig{
-						MaxFetchResponseSizeBytes: 2 * 1024,
+						MaxResponseSizeBytes: 2 * 1024,
 					},
 				},
 			},
@@ -599,7 +599,7 @@ func Test_Compute_Fetch(t *testing.T) {
 						},
 					},
 					RuntimeConfig: &wasmpb.RuntimeConfig{
-						MaxFetchResponseSizeBytes: 2 * 1024,
+						MaxResponseSizeBytes: 2 * 1024,
 					},
 				},
 			},
@@ -648,7 +648,7 @@ func Test_Compute_Fetch(t *testing.T) {
 						},
 					},
 					RuntimeConfig: &wasmpb.RuntimeConfig{
-						MaxFetchResponseSizeBytes: 2 * 1024,
+						MaxResponseSizeBytes: 2 * 1024,
 					},
 				},
 			},
@@ -1188,7 +1188,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 	})
 }
 
-func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
+func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 	t.Parallel()
 
 	t.Run("FetchResponse size within the limit", func(t *testing.T) {
@@ -1201,8 +1201,8 @@ func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
 			}, nil
 		}
 
-		maxFetchResponseSizeBytes := uint64(10 * 1024)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		maxResponseSizeBytes := uint64(10 * 1024)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1235,8 +1235,8 @@ func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
 		}
 
 		// setting a lower limit than the size of the fetch response
-		maxFetchResponseSizeBytes := uint64(1024)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		maxResponseSizeBytes := uint64(1024)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1258,7 +1258,7 @@ func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
 		_, err = m.Run(ctx, req)
 
 		// a response with a 2KB body when marshaled is 2051 bytes
-		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 2051, maxFetchResponseSizeBytes))
+		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 2051, maxResponseSizeBytes))
 	})
 
 	t.Run("Emitted message size within the limit", func(t *testing.T) {
@@ -1269,9 +1269,9 @@ func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
 			return errors.New("some error")
 		})
 		// an emitter response with an error "some error" when marshaled is 14 bytes
-		// setting a maxFetchResponseSizeBytes that should handle that payload
-		maxFetchResponseSizeBytes := uint64(14)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		// setting a maxResponseSizeBytes that should handle that payload
+		maxResponseSizeBytes := uint64(14)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1306,8 +1306,8 @@ func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
 		})
 
 		// setting a lower limit than the size of the emitted message
-		maxFetchResponseSizeBytes := uint64(1)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxFetchResponseSizeBytes: maxFetchResponseSizeBytes}, binary)
+		maxResponseSizeBytes := uint64(1)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1332,7 +1332,7 @@ func TestModule_MaxFetchResponseSizeBytesLimit(t *testing.T) {
 		}
 		_, err = m.Run(ctx, req)
 		// an emitter response with an error "some error" when marshaled is 14 bytes
-		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 14, maxFetchResponseSizeBytes))
+		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 14, maxResponseSizeBytes))
 	})
 }
 

@@ -28,20 +28,20 @@ type Runtime struct {
 }
 
 type RuntimeConfig struct {
-	MaxFetchResponseSizeBytes int64
-	RequestID                 *string
-	Metadata                  *capabilities.RequestMetadata
+	MaxResponseSizeBytes int64
+	RequestID            *string
+	Metadata             *capabilities.RequestMetadata
 }
 
 const (
-	defaultMaxFetchResponseSizeBytes = 5 * 1024 * 1024
+	defaultFetchResponseSizeBytes = 5 * 1024 * 1024
 )
 
 func defaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeConfig {
 	return &RuntimeConfig{
-		MaxFetchResponseSizeBytes: defaultMaxFetchResponseSizeBytes,
-		RequestID:                 &id,
-		Metadata:                  md,
+		MaxResponseSizeBytes: defaultFetchResponseSizeBytes,
+		RequestID:            &id,
+		Metadata:             md,
 	}
 }
 
@@ -122,7 +122,7 @@ func createEmitFn(
 
 		// Prepare the request to be sent to the host memory by allocating space for the
 		// response and response length buffers.
-		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
+		respBuffer := make([]byte, sdkConfig.MaxResponseSizeBytes)
 		respptr, _, err := bufferToPointerLen(respBuffer)
 		if err != nil {
 			return err
@@ -150,8 +150,8 @@ func createEmitFn(
 		// Attempt to read and handle the response from the host memory
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 
-		if responseSize > uint32(sdkConfig.MaxFetchResponseSizeBytes) {
-			return NewEmissionError(fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxFetchResponseSizeBytes))
+		if responseSize > uint32(sdkConfig.MaxResponseSizeBytes) {
+			return NewEmissionError(fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxResponseSizeBytes))
 		}
 
 		response := &wasmpb.EmitMessageResponse{}
@@ -211,7 +211,7 @@ func createFetchFn(
 			return sdk.FetchResponse{}, err
 		}
 
-		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
+		respBuffer := make([]byte, sdkConfig.MaxResponseSizeBytes)
 		respptr, _, err := bufferToPointerLen(respBuffer)
 		if err != nil {
 			return sdk.FetchResponse{}, err
@@ -229,8 +229,8 @@ func createFetchFn(
 		}
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
 
-		if responseSize > uint32(sdkConfig.MaxFetchResponseSizeBytes) {
-			return sdk.FetchResponse{}, fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxFetchResponseSizeBytes)
+		if responseSize > uint32(sdkConfig.MaxResponseSizeBytes) {
+			return sdk.FetchResponse{}, fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxResponseSizeBytes)
 		}
 
 		response := &wasmpb.FetchResponse{}

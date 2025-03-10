@@ -8,6 +8,7 @@ import (
 )
 
 // NewWrapperModifier creates a modifier that will wrap specified on-chain fields in a struct.
+// if key is not provided in the config, the whole value is wrapped with the name of the value from config.
 func NewWrapperModifier(fields map[string]string) Modifier {
 	return NewPathTraverseWrapperModifier(fields, false)
 }
@@ -23,14 +24,10 @@ func NewPathTraverseWrapperModifier(fields map[string]string, enablePathTraverse
 	}
 
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, fieldName string) error {
-		typ := field.Type
 		field.Type = reflect.StructOf([]reflect.StructField{{
 			Name: fieldName,
 			Type: field.Type,
 		}})
-		m.onToOffChainType[field.Type] = m.onToOffChainType[typ]
-		m.offToOnChainType[field.Type] = m.onToOffChainType[typ]
-
 		return nil
 	}
 
@@ -41,32 +38,48 @@ type wrapperModifier struct {
 	modifierBase[string]
 }
 
+func (m *wrapperModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (tpe reflect.Type, err error) {
+	defer func() {
+		// StructOf can panic if the fields are not valid
+		if r := recover(); r != nil {
+			tpe = nil
+			err = fmt.Errorf("%w: %v", types.ErrInvalidType, r)
+		}
+	}()
+
+	// custom handling for wrapping primitive value or the whole value
+	if m.isWholeValueWrapper() {
+		for _, v := range m.fields {
+			offChainTyp := reflect.StructOf([]reflect.StructField{{
+				Name: v,
+				Type: onChainType,
+			}})
+
+			m.onToOffChainType[onChainType] = offChainTyp
+			m.offToOnChainType[offChainTyp] = onChainType
+			return offChainTyp, nil
+		}
+	}
+
+	return m.modifierBase.RetypeToOffChain(onChainType, "")
+}
+
 func (m *wrapperModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
 	offChainValue, itemType, err := m.modifierBase.selectType(offChainValue, m.offChainStructType, itemType)
 	if err != nil {
 		return nil, err
 	}
 
-	if reflect.TypeOf(offChainValue).Kind() != reflect.Struct {
-		if len(m.fields) > 1 {
-			return nil, fmt.Errorf("cannot wrap multiple fields when type is not a struct but a %q", reflect.TypeOf(offChainValue).String())
+	// check if the offChainValue is a wrapper around the whole value
+	typ := reflect.TypeOf(offChainValue)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+
+	if typ.Kind() == reflect.Struct && typ.NumField() == 1 {
+		if m.isWholeValueWrapper() {
+			return reflect.ValueOf(offChainValue).Field(0).Interface(), nil
 		}
-
-		var name string
-		for _, v := range m.fields {
-			var ok bool
-			name, ok = any(v).(string)
-			if !ok {
-				return nil, fmt.Errorf("%q invalid type for m.fields value expected string got : %q", types.ErrInternal, reflect.TypeOf(v).String())
-			}
-		}
-
-		s := reflect.StructOf([]reflect.StructField{{Name: name, Type: reflect.TypeOf(offChainValue)}})
-		instance := reflect.New(s).Elem()
-		fieldValue := instance.FieldByName(name)
-		fieldValue.Set(reflect.ValueOf(offChainValue))
-
-		return instance.Interface(), nil
 	}
 
 	modified, err := transformWithMaps(offChainValue, m.offToOnChainType, m.fields, unwrapFieldMapAction)
@@ -87,11 +100,7 @@ func (m *wrapperModifier) TransformToOffChain(onChainValue any, itemType string)
 		return nil, err
 	}
 
-	if reflect.TypeOf(onChainValue).Kind() != reflect.Struct {
-		if len(m.fields) > 1 {
-			return nil, fmt.Errorf("cannot wrap multiple fields when type is not a struct but a %q", reflect.TypeOf(onChainValue).String())
-		}
-
+	if m.isWholeValueWrapper() {
 		var name string
 		for _, v := range m.fields {
 			var ok bool
@@ -121,6 +130,16 @@ func (m *wrapperModifier) TransformToOffChain(onChainValue any, itemType string)
 	return modified, nil
 }
 
+// isWholeValueWrapper we know that we are wrapping the whole value when the original field name is empty.
+func (m *wrapperModifier) isWholeValueWrapper() bool {
+	if len(m.fields) == 1 {
+		for k := range m.fields {
+			return k == ""
+		}
+	}
+	return false
+}
+
 func wrapFieldMapAction(typesMap map[string]any, fieldName string, wrappedFieldName string) error {
 	field, exists := typesMap[fieldName]
 	if !exists {
@@ -136,11 +155,17 @@ func unwrapFieldMapAction(typesMap map[string]any, fieldName string, wrappedFiel
 	if !exists {
 		return fmt.Errorf("field %s does not exist", fieldName)
 	}
-	val, isOk := typesMap[fieldName].(map[string]any)[wrappedFieldName]
-	if !isOk {
-		return fmt.Errorf("field %s.%s does not exist", fieldName, wrappedFieldName)
+
+	switch v := typesMap[fieldName].(type) {
+	case map[string]any:
+		val, isOk := v[wrappedFieldName]
+		if !isOk {
+			return fmt.Errorf("field %s.%s does not exist", fieldName, wrappedFieldName)
+		}
+		typesMap[fieldName] = val
+	default:
+		return fmt.Errorf("field %s is not a map", fieldName)
 	}
 
-	typesMap[fieldName] = val
 	return nil
 }

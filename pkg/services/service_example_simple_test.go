@@ -20,7 +20,7 @@ func NewSimple(lggr logger.Logger) *simple {
 
 // The name makes sense for the test even though there's no ExampleService struct
 // nolint
-func ExampleNewService() {
+func ExampleService() {
 	lggr, err := Logger()
 	if err != nil {
 		fmt.Println("Failed to create logger:", err)

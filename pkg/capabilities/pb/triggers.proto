@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb";
+
+import "values/pb/values.proto";
+
+message OCRTriggerEvent {
+  bytes configDigest = 1;
+  uint64 seqNr = 2;
+  bytes report = 3; // marshalled OCRTriggerReport
+  repeated OCRAttributedOnchainSignature sigs = 4;
+}
+
+message OCRAttributedOnchainSignature {
+  bytes signature = 1;
+  // signer is actually a uint8 but uint32 is the smallest supported by protobuf
+  uint32 signer = 2;
+}
+
+message OCRTriggerReport {
+  string eventID = 1;     // unique, scoped to the trigger capability
+  uint64 timestamp = 2;    // used to enforce freshness
+  values.Map outputs = 3; // contains trigger-specific data
+}

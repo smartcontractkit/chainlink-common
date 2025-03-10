@@ -1,4 +1,4 @@
-package types_test
+package binary_test
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/codec/encodings/binary"
 )
 
-// ExampleCodec provides a minimal example of constructing and using a codec.
-func ExampleCodec() {
+// ExampleBigEndian provides a minimal example of constructing and using a codec.
+func ExampleBigEndian() {
 	ctx := context.Background()
 	typeCodec, _ := binary.BigEndian().BigInt(32, true)
 

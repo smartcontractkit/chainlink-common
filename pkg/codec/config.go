@@ -59,6 +59,8 @@ func (m *ModifiersConfig) UnmarshalJSON(data []byte) error {
 			(*m)[i] = &PropertyExtractorConfig{}
 		case ModifierAddressToString:
 			(*m)[i] = &AddressBytesToStringModifierConfig{}
+		case ModifierBytesToString:
+			(*m)[i] = &ConstrainedBytesToStringModifierConfig{}
 		case ModifierWrapper:
 			(*m)[i] = &WrapperModifierConfig{}
 		case ModifierPreCodec:
@@ -103,6 +105,7 @@ const (
 	ModifierEpochToTime               ModifierType = "epoch to time"
 	ModifierExtractProperty           ModifierType = "extract property"
 	ModifierAddressToString           ModifierType = "address to string"
+	ModifierBytesToString             ModifierType = "constrained bytes to string"
 	ModifierWrapper                   ModifierType = "wrapper"
 )
 
@@ -334,11 +337,12 @@ func (e *EpochToTimeModifierConfig) MarshalJSON() ([]byte, error) {
 }
 
 type PropertyExtractorConfig struct {
-	FieldName string
+	FieldName          string
+	EnablePathTraverse bool
 }
 
 func (c *PropertyExtractorConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
-	return NewPropertyExtractor(upperFirstCharacter(c.FieldName)), nil
+	return NewPathTraversePropertyExtractor(upperFirstCharacter(c.FieldName), c.EnablePathTraverse), nil
 }
 
 func (c *PropertyExtractorConfig) MarshalJSON() ([]byte, error) {
@@ -364,6 +368,23 @@ func (c *AddressBytesToStringModifierConfig) ToModifier(_ ...mapstructure.Decode
 func (c *AddressBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&modifierMarshaller[AddressBytesToStringModifierConfig]{
 		Type: ModifierAddressToString,
+		T:    c,
+	})
+}
+
+type ConstrainedBytesToStringModifierConfig struct {
+	Fields             []string
+	MaxLen             int
+	EnablePathTraverse bool
+}
+
+func (c *ConstrainedBytesToStringModifierConfig) ToModifier(_ ...mapstructure.DecodeHookFunc) (Modifier, error) {
+	return NewPathTraverseConstrainedLengthBytesToStringModifier(c.Fields, c.MaxLen, c.EnablePathTraverse), nil
+}
+
+func (c *ConstrainedBytesToStringModifierConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&modifierMarshaller[ConstrainedBytesToStringModifierConfig]{
+		Type: ModifierBytesToString,
 		T:    c,
 	})
 }

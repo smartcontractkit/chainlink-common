@@ -26,13 +26,11 @@ type Capability struct {
 }
 
 type Config struct {
-	RequestTimeout          *time.Duration
-	BatchSize               int
-	OutcomePruningThreshold uint64
-	Logger                  logger.Logger
-	AggregatorFactory       types.AggregatorFactory
-	EncoderFactory          types.EncoderFactory
-	SendBufferSize          int
+	RequestTimeout    *time.Duration
+	Logger            logger.Logger
+	AggregatorFactory types.AggregatorFactory
+	EncoderFactory    types.EncoderFactory
+	SendBufferSize    int
 
 	store      *requests.Store
 	capability *capability
@@ -40,24 +38,13 @@ type Config struct {
 }
 
 const (
-	defaultRequestExpiry           time.Duration = 20 * time.Second
-	defaultBatchSize                             = 20
-	defaultSendBufferSize                        = 10
-	defaultOutcomePruningThreshold               = 3600
+	defaultSendBufferSize = 10
 )
 
 func NewOCR3(config Config) *Capability {
 	if config.RequestTimeout == nil {
 		dre := defaultRequestExpiry
 		config.RequestTimeout = &dre
-	}
-
-	if config.BatchSize == 0 {
-		config.BatchSize = defaultBatchSize
-	}
-
-	if config.OutcomePruningThreshold == 0 {
-		config.OutcomePruningThreshold = defaultOutcomePruningThreshold
 	}
 
 	if config.SendBufferSize == 0 {
@@ -92,7 +79,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
 	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
-	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
+	f, err := newFactory(o.config.store, o.config.capability, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +91,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 
 	o.capabilityRegistry = capabilityRegistry
 
-	return factory, err
+	return f, err
 }
 
 func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationService, error) {

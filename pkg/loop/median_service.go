@@ -24,13 +24,13 @@ type MedianService struct {
 
 // NewMedianService returns a new [*MedianService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MedianProvider, contractAddress string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog) *MedianService {
+func NewMedianService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, provider types.MedianProvider, contractAddress string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog, deviationFuncDefinition map[string]any) *MedianService {
 	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, services.HealthReporter, error) {
 		plug, ok := instance.(core.PluginMedian)
 		if !ok {
 			return nil, nil, fmt.Errorf("expected PluginMedian but got %T", instance)
 		}
-		factory, err := plug.NewMedianFactory(ctx, provider, contractAddress, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog)
+		factory, err := plug.NewMedianFactory(ctx, provider, contractAddress, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog, deviationFuncDefinition)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -37,6 +37,7 @@ func TestPropertyExtractor(t *testing.T) {
 	extractor := codec.NewPropertyExtractor("A")
 	invalidExtractor := codec.NewPropertyExtractor("A.B")
 	nestedExtractor := codec.NewPropertyExtractor("B.B")
+	pathTraverseExt := codec.NewPathTraversePropertyExtractor("B", true)
 	nestedExtractorFieldUnderSlice := codec.NewPropertyExtractor("C.E.D")
 
 	t.Run("RetypeToOffChain sets the type for offchain to the onchain property", func(t *testing.T) {
@@ -285,5 +286,21 @@ func TestPropertyExtractor(t *testing.T) {
 		}
 
 		assert.Equal(t, expectedLossy, lossyOnChain)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works for path traversal", func(t *testing.T) {
+		_, err := pathTraverseExt.RetypeToOffChain(reflect.PointerTo(onChainType), "")
+		require.NoError(t, err)
+
+		offChainValue, err := pathTraverseExt.TransformToOffChain(int64(42), "B.B")
+		require.NoError(t, err)
+
+		expectedVal := int64(42)
+		require.Equal(t, expectedVal, offChainValue)
+
+		lossyOnChain, err := pathTraverseExt.TransformToOnChain(int64(42), "B")
+		require.NoError(t, err)
+
+		assert.Equal(t, int64(42), lossyOnChain)
 	})
 }

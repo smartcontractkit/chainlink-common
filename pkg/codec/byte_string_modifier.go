@@ -1,11 +1,46 @@
 package codec
 
 import (
+	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
+
+type ExampleAddressModifier struct{}
+
+func (m *ExampleAddressModifier) EncodeAddress(bts []byte) (string, error) {
+	if len(bts) > 32 {
+		return "", errors.New("upexpected address byte length")
+	}
+
+	normalized := make([]byte, 32)
+
+	// apply byts as big endian
+	copy(normalized[:], bts[:])
+
+	return base64.StdEncoding.EncodeToString(normalized), nil
+}
+
+func (m *ExampleAddressModifier) DecodeAddress(str string) ([]byte, error) {
+	decodedBytes, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(decodedBytes) != 32 {
+		return nil, errors.New("unexpected address byte length")
+	}
+
+	return decodedBytes, nil
+}
+
+func (m *ExampleAddressModifier) Length() int {
+	return 32
+}
 
 // AddressModifier defines the interface for encoding, decoding, and handling addresses.
 // This interface allows for chain-specific logic to be injected into the modifier without
@@ -66,6 +101,41 @@ func NewPathTraverseAddressBytesToStringModifier(
 	return m
 }
 
+func NewConstrainedLengthBytesToStringModifier(
+	fields []string,
+	maxLen int,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, &constrainedLengthBytesToStringModifier{maxLen: maxLen}, false)
+}
+
+func NewPathTraverseConstrainedLengthBytesToStringModifier(
+	fields []string,
+	maxLen int,
+	enablePathTraverse bool,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, &constrainedLengthBytesToStringModifier{maxLen: maxLen}, enablePathTraverse)
+}
+
+type constrainedLengthBytesToStringModifier struct {
+	maxLen int
+}
+
+func (m constrainedLengthBytesToStringModifier) EncodeAddress(bts []byte) (string, error) {
+	return string(bytes.Trim(bts, "\x00")), nil
+}
+
+func (m constrainedLengthBytesToStringModifier) DecodeAddress(str string) ([]byte, error) {
+	output := make([]byte, m.maxLen)
+
+	copy(output, []byte(str)[:])
+
+	return output, nil
+}
+
+func (m constrainedLengthBytesToStringModifier) Length() int {
+	return m.maxLen
+}
+
 type bytesToStringModifier struct {
 	// Injected modifier that contains chain-specific logic
 	modifier AddressModifier
@@ -110,7 +180,7 @@ func (m *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType s
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -132,7 +202,7 @@ func (m *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType s
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

@@ -189,9 +189,6 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 	fieldName := parts[len(parts)-1]
 	parts = parts[:len(parts)-1]
 
-	var field *reflect.StructField
-	var ok bool
-
 	curLocations := filedLocations
 	prevLocations := curLocations
 	for _, part := range parts {
@@ -219,7 +216,7 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 	}
 
 	curLocations.updateTypeFromSubkeyMods(fieldName)
-	field, ok = curLocations.fieldByName(fieldName)
+	field, ok := curLocations.fieldByName(fieldName)
 	if !ok {
 		return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
 	}

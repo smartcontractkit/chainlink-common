@@ -472,7 +472,9 @@ func upperFirstCharacter(s string) string {
 	parts := strings.Split(s, ".")
 	for i, p := range parts {
 		r := []rune(p)
-		r[0] = unicode.ToUpper(r[0])
+		if len(r) != 0 {
+			r[0] = unicode.ToUpper(r[0])
+		}
 		parts[i] = string(r)
 	}
 

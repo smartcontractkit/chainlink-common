@@ -13,6 +13,7 @@ import (
 // NewPropertyExtractor creates a modifier that will extract a single property from a struct.
 // This modifier is lossy, as TransformToOffchain will discard unwanted struct properties and
 // return a single element. Calling TransformToOnchain will result in unset properties.
+// Extracting a field which is nested under a slice of structs will return a slice containing the extracted property for every element of the slice, this is completely lossy and cannot be transformed back.
 func NewPropertyExtractor(fieldName string) Modifier {
 	return NewPathTraversePropertyExtractor(fieldName, false)
 }
@@ -189,9 +190,28 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 	parts = parts[:len(parts)-1]
 
 	curLocations := filedLocations
+	prevLocations := curLocations
 	for _, part := range parts {
+		prevLocations = curLocations
 		if curLocations, err = curLocations.populateSubFields(part); err != nil {
 			return nil, err
+		}
+	}
+
+	// if value for extraction is nested under a slice return [][] with type of the value to be extracted
+	var prevIsSlice bool
+	if prevLocations != nil && len(parts) > 1 {
+		prevLocation, ok := prevLocations.fieldByName(parts[len(parts)-1])
+		if !ok {
+			return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
+		}
+
+		if prevLocation.Type.Kind() == reflect.Ptr {
+			if prevLocation.Type.Elem().Kind() == reflect.Slice {
+				prevIsSlice = true
+			}
+		} else if prevLocation.Type.Kind() == reflect.Slice {
+			prevIsSlice = true
 		}
 	}
 
@@ -201,6 +221,13 @@ func (e *propertyExtractor) getPropTypeFromStruct(onChainType reflect.Type) (ref
 		return nil, fmt.Errorf("%w: field not found in on-chain type %s", types.ErrInvalidType, e.fieldName)
 	}
 
+	if prevIsSlice {
+		field.Type = reflect.SliceOf(field.Type)
+	}
+
+	e.onToOffChainType[onChainType] = field.Type
+	e.offToOnChainType[field.Type] = onChainType
+
 	return field.Type, nil
 }
 
@@ -208,10 +235,16 @@ type transformHelperFunc func(reflect.Value, reflect.Type, string) (reflect.Valu
 
 func extractOrExpandWithMaps(input any, typeMap map[reflect.Type]reflect.Type, field string, fn transformHelperFunc) (any, error) {
 	rItem := reflect.ValueOf(input)
-
 	toType, ok := typeMap[rItem.Type()]
 	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
+		if rItem.Kind() == reflect.Struct && rItem.NumField() == 1 {
+			toType, ok = typeMap[rItem.Field(0).Type()]
+			if !ok {
+				return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
+			}
+		} else {
+			return reflect.Value{}, fmt.Errorf("%w: cannot retype %v", types.ErrInvalidType, rItem.Type())
+		}
 	}
 
 	output, err := fn(rItem, toType, field)
@@ -344,7 +377,30 @@ func extractElement(src any, field string) (reflect.Value, error) {
 	}
 
 	if len(extractMaps) != 1 {
-		return reflect.Value{}, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, field)
+		var sliceValue reflect.Value
+		var sliceInitialized bool
+		for _, fields := range extractMaps {
+			val, ok := fields[name]
+			if !ok {
+				continue
+			}
+
+			rv := reflect.ValueOf(val)
+			// If this is the first item found, initialize the typed slice
+			if !sliceInitialized {
+				sliceType := reflect.SliceOf(rv.Type())
+				sliceValue = reflect.MakeSlice(sliceType, 0, 0)
+				sliceInitialized = true
+			}
+
+			sliceValue = reflect.Append(sliceValue, rv)
+		}
+
+		if !sliceInitialized || sliceValue.Len() == 0 {
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q", types.ErrInvalidType, field)
+		}
+
+		return sliceValue, nil
 	}
 
 	em := extractMaps[0]

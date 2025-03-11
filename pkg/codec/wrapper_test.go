@@ -52,15 +52,30 @@ func TestWrapper(t *testing.T) {
 		D string
 	}
 
+	primitiveToWrap := "ABC"
+
 	wrapper := codec.NewWrapperModifier(map[string]string{"A": "X", "C": "Z"})
 	invalidWrapper := codec.NewWrapperModifier(map[string]string{"W": "X", "C": "Z"})
 	nestedWrapper := codec.NewWrapperModifier(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z"})
+	wholeValueWrapper := codec.NewWrapperModifier(map[string]string{"": "X"})
+
 	t.Run("RetypeToOffChain works on slices", func(t *testing.T) {
 		offChainType, err := wrapper.RetypeToOffChain(reflect.TypeOf([]testStruct{}), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, offChainType.Kind())
 		assertBasicWrapperTransform(t, offChainType.Elem())
+	})
+
+	t.Run("RetypeToOffChain works for whole values", func(t *testing.T) {
+		offChainType, err := wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(primitiveToWrap), "")
+		require.NoError(t, err)
+		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf("")}}).Kind(), offChainType.Kind())
+
+		offChainType, err = wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		require.NoError(t, err)
+		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf(testStruct{})}}).Kind(), offChainType.Kind())
+
 	})
 
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
@@ -133,6 +148,61 @@ func TestWrapper(t *testing.T) {
 		newInput, err := wrapper.TransformToOffChain(expected, "")
 		require.NoError(t, err)
 		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOffChain and TransformToOnChain works on whole values", func(t *testing.T) {
+		offChainType, err := wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(primitiveToWrap), "")
+		require.NoError(t, err)
+
+		offChain := reflect.New(offChainType).Elem()
+		type wrappedPrimitive struct {
+			X string
+		}
+
+		wp := wrappedPrimitive{primitiveToWrap}
+		offChain.Set(reflect.ValueOf(wp))
+
+		onChainVal, err := wholeValueWrapper.TransformToOnChain(offChain.Interface(), "")
+		require.NoError(t, err)
+
+		require.Equal(t, primitiveToWrap, onChainVal)
+
+		offChainVal, err := wholeValueWrapper.TransformToOffChain(onChainVal, "")
+		require.NoError(t, err)
+
+		require.Equal(t, offChainVal, offChain.Interface())
+
+		// --- works for non primitive type
+		offChainType, err = wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		require.NoError(t, err)
+
+		iOffchain := reflect.New(offChainType).Elem()
+		iOffchain.FieldByName("X").FieldByName("A").SetString("foo")
+		iOffchain.FieldByName("X").FieldByName("B").SetInt(10)
+		iOffchain.FieldByName("X").FieldByName("C").SetInt(20)
+
+		output, err := wholeValueWrapper.TransformToOnChain(iOffchain.Interface(), "")
+		require.NoError(t, err)
+
+		assert.Equal(t, testStruct{
+			A: "foo",
+			B: 10,
+			C: 20,
+		}, output)
+
+		type expectedOffChainStruct struct {
+			X testStruct
+		}
+		expected := reflect.New(reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf(testStruct{})}})).Elem()
+		expected.Set(reflect.ValueOf(expectedOffChainStruct{testStruct{
+			A: "foo",
+			B: 10,
+			C: 20,
+		}}))
+
+		newInput, err := wholeValueWrapper.TransformToOffChain(output, "")
+		require.NoError(t, err)
+		assert.Equal(t, expected.Interface(), newInput)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain returns error if input type was not from TransformToOnChain", func(t *testing.T) {

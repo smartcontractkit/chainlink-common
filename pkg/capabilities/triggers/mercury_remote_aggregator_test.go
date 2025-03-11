@@ -100,7 +100,7 @@ func TestMercuryRemoteAggregator(t *testing.T) {
 }
 
 func getRawResponse(t *testing.T, reports []datastreams.FeedReport, timestamp int64) []byte {
-	resp, err := wrapReports(reports, eventID, timestamp, datastreams.Metadata{}, capID)
+	resp, err := WrapReports(reports, eventID, timestamp, datastreams.Metadata{}, capID)
 	require.NoError(t, err)
 	rawResp, err := pb.MarshalTriggerResponse(resp)
 	require.NoError(t, err)

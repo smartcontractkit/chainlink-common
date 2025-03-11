@@ -149,6 +149,10 @@ func (c *ContractTransmitter) FromAccount(_ context.Context) (types.Account, err
 	return types.Account(c.fromAccount), nil
 }
 
+func (c *ContractTransmitter) SetCapability(capability capabilities.ExecutableCapability) {
+	c.capability = capability
+}
+
 func NewContractTransmitter(lggr logger.Logger, registry core.CapabilitiesRegistry, fromAccount string) *ContractTransmitter {
 	return &ContractTransmitter{lggr: lggr, registry: registry, fromAccount: fromAccount, emitter: custmsg.NewLabeler()}
 }

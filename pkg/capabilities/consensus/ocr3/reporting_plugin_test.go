@@ -30,7 +30,7 @@ func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	batchSize := 0
-	rp, err := newReportingPlugin(s, nil, batchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, nil, batchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -44,7 +44,7 @@ func TestReportingPlugin_Query(t *testing.T) {
 	ctx := tests.Context(t)
 	lggr := logger.Test(t)
 	s := requests.NewStore()
-	rp, err := newReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
@@ -126,20 +126,20 @@ func (e *enc) Encode(ctx context.Context, input values.Map) ([]byte, error) {
 	return proto.Marshal(values.Proto(&input))
 }
 
-func (mc *mockCapability) getAggregator(workflowID string) (pbtypes.Aggregator, error) {
+func (mc *mockCapability) GetAggregator(workflowID string) (pbtypes.Aggregator, error) {
 	return mc.aggregator, nil
 }
 
-func (mc *mockCapability) getEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error) {
+func (mc *mockCapability) GetEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error) {
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error) {
+func (mc *mockCapability) GetEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error) {
 	require.Equal(mc.t, mc.expectedEncoderName, encoderName)
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getRegisteredWorkflowsIDs() []string {
+func (mc *mockCapability) GetRegisteredWorkflowsIDs() []string {
 	workflows := make([]string, 0, len(mc.registeredWorkflows))
 	for wf := range mc.registeredWorkflows {
 		workflows = append(workflows, wf)
@@ -147,7 +147,7 @@ func (mc *mockCapability) getRegisteredWorkflowsIDs() []string {
 	return workflows
 }
 
-func (mc *mockCapability) unregisterWorkflowID(workflowID string) {
+func (mc *mockCapability) UnregisterWorkflowID(workflowID string) {
 	delete(mc.registeredWorkflows, workflowID)
 }
 
@@ -163,7 +163,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	o, err := values.NewList([]any{"hello"})
@@ -220,7 +220,7 @@ func TestReportingPlugin_Observation_NilIds(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -250,7 +250,7 @@ func TestReportingPlugin_Observation_NoResults(t *testing.T) {
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -278,7 +278,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 		aggregator: aggregator,
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -338,7 +338,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t 
 		aggregator: aggregator,
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -413,7 +413,7 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -471,7 +471,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testi
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -537,7 +537,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	var sqNr uint64
@@ -591,7 +591,7 @@ func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	var sqNr uint64
@@ -636,7 +636,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 		encoder:             &enc{},
 		expectedEncoderName: dynamicEncoderName,
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	var sqNr uint64
@@ -721,7 +721,7 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -838,7 +838,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -970,7 +970,7 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{F: 1}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{F: 1}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	wowner := uuid.New().String()

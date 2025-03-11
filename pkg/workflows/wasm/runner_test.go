@@ -483,7 +483,7 @@ func Test_createEmitFn(t *testing.T) {
 		l         = logger.Test(t)
 		reqId     = "random-id"
 		sdkConfig = &RuntimeConfig{
-			MaxFetchResponseSizeBytes: 1_000,
+			MaxResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",
@@ -580,8 +580,8 @@ func Test_createFetchFn(t *testing.T) {
 		l         = logger.Test(t)
 		requestID = uuid.New().String()
 		sdkConfig = &RuntimeConfig{
-			RequestID:                 &requestID,
-			MaxFetchResponseSizeBytes: 1_000,
+			RequestID:            &requestID,
+			MaxResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",
@@ -605,8 +605,8 @@ func Test_createFetchFn(t *testing.T) {
 
 	t.Run("NOK-config_missing_request_id", func(t *testing.T) {
 		invalidConfig := &RuntimeConfig{
-			RequestID:                 nil,
-			MaxFetchResponseSizeBytes: 1_000,
+			RequestID:            nil,
+			MaxResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",

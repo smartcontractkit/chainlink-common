@@ -190,8 +190,8 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 	// Extract the config from the request
 	drc := defaultRuntimeConfig(id, &creq.Metadata)
 	if rc := computeReq.GetRuntimeConfig(); rc != nil {
-		if rc.MaxFetchResponseSizeBytes != 0 {
-			drc.MaxFetchResponseSizeBytes = rc.MaxFetchResponseSizeBytes
+		if rc.MaxResponseSizeBytes != 0 {
+			drc.MaxResponseSizeBytes = rc.MaxResponseSizeBytes
 		}
 	}
 

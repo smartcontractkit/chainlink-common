@@ -73,7 +73,7 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.RequestTimeout = durationpb.New(defaultRequestExpiry)
 	}
 	o.capability.setRequestTimeout(configProto.RequestTimeout.AsDuration())
-	rp, err := newReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
+	rp, err := NewReportingPlugin(o.store, o.capability, int(configProto.MaxBatchSize), config, configProto.OutcomePruningThreshold, o.lggr)
 	rpInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{

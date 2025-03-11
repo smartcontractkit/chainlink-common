@@ -51,7 +51,7 @@ func TestOCR3Capability_Schema(t *testing.T) {
 
 	s := requests.NewStore()
 
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	schema, err := cp.Schema()
 	require.NoError(t, err)
 
@@ -91,7 +91,7 @@ func TestOCR3Capability(t *testing.T) {
 
 			s := requests.NewStore()
 
-			cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+			cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 			require.NoError(t, cp.Start(ctx))
 
 			config, err := values.NewMap(
@@ -155,7 +155,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 
 	rea := time.Second
 	s := requests.NewStore()
-	cp := newCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -223,7 +223,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	// This is the default expired at
 	rea := time.Hour
 	s := requests.NewStore()
-	cp := newCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -290,7 +290,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 
 	ctx := tests.Context(t)
 	s := requests.NewStore()
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{
@@ -313,7 +313,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	err = cp.RegisterToWorkflow(ctx, registerReq)
 	require.NoError(t, err)
 
-	agg, err := cp.getAggregator(workflowTestID)
+	agg, err := cp.GetAggregator(workflowTestID)
 	require.NoError(t, err)
 	assert.NotNil(t, agg)
 
@@ -326,7 +326,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	err = cp.UnregisterFromWorkflow(ctx, unregisterReq)
 	require.NoError(t, err)
 
-	_, err = cp.getAggregator(workflowTestID)
+	_, err = cp.GetAggregator(workflowTestID)
 	assert.ErrorContains(t, err, "no aggregator found for")
 }
 
@@ -337,7 +337,7 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 
 	s := requests.NewStore()
 
-	o := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	o := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 
 	t.Run("ValidConfig", func(t *testing.T) {
 		config, err := values.NewMap(map[string]any{
@@ -412,7 +412,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 
 	s := requests.NewStore()
 
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -472,7 +472,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 
 	s := requests.NewStore()
 
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 0)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 0)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(

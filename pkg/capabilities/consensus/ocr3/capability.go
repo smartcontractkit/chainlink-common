@@ -59,10 +59,10 @@ type capability struct {
 	mu                     sync.RWMutex
 }
 
-var _ capabilityIface = (*capability)(nil)
+var _ CapabilityIface = (*capability)(nil)
 var _ capabilities.ConsensusCapability = (*capability)(nil)
 
-func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
+func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
@@ -136,7 +136,7 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 	return nil
 }
 
-func (o *capability) getAggregator(workflowID string) (types.Aggregator, error) {
+func (o *capability) GetAggregator(workflowID string) (types.Aggregator, error) {
 	agg, ok := o.aggregators[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no aggregator found for workflowID %s", workflowID)
@@ -145,7 +145,7 @@ func (o *capability) getAggregator(workflowID string) (types.Aggregator, error) 
 	return agg, nil
 }
 
-func (o *capability) getEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
+func (o *capability) GetEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
 	enc, ok := o.encoders[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no encoder found for workflowID %s", workflowID)
@@ -154,11 +154,11 @@ func (o *capability) getEncoderByWorkflowID(workflowID string) (types.Encoder, e
 	return enc, nil
 }
 
-func (o *capability) getEncoderByName(encoderName string, config *values.Map) (types.Encoder, error) {
+func (o *capability) GetEncoderByName(encoderName string, config *values.Map) (types.Encoder, error) {
 	return o.encoderFactory(encoderName, config, o.lggr)
 }
 
-func (o *capability) getRegisteredWorkflowsIDs() []string {
+func (o *capability) GetRegisteredWorkflowsIDs() []string {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
@@ -169,7 +169,7 @@ func (o *capability) getRegisteredWorkflowsIDs() []string {
 	return workflows
 }
 
-func (o *capability) unregisterWorkflowID(workflowID string) {
+func (o *capability) UnregisterWorkflowID(workflowID string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	delete(o.registeredWorkflowsIDs, workflowID)

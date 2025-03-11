@@ -60,7 +60,7 @@ func NewOCR3(config Config) *Capability {
 	}
 
 	if config.capability == nil {
-		ci := newCapability(config.store, config.clock, *config.RequestTimeout, config.AggregatorFactory, config.EncoderFactory, config.Logger,
+		ci := NewCapability(config.store, config.clock, *config.RequestTimeout, config.AggregatorFactory, config.EncoderFactory, config.Logger,
 			config.SendBufferSize)
 		config.capability = ci
 	}

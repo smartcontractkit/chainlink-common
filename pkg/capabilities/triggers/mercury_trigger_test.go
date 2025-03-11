@@ -360,7 +360,7 @@ func TestMercuryTrigger_WrapReports(t *testing.T) {
 			ObservationTimestamp: 876543,
 		})
 	}
-	wrapped, err := wrapReports(reportList, "event_id", 1234, meta, triggerID)
+	wrapped, err := WrapReports(reportList, "event_id", 1234, meta, triggerID)
 	require.NoError(t, err)
 	require.NotNil(t, wrapped.Event)
 	require.Len(t, wrapped.Event.Outputs.Underlying["Payload"].(*values.List).Underlying, P)

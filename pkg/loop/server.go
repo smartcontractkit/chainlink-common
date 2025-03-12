@@ -151,7 +151,7 @@ func (s *Server) start() error {
 	}
 
 	if envCfg.DatabaseURL != nil {
-		pg.SetApplicationName(envCfg.DatabaseURL, build.Program)
+		pg.SetApplicationName(envCfg.DatabaseURL.URL(), build.Program)
 		dbURL := envCfg.DatabaseURL.String()
 		var err error
 		s.db, err = pg.DBConfig{

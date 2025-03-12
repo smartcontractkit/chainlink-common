@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
 
 const (
@@ -46,7 +48,7 @@ const (
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	DatabaseURL                    *url.URL
+	DatabaseURL                    *config.SecretURL
 	DatabaseIdleInTxSessionTimeout time.Duration
 	DatabaseLockTimeout            time.Duration
 	DatabaseQueryTimeout           time.Duration
@@ -84,7 +86,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	}
 
 	if e.DatabaseURL != nil { // optional
-		add(envDatabaseURL, e.DatabaseURL.String())
+		add(envDatabaseURL, e.DatabaseURL.URL().String())
 		add(envDatabaseIdleInTxSessionTimeout, e.DatabaseIdleInTxSessionTimeout.String())
 		add(envDatabaseLockTimeout, e.DatabaseLockTimeout.String())
 		add(envDatabaseQueryTimeout, e.DatabaseQueryTimeout.String())
@@ -128,11 +130,15 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
 	var err error
-	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*url.URL, error) {
+	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*config.SecretURL, error) {
 		if s == "" { // DatabaseURL is optional
 			return nil, nil
 		}
-		return url.Parse(s)
+		u, err2 := url.Parse(s)
+		if err2 != nil {
+			return nil, err2
+		}
+		return (*config.SecretURL)(u), nil
 	})
 	if err != nil {
 		return err

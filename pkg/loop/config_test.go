@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -155,7 +156,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				} else {
-					if config.DatabaseURL.String() != tc.expectedDatabaseURL {
+					if config.DatabaseURL.URL().String() != tc.expectedDatabaseURL {
 						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL)
 					}
 					if config.DatabaseIdleInTxSessionTimeout != tc.expectedDatabaseIdleInTxSessionTimeout {
@@ -263,7 +264,7 @@ func equalStringMaps(a, b map[string]string) bool {
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	envCfg := EnvConfig{
-		DatabaseURL:    &url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"},
+		DatabaseURL:    (*config.SecretURL)(&url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"}),
 		PrometheusPort: 9090,
 
 		TracingEnabled:         true,

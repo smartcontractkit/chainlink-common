@@ -51,6 +51,9 @@ const (
 	// ReportFormatCapabilityTrigger is a protobuf binary format compatible
 	// with CRE capability triggers
 	ReportFormatCapabilityTrigger = 5
+	// ReportFormatEVMStreamlined is a feeless report format that offers packed
+	// encoding and minimal header overhead for optimal size and gas efficiency
+	ReportFormatEVMStreamlined = 6
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -61,6 +64,7 @@ var ReportFormats = []ReportFormat{
 	ReportFormatRetirement,
 	ReportFormatEVMABIEncodeUnpacked,
 	ReportFormatCapabilityTrigger,
+	ReportFormatEVMStreamlined,
 }
 
 func (rf ReportFormat) String() string {
@@ -75,6 +79,8 @@ func (rf ReportFormat) String() string {
 		return "evm_abi_encode_unpacked"
 	case ReportFormatCapabilityTrigger:
 		return "capability_trigger"
+	case ReportFormatEVMStreamlined:
+		return "evm_streamlined"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -92,6 +98,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatEVMABIEncodeUnpacked, nil
 	case "capability_trigger":
 		return ReportFormatCapabilityTrigger, nil
+	case "evm_streamlined":
+		return ReportFormatEVMStreamlined, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}

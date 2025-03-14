@@ -152,7 +152,7 @@ func (s *Server) start() error {
 
 	if envCfg.DatabaseURL != nil {
 		pg.SetApplicationName(envCfg.DatabaseURL.URL(), build.Program)
-		dbURL := envCfg.DatabaseURL.String()
+		dbURL := envCfg.DatabaseURL.URL().String()
 		var err error
 		s.db, err = pg.DBConfig{
 			IdleInTxSessionTimeout: envCfg.DatabaseIdleInTxSessionTimeout,
@@ -161,7 +161,7 @@ func (s *Server) start() error {
 			MaxIdleConns:           envCfg.DatabaseMaxIdleConns,
 		}.New(ctx, dbURL, pg.DriverPostgres)
 		if err != nil {
-			return fmt.Errorf("error connecting to DataBase at %s: %w", dbURL, err)
+			return fmt.Errorf("error connecting to DataBase: %w", err)
 		}
 		s.DataSource = sqlutil.WrapDataSource(s.db, s.Logger,
 			sqlutil.TimeoutHook(func() time.Duration { return envCfg.DatabaseQueryTimeout }),

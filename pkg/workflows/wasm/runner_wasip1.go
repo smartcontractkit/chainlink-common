@@ -42,6 +42,7 @@ var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
 var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 
 // TODO callbacks to setup a trigger...
+// TODO can't subscribe to a trigger more than once and differentiate the return value.
 
 func (d *runner[T]) SubscribeToTrigger(id string, _ *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) ([]byte, error)) error {
 	if id == d.trigger.Id {

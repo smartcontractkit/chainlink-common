@@ -11,19 +11,16 @@ message TriggerSubscriptionRequest {
   google.protobuf.Any payload = 2;
 }
 
-message TriggerSubscriptionResponse {
-  optional string error = 1;
-}
-
 message Trigger {
   string id = 1;
   google.protobuf.Any payload = 2;
 }
 
 message ExecuteRequest {
+  string id = 1;
   oneof request {
-    google.protobuf.Empty subscribe = 1;
-    Trigger trigger = 2;
+    google.protobuf.Empty subscribe = 2;
+    Trigger trigger = 3;
   }
 }
 

@@ -157,7 +157,7 @@ func TestEnvConfig_parse(t *testing.T) {
 					t.Errorf("Unexpected error: %v", err)
 				} else {
 					if config.DatabaseURL.URL().String() != tc.expectedDatabaseURL {
-						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL)
+						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL.String())
 					}
 					if config.DatabaseIdleInTxSessionTimeout != tc.expectedDatabaseIdleInTxSessionTimeout {
 						t.Errorf("Expected Database idle in tx session timeout %s, got %s", tc.expectedDatabaseIdleInTxSessionTimeout, config.DatabaseIdleInTxSessionTimeout)

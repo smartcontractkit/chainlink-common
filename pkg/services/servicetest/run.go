@@ -22,6 +22,7 @@ type TestingT interface {
 	require.TestingT
 	Helper()
 	Cleanup(func())
+	Context() context.Context
 }
 
 // Run fails tb if the service fails to start or close.

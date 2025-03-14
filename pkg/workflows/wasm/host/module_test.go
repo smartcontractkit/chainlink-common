@@ -19,11 +19,11 @@ import (
 )
 
 type mockMessageEmitter struct {
-	e      func(context.Context, string, map[string]string) error
+	e      func(context.Context, any, map[string]string) error
 	labels map[string]string
 }
 
-func (m *mockMessageEmitter) Emit(ctx context.Context, msg string) error {
+func (m *mockMessageEmitter) Emit(ctx context.Context, msg any) error {
 	return m.e(ctx, msg, m.labels)
 }
 
@@ -41,7 +41,7 @@ func (m *mockMessageEmitter) Labels() map[string]string {
 	return m.labels
 }
 
-func newMockMessageEmitter(e func(context.Context, string, map[string]string) error) custmsg.MessageEmitter {
+func newMockMessageEmitter(e func(context.Context, any, map[string]string) error) custmsg.MessageEmitter {
 	return &mockMessageEmitter{e: e}
 }
 
@@ -65,7 +65,7 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			store,
-			newMockMessageEmitter(func(ctx context.Context, _ string, _ map[string]string) error {
+			newMockMessageEmitter(func(ctx context.Context, _ any, _ map[string]string) error {
 				v := ctx.Value(ctxKey)
 				assert.Equal(t, ctxValue, v)
 				return nil
@@ -106,7 +106,7 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			store,
-			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ context.Context, _ any, _ map[string]string) error {
 				return nil
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
@@ -176,7 +176,7 @@ func Test_createEmitFn(t *testing.T) {
 		emitFn := createEmitFn(
 			logger.Test(t),
 			store,
-			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
+			newMockMessageEmitter(func(_ context.Context, _ any, _ map[string]string) error {
 				return assert.AnError
 			}),
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {

@@ -2,7 +2,9 @@ package custmsg
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 
 	"google.golang.org/protobuf/proto"
 
@@ -12,7 +14,7 @@ import (
 
 type MessageEmitter interface {
 	// Emit sends a message to the labeler's destination.
-	Emit(context.Context, string) error
+	Emit(context.Context, any) error
 
 	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
 	WithMapLabels(map[string]string) MessageEmitter
@@ -22,6 +24,17 @@ type MessageEmitter interface {
 
 	// Labels returns a view of the current labels.
 	Labels() map[string]string
+}
+
+type ProtoDetail struct {
+	Schema string
+	Domain string
+	Entity string
+}
+
+type ProtoMessage interface {
+	Message() proto.Message
+	Description() ProtoDetail
 }
 
 type Labeler struct {
@@ -38,14 +51,10 @@ func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 	newCustomMessageLabeler := NewLabeler()
 
 	// Copy existing labels from the current agent
-	for k, v := range l.labels {
-		newCustomMessageLabeler.labels[k] = v
-	}
+	maps.Copy(newCustomMessageLabeler.labels, l.labels)
 
 	// Add new key-value pairs
-	for k, v := range labels {
-		newCustomMessageLabeler.labels[k] = v
-	}
+	maps.Copy(newCustomMessageLabeler.labels, labels)
 
 	return newCustomMessageLabeler
 }
@@ -60,9 +69,7 @@ func (l Labeler) With(keyValues ...string) MessageEmitter {
 	}
 
 	// Copy existing labels from the current agent
-	for k, v := range l.labels {
-		newCustomMessageLabeler.labels[k] = v
-	}
+	maps.Copy(newCustomMessageLabeler.labels, l.labels)
 
 	// Add new key-value pairs
 	for i := 0; i < len(keyValues); i += 2 {
@@ -74,25 +81,36 @@ func (l Labeler) With(keyValues ...string) MessageEmitter {
 	return newCustomMessageLabeler
 }
 
-func (l Labeler) Emit(ctx context.Context, msg string) error {
-	return sendLogAsCustomMessageW(ctx, msg, l.labels)
+func (l Labeler) Emit(ctx context.Context, msg any) error {
+	switch msg.(type) {
+	case string:
+		return sendLogAsStringMessageW(ctx, msg.(string), l.labels)
+	default:
+		typedMsg, ok := msg.(ProtoMessage)
+		if !ok {
+			// TODO: can default to JSON encoding instead of returning an error
+			return errors.New("must be a proto message")
+		}
+
+		return sendLogAsCustomMessageW(ctx, typedMsg.Description(), typedMsg.Message(), l.labels)
+	}
 }
 
 func (l Labeler) Labels() map[string]string {
 	copied := make(map[string]string, len(l.labels))
-	for k, v := range l.labels {
-		copied[k] = v
-	}
+
+	maps.Copy(copied, l.labels)
+
 	return copied
 }
 
 // SendLogAsCustomMessage emits a BaseMessage With msg and labels as data.
 // any key in labels that is not part of orderedLabelKeys will not be transmitted
 func (l Labeler) SendLogAsCustomMessage(ctx context.Context, msg string) error {
-	return sendLogAsCustomMessageW(ctx, msg, l.labels)
+	return sendLogAsStringMessageW(ctx, msg, l.labels)
 }
 
-func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]string) error {
+func sendLogAsStringMessageW(ctx context.Context, msg string, labels map[string]string) error {
 	// TODO un-comment after INFOPLAT-1386
 	// cast to map[string]any
 	//newLabels := map[string]any{}
@@ -120,6 +138,30 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 		"beholder_domain", "platform", // required
 		"beholder_entity", "BaseMessage", // required
 	)
+	if err != nil {
+		return fmt.Errorf("sending custom message failed on emit: %w", err)
+	}
+
+	return nil
+}
+
+func sendLogAsCustomMessageW(ctx context.Context, desc ProtoDetail, msg proto.Message, labels map[string]string) error {
+	payloadBytes, err := proto.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("sending custom message failed to marshal protobuf: %w", err)
+	}
+
+	kvs := []any{
+		"beholder_data_schema", desc.Schema, // required
+		"beholder_domain", desc.Domain, // required
+		"beholder_entity", desc.Entity, // required
+	}
+
+	for key, value := range labels {
+		kvs = append(kvs, []any{key, value}...)
+	}
+
+	err = beholder.GetEmitter().Emit(ctx, payloadBytes, kvs...)
 	if err != nil {
 		return fmt.Errorf("sending custom message failed on emit: %w", err)
 	}

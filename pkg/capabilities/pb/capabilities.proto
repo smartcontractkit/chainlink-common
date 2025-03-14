@@ -37,6 +37,8 @@ message RequestMetadata {
   uint32 workflow_don_config_version = 7;
   string reference_id = 8;
   string decoded_workflow_name = 9;
+  string max_cost = 10;
+  string max_cost_units = 11;
 }
 
 message CapabilityRequest {
@@ -74,9 +76,15 @@ service TriggerExecutable {
   rpc UnregisterTrigger (TriggerRegistrationRequest) returns (google.protobuf.Empty) {}
 }
 
+message ResponseMetadata {
+  string cost_spend = 1;
+  string cost_spend_unit = 2;
+}
+
 message CapabilityResponse {
   values.Map value = 1;
   string error = 2;
+  ResponseMetadata metadata = 3;
 }
 
 message RegistrationMetadata {
@@ -119,4 +127,14 @@ message InitialiseRequest {
 
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
+}
+
+message MeteringReportStep {
+	string peer_2_peer_id = 1;
+	string spend_unit = 2;
+	string spend_value = 3;
+}
+
+message MeteringReport {
+  map<string, MeteringReportStep> steps = 1;
 }

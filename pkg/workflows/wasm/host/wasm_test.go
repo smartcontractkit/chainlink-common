@@ -271,7 +271,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
-			Labeler: newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+			Labeler: newMockMessageEmitter(func(gotCtx context.Context, msg any, kvs map[string]string) error {
 				t.Helper()
 
 				v := ctx.Value(ctxKey)
@@ -301,7 +301,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
-			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, kvs map[string]string) error {
+			Labeler: newMockMessageEmitter(func(_ context.Context, msg any, kvs map[string]string) error {
 				t.Helper()
 
 				assert.Equal(t, "testing emit", msg)
@@ -343,7 +343,7 @@ func Test_Compute_Emit(t *testing.T) {
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
-			Labeler: newMockMessageEmitter(func(_ context.Context, msg string, labels map[string]string) error {
+			Labeler: newMockMessageEmitter(func(_ context.Context, msg any, labels map[string]string) error {
 				return nil
 			}), // never called
 		}, binary)
@@ -1265,7 +1265,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		ctx := tests.Context(t)
 		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
-		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg any, kvs map[string]string) error {
 			return errors.New("some error")
 		})
 		// an emitter response with an error "some error" when marshaled is 14 bytes
@@ -1301,7 +1301,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		ctx := tests.Context(t)
 		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
-		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg any, kvs map[string]string) error {
 			return errors.New("some error")
 		})
 

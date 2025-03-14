@@ -13,27 +13,12 @@ type TestingT interface {
 	require.TestingT
 	Helper()
 	Cleanup(func())
+	Context() context.Context
 }
 
-func Context(tb TestingT) (ctx context.Context) {
-	ctx = context.Background()
-	var cancel func()
-
-	t, isTest := tb.(interface {
-		Deadline() (deadline time.Time, ok bool)
-	})
-	if isTest {
-		d, hasDeadline := t.Deadline()
-		if hasDeadline {
-			ctx, cancel = context.WithDeadline(ctx, d)
-			tb.Cleanup(cancel)
-			return
-		}
-	}
-
-	ctx, cancel = context.WithCancel(ctx)
-	tb.Cleanup(cancel)
-	return
+// Deprecated: use [*testing.T.Context]
+func Context(t TestingT) (ctx context.Context) {
+	return t.Context()
 }
 
 // DefaultWaitTimeout is the default wait timeout. If you have a *testing.T, use WaitTimeout instead.

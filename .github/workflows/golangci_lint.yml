@@ -14,5 +14,5 @@ jobs:
         if: ${{ always() && !contains(join(github.event.pull_request.labels.*.name, ' '), 'allow-lint-issues') }}
         uses: smartcontractkit/.github/actions/ci-lint-go@2ac9d97a83a5edded09af7fcf4ea5bce7a4473a4 # v0.2.6
         with:
-          golangci-lint-version: v1.63.4
+          golangci-lint-version: v1.64.8
           

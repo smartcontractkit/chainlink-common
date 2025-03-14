@@ -53,6 +53,7 @@ type TestingT[T any] interface {
 	Failed() bool
 	Run(name string, f func(t T)) bool
 	Parallel()
+	Context() context.Context
 }
 
 // Tests execution utility function that will consider enabled / disabled test cases according to

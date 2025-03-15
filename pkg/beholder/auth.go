@@ -1,7 +1,9 @@
 package beholder
 
 import (
+	"crypto"
 	"crypto/ed25519"
+	"crypto/rand"
 	"fmt"
 )
 
@@ -17,11 +19,14 @@ var authHeaderVersion = "1"
 // <version>:<public_key_hex>:<signature_hex>
 //
 // where the byte value of <public_key_hex> is what's being signed
-func BuildAuthHeaders(privKey ed25519.PrivateKey) map[string]string {
-	pubKey := privKey.Public().(ed25519.PublicKey)
+func BuildAuthHeaders(ed25519Signer crypto.Signer) (map[string]string, error) {
+	pubKey := ed25519Signer.Public().(ed25519.PublicKey)
 	messageBytes := pubKey
-	signature := ed25519.Sign(privKey, messageBytes)
+	signature, err := ed25519Signer.Sign(rand.Reader, messageBytes, crypto.Hash(0))
+	if err != nil {
+		return nil, fmt.Errorf("ed25519: failed to sign message: %w", err)
+	}
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 
-	return map[string]string{authHeaderKey: headerValue}
+	return map[string]string{authHeaderKey: headerValue}, nil
 }

@@ -99,16 +99,6 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 		ProviderType: req.RelayArgs.ProviderType,
 	}
 
-	// TODO - the mercury credentials should be set as part of the relay config and not as a separate field
-	if req.RelayArgs.MercuryCredentials != nil {
-		relayArgs.MercuryCredentials = &types.MercuryCredentials{
-			LegacyURL: req.RelayArgs.MercuryCredentials.LegacyUrl,
-			URL:       req.RelayArgs.MercuryCredentials.Url,
-			Username:  req.RelayArgs.MercuryCredentials.Username,
-			Password:  req.RelayArgs.MercuryCredentials.Password,
-		}
-	}
-
 	pluginArgs := core.PluginArgs{
 		TransmitterID: req.PluginArgs.TransmitterID,
 		PluginConfig:  req.PluginArgs.PluginConfig,

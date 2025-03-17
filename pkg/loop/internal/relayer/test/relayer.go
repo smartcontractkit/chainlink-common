@@ -20,7 +20,6 @@ import (
 	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
-	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
 	ocr3capabilitytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
@@ -62,7 +61,6 @@ type staticRelayerConfig struct {
 	contractReaderConfig   []byte
 	medianProvider         testtypes.MedianProviderTester
 	agnosticProvider       testtypes.PluginProviderTester
-	mercuryProvider        mercurytest.MercuryProviderTester
 	executionProvider      cciptest.ExecProviderTester
 	commitProvider         cciptest.CommitProviderTester
 	configProvider         ocr2test.ConfigProviderTester
@@ -83,7 +81,6 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 		pluginArgs:             PluginArgs,
 		contractReaderConfig:   []byte("test"),
 		medianProvider:         mediantest.MedianProvider(lggr),
-		mercuryProvider:        mercurytest.MercuryProvider(lggr),
 		executionProvider:      cciptest.ExecutionProvider(lggr),
 		agnosticProvider:       ocr2test.AgnosticPluginProvider(lggr),
 		configProvider:         ocr2test.ConfigProvider(lggr),
@@ -172,7 +169,6 @@ func (s staticRelayer) HealthReport() map[string]error {
 	services.CopyHealth(hp, s.medianProvider.HealthReport())
 	services.CopyHealth(hp, s.agnosticProvider.HealthReport())
 	services.CopyHealth(hp, s.ocr3CapabilityProvider.HealthReport())
-	services.CopyHealth(hp, s.mercuryProvider.HealthReport())
 	services.CopyHealth(hp, s.executionProvider.HealthReport())
 	services.CopyHealth(hp, s.commitProvider.HealthReport())
 	return hp
@@ -234,18 +230,6 @@ func (s staticRelayer) NewOCR3CapabilityProvider(ctx context.Context, r types.Re
 		}
 	}
 	return s.ocr3CapabilityProvider, nil
-}
-
-func (s staticRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
-	if s.StaticChecks {
-		if !equalRelayArgs(r, mercurytest.RelayArgs) {
-			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercurytest.RelayArgs, r)
-		}
-		if !reflect.DeepEqual(mercurytest.PluginArgs, p) {
-			return nil, fmt.Errorf("expected plugin args %v but got %v", mercurytest.PluginArgs, p)
-		}
-	}
-	return s.mercuryProvider, nil
 }
 
 func (s staticRelayer) NewExecutionProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.CCIPExecProvider, error) {
@@ -421,7 +405,6 @@ func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticConfigProvider",
 			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticExecProvider",
 			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticMedianProvider",
-			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticMercuryProvider",
 			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider",
 			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider.staticPluginProvider",
 		)
@@ -525,7 +508,6 @@ func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) Fuzzable
 
 	f.Add([]byte{}, int32(-1), "ABC\xa8\x8c\xb3G\xfc", false, []byte{}, "", "", []byte{})                                                    // bad inputs
 	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.Median), "testtransmitter", []byte{100: 88})     // valid for MedianProvider
-	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.Mercury), "testtransmitter", []byte{100: 88})    // valid for MercuryProvider
 	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.Functions), "testtransmitter", []byte{100: 88})  // valid for FunctionsProvider
 	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.OCR2Keeper), "testtransmitter", []byte{100: 88}) // valid for AutomationProvider
 

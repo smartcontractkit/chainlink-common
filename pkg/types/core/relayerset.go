@@ -21,10 +21,9 @@ type PluginArgs struct {
 }
 
 type RelayArgs struct {
-	ContractID         string
-	RelayConfig        []byte
-	ProviderType       string
-	MercuryCredentials *types.MercuryCredentials
+	ContractID   string
+	RelayConfig  []byte
+	ProviderType string
 }
 
 type Relayer interface {

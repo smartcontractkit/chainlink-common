@@ -21,7 +21,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
@@ -284,8 +283,6 @@ func WrapProviderClientConnection(ctx context.Context, providerType string, cc g
 		return ocr2.NewPluginProviderClient(broker, cc), nil
 	case string(types.OCR3Capability):
 		return ocr3capability.NewProviderClient(broker, cc), nil
-	case string(types.Mercury):
-		return mercury.NewProviderClient(broker, cc), nil
 	case string(types.CCIPExecution):
 		// TODO BCF-3061
 		// what do i do here? for the local embedded relayer, we are using the broker
@@ -486,12 +483,6 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 			return nil, err
 		}
 		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
-	case string(types.Mercury):
-		id, err := r.newMercuryProvider(ctx, relayArgs, pluginArgs)
-		if err != nil {
-			return nil, err
-		}
-		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
 	case string(types.CCIPCommit):
 		id, err := r.newCommitProvider(ctx, relayArgs, pluginArgs)
 		if err != nil {
@@ -582,34 +573,6 @@ func (r *relayerServer) newPluginProvider(ctx context.Context, relayArgs types.R
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
-	}, providerRes)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, err
-}
-
-func (r *relayerServer) newMercuryProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
-	i, ok := r.impl.(looptypes.MercuryProvider)
-	if !ok {
-		return 0, status.Error(codes.Unimplemented, fmt.Sprintf("mercury not supported by %T", r.impl))
-	}
-
-	provider, err := i.NewMercuryProvider(ctx, relayArgs, pluginArgs)
-	if err != nil {
-		return 0, err
-	}
-	err = provider.Start(ctx)
-	if err != nil {
-		return 0, err
-	}
-	const name = "MercuryProvider"
-	providerRes := net.Resource{Name: name, Closer: provider}
-
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		ocr2.RegisterPluginProviderServices(s, provider)
-		mercury.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err

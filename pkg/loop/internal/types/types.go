@@ -18,10 +18,6 @@ type MedianProvider interface {
 	NewMedianProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.MedianProvider, error)
 }
 
-type MercuryProvider interface {
-	NewMercuryProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.MercuryProvider, error)
-}
-
 type FunctionsProvider interface {
 	NewFunctionsProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.FunctionsProvider, error)
 }

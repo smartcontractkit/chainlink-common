@@ -116,20 +116,9 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 }
 
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {
-	// TODO at a later phase these credentials should be set as part of the relay config and not as a separate field
-	var mercuryCredentials *relayerset.MercuryCredentials
-	if relayArgs.MercuryCredentials != nil {
-		mercuryCredentials = &relayerset.MercuryCredentials{
-			LegacyUrl: relayArgs.MercuryCredentials.LegacyURL,
-			Url:       relayArgs.MercuryCredentials.URL,
-			Username:  relayArgs.MercuryCredentials.Username,
-			Password:  relayArgs.MercuryCredentials.Password,
-		}
-	}
-
 	req := &relayerset.NewPluginProviderRequest{
 		RelayerId:  &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
-		RelayArgs:  &relayerset.RelayArgs{ContractID: relayArgs.ContractID, RelayConfig: relayArgs.RelayConfig, ProviderType: relayArgs.ProviderType, MercuryCredentials: mercuryCredentials},
+		RelayArgs:  &relayerset.RelayArgs{ContractID: relayArgs.ContractID, RelayConfig: relayArgs.RelayConfig, ProviderType: relayArgs.ProviderType},
 		PluginArgs: &relayerset.PluginArgs{TransmitterID: pluginArgs.TransmitterID, PluginConfig: pluginArgs.PluginConfig},
 	}
 

@@ -66,10 +66,21 @@ type MercuryCredentials struct {
 }
 
 type ChainStatus struct {
-	ID      string
-	Enabled bool
-	Config  string // TOML
+	ID           string
+	Enabled      bool
+	Config       string // TOML
+	ReplayStatus ReplayStatus
 }
+
+// ReplayStatus is the status of the current replay
+type ReplayStatus int
+
+const (
+	ReplayStatusNoRequest ReplayStatus = iota
+	ReplayStatusRequested
+	ReplayStatusPending
+	ReplayStatusComplete
+)
 
 type NodeStatus struct {
 	ChainID string
@@ -91,6 +102,8 @@ type ChainService interface {
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
+	// Replay ...
+	Replay(ctx context.Context, from string, args map[string]any) error
 }
 
 // Relayer extends ChainService with providers for each product.

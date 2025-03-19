@@ -41,10 +41,6 @@ func (m *mockRelayer) NewFunctionsProvider(ctx context.Context, rargs types.Rela
 	return staticFunctionsProvider{}, nil
 }
 
-func (m *mockRelayer) NewMercuryProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.MercuryProvider, error) {
-	return staticMercuryProvider{}, nil
-}
-
 func (m *mockRelayer) NewAutomationProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.AutomationProvider, error) {
 	return staticAutomationProvider{}, nil
 }
@@ -125,10 +121,6 @@ func (s staticMedianProvider) Start(context.Context) error {
 
 type staticFunctionsProvider struct {
 	types.FunctionsProvider
-}
-
-type staticMercuryProvider struct {
-	types.MercuryProvider
 }
 
 type staticAutomationProvider struct {

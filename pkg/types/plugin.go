@@ -11,7 +11,7 @@ const (
 	// TODO: sc-55296 to rename ocr2keeper to ocr2automation in code
 	OCR2Keeper     OCR2PluginType = "ocr2automation"
 	Functions      OCR2PluginType = "functions"
-	Mercury        OCR2PluginType = "mercury"
+	_              OCR2PluginType = "mercury" // Mercury is decommissioned
 	LLO            OCR2PluginType = "llo"
 	GenericPlugin  OCR2PluginType = "plugin"
 	OCR3Capability OCR2PluginType = "ocr3-capability"

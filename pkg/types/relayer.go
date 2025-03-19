@@ -48,21 +48,13 @@ type PluginArgs struct {
 // RelayArgs are the args required to create relayer.
 // The are common to all relayer implementations.
 type RelayArgs struct {
-	ExternalJobID      uuid.UUID
-	JobID              int32
-	OracleSpecID       int32
-	ContractID         string
-	New                bool   // Whether this is a first time job add.
-	RelayConfig        []byte // The specific configuration of a given relayer instance. Will vary by relayer type.
-	ProviderType       string
-	MercuryCredentials *MercuryCredentials
-}
-
-type MercuryCredentials struct {
-	LegacyURL string
-	URL       string
-	Username  string
-	Password  string
+	ExternalJobID uuid.UUID
+	JobID         int32
+	OracleSpecID  int32
+	ContractID    string
+	New           bool   // Whether this is a first time job add.
+	RelayConfig   []byte // The specific configuration of a given relayer instance. Will vary by relayer type.
+	ProviderType  string
 }
 
 type ChainStatus struct {
@@ -108,7 +100,6 @@ type Relayer interface {
 	NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error)
 
 	NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
-	NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
 	NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
 	NewLLOProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)

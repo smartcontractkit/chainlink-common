@@ -32,7 +32,6 @@ var relayerServiceNames = []string{
 	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticCommitProvider",
 	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticConfigProvider",
 	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticExecProvider",
-	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticMercuryProvider",
 	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticMedianProvider",
 	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider",
 	"RelayerService.PluginRelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider.staticPluginProvider",

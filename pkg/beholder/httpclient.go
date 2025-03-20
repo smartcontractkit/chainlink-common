@@ -32,7 +32,9 @@ func newCertFromFile(certFile string) (*x509.CertPool, error) {
 	return cp, nil
 }
 
-func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
+// NewHTTPClient creates a HTTP based beholder Client. Use NewClient to create a client from a Config which will pick
+// the best client type from the Config.
+func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err
@@ -81,7 +83,6 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
 		}
 		if cfg.LogExportMaxBatchSize > 0 {
-
 			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
 		}
 		if cfg.LogExportInterval > 0 {

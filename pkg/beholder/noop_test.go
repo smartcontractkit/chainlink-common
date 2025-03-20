@@ -1,4 +1,4 @@
-package beholder
+package beholder_test
 
 import (
 	"context"
@@ -12,11 +12,12 @@ import (
 	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestNoopClient(t *testing.T) {
-	noopClient := NewNoopClient()
+	noopClient := beholder.NewNoopClient()
 	assert.NotNil(t, noopClient)
 
 	// Message Emitter

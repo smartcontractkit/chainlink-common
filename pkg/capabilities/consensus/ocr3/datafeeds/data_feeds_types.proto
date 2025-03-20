@@ -13,3 +13,12 @@ message DataFeedsMercuryReportInfo {
   int64 observation_timestamp = 3;
   bytes benchmark_price = 5; // big.Int
 }
+
+message LLOOutcomeMetadata {
+  map<uint32, LLOStreamInfo> streamInfo = 1;
+}
+
+message LLOStreamInfo {
+  int64 timestamp = 1;
+  bytes price = 2; // Decimal
+}

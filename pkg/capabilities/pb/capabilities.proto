@@ -122,3 +122,17 @@ message InitialiseRequest {
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
 }
+
+message MeteringReportNodeDetail {
+	string peer_2_peer_id = 1;
+	string spend_unit = 2;
+	string spend_value = 3;
+}
+
+message MeteringReportStep {
+  repeated MeteringReportNodeDetail nodes = 1;
+}
+
+message MeteringReport {
+  map<string, MeteringReportStep> steps = 1;
+}

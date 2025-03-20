@@ -64,20 +64,23 @@ func NewClient(cfg Config) (*Client, error) {
 			// note: context is unused internally
 			return otlploghttp.New(context.Background(), options...) //nolint
 		}
-		return newHTTPClient(cfg, factory)
+		return NewHTTPClient(cfg, factory)
 	}
 
 	factory := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		// note: context is unused internally
 		return otlploggrpc.New(context.Background(), options...) //nolint
 	}
-	return newGRPCClient(cfg, factory)
+
+	return NewGRPCClient(cfg, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+// NewGRPCClient creates a GRPC based beholder Client. Use NewClient to create a client from a Config which will pick
+// the best client type from the Config.
+func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err

@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	otellognoop "go.opentelemetry.io/otel/log/noop"
 	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
@@ -34,15 +33,6 @@ func (b BeholderTester) Len(t *testing.T, attrKVs ...any) int {
 	found := b.msgsForKVs(t, attrKVs...)
 
 	return len(found)
-}
-
-// GreaterOrEqual asserts the total number of messages received that match the provided attribute key/value pairs.
-func (b BeholderTester) GreaterOrEqual(t *testing.T, length int, attrKVs ...any) bool {
-	t.Helper()
-
-	found := b.msgsForKVs(t, attrKVs...)
-
-	return assert.GreaterOrEqual(t, len(found), length)
 }
 
 func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
@@ -74,22 +64,6 @@ func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Mess
 	}
 
 	return found
-}
-
-// MessageExists asserts that the provided messages matches exactly to at least on of the received messages.
-func (b BeholderTester) MessageExists(t *testing.T, msg beholder.Message) bool {
-	t.Helper()
-
-	b.emitter.mu.RLock()
-	defer b.emitter.mu.RUnlock()
-
-	for _, eMsg := range b.emitter.msgs {
-		return assert.Equal(t, msg, eMsg)
-	}
-
-	t.Fail()
-
-	return false
 }
 
 // Beholder sets the global beholder client as a message collector and returns a tester that provides helper assertion

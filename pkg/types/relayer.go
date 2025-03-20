@@ -66,9 +66,35 @@ type MercuryCredentials struct {
 }
 
 type ChainStatus struct {
-	ID      string
-	Enabled bool
-	Config  string // TOML
+	ID           string
+	Enabled      bool
+	Config       string // TOML
+	ReplayStatus ReplayStatus
+}
+
+// ReplayStatus is the status of the current replay
+type ReplayStatus int
+
+const (
+	ReplayStatusNoRequest ReplayStatus = iota
+	ReplayStatusRequested
+	ReplayStatusPending
+	ReplayStatusComplete
+)
+
+func (rs ReplayStatus) String() string {
+	switch rs {
+	case ReplayStatusNoRequest:
+		return "NoRequest"
+	case ReplayStatusRequested:
+		return "Requested"
+	case ReplayStatusPending:
+		return "Pending"
+	case ReplayStatusComplete:
+		return "Complete"
+	default:
+		return fmt.Sprintf("invalid status: %d", rs) // Handle unknown cases
+	}
 }
 
 type NodeStatus struct {
@@ -91,6 +117,8 @@ type ChainService interface {
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
+	// Replay is an emergency recovery tool to re-process blocks starting at the provided fromBlock
+	Replay(fromBlock uint64, args map[string]any)
 }
 
 // Relayer extends ChainService with providers for each product.

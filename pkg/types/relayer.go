@@ -118,7 +118,7 @@ type ChainService interface {
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
 	// Replay is an emergency recovery tool to re-process blocks starting at the provided fromBlock
-	Replay(fromBlock int64, args map[string]any)
+	Replay(fromBlock uint64, args map[string]any)
 }
 
 // Relayer extends ChainService with providers for each product.

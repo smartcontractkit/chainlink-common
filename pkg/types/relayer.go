@@ -93,7 +93,7 @@ type ChainReader interface {
 type ChainWriter interface {
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
-	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
+	NewContractWriter(ctx context.Context, contractWriterCfg []byte) (ContractWriter, error)
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error

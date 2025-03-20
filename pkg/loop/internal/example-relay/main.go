@@ -106,7 +106,7 @@ func (r *relayer) Transact(ctx context.Context, from, to string, amount *big.Int
 	return errors.New("unimplemented")
 }
 
-func (r *relayer) NewContractWriter(ctx context.Context, chainWriterConfig []byte) (types.ContractWriter, error) {
+func (r *relayer) NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
 	return nil, errors.New("unimplemented")
 }
 

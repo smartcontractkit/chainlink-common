@@ -466,8 +466,8 @@ func (_c *Relayer_NewContractReader_Call) RunAndReturn(run func(context.Context,
 }
 
 // NewContractWriter provides a mock function with given fields: ctx, config
-func (_m *Relayer) NewContractWriter(ctx context.Context, config []byte) (types.ContractWriter, error) {
-	ret := _m.Called(ctx, config)
+func (_m *Relayer) NewContractWriter(ctx context.Context, contractWriterCfg []byte) (types.ContractWriter, error) {
+	ret := _m.Called(ctx, contractWriterCfg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewContractWriter")
@@ -476,10 +476,10 @@ func (_m *Relayer) NewContractWriter(ctx context.Context, config []byte) (types.
 	var r0 types.ContractWriter
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []byte) (types.ContractWriter, error)); ok {
-		return rf(ctx, config)
+		return rf(ctx, contractWriterCfg)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, []byte) types.ContractWriter); ok {
-		r0 = rf(ctx, config)
+		r0 = rf(ctx, contractWriterCfg)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(types.ContractWriter)
@@ -487,7 +487,7 @@ func (_m *Relayer) NewContractWriter(ctx context.Context, config []byte) (types.
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
-		r1 = rf(ctx, config)
+		r1 = rf(ctx, contractWriterCfg)
 	} else {
 		r1 = ret.Error(1)
 	}

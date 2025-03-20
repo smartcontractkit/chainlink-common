@@ -137,6 +137,8 @@ func Beholder(t *testing.T) BeholderTester {
 	return BeholderTester{emitter: messageEmitter}
 }
 
+// assertMessageEmitter is implemented with the same interface as the noopMessageEmitter in pkg/beholder/noop.go
+// it is unknown at this time whether EmitMessage is needed, but it exists in the case that it is needed
 type assertMessageEmitter struct {
 	t    *testing.T
 	mu   sync.RWMutex

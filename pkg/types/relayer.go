@@ -82,6 +82,21 @@ const (
 	ReplayStatusComplete
 )
 
+func (rs ReplayStatus) String() string {
+	switch rs {
+	case ReplayStatusNoRequest:
+		return "NoRequest"
+	case ReplayStatusRequested:
+		return "Requested"
+	case ReplayStatusPending:
+		return "Pending"
+	case ReplayStatusComplete:
+		return "Complete"
+	default:
+		return fmt.Sprintf("invalid status: %d", rs) // Handle unknown cases
+	}
+}
+
 type NodeStatus struct {
 	ChainID string
 	Name    string

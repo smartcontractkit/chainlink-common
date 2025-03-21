@@ -665,7 +665,7 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 
 type unimplementedMessageEmitter struct{}
 
-func (u *unimplementedMessageEmitter) Emit(context.Context, string) error {
+func (u *unimplementedMessageEmitter) Emit(context.Context, any) error {
 	return errors.New("unimplemented")
 }
 

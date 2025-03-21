@@ -25,6 +25,9 @@ type TargetConfig struct {
 	// The address to write to.
 	Address string `json:"address" yaml:"address" mapstructure:"address"`
 
+	// The step timeout which must be a number expressed in seconds
+	CreStepTimeout *int64 `json:"cre_step_timeout,omitempty" yaml:"cre_step_timeout,omitempty" mapstructure:"cre_step_timeout,omitempty"`
+
 	// The delta stage which must be a number followed by a time symbol (s for
 	// seconds, m for minutes, h for hours, d for days).
 	DeltaStage string `json:"deltaStage" yaml:"deltaStage" mapstructure:"deltaStage"`

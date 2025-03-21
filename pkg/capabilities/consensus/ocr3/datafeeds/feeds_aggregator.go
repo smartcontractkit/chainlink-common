@@ -24,14 +24,16 @@ const (
 	//   []Reports{FeedID []byte, RawReport []byte, Price *big.Int, Timestamp int64}
 	// Example of a compatible EVM encoder ABI config:
 	//   (bytes32 FeedID, bytes RawReport, uint256 Price, uint64 Timestamp)[] Reports
+
+	// The follow constants are used in value maps to ensure consistent naming while the underlying
+	// implementation is untyped.
 	TopLevelListOutputFieldName = "Reports"
 	FeedIDOutputFieldName       = "FeedID"
 	RawReportOutputFieldName    = "RawReport"
 	PriceOutputFieldName        = "Price"
 	TimestampOutputFieldName    = "Timestamp"
 	RemappedIDOutputFieldName   = "RemappedID"
-
-	StreamIDOutputFieldName = "StreamID"
+	StreamIDOutputFieldName     = "StreamID"
 
 	addrLen = 20
 )

@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func ExecFactoryServer(lggr logger.Logger) execFactoryServer {
@@ -72,8 +71,7 @@ type ExecutionLOOPTester struct {
 
 func (e ExecutionLOOPTester) Run(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
 	t.Run("ExecutionLOOP", func(t *testing.T) {
-		ctx := tests.Context(t)
-		factory, err := p.NewExecutionFactory(ctx, e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID, e.SourceTokenAddress)
+		factory, err := p.NewExecutionFactory(t.Context(), e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID, e.SourceTokenAddress)
 		require.NoError(t, err)
 
 		runExecReportingPluginFactory(t, factory)
@@ -98,15 +96,13 @@ func runExecReportingPluginFactory(t *testing.T, factory types.ReportingPluginFa
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(tests.Context(t), reportingplugintest.StaticFactoryConfig.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), reportingplugintest.StaticFactoryConfig.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
-
-			expectedReportingPlugin.AssertEqual(ctx, t, rp)
+			expectedReportingPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }

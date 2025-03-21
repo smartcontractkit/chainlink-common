@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -176,11 +175,7 @@ func newCapabilityPlugin(t *testing.T, capability capabilities.BaseCapability) (
 }
 
 func Test_RegisterTrigger(t *testing.T) {
-	testContext := tests.Context(t)
 	t.Run("async RegisterTrigger implementation returns error to server", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		errMsg := "boom"
 		mtr := mustMockTrigger(t)
 		mtr.failedToRegisterErr = &errMsg
@@ -191,19 +186,14 @@ func Test_RegisterTrigger(t *testing.T) {
 		ctr := tr.(capabilities.TriggerCapability)
 
 		_, err = ctr.RegisterTrigger(
-			ctx,
+			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
 		require.ErrorContains(t, err, fmt.Sprintf("failed registering trigger: %s", errMsg))
 	})
 }
 
 func Test_Capabilities(t *testing.T) {
-	testContext := tests.Context(t)
-
 	t.Run("fetching a trigger capability and sending responses propagate to client", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		mtr := mustMockTrigger(t)
 		tr, _, _, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
@@ -211,7 +201,7 @@ func Test_Capabilities(t *testing.T) {
 		ctr := tr.(capabilities.TriggerCapability)
 
 		ch, err := ctr.RegisterTrigger(
-			ctx,
+			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
@@ -239,9 +229,6 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability and stopping the underlying trigger closes the client channel", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		mtr := mustMockTrigger(t)
 		tr, _, _, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
@@ -249,7 +236,7 @@ func Test_Capabilities(t *testing.T) {
 		ctr := tr.(capabilities.TriggerCapability)
 
 		ch, err := ctr.RegisterTrigger(
-			ctx,
+			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
@@ -265,7 +252,7 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability and closing the client connection should close the client channel and unregister the trigger", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 
 		mtr := mustMockTrigger(t)
@@ -298,9 +285,6 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability and stopping the server should close the client channel and unregister the trigger", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		mtr := mustMockTrigger(t)
 		tr, _, server, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
@@ -308,7 +292,7 @@ func Test_Capabilities(t *testing.T) {
 		ctr := tr.(capabilities.TriggerCapability)
 
 		ch, err := ctr.RegisterTrigger(
-			ctx,
+			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
@@ -330,9 +314,6 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability and unregistering should close client channel", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		mtr := mustMockTrigger(t)
 		tr, _, _, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
@@ -340,7 +321,7 @@ func Test_Capabilities(t *testing.T) {
 		ctr := tr.(capabilities.TriggerCapability)
 
 		ch, err := ctr.RegisterTrigger(
-			ctx,
+			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 
@@ -349,7 +330,7 @@ func Test_Capabilities(t *testing.T) {
 		assert.NotNil(t, mtr.callback)
 
 		err = ctr.UnregisterTrigger(
-			ctx,
+			t.Context(),
 			capabilities.TriggerRegistrationRequest{})
 
 		require.NoError(t, err)
@@ -361,16 +342,13 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability and cancelling context should unregister trigger and close client channel", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		mtr := mustMockTrigger(t)
 		tr, _, _, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
 
 		ctr := tr.(capabilities.TriggerCapability)
 
-		ctxWithCancel, cancel := context.WithCancel(ctx)
+		ctxWithCancel, cancel := context.WithCancel(t.Context())
 
 		ch, err := ctr.RegisterTrigger(
 			ctxWithCancel,
@@ -390,25 +368,19 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching a trigger capability and calling Info", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		mtr := mustMockTrigger(t)
 		tr, _, _, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
 
-		gotInfo, err := tr.Info(ctx)
+		gotInfo, err := tr.Info(t.Context())
 		require.NoError(t, err)
 
-		expectedInfo, err := mtr.Info(ctx)
+		expectedInfo, err := mtr.Info(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, expectedInfo, gotInfo)
 	})
 
 	t.Run("fetching an action capability, and (un)registering it", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
@@ -421,7 +393,7 @@ func Test_Capabilities(t *testing.T) {
 			Config: vmap,
 		}
 		err = act.RegisterToWorkflow(
-			ctx,
+			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
 
@@ -431,7 +403,7 @@ func Test_Capabilities(t *testing.T) {
 			Config: vmap,
 		}
 		err = act.UnregisterFromWorkflow(
-			ctx,
+			t.Context(),
 			expectedUnrRequest)
 		require.NoError(t, err)
 
@@ -439,9 +411,6 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching an action capability, and executing it", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
@@ -463,7 +432,7 @@ func Test_Capabilities(t *testing.T) {
 		ma.callback <- expectedResp
 
 		resp, err := c.(capabilities.ActionCapability).Execute(
-			ctx,
+			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
 
@@ -471,9 +440,6 @@ func Test_Capabilities(t *testing.T) {
 	})
 
 	t.Run("fetching an action capability, and executing it with error", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
@@ -491,16 +457,13 @@ func Test_Capabilities(t *testing.T) {
 		ma.responseError = errors.New("bang")
 
 		_, err = c.(capabilities.ActionCapability).Execute(
-			ctx,
+			t.Context(),
 			expectedRequest)
 		require.NotNil(t, err)
 		assert.Equal(t, "bang", err.Error())
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
@@ -517,15 +480,12 @@ func Test_Capabilities(t *testing.T) {
 
 		ma.callback <- capabilities.CapabilityResponse{}
 		_, err = c.(capabilities.ActionCapability).Execute(
-			ctx,
+			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
 	})
 
 	t.Run("calling execute should be synchronous", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(testContext)
-		defer cancel()
-
 		ma := mustSynchronousCallback(t, capabilities.CapabilityTypeAction)
 		ma.callback <- capabilities.CapabilityResponse{}
 
@@ -545,7 +505,7 @@ func Test_Capabilities(t *testing.T) {
 		assert.False(t, ma.executeCalled)
 
 		_, err = c.(capabilities.ActionCapability).Execute(
-			ctx,
+			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
 

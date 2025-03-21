@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 var Telemetry = staticTelemetry{
@@ -114,7 +113,6 @@ func (m mockClientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, me
 }
 
 func TestTelemetry(t *testing.T) {
-	ctx := tests.Context(t)
 	tsc := telemetry.NewTelemetryServiceClient(mockClientConn{})
 	c := telemetry.NewTelemetryClient(tsc)
 
@@ -186,7 +184,7 @@ func TestTelemetry(t *testing.T) {
 	}
 
 	for _, test := range sendTests {
-		err := c.Send(ctx, test.network, test.chainID, test.contractID, test.telemetryType, test.payload)
+		err := c.Send(t.Context(), test.network, test.chainID, test.contractID, test.telemetryType, test.payload)
 		if test.shouldError {
 			require.ErrorContains(t, err, test.error)
 		} else {
@@ -247,14 +245,14 @@ func TestTelemetry(t *testing.T) {
 	}
 
 	for _, test := range genMonitoringEndpointTests {
-		e, err := c.NewEndpoint(ctx, test.network, test.chainID, test.contractID, test.telemetryType)
+		e, err := c.NewEndpoint(t.Context(), test.network, test.chainID, test.contractID, test.telemetryType)
 		if test.shouldError {
 			require.Nil(t, e)
 			require.ErrorContains(t, err, test.error)
 		} else {
 			require.NotNil(t, e)
 			require.Nil(t, err)
-			require.Nil(t, e.SendLog(ctx, []byte("some-data")))
+			require.Nil(t, e.SendLog(t.Context(), []byte("some-data")))
 		}
 	}
 }

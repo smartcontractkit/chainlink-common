@@ -271,13 +271,12 @@ func (s staticMercuryPluginFactory) NewMercuryPlugin(ctx context.Context, config
 func MercuryPluginFactory(t *testing.T, factory types.MercuryPluginFactory) {
 	expectedMercuryPlugin := OCR3Plugin
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
-		ctx := tests.Context(t)
-		rp, gotRPI, err := factory.NewMercuryPlugin(ctx, mercuryPluginConfig)
+		rp, gotRPI, err := factory.NewMercuryPlugin(t.Context(), mercuryPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, mercuryPluginInfo, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			expectedMercuryPlugin.AssertEqual(ctx, t, rp)
+			expectedMercuryPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }

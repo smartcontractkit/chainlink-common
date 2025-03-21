@@ -164,7 +164,7 @@ func Test_createEmitFn(t *testing.T) {
 		}
 		reqId := "random-id"
 		store.add(reqId, &RequestData{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: t.Context,
 		})
 		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 			Error: &wasmpb.Error{
@@ -247,7 +247,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: t.Context,
 		}
 
 		fetchFn := createFetchFn(
@@ -398,7 +398,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: t.Context,
 		}
 
 		fetchFn := createFetchFn(
@@ -444,7 +444,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: t.Context,
 		}
 
 		fetchFn := createFetchFn(
@@ -483,7 +483,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: t.Context,
 		}
 
 		fetchFn := createFetchFn(

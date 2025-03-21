@@ -350,15 +350,13 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 
 	t.Run("PluginProvider", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
 		ra := newRelayArgsWithProviderType(types.GenericPlugin)
-		provider, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
+		provider, err := relayer.NewPluginProvider(t.Context(), ra, PluginArgs)
 		require.NoError(t, err)
 		servicetest.Run(t, provider)
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
-			ctx := tests.Context(t)
-			s.agnosticProvider.AssertEqual(ctx, t, provider)
+			s.agnosticProvider.AssertEqual(t.Context(), t, provider)
 		})
 	})
 

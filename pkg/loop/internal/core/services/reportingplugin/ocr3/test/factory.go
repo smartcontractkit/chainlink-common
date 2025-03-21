@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Factory(lggr logger.Logger) ocr3StaticPluginFactory {
@@ -90,13 +89,12 @@ func (o ocr3StaticPluginFactory) equalConfig(other ocr3types.ReportingPluginConf
 func OCR3ReportingPluginFactory(t *testing.T, factory core.OCR3ReportingPluginFactory) {
 	expectedFactory := Factory(logger.Test(t))
 	t.Run("OCR3ReportingPluginFactory", func(t *testing.T) {
-		ctx := tests.Context(t)
-		rp, gotRPI, err := factory.NewReportingPlugin(ctx, ocr3reportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), ocr3reportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, ocr3rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("OCR3ReportingPlugin", func(t *testing.T) {
-			expectedFactory.reportingPlugin.AssertEqual(ctx, t, rp)
+			expectedFactory.reportingPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }

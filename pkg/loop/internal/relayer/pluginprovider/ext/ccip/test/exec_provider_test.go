@@ -18,17 +18,16 @@ import (
 )
 
 func TestStaticExecProvider(t *testing.T) {
-	ctx := tests.Context(t)
 	t.Run("Self consistent Evaluate", func(t *testing.T) {
 		t.Parallel()
 		ep := ExecutionProvider(logger.Test(t))
 		// static test implementation is self consistent
-		assert.NoError(t, ep.Evaluate(ctx, ep))
+		assert.NoError(t, ep.Evaluate(t.Context(), ep))
 
 		// error when the test implementation evaluates something that differs from form itself
 		botched := ExecutionProvider(logger.Test(t))
 		botched.priceRegistryReader = staticPriceRegistryReader{}
-		err := ep.Evaluate(ctx, botched)
+		err := ep.Evaluate(t.Context(), botched)
 		require.Error(t, err)
 		var evalErr evaluationError
 		require.True(t, errors.As(err, &evalErr), "expected error to be an evaluationError")
@@ -37,7 +36,7 @@ func TestStaticExecProvider(t *testing.T) {
 	t.Run("Self consistent AssertEqual", func(t *testing.T) {
 		ep := ExecutionProvider(logger.Test(t))
 		// no parallel because the AssertEqual is parallel
-		ep.AssertEqual(ctx, t, ep)
+		ep.AssertEqual(t.Context(), t, ep)
 	})
 }
 

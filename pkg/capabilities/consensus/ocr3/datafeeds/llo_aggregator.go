@@ -96,21 +96,21 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		}
 		//oldPrice := big.NewInt(0).SetBytes(previousStreamInfo.Price)
 		newPrice := prices[streamID].BigInt() //.Mul(decimal.NewFromInt(multiplier)).BigInt()
-		currDeviation := deviation(oldPrice.BigInt(), newPrice)
-		currStaleness := observationTimestamp - uint64(previousStreamInfo.Timestamp)
+		priceDeviation := deviation(oldPrice.BigInt(), newPrice)
+		timeDiffNs := observationTimestamp - uint64(previousStreamInfo.Timestamp)
 		lggr.Debugw("checking deviation and heartbeat",
 			"streamID", streamID,
 			"observationNs", observationTimestamp,
 			"perviousNs", previousStreamInfo.Timestamp,
-			"currStalenessNs", currStaleness,
+			"currStalenessNs", timeDiffNs,
 			"heartbeatSec", config.Heartbeat,
 			"oldPrice", oldPrice,
 			"newPrice", newPrice,
-			"currDeviation", currDeviation,
+			"currDeviation", priceDeviation,
 			"deviation", config.Deviation.InexactFloat64(),
 		)
-		if currStaleness > uint64(config.HeartbeatNanos()) ||
-			currDeviation > config.Deviation.InexactFloat64() {
+		if timeDiffNs > uint64(config.HeartbeatNanos()) ||
+			priceDeviation > config.Deviation.InexactFloat64() {
 			// this stream needs an update
 			previousStreamInfo.Timestamp = int64(observationTimestamp)
 			var err2 error
@@ -120,7 +120,7 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 				continue
 			}
 			mustUpdateIDs = append(mustUpdateIDs, streamID)
-		} else if float64(currStaleness) > float64(config.Heartbeat)*(1.0-a.config.allowedPartialStaleness) {
+		} else if float64(timeDiffNs) > float64(config.HeartbeatNanos())*(1.0-a.config.allowedPartialStaleness) {
 			maybeUpdateIDs = append(maybeUpdateIDs, streamID)
 		}
 	}

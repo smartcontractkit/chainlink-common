@@ -205,6 +205,7 @@ func TestDataFeedsAggregator_ParseConfig(t *testing.T) {
 		config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
 		parsedConfig, err := datafeeds.ParseConfig(*config)
 		require.NoError(t, err)
+		t.FailNow()
 		require.Equal(t, deviationA, parsedConfig.Feeds[feedIDA].Deviation)
 		require.Equal(t, heartbeatA, parsedConfig.Feeds[feedIDA].Heartbeat)
 		require.Equal(t, deviationB, parsedConfig.Feeds[feedIDB].Deviation)
@@ -240,6 +241,7 @@ func getConfig(t *testing.T, feedID string, deviation string, heartbeat int) *va
 		},
 		"allowedPartialStaleness": "0.2",
 	}
+	t.Logf("unwrappedConfig: %v", unwrappedConfig)
 	config, err := values.NewMap(unwrappedConfig)
 	require.NoError(t, err)
 	return config

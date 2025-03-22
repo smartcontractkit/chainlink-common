@@ -1,7 +1,8 @@
 package datafeeds_test
 
 import (
-	"strconv"
+	"math/big"
+	"sort"
 	"testing"
 	"time"
 
@@ -163,7 +164,7 @@ func TestGetLatestPrices(t *testing.T) {
 
 func TestLLOAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
-
+	testStartTime := time.Now()
 	tests := []struct {
 		name                 string
 		config               values.Map //datafeeds.LLOAggregatorConfig
@@ -173,10 +174,38 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 		expectedShouldReport bool
 		expectedStreamIDs    []uint32
 		expectError          bool
+		wantUpdates          []*datafeeds.WrappableStreamUpdate
 	}{
+
+		{
+			name: "update due to no previous outcome",
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
+				1: {
+					Deviation: decimal.NewFromFloat(0.01), // 1%
+					Heartbeat: 3600,                       // 1 hour
+				},
+			}),
+
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
+				1: decimal.NewFromFloat(102), // 2% change, exceeds 1% threshold
+			}),
+			f:                    1,
+			expectedShouldReport: true,
+			expectedStreamIDs:    []uint32{1},
+			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+				{
+					StreamID:  1,
+					Price:     big.NewInt(102),
+					Timestamp: uint64(testStartTime.UnixNano()),
+				},
+			},
+
+			expectError: false,
+		},
+
 		{
 			name: "update due to deviation",
-			config: zz(t, map[uint32]datafeeds.FeedConfig{
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
 					Deviation: decimal.NewFromFloat(0.01), // 1%
 					Heartbeat: 3600,                       // 1 hour
@@ -189,20 +218,29 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			}{
 				1: {
 					price:     decimal.NewFromFloat(100),
-					timestamp: time.Now().Add(-10 * time.Minute).UnixNano(),
+					timestamp: testStartTime.Add(-10 * time.Minute).UnixNano(),
 				},
 			}),
-			observations: createObservations(t, 1000, map[uint32]decimal.Decimal{
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
 				1: decimal.NewFromFloat(102), // 2% change, exceeds 1% threshold
 			}),
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1},
-			expectError:          false,
+			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+				{
+					StreamID:  1,
+					Price:     big.NewInt(102),
+					Timestamp: uint64(testStartTime.UnixNano()),
+				},
+			},
+
+			expectError: false,
 		},
+
 		{
 			name: "update due to heartbeat",
-			config: zz(t, map[uint32]datafeeds.FeedConfig{
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
 					Deviation: decimal.NewFromFloat(0.1), // 10%
 					Heartbeat: 300,                       // 5 minutes
@@ -215,20 +253,28 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			}{
 				1: {
 					price:     decimal.NewFromFloat(100),
-					timestamp: time.Now().Add(-6 * time.Minute).UnixNano(), // Over heartbeat
+					timestamp: testStartTime.Add(-6 * time.Minute).UnixNano(), // Over heartbeat
 				},
 			}),
-			observations: createObservations(t, 1000, map[uint32]decimal.Decimal{
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
 				1: decimal.NewFromFloat(101), // 1% change, under 10% threshold
 			}),
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1},
-			expectError:          false,
+			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+				{
+					StreamID:  1,
+					Price:     big.NewInt(101),
+					Timestamp: uint64(testStartTime.UnixNano()),
+				},
+			},
+			expectError: false,
 		},
+
 		{
 			name: "no update needed",
-			config: zz(t, map[uint32]datafeeds.FeedConfig{
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 
 				1: {
 					Deviation: decimal.NewFromFloat(0.1), // 10%
@@ -240,21 +286,22 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				timestamp int64
 			}{
 				1: {
-					price:     decimal.NewFromFloat(100),
+					price:     decimal.NewFromInt(100),
 					timestamp: time.Now().Add(-30 * time.Minute).UnixNano(), // Under heartbeat
 				},
 			}),
-			observations: createObservations(t, 1000, map[uint32]decimal.Decimal{
-				1: decimal.NewFromFloat(105), // 5% change, under 10% threshold
+			observations: createObservations(t, uint64(time.Now().UnixNano()), map[uint32]decimal.Decimal{
+				1: decimal.NewFromInt(105), // 5% change, under 10% threshold
 			}),
 			f:                    1,
 			expectedShouldReport: false, // No update needed
 			expectedStreamIDs:    []uint32{},
 			expectError:          false,
 		},
+
 		{
 			name: "partial staleness optimization",
-			config: zz(t, map[uint32]datafeeds.FeedConfig{
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
 					Deviation: decimal.NewFromFloat(0.1), // 10%
 					Heartbeat: 3600,                      // 1 hour
@@ -263,7 +310,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					Deviation: decimal.NewFromFloat(0.1), // 10%
 					Heartbeat: 300,                       // 5 minutes
 				},
-			}, lloConfigAllowStaleness(0.2)), // 20% allowed partial staleness
+			}, datafeeds.LLOConfigAllowStaleness(0.2)), // 20% allowed partial staleness
 
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
 				price     decimal.Decimal
@@ -271,25 +318,39 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			}{
 				1: {
 					price:     decimal.NewFromFloat(100),
-					timestamp: time.Now().Add(-50 * time.Minute).UnixNano(), // 83% of heartbeat
+					timestamp: testStartTime.Add(-50 * time.Minute).UnixNano(), // 83% of heartbeat
 				},
 				2: {
 					price:     decimal.NewFromFloat(200),
-					timestamp: time.Now().Add(-6 * time.Minute).UnixNano(), // Over heartbeat
+					timestamp: testStartTime.Add(-6 * time.Minute).UnixNano(), // Over heartbeat
 				},
 			}),
-			observations: createObservations(t, 1000, map[uint32]decimal.Decimal{
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
 				1: decimal.NewFromFloat(105), // 5% change, under 10% threshold
 				2: decimal.NewFromFloat(202), // 1% change, under 10% threshold
 			}),
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1, 2}, // Both update due to optimization
-			expectError:          false,
+			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+				{
+					StreamID:  1,
+					Price:     big.NewInt(105),
+					Timestamp: uint64(testStartTime.UnixNano()),
+				},
+				{
+					StreamID:  2,
+					Price:     big.NewInt(202),
+					Timestamp: uint64(testStartTime.UnixNano()),
+				},
+			},
+
+			expectError: false,
 		},
+
 		{
 			name: "empty observations",
-			config: zz(t, map[uint32]datafeeds.FeedConfig{
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
 					Deviation: decimal.NewFromFloat(0.1),
 					Heartbeat: 3600,
@@ -300,6 +361,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				price     decimal.Decimal
 				timestamp int64
 			}{}),
+
 			observations:         map[ocrcommon.OracleID][]values.Value{},
 			f:                    1,
 			expectedShouldReport: false,
@@ -310,6 +372,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			aggregator, err := datafeeds.NewLLOAggregator(tc.config)
+			require.NoError(t, err)
 
 			outcome, err := aggregator.Aggregate(lggr, tc.previousOutcome, tc.observations, tc.f)
 
@@ -323,8 +386,20 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 			if outcome.ShouldReport {
 				// Verify that the correct streams were updated
-				reportedStreams := extractUpdatedStreamIDs(t, outcome)
+				reportedStreams, reports := extractUpdatedStreamIDs(t, outcome)
 				assert.ElementsMatch(t, tc.expectedStreamIDs, reportedStreams)
+				assert.Len(t, reports, len(tc.expectedStreamIDs))
+				sort.Slice(reports, func(i, j int) bool {
+					return reports[i].StreamID < reports[j].StreamID
+				})
+				sort.Slice(tc.wantUpdates, func(i, j int) bool {
+					return tc.wantUpdates[i].StreamID < tc.wantUpdates[j].StreamID
+				})
+				for i, report := range reports {
+					assert.Equal(t, tc.wantUpdates[i].StreamID, report.StreamID)
+					assert.Equal(t, tc.wantUpdates[i].Price, report.Price)
+					assert.Equal(t, tc.wantUpdates[i].Timestamp, report.Timestamp)
+				}
 			}
 		})
 	}
@@ -332,9 +407,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 // Helper functions
 
-func createLLOEvent(t *testing.T, ts uint64, prices map[uint32]decimal.Decimal) *datastreams.LLOStreamsTriggerEvent {
+func createLLOEvent(t *testing.T, nsTimestamp uint64, prices map[uint32]decimal.Decimal) *datastreams.LLOStreamsTriggerEvent {
 	event := &datastreams.LLOStreamsTriggerEvent{
-		ObservationTimestampNanoseconds: ts,
+		ObservationTimestampNanoseconds: nsTimestamp,
 		Payload:                         make([]*datastreams.LLOStreamDecimal, 0, len(prices)),
 	}
 
@@ -393,79 +468,21 @@ func createObservations(t *testing.T, ts uint64, prices map[uint32]decimal.Decim
 	return observations
 }
 
-func extractUpdatedStreamIDs(t *testing.T, outcome *types.AggregationOutcome) []uint32 {
-
-	//outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue()
+func extractUpdatedStreamIDs(t *testing.T, outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.WrappableStreamUpdate) {
 	decodedMap, err := values.FromMapValueProto(outcome.EncodableOutcome)
 	require.NoError(t, err)
 
 	reportsAny, ok := decodedMap.Underlying[datafeeds.TopLevelListOutputFieldName]
 	require.True(t, ok)
 
-	var reportsList []any // each element is a WrappableUpdate
-	err = reportsAny.UnwrapTo(reportsList)
+	var reportsList []*datafeeds.WrappableStreamUpdate // each element is a WrappableUpdate
+	err = reportsAny.UnwrapTo(&reportsList)
 	require.NoError(t, err)
 
 	streamIDs := make([]uint32, 0, len(reportsList))
 	for _, reportAny := range reportsList {
-		report := reportAny.(*datafeeds.WrappableUpdate)
-
-		/*
-			streamIDAny, exists :=  reports[datafeeds.StreamIDOutputFieldName] //report.Get(StreamIDOutputFieldName)
-			require.True(t, exists)
-
-			streamID, err := streamIDAny.AsUint()
-			require.NoError(t, err)
-		*/
-		streamIDs = append(streamIDs, report.StreamID)
+		streamIDs = append(streamIDs, reportAny.StreamID)
 	}
 
-	return streamIDs
-}
-
-func lloFeedConfig(t *testing.T, feedID string, deviation string, heartbeat int) *values.Map {
-	unwrappedConfig := map[string]any{
-		"feeds": map[string]any{
-			feedID: map[string]any{
-				"deviation":  deviation,
-				"heartbeat":  heartbeat,
-				"remappedID": remappedIDA,
-			},
-			feedIDB.String(): map[string]any{
-				"deviation": deviationB.String(),
-				"heartbeat": heartbeatB,
-			},
-		},
-		"allowedPartialStaleness": "0.2",
-	}
-	config, err := values.NewMap(unwrappedConfig)
-	require.NoError(t, err)
-	return config
-}
-
-func zz(t *testing.T, m map[uint32]datafeeds.FeedConfig, opts ...lloConfigOpt) values.Map {
-	unwrappedConfig := map[string]any{
-		"feeds": map[string]any{},
-	}
-	for feedID, cfg := range m {
-		unwrappedConfig["feeds"].(map[string]any)[strconv.FormatUint(uint64(feedID), 10)] = map[string]any{
-			"deviation": cfg.Deviation.String(),
-			"heartbeat": cfg.Heartbeat,
-			//			"remappedID": cfg.RemappedID,
-		}
-	}
-	for _, opt := range opts {
-		opt(t, unwrappedConfig)
-	}
-	config, err := values.NewMap(unwrappedConfig)
-	require.NoError(t, err)
-	return *config
-}
-
-type lloConfigOpt = func(t *testing.T, m map[string]any)
-
-func lloConfigAllowStaleness(staleness float64) lloConfigOpt {
-	return func(t *testing.T, m map[string]any) {
-		m["allowedPartialStaleness"] = staleness
-	}
+	return streamIDs, reportsList
 }

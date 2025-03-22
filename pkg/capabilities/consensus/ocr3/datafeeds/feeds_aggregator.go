@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/proto"
@@ -50,10 +51,14 @@ type aggregatorConfig struct {
 
 type feedConfig struct {
 	Deviation       decimal.Decimal `mapstructure:"-"`
-	Heartbeat       int
-	DeviationString string `mapstructure:"deviation"`
-	RemappedIDHex   string `mapstructure:"remappedId"`
-	RemappedID      []byte `mapstructure:"-"`
+	Heartbeat       int             // seconds
+	DeviationString string          `mapstructure:"deviation"`
+	RemappedIDHex   string          `mapstructure:"remappedId"`
+	RemappedID      []byte          `mapstructure:"-"`
+}
+
+func (c feedConfig) HeartbeatNanos() int64 {
+	return int64(c.Heartbeat) * time.Second.Nanoseconds()
 }
 
 type dataFeedsAggregator struct {

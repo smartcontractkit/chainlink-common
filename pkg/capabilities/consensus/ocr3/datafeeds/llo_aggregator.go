@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"slices"
+	"strconv"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -20,20 +21,24 @@ import (
 
 // NOTE: in the future this could be defined per stream
 // TODO where does this magic number come from? Presumably it's shared with some other code...
-const multiplier = 1e18
+//const multiplier = 1e18
 
 var (
 	ErrInsufficientConsensus = fmt.Errorf("insufficient consensus")
+	ErrEmptyObservation      = fmt.Errorf("empty observation")
 )
 
 type lloAggregatorConfig struct {
-	Streams map[uint32]feedConfig
-	// AllowedPartialStaleness is an optional optimization that tries to maximize batching.
+	// workaround for the fact that mapstructure doesn't support uint32 keys
+	streams    map[uint32]feedConfig `mapstructure:"-"`
+	StreamsStr map[string]feedConfig `mapstructure:"streams"`
+	// allowedPartialStaleness is an optional optimization that tries to maximize batching.
 	// Once any deviation or heartbeat threshold hits, we will include all other feeds that are
-	// within the AllowedPartialStaleness range of their own heartbeat.
+	// within the allowedPartialStaleness range of their own heartbeat.
 	// For example, setting 0.2 will include all feeds that are within 20% of their heartbeat.
-	AllowedPartialStaleness    float64 `mapstructure:"-"`
-	AllowedPartialStalenessStr string  `mapstructure:"allowedPartialStaleness"`
+	allowedPartialStaleness float64 `mapstructure:"-"`
+	// workaround for the fact that mapstructure doesn't support float64 keys
+	AllowedPartialStalenessStr string `mapstructure:"allowedPartialStaleness"`
 }
 
 var _ types.Aggregator = (*lloAggregator)(nil)
@@ -55,6 +60,9 @@ func NewLLOAggregator(config values.Map) (types.Aggregator, error) {
 // Aggregate implements the Aggregator interface,
 func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "LLOAggregator")
+	if len(observations) == 0 {
+		return nil, ErrEmptyObservation
+	}
 	lloEvents := a.extractLLOEvents(lggr, observations)
 	if len(lloEvents) != len(observations) {
 		lggr.Warnw("missing LLO events", "nNodes", len(observations), "nEvents", len(lloEvents))
@@ -80,23 +88,28 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 	maybeUpdateIDs := []uint32{} // streamIDs that are within AllowedPartialStaleness percentage of their heartbeat
 	for _, streamID := range allStreamIDs {
 		previousStreamInfo := currentState.StreamInfo[streamID]
-		config := a.config.Streams[streamID]
-		oldPrice := big.NewInt(0).SetBytes(previousStreamInfo.Price)
-		newPrice := prices[streamID].Mul(decimal.NewFromInt(multiplier)).BigInt()
-		currDeviation := deviation(oldPrice, newPrice)
+		config := a.config.streams[streamID]
+		oldPrice := new(decimal.Decimal)
+		if err := oldPrice.UnmarshalBinary(previousStreamInfo.Price); err != nil {
+			lggr.Errorw("failed to unmarshal previous price", "streamID", streamID, "err", err)
+			continue
+		}
+		//oldPrice := big.NewInt(0).SetBytes(previousStreamInfo.Price)
+		newPrice := prices[streamID].BigInt() //.Mul(decimal.NewFromInt(multiplier)).BigInt()
+		currDeviation := deviation(oldPrice.BigInt(), newPrice)
 		currStaleness := observationTimestamp - uint64(previousStreamInfo.Timestamp)
 		lggr.Debugw("checking deviation and heartbeat",
 			"streamID", streamID,
-			"currentTs", observationTimestamp,
-			"oldTs", previousStreamInfo.Timestamp,
-			"currStaleness", currStaleness,
-			"heartbeat", config.Heartbeat,
+			"observationNs", observationTimestamp,
+			"perviousNs", previousStreamInfo.Timestamp,
+			"currStalenessNs", currStaleness,
+			"heartbeatSec", config.Heartbeat,
 			"oldPrice", oldPrice,
 			"newPrice", newPrice,
 			"currDeviation", currDeviation,
 			"deviation", config.Deviation.InexactFloat64(),
 		)
-		if currStaleness > uint64(config.Heartbeat) ||
+		if currStaleness > uint64(config.HeartbeatNanos()) ||
 			currDeviation > config.Deviation.InexactFloat64() {
 			// this stream needs an update
 			previousStreamInfo.Timestamp = int64(observationTimestamp)
@@ -107,7 +120,7 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 				continue
 			}
 			mustUpdateIDs = append(mustUpdateIDs, streamID)
-		} else if float64(currStaleness) > float64(config.Heartbeat)*(1.0-a.config.AllowedPartialStaleness) {
+		} else if float64(currStaleness) > float64(config.Heartbeat)*(1.0-a.config.allowedPartialStaleness) {
 			maybeUpdateIDs = append(maybeUpdateIDs, streamID)
 		}
 	}
@@ -126,25 +139,17 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		return nil, fmt.Errorf("failed to marshal current state: %w", err)
 	}
 
-	var toWrap []any
+	var toWrap []*WrappableStreamUpdate
 	for _, streamID := range mustUpdateIDs {
 		// TODO what if remapped ID is not defined? How do we reconcile binary vs int? Should remapped IDs also be integers now?
-		remappedID := a.config.Streams[streamID].RemappedID
-		newPrice := prices[streamID].Mul(decimal.NewFromInt(multiplier)).BigInt()
-		w := &wrappableUpdate{
+		remappedID := a.config.streams[streamID].RemappedID
+		newPrice := prices[streamID].BigInt() //.Mul(decimal.NewFromInt(multiplier)).BigInt()
+		w := &WrappableStreamUpdate{
 			StreamID:   streamID,
 			Price:      newPrice,
 			Timestamp:  uint64(observationTimestamp),
 			RemappedID: remappedID,
-		} /*
-			toWrap = append(toWrap,
-				map[string]any{
-					StreamIDOutputFieldName:   streamID,
-					PriceOutputFieldName:      newPrice,
-					TimestampOutputFieldName:  observationTimestamp, // TODO: nanoseconds OK here? What does the new onchain contract want? Should we make it configurable?
-					RemappedIDOutputFieldName: remappedID,
-				})
-		*/
+		}
 		toWrap = append(toWrap, w)
 	}
 
@@ -164,14 +169,15 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 	}, nil
 }
 
-type wrappableUpdate struct {
+type WrappableStreamUpdate struct {
 	StreamID   uint32
 	Price      *big.Int
 	Timestamp  uint64
 	RemappedID []byte
 }
 
-func (w *wrappableUpdate) wrap() (map[string]any, error) {
+/*
+func (w *WrappableStreamUpdate) Wrap() (map[string]any, error) {
 	return map[string]any{
 		StreamIDOutputFieldName:   w.StreamID,
 		PriceOutputFieldName:      w.Price,
@@ -179,15 +185,29 @@ func (w *wrappableUpdate) wrap() (map[string]any, error) {
 		RemappedIDOutputFieldName: w.RemappedID,
 	}, nil
 }
-func newwrappableUpdate(m map[string]any) *wrappableUpdate {
-	return &wrappableUpdate{
-		StreamID:   m[StreamIDOutputFieldName].(uint32),
-		Price:      m[PriceOutputFieldName].(*big.Int),
-		Timestamp:  m[TimestampOutputFieldName].(uint64),
-		RemappedID: m[RemappedIDOutputFieldName].([]byte),
-	}
-}
 
+// the expected format of the wrapped stream update
+//
+//	{
+//		StreamIDOutputFieldName:   uint32, // required; panic
+//		PriceOutputFieldName:      *big.Int, // required; panic
+//		TimestampOutputFieldName:  uint64, // required; panic
+//		RemappedIDOutputFieldName: []byte // optional
+//	}
+func NewWrappableStreamUpdate(m map[string]any) *WrappableStreamUpdate {
+	w := &WrappableStreamUpdate{
+		Price:     m[PriceOutputFieldName].(*big.Int),
+		Timestamp: m[TimestampOutputFieldName].(uint64),
+		StreamID:  m[StreamIDOutputFieldName].(uint32),
+	}
+	if remappedID, ok := m[RemappedIDOutputFieldName]; ok {
+		w.RemappedID = remappedID.([]byte)
+	} else {
+		w.RemappedID = nil
+	}
+	return w
+}
+*/
 // observations are expected to be wrapped LLOStreamsTriggerEvent structs
 func (a *lloAggregator) extractLLOEvents(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value) map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent {
 	events := make(map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent)
@@ -219,7 +239,7 @@ func (a *lloAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *
 	currentState := &LLOOutcomeMetadata{
 		StreamInfo: make(map[uint32]*LLOStreamInfo),
 	}
-	if previousOutcome != nil {
+	if previousOutcome != nil && len(previousOutcome.Metadata) != 0 {
 		err := proto.Unmarshal(previousOutcome.Metadata, currentState)
 		if err != nil {
 			return nil, err
@@ -230,7 +250,7 @@ func (a *lloAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal zero: %w", err)
 	}
-	for streamID := range a.config.Streams {
+	for streamID := range a.config.streams {
 		if _, ok := currentState.StreamInfo[streamID]; !ok {
 			currentState.StreamInfo[streamID] = &LLOStreamInfo{
 				Timestamp: 0, // will always trigger an update
@@ -241,7 +261,7 @@ func (a *lloAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *
 	}
 	// remove obsolete streams from state
 	for streamID := range currentState.StreamInfo {
-		if _, ok := a.config.Streams[streamID]; !ok {
+		if _, ok := a.config.streams[streamID]; !ok {
 			delete(currentState.StreamInfo, streamID)
 			lggr.Debugw("removed obsolete stream", "streamID", streamID)
 		}
@@ -446,20 +466,29 @@ func lloStreamPrices(lggr logger.Logger, allStreamIDs []uint32, lloEvents map[oc
 }
 
 func parseLLOConfig(config values.Map) (lloAggregatorConfig, error) {
-	parsedConfig := lloAggregatorConfig{}
+	parsedConfig := lloAggregatorConfig{
+		streams: make(map[uint32]feedConfig),
+	}
 	if err := config.UnwrapTo(&parsedConfig); err != nil {
 		return lloAggregatorConfig{}, err
 	}
-
+	for s, cfg := range parsedConfig.StreamsStr {
+		id, err := strconv.ParseUint(s, 10, 32)
+		if err != nil {
+			return lloAggregatorConfig{}, fmt.Errorf("cannot parse stream ID %s: %w", s, err)
+		}
+		id32 := uint32(id) //nolint:gosec // G115
+		parsedConfig.streams[id32] = cfg
+	}
 	// TODO some copy-pasta from feeds_aggregator.go - maybe reuse the same code?
-	for streamID, cfg := range parsedConfig.Streams {
+	for streamID, cfg := range parsedConfig.streams {
 		if cfg.DeviationString != "" {
 			dec, err := decimal.NewFromString(cfg.DeviationString)
 			if err != nil {
 				return lloAggregatorConfig{}, fmt.Errorf("cannot parse deviation config for feed %d: %w", streamID, err)
 			}
 			cfg.Deviation = dec
-			parsedConfig.Streams[streamID] = cfg
+			parsedConfig.streams[streamID] = cfg
 		}
 		trimmed, nonEmpty := strings.CutPrefix(cfg.RemappedIDHex, "0x")
 		if nonEmpty {
@@ -468,7 +497,7 @@ func parseLLOConfig(config values.Map) (lloAggregatorConfig, error) {
 				return lloAggregatorConfig{}, fmt.Errorf("cannot parse remappedId config for feed %d: %w", streamID, err)
 			}
 			cfg.RemappedID = rawRemappedID
-			parsedConfig.Streams[streamID] = cfg
+			parsedConfig.streams[streamID] = cfg
 		}
 	}
 	// convert allowedPartialStaleness from string to float64
@@ -477,7 +506,7 @@ func parseLLOConfig(config values.Map) (lloAggregatorConfig, error) {
 		if err != nil {
 			return lloAggregatorConfig{}, fmt.Errorf("cannot parse allowedPartialStaleness: %w", err)
 		}
-		parsedConfig.AllowedPartialStaleness = allowedPartialStaleness.InexactFloat64()
+		parsedConfig.allowedPartialStaleness = allowedPartialStaleness.InexactFloat64()
 	}
 	return parsedConfig, nil
 }

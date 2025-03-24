@@ -56,9 +56,6 @@ func policyExist(parent alerting.NotificationPolicy, newNotificationPolicy alert
 		if matchersEqual && receiversEqual {
 			return true
 		}
-		if notificationPolicy.Routes != nil {
-			return policyExist(notificationPolicy, newNotificationPolicy)
-		}
 	}
 	return false
 }

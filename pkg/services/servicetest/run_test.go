@@ -61,6 +61,10 @@ type fakeTest struct {
 	failed  bool
 }
 
+func (f *fakeTest) Context() context.Context {
+	return context.Background()
+}
+
 func (f *fakeTest) Cleanup(fn func()) {
 	f.cleanup = append(f.cleanup, fn)
 }

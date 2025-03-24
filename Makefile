@@ -15,11 +15,13 @@ docs:
 .PHONY: install-protoc
 install-protoc:
 	script/install-protoc.sh 29.3 /
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5 
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@`go list -m -json google.golang.org/protobuf | jq -r .Version`
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+
 
 .PHONY: mockery
 mockery: $(mockery) ## Install mockery.
-	go install github.com/vektra/mockery/v2@v2.43.2
+	go install github.com/vektra/mockery/v2@v2.53.3
 
 .PHONY: rm-mocked
 rm-mocked:
@@ -38,7 +40,7 @@ generate: mockery install-protoc gomods
 	mockery
 
 .PHONY: lint-workspace lint
-GOLANGCI_LINT_VERSION := 1.63.4
+GOLANGCI_LINT_VERSION := 1.64.8
 GOLANGCI_LINT_COMMON_OPTS := --max-issues-per-linter 0 --max-same-issues 0
 GOLANGCI_LINT_DIRECTORY := ./golangci-lint
 

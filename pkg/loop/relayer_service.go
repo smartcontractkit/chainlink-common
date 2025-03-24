@@ -104,3 +104,10 @@ func (r *RelayerService) Transact(ctx context.Context, from, to string, amount *
 	}
 	return r.Service.Transact(ctx, from, to, amount, balanceCheck)
 }
+
+func (r *RelayerService) Replay(ctx context.Context, fromBlock uint64, args map[string]any) error {
+	if err := r.WaitCtx(ctx); err != nil {
+		return err
+	}
+	return r.Service.Replay(ctx, fromBlock, args)
+}

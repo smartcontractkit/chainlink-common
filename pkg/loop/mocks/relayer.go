@@ -689,6 +689,54 @@ func (_c *Relayer_Ready_Call) RunAndReturn(run func() error) *Relayer_Ready_Call
 	return _c
 }
 
+// Replay provides a mock function with given fields: ctx, fromBlock, args
+func (_m *Relayer) Replay(ctx context.Context, fromBlock uint64, args map[string]interface{}) error {
+	ret := _m.Called(ctx, fromBlock, args)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Replay")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, map[string]interface{}) error); ok {
+		r0 = rf(ctx, fromBlock, args)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Relayer_Replay_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Replay'
+type Relayer_Replay_Call struct {
+	*mock.Call
+}
+
+// Replay is a helper method to define mock.On call
+//   - ctx context.Context
+//   - fromBlock uint64
+//   - args map[string]interface{}
+func (_e *Relayer_Expecter) Replay(ctx interface{}, fromBlock interface{}, args interface{}) *Relayer_Replay_Call {
+	return &Relayer_Replay_Call{Call: _e.mock.On("Replay", ctx, fromBlock, args)}
+}
+
+func (_c *Relayer_Replay_Call) Run(run func(ctx context.Context, fromBlock uint64, args map[string]interface{})) *Relayer_Replay_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint64), args[2].(map[string]interface{}))
+	})
+	return _c
+}
+
+func (_c *Relayer_Replay_Call) Return(_a0 error) *Relayer_Replay_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Relayer_Replay_Call) RunAndReturn(run func(context.Context, uint64, map[string]interface{}) error) *Relayer_Replay_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Start provides a mock function with given fields: _a0
 func (_m *Relayer) Start(_a0 context.Context) error {
 	ret := _m.Called(_a0)

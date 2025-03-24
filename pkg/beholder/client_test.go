@@ -90,7 +90,7 @@ func TestClient(t *testing.T) {
 		messageCount           int
 		exporterMockErrorCount int
 		exporterOutputExpected bool
-		messageGenerator       func(client *beholder.Client, messageBody []byte, customAttributes map[string]any)
+		messageGenerator       func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any)
 		mustNewGrpcClient      func(*testing.T, *mocks.OTLPExporter) *beholder.Client
 	}{
 		{
@@ -100,7 +100,7 @@ func TestClient(t *testing.T) {
 			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			messageGenerator: func(client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
+			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
 				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
@@ -114,7 +114,7 @@ func TestClient(t *testing.T) {
 			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			messageGenerator: func(client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
+			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
 				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
@@ -168,7 +168,7 @@ func TestClient(t *testing.T) {
 					})
 			}
 			for i := 0; i < tc.messageCount; i++ {
-				tc.messageGenerator(client, tc.messageBody, customAttributes)
+				tc.messageGenerator(t, client, tc.messageBody, customAttributes)
 			}
 			assert.Equal(t, tc.messageCount, exportedMessageCount, "Expect all emitted messages to be exported")
 		})

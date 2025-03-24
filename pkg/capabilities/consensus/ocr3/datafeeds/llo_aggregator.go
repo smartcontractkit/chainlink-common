@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/big"
 	"slices"
 	"strconv"
 	"strings"
@@ -21,9 +20,9 @@ import (
 )
 
 var (
-	ErrInvalidConfig         = fmt.Errorf("invalid config")
-	ErrInsufficientConsensus = fmt.Errorf("insufficient consensus")
-	ErrEmptyObservation      = fmt.Errorf("empty observation")
+	ErrInvalidConfig         = errors.New("invalid config")
+	ErrInsufficientConsensus = errors.New("insufficient consensus")
+	ErrEmptyObservation      = errors.New("empty observation")
 )
 
 // LLOAggregatorConfig is the config for the LLO aggregator.
@@ -101,16 +100,16 @@ func (c LLOAggregatorConfig) convertToInternal() (parsedLLOAggregatorConfig, err
 }
 
 // parsedLLOAggregatorConfig is the internal representation of the LLO aggregator config.
-// the seperation is because mapstructure only supports string keys.
+// the separation is because mapstructure only supports string keys.
 // the are exposed in LLOAggregatorConfig for the config which is then processed into this internal representation.
 type parsedLLOAggregatorConfig struct {
 	streams                 map[uint32]feedConfig
-	allowedPartialStaleness float64 `mapstructure:"-"`
+	allowedPartialStaleness float64
 }
 
-var _ types.Aggregator = (*lloAggregator)(nil)
+var _ types.Aggregator = (*LLOAggregator)(nil)
 
-type lloAggregator struct {
+type LLOAggregator struct {
 	config parsedLLOAggregatorConfig
 }
 
@@ -119,13 +118,13 @@ func NewLLOAggregator(config values.Map) (types.Aggregator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config (%+v): %w", config, err)
 	}
-	return &lloAggregator{
+	return &LLOAggregator{
 		config: parsedConfig,
 	}, nil
 }
 
 // Aggregate implements the Aggregator interface,
-func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
+func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "LLOAggregator")
 	if len(observations) == 0 {
 		return nil, ErrEmptyObservation
@@ -158,14 +157,14 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		previousStreamInfo := currentState.StreamInfo[streamID]
 		config := a.config.streams[streamID]
 		oldPrice := new(decimal.Decimal)
-		if err := oldPrice.UnmarshalBinary(previousStreamInfo.Price); err != nil {
-			lggr.Errorw("failed to unmarshal previous price", "streamID", streamID, "err", err)
+		if uerr := oldPrice.UnmarshalBinary(previousStreamInfo.Price); uerr != nil {
+			lggr.Errorw("failed to unmarshal previous price", "streamID", streamID, "err", uerr)
 			continue
 		}
 		//oldPrice := big.NewInt(0).SetBytes(previousStreamInfo.Price)
-		newPrice := prices[streamID].BigInt() //.Mul(decimal.NewFromInt(multiplier)).BigInt()
-		priceDeviation := deviation(oldPrice.BigInt(), newPrice)
-		timeDiffNs := observationTimestamp - uint64(previousStreamInfo.Timestamp)
+		newPrice := prices[streamID] //.Mul(decimal.NewFromInt(multiplier)).BigInt()
+		priceDeviation := deviationDecimal(*oldPrice, newPrice)
+		timeDiffNs := observationTimestamp - uint64(previousStreamInfo.Timestamp) //nolint:gosec // G115
 		lggr.Debugw("checking deviation and heartbeat",
 			"streamID", streamID,
 			"observationNs", observationTimestamp,
@@ -177,10 +176,10 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 			"currDeviation", priceDeviation,
 			"deviation", config.Deviation.InexactFloat64(),
 		)
-		if timeDiffNs > uint64(config.HeartbeatNanos()) ||
+		if timeDiffNs > uint64(config.HeartbeatNanos()) || //nolint:gosec // G115
 			priceDeviation > config.Deviation.InexactFloat64() {
 			// this stream needs an update
-			previousStreamInfo.Timestamp = int64(observationTimestamp)
+			previousStreamInfo.Timestamp = int64(observationTimestamp) //nolint: gosec // G115
 			var err2 error
 			previousStreamInfo.Price, err2 = prices[streamID].MarshalBinary()
 			if err2 != nil {
@@ -195,7 +194,7 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 
 	// optimization that allows for more efficient batching
 	// if there is at least one stream that actually hit its deviation or heartbeat threshold,
-	// append all others that were withing AllowedPartialStaleness percentage of their heartbeat
+	// append all others that were within AllowedPartialStaleness percentage of their heartbeat
 	if len(mustUpdateIDs) > 0 {
 		mustUpdateIDs = append(mustUpdateIDs, maybeUpdateIDs...)
 		// deterministic order
@@ -207,15 +206,15 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		return nil, fmt.Errorf("failed to marshal current state: %w", err)
 	}
 
-	var toWrap []*WrappableStreamUpdate
+	toWrap := make([]*WrappableStreamUpdate, 0, len(mustUpdateIDs))
 	for _, streamID := range mustUpdateIDs {
 		// TODO what if remapped ID is not defined? How do we reconcile binary vs int? Should remapped IDs also be integers now?
 		remappedID := a.config.streams[streamID].RemappedID
-		newPrice := prices[streamID].BigInt()
+		newPrice := prices[streamID] //.BigInt()
 		w := &WrappableStreamUpdate{
 			StreamID:   streamID,
 			Price:      newPrice,
-			Timestamp:  uint64(observationTimestamp),
+			Timestamp:  observationTimestamp,
 			RemappedID: remappedID,
 		}
 		toWrap = append(toWrap, w)
@@ -239,14 +238,14 @@ func (a *lloAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 
 type WrappableStreamUpdate struct {
 	StreamID   uint32
-	Price      *big.Int
+	Price      decimal.Decimal
 	Timestamp  uint64
 	RemappedID []byte
 }
 
 // extractLLOEvents decodes the untyped wire format into LLOStreamsTriggerEvent.
 // every observation ios expected to be len 1, a single wrapped LLOStreamsTriggerEvent.
-func (a *lloAggregator) extractLLOEvents(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value) map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent {
+func (a *LLOAggregator) extractLLOEvents(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value) map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent {
 	events := make(map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent)
 	for nodeID, nodeObservations := range observations {
 		lggr = logger.With(lggr, "nodeID", nodeID)
@@ -261,7 +260,7 @@ func (a *lloAggregator) extractLLOEvents(lggr logger.Logger, observations map[oc
 		}
 		triggerEvent := &datastreams.LLOStreamsTriggerEvent{}
 		if err := nodeObservations[0].UnwrapTo(triggerEvent); err != nil {
-			lggr.Warnw("could not parse observations", err)
+			lggr.Warnw("could not parse observations", "err", err)
 			continue
 		}
 		events[nodeID] = triggerEvent
@@ -272,7 +271,7 @@ func (a *lloAggregator) extractLLOEvents(lggr logger.Logger, observations map[oc
 // AggregationOutcome.Metadata is used to store extra data that is passed between OCR rounds as part of previous outcome.
 // For LLO aggregator, that data is a serialized LLOOutcomeMetadata proto.
 // This helper initializes current state by adjusting previous state with current config (adding missing streams, removing obsolete ones).
-func (a *lloAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *types.AggregationOutcome) (*LLOOutcomeMetadata, error) {
+func (a *LLOAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *types.AggregationOutcome) (*LLOOutcomeMetadata, error) {
 	currentState := &LLOOutcomeMetadata{
 		StreamInfo: make(map[uint32]*LLOStreamInfo),
 	}

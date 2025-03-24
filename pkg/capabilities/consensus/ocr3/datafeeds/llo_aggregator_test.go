@@ -2,7 +2,6 @@ package datafeeds_test
 
 import (
 	"fmt"
-	"math/big"
 	"sort"
 	"testing"
 	"time"
@@ -145,7 +144,7 @@ func TestGetLatestPrices(t *testing.T) {
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tc.expectedTimestamp, ts)
 
 			// Check all expected prices
@@ -187,8 +186,8 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				},
 			}),
 
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
-				1: decimal.NewFromFloat(102), // 2% change, exceeds 1% threshold
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+				1: decimal.NewFromFloat(102.123), // 2% change, exceeds 1% threshold
 			}),
 			f:                    1,
 			expectedShouldReport: true,
@@ -196,8 +195,8 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			wantUpdates: []*datafeeds.WrappableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     big.NewInt(102),
-					Timestamp: uint64(testStartTime.UnixNano()),
+					Price:     decimal.NewFromFloat(102.123),
+					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
 
@@ -222,8 +221,8 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: testStartTime.Add(-10 * time.Minute).UnixNano(),
 				},
 			}),
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
-				1: decimal.NewFromFloat(102), // 2% change, exceeds 1% threshold
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+				1: decimal.NewFromFloat(102.00000000001), // 2% change, exceeds 1% threshold
 			}),
 			f:                    1,
 			expectedShouldReport: true,
@@ -231,8 +230,8 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			wantUpdates: []*datafeeds.WrappableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     big.NewInt(102),
-					Timestamp: uint64(testStartTime.UnixNano()),
+					Price:     decimal.NewFromFloat(102.00000000001),
+					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
 
@@ -257,7 +256,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: testStartTime.Add(-6 * time.Minute).UnixNano(), // Over heartbeat
 				},
 			}),
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(101), // 1% change, under 10% threshold
 			}),
 			f:                    1,
@@ -266,8 +265,8 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			wantUpdates: []*datafeeds.WrappableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     big.NewInt(101),
-					Timestamp: uint64(testStartTime.UnixNano()),
+					Price:     decimal.NewFromFloat(101),
+					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
 			expectError: false,
@@ -291,7 +290,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: time.Now().Add(-30 * time.Minute).UnixNano(), // Under heartbeat
 				},
 			}),
-			observations: createObservations(t, uint64(time.Now().UnixNano()), map[uint32]decimal.Decimal{
+			observations: createObservations(t, uint64(time.Now().UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromInt(105), // 5% change, under 10% threshold
 			}),
 			f:                    1,
@@ -334,7 +333,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: testStartTime.Add(-1 * time.Minute).UnixNano(), // Under heartbeat, outside optimization
 				},
 			}),
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{
+			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(105), // 5% change, under 10% threshold
 				2: decimal.NewFromFloat(202), // 1% change, under 10% threshold
 				3: decimal.NewFromFloat(205), // 2.5% change, under 10% threshold
@@ -345,13 +344,13 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			wantUpdates: []*datafeeds.WrappableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     big.NewInt(105),
-					Timestamp: uint64(testStartTime.UnixNano()),
+					Price:     decimal.NewFromFloat(105),        //big.NewInt(105),
+					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 				{
 					StreamID:  2,
-					Price:     big.NewInt(202),
-					Timestamp: uint64(testStartTime.UnixNano()),
+					Price:     decimal.NewFromFloat(202),        //big.NewInt(202),
+					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
 

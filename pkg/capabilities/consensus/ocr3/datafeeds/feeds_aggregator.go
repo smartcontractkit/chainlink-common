@@ -2,6 +2,7 @@ package datafeeds
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -77,7 +78,7 @@ var _ types.Aggregator = (*dataFeedsAggregator)(nil)
 func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	allowedSigners, minRequiredSignatures, events := a.extractSignersAndPayloads(lggr, observations, f)
 	if len(events) > 0 && minRequiredSignatures == 0 {
-		return nil, fmt.Errorf("cannot process non-empty observation payloads with minRequiredSignatures set to 0")
+		return nil, errors.New("cannot process non-empty observation payloads with minRequiredSignatures set to 0")
 	}
 	lggr.Debugw("extracted signers", "nAllowedSigners", len(allowedSigners), "minRequired", minRequiredSignatures, "nEvents", len(events))
 	// find latest valid report for each feed ID
@@ -271,7 +272,6 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(lggr logger.Logger, obse
 	// In that case both values are legitimate and signers list will contain nodes from both DONs. However, min-required value will be the higher one (if different).
 	allowedSigners := [][]byte{}
 	for signer, count := range signers {
-		signer := signer
 		if count >= fConsensus+1 {
 			allowedSigners = append(allowedSigners, signer[:])
 		}
@@ -304,6 +304,21 @@ func deviation(oldPrice, newPrice *big.Int) float64 {
 	diff.Abs(diff)
 	if oldPrice.Cmp(big.NewInt(0)) == 0 {
 		if diff.Cmp(big.NewInt(0)) == 0 {
+			return 0.0
+		}
+		return math.MaxFloat64
+	}
+	diffFl, _ := diff.Float64()
+	oldFl, _ := oldPrice.Float64()
+	return diffFl / oldFl
+}
+
+// (krehermann) found it surprisingly tricky to faithfully convert from decimal.Decimal to big.Int
+// so i just used the same logic as in the original code
+func deviationDecimal(oldPrice, newPrice decimal.Decimal) float64 {
+	diff := oldPrice.Sub(newPrice).Abs()
+	if oldPrice.IsZero() {
+		if diff.IsZero() {
 			return 0.0
 		}
 		return math.MaxFloat64

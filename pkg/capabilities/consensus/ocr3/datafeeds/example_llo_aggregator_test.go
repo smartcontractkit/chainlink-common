@@ -2,7 +2,6 @@ package datafeeds_test
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/shopspring/decimal"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -15,7 +14,8 @@ import (
 )
 
 // Example of using LLOAggregator.Aggregate with multiple oracles and price streams
-func Example_lloAggregator_Aggregate() {
+// go test -run ExampleLLOAggregator_Aggregate
+func ExampleLLOAggregator_Aggregate() {
 	// Create a logger
 	lggr, err := logger.New()
 	if err != nil {
@@ -38,17 +38,17 @@ func Example_lloAggregator_Aggregate() {
 
 	aggregator, _ := datafeeds.NewLLOAggregator(*configMap)
 
-	// 2. Create empty previous outcome (first round)
-	var previousOutcome *types.AggregationOutcome = nil
+	// 2. Create empty previous outcome (first round); empty previousOutcome will cause all streams to be updated
+	var previousOutcome *types.AggregationOutcome
 
 	// 3. Create observations from 3 oracles
 	observations := make(map[ocrcommon.OracleID][]values.Value)
-	timestamp := uint64(time.Now().UnixNano())
+	timestamp := uint64(61116379204) //uint64(time.Now().UnixNano()) //nolint: gosec // G115
 
 	// Setup price data for 2 streams
 	prices := map[uint32]decimal.Decimal{
-		1: decimal.NewFromFloat(1250.75),  // ETH/USD price
-		2: decimal.NewFromFloat(39250.25), // BTC/USD price
+		1: decimal.NewFromFloat(1250.427975), // ETH/USD price
+		2: decimal.NewFromFloat(39250.25),    // BTC/USD price
 	}
 
 	// Create the same observation for each oracle to ensure f+1 consensus
@@ -71,9 +71,9 @@ func Example_lloAggregator_Aggregate() {
 		}
 
 		// Wrap the event in a values.Value
-		val, err := values.Wrap(event)
-		if err != nil {
-			panic(err)
+		val, err2 := values.Wrap(event)
+		if err2 != nil {
+			panic(err2)
 		}
 		observations[i] = []values.Value{val}
 	}
@@ -98,15 +98,13 @@ func Example_lloAggregator_Aggregate() {
 
 		// Print details of each updated stream
 		for i, report := range reports {
-
 			fmt.Printf("  Stream %d: ID=%d, Price=%s, Timestamp=%d\n",
 				i+1, report.StreamID, report.Price.String(), timestamp)
 		}
 	}
+	// Output:
+	// Should report: true
+	// Updated streams: 2
+	//   Stream 1: ID=1, Price=1250.427975, Timestamp=61116379204
+	//   Stream 2: ID=2, Price=39250.25, Timestamp=61116379204
 }
-
-// Output:
-// Should report: true
-// Updated streams: 2
-//   Stream 1: ID=1, Price=1250.75, Timestamp=1616744307328492000
-//   Stream 2: ID=2, Price=39250.25, Timestamp=1616744307328492000

@@ -62,7 +62,7 @@ require (
 	golang.org/x/tools v0.26.0
 	gonum.org/v1/gonum v0.15.1
 	google.golang.org/grpc v1.67.1
-	google.golang.org/protobuf v1.35.1
+	google.golang.org/protobuf v1.36.6
 	sigs.k8s.io/yaml v1.4.0
 )
 

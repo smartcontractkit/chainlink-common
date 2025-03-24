@@ -141,7 +141,7 @@ func TestReduceConsensus(t *testing.T) {
 					"address":          "0x1235",
 					"deltaStage":       "45s",
 					"schedule":         "oneAtATime",
-					"cre_step_timeout": nil,
+					"cre_step_timeout": 0,
 				},
 				CapabilityType: capabilities.CapabilityTypeTarget,
 			},

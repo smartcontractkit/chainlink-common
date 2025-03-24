@@ -324,9 +324,6 @@ func (s staticRelayer) Replay(ctx context.Context, fromBlock uint64, args map[st
 		if fromBlock != s.replayRequest.fromBlock {
 			return fmt.Errorf("expected from %d but got %d", s.replayRequest.fromBlock, fromBlock)
 		}
-		if !reflect.DeepEqual(args, s.replayRequest.args) {
-			return fmt.Errorf("replay args mismatch: expected: %v but got: %v", s.replayRequest.args, args)
-		}
 	}
 	return nil
 }

@@ -46,7 +46,7 @@ type transactionRequest struct {
 }
 
 type replayRequest struct {
-	fromBlock uint64
+	fromBlock string
 	args      map[string]any
 }
 
@@ -319,10 +319,10 @@ func (s staticRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b 
 	return nil
 }
 
-func (s staticRelayer) Replay(ctx context.Context, fromBlock uint64, args map[string]any) error {
+func (s staticRelayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
 	if s.StaticChecks {
 		if fromBlock != s.replayRequest.fromBlock {
-			return fmt.Errorf("expected from %d but got %d", s.replayRequest.fromBlock, fromBlock)
+			return fmt.Errorf("expected from %s but got %s", s.replayRequest.fromBlock, fromBlock)
 		}
 	}
 	return nil

@@ -1181,7 +1181,7 @@ func (x *NodeStatus) GetState() string {
 
 type ReplayRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FromBlock     uint64                 `protobuf:"varint,1,opt,name=fromBlock,proto3" json:"fromBlock,omitempty"`
+	FromBlock     string                 `protobuf:"bytes,1,opt,name=fromBlock,proto3" json:"fromBlock,omitempty"`
 	Args          *structpb.Struct       `protobuf:"bytes,2,opt,name=args,proto3" json:"args,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1217,11 +1217,11 @@ func (*ReplayRequest) Descriptor() ([]byte, []int) {
 	return file_relayer_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *ReplayRequest) GetFromBlock() uint64 {
+func (x *ReplayRequest) GetFromBlock() string {
 	if x != nil {
 		return x.FromBlock
 	}
-	return 0
+	return ""
 }
 
 func (x *ReplayRequest) GetArgs() *structpb.Struct {
@@ -2585,7 +2585,7 @@ const file_relayer_proto_rawDesc = "" +
 	"\x06config\x18\x03 \x01(\tR\x06config\x12\x14\n" +
 	"\x05state\x18\x04 \x01(\tR\x05state\"Z\n" +
 	"\rReplayRequest\x12\x1c\n" +
-	"\tfromBlock\x18\x01 \x01(\x04R\tfromBlock\x12+\n" +
+	"\tfromBlock\x18\x01 \x01(\tR\tfromBlock\x12+\n" +
 	"\x04args\x18\x02 \x01(\v2\x17.google.protobuf.StructR\x04args\"\x82\x01\n" +
 	"\x12TransactionRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +

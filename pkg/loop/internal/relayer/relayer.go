@@ -365,7 +365,7 @@ func (r *relayerClient) Transact(ctx context.Context, from, to string, amount *b
 	return err
 }
 
-func (r *relayerClient) Replay(ctx context.Context, fromBlock uint64, args map[string]any) error {
+func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
 	argsStruct, err := structpb.NewStruct(args)
 	if err != nil {
 		return err

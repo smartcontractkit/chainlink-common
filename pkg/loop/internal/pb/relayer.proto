@@ -156,7 +156,7 @@ message NodeStatus {
 }
 
 message ReplayRequest {
-  uint64 fromBlock = 1;
+  string fromBlock = 1;
   google.protobuf.Struct args = 2;
 }
 

@@ -11,8 +11,6 @@ import (
 
 var LLOStreamPrices = lloStreamPrices
 
-type LLOAggregatorConfig = lloAggregatorConfig
-
 type WrappableUpdate = WrappableStreamUpdate
 
 type FeedConfig = feedConfig
@@ -32,8 +30,6 @@ func NewLLOconfig(t *testing.T, m map[uint32]FeedConfig, opts ...lloConfigOpt) v
 	for _, opt := range opts {
 		opt(t, unwrappedConfig)
 	}
-
-	t.Logf("unwrappedConfig: %v", unwrappedConfig)
 	config, err := values.NewMap(unwrappedConfig)
 	require.NoError(t, err)
 	return *config

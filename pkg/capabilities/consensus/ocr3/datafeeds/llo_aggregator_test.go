@@ -1,6 +1,7 @@
 package datafeeds_test
 
 import (
+	"fmt"
 	"math/big"
 	"sort"
 	"testing"
@@ -356,26 +357,26 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 			expectError: false,
 		},
-		/*
-			{
-				name: "empty observations",
-				config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-					1: {
-						Deviation: decimal.NewFromFloat(0.1),
-						Heartbeat: 3600,
-					},
-				}),
 
-				previousOutcome: createPreviousOutcome(t, map[uint32]struct {
-					price     decimal.Decimal
-					timestamp int64
-				}{}),
+		{
+			name: "empty observations",
+			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
+				1: {
+					Deviation: decimal.NewFromFloat(0.1),
+					Heartbeat: 3600,
+				},
+			}),
 
-				observations:         map[ocrcommon.OracleID][]values.Value{},
-				f:                    1,
-				expectedShouldReport: false,
-				expectError:          true, // Should error with empty observations
-			},*/
+			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
+				price     decimal.Decimal
+				timestamp int64
+			}{}),
+
+			observations:         map[ocrcommon.OracleID][]values.Value{},
+			f:                    1,
+			expectedShouldReport: false,
+			expectError:          true, // Should error with empty observations
+		},
 	}
 
 	for _, tc := range tests {
@@ -478,20 +479,33 @@ func createObservations(t *testing.T, ts uint64, prices map[uint32]decimal.Decim
 }
 
 func extractUpdatedStreamIDs(t *testing.T, outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.WrappableStreamUpdate) {
-	decodedMap, err := values.FromMapValueProto(outcome.EncodableOutcome)
+	streamIDs, reports, err := processOutcome(outcome)
 	require.NoError(t, err)
 
+	return streamIDs, reports
+}
+
+func processOutcome(outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.WrappableStreamUpdate, error) {
+	decodedMap, err := values.FromMapValueProto(outcome.EncodableOutcome)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	reportsAny, ok := decodedMap.Underlying[datafeeds.TopLevelListOutputFieldName]
-	require.True(t, ok)
+	if !ok {
+		return nil, nil, fmt.Errorf("missing field %s", datafeeds.TopLevelListOutputFieldName)
+	}
 
 	var reportsList []*datafeeds.WrappableStreamUpdate // each element is a WrappableUpdate
 	err = reportsAny.UnwrapTo(&reportsList)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	streamIDs := make([]uint32, 0, len(reportsList))
 	for _, reportAny := range reportsList {
 		streamIDs = append(streamIDs, reportAny.StreamID)
 	}
 
-	return streamIDs, reportsList
+	return streamIDs, reportsList, nil
 }

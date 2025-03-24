@@ -18,6 +18,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -104,6 +105,9 @@ type ModuleConfig struct {
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
+
+	CallCapability    func(ctx context.Context, mode wasmpb.Mode, req *wasmpb.CapabilityRequest) (*wasmpb.CapabilityResponse, error)
+	AwaitCapabilities func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error)
 }
 
 /*
@@ -134,6 +138,7 @@ type Module struct {
 
 	requestStore *store[*wasmdagpb.Response]
 	executeStore *store[*wasmpb.ExecutionResult]
+	modes        map[string]wasmpb.Mode
 
 	cfg *ModuleConfig
 
@@ -261,6 +266,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		m: map[string]*RequestData[*wasmpb.ExecutionResult]{},
 	}
 
+	modes := map[string]wasmpb.Mode{}
+
 	isLegacyDAG := false
 	for _, modImport := range mod.Imports() {
 		name := modImport.Name()
@@ -269,13 +276,13 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 			break
 		}
 	}
+
 	if isLegacyDAG {
 		if err = linkLegacyDAG(linker, modCfg, requestStore); err != nil {
 			return nil, err
 		}
-	} else {
-		// TODO rtinianov NOW
-		panic("link new functions here :)")
+	} else if err = linkNoDAG(linker, modCfg, modes, execStore); err != nil {
+		return nil, err
 	}
 
 	m := &Module{
@@ -291,9 +298,27 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 		stopCh:      make(chan struct{}),
 		isLegacyDAG: isLegacyDAG,
+		modes:       modes,
 	}
 
 	return m, nil
+}
+
+func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, modes map[string]wasmpb.Mode, execStore *store[*wasmpb.ExecutionResult]) error {
+	logger := modCfg.Logger
+	err := linker.FuncWrap(
+		"env",
+		"sendResponse",
+		createSendResponseFn(logger, execStore, func() *wasmpb.ExecutionResult {
+			return &wasmpb.ExecutionResult{}
+		}),
+	)
+
+	if err != nil {
+		return fmt.Errorf("error wrapping sendResponse func: %w", err)
+	}
+
+	return nil
 }
 
 func linkLegacyDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, requestStore *store[*wasmdagpb.Response]) error {
@@ -301,7 +326,9 @@ func linkLegacyDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, requestStore *
 	err := linker.FuncWrap(
 		"env",
 		"sendResponse",
-		createSendResponseFn(logger, requestStore),
+		createSendResponseFn(logger, requestStore, func() *wasmdagpb.Response {
+			return &wasmdagpb.Response{}
+		}),
 	)
 	if err != nil {
 		return fmt.Errorf("error wrapping sendResponse func: %w", err)
@@ -496,20 +523,35 @@ func runWasm[I idMessage, O proto.Message](
 }
 
 func (m *Module) wrapRunForNoDAG(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error) {
-	response, err := m.Execute(ctx, &wasmpb.ExecuteRequest{
-		Request: &wasmpb.ExecuteRequest_Trigger{
-			Trigger: &wasmpb.Trigger{},
-		},
-	})
+	execRequest := &wasmpb.ExecuteRequest{Id: request.Id, Config: request.Config}
+	switch msg := request.Message.(type) {
+	case *wasmdagpb.Request_ComputeRequest:
+		execRequest.Request = &wasmpb.ExecuteRequest_Trigger{
+			Trigger: &wasmpb.Trigger{
+				Id:      request.TriggerId,
+				Payload: msg.ComputeRequest.Request.Request,
+			},
+		}
+	case *wasmdagpb.Request_SpecRequest:
+		execRequest.Request = &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}
+	default:
+		return nil, fmt.Errorf("invalid request message type: %T", msg)
+	}
+
+	response, err := m.Execute(ctx, execRequest)
 
 	if err != nil {
 		return nil, err
 	}
 
+	respErr := ""
+	if response.Error != nil {
+		respErr = *response.Error
+	}
+
 	return &wasmdagpb.Response{
-		Id: request.Id,
-		// TODO error message should be in the other
-		ErrMsg: "",
+		Id:     response.Id,
+		ErrMsg: respErr,
 		Message: &wasmdagpb.Response_ComputeResponse{
 			ComputeResponse: &wasmdagpb.ComputeResponse{
 				Response: &capabilitiespb.CapabilityResponse{ResponseValue: response.Payload},
@@ -527,7 +569,10 @@ func containsCode(err error, code int) bool {
 
 // createSendResponseFn injects the dependency required by a WASM guest to
 // send a response back to the host.
-func createSendResponseFn(logger logger.Logger, requestStore *store[*wasmdagpb.Response]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+func createSendResponseFn[T idMessage](
+	logger logger.Logger,
+	requestStore *store[T],
+	newT func() T) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
@@ -535,19 +580,19 @@ func createSendResponseFn(logger logger.Logger, requestStore *store[*wasmdagpb.R
 			return ErrnoFault
 		}
 
-		var resp wasmdagpb.Response
-		innerErr = proto.Unmarshal(b, &resp)
+		resp := newT()
+		innerErr = proto.Unmarshal(b, resp)
 		if innerErr != nil {
 			logger.Errorf("error calling sendResponse: %s", innerErr)
 			return ErrnoFault
 		}
 
-		storedReq, innerErr := requestStore.get(resp.Id)
+		storedReq, innerErr := requestStore.get(resp.GetId())
 		if innerErr != nil {
 			logger.Errorf("error calling sendResponse: %s", innerErr)
 			return ErrnoFault
 		}
-		storedReq.response = &resp
+		storedReq.response = resp
 
 		return ErrnoSuccess
 	}

@@ -138,9 +138,10 @@ func TestReduceConsensus(t *testing.T) {
 					Mapping: map[string]any{"signed_report": "$(consensus.outputs)"},
 				},
 				Config: map[string]any{
-					"address":    "0x1235",
-					"deltaStage": "45s",
-					"schedule":   "oneAtATime",
+					"address":          "0x1235",
+					"deltaStage":       "45s",
+					"schedule":         "oneAtATime",
+					"cre_step_timeout": nil,
 				},
 				CapabilityType: capabilities.CapabilityTypeTarget,
 			},

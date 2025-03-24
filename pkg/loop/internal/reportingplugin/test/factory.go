@@ -8,6 +8,9 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
@@ -15,10 +18,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func Factory(lggr logger.Logger) staticFactory {
@@ -103,23 +102,21 @@ func (s staticFactory) equalConfig(other libocr.ReportingPluginConfig) error {
 func RunFactory(t *testing.T, factory libocr.ReportingPluginFactory) {
 	expectedFactory := Factory(logger.Test(t))
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
-		ctx := tests.Context(t)
-		rp, gotRPI, err := factory.NewReportingPlugin(ctx, expectedFactory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), expectedFactory.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, expectedFactory.rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			expectedFactory.reportingPlugin.AssertEqual(ctx, t, rp)
+			expectedFactory.reportingPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }
 
 func RunValidation(t *testing.T, validationService core.ValidationService) {
-	ctx := tests.Context(t)
 	t.Run("ValidationService", func(t *testing.T) {
-		err := validationService.ValidateConfig(ctx, validationtest.GoodPluginConfig)
+		err := validationService.ValidateConfig(t.Context(), validationtest.GoodPluginConfig)
 		require.NoError(t, err)
-		err = validationService.ValidateConfig(ctx, nil)
+		err = validationService.ValidateConfig(t.Context(), nil)
 		require.Error(t, err)
 	})
 }

@@ -15,7 +15,7 @@ type TestingT interface {
 	Cleanup(func())
 }
 
-func Context(tb TestingT) (ctx context.Context) {
+func getContext(tb TestingT) (ctx context.Context) {
 	ctx = context.Background()
 	var cancel func()
 

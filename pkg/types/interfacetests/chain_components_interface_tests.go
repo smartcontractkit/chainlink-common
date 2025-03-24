@@ -134,13 +134,12 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		{
 			Name: ContractReaderQueryKeysReturnsDataTwoEventTypes,
 			Test: func(t T) {
-				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 
 				bindings := tester.GetBindings(t)
 
-				require.NoError(t, cr.Bind(ctx, bindings))
+				require.NoError(t, cr.Bind(t.Context(), bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
 
 				expectedSequenceData := createMixedEventTypeSequence(t, tester, cw, boundContract)
@@ -160,7 +159,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 						SequenceDataType: &ds,
 					}
 
-					sequencesIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{secondContractFilter, contractFilter}, query.LimitAndSort{})
+					sequencesIter, err := cr.QueryKeys(t.Context(), []types.ContractKeyFilter{secondContractFilter, contractFilter}, query.LimitAndSort{})
 					if err != nil {
 						return false
 					}

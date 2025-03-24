@@ -14,6 +14,8 @@ import (
 )
 
 // Example of using LLOAggregator.Aggregate with multiple oracles and price streams
+// It constructs a LLOAggregator with two streams, simulates observations from three oracles,
+// and demonstrates how to process the aggregation outcome.
 // go test -run ExampleLLOAggregator_Aggregate
 func ExampleLLOAggregator_Aggregate() {
 	// Create a logger
@@ -25,8 +27,9 @@ func ExampleLLOAggregator_Aggregate() {
 	configMap, _ := values.NewMap(map[string]interface{}{
 		"streams": map[string]interface{}{
 			"1": map[string]interface{}{
-				"deviation": "0.01", // 1% deviation threshold
-				"heartbeat": 3600,   // 1 hour heartbeat
+				"deviation":  "0.01", // 1% deviation threshold
+				"heartbeat":  3600,   // 1 hour heartbeat
+				"remappedID": "0x680084f7347baFfb5C323c2982dfC90e04F9F918",
 			},
 			"2": map[string]interface{}{
 				"deviation": "0.02", // 2% deviation threshold
@@ -98,13 +101,16 @@ func ExampleLLOAggregator_Aggregate() {
 
 		// Print details of each updated stream
 		for i, report := range reports {
-			fmt.Printf("  Stream %d: ID=%d, Price=%s, Timestamp=%d\n",
-				i+1, report.StreamID, report.Price.String(), timestamp)
+			fmt.Printf("  Stream %d: ID=%d, Price=%s, Timestamp=%d, RemappedID=%x\n",
+				i+1, report.StreamID, report.Price.String(), timestamp, report.RemappedID)
 		}
 	}
+
+	// Note: the remappedID is passed thru the aggregator as raw bytes, except that any 0x prefix is stripped
+	// the output here is hex encoding that processed byte array
 	// Output:
 	// Should report: true
 	// Updated streams: 2
-	//   Stream 1: ID=1, Price=1250.427975, Timestamp=61116379204
-	//   Stream 2: ID=2, Price=39250.25, Timestamp=61116379204
+	//   Stream 1: ID=1, Price=1250.427975, Timestamp=61116379204 RemappedID=680084f7347baFfb5C323c2982dfC90e04F9F918
+	//   Stream 2: ID=2, Price=39250.25, Timestamp=61116379204 RemappedID=
 }

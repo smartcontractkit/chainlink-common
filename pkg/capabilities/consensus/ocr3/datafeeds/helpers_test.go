@@ -9,12 +9,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+// exported for testing only
 var LLOStreamPrices = lloStreamPrices
-
-type WrappableUpdate = WrappableStreamUpdate
 
 type FeedConfig = feedConfig
 
+// helper function to create a map of feed configs
 func NewLLOconfig(t *testing.T, m map[uint32]FeedConfig, opts ...lloConfigOpt) values.Map {
 	unwrappedConfig := map[string]any{
 		"streams": map[string]any{},

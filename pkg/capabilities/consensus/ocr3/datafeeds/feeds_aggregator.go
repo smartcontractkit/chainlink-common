@@ -27,7 +27,7 @@ const (
 	// Example of a compatible EVM encoder ABI config:
 	//   (bytes32 FeedID, bytes RawReport, uint256 Price, uint64 Timestamp)[] Reports
 
-	// The follow constants are used in value maps to ensure consistent naming while the underlying
+	// The following constants are used in value maps to ensure consistent naming while the underlying
 	// implementation is untyped.
 	TopLevelListOutputFieldName = "Reports"
 	FeedIDOutputFieldName       = "FeedID"

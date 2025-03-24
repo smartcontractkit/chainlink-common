@@ -27,14 +27,16 @@ var (
 
 // LLOAggregatorConfig is the config for the LLO aggregator.
 // Example config:
+// remappedID but a hex string
 // streams:
 //
-//	1:
-//	  deviation: "0.1"
-//	  heartbeat: 10
-//	2:
-//	  deviation: "0.2"
-//	  heartbeat: 20
+//		"1":
+//		  deviation: "0.1"
+//		  heartbeat: 10
+//	   remappedID: "0x680084f7347baFfb5C323c2982dfC90e04F9F918"
+//		"2":
+//		  deviation: "0.2"
+//		  heartbeat: 20
 //
 // allowedPartialStaleness: "0.2"
 // The streams are the stream IDs that the aggregator will aggregate.
@@ -210,7 +212,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 	for _, streamID := range mustUpdateIDs {
 		// TODO what if remapped ID is not defined? How do we reconcile binary vs int? Should remapped IDs also be integers now?
 		remappedID := a.config.streams[streamID].RemappedID
-		newPrice := prices[streamID] //.BigInt()
+		newPrice := prices[streamID]
 		w := &WrappableStreamUpdate{
 			StreamID:   streamID,
 			Price:      newPrice,
@@ -391,7 +393,7 @@ func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[o
 	return observationTimestamp, out, nil
 }
 
-// parseLLOConfig parses the LLO aggregator config from a mapstructure-compatible config.
+// parseLLOConfig parses the user-facing, type-less, LLO aggregator in the internal typed config.
 func parseLLOConfig(config values.Map) (parsedLLOAggregatorConfig, error) {
 	converter := LLOAggregatorConfig{
 		StreamsStr: make(map[string]feedConfig),

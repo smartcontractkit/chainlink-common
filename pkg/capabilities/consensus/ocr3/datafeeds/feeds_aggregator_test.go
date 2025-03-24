@@ -240,7 +240,6 @@ func getConfig(t *testing.T, feedID string, deviation string, heartbeat int) *va
 		},
 		"allowedPartialStaleness": "0.2",
 	}
-	t.Logf("unwrappedConfig: %v", unwrappedConfig)
 	config, err := values.NewMap(unwrappedConfig)
 	require.NoError(t, err)
 	return config

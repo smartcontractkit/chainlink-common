@@ -51,13 +51,14 @@ func TestObjectMatchersEqual(t *testing.T) {
 
 func TestPolicyExists(t *testing.T) {
 	t.Run("policyExists return true if policy exists", func(t *testing.T) {
-		notificationPolicyTree := &alerting.NotificationPolicy{
+		notificationPolicyTree := alerting.NotificationPolicy{
 			Receiver: Pointer("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
 					Receiver: Pointer("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
+						{"product", "=", "product-a"},
 					},
 					Routes: []alerting.NotificationPolicy{
 						{
@@ -71,14 +72,26 @@ func TestPolicyExists(t *testing.T) {
 			},
 		}
 
-		newNotificationPolicy := alerting.NotificationPolicy{
-			Receiver: Pointer("pagerduty"),
+		productANotificationPolicy := alerting.NotificationPolicy{
+			Receiver: Pointer("slack"),
 			ObjectMatchers: &alerting.ObjectMatchers{
-				{"env", "=", "production"},
+				{"team", "=", "chainlink"},
+				{"product", "=", "product-a"},
 			},
 		}
-		result := policyExist(*notificationPolicyTree, newNotificationPolicy)
-		require.True(t, result)
+
+		productBNotificationPolicy := alerting.NotificationPolicy{
+			Receiver: Pointer("test"),
+			ObjectMatchers: &alerting.ObjectMatchers{
+				{"team", "=", "chainlink"},
+				{"product", "=", "product-b"},
+			},
+		}
+
+		resultA := policyExist(notificationPolicyTree, productANotificationPolicy)
+		resultB := policyExist(notificationPolicyTree, productBNotificationPolicy)
+		require.True(t, resultA)
+		require.False(t, resultB)
 	})
 
 	t.Run("policyExists return false if policy does not exists", func(t *testing.T) {

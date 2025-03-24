@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 package capabilities;
 
 import "values/pb/values.proto";
+import "capabilities/pb/triggers.proto";
 import "google/protobuf/empty.proto";
 
 service BaseCapability {
@@ -55,6 +56,7 @@ message TriggerEvent {
   string triggerType = 1;
   string id = 2;
   values.Map outputs = 4;
+  v1.OCRTriggerEvent ocr_event = 5;
 }
 
 message TriggerResponse {
@@ -119,4 +121,18 @@ message InitialiseRequest {
 
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
+}
+
+message MeteringReportNodeDetail {
+	string peer_2_peer_id = 1;
+	string spend_unit = 2;
+	string spend_value = 3;
+}
+
+message MeteringReportStep {
+  repeated MeteringReportNodeDetail nodes = 1;
+}
+
+message MeteringReport {
+  map<string, MeteringReportStep> steps = 1;
 }

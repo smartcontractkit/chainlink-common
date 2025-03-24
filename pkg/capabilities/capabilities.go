@@ -85,15 +85,6 @@ type CapabilityRequest struct {
 	Inputs   *values.Map
 }
 
-type TriggerEvent struct {
-	// The ID of the trigger capability
-	TriggerType string
-	// The ID of the trigger event
-	ID string
-	// Trigger-specific payload
-	Outputs *values.Map
-}
-
 type RegisterToWorkflowRequest struct {
 	Metadata RegistrationMetadata
 	Config   *values.Map
@@ -137,6 +128,30 @@ type TriggerRegistrationRequest struct {
 type TriggerResponse struct {
 	Event TriggerEvent
 	Err   error
+}
+
+type TriggerEvent struct {
+	// The ID of the trigger capability
+	TriggerType string
+	// The ID of the trigger event
+	ID string
+	// Trigger-specific payload
+	Outputs *values.Map
+	// Signed report representing an event from an OCR-based capability
+	// If set, the Outputs field above will be ignored
+	OCREvent *OCRTriggerEvent
+}
+
+type OCRTriggerEvent struct {
+	ConfigDigest []byte
+	SeqNr        uint64
+	Report       []byte // marshaled pb.OCRTriggerReport
+	Sigs         []OCRAttributedOnchainSignature
+}
+
+type OCRAttributedOnchainSignature struct {
+	Signature []byte
+	Signer    uint32 // oracle ID (0,1,...,N-1)
 }
 
 type TriggerExecutable interface {

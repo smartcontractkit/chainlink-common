@@ -3,6 +3,7 @@ package custmsg
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"google.golang.org/protobuf/proto"
 
@@ -38,14 +39,10 @@ func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 	newCustomMessageLabeler := NewLabeler()
 
 	// Copy existing labels from the current agent
-	for k, v := range l.labels {
-		newCustomMessageLabeler.labels[k] = v
-	}
+	maps.Copy(newCustomMessageLabeler.labels, l.labels)
 
 	// Add new key-value pairs
-	for k, v := range labels {
-		newCustomMessageLabeler.labels[k] = v
-	}
+	maps.Copy(newCustomMessageLabeler.labels, labels)
 
 	return newCustomMessageLabeler
 }
@@ -60,9 +57,7 @@ func (l Labeler) With(keyValues ...string) MessageEmitter {
 	}
 
 	// Copy existing labels from the current agent
-	for k, v := range l.labels {
-		newCustomMessageLabeler.labels[k] = v
-	}
+	maps.Copy(newCustomMessageLabeler.labels, l.labels)
 
 	// Add new key-value pairs
 	for i := 0; i < len(keyValues); i += 2 {
@@ -80,9 +75,9 @@ func (l Labeler) Emit(ctx context.Context, msg string) error {
 
 func (l Labeler) Labels() map[string]string {
 	copied := make(map[string]string, len(l.labels))
-	for k, v := range l.labels {
-		copied[k] = v
-	}
+
+	maps.Copy(copied, l.labels)
+
 	return copied
 }
 

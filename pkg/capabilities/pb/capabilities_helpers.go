@@ -68,8 +68,20 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 }
 
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
+	metering := make([]*MeteringReportNodeDetail, len(resp.Metadata.Metering))
+	for idx, detail := range resp.Metadata.Metering {
+		metering[idx] = &MeteringReportNodeDetail{
+			Peer_2PeerId: detail.Peer2PeerID,
+			SpendUnit:    detail.SpendUnit,
+			SpendValue:   detail.SpendValue,
+		}
+	}
+
 	return &CapabilityResponse{
 		Value: values.ProtoMap(resp.Value),
+		Metadata: &CapabilityResponseMetadata{
+			Metering: metering,
+		},
 	}
 }
 
@@ -120,8 +132,25 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		return capabilities.CapabilityResponse{}, err
 	}
 
+	var metering []capabilities.MeteringNodeDetail
+
+	if pr.Metadata != nil {
+		metering = make([]capabilities.MeteringNodeDetail, len(pr.Metadata.Metering))
+
+		for idx, detail := range pr.Metadata.Metering {
+			metering[idx] = capabilities.MeteringNodeDetail{
+				Peer2PeerID: detail.Peer_2PeerId,
+				SpendUnit:   detail.SpendUnit,
+				SpendValue:  detail.SpendValue,
+			}
+		}
+	}
+
 	resp := capabilities.CapabilityResponse{
 		Value: val,
+		Metadata: capabilities.CapabilityResponseMetadata{
+			Metering: metering,
+		},
 	}
 
 	return resp, err

@@ -2,6 +2,7 @@ package interfacetests
 
 import (
 	"regexp"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,7 +11,8 @@ import (
 )
 
 var (
-	validCapabilityID = regexp.MustCompile(`{name}:{label1_key}_{labe1_value}:{label2_key}_{label2_value}@{version}`)
+	// It takes the form of `{name}:{label1_key}_{labe1_value}:{label2_key}_{label2_value}@{version}`
+	validCapabilityID = regexp.MustCompile(`(?P<name>.+):(?P<label1_key>.+)_(?P<label1_value>.+):(?P<label2_key>.+)_(?P<label2_value>.+)@(?P<version>.+)`)
 )
 
 type CapabilityTestID string
@@ -21,45 +23,47 @@ const (
 	CapabilityInfoIDCorrectPattern         = "capability info has correct pattern"
 )
 
-type CapabilitiesInterfaceTester[T TestingT[T]] interface {
+type CapabilitiesInterfaceTester interface {
 	Name() string
-	Setup(T, CapabilityTestID)
+	Setup(*testing.T, CapabilityTestID)
 	IsDisabled(CapabilityTestID) bool
 }
 
-type TriggerCapabilitiesInterfaceTester[T TestingT[T]] interface {
-	CapabilitiesInterfaceTester[T]
-	GetTriggerCapability(T, CapabilityTestID) capabilities.TriggerCapability
+type TriggerCapabilitiesInterfaceTester interface {
+	CapabilitiesInterfaceTester
+	GetTriggerCapability(*testing.T, CapabilityTestID) capabilities.TriggerCapability
 }
 
-type ExecutableCapabilitiesInterfaceTester[T TestingT[T]] interface {
-	CapabilitiesInterfaceTester[T]
-	GetExecutableCapability(T, CapabilityTestID) capabilities.ExecutableCapability
+type ExecutableCapabilitiesInterfaceTester interface {
+	CapabilitiesInterfaceTester
+	GetExecutableCapability(*testing.T, CapabilityTestID) capabilities.ExecutableCapability
 }
 
-func RunTriggerCapabilityInterfaceTests[T TestingT[T]](t T, tester TriggerCapabilitiesInterfaceTester[T]) {
-	t.Run(tester.Name(), func(t T) {
+func RunTriggerCapabilityInterfaceTests(t *testing.T, tester TriggerCapabilitiesInterfaceTester) {
+	t.Run(tester.Name(), func(t *testing.T) {
 		t.Parallel()
 
-		runBaseCapabilityInterfaceTests(t, tester, func(t T, id CapabilityTestID) capabilities.BaseCapability { return tester.GetTriggerCapability(t, id) })
+		runBaseCapabilityInterfaceTests(t, tester, func(t *testing.T, id CapabilityTestID) capabilities.BaseCapability {
+			return tester.GetTriggerCapability(t, id)
+		})
 	})
 }
 
-func RunExecutableCapabilityInterfaceTests[T TestingT[T]](t T, tester ExecutableCapabilitiesInterfaceTester[T]) {
-	t.Run(tester.Name(), func(t T) {
+func RunExecutableCapabilityInterfaceTests(t *testing.T, tester ExecutableCapabilitiesInterfaceTester) {
+	t.Run(tester.Name(), func(t *testing.T) {
 		t.Parallel()
 
-		runBaseCapabilityInterfaceTests(t, tester, func(t T, id CapabilityTestID) capabilities.BaseCapability {
+		runBaseCapabilityInterfaceTests(t, tester, func(t *testing.T, id CapabilityTestID) capabilities.BaseCapability {
 			return tester.GetExecutableCapability(t, id)
 		})
 
-		t.Run("Executable", func(t T) {
+		t.Run("Executable", func(t *testing.T) {
 			t.Parallel()
 
-			tests := []Testcase[T]{
+			tests := []Testcase[*testing.T]{
 				{
 					Name: CapabilityResponseContainsMeteringData,
-					Test: func(t T) {
+					Test: func(t *testing.T) {
 						capability := tester.GetExecutableCapability(t, CapabilityResponseContainsMeteringData)
 						response, err := capability.Execute(t.Context(), capabilities.CapabilityRequest{})
 
@@ -74,7 +78,7 @@ func RunExecutableCapabilityInterfaceTests[T TestingT[T]](t T, tester Executable
 				testID := CapabilityTestID(test.Name)
 
 				if !tester.IsDisabled(testID) {
-					t.Run(test.Name, func(t T) {
+					t.Run(test.Name, func(t *testing.T) {
 						t.Parallel()
 
 						tester.Setup(t, testID)
@@ -86,15 +90,15 @@ func RunExecutableCapabilityInterfaceTests[T TestingT[T]](t T, tester Executable
 	})
 }
 
-type baseCapabilityFunc[T TestingT[T]] func(T, CapabilityTestID) capabilities.BaseCapability
+type baseCapabilityFunc func(*testing.T, CapabilityTestID) capabilities.BaseCapability
 
-func runBaseCapabilityInterfaceTests[T TestingT[T]](t T, tester CapabilitiesInterfaceTester[T], base baseCapabilityFunc[T]) {
-	t.Run("BaseCapability", func(t T) {
+func runBaseCapabilityInterfaceTests(t *testing.T, tester CapabilitiesInterfaceTester, base baseCapabilityFunc) {
+	t.Run("BaseCapability", func(t *testing.T) {
 		t.Parallel()
-		tests := []Testcase[T]{
+		tests := []Testcase[*testing.T]{
 			{
 				Name: CapabilityInfoIDCorrectPattern,
-				Test: func(t T) {
+				Test: func(t *testing.T) {
 					capability := base(t, CapabilityInfoIDCorrectPattern)
 					info, err := capability.Info(t.Context())
 
@@ -104,7 +108,7 @@ func runBaseCapabilityInterfaceTests[T TestingT[T]](t T, tester CapabilitiesInte
 			},
 			{
 				Name: CapabilityTypeIsValid,
-				Test: func(t T) {
+				Test: func(t *testing.T) {
 					capability := base(t, CapabilityTypeIsValid)
 
 					var info capabilities.CapabilityInfo
@@ -120,7 +124,7 @@ func runBaseCapabilityInterfaceTests[T TestingT[T]](t T, tester CapabilitiesInte
 		for _, test := range tests {
 			testID := CapabilityTestID(test.Name)
 
-			t.Run(test.Name, func(t T) {
+			t.Run(test.Name, func(t *testing.T) {
 				t.Parallel()
 
 				tester.Setup(t, testID)

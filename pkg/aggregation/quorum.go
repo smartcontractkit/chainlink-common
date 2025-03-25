@@ -8,7 +8,7 @@ package aggregation
 // F should be >= 1.
 // If N = 1, a quorum size of 1 is returned.
 // Double check usage for small N and F if N < 3f + 1.
-func ByzantineQuorum(F int, N int) (Q int) {
+func ByzantineQuorum(N int, F int) (Q int) {
 	if N == 1 {
 		return 1
 	}

@@ -27,8 +27,10 @@ message ExecuteRequest {
 
 message ExecutionResult {
   string id = 1;
-  values.Value value = 2;
-  optional string error = 3;
+  oneof result {
+    values.Value value = 2;
+    string error = 3;
+  }
 }
 
 

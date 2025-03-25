@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasm "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -72,6 +73,38 @@ func (r *store[T]) delete(id string) {
 	delete(r.m, id)
 }
 
+type triggerStore struct {
+	triggers    []*wasmpb.TriggerSubscriptionRequest
+	triggerLock sync.Mutex
+}
+
+func (t *triggerStore) add(trigger *wasmpb.TriggerSubscriptionRequest) {
+	t.triggerLock.Lock()
+	defer t.triggerLock.Unlock()
+	t.triggers = append(t.triggers, trigger)
+}
+
+func (t *triggerStore) get() []*wasmpb.TriggerSubscriptionRequest {
+	t.triggerLock.Lock()
+	defer t.triggerLock.Unlock()
+	return t.triggers
+}
+
+func (t *triggerStore) subscribeToTrigger(caller *wasmtime.Caller, subscription, subscriptionLen int32) int32 {
+	triggerBytes, err := wasmRead(caller, subscription, subscriptionLen)
+	if err != nil {
+		return ErrnoFault
+	}
+
+	trigger := &wasmpb.TriggerSubscriptionRequest{}
+	if err = proto.Unmarshal(triggerBytes, trigger); err != nil {
+		return ErrnoFault
+	}
+
+	t.add(trigger)
+	return ErrnoSuccess
+}
+
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Second
@@ -106,29 +139,9 @@ type ModuleConfig struct {
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
 
-	CallCapability    func(ctx context.Context, mode wasmpb.Mode, req *wasmpb.CapabilityRequest) (*wasmpb.CapabilityResponse, error)
+	CallCapability    func(ctx context.Context, req *wasmpb.CapabilityRequest) (*wasmpb.CapabilityFuture, error)
 	AwaitCapabilities func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error)
 }
-
-/*
-//go:wasmimport env change_mode
-func changeMode(mode int32)
-
-//go:wasmimport env subscribe_to_trigger
-func subscribeToTrigger(reqptr unsafe.Pointer, reqptrlen int32, configptr unsafe.Pointer, configLen int32) int32
-
-//go:wasmimport env return_response
-func returnResponse(reqptr unsafe.Pointer, reqptrlen int32)
-
-//go:wasmimport env return_error
-func returnError(reqptr unsafe.Pointer, reqptrlen int32)
-
-//go:wasmimport env call_capability
-func callCapability(reqptr unsafe.Pointer, reqptrlen int32, id unsafe.Pointer) int32
-
-//go:wasmimport env await_capabilities
-func awaitCapabilities(id unsafe.Pointer, respptr unsafe.Pointer, resplen int32) int32
-*/
 
 type Module struct {
 	engine  *wasmtime.Engine
@@ -138,7 +151,7 @@ type Module struct {
 
 	requestStore *store[*wasmdagpb.Response]
 	executeStore *store[*wasmpb.ExecutionResult]
-	modes        map[string]wasmpb.Mode
+	triggers     *triggerStore
 
 	cfg *ModuleConfig
 
@@ -266,8 +279,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		m: map[string]*RequestData[*wasmpb.ExecutionResult]{},
 	}
 
-	modes := map[string]wasmpb.Mode{}
-
 	isLegacyDAG := false
 	for _, modImport := range mod.Imports() {
 		name := modImport.Name()
@@ -277,11 +288,13 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		}
 	}
 
+	triggers := &triggerStore{}
+
 	if isLegacyDAG {
 		if err = linkLegacyDAG(linker, modCfg, requestStore); err != nil {
 			return nil, err
 		}
-	} else if err = linkNoDAG(linker, modCfg, modes, execStore); err != nil {
+	} else if err = linkNoDAG(linker, modCfg, execStore, triggers); err != nil {
 		return nil, err
 	}
 
@@ -293,29 +306,51 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 		requestStore: requestStore,
 		executeStore: execStore,
+		triggers:     triggers,
 
 		cfg: modCfg,
 
 		stopCh:      make(chan struct{}),
 		isLegacyDAG: isLegacyDAG,
-		modes:       modes,
 	}
 
 	return m, nil
 }
 
-func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, modes map[string]wasmpb.Mode, execStore *store[*wasmpb.ExecutionResult]) error {
+func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*wasmpb.ExecutionResult], triggerStore *triggerStore) error {
 	logger := modCfg.Logger
-	err := linker.FuncWrap(
+	if err := linker.FuncWrap(
 		"env",
-		"sendResponse",
+		"send_response",
 		createSendResponseFn(logger, execStore, func() *wasmpb.ExecutionResult {
 			return &wasmpb.ExecutionResult{}
 		}),
-	)
-
-	if err != nil {
+	); err != nil {
 		return fmt.Errorf("error wrapping sendResponse func: %w", err)
+	}
+
+	if err := linker.FuncWrap(
+		"env",
+		"subscribe_to_trigger",
+		triggerStore.subscribeToTrigger,
+	); err != nil {
+		return err
+	}
+
+	if err := linker.FuncWrap(
+		"env",
+		"call_capability",
+		createCallCapFn(logger, modCfg.CallCapability),
+	); err != nil {
+		return fmt.Errorf("error wrapping callcap func: %w", err)
+	}
+
+	if err := linker.FuncWrap(
+		"env",
+		"await_capabilities",
+		createAwaitCapsFn(logger, modCfg.AwaitCapabilities, wasmRead, wasmWrite, wasmWriteUInt32),
+	); err != nil {
+		return fmt.Errorf("error wrapping awaitcaps func: %w", err)
 	}
 
 	return nil
@@ -438,10 +473,12 @@ func runWasm[I idMessage, O proto.Message](
 
 	// we add the request context to the store to make it available to the Fetch fn
 	reqId := request.GetId()
-	err := execStore.add(reqId, &RequestData[O]{ctx: func() context.Context { return ctxWithTimeout }})
+	ctxCallback := func() context.Context { return ctxWithTimeout }
+	err := execStore.add(reqId, &RequestData[O]{ctx: ctxCallback})
 	if err != nil {
 		return o, fmt.Errorf("error adding ctx to the store: %w", err)
 	}
+
 	// we delete the request data from the store when we're done
 	defer m.requestStore.delete(reqId)
 
@@ -494,6 +531,10 @@ func runWasm[I idMessage, O proto.Message](
 	_, err = start.Call(store)
 	switch {
 	case containsCode(err, wasm.CodeSuccess):
+		if err = m.wrapTriggersToResponse(reqId); err != nil {
+			return o, err
+		}
+
 		storedRequest, innerErr := execStore.get(reqId)
 		if innerErr != nil {
 			return o, innerErr
@@ -545,19 +586,45 @@ func (m *Module) wrapRunForNoDAG(ctx context.Context, request *wasmdagpb.Request
 	}
 
 	respErr := ""
-	if response.Error != nil {
-		respErr = *response.Error
+	var value *pb.Value
+	switch r := response.Result.(type) {
+	case *wasmpb.ExecutionResult_Error:
+		respErr = r.Error
+	case *wasmpb.ExecutionResult_Value:
+		value = r.Value
 	}
+
+	output := &pb.Map{Fields: map[string]*pb.Value{"output": value}}
 
 	return &wasmdagpb.Response{
 		Id:     response.Id,
 		ErrMsg: respErr,
 		Message: &wasmdagpb.Response_ComputeResponse{
 			ComputeResponse: &wasmdagpb.ComputeResponse{
-				Response: &capabilitiespb.CapabilityResponse{ResponseValue: response.Payload},
+				Response: &capabilitiespb.CapabilityResponse{Value: output},
 			},
 		},
 	}, nil
+}
+
+func (m *Module) wrapTriggersToResponse(reqId string) error {
+	triggers := m.triggers.get()
+	if len(triggers) == 0 {
+		return nil
+	}
+	result, err := values.Wrap(triggers)
+	if err != nil {
+		return err
+	}
+	execution, err := m.executeStore.get(reqId)
+	if err != nil {
+		return err
+	}
+
+	resultPb := values.Proto(result)
+	execution.response = &wasmpb.ExecutionResult{Id: reqId, Result: &wasmpb.ExecutionResult_Value{Value: resultPb}}
+
+	return nil
 }
 
 func containsCode(err error, code int) bool {
@@ -924,4 +991,72 @@ func write(memory, src []byte, ptr, size int32) int64 {
 	}
 	buffer := memory[ptr : ptr+size]
 	return int64(copy(buffer, src))
+}
+
+// TODO return the ID too
+func createCallCapFn(logger logger.Logger, callCapAsync func(ctx context.Context, req *wasmpb.CapabilityRequest) (*wasmpb.CapabilityFuture, error)) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+		b, innerErr := wasmRead(caller, ptr, ptrlen)
+		if innerErr != nil {
+			logger.Errorf("error calling wasmRead: %s", innerErr)
+			return ErrnoFault
+		}
+
+		req := &wasmpb.CapabilityRequest{}
+		innerErr = proto.Unmarshal(b, req)
+		if innerErr != nil {
+			logger.Errorf("error calling proto unmarshal: %s", innerErr)
+			return ErrnoInval
+		}
+		future, err := callCapAsync(req)
+		if err != nil {
+			logger.Errorf("error calling callCapAsync: %s", err)
+			// TODO what error?
+			return ErrnoInval
+		}
+
+		return 0
+	}
+}
+
+func createAwaitCapsFn(
+	l logger.Logger,
+	awaitCaps func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error),
+	reader unsafeReaderFunc,
+	writer unsafeWriterFunc,
+	sizeWriter unsafeFixedLengthWriterFunc,
+) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
+	return func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
+		b, err := reader(caller, msgptr, msglen)
+		if err != nil {
+			return ErrnoFault
+		}
+
+		req := &wasmpb.AwaitCapabilitiesRequest{}
+		err = proto.Unmarshal(b, req)
+		if err != nil {
+			return ErrnoInval
+		}
+
+		resp, err := awaitCaps(req)
+		if err != nil {
+			return ErrnoInval
+		}
+
+		respBytes, err := proto.Marshal(resp)
+		if err != nil {
+			// TODO?
+			return ErrnoInval
+		}
+
+		if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
+			return ErrnoFault
+		}
+
+		if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
+			return ErrnoFault
+		}
+
+		return ErrnoSuccess
+	}
 }

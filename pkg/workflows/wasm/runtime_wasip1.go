@@ -48,12 +48,10 @@ type donRuntime struct {
 	runtimeBase
 }
 
-func (d donRuntime) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *wpb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
-	changeMode(int32(wpb.Mode_NODE))
+func (d *donRuntime) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *wpb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
 	observation := fn(&nodeRuntime{})
 	wrapped, _ := anypb.New(observation)
-
-	changeMode(int32(wpb.Mode_DON))
+	
 	// In real life, the payload can be different than
 	capabilityRequest := &wpb.CapabilityRequest{
 		Id:      "consensus@1.0.0",

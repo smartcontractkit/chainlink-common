@@ -14,21 +14,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-//go:wasmimport env change_mode
-func changeMode(mode int32)
+//go:wasmimport env subscrib_to_trigger
+func subscribeToTrigger(subscription unsafe.Pointer, subscriptionLen int32) int32
 
-//go:wasmimport env subscribe_to_trigger
-func subscribeToTrigger(reqptr unsafe.Pointer, reqptrlen int32, configptr unsafe.Pointer, configLen int32) int32
-
-//go:wasmimport env sendResponse
+//go:wasmimport env send_response
 func sendResponse(respptr unsafe.Pointer, respptrlen int32) (errno int32)
 
 func NewDonRunner() sdk.DonRunner {
-	return getRunner(pb.Mode_DON, &subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{})
+	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{})
 }
 
 func NewNodeRunner() sdk.NodeRunner {
-	return getRunner(pb.Mode_NODE, &subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{})
+	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{})
 }
 
 type runner[T any] struct {
@@ -43,55 +40,51 @@ var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 // TODO callbacks to setup a trigger...
 // TODO can't subscribe to a trigger more than once and differentiate the return value.
 
-func (d *runner[T]) SubscribeToTrigger(id string, _ *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error)) error {
+func (d *runner[T]) SubscribeToTrigger(id string, _ *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
 	if id == d.trigger.Id {
 		response, err := handler(d.runtime, d.trigger.Payload)
 		execResponse := &pb.ExecutionResult{Id: d.id}
 		if err == nil {
 			wrapped, err := values.Wrap(response)
 			if err != nil {
-				tmp := err.Error()
-				execResponse.Error = &tmp
+				execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
 			} else {
-				execResponse.Value = values.Proto(wrapped)
+				execResponse.Result = &pb.ExecutionResult_Value{Value: values.Proto(wrapped)}
 			}
 		} else {
-			tmp := err.Error()
-			execResponse.Error = &tmp
+			execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
 		}
 		marshalled, _ := proto.Marshal(execResponse)
 		sendResponse(unsafe.Pointer(&marshalled[0]), int32(len(marshalled)))
 	}
-
-	return nil
 }
 
-type subscriber[T any] struct{}
+type subscriber[T any] struct {
+	id string
+}
 
 var _ sdk.DonRunner = &subscriber[sdk.DonRuntime]{}
 var _ sdk.NodeRunner = &subscriber[sdk.NodeRuntime]{}
 
-func (s *subscriber[T]) SubscribeToTrigger(id string, triggerCfg *anypb.Any, _ func(runtime T, triggerOutputs *anypb.Any) (any, error)) error {
-	idBytes := []byte(id)
-	configBytes, err := proto.Marshal(triggerCfg)
-	if err != nil {
-		return err
+func (s *subscriber[T]) SubscribeToTrigger(id string, triggerCfg *anypb.Any, _ func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
+	triggerSubscription := &pb.TriggerSubscriptionRequest{
+		Id:      id,
+		Payload: triggerCfg,
 	}
 
-	result := subscribeToTrigger(unsafe.Pointer(&idBytes[0]), int32(len(idBytes)), unsafe.Pointer(&configBytes[0]), int32(len(configBytes)))
+	configBytes, _ := proto.Marshal(triggerSubscription)
+
+	result := subscribeToTrigger(unsafe.Pointer(&configBytes[0]), int32(len(configBytes)))
 	if result < 0 {
-		return fmt.Errorf("could not subscribe to trigger: %s", id)
+		panic(fmt.Sprintf("could not subscribe to trigger: %s", id))
 	}
-
-	return nil
 }
 
 type genericRunner[T any] interface {
-	SubscribeToTrigger(id string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error)) error
+	SubscribeToTrigger(id string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error))
 }
 
-func getRunner[T any](mode pb.Mode, subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
-	changeMode(int32(mode))
+func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
 	// We expect exactly 2 args, i.e. `wasm <blob>`,
 	// where <blob> is a base64 encoded protobuf message.
 	if len(os.Args) != 2 {

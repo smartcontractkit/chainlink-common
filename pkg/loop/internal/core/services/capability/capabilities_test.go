@@ -427,7 +427,7 @@ func Test_Capabilities(t *testing.T) {
 
 		expectedResp := capabilities.CapabilityResponse{
 			Value: values.EmptyMap(),
-			Metadata: capabilities.CapabilityResponseMetadata{
+			Metadata: capabilities.ResponseMetadata{
 				Metering: []capabilities.MeteringNodeDetail{},
 			},
 		}

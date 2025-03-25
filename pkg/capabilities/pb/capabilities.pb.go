@@ -577,10 +577,10 @@ func (*TriggerResponseMessage_Ack) isTriggerResponseMessage_Message() {}
 func (*TriggerResponseMessage_Response) isTriggerResponseMessage_Message() {}
 
 type CapabilityResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Value         *pb.Map                     `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	Error         string                      `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	Metadata      *CapabilityResponseMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         *pb.Map                `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Metadata      *ResponseMetadata      `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -629,34 +629,34 @@ func (x *CapabilityResponse) GetError() string {
 	return ""
 }
 
-func (x *CapabilityResponse) GetMetadata() *CapabilityResponseMetadata {
+func (x *CapabilityResponse) GetMetadata() *ResponseMetadata {
 	if x != nil {
 		return x.Metadata
 	}
 	return nil
 }
 
-type CapabilityResponseMetadata struct {
+type ResponseMetadata struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	Metering      []*MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CapabilityResponseMetadata) Reset() {
-	*x = CapabilityResponseMetadata{}
+func (x *ResponseMetadata) Reset() {
+	*x = ResponseMetadata{}
 	mi := &file_capabilities_pb_capabilities_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CapabilityResponseMetadata) String() string {
+func (x *ResponseMetadata) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CapabilityResponseMetadata) ProtoMessage() {}
+func (*ResponseMetadata) ProtoMessage() {}
 
-func (x *CapabilityResponseMetadata) ProtoReflect() protoreflect.Message {
+func (x *ResponseMetadata) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_pb_capabilities_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -668,12 +668,12 @@ func (x *CapabilityResponseMetadata) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CapabilityResponseMetadata.ProtoReflect.Descriptor instead.
-func (*CapabilityResponseMetadata) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResponseMetadata.ProtoReflect.Descriptor instead.
+func (*ResponseMetadata) Descriptor() ([]byte, []int) {
 	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *CapabilityResponseMetadata) GetMetering() []*MeteringReportNodeDetail {
+func (x *ResponseMetadata) GetMetering() []*MeteringReportNodeDetail {
 	if x != nil {
 		return x.Metering
 	}
@@ -1176,12 +1176,12 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x16TriggerResponseMessage\x12*\n" +
 	"\x03ack\x18\x01 \x01(\v2\x16.google.protobuf.EmptyH\x00R\x03ack\x12;\n" +
 	"\bresponse\x18\x02 \x01(\v2\x1d.capabilities.TriggerResponseH\x00R\bresponseB\t\n" +
-	"\amessage\"\x93\x01\n" +
+	"\amessage\"\x89\x01\n" +
 	"\x12CapabilityResponse\x12!\n" +
 	"\x05value\x18\x01 \x01(\v2\v.values.MapR\x05value\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\x12D\n" +
-	"\bmetadata\x18\x03 \x01(\v2(.capabilities.CapabilityResponseMetadataR\bmetadata\"`\n" +
-	"\x1aCapabilityResponseMetadata\x12B\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12:\n" +
+	"\bmetadata\x18\x03 \x01(\v2\x1e.capabilities.ResponseMetadataR\bmetadata\"V\n" +
+	"\x10ResponseMetadata\x12B\n" +
 	"\bmetering\x18\x01 \x03(\v2&.capabilities.MeteringReportNodeDetailR\bmetering\"\x81\x01\n" +
 	"\x14RegistrationMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
@@ -1265,7 +1265,7 @@ var file_capabilities_pb_capabilities_proto_goTypes = []any{
 	(*TriggerResponse)(nil),               // 6: capabilities.TriggerResponse
 	(*TriggerResponseMessage)(nil),        // 7: capabilities.TriggerResponseMessage
 	(*CapabilityResponse)(nil),            // 8: capabilities.CapabilityResponse
-	(*CapabilityResponseMetadata)(nil),    // 9: capabilities.CapabilityResponseMetadata
+	(*ResponseMetadata)(nil),              // 9: capabilities.ResponseMetadata
 	(*RegistrationMetadata)(nil),          // 10: capabilities.RegistrationMetadata
 	(*RegisterToWorkflowRequest)(nil),     // 11: capabilities.RegisterToWorkflowRequest
 	(*UnregisterFromWorkflowRequest)(nil), // 12: capabilities.UnregisterFromWorkflowRequest
@@ -1292,8 +1292,8 @@ var file_capabilities_pb_capabilities_proto_depIdxs = []int32{
 	21, // 9: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
 	6,  // 10: capabilities.TriggerResponseMessage.response:type_name -> capabilities.TriggerResponse
 	19, // 11: capabilities.CapabilityResponse.value:type_name -> values.Map
-	9,  // 12: capabilities.CapabilityResponse.metadata:type_name -> capabilities.CapabilityResponseMetadata
-	15, // 13: capabilities.CapabilityResponseMetadata.metering:type_name -> capabilities.MeteringReportNodeDetail
+	9,  // 12: capabilities.CapabilityResponse.metadata:type_name -> capabilities.ResponseMetadata
+	15, // 13: capabilities.ResponseMetadata.metering:type_name -> capabilities.MeteringReportNodeDetail
 	10, // 14: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
 	19, // 15: capabilities.RegisterToWorkflowRequest.config:type_name -> values.Map
 	10, // 16: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata

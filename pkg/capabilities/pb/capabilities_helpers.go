@@ -79,7 +79,7 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 
 	return &CapabilityResponse{
 		Value: values.ProtoMap(resp.Value),
-		Metadata: &CapabilityResponseMetadata{
+		Metadata: &ResponseMetadata{
 			Metering: metering,
 		},
 	}
@@ -148,7 +148,7 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 
 	resp := capabilities.CapabilityResponse{
 		Value: val,
-		Metadata: capabilities.CapabilityResponseMetadata{
+		Metadata: capabilities.ResponseMetadata{
 			Metering: metering,
 		},
 	}

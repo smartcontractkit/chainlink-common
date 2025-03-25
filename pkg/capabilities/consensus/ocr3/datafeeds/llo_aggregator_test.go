@@ -174,7 +174,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 		expectedShouldReport bool
 		expectedStreamIDs    []uint32
 		expectError          bool
-		wantUpdates          []*datafeeds.WrappableStreamUpdate
+		wantUpdates          []*datafeeds.EVMEncodableStreamUpdate
 	}{
 
 		{
@@ -192,10 +192,10 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1},
-			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     decimal.NewFromFloat(102.123),
+					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.123)),
 					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
@@ -227,10 +227,10 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1},
-			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     decimal.NewFromFloat(102.00000000001),
+					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.00000000001)),
 					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
@@ -262,10 +262,10 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1},
-			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     decimal.NewFromFloat(101),
+					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(101)),
 					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
 				},
 			},
@@ -341,16 +341,16 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			f:                    1,
 			expectedShouldReport: true,
 			expectedStreamIDs:    []uint32{1, 2}, // Both update due to optimization
-			wantUpdates: []*datafeeds.WrappableStreamUpdate{
+			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
 					StreamID:  1,
-					Price:     decimal.NewFromFloat(105),        //big.NewInt(105),
-					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(105)), //big.NewInt(105),
+					Timestamp: uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
 				},
 				{
 					StreamID:  2,
-					Price:     decimal.NewFromFloat(202),        //big.NewInt(202),
-					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(202)), //big.NewInt(202),
+					Timestamp: uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
 				},
 			},
 
@@ -477,14 +477,15 @@ func createObservations(t *testing.T, ts uint64, prices map[uint32]decimal.Decim
 	return observations
 }
 
-func extractUpdatedStreamIDs(t *testing.T, outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.WrappableStreamUpdate) {
+func extractUpdatedStreamIDs(t *testing.T, outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.EVMEncodableStreamUpdate) {
 	streamIDs, reports, err := processOutcome(outcome)
 	require.NoError(t, err)
 
 	return streamIDs, reports
 }
 
-func processOutcome(outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.WrappableStreamUpdate, error) {
+func processOutcome(outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.EVMEncodableStreamUpdate, error) {
+	// TODOD here add the decoder of the slice
 	decodedMap, err := values.FromMapValueProto(outcome.EncodableOutcome)
 	if err != nil {
 		return nil, nil, err
@@ -495,7 +496,7 @@ func processOutcome(outcome *types.AggregationOutcome) ([]uint32, []*datafeeds.W
 		return nil, nil, fmt.Errorf("missing field %s", datafeeds.TopLevelListOutputFieldName)
 	}
 
-	var reportsList []*datafeeds.WrappableStreamUpdate // each element is a WrappableUpdate
+	var reportsList []*datafeeds.EVMEncodableStreamUpdate // each element is a WrappableUpdate
 	err = reportsAny.UnwrapTo(&reportsList)
 	if err != nil {
 		return nil, nil, err

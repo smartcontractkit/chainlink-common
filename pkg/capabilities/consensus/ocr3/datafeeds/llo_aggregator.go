@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 	"slices"
 	"strconv"
 	"strings"
@@ -125,7 +126,9 @@ func NewLLOAggregator(config values.Map) (types.Aggregator, error) {
 	}, nil
 }
 
-// Aggregate implements the Aggregator interface,
+// Aggregate implements the Aggregator interface
+// For this implementation, we expect the LLO events to be the same across all nodes.
+// And we expect the every observation only contains a single LLO event, ie len(observations.["some-oracle-id"]) == 1.
 func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "LLOAggregator")
 	if len(observations) == 0 {
@@ -163,8 +166,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 			lggr.Errorw("failed to unmarshal previous price", "streamID", streamID, "err", uerr)
 			continue
 		}
-		//oldPrice := big.NewInt(0).SetBytes(previousStreamInfo.Price)
-		newPrice := prices[streamID] //.Mul(decimal.NewFromInt(multiplier)).BigInt()
+		newPrice := prices[streamID]
 		priceDeviation := deviationDecimal(*oldPrice, newPrice)
 		timeDiffNs := observationTimestamp - uint64(previousStreamInfo.Timestamp) //nolint:gosec // G115
 		lggr.Debugw("checking deviation and heartbeat",
@@ -208,14 +210,13 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		return nil, fmt.Errorf("failed to marshal current state: %w", err)
 	}
 
-	toWrap := make([]*WrappableStreamUpdate, 0, len(mustUpdateIDs))
+	toWrap := make([]*EVMEncodableStreamUpdate, 0, len(mustUpdateIDs))
 	for _, streamID := range mustUpdateIDs {
-		// TODO what if remapped ID is not defined? How do we reconcile binary vs int? Should remapped IDs also be integers now?
 		remappedID := a.config.streams[streamID].RemappedID
 		newPrice := prices[streamID]
-		w := &WrappableStreamUpdate{
+		w := &EVMEncodableStreamUpdate{
 			StreamID:   streamID,
-			Price:      newPrice,
+			Price:      decimalToBigInt(newPrice),
 			Timestamp:  observationTimestamp,
 			RemappedID: remappedID,
 		}
@@ -238,13 +239,150 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 	}, nil
 }
 
-type WrappableStreamUpdate struct {
+// EVMEncodableStreamUpdate is the EVM encodable representation of a stream update.
+// The field name must match the field name in the EVM encoder, and must be a valid EVMEncoderKey.
+type EVMEncodableStreamUpdate struct {
 	StreamID   uint32
-	Price      decimal.Decimal
+	Price      *big.Int
 	Timestamp  uint64
 	RemappedID []byte
 }
 
+/*
+// EncodableOutcome converts the stream update to a map of EVM encodable values the can be parsed by the EVM encoder.
+func (w *EVMEncodableStreamUpdate) EncodableOutcome() (map[EVMEncoderKey]any, error) {
+	return map[EVMEncoderKey]any{
+		StreamIDOutputFieldName:   w.StreamID,
+		PriceOutputFieldName:      w.Price,
+		TimestampOutputFieldName:  w.Timestamp,
+		RemappedIDOutputFieldName: w.RemappedID,
+	}, nil
+}
+
+func NewStreamUpdate(m map[EVMEncoderKey]any) (*EVMEncodableStreamUpdate, error) {
+	streamID, ok := m[StreamIDOutputFieldName]
+	if !ok {
+		return nil, fmt.Errorf("missing stream ID")
+	}
+	price, ok := m[PriceOutputFieldName]
+	if !ok {
+		return nil, fmt.Errorf("missing price")
+	}
+	timestamp, ok := m[TimestampOutputFieldName]
+	if !ok {
+		return nil, fmt.Errorf("missing timestamp")
+	}
+	remappedID, ok := m[RemappedIDOutputFieldName]
+	if !ok {
+		return nil, fmt.Errorf("missing remapped ID")
+	}
+	// our value library is lossy only supports int64
+	streamIDInt, ok := streamID.(int64)
+	if !ok {
+		return nil, fmt.Errorf("invalid stream ID type: %T", streamID)
+	}
+	priceBigInt, ok := price.(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("invalid price type: %T", price)
+	}
+	// our value library is lossy only supports int64
+	timestampInt, ok := timestamp.(int64)
+	if !ok {
+		return nil, fmt.Errorf("invalid timestamp type: %T", timestamp)
+	}
+	remappedIDBytes, ok := remappedID.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("invalid remapped ID type: %T", remappedID)
+	}
+	return &EVMEncodableStreamUpdate{
+		StreamID:   uint32(streamIDInt),
+		Price:      priceBigInt,
+		Timestamp:  uint64(timestampInt),
+		RemappedID: remappedIDBytes,
+	}, nil
+}
+*/
+// decimalShift is the number of decimal places to shift the decimal.Decimal to convert it to a big.Int in convert an llo price to a big.Int.
+const decimalShift = 18
+
+func decimalToBigInt(d decimal.Decimal) *big.Int {
+	return d.Shift(decimalShift).BigInt()
+}
+
+func bigIntToDecimal(b *big.Int) decimal.Decimal {
+	return decimal.NewFromBigInt(b, 0).Shift(-decimalShift)
+}
+
+/*
+type EncodableLLOOutcome []*StreamUpdate
+
+func (e *EncodableLLOOutcome) Slice() []*StreamUpdate {
+	return *e
+}
+
+func (e *EncodableLLOOutcome) Encode() (*pb.Value, error) {
+	encodable := make([]any, len(e.Slice()))
+	var err error
+	for i, streamUpdate := range e.Slice() {
+		encodable[i], err = streamUpdate.EncodableOutcome()
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode stream update: %w", err)
+		}
+	}
+	wrapped, err := values.NewMap(map[string]any{
+		TopLevelListOutputFieldName: encodable,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return values.Proto(wrapped), nil
+}
+
+func (e *EncodableLLOOutcome) Decode(wrappedMap *pb.Map) error {
+	// Unwrap the wrapped value to get the map
+	//wrappedMap := wrapped.GetMapValue()
+	// Get the list of stream updates
+
+	// validate encodable outcome
+	val, err := values.FromMapValueProto(wrappedMap)
+	if err != nil {
+		return fmt.Errorf("failed to unwrap map value: %w", err)
+	}
+	topLevelMap, err := val.Unwrap()
+	if err != nil {
+		return fmt.Errorf("failed to unwrap map: %w", err)
+	}
+	m, ok := topLevelMap.(map[string]any)
+	if !ok {
+		return fmt.Errorf("unexpected value %+v for encodable outcome: expected map, got %T", topLevelMap, topLevelMap)
+	}
+	// check if the map has the expected field
+	reports, ok := m[TopLevelListOutputFieldName]
+	if !ok {
+		return fmt.Errorf("missing field %s in encodable outcome", TopLevelListOutputFieldName)
+	}
+	x, ok := reports.([]any)
+	if !ok {
+		return fmt.Errorf("unexpected value %+v for encodable outcome: expected list, got %T", reports, reports)
+	}
+	updates := make([]*StreamUpdate, len(x))
+
+	for i, v := range x {
+		t, ok := v.(map[EVMEncoderKey]any)
+		if !ok {
+			return fmt.Errorf("unexpected value %+v for stream update: expected map, got %T", v, v)
+		}
+		update, err := NewStreamUpdate(t)
+		if err != nil {
+			return fmt.Errorf("failed to create stream update: %w", err)
+		}
+		updates[i] = update
+	}
+	y := EncodableLLOOutcome(updates)
+	e = &y
+	return nil
+}
+*/
 // extractLLOEvents decodes the untyped wire format into LLOStreamsTriggerEvent.
 // every observation ios expected to be len 1, a single wrapped LLOStreamsTriggerEvent.
 func (a *LLOAggregator) extractLLOEvents(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value) map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent {

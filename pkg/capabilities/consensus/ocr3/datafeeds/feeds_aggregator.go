@@ -21,6 +21,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+type EVMEncoderKey = string
+
 const (
 	// Aggregator outputs reports in the following format:
 	//   []Reports{FeedID []byte, RawReport []byte, Price *big.Int, Timestamp int64}
@@ -29,13 +31,13 @@ const (
 
 	// The following constants are used in value maps to ensure consistent naming while the underlying
 	// implementation is untyped.
-	TopLevelListOutputFieldName = "Reports"
-	FeedIDOutputFieldName       = "FeedID"
-	RawReportOutputFieldName    = "RawReport"
-	PriceOutputFieldName        = "Price"
-	TimestampOutputFieldName    = "Timestamp"
-	RemappedIDOutputFieldName   = "RemappedID"
-	StreamIDOutputFieldName     = "StreamID"
+	TopLevelListOutputFieldName = EVMEncoderKey("Reports")
+	FeedIDOutputFieldName       = EVMEncoderKey("FeedID")
+	RawReportOutputFieldName    = EVMEncoderKey("RawReport")
+	PriceOutputFieldName        = EVMEncoderKey("Price")
+	TimestampOutputFieldName    = EVMEncoderKey("Timestamp")
+	RemappedIDOutputFieldName   = EVMEncoderKey("RemappedID")
+	StreamIDOutputFieldName     = EVMEncoderKey("StreamID")
 
 	addrLen = 20
 )
@@ -180,7 +182,7 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 			remappedID = feedID[:]
 		}
 		toWrap = append(toWrap,
-			map[string]any{
+			map[EVMEncoderKey]any{
 				FeedIDOutputFieldName:     feedID[:],
 				RawReportOutputFieldName:  report.FullReport,
 				PriceOutputFieldName:      big.NewInt(0).SetBytes(report.BenchmarkPrice),
@@ -189,7 +191,7 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 			})
 	}
 
-	wrappedReportsNeedingUpdates, err := values.NewMap(map[string]any{
+	wrappedReportsNeedingUpdates, err := values.NewMap(map[EVMEncoderKey]any{
 		TopLevelListOutputFieldName: toWrap,
 	})
 	if err != nil {

@@ -73,12 +73,16 @@ type Metadata struct {
 	MinRequiredSignatures int
 }
 
+// StreamsTriggerEvent is the underlying type passed to the dataFeedsAggregator.Aggregate
+// function via the untyped observation, which originates in the asset don.
 type StreamsTriggerEvent struct {
 	Payload   []FeedReport
 	Metadata  Metadata
 	Timestamp int64
 }
 
+// LLOStreamsTriggerEvent is the underlying type passed to the LLOAggregator.Aggregate
+// function via the untyped observation, which originates on the asset don via the LLO OCR3 plugin.
 type LLOStreamsTriggerEvent struct {
 	Payload                         []*LLOStreamDecimal
 	ObservationTimestampNanoseconds uint64

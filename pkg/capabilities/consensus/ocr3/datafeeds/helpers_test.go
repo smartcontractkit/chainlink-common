@@ -12,6 +12,9 @@ import (
 // exported for testing only
 var LLOStreamPrices = lloStreamPrices
 
+var DecimalToBigInt = decimalToBigInt
+var BigIntToDecimal = bigIntToDecimal
+
 type FeedConfig = feedConfig
 
 // helper function to create a map of feed configs
@@ -22,9 +25,9 @@ func NewLLOconfig(t *testing.T, m map[uint32]FeedConfig, opts ...lloConfigOpt) v
 
 	for feedID, cfg := range m {
 		unwrappedConfig["streams"].(map[string]any)[strconv.FormatUint(uint64(feedID), 10)] = map[string]any{
-			"deviation": cfg.Deviation.String(),
-			"heartbeat": cfg.Heartbeat,
-			//			"remappedID": cfg.RemappedID,
+			"deviation":  cfg.Deviation.String(),
+			"heartbeat":  cfg.Heartbeat,
+			"remappedID": cfg.RemappedID,
 		}
 	}
 	for _, opt := range opts {

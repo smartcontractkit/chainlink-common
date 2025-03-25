@@ -31,6 +31,8 @@ const (
 	TimestampOutputFieldName    = "Timestamp"
 	RemappedIDOutputFieldName   = "RemappedID"
 
+	StreamIDOutputFieldName = "StreamID"
+
 	addrLen = 20
 )
 

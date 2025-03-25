@@ -32,14 +32,18 @@ func ExampleLLOAggregator_Aggregate() {
 				"remappedID": "0x680084f7347baFfb5C323c2982dfC90e04F9F918",
 			},
 			"2": map[string]interface{}{
-				"deviation": "0.02", // 2% deviation threshold
-				"heartbeat": 1800,   // 30 min heartbeat
+				"deviation":  "0.02", // 2% deviation threshold
+				"heartbeat":  1800,   // 30 min heartbeat
+				"remappedID": "0x00001237347baFfb5C323c1112dfC90e0789FFFF",
 			},
 		},
 		"allowedPartialStaleness": "0.2", // 20% partial staleness
 	})
 
-	aggregator, _ := datafeeds.NewLLOAggregator(*configMap)
+	aggregator, err := datafeeds.NewLLOAggregator(*configMap)
+	if err != nil {
+		panic(err)
+	}
 
 	// 2. Create empty previous outcome (first round); empty previousOutcome will cause all streams to be updated
 	var previousOutcome *types.AggregationOutcome
@@ -106,11 +110,9 @@ func ExampleLLOAggregator_Aggregate() {
 		}
 	}
 
-	// Note: the remappedID is passed thru the aggregator as raw bytes, except that any 0x prefix is stripped
-	// the output here is hex encoding that processed byte array
 	// Output:
 	// Should report: true
 	// Updated streams: 2
 	//   Stream 1: ID=1, Price=1250.427975, Timestamp=61116379204 RemappedID=680084f7347baFfb5C323c2982dfC90e04F9F918
-	//   Stream 2: ID=2, Price=39250.25, Timestamp=61116379204 RemappedID=
+	//   Stream 2: ID=2, Price=39250.25, Timestamp=61116379204 RemappedID=00001237347baFfb5C323c1112dfC90e0789FFFF
 }

@@ -14,8 +14,8 @@ message DataFeedsMercuryReportInfo {
   bytes benchmark_price = 5; // big.Int
 }
 
-// LLOOutcomeMetadata maps the streamID to the Consensus Capability output
-// It flat is a map representation of an array of LLOS
+// LLOOutcomeMetadata is the state representation of the OCR3 consensus capability
+// when running the LLO aggregator.
 message LLOOutcomeMetadata {
   map<uint32, LLOStreamInfo> streamInfo = 1;
 }

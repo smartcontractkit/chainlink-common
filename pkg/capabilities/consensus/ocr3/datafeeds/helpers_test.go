@@ -27,7 +27,7 @@ func NewLLOconfig(t *testing.T, m map[uint32]FeedConfig, opts ...lloConfigOpt) v
 		unwrappedConfig["streams"].(map[string]any)[strconv.FormatUint(uint64(feedID), 10)] = map[string]any{
 			"deviation":  cfg.Deviation.String(),
 			"heartbeat":  cfg.Heartbeat,
-			"remappedID": cfg.RemappedID,
+			"remappedID": cfg.RemappedIDHex,
 		}
 	}
 	for _, opt := range opts {

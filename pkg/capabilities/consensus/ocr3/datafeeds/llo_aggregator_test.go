@@ -1,6 +1,7 @@
 package datafeeds_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"testing"
@@ -165,6 +166,14 @@ func TestGetLatestPrices(t *testing.T) {
 func TestLLOAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
 	testStartTime := time.Now()
+	remappedHex1 := "0x680084f7347baFfb5C323c2982dfC90e04F9F918"
+	remappedHex2 := "0x00001237347baFfb5C323c1112dfC90e0789FFFF"
+	remappedHex3 := "0xaaaa59b7347baFfb5C323c1112dfC90e0789FEDC"
+	remapped1, err := hex.DecodeString(remappedHex1[2:])
+	require.NoError(t, err)
+	remapped2, err := hex.DecodeString(remappedHex2[2:])
+	require.NoError(t, err)
+
 	tests := []struct {
 		name                 string
 		config               values.Map
@@ -181,8 +190,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			name: "update due to no previous outcome",
 			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
-					Deviation: decimal.NewFromFloat(0.01), // 1%
-					Heartbeat: 3600,                       // 1 hour
+					Deviation:     decimal.NewFromFloat(0.01), // 1%
+					Heartbeat:     3600,                       // 1 hour
+					RemappedIDHex: remappedHex1,               //"0x680084f7347baFfb5C323c2982dfC90e04F9F918",
 				},
 			}),
 
@@ -194,9 +204,10 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			expectedStreamIDs:    []uint32{1},
 			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
-					StreamID:  1,
-					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.123)),
-					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					StreamID:   1,
+					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.123)),
+					Timestamp:  uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					RemappedID: remapped1,
 				},
 			},
 
@@ -207,8 +218,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			name: "update due to deviation",
 			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
-					Deviation: decimal.NewFromFloat(0.01), // 1%
-					Heartbeat: 3600,                       // 1 hour
+					Deviation:     decimal.NewFromFloat(0.01), // 1%
+					Heartbeat:     3600,                       // 1 hour
+					RemappedIDHex: remappedHex1,               //"0x680084f7347baFfb5C323c2982dfC90e04F9F918",
 				},
 			}),
 
@@ -229,9 +241,10 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			expectedStreamIDs:    []uint32{1},
 			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
-					StreamID:  1,
-					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.00000000001)),
-					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					StreamID:   1,
+					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.00000000001)),
+					Timestamp:  uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					RemappedID: remapped1,
 				},
 			},
 
@@ -242,8 +255,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			name: "update due to heartbeat",
 			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
-					Deviation: decimal.NewFromFloat(0.1), // 10%
-					Heartbeat: 300,                       // 5 minutes
+					Deviation:     decimal.NewFromFloat(0.1), // 10%
+					Heartbeat:     300,                       // 5 minutes
+					RemappedIDHex: remappedHex1,
 				},
 			}),
 
@@ -264,9 +278,10 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			expectedStreamIDs:    []uint32{1},
 			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
-					StreamID:  1,
-					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(101)),
-					Timestamp: uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					StreamID:   1,
+					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(101)),
+					Timestamp:  uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					RemappedID: remapped1,
 				},
 			},
 			expectError: false,
@@ -277,8 +292,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 
 				1: {
-					Deviation: decimal.NewFromFloat(0.1), // 10%
-					Heartbeat: 3600,                      // 1 hour
+					Deviation:     decimal.NewFromFloat(0.1), // 10%
+					Heartbeat:     3600,                      // 1 hour
+					RemappedIDHex: remappedHex1,
 				},
 			}),
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
@@ -303,16 +319,19 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			name: "partial staleness optimization",
 			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
-					Deviation: decimal.NewFromFloat(0.1), // 10%
-					Heartbeat: 3600,                      // 1 hour
+					Deviation:     decimal.NewFromFloat(0.1), // 10%
+					Heartbeat:     3600,                      // 1 hour
+					RemappedIDHex: remappedHex1,
 				},
 				2: {
-					Deviation: decimal.NewFromFloat(0.1), // 10%
-					Heartbeat: 300,                       // 5 minutes
+					Deviation:     decimal.NewFromFloat(0.1), // 10%
+					Heartbeat:     300,                       // 5 minutes
+					RemappedIDHex: remappedHex2,
 				},
 				3: {
-					Deviation: decimal.NewFromFloat(0.1), // 10%
-					Heartbeat: 300,                       // 5 minutes
+					Deviation:     decimal.NewFromFloat(0.1), // 10%
+					Heartbeat:     300,                       // 5 minutes
+					RemappedIDHex: remappedHex3,
 				},
 			}, datafeeds.LLOConfigAllowStaleness(0.2)), // 20% allowed partial staleness
 
@@ -343,14 +362,16 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			expectedStreamIDs:    []uint32{1, 2}, // Both update due to optimization
 			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
 				{
-					StreamID:  1,
-					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(105)), //big.NewInt(105),
-					Timestamp: uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
+					StreamID:   1,
+					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(105)), //big.NewInt(105),
+					Timestamp:  uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
+					RemappedID: remapped1,
 				},
 				{
-					StreamID:  2,
-					Price:     datafeeds.DecimalToBigInt(decimal.NewFromFloat(202)), //big.NewInt(202),
-					Timestamp: uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
+					StreamID:   2,
+					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(202)), //big.NewInt(202),
+					Timestamp:  uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
+					RemappedID: remapped2,
 				},
 			},
 
@@ -361,8 +382,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			name: "empty observations",
 			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
 				1: {
-					Deviation: decimal.NewFromFloat(0.1),
-					Heartbeat: 3600,
+					Deviation:     decimal.NewFromFloat(0.1),
+					Heartbeat:     3600,
+					RemappedIDHex: remappedHex1,
 				},
 			}),
 

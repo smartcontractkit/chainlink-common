@@ -66,35 +66,9 @@ type MercuryCredentials struct {
 }
 
 type ChainStatus struct {
-	ID           string
-	Enabled      bool
-	Config       string // TOML
-	ReplayStatus ReplayStatus
-}
-
-// ReplayStatus is the status of the current replay
-type ReplayStatus int
-
-const (
-	ReplayStatusNoRequest ReplayStatus = iota
-	ReplayStatusRequested
-	ReplayStatusPending
-	ReplayStatusComplete
-)
-
-func (rs ReplayStatus) String() string {
-	switch rs {
-	case ReplayStatusNoRequest:
-		return "NoRequest"
-	case ReplayStatusRequested:
-		return "Requested"
-	case ReplayStatusPending:
-		return "Pending"
-	case ReplayStatusComplete:
-		return "Complete"
-	default:
-		return fmt.Sprintf("invalid status: %d", rs) // Handle unknown cases
-	}
+	ID      string
+	Enabled bool
+	Config  string // TOML
 }
 
 type NodeStatus struct {

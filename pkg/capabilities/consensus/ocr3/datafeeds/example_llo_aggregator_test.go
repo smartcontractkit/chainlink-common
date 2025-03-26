@@ -113,6 +113,6 @@ func ExampleLLOAggregator_Aggregate() {
 	// Output:
 	// Should report: true
 	// Updated streams: 2
-	//   Stream 1: ID=1, Price=1250.427975, Timestamp=61116379204 RemappedID=680084f7347baFfb5C323c2982dfC90e04F9F918
-	//   Stream 2: ID=2, Price=39250.25, Timestamp=61116379204 RemappedID=00001237347baFfb5C323c1112dfC90e0789FFFF
+	//   Stream 1: ID=1, Price=1250427975000000000000, Timestamp=61116379204, RemappedID=680084f7347baffb5c323c2982dfc90e04f9f918
+	//   Stream 2: ID=2, Price=39250250000000000000000, Timestamp=61116379204, RemappedID=00001237347baffb5c323c1112dfc90e0789ffff
 }

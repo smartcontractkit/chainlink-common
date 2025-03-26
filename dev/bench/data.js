@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1742867409193,
+  "lastUpdate": 1742971010050,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10374,6 +10374,48 @@ window.BENCHMARK_DATA = {
             "value": 28139,
             "unit": "ns/op",
             "extra": "42884 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c05266d7568233283bbb30fb72ac26a8ec337e38",
+          "message": "CRE-293 Add Metering Detail to Capabilities Response (#1080)\n\n* Add Metering Detail to Capabilities Response\n\nEvery node must independently report metering information while the engine expects an aggregated list of all nodes.\nInstead of having two different response types: one for a node and one as an aggregate, a `CapabilityResponse` can\ncontain metadata with an array of values. A node is expected to send a single entity in the array while an aggregated\nresponse would have multiple.\n\nThis change gives the ability to surface metering data from 1 or many nodes without moving to more complex types.\n\n* fix capability loop test\n\n* reduce metadata name\n\n* make another test pass\n\n* fix another test",
+          "timestamp": "2025-03-26T07:35:41+01:00",
+          "tree_id": "219e93a2829c09732010f77b586863fd589b95b9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c05266d7568233283bbb30fb72ac26a8ec337e38"
+        },
+        "date": 1742971009291,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.8,
+            "unit": "ns/op",
+            "extra": "3302904 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.5,
+            "unit": "ns/op",
+            "extra": "2918049 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28056,
+            "unit": "ns/op",
+            "extra": "42784 times\n4 procs"
           }
         ]
       }

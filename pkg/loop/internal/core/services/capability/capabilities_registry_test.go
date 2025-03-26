@@ -121,6 +121,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	capabilityResponse := capabilities.CapabilityResponse{
 		Value: values.EmptyMap(),
+		Metadata: capabilities.ResponseMetadata{
+			Metering: []capabilities.MeteringNodeDetail{},
+		},
 	}
 
 	pluginName := "registry-test"

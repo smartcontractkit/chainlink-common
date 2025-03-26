@@ -274,9 +274,10 @@ func TestBuilder_ValidSpec(t *testing.T) {
 						Mapping: map[string]any{"signed_report": "$(data-feeds-report.outputs)"},
 					},
 					Config: map[string]any{
-						"address":    "0xE0082363396985ae2FdcC3a9F816A586Eed88416",
-						"deltaStage": "45s",
-						"schedule":   "oneAtATime",
+						"address":          "0xE0082363396985ae2FdcC3a9F816A586Eed88416",
+						"deltaStage":       "45s",
+						"schedule":         "oneAtATime",
+						"cre_step_timeout": 0,
 					},
 					CapabilityType: capabilities.CapabilityTypeTarget,
 				},

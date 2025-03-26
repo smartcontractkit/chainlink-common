@@ -112,6 +112,9 @@ func TestMarshalUnmarshalResponse(t *testing.T) {
 	require.NoError(t, err)
 	resp := capabilities.CapabilityResponse{
 		Value: v,
+		Metadata: capabilities.ResponseMetadata{
+			Metering: []capabilities.MeteringNodeDetail{},
+		},
 	}
 	raw, err := pb.MarshalCapabilityResponse(resp)
 	require.NoError(t, err)

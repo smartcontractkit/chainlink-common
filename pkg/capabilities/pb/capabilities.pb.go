@@ -580,6 +580,7 @@ type CapabilityResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Value         *pb.Map                `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Metadata      *ResponseMetadata      `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -628,6 +629,57 @@ func (x *CapabilityResponse) GetError() string {
 	return ""
 }
 
+func (x *CapabilityResponse) GetMetadata() *ResponseMetadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+type ResponseMetadata struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Metering      []*MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResponseMetadata) Reset() {
+	*x = ResponseMetadata{}
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResponseMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResponseMetadata) ProtoMessage() {}
+
+func (x *ResponseMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResponseMetadata.ProtoReflect.Descriptor instead.
+func (*ResponseMetadata) Descriptor() ([]byte, []int) {
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ResponseMetadata) GetMetering() []*MeteringReportNodeDetail {
+	if x != nil {
+		return x.Metering
+	}
+	return nil
+}
+
 type RegistrationMetadata struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	WorkflowId    string                 `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
@@ -639,7 +691,7 @@ type RegistrationMetadata struct {
 
 func (x *RegistrationMetadata) Reset() {
 	*x = RegistrationMetadata{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[8]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -651,7 +703,7 @@ func (x *RegistrationMetadata) String() string {
 func (*RegistrationMetadata) ProtoMessage() {}
 
 func (x *RegistrationMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[8]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -664,7 +716,7 @@ func (x *RegistrationMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegistrationMetadata.ProtoReflect.Descriptor instead.
 func (*RegistrationMetadata) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{8}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RegistrationMetadata) GetWorkflowId() string {
@@ -698,7 +750,7 @@ type RegisterToWorkflowRequest struct {
 
 func (x *RegisterToWorkflowRequest) Reset() {
 	*x = RegisterToWorkflowRequest{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[9]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -710,7 +762,7 @@ func (x *RegisterToWorkflowRequest) String() string {
 func (*RegisterToWorkflowRequest) ProtoMessage() {}
 
 func (x *RegisterToWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[9]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -723,7 +775,7 @@ func (x *RegisterToWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterToWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*RegisterToWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{9}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RegisterToWorkflowRequest) GetMetadata() *RegistrationMetadata {
@@ -750,7 +802,7 @@ type UnregisterFromWorkflowRequest struct {
 
 func (x *UnregisterFromWorkflowRequest) Reset() {
 	*x = UnregisterFromWorkflowRequest{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[10]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -762,7 +814,7 @@ func (x *UnregisterFromWorkflowRequest) String() string {
 func (*UnregisterFromWorkflowRequest) ProtoMessage() {}
 
 func (x *UnregisterFromWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[10]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -775,7 +827,7 @@ func (x *UnregisterFromWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterFromWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterFromWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{10}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UnregisterFromWorkflowRequest) GetMetadata() *RegistrationMetadata {
@@ -808,7 +860,7 @@ type InitialiseRequest struct {
 
 func (x *InitialiseRequest) Reset() {
 	*x = InitialiseRequest{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[11]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -820,7 +872,7 @@ func (x *InitialiseRequest) String() string {
 func (*InitialiseRequest) ProtoMessage() {}
 
 func (x *InitialiseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[11]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -833,7 +885,7 @@ func (x *InitialiseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitialiseRequest.ProtoReflect.Descriptor instead.
 func (*InitialiseRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{11}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *InitialiseRequest) GetConfig() string {
@@ -901,7 +953,7 @@ type CapabilityInfosReply struct {
 
 func (x *CapabilityInfosReply) Reset() {
 	*x = CapabilityInfosReply{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[12]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -913,7 +965,7 @@ func (x *CapabilityInfosReply) String() string {
 func (*CapabilityInfosReply) ProtoMessage() {}
 
 func (x *CapabilityInfosReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[12]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -926,7 +978,7 @@ func (x *CapabilityInfosReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityInfosReply.ProtoReflect.Descriptor instead.
 func (*CapabilityInfosReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{12}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CapabilityInfosReply) GetInfos() []*CapabilityInfoReply {
@@ -947,7 +999,7 @@ type MeteringReportNodeDetail struct {
 
 func (x *MeteringReportNodeDetail) Reset() {
 	*x = MeteringReportNodeDetail{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[13]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -959,7 +1011,7 @@ func (x *MeteringReportNodeDetail) String() string {
 func (*MeteringReportNodeDetail) ProtoMessage() {}
 
 func (x *MeteringReportNodeDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[13]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -972,7 +1024,7 @@ func (x *MeteringReportNodeDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MeteringReportNodeDetail.ProtoReflect.Descriptor instead.
 func (*MeteringReportNodeDetail) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{13}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MeteringReportNodeDetail) GetPeer_2PeerId() string {
@@ -1005,7 +1057,7 @@ type MeteringReportStep struct {
 
 func (x *MeteringReportStep) Reset() {
 	*x = MeteringReportStep{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[14]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1017,7 +1069,7 @@ func (x *MeteringReportStep) String() string {
 func (*MeteringReportStep) ProtoMessage() {}
 
 func (x *MeteringReportStep) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[14]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1030,7 +1082,7 @@ func (x *MeteringReportStep) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MeteringReportStep.ProtoReflect.Descriptor instead.
 func (*MeteringReportStep) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{14}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *MeteringReportStep) GetNodes() []*MeteringReportNodeDetail {
@@ -1049,7 +1101,7 @@ type MeteringReport struct {
 
 func (x *MeteringReport) Reset() {
 	*x = MeteringReport{}
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[15]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1113,7 @@ func (x *MeteringReport) String() string {
 func (*MeteringReport) ProtoMessage() {}
 
 func (x *MeteringReport) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_capabilities_proto_msgTypes[15]
+	mi := &file_capabilities_pb_capabilities_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1126,7 @@ func (x *MeteringReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MeteringReport.ProtoReflect.Descriptor instead.
 func (*MeteringReport) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{15}
+	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MeteringReport) GetSteps() map[string]*MeteringReportStep {
@@ -1124,10 +1176,13 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x16TriggerResponseMessage\x12*\n" +
 	"\x03ack\x18\x01 \x01(\v2\x16.google.protobuf.EmptyH\x00R\x03ack\x12;\n" +
 	"\bresponse\x18\x02 \x01(\v2\x1d.capabilities.TriggerResponseH\x00R\bresponseB\t\n" +
-	"\amessage\"M\n" +
+	"\amessage\"\x89\x01\n" +
 	"\x12CapabilityResponse\x12!\n" +
 	"\x05value\x18\x01 \x01(\v2\v.values.MapR\x05value\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x81\x01\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12:\n" +
+	"\bmetadata\x18\x03 \x01(\v2\x1e.capabilities.ResponseMetadataR\bmetadata\"V\n" +
+	"\x10ResponseMetadata\x12B\n" +
+	"\bmetering\x18\x01 \x03(\v2&.capabilities.MeteringReportNodeDetailR\bmetering\"\x81\x01\n" +
 	"\x14RegistrationMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12!\n" +
@@ -1199,7 +1254,7 @@ func file_capabilities_pb_capabilities_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_pb_capabilities_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_pb_capabilities_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_capabilities_pb_capabilities_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_capabilities_pb_capabilities_proto_goTypes = []any{
 	(CapabilityType)(0),                   // 0: capabilities.CapabilityType
 	(*CapabilityInfoReply)(nil),           // 1: capabilities.CapabilityInfoReply
@@ -1210,61 +1265,64 @@ var file_capabilities_pb_capabilities_proto_goTypes = []any{
 	(*TriggerResponse)(nil),               // 6: capabilities.TriggerResponse
 	(*TriggerResponseMessage)(nil),        // 7: capabilities.TriggerResponseMessage
 	(*CapabilityResponse)(nil),            // 8: capabilities.CapabilityResponse
-	(*RegistrationMetadata)(nil),          // 9: capabilities.RegistrationMetadata
-	(*RegisterToWorkflowRequest)(nil),     // 10: capabilities.RegisterToWorkflowRequest
-	(*UnregisterFromWorkflowRequest)(nil), // 11: capabilities.UnregisterFromWorkflowRequest
-	(*InitialiseRequest)(nil),             // 12: capabilities.InitialiseRequest
-	(*CapabilityInfosReply)(nil),          // 13: capabilities.CapabilityInfosReply
-	(*MeteringReportNodeDetail)(nil),      // 14: capabilities.MeteringReportNodeDetail
-	(*MeteringReportStep)(nil),            // 15: capabilities.MeteringReportStep
-	(*MeteringReport)(nil),                // 16: capabilities.MeteringReport
-	nil,                                   // 17: capabilities.MeteringReport.StepsEntry
-	(*pb.Map)(nil),                        // 18: values.Map
-	(*OCRTriggerEvent)(nil),               // 19: v1.OCRTriggerEvent
-	(*emptypb.Empty)(nil),                 // 20: google.protobuf.Empty
+	(*ResponseMetadata)(nil),              // 9: capabilities.ResponseMetadata
+	(*RegistrationMetadata)(nil),          // 10: capabilities.RegistrationMetadata
+	(*RegisterToWorkflowRequest)(nil),     // 11: capabilities.RegisterToWorkflowRequest
+	(*UnregisterFromWorkflowRequest)(nil), // 12: capabilities.UnregisterFromWorkflowRequest
+	(*InitialiseRequest)(nil),             // 13: capabilities.InitialiseRequest
+	(*CapabilityInfosReply)(nil),          // 14: capabilities.CapabilityInfosReply
+	(*MeteringReportNodeDetail)(nil),      // 15: capabilities.MeteringReportNodeDetail
+	(*MeteringReportStep)(nil),            // 16: capabilities.MeteringReportStep
+	(*MeteringReport)(nil),                // 17: capabilities.MeteringReport
+	nil,                                   // 18: capabilities.MeteringReport.StepsEntry
+	(*pb.Map)(nil),                        // 19: values.Map
+	(*OCRTriggerEvent)(nil),               // 20: v1.OCRTriggerEvent
+	(*emptypb.Empty)(nil),                 // 21: google.protobuf.Empty
 }
 var file_capabilities_pb_capabilities_proto_depIdxs = []int32{
 	0,  // 0: capabilities.CapabilityInfoReply.capability_type:type_name -> capabilities.CapabilityType
 	2,  // 1: capabilities.CapabilityRequest.metadata:type_name -> capabilities.RequestMetadata
-	18, // 2: capabilities.CapabilityRequest.config:type_name -> values.Map
-	18, // 3: capabilities.CapabilityRequest.inputs:type_name -> values.Map
+	19, // 2: capabilities.CapabilityRequest.config:type_name -> values.Map
+	19, // 3: capabilities.CapabilityRequest.inputs:type_name -> values.Map
 	2,  // 4: capabilities.TriggerRegistrationRequest.metadata:type_name -> capabilities.RequestMetadata
-	18, // 5: capabilities.TriggerRegistrationRequest.config:type_name -> values.Map
-	18, // 6: capabilities.TriggerEvent.outputs:type_name -> values.Map
-	19, // 7: capabilities.TriggerEvent.ocr_event:type_name -> v1.OCRTriggerEvent
+	19, // 5: capabilities.TriggerRegistrationRequest.config:type_name -> values.Map
+	19, // 6: capabilities.TriggerEvent.outputs:type_name -> values.Map
+	20, // 7: capabilities.TriggerEvent.ocr_event:type_name -> v1.OCRTriggerEvent
 	5,  // 8: capabilities.TriggerResponse.event:type_name -> capabilities.TriggerEvent
-	20, // 9: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
+	21, // 9: capabilities.TriggerResponseMessage.ack:type_name -> google.protobuf.Empty
 	6,  // 10: capabilities.TriggerResponseMessage.response:type_name -> capabilities.TriggerResponse
-	18, // 11: capabilities.CapabilityResponse.value:type_name -> values.Map
-	9,  // 12: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
-	18, // 13: capabilities.RegisterToWorkflowRequest.config:type_name -> values.Map
-	9,  // 14: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
-	18, // 15: capabilities.UnregisterFromWorkflowRequest.config:type_name -> values.Map
-	1,  // 16: capabilities.CapabilityInfosReply.infos:type_name -> capabilities.CapabilityInfoReply
-	14, // 17: capabilities.MeteringReportStep.nodes:type_name -> capabilities.MeteringReportNodeDetail
-	17, // 18: capabilities.MeteringReport.steps:type_name -> capabilities.MeteringReport.StepsEntry
-	15, // 19: capabilities.MeteringReport.StepsEntry.value:type_name -> capabilities.MeteringReportStep
-	20, // 20: capabilities.BaseCapability.Info:input_type -> google.protobuf.Empty
-	4,  // 21: capabilities.TriggerExecutable.RegisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
-	4,  // 22: capabilities.TriggerExecutable.UnregisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
-	10, // 23: capabilities.Executable.RegisterToWorkflow:input_type -> capabilities.RegisterToWorkflowRequest
-	11, // 24: capabilities.Executable.UnregisterFromWorkflow:input_type -> capabilities.UnregisterFromWorkflowRequest
-	3,  // 25: capabilities.Executable.Execute:input_type -> capabilities.CapabilityRequest
-	12, // 26: capabilities.StandardCapabilities.Initialise:input_type -> capabilities.InitialiseRequest
-	20, // 27: capabilities.StandardCapabilities.Infos:input_type -> google.protobuf.Empty
-	1,  // 28: capabilities.BaseCapability.Info:output_type -> capabilities.CapabilityInfoReply
-	7,  // 29: capabilities.TriggerExecutable.RegisterTrigger:output_type -> capabilities.TriggerResponseMessage
-	20, // 30: capabilities.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
-	20, // 31: capabilities.Executable.RegisterToWorkflow:output_type -> google.protobuf.Empty
-	20, // 32: capabilities.Executable.UnregisterFromWorkflow:output_type -> google.protobuf.Empty
-	8,  // 33: capabilities.Executable.Execute:output_type -> capabilities.CapabilityResponse
-	20, // 34: capabilities.StandardCapabilities.Initialise:output_type -> google.protobuf.Empty
-	13, // 35: capabilities.StandardCapabilities.Infos:output_type -> capabilities.CapabilityInfosReply
-	28, // [28:36] is the sub-list for method output_type
-	20, // [20:28] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	19, // 11: capabilities.CapabilityResponse.value:type_name -> values.Map
+	9,  // 12: capabilities.CapabilityResponse.metadata:type_name -> capabilities.ResponseMetadata
+	15, // 13: capabilities.ResponseMetadata.metering:type_name -> capabilities.MeteringReportNodeDetail
+	10, // 14: capabilities.RegisterToWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
+	19, // 15: capabilities.RegisterToWorkflowRequest.config:type_name -> values.Map
+	10, // 16: capabilities.UnregisterFromWorkflowRequest.metadata:type_name -> capabilities.RegistrationMetadata
+	19, // 17: capabilities.UnregisterFromWorkflowRequest.config:type_name -> values.Map
+	1,  // 18: capabilities.CapabilityInfosReply.infos:type_name -> capabilities.CapabilityInfoReply
+	15, // 19: capabilities.MeteringReportStep.nodes:type_name -> capabilities.MeteringReportNodeDetail
+	18, // 20: capabilities.MeteringReport.steps:type_name -> capabilities.MeteringReport.StepsEntry
+	16, // 21: capabilities.MeteringReport.StepsEntry.value:type_name -> capabilities.MeteringReportStep
+	21, // 22: capabilities.BaseCapability.Info:input_type -> google.protobuf.Empty
+	4,  // 23: capabilities.TriggerExecutable.RegisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
+	4,  // 24: capabilities.TriggerExecutable.UnregisterTrigger:input_type -> capabilities.TriggerRegistrationRequest
+	11, // 25: capabilities.Executable.RegisterToWorkflow:input_type -> capabilities.RegisterToWorkflowRequest
+	12, // 26: capabilities.Executable.UnregisterFromWorkflow:input_type -> capabilities.UnregisterFromWorkflowRequest
+	3,  // 27: capabilities.Executable.Execute:input_type -> capabilities.CapabilityRequest
+	13, // 28: capabilities.StandardCapabilities.Initialise:input_type -> capabilities.InitialiseRequest
+	21, // 29: capabilities.StandardCapabilities.Infos:input_type -> google.protobuf.Empty
+	1,  // 30: capabilities.BaseCapability.Info:output_type -> capabilities.CapabilityInfoReply
+	7,  // 31: capabilities.TriggerExecutable.RegisterTrigger:output_type -> capabilities.TriggerResponseMessage
+	21, // 32: capabilities.TriggerExecutable.UnregisterTrigger:output_type -> google.protobuf.Empty
+	21, // 33: capabilities.Executable.RegisterToWorkflow:output_type -> google.protobuf.Empty
+	21, // 34: capabilities.Executable.UnregisterFromWorkflow:output_type -> google.protobuf.Empty
+	8,  // 35: capabilities.Executable.Execute:output_type -> capabilities.CapabilityResponse
+	21, // 36: capabilities.StandardCapabilities.Initialise:output_type -> google.protobuf.Empty
+	14, // 37: capabilities.StandardCapabilities.Infos:output_type -> capabilities.CapabilityInfosReply
+	30, // [30:38] is the sub-list for method output_type
+	22, // [22:30] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_pb_capabilities_proto_init() }
@@ -1283,7 +1341,7 @@ func file_capabilities_pb_capabilities_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_pb_capabilities_proto_rawDesc), len(file_capabilities_pb_capabilities_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   4,
 		},

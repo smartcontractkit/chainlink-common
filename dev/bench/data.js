@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1742971010050,
+  "lastUpdate": 1742986939247,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10414,6 +10414,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "BenchmarkKeystore_Sign/ed25519/in-process",
             "value": 28056,
+            "unit": "ns/op",
+            "extra": "42784 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8485f36ebe7e3e749c46e9e171ca5c55c42bcf08",
+          "message": "[chore] Add CreStepTimeout to WriteTarget (#1073)\n\n* [chore] Add CreStepTimeout to WriteTarget\n\n* [chore] Add CreStepTimeout to WriteTarget",
+          "timestamp": "2025-03-26T11:01:08Z",
+          "tree_id": "945e7767a3c9abcccb2c07180f8e5769b59725e1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8485f36ebe7e3e749c46e9e171ca5c55c42bcf08"
+        },
+        "date": 1742986938360,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.6,
+            "unit": "ns/op",
+            "extra": "3348494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415,
+            "unit": "ns/op",
+            "extra": "2848659 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28184,
             "unit": "ns/op",
             "extra": "42784 times\n4 procs"
           }

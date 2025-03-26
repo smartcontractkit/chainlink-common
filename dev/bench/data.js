@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1742986939247,
+  "lastUpdate": 1743014320219,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10458,6 +10458,48 @@ window.BENCHMARK_DATA = {
             "value": 28184,
             "unit": "ns/op",
             "extra": "42784 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16602512+krehermann@users.noreply.github.com",
+            "name": "krehermann",
+            "username": "krehermann"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "39bc061d09ded8c6b87ff95ffaea53110a742f87",
+          "message": "feat:(capabilities) OCR aggregator for LLO-based data feeds (#1079)\n\n* [CAPPL-597] OCR aggregator for LLO-based data feeds\n\n\n* tests working\n\n* fix partial staleness\n\n* cleanup; add example\n\n* linter, fix example, use decimal.Decimal consistently\n\n* typos, docs\n\n* fixing encoded outcome\n\n* cleanup\n\n* json schema validation\n\n* cleanup; rm OCRTriggerEvent to simplify the dependency and layering\n\n* address comments\n\n* fix test\n\n* maintain compatability; depreciate OCREvent\n\n---------\n\nCo-authored-by: Bolek Kulbabinski <1416262+bolekk@users.noreply.github.com>",
+          "timestamp": "2025-03-26T12:37:26-06:00",
+          "tree_id": "cee820d8e47cd9658c426a16ae596572e25e79b5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/39bc061d09ded8c6b87ff95ffaea53110a742f87"
+        },
+        "date": 1743014319380,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.6,
+            "unit": "ns/op",
+            "extra": "3273548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.1,
+            "unit": "ns/op",
+            "extra": "2846638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28861,
+            "unit": "ns/op",
+            "extra": "42285 times\n4 procs"
           }
         ]
       }

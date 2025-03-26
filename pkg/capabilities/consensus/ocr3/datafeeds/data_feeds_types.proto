@@ -21,6 +21,6 @@ message LLOOutcomeMetadata {
 }
 
 message LLOStreamInfo {
-  int64 timestamp = 1; // Unix timestamp of observation produced by the LLO oracle
+  int64 timestamp = 1; // Nanoseconds. Unix timestamp of observation produced by the LLO oracle
   bytes price = 2; //  binary representation of [llo.Decimal]: https://github.com/smartcontractkit/chainlink-data-streams/blob/d33e95631485bbcfdc22d209875035e3c73199d0/llo/stream_value.go#L147
 }

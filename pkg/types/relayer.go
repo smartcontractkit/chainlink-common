@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -68,33 +69,30 @@ type MercuryCredentials struct {
 type ChainStatus struct {
 	ID           string
 	Enabled      bool
-	Config       string // TOML
-	ReplayStatus ReplayStatus
+	Config       string        // TOML
+	ReplayStatus *ReplayStatus // nil if no replay has been requested
 }
 
 // ReplayStatus is the status of the current replay
-type ReplayStatus int
+type ReplayStatus struct {
+	Request ReplayRequest
+	Start   *time.Time // nil if requested but unstarted
+	End     *time.Time // nil if unfinished
+}
+type ReplayRequest struct {
+	FromBlock string
+	Args      map[string]any
+}
 
-const (
-	ReplayStatusNoRequest ReplayStatus = iota
-	ReplayStatusRequested
-	ReplayStatusPending
-	ReplayStatusComplete
-)
-
-func (rs ReplayStatus) String() string {
-	switch rs {
-	case ReplayStatusNoRequest:
+func (rs *ReplayStatus) Status() string {
+	if rs == nil {
 		return "NoRequest"
-	case ReplayStatusRequested:
+	} else if rs.Start == nil {
 		return "Requested"
-	case ReplayStatusPending:
+	} else if rs.End == nil {
 		return "Pending"
-	case ReplayStatusComplete:
-		return "Complete"
-	default:
-		return fmt.Sprintf("invalid status: %d", rs) // Handle unknown cases
 	}
+	return "Complete"
 }
 
 type NodeStatus struct {

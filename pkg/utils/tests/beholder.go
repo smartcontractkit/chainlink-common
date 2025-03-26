@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 	"sync"
-	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,8 +13,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
-
-var testEmitter atomic.Pointer[assertMessageEmitter]
 
 const (
 	packageNameBeholder = "test_beholder"
@@ -71,10 +68,6 @@ func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Mess
 func Beholder(t *testing.T) BeholderTester {
 	t.Helper()
 
-	if testEmitter.Load() != nil {
-		return BeholderTester{emitter: testEmitter.Load()}
-	}
-
 	cfg := beholder.DefaultConfig()
 
 	// Logger
@@ -105,7 +98,11 @@ func Beholder(t *testing.T) BeholderTester {
 		OnClose:               func() error { return nil },
 	}
 
-	testEmitter.Store(messageEmitter)
+	//reset Beholder state after the test
+	prevClient := beholder.GetClient()
+	t.Cleanup(func() {
+		beholder.SetClient(prevClient)
+	})
 	beholder.SetClient(client)
 
 	return BeholderTester{emitter: messageEmitter}

@@ -25,6 +25,9 @@ type TargetConfig struct {
 	// The address to write to.
 	Address string `json:"address" yaml:"address" mapstructure:"address"`
 
+	// The step timeout which must be a number expressed in seconds
+	CreStepTimeout int64 `json:"cre_step_timeout" yaml:"cre_step_timeout" mapstructure:"cre_step_timeout"`
+
 	// The delta stage which must be a number followed by a time symbol (s for
 	// seconds, m for minutes, h for hours, d for days).
 	DeltaStage string `json:"deltaStage" yaml:"deltaStage" mapstructure:"deltaStage"`
@@ -71,6 +74,9 @@ func (j *TargetConfig) UnmarshalJSON(b []byte) error {
 	}
 	if _, ok := raw["address"]; raw != nil && !ok {
 		return fmt.Errorf("field address in TargetConfig: required")
+	}
+	if _, ok := raw["cre_step_timeout"]; raw != nil && !ok {
+		return fmt.Errorf("field cre_step_timeout in TargetConfig: required")
 	}
 	if _, ok := raw["deltaStage"]; raw != nil && !ok {
 		return fmt.Errorf("field deltaStage in TargetConfig: required")

@@ -25,6 +25,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasm "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -139,7 +140,7 @@ type ModuleConfig struct {
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
 
-	CallCapability    func(ctx context.Context, req *wasmpb.CapabilityRequest) (*wasmpb.CapabilityFuture, error)
+	CallCapability    func(ctx context.Context, req *wasmpb.CapabilityRequest) ([sdk.IdLen]byte, error)
 	AwaitCapabilities func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error)
 }
 
@@ -340,7 +341,7 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 	if err := linker.FuncWrap(
 		"env",
 		"call_capability",
-		createCallCapFn(logger, modCfg.CallCapability),
+		createCallCapFn(logger, execStore, modCfg.CallCapability),
 	); err != nil {
 		return fmt.Errorf("error wrapping callcap func: %w", err)
 	}
@@ -348,7 +349,7 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 	if err := linker.FuncWrap(
 		"env",
 		"await_capabilities",
-		createAwaitCapsFn(logger, modCfg.AwaitCapabilities, wasmRead, wasmWrite, wasmWriteUInt32),
+		createAwaitCapsFn(logger, execStore, modCfg.AwaitCapabilities),
 	); err != nil {
 		return fmt.Errorf("error wrapping awaitcaps func: %w", err)
 	}
@@ -976,6 +977,16 @@ func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
 	return write(memory, buffer, ptr, uint32Size)
 }
 
+func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
+	memory := wasmMemoryAccessor(caller)
+	if int32(len(memory)) < ptr+size {
+		size = int32(len(memory)) - ptr
+		src = src[:size]
+	}
+
+	return write(memory, src, ptr, size)
+}
+
 // write copies the given src byte slice into the memory at the given pointer and size.
 func write(memory, src []byte, ptr, size int32) int64 {
 	if size < 0 || ptr < 0 {
@@ -993,70 +1004,100 @@ func write(memory, src []byte, ptr, size int32) int64 {
 	return int64(copy(buffer, src))
 }
 
-// TODO return the ID too
-func createCallCapFn(logger logger.Logger, callCapAsync func(ctx context.Context, req *wasmpb.CapabilityRequest) (*wasmpb.CapabilityFuture, error)) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
-	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+func createCallCapFn(
+	logger logger.Logger,
+	store *store[*wasmpb.ExecutionResult],
+	callCapAsync func(ctx context.Context, req *wasmpb.CapabilityRequest) ([sdk.IdLen]byte, error)) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
-			logger.Errorf("error calling wasmRead: %s", innerErr)
-			return ErrnoFault
+			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
 		}
 
 		req := &wasmpb.CapabilityRequest{}
 		innerErr = proto.Unmarshal(b, req)
 		if innerErr != nil {
-			logger.Errorf("error calling proto unmarshal: %s", innerErr)
-			return ErrnoInval
-		}
-		future, err := callCapAsync(req)
-		if err != nil {
-			logger.Errorf("error calling callCapAsync: %s", err)
-			// TODO what error?
-			return ErrnoInval
+			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
+			logger.Errorf(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
 		}
 
-		return 0
+		reqData, err := store.get(req.ExecutionId)
+		if err != nil {
+			errStr := fmt.Sprintf("error calling store.get: %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
+		}
+
+		id, err := callCapAsync(reqData.ctx(), req)
+		if err != nil {
+			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
+		}
+
+		writeLen := wasmWrite(caller, id[:], ptr, ptrlen)
+		if writeLen < 0 {
+			errStr := fmt.Sprintf("Response size %d is too large for wasm memory", sdk.IdLen)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
+		}
+
+		return writeLen
 	}
 }
 
 func createAwaitCapsFn(
-	l logger.Logger,
+	logger logger.Logger,
+	store *store[*wasmpb.ExecutionResult],
 	awaitCaps func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error),
-	reader unsafeReaderFunc,
-	writer unsafeWriterFunc,
-	sizeWriter unsafeFixedLengthWriterFunc,
-) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
-	return func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int32 {
-		b, err := reader(caller, msgptr, msglen)
+) func(caller *wasmtime.Caller, respptr, resplenptr, msgptr, msglen int32) int64 {
+	return func(caller *wasmtime.Caller, respptr, resplen, msgptr, msglen int32) int64 {
+		b, err := wasmRead(caller, msgptr, msglen)
 		if err != nil {
-			return ErrnoFault
+			errStr := fmt.Sprintf("error reading from wasm %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), respptr, resplen)
 		}
 
 		req := &wasmpb.AwaitCapabilitiesRequest{}
 		err = proto.Unmarshal(b, req)
 		if err != nil {
-			return ErrnoInval
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), respptr, resplen)
 		}
 
-		resp, err := awaitCaps(req)
+		reqData, err := store.get(req.ExecId)
 		if err != nil {
-			return ErrnoInval
+			errStr := fmt.Sprintf("error calling store.get: %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), respptr, resplen)
+		}
+
+		resp, err := awaitCaps(reqData.ctx(), req)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), respptr, resplen)
 		}
 
 		respBytes, err := proto.Marshal(resp)
 		if err != nil {
-			// TODO?
-			return ErrnoInval
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), respptr, resplen)
 		}
 
-		if size := writer(caller, respBytes, respptr, int32(len(respBytes))); size == -1 {
-			return ErrnoFault
+		size := wasmWrite(caller, respBytes, respptr, int32(len(respBytes)))
+		if size == -1 {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), respptr, resplen)
 		}
 
-		if size := sizeWriter(caller, resplenptr, uint32(len(respBytes))); size == -1 {
-			return ErrnoFault
-		}
-
-		return ErrnoSuccess
+		return size
 	}
 }

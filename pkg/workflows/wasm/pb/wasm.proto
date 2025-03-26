@@ -7,8 +7,9 @@ import "google/protobuf/any.proto";
 import "values/pb/values.proto";
 
 message TriggerSubscriptionRequest {
-  string id = 1;
-  google.protobuf.Any payload = 2;
+  string execId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
 }
 
 message Trigger {
@@ -35,17 +36,14 @@ message ExecutionResult {
 
 
 message CapabilityRequest {
-  string id = 1;
-  google.protobuf.Any payload = 2;
-}
-
-message CapabilityFuture {
-  string id = 1;
-  optional string error = 2;
+  string executionId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
 }
 
 message AwaitCapabilitiesRequest {
-  repeated string ids = 1;
+  string execId = 1;
+  repeated string ids = 2;
 }
 
 message CapabilityResponse {

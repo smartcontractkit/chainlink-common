@@ -14,15 +14,17 @@ import (
 )
 
 type runtimeBase struct {
+	execId string
 }
 
 //go:wasmimport env call_capability
-func callCapability(reqptr unsafe.Pointer, reqptrlen int32, id unsafe.Pointer) int32
+func callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64
 
 //go:wasmimport env await_capabilities
-func awaitCapabilities(id unsafe.Pointer, respptr unsafe.Pointer, resplen int32) int32
+func awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64
 
 func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise[*wpb.CapabilityResponse] {
+	request.ExecutionId = r.execId
 	marshalled, err := proto.Marshal(request)
 	if err != nil {
 		return sdk.PromiseFromResult[*wpb.CapabilityResponse](nil, err)
@@ -35,11 +37,24 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 	}
 
 	return sdk.NewBasicPromise(func() (*wpb.CapabilityResponse, error) {
+		awaitRequest := &wpb.AwaitCapabilitiesRequest{
+			ExecId: r.execId,
+			Ids:    []string{string(id)},
+		}
+		m, err := proto.Marshal(awaitRequest)
+		if err != nil {
+			return nil, err
+		}
+
 		// TODO make this configurable?
 		response := make([]byte, 2048)
-		bytes := awaitCapabilities(unsafe.Pointer(&id[0]), unsafe.Pointer(&response[0]), int32(len(response)))
+		bytes := awaitCapabilities(unsafe.Pointer(&m[0]), int32(len(m)), unsafe.Pointer(&response[0]), int32(len(response)))
+		if bytes < 0 {
+			return nil, errors.New(string(response[:-bytes]))
+		}
+
 		capResponse := &wpb.CapabilityResponse{}
-		err := proto.Unmarshal(response[:bytes], capResponse)
+		err = proto.Unmarshal(response[:bytes], capResponse)
 		return capResponse, err
 	})
 }
@@ -51,11 +66,12 @@ type donRuntime struct {
 func (d *donRuntime) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *wpb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
 	observation := fn(&nodeRuntime{})
 	wrapped, _ := anypb.New(observation)
-	
+
 	// In real life, the payload can be different than
 	capabilityRequest := &wpb.CapabilityRequest{
-		Id:      "consensus@1.0.0",
-		Payload: wrapped,
+		ExecutionId: d.execId,
+		Id:          "consensus@1.0.0",
+		Payload:     wrapped,
 	}
 	response := d.CallCapability(capabilityRequest)
 	return sdk.Then(response, func(resp *wpb.CapabilityResponse) (values.Value, error) {

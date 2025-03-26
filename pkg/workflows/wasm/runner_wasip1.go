@@ -18,7 +18,7 @@ import (
 func subscribeToTrigger(subscription unsafe.Pointer, subscriptionLen int32) int32
 
 //go:wasmimport env send_response
-func sendResponse(respptr unsafe.Pointer, respptrlen int32) (errno int32)
+func sendResponse(response unsafe.Pointer, responseLen int32) int32
 
 func NewDonRunner() sdk.DonRunner {
 	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{})
@@ -68,6 +68,7 @@ var _ sdk.NodeRunner = &subscriber[sdk.NodeRuntime]{}
 
 func (s *subscriber[T]) SubscribeToTrigger(id string, triggerCfg *anypb.Any, _ func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
 	triggerSubscription := &pb.TriggerSubscriptionRequest{
+		ExecId:  s.id,
 		Id:      id,
 		Payload: triggerCfg,
 	}
@@ -108,6 +109,7 @@ func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T]
 
 	switch req := execRequest.Request.(type) {
 	case *pb.ExecuteRequest_Subscribe:
+		subscribe.id = execRequest.Id
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger

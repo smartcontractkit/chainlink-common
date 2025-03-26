@@ -8,6 +8,7 @@
           "type": "string",
           "enum": [
             "data_feeds",
+            "llo_streams",
             "identical",
             "reduce"
           ]

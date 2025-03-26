@@ -53,10 +53,10 @@ message TriggerRegistrationRequest {
 }
 
 message TriggerEvent {
+  reserved 5; // Previously used for v1.OCRTriggerEvent
   string triggerType = 1;
   string id = 2;
   values.Map outputs = 4;
-  v1.OCRTriggerEvent ocr_event = 5;
 }
 
 message TriggerResponse {

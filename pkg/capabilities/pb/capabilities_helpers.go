@@ -342,30 +342,12 @@ func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse 
 		errs = resp.Err.Error()
 	}
 
-	var ocrEvent *OCRTriggerEvent
-	if resp.Event.OCREvent != nil && len(resp.Event.OCREvent.Report) > 0 {
-		sigs := make([]*OCRAttributedOnchainSignature, 0, len(resp.Event.OCREvent.Sigs))
-		for _, sig := range resp.Event.OCREvent.Sigs {
-			sigs = append(sigs, &OCRAttributedOnchainSignature{
-				Signature: sig.Signature,
-				Signer:    sig.Signer,
-			})
-		}
-		ocrEvent = &OCRTriggerEvent{
-			ConfigDigest: resp.Event.OCREvent.ConfigDigest,
-			Report:       resp.Event.OCREvent.Report,
-			SeqNr:        resp.Event.OCREvent.SeqNr,
-			Sigs:         sigs,
-		}
-	}
-
 	return &TriggerResponse{
 		Error: errs,
 		Event: &TriggerEvent{
 			TriggerType: resp.Event.TriggerType,
 			Id:          resp.Event.ID,
 			Outputs:     values.ProtoMap(resp.Event.Outputs),
-			OcrEvent:    ocrEvent,
 		},
 	}
 }
@@ -386,22 +368,6 @@ func TriggerResponseFromProto(resp *TriggerResponse) (capabilities.TriggerRespon
 			return capabilities.TriggerResponse{}, fmt.Errorf("could not unmarshal event payload: %w", err)
 		}
 		event.Outputs = outputs
-
-		if eventpb.OcrEvent != nil && len(eventpb.OcrEvent.Report) > 0 {
-			sigs := make([]capabilities.OCRAttributedOnchainSignature, 0, len(eventpb.OcrEvent.Sigs))
-			for _, sig := range eventpb.OcrEvent.Sigs {
-				sigs = append(sigs, capabilities.OCRAttributedOnchainSignature{
-					Signature: sig.Signature,
-					Signer:    sig.Signer,
-				})
-			}
-			event.OCREvent = &capabilities.OCRTriggerEvent{
-				ConfigDigest: eventpb.OcrEvent.ConfigDigest,
-				Report:       eventpb.OcrEvent.Report,
-				SeqNr:        eventpb.OcrEvent.SeqNr,
-				Sigs:         sigs,
-			}
-		}
 	}
 
 	var err error

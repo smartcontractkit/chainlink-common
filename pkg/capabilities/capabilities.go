@@ -148,8 +148,8 @@ type TriggerEvent struct {
 	ID string
 	// Trigger-specific payload
 	Outputs *values.Map
-	// Signed report representing an event from an OCR-based capability
-	// If set, the Outputs field above will be ignored
+	// Deprecated: use Outputs instead
+	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)
 	OCREvent *OCRTriggerEvent
 }
 
@@ -158,6 +158,47 @@ type OCRTriggerEvent struct {
 	SeqNr        uint64
 	Report       []byte // marshaled pb.OCRTriggerReport
 	Sigs         []OCRAttributedOnchainSignature
+}
+
+// DO NOT change this. it is in the encoding of [TriggerEvent].Outputs
+//
+// TODO: a more sophisticated way to handle this would be to have add this const
+// in the protobuf definition of the TriggerEvent struct.
+const ocrTriggerEventOutputKey = "OCRTriggerEvent"
+
+func (e *OCRTriggerEvent) topLevelKey() string {
+	return ocrTriggerEventOutputKey
+}
+
+// ToMap converts the OCRTriggerEvent to a map.
+// This is useful serialization purposes with the [TriggerEvent] struct.
+func (e *OCRTriggerEvent) ToMap() (*values.Map, error) {
+	x, err := values.Wrap(e)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wrap OCRTriggerEvent: %w", err)
+	}
+	return values.NewMap(map[string]any{
+		e.topLevelKey(): x,
+	})
+}
+
+// FromMap converts a map to an OCRTriggerEvent.
+// This is useful deserialization purposes with the [TriggerEvent] struct.
+func (e *OCRTriggerEvent) FromMap(m *values.Map) error {
+	if m == nil {
+		return fmt.Errorf("nil map")
+	}
+	val, ok := m.Underlying[e.topLevelKey()]
+	if !ok {
+		return fmt.Errorf("missing key: %s", e.topLevelKey())
+	}
+	var unwrapped OCRTriggerEvent
+	err := val.UnwrapTo(&unwrapped)
+	if err != nil {
+		return fmt.Errorf("failed to unwrap OCRTriggerEvent: %w", err)
+	}
+	*e = unwrapped
+	return nil
 }
 
 type OCRAttributedOnchainSignature struct {

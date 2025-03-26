@@ -79,6 +79,11 @@ service TriggerExecutable {
 message CapabilityResponse {
   values.Map value = 1;
   string error = 2;
+  ResponseMetadata metadata = 3;
+}
+
+message ResponseMetadata {
+  repeated MeteringReportNodeDetail metering = 1;
 }
 
 message RegistrationMetadata {

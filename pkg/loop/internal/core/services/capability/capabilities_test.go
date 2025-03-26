@@ -427,6 +427,9 @@ func Test_Capabilities(t *testing.T) {
 
 		expectedResp := capabilities.CapabilityResponse{
 			Value: values.EmptyMap(),
+			Metadata: capabilities.ResponseMetadata{
+				Metering: []capabilities.MeteringNodeDetail{},
+			},
 		}
 
 		ma.callback <- expectedResp

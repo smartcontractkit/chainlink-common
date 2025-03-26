@@ -117,7 +117,7 @@ func Test_ExecuteSyncReturnValue(t *testing.T) {
 				return CapabilityResponse{}, err
 			}
 
-			return CapabilityResponse{val}, nil
+			return CapabilityResponse{Value: val}, nil
 		},
 	}
 	req := CapabilityRequest{}

@@ -55,7 +55,18 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value *values.Map
+	Value    *values.Map
+	Metadata ResponseMetadata
+}
+
+type ResponseMetadata struct {
+	Metering []MeteringNodeDetail
+}
+
+type MeteringNodeDetail struct {
+	Peer2PeerID string
+	SpendUnit   string
+	SpendValue  string
 }
 
 type RequestMetadata struct {

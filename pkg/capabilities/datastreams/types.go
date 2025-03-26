@@ -86,7 +86,7 @@ type LLOStreamsTriggerEvent struct {
 
 type LLOStreamDecimal struct {
 	StreamID uint32
-	Decimal  []byte
+	Decimal  []byte // binary representation of [llo.Decimal]: https://github.com/smartcontractkit/chainlink-data-streams/blob/d33e95631485bbcfdc22d209875035e3c73199d0/llo/stream_value.go#L147
 	// future: may add aggregation type {MODE, MEDIAN, etc...}
 }
 

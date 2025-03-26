@@ -34,6 +34,7 @@ func (m *Metadata) padWorkflowName() {
 	}
 }
 
+// Aggregator is the interface that enables a hook to the Outcome() phase of OCR reporting.
 type Aggregator interface {
 	// Called by the Outcome() phase of OCR reporting.
 	// The inner array of observations corresponds to elements listed in "inputs.observations" section.

@@ -148,6 +148,9 @@ type TriggerEvent struct {
 	ID string
 	// Trigger-specific payload
 	Outputs *values.Map
+	// Deprecated: use Outputs instead
+	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)
+	OCREvent *OCRTriggerEvent
 }
 
 type OCRTriggerEvent struct {

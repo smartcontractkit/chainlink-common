@@ -222,9 +222,6 @@ func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
 }
 
 func TestTriggerResponseConverters(t *testing.T) {
-	digest := []byte("digest")
-	report := []byte("report")
-	signature := []byte("signature")
 
 	resp := capabilities.TriggerResponse{
 		Event: capabilities.TriggerEvent{
@@ -235,17 +232,6 @@ func TestTriggerResponseConverters(t *testing.T) {
 					"output_key": &values.String{Underlying: "output_value"},
 				},
 			},
-			OCREvent: &capabilities.OCRTriggerEvent{
-				ConfigDigest: digest,
-				SeqNr:        123,
-				Report:       report,
-				Sigs: []capabilities.OCRAttributedOnchainSignature{
-					{
-						Signature: signature,
-						Signer:    3,
-					},
-				},
-			},
 		},
 	}
 
@@ -254,12 +240,6 @@ func TestTriggerResponseConverters(t *testing.T) {
 	require.Equal(t, "my_type", protoResp.Event.TriggerType)
 	require.Equal(t, "my_id", protoResp.Event.Id)
 	require.Equal(t, "output_value", protoResp.Event.Outputs.GetFields()["output_key"].GetStringValue())
-	require.Equal(t, digest, protoResp.Event.OcrEvent.ConfigDigest)
-	require.Equal(t, uint64(123), protoResp.Event.OcrEvent.SeqNr)
-	require.Equal(t, report, protoResp.Event.OcrEvent.Report)
-	require.Equal(t, signature, protoResp.Event.OcrEvent.Sigs[0].Signature)
-	require.Equal(t, uint32(3), protoResp.Event.OcrEvent.Sigs[0].Signer)
-
 	convertedResp, err := pb.TriggerResponseFromProto(protoResp)
 	require.NoError(t, err)
 

@@ -1,0 +1,41 @@
+package {{.GoPackageName}}
+
+import (
+    "errors"
+    
+    "google.golang.org/protobuf/types/known/anypb"
+
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+)
+
+{{- range .Services}}
+{{ $service := . }}
+type {{.GoName}} struct {
+
+}
+
+
+    {{- range .Methods}}
+func (c *{{$service.GoName}}) {{.GoName}}(runtime sdk.{{$.Mode}}Runtime,input *{{.Input.GoIdent.GoName}}) sdk.Promise[*{{.Output.GoIdent.GoName}}] {
+    wrapped, err := anypb.New(input)
+    	if err != nil {
+    		return sdk.PromiseFromResult[*{{.Output.GoIdent.GoName}}](nil, err)
+    	}
+    	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+    		Id:      "{{$.CapabilityId}}",
+    		Payload: wrapped,
+    	}), func(i *pb.CapabilityResponse) (*{{.Output.GoIdent.GoName}}, error) {
+          		switch payload := i.Response.(type) {
+          		case *pb.CapabilityResponse_Error:
+          			return nil, errors.New(payload.Error)
+          		case *pb.CapabilityResponse_Payload:
+          			var output *{{.Output.GoIdent.GoName}}
+          			err = payload.Payload.UnmarshalTo(output)
+          			return output, err
+          		default:
+          			return nil, errors.New("unexpected response type")
+          		}
+          	})
+}
+    {{- end }}
+{{- end }}

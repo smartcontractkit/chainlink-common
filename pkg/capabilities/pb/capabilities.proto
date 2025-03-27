@@ -45,6 +45,7 @@ message CapabilityRequest {
   values.Map config = 2;
   values.Map inputs = 3;
   google.protobuf.Any request = 4;
+  string method = 5;
 }
 
 message TriggerRegistrationRequest {

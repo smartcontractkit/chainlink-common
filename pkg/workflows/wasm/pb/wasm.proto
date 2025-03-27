@@ -39,6 +39,7 @@ message CapabilityRequest {
   string executionId = 1;
   string id = 2;
   google.protobuf.Any payload = 3;
+  string method = 4;
 }
 
 message AwaitCapabilitiesRequest {

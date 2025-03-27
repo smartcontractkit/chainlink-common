@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/uuid"
-
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -42,7 +42,24 @@ func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 		}
 
 		var unwrapped []*wasmpb.TriggerSubscriptionRequest
+		/*
+			ExecId  string     `protobuf:"bytes,1,opt,name=execId,proto3" json:"execId,omitempty"`
+			Id      string     `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+			Payload *anypb.Any `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+		*/
+		tmp, e2 := v.Unwrap()
+		if e2 == nil {
+			fmt.Println(tmp)
+			tmp2 := &wasmpb.TriggerSubscriptionRequest{}
+			if err = mapstructure.Decode(tmp.([]any)[0], &tmp2); err == nil {
+				// This decodes correctly
+				fmt.Printf("%+v\n", tmp2)
+			} else {
+				fmt.Println(err.Error())
+			}
+		}
 		if err = v.UnwrapTo(&unwrapped); err != nil {
+			// And obviously here
 			return nil, err
 		}
 

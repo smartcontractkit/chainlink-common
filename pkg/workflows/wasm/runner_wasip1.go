@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-//go:wasmimport env subscrib_to_trigger
+//go:wasmimport env subscribe_to_trigger
 func subscribeToTrigger(subscription unsafe.Pointer, subscriptionLen int32) int32
 
 //go:wasmimport env send_response

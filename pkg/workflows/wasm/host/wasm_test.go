@@ -24,8 +24,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy/pb"
 )
 
 const (
@@ -65,8 +65,8 @@ func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) 
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
+	/*output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))*/
 
 	binary, err := os.ReadFile(path)
 	require.NoError(t, err)

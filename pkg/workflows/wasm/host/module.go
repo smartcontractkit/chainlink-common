@@ -541,7 +541,7 @@ func runWasm[I idMessage, O proto.Message](
 			return o, innerErr
 		}
 
-		if storedRequest.response == nil {
+		if any(storedRequest.response) == nil {
 			return o, fmt.Errorf("could not find response for id %s", reqId)
 		}
 

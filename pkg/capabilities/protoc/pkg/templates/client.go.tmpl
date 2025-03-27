@@ -12,7 +12,10 @@ import (
 {{- range .Services}}
 {{ $service := . }}
 type {{.GoName}} struct {
-    
+    // TODO config types (optional)
+    // TODO capability interfaces.
+        // Is this required if we're not doing chain abstraction?
+        // KV store could use it if we have different kinds...
 }
 
 
@@ -25,6 +28,7 @@ func (c *{{$service.GoName}}) {{.GoName}}(runtime sdk.{{$.Mode}}Runtime,input *{
     	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
     		Id:      "{{$.CapabilityId}}",
     		Payload: wrapped,
+    		Method: "{{.GoName}}",
     	}), func(i *pb.CapabilityResponse) (*{{.Output.GoIdent.GoName}}, error) {
           		switch payload := i.Response.(type) {
           		case *pb.CapabilityResponse_Error:

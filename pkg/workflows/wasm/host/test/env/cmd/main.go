@@ -6,10 +6,10 @@ import (
 	"errors"
 	"os"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
+	wasm "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/legacy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 )
 
 func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {

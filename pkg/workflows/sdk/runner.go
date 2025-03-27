@@ -21,7 +21,7 @@ type NodeRunner interface {
 type Trigger[T proto.Message] interface {
 	NewT() T
 	Id() string
-	Config() *anypb.Any
+	ConfigAsAny() *anypb.Any
 }
 
 type DonTrigger[T proto.Message] interface {
@@ -34,8 +34,8 @@ type NodeTrigger[T proto.Message] interface {
 	IsNodeTrigger()
 }
 
-func SubscribeToDonTrigger[T proto.Message](runner DonRunner, trigger DonTrigger[T], callback func(runtime DonRuntime, triggerOutputs T) (any, error)) {
-	runner.SubscribeToTrigger(trigger.Id(), trigger.Config(), func(runtime DonRuntime, triggerOutputs *anypb.Any) (any, error) {
+func SubscribeToDonTrigger[T proto.Message, O any](runner DonRunner, trigger DonTrigger[T], callback func(runtime DonRuntime, triggerOutputs T) (O, error)) {
+	runner.SubscribeToTrigger(trigger.Id(), trigger.ConfigAsAny(), func(runtime DonRuntime, triggerOutputs *anypb.Any) (any, error) {
 		unwrappedTrigger := trigger.NewT()
 		if err := triggerOutputs.UnmarshalTo(unwrappedTrigger); err != nil {
 			return nil, err
@@ -45,8 +45,8 @@ func SubscribeToDonTrigger[T proto.Message](runner DonRunner, trigger DonTrigger
 	})
 }
 
-func SubscribeToNodeTrigger[T proto.Message](runner NodeRunner, trigger Trigger[T], callback func(runtime NodeRuntime, triggerOutputs T) (any, error)) {
-	runner.SubscribeToTrigger(trigger.Id(), trigger.Config(), func(runtime NodeRuntime, triggerOutputs *anypb.Any) (any, error) {
+func SubscribeToNodeTrigger[T proto.Message, O any](runner NodeRunner, trigger Trigger[T], callback func(runtime NodeRuntime, triggerOutputs T) (O, error)) {
+	runner.SubscribeToTrigger(trigger.Id(), trigger.ConfigAsAny(), func(runtime NodeRuntime, triggerOutputs *anypb.Any) (any, error) {
 		unwrappedTrigger := trigger.NewT()
 		if err := triggerOutputs.UnmarshalTo(unwrappedTrigger); err != nil {
 			return nil, err

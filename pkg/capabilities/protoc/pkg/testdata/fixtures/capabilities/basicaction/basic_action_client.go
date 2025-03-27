@@ -12,6 +12,10 @@ import (
 )
 
 type BasicAction struct {
+	// TODO config types (optional)
+	// TODO capability interfaces.
+	// Is this required if we're not doing chain abstraction?
+	// KV store could use it if we have different kinds...
 }
 
 func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.Promise[*Outputs] {
@@ -22,6 +26,7 @@ func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.P
 	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
 		Id:      "basic-test-action@1.0.0",
 		Payload: wrapped,
+		Method:  "PerformAction",
 	}), func(i *pb.CapabilityResponse) (*Outputs, error) {
 		switch payload := i.Response.(type) {
 		case *pb.CapabilityResponse_Error:

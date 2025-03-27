@@ -15,5 +15,5 @@ message Outputs {
 }
 
 service BasicTrigger {
-  rpc
+  rpc Trigger(Config) returns (Outputs);
 }

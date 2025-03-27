@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743085635349,
+  "lastUpdate": 1743097823984,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10626,6 +10626,48 @@ window.BENCHMARK_DATA = {
             "value": 28033,
             "unit": "ns/op",
             "extra": "42747 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16602512+krehermann@users.noreply.github.com",
+            "name": "krehermann",
+            "username": "krehermann"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c11ba1cf36826b86449aa1c12514fa91f12c0894",
+          "message": "fix llo aggregator timestamp for cache contract encoding (#1089)\n\n* fix llo aggregator timestamp for cache contract encoding\n\n* linter",
+          "timestamp": "2025-03-27T11:49:12-06:00",
+          "tree_id": "979b6b156d5d5a443a8d00911368ac0f3e3e7cc4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c11ba1cf36826b86449aa1c12514fa91f12c0894"
+        },
+        "date": 1743097823221,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366,
+            "unit": "ns/op",
+            "extra": "3270852 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 447.5,
+            "unit": "ns/op",
+            "extra": "2479548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28278,
+            "unit": "ns/op",
+            "extra": "42819 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743014320219,
+  "lastUpdate": 1743036305429,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10500,6 +10500,48 @@ window.BENCHMARK_DATA = {
             "value": 28861,
             "unit": "ns/op",
             "extra": "42285 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8dad34f94aa5f30528de595b9db71465531398cf",
+          "message": "Add Replay to Relayer (#1072)\n\n* Add Replay\n\n* Add ReplayStatus strings\n\n* Update relayer.go\n\n* Add Replay to Relayer\n\n* Update relayer.pb.go\n\n* Add replay to tests\n\n* Update relayer.go\n\n* Use string fromBlock\n\n* trigger CI\n\n* trigger CI\n\n* trigger CI\n\n* Remove ReplayStatus",
+          "timestamp": "2025-03-26T20:43:43-04:00",
+          "tree_id": "b3f25228e3aeb27dc086dc0862cb731c80c80453",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8dad34f94aa5f30528de595b9db71465531398cf"
+        },
+        "date": 1743036304160,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 373.9,
+            "unit": "ns/op",
+            "extra": "3325424 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.3,
+            "unit": "ns/op",
+            "extra": "2905951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28108,
+            "unit": "ns/op",
+            "extra": "42535 times\n4 procs"
           }
         ]
       }

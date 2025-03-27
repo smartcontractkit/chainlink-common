@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type chanWorker struct {
@@ -57,7 +56,7 @@ func TestSleeperTask_CallingStopTwiceFails(t *testing.T) {
 
 func TestSleeperTask_WakeupPerformsWork(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	worker := &chanWorker{ch: make(chan struct{}, 1)}
 	sleeper := utils.NewSleeperTask(worker)
@@ -90,7 +89,7 @@ func (w *controllableWorker) Work() {
 
 func TestSleeperTask_WakeupEnqueuesMaxTwice(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	worker := &controllableWorker{chanWorker: chanWorker{ch: make(chan struct{}, 1)}, awaitWorkStarted: make(chan struct{}), allowResumeWork: make(chan struct{})}
 	sleeper := utils.NewSleeperTask(worker)

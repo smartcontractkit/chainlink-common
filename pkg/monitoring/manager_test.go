@@ -15,7 +15,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 const numPollerUpdates = 10
@@ -130,7 +129,7 @@ func TestManager(t *testing.T) {
 		defer goleak.VerifyNone(t)
 
 		var subs utils.Subprocesses
-		ctx, cancel := context.WithCancel(tests.Context(t))
+		ctx, cancel := context.WithCancel(t.Context())
 
 		poller := &fakePoller{ch: make(chan interface{})}
 

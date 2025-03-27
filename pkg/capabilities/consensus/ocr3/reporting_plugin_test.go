@@ -20,13 +20,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	batchSize := 0
@@ -41,7 +40,7 @@ func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
 }
 
 func TestReportingPlugin_Query(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	rp, err := NewReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
@@ -152,7 +151,7 @@ func (mc *mockCapability) UnregisterWorkflowID(workflowID string) {
 }
 
 func TestReportingPlugin_Observation(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -209,7 +208,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 }
 
 func TestReportingPlugin_Observation_NilIds(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -243,7 +242,7 @@ func TestReportingPlugin_Observation_NilIds(t *testing.T) {
 }
 
 func TestReportingPlugin_Observation_NoResults(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -315,7 +314,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
+	outcome, err := rp.Outcome(t.Context(), ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	opb := &pbtypes.Outcome{}
@@ -390,7 +389,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t 
 		},
 	}
 
-	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
+	outcome, err := rp.Outcome(t.Context(), ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	opb := &pbtypes.Outcome{}
@@ -406,7 +405,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t 
 }
 
 func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -464,7 +463,7 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 }
 
 func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -566,7 +565,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
+	reports, err := rp.Reports(t.Context(), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
@@ -584,7 +583,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 }
 
 func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -672,7 +671,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
+	reports, err := rp.Reports(t.Context(), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
@@ -710,7 +709,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 }
 
 func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -827,7 +826,7 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 }
 
 func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 	mcap := &mockCapability{
@@ -1096,7 +1095,7 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	outcome, err := rp.Outcome(t.Context(), ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
 	require.NoError(t, err)
 	opb1 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome, opb1)

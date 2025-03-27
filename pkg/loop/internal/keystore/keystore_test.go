@@ -15,11 +15,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestKeystore(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	stopCh := make(chan struct{})
 	log := logger.Test(t)
 

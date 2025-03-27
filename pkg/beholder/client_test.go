@@ -17,7 +17,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type MockExporter struct {
@@ -101,7 +100,7 @@ func TestClient(t *testing.T) {
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
 			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
-				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
+				err := client.Emitter.Emit(t.Context(), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
 			mustNewGrpcClient: mustNewGRPCClient,
@@ -115,7 +114,7 @@ func TestClient(t *testing.T) {
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
 			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
-				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
+				err := client.Emitter.Emit(t.Context(), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
 			mustNewGrpcClient: mustNewHTTPClient,
@@ -284,7 +283,7 @@ func TestEmitterMessageValidation(t *testing.T) {
 				emitter := getEmitter(exporterMock)
 				message := beholder.NewMessage([]byte("test"), tc.attrs)
 				// Emit
-				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
+				err := emitter.Emit(t.Context(), message.Body, tc.attrs)
 				// Assert expectations
 				if tc.expectedError != "" {
 					require.ErrorContains(t, err, tc.expectedError)
@@ -323,12 +322,12 @@ func TestClient_ForPackage(t *testing.T) {
 	clientForTest := client.ForPackage("TestClient_ForPackage")
 
 	// Log
-	clientForTest.Logger.Emit(tests.Context(t), otellog.Record{})
+	clientForTest.Logger.Emit(t.Context(), otellog.Record{})
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	b.Reset()
 
 	// Trace
-	_, span := clientForTest.Tracer.Start(tests.Context(t), "testSpan")
+	_, span := clientForTest.Tracer.Start(t.Context(), "testSpan")
 	span.End()
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testSpan")
@@ -336,7 +335,7 @@ func TestClient_ForPackage(t *testing.T) {
 
 	// Meter
 	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
-	counter.Add(tests.Context(t), 1)
+	counter.Add(t.Context(), 1)
 	clientForTest.Close()
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testMetric")

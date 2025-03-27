@@ -17,11 +17,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_RelayerSet(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	stopCh := make(chan struct{})
 	log := logger.Test(t)
 

@@ -170,7 +170,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		}
 		newPrice := prices[streamID]
 		priceDeviation := deviationDecimal(*oldPrice, newPrice)
-		timeDiffNs := int64(observationTimestamp.UnixNano()) - previousStreamInfo.Timestamp
+		timeDiffNs := observationTimestamp.UnixNano() - previousStreamInfo.Timestamp
 		lggr.Debugw("checking deviation and heartbeat",
 			"streamID", streamID,
 			"observationNs", observationTimestamp,
@@ -219,7 +219,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		w := &EVMEncodableStreamUpdate{
 			StreamID:   streamID,
 			Price:      decimalToBigInt(newPrice),
-			Timestamp:  uint32(observationTimestamp.Unix()),
+			Timestamp:  uint32(observationTimestamp.Unix()), //nolint:gosec // G115
 			RemappedID: remappedID,
 		}
 		toWrap = append(toWrap, w)
@@ -333,10 +333,7 @@ func getObservationTimestamp(lloEvents map[ocrcommon.OracleID]*datastreams.LLOSt
 	for _, event := range lloEvents {
 		counts[event.ObservationTimestampNanoseconds]++
 		if counts[event.ObservationTimestampNanoseconds] >= f+1 {
-			// Convert nanosecond timestamp to time.Time
-			nanos := int64(event.ObservationTimestampNanoseconds) //nolint:gosec // G115
-			return time.Unix(nanos/1e9, nanos%1e9), nil
-			//return time.Unix(0, int64(event.ObservationTimestampNanoseconds)), nil //nolint:gosec // G115
+			return time.Unix(0, int64(event.ObservationTimestampNanoseconds)), nil //nolint:gosec // G115
 		}
 	}
 	return time.Time{}, fmt.Errorf("%w: no timestamp appeared at least %d times", ErrInsufficientConsensus, f+1)

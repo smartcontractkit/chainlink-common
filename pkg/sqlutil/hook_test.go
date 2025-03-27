@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 const (
@@ -42,7 +41,7 @@ func TestWrapDataSource(t *testing.T) {
 			return sentinelErr
 		},
 	)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	// Error intercepted
 	err := ds.GetContext(ctx, "test", "foo", 42, "bar")

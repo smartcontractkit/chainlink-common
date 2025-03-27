@@ -3,6 +3,7 @@ package datafeeds_test
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"math"
 	"math/big"
 	"testing"
 
@@ -209,7 +210,7 @@ func TestDataFeedsAggregator_ParseConfig(t *testing.T) {
 		require.Equal(t, heartbeatA, parsedConfig.Feeds[feedIDA].Heartbeat)
 		require.Equal(t, deviationB, parsedConfig.Feeds[feedIDB].Deviation)
 		require.Equal(t, heartbeatB, parsedConfig.Feeds[feedIDB].Heartbeat)
-		require.Equal(t, allowedPartialStaleness, parsedConfig.AllowedPartialStaleness)
+		require.InEpsilon(t, allowedPartialStaleness, parsedConfig.AllowedPartialStaleness, math.SmallestNonzeroFloat64)
 	})
 
 	t.Run("invalid ID", func(t *testing.T) {

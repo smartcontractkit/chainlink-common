@@ -1,12 +1,12 @@
 package custmsg
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"maps"
 
-	"google.golang.org/protobuf/proto"
-
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
@@ -99,18 +99,21 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	//if err != nil {
 	//	return fmt.Errorf("could not wrap labels to map: %w", err)
 	//}
-
 	// Define a custom protobuf payload to emit
 	payload := &pb.BaseMessage{
 		Msg:    msg,
 		Labels: labels,
 	}
-	payloadBytes, err := proto.Marshal(payload)
+
+	// We marshal to JSON so we can read these messages in Loki
+	marshaler := &jsonpb.Marshaler{}
+	var buf bytes.Buffer
+	err := marshaler.Marshal(&buf, payload)
 	if err != nil {
-		return fmt.Errorf("sending custom message failed to marshal protobuf: %w", err)
+		return fmt.Errorf("sending custom message failed to marshal to JSON: %w", err)
 	}
 
-	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
+	err = beholder.GetEmitter().Emit(ctx, buf.Bytes(),
 		"beholder_data_schema", "/beholder-base-message/versions/1", // required
 		"beholder_domain", "platform", // required
 		"beholder_entity", "BaseMessage", // required

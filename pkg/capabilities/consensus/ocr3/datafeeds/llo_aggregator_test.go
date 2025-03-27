@@ -26,12 +26,14 @@ func TestGetLatestPrices(t *testing.T) {
 	t.Parallel()
 	lggr := logger.Test(t)
 
+	testTime := time.Unix(3164233, 0)
+
 	tests := []struct {
 		name              string
 		streamIDs         []uint32
 		events            map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent
 		f                 int
-		expectedTimestamp uint64
+		expectedTimestamp time.Time
 		expectedPrices    map[uint32]decimal.Decimal
 		expectError       bool
 	}{
@@ -39,21 +41,21 @@ func TestGetLatestPrices(t *testing.T) {
 			name:      "successful price consensus",
 			streamIDs: []uint32{1, 2},
 			events: map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent{
-				1: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				1: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
-				2: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				2: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
-				3: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				3: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
 			},
 			f:                 1,
-			expectedTimestamp: 1000,
+			expectedTimestamp: testTime,
 			expectedPrices: map[uint32]decimal.Decimal{
 				1: decimal.NewFromFloat(100.5),
 				2: decimal.NewFromFloat(200.5),
@@ -64,21 +66,21 @@ func TestGetLatestPrices(t *testing.T) {
 			name:      "insufficient price consensus",
 			streamIDs: []uint32{1, 2},
 			events: map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent{
-				1: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				1: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
-				2: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				2: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(101.5), // Different value
 					2: decimal.NewFromFloat(201.5), // Different value
 				}),
-				3: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				3: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(102.5), // Different value
 					2: decimal.NewFromFloat(202.5), // Different value
 				}),
 			},
 			f:                 1,
-			expectedTimestamp: 1000,
+			expectedTimestamp: testTime,
 			expectedPrices:    map[uint32]decimal.Decimal{}, // No consensus
 			expectError:       false,
 		},
@@ -86,21 +88,21 @@ func TestGetLatestPrices(t *testing.T) {
 			name:      "mixed consensus",
 			streamIDs: []uint32{1, 2},
 			events: map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent{
-				1: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				1: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
-				2: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				2: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(201.5), // Different value
 				}),
-				3: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				3: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(202.5), // Different value
 				}),
 			},
 			f:                 1,
-			expectedTimestamp: 1000,
+			expectedTimestamp: testTime,
 			expectedPrices: map[uint32]decimal.Decimal{
 				1: decimal.NewFromFloat(100.5), // Consensus for stream 1
 				// No consensus for stream 2
@@ -111,15 +113,15 @@ func TestGetLatestPrices(t *testing.T) {
 			name:      "no timestamp consensus",
 			streamIDs: []uint32{1, 2},
 			events: map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent{
-				1: createLLOEvent(t, 1000, map[uint32]decimal.Decimal{
+				1: createLLOEvent(t, testTime, map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
-				2: createLLOEvent(t, 1001, map[uint32]decimal.Decimal{
+				2: createLLOEvent(t, testTime.Add(time.Second), map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
-				3: createLLOEvent(t, 1002, map[uint32]decimal.Decimal{
+				3: createLLOEvent(t, testTime.Add(2*time.Second), map[uint32]decimal.Decimal{
 					1: decimal.NewFromFloat(100.5),
 					2: decimal.NewFromFloat(200.5),
 				}),
@@ -196,7 +198,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				},
 			}),
 
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(102.123), // 2% change, exceeds 1% threshold
 			}),
 			f:                    1,
@@ -206,7 +208,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				{
 					StreamID:   1,
 					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.123)),
-					Timestamp:  uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					Timestamp:  uint32(testStartTime.Unix()), //nolint: gosec // G115
 					RemappedID: remapped1,
 				},
 			},
@@ -233,7 +235,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: testStartTime.Add(-10 * time.Minute).UnixNano(),
 				},
 			}),
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(102.00000000001), // 2% change, exceeds 1% threshold
 			}),
 			f:                    1,
@@ -243,7 +245,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				{
 					StreamID:   1,
 					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(102.00000000001)),
-					Timestamp:  uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					Timestamp:  uint32(testStartTime.Unix()), //nolint: gosec // G115
 					RemappedID: remapped1,
 				},
 			},
@@ -270,7 +272,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: testStartTime.Add(-6 * time.Minute).UnixNano(), // Over heartbeat
 				},
 			}),
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(101), // 1% change, under 10% threshold
 			}),
 			f:                    1,
@@ -280,7 +282,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				{
 					StreamID:   1,
 					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(101)),
-					Timestamp:  uint64(testStartTime.UnixNano()), //nolint: gosec // G115
+					Timestamp:  uint32(testStartTime.Unix()), //nolint: gosec // G115
 					RemappedID: remapped1,
 				},
 			},
@@ -306,7 +308,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: time.Now().Add(-30 * time.Minute).UnixNano(), // Under heartbeat
 				},
 			}),
-			observations: createObservations(t, uint64(time.Now().UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+			observations: createObservations(t, time.Now(), map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromInt(105), // 5% change, under 10% threshold
 			}),
 			f:                    1,
@@ -352,7 +354,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					timestamp: testStartTime.Add(-1 * time.Minute).UnixNano(), // Under heartbeat, outside optimization
 				},
 			}),
-			observations: createObservations(t, uint64(testStartTime.UnixNano()), map[uint32]decimal.Decimal{ //nolint: gosec // G115
+			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(105), // 5% change, under 10% threshold
 				2: decimal.NewFromFloat(202), // 1% change, under 10% threshold
 				3: decimal.NewFromFloat(205), // 2.5% change, under 10% threshold
@@ -364,13 +366,13 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				{
 					StreamID:   1,
 					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(105)), //big.NewInt(105),
-					Timestamp:  uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
+					Timestamp:  uint32(testStartTime.Unix()),                         //nolint: gosec // G115
 					RemappedID: remapped1,
 				},
 				{
 					StreamID:   2,
 					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(202)), //big.NewInt(202),
-					Timestamp:  uint64(testStartTime.UnixNano()),                     //nolint: gosec // G115
+					Timestamp:  uint32(testStartTime.Unix()),                         //nolint: gosec // G115
 					RemappedID: remapped2,
 				},
 			},
@@ -438,9 +440,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 // Helper functions
 
-func createLLOEvent(t *testing.T, nsTimestamp uint64, prices map[uint32]decimal.Decimal) *datastreams.LLOStreamsTriggerEvent {
+func createLLOEvent(t *testing.T, obs time.Time, prices map[uint32]decimal.Decimal) *datastreams.LLOStreamsTriggerEvent {
 	event := &datastreams.LLOStreamsTriggerEvent{
-		ObservationTimestampNanoseconds: nsTimestamp,
+		ObservationTimestampNanoseconds: uint64(obs.UnixNano()), //nolint: gosec // G115
 		Payload:                         make([]*datastreams.LLOStreamDecimal, 0, len(prices)),
 	}
 
@@ -459,7 +461,7 @@ func createLLOEvent(t *testing.T, nsTimestamp uint64, prices map[uint32]decimal.
 
 func createPreviousOutcome(t *testing.T, streams map[uint32]struct {
 	price     decimal.Decimal
-	timestamp int64
+	timestamp int64 // UnixNano
 }) *types.AggregationOutcome {
 	state := &datafeeds.LLOOutcomeMetadata{
 		StreamInfo: make(map[uint32]*datafeeds.LLOStreamInfo),
@@ -483,7 +485,7 @@ func createPreviousOutcome(t *testing.T, streams map[uint32]struct {
 	}
 }
 
-func createObservations(t *testing.T, ts uint64, prices map[uint32]decimal.Decimal) map[ocrcommon.OracleID][]values.Value {
+func createObservations(t *testing.T, ts time.Time, prices map[uint32]decimal.Decimal) map[ocrcommon.OracleID][]values.Value {
 	observations := make(map[ocrcommon.OracleID][]values.Value)
 
 	// Create three observations with identical data to ensure f+1 consensus

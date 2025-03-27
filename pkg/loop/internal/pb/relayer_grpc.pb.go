@@ -266,6 +266,7 @@ const (
 	Relayer_NewContractReader_FullMethodName = "/loop.Relayer/NewContractReader"
 	Relayer_NewConfigProvider_FullMethodName = "/loop.Relayer/NewConfigProvider"
 	Relayer_NewPluginProvider_FullMethodName = "/loop.Relayer/NewPluginProvider"
+	Relayer_GetBalance_FullMethodName        = "/loop.Relayer/GetBalance"
 	Relayer_LatestHead_FullMethodName        = "/loop.Relayer/LatestHead"
 	Relayer_GetChainStatus_FullMethodName    = "/loop.Relayer/GetChainStatus"
 	Relayer_ListNodeStatuses_FullMethodName  = "/loop.Relayer/ListNodeStatuses"
@@ -280,6 +281,7 @@ type RelayerClient interface {
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error)
 	NewConfigProvider(ctx context.Context, in *NewConfigProviderRequest, opts ...grpc.CallOption) (*NewConfigProviderReply, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderReply, error)
+	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceReply, error)
 	LatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadReply, error)
 	GetChainStatus(ctx context.Context, in *GetChainStatusRequest, opts ...grpc.CallOption) (*GetChainStatusReply, error)
 	ListNodeStatuses(ctx context.Context, in *ListNodeStatusesRequest, opts ...grpc.CallOption) (*ListNodeStatusesReply, error)
@@ -334,6 +336,16 @@ func (c *relayerClient) NewPluginProvider(ctx context.Context, in *NewPluginProv
 	return out, nil
 }
 
+func (c *relayerClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBalanceReply)
+	err := c.cc.Invoke(ctx, Relayer_GetBalance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *relayerClient) LatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LatestHeadReply)
@@ -382,6 +394,7 @@ type RelayerServer interface {
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error)
 	NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderReply, error)
+	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceReply, error)
 	LatestHead(context.Context, *LatestHeadRequest) (*LatestHeadReply, error)
 	GetChainStatus(context.Context, *GetChainStatusRequest) (*GetChainStatusReply, error)
 	ListNodeStatuses(context.Context, *ListNodeStatusesRequest) (*ListNodeStatusesReply, error)
@@ -407,6 +420,9 @@ func (UnimplementedRelayerServer) NewConfigProvider(context.Context, *NewConfigP
 }
 func (UnimplementedRelayerServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+func (UnimplementedRelayerServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
 }
 func (UnimplementedRelayerServer) LatestHead(context.Context, *LatestHeadRequest) (*LatestHeadReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
@@ -513,6 +529,24 @@ func _Relayer_NewPluginProvider_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Relayer_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBalanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerServer).GetBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Relayer_GetBalance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerServer).GetBalance(ctx, req.(*GetBalanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Relayer_LatestHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LatestHeadRequest)
 	if err := dec(in); err != nil {
@@ -607,6 +641,10 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewPluginProvider",
 			Handler:    _Relayer_NewPluginProvider_Handler,
+		},
+		{
+			MethodName: "GetBalance",
+			Handler:    _Relayer_GetBalance_Handler,
 		},
 		{
 			MethodName: "LatestHead",

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743036305429,
+  "lastUpdate": 1743082799345,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10542,6 +10542,48 @@ window.BENCHMARK_DATA = {
             "value": 28108,
             "unit": "ns/op",
             "extra": "42535 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e4827f4b9cb5d2e51ff72c5d593051cdd65aa79c",
+          "message": "removing global state for beholder tester (#1085)\n\n* removing global state for beholder tester\n\n* adding doc\n\n---------\n\nCo-authored-by: Vyzaldy Sanchez <vyzaldysanchez@gmail.com>",
+          "timestamp": "2025-03-27T09:38:35-04:00",
+          "tree_id": "305c77ae0efbff1237655b19d361a8b893022620",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e4827f4b9cb5d2e51ff72c5d593051cdd65aa79c"
+        },
+        "date": 1743082798387,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363,
+            "unit": "ns/op",
+            "extra": "3318004 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 447.2,
+            "unit": "ns/op",
+            "extra": "2853153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28020,
+            "unit": "ns/op",
+            "extra": "42721 times\n4 procs"
           }
         ]
       }

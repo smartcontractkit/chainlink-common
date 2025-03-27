@@ -107,7 +107,7 @@ message SubmitWorkflowReceiptRequest {
   string account_id = 1;
   string workflow_id = 2;
   string workflow_execution_id = 3;
-  MeteringReport metering = 4;
+  capabilities.MeteringReport metering = 4;
 }
 message SubmitWorkflowReceiptResponse {
   bool success = 1;

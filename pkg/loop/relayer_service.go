@@ -84,6 +84,14 @@ func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {
 	return r.Service.LatestHead(ctx)
 }
 
+func (r *RelayerService) GetBalance(ctx context.Context, address string) (types.TokenBalance, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return types.TokenBalance{}, err
+	}
+
+	return r.Service.GetBalance(ctx, address)
+}
+
 func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.ChainStatus{}, err

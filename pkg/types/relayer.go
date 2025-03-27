@@ -81,7 +81,8 @@ type NodeStatus struct {
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
-
+	// GetBalance returns the address latest native balance for the underlying chain
+	GetBalance(ctx context.Context, address string) (TokenBalance, error)
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.

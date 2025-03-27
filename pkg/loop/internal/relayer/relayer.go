@@ -321,6 +321,22 @@ func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
 	}, nil
 }
 
+func (r *relayerClient) GetBalance(ctx context.Context, address string) (types.TokenBalance, error) {
+	reply, err := r.relayer.GetBalance(ctx, &pb.GetBalanceRequest{
+		Address: address,
+	})
+
+	if err != nil {
+		return types.TokenBalance{}, err
+	}
+
+	balance := new(big.Int).SetBytes(reply.Balance.Balance)
+	return types.TokenBalance{
+		Balance:  balance,
+		Decimals: reply.Balance.Decimals,
+	}, nil
+}
+
 func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	reply, err := r.relayer.GetChainStatus(ctx, &pb.GetChainStatusRequest{})
 	if err != nil {

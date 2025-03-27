@@ -69,6 +69,63 @@ func (_c *Relayer_Close_Call) RunAndReturn(run func() error) *Relayer_Close_Call
 	return _c
 }
 
+// GetBalance provides a mock function with given fields: ctx, address
+func (_m *Relayer) GetBalance(ctx context.Context, address string) (types.TokenBalance, error) {
+	ret := _m.Called(ctx, address)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBalance")
+	}
+
+	var r0 types.TokenBalance
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (types.TokenBalance, error)); ok {
+		return rf(ctx, address)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) types.TokenBalance); ok {
+		r0 = rf(ctx, address)
+	} else {
+		r0 = ret.Get(0).(types.TokenBalance)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, address)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_GetBalance_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBalance'
+type Relayer_GetBalance_Call struct {
+	*mock.Call
+}
+
+// GetBalance is a helper method to define mock.On call
+//   - ctx context.Context
+//   - address string
+func (_e *Relayer_Expecter) GetBalance(ctx interface{}, address interface{}) *Relayer_GetBalance_Call {
+	return &Relayer_GetBalance_Call{Call: _e.mock.On("GetBalance", ctx, address)}
+}
+
+func (_c *Relayer_GetBalance_Call) Run(run func(ctx context.Context, address string)) *Relayer_GetBalance_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Relayer_GetBalance_Call) Return(_a0 types.TokenBalance, _a1 error) *Relayer_GetBalance_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_GetBalance_Call) RunAndReturn(run func(context.Context, string) (types.TokenBalance, error)) *Relayer_GetBalance_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetChainStatus provides a mock function with given fields: ctx
 func (_m *Relayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	ret := _m.Called(ctx)

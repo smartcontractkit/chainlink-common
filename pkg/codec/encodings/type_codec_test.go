@@ -17,7 +17,6 @@ import (
 	encodingtestutils "github.com/smartcontractkit/chainlink-common/pkg/codec/encodings/testutils"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/testutils"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint
 )
@@ -36,11 +35,11 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 	t.Run("Lenient encoding allows extra bits", func(t *testing.T) {
 		ts := CreateTestStruct(0, lbiit)
 		c := lbiit.GetCodec(t)
-		encoded, err := c.Encode(tests.Context(t), ts, TestItemType)
+		encoded, err := c.Encode(t.Context(), ts, TestItemType)
 		require.NoError(t, err)
 		encoded = append(encoded, 0x00, 0x01, 0x02, 0x03, 0x04)
 		actual := &TestStruct{}
-		require.NoError(t, c.Decode(tests.Context(t), encoded, actual, TestItemType))
+		require.NoError(t, c.Decode(t.Context(), encoded, actual, TestItemType))
 		assert.Equal(t, ts, *actual)
 	})
 
@@ -52,7 +51,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 
 		c := encodings.CodecFromTypeCodec{"test": testCodec}
 
-		actual, err := c.GetMaxEncodingSize(tests.Context(t), 50, "test")
+		actual, err := c.GetMaxEncodingSize(t.Context(), 50, "test")
 		require.NoError(t, err)
 
 		expected, err := testCodec.Size(50)
@@ -75,7 +74,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 
 		c := encodings.CodecFromTypeCodec{"test": structCodec}
 
-		actual, err := c.GetMaxEncodingSize(tests.Context(t), 50, "test")
+		actual, err := c.GetMaxEncodingSize(t.Context(), 50, "test")
 		require.NoError(t, err)
 
 		singleItemSize, err := testCodec.Size(50)
@@ -92,7 +91,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 
 		c := encodings.CodecFromTypeCodec{"test": testCodec}
 
-		actual, err := c.GetMaxDecodingSize(tests.Context(t), 50, "test")
+		actual, err := c.GetMaxDecodingSize(t.Context(), 50, "test")
 		require.NoError(t, err)
 
 		expected, err := testCodec.Size(50)
@@ -115,7 +114,7 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 
 		c := encodings.CodecFromTypeCodec{"test": structCodec}
 
-		actual, err := c.GetMaxDecodingSize(tests.Context(t), 50, "test")
+		actual, err := c.GetMaxDecodingSize(t.Context(), 50, "test")
 		require.NoError(t, err)
 
 		singleItemSize, err := testCodec.Size(50)
@@ -129,11 +128,11 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 		ts := CreateTestStruct(0, biit)
 		c := biit.GetNestableCodec(t)
 
-		encoded, err := c.Encode(tests.Context(t), ts.AccountStruct.Account, itemType)
+		encoded, err := c.Encode(t.Context(), ts.AccountStruct.Account, itemType)
 		require.NoError(t, err)
 
 		var actual []byte
-		require.NoError(t, c.Decode(tests.Context(t), encoded, &actual, itemType))
+		require.NoError(t, c.Decode(t.Context(), encoded, &actual, itemType))
 
 		assert.Equal(t, ts.AccountStruct.Account, actual)
 	})
@@ -143,11 +142,11 @@ func TestCodecFromTypeCodecs(t *testing.T) {
 		ts := CreateTestStruct(0, biit)
 		c := biit.GetNestableCodec(t)
 
-		encoded, err := c.Encode(tests.Context(t), ts.NestedDynamicStruct.Inner.S, itemType)
+		encoded, err := c.Encode(t.Context(), ts.NestedDynamicStruct.Inner.S, itemType)
 		require.NoError(t, err)
 
 		var actual string
-		require.NoError(t, c.Decode(tests.Context(t), encoded, &actual, itemType))
+		require.NoError(t, c.Decode(t.Context(), encoded, &actual, itemType))
 
 		assert.Equal(t, ts.NestedDynamicStruct.Inner.S, actual)
 	})

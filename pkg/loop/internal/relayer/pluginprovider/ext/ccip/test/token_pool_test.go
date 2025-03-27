@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticTokenPool(t *testing.T) {
@@ -48,7 +47,7 @@ func TestTokenPoolGRPC(t *testing.T) {
 func roundTripTokenPoolTests(t *testing.T, client cciptypes.TokenPoolBatchedReader) {
 	t.Helper()
 	// test read token data
-	limits, err := client.GetInboundTokenPoolRateLimits(tests.Context(t), TokenPoolBatchedReader.getInboundTokenPoolRateLimitsRequest)
+	limits, err := client.GetInboundTokenPoolRateLimits(t.Context(), TokenPoolBatchedReader.getInboundTokenPoolRateLimitsRequest)
 	require.NoError(t, err)
 	assert.Equal(t, TokenPoolBatchedReader.getInboundTokenPoolRateLimitsResponse, limits)
 }

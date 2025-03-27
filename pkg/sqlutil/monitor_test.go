@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_sprintQ(t *testing.T) {
@@ -107,7 +106,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 
 				start := time.Now().Add(-time.Second)
 
-				ctx, cancel := context.WithCancel(tests.Context(t))
+				ctx, cancel := context.WithCancel(t.Context())
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
 				}
@@ -127,7 +126,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 
 				start := time.Now().Add(-time.Second)
 
-				ctx, cancel := context.WithTimeout(tests.Context(t), time.Minute)
+				ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 				ctx = tt.thresholds.ContextWithValue(ctx)
 				ql.logTiming(ctx, start)
 				cancel()
@@ -150,7 +149,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				start := time.Now().Add(-threshold)
 				deadline := time.Now().Add(10*time.Second - threshold)
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), deadline)
+				ctx, cancel := context.WithDeadline(t.Context(), deadline)
 				ctx = tt.thresholds.ContextWithValue(ctx)
 				ql.logTiming(ctx, start)
 				cancel()
@@ -177,7 +176,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				start := time.Now().Add(-threshold)
 				deadline := time.Now().Add(5*time.Second - threshold)
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), deadline)
+				ctx, cancel := context.WithDeadline(t.Context(), deadline)
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
 				}
@@ -203,7 +202,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				start := time.Now().Add(-10 * time.Second)
 				deadline := time.Now()
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), deadline)
+				ctx, cancel := context.WithDeadline(t.Context(), deadline)
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
 				}
@@ -234,7 +233,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				// >100%
 				start := time.Now()
 
-				ctx, cancel := context.WithCancel(tests.Context(t))
+				ctx, cancel := context.WithCancel(t.Context())
 				cancel() // pre-cancel
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
@@ -262,7 +261,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				// >100%
 				start := time.Now()
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), start.Add(-time.Second))
+				ctx, cancel := context.WithDeadline(t.Context(), start.Add(-time.Second))
 				defer cancel()
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)

@@ -91,6 +91,8 @@ type ChainService interface {
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
+	// Replay is an emergency recovery tool to re-process blocks starting at the provided fromBlock
+	Replay(ctx context.Context, fromBlock string, args map[string]any) error
 }
 
 // Relayer extends ChainService with providers for each product.

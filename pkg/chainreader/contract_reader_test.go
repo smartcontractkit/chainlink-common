@@ -12,11 +12,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestContractReaderByIDsUnbind(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	mockReader := &ContractReaderMock{}
 	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},
@@ -65,7 +64,7 @@ func TestContractReaderByIDsUnbind(t *testing.T) {
 }
 
 func TestContractReaderByIDsGetLatestValue(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	mockReader := &ContractReaderMock{}
 	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},
@@ -121,7 +120,7 @@ func TestContractReaderByIDsGetLatestValue(t *testing.T) {
 }
 
 func TestContractReaderByIDsQueryKey(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	mockReader := &ContractReaderMock{}
 	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},
@@ -183,7 +182,7 @@ func TestContractReaderByIDsQueryKey(t *testing.T) {
 }
 
 func TestContractReaderByIDsBatchGetLatestValues(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	mockReader := &ContractReaderMock{}
 	crByIDs := &ContractReaderByIDs{
 		bindings: sync.Map{},

@@ -21,7 +21,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/nestedaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/referenceactiontest"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
@@ -268,7 +267,7 @@ func TestTypeGeneration(t *testing.T) {
 
 func TestMockGeneration(t *testing.T) {
 	t.Run("Basic trigger", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		capMock := basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{}, nil
 		})
@@ -280,7 +279,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("Basic action", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := basicactiontest.Action(runner, func(_ basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
@@ -300,7 +299,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("Basic target", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		capMock := basictargettest.Target(runner, func(_ basictarget.TargetInputs) error {
 			return nil
 		})
@@ -312,7 +311,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("References", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := referenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
@@ -332,7 +331,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("External references", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := externalreferenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
@@ -355,7 +354,7 @@ func TestMockGeneration(t *testing.T) {
 	// no need to test nesting, we don't generate anything different for the mock's
 
 	t.Run("Array action", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := arrayactiontest.Action(runner, func(_ arrayaction.ActionInputs) ([]arrayaction.ActionOutputsElem, error) {
 			return []arrayaction.ActionOutputsElem{}, nil

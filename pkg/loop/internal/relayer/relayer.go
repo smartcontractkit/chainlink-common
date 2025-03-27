@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
@@ -360,6 +361,19 @@ func (r *relayerClient) Transact(ctx context.Context, from, to string, amount *b
 		To:           to,
 		Amount:       pb.NewBigIntFromInt(amount),
 		BalanceCheck: balanceCheck,
+	})
+	return err
+}
+
+func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	argsStruct, err := structpb.NewStruct(args)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.relayer.Replay(ctx, &pb.ReplayRequest{
+		FromBlock: fromBlock,
+		Args:      argsStruct,
 	})
 	return err
 }
@@ -720,6 +734,10 @@ func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNo
 
 func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionRequest) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
+}
+
+func (r *relayerServer) Replay(ctx context.Context, request *pb.ReplayRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, r.impl.Replay(ctx, request.FromBlock, request.Args.AsMap())
 }
 
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,

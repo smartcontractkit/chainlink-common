@@ -13,7 +13,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -51,7 +50,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctxKey := "key"
 		ctxValue := "test-value"
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		ctx = context.WithValue(ctx, ctxKey, "test-value")
 		store := &store{
 			m:  make(map[string]*RequestData),

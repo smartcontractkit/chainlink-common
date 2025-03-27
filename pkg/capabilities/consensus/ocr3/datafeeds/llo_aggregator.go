@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -169,7 +170,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		}
 		newPrice := prices[streamID]
 		priceDeviation := deviationDecimal(*oldPrice, newPrice)
-		timeDiffNs := observationTimestamp - uint64(previousStreamInfo.Timestamp) //nolint:gosec // G115
+		timeDiffNs := int64(observationTimestamp.UnixNano()) - previousStreamInfo.Timestamp
 		lggr.Debugw("checking deviation and heartbeat",
 			"streamID", streamID,
 			"observationNs", observationTimestamp,
@@ -181,10 +182,10 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 			"currDeviation", priceDeviation,
 			"deviation", config.Deviation.InexactFloat64(),
 		)
-		if timeDiffNs > uint64(config.HeartbeatNanos()) || //nolint:gosec // G115
+		if timeDiffNs > config.HeartbeatNanos() ||
 			priceDeviation > config.Deviation.InexactFloat64() {
 			// this stream needs an update
-			previousStreamInfo.Timestamp = int64(observationTimestamp) //nolint: gosec // G115
+			previousStreamInfo.Timestamp = observationTimestamp.UnixNano()
 			var err2 error
 			previousStreamInfo.Price, err2 = prices[streamID].MarshalBinary()
 			if err2 != nil {
@@ -218,7 +219,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		w := &EVMEncodableStreamUpdate{
 			StreamID:   streamID,
 			Price:      decimalToBigInt(newPrice),
-			Timestamp:  observationTimestamp,
+			Timestamp:  uint32(observationTimestamp.Unix()),
 			RemappedID: remappedID,
 		}
 		toWrap = append(toWrap, w)
@@ -245,7 +246,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 type EVMEncodableStreamUpdate struct {
 	StreamID   uint32
 	Price      *big.Int
-	Timestamp  uint64
+	Timestamp  uint32 // unix timestamp in seconds
 	RemappedID []byte
 }
 
@@ -325,22 +326,25 @@ func (a *LLOAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *
 // getObservationTimestamp returns the observation timestamp that appears at least f+1 times in the LLO events.
 // it is optimistic and takes the first one that appears at least f+1 times. this is valid be we know that LLO events are coming from an OCR consensus output.
 // ErrInsufficientConsensus is returned if no timestamp appears at least f+1 times.
-func getObservationTimestamp(lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (uint64, error) {
+func getObservationTimestamp(lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (time.Time, error) {
 	// All honest nodes are expected to include the same streams trigger event in their observation.
 	// We can trust the timestamp that appears at least f+1 times.
 	counts := make(map[uint64]int)
 	for _, event := range lloEvents {
 		counts[event.ObservationTimestampNanoseconds]++
 		if counts[event.ObservationTimestampNanoseconds] >= f+1 {
-			return event.ObservationTimestampNanoseconds, nil
+			// Convert nanosecond timestamp to time.Time
+			nanos := int64(event.ObservationTimestampNanoseconds) //nolint:gosec // G115
+			return time.Unix(nanos/1e9, nanos%1e9), nil
+			//return time.Unix(0, int64(event.ObservationTimestampNanoseconds)), nil //nolint:gosec // G115
 		}
 	}
-	return 0, fmt.Errorf("%w: no timestamp appeared at least %d times", ErrInsufficientConsensus, f+1)
+	return time.Time{}, fmt.Errorf("%w: no timestamp appeared at least %d times", ErrInsufficientConsensus, f+1)
 }
 
 // lloStreamPrices returns the prices for the streams at the consensus observation timestamp.
 // it ignores any events that are not from the consensus observation timestamp.
-func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (observationTimestamp uint64, out map[uint32]decimal.Decimal, err error) {
+func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (observationTimestamp time.Time, out map[uint32]decimal.Decimal, err error) {
 	// All honest nodes are expected to include the same streams trigger event in their observation.
 	// We can trust any price that appears at least f+1 times.
 
@@ -357,10 +361,11 @@ func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[o
 	// count all the prices across all events for the stream IDs we are interested in
 	observationTimestamp, err = getObservationTimestamp(lloEvents, f)
 	if err != nil {
-		return 0, nil, err
+		return time.Time{}, nil, err
 	}
+	observationTimestampNS := uint64(observationTimestamp.UnixNano()) //nolint:gosec // G115
 	for _, event := range lloEvents {
-		if event.ObservationTimestampNanoseconds != observationTimestamp {
+		if event.ObservationTimestampNanoseconds != observationTimestampNS {
 			// Ignore events with different timestamps. This shouldn't happen unless there are malicious nodes
 			lggr.Warnw("observation timestamp mismatch", "expected", observationTimestamp, "actual", event.ObservationTimestampNanoseconds)
 			continue

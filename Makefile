@@ -18,7 +18,6 @@ install-protoc:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@`go list -m -json google.golang.org/protobuf | jq -r .Version`
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
-
 .PHONY: mockery
 mockery: $(mockery) ## Install mockery.
 	go install github.com/vektra/mockery/v2@v2.53.3

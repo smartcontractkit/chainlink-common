@@ -9,11 +9,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_KeyValueStoreClient(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// Setup
 	client := Client{grpc: &testGrpcClient{store: make(map[string][]byte)}}
 	key := "key"
@@ -28,7 +27,7 @@ func Test_KeyValueStoreClient(t *testing.T) {
 }
 
 func Test_KeyValueStoreServer(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// Setup
 	server := Server{impl: &testKeyValueStore{store: make(map[string][]byte)}}
 

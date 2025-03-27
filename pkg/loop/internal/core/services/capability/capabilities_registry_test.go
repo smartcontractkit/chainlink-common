@@ -19,7 +19,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -154,7 +153,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// No capabilities in register
 	reg.On("Get", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.Get(tests.Context(t), "some-id")
+	_, err = rc.Get(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
 	pid := p2ptypes.PeerID([32]byte{0: 1})
@@ -191,7 +190,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	reg.On("LocalNode", mock.Anything).Once().Return(expectedNode, nil)
 
-	actualNode, err := rc.LocalNode(tests.Context(t))
+	actualNode, err := rc.LocalNode(t.Context())
 	require.NoError(t, err)
 	// check local node struct
 	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
@@ -216,7 +215,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	// Check zero values for empty node
 	emptyNode := capabilities.Node{}
 	reg.On("LocalNode", mock.Anything).Once().Return(emptyNode, nil)
-	actualNode, err = rc.LocalNode(tests.Context(t))
+	actualNode, err = rc.LocalNode(t.Context())
 	require.NoError(t, err)
 	require.Nil(t, actualNode.PeerID)
 	require.Equal(t, capabilities.DON{
@@ -228,23 +227,23 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	require.Empty(t, actualNode.CapabilityDONs)
 
 	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetAction(tests.Context(t), "some-id")
+	_, err = rc.GetAction(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
 	reg.On("GetConsensus", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetConsensus(tests.Context(t), "some-id")
+	_, err = rc.GetConsensus(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
 	reg.On("GetTarget", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetTarget(tests.Context(t), "some-id")
+	_, err = rc.GetTarget(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
 	reg.On("GetTrigger", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetTrigger(tests.Context(t), "some-id")
+	_, err = rc.GetTrigger(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
 	reg.On("List", mock.Anything).Return([]capabilities.BaseCapability{}, nil)
-	list, err := rc.List(tests.Context(t))
+	list, err := rc.List(t.Context())
 	require.NoError(t, err)
 	require.Len(t, list, 0)
 
@@ -261,18 +260,18 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	// After adding the trigger, we'll expect something wrapped by the internal client type below.
 	reg.On("Add", mock.Anything, mock.AnythingOfType("*capability.TriggerCapabilityClient")).Return(nil)
-	err = rc.Add(tests.Context(t), testTrigger)
+	err = rc.Add(t.Context(), testTrigger)
 	require.NoError(t, err)
 
 	reg.On("GetTrigger", mock.Anything, "trigger-1@1.0.0").Return(testTrigger, nil)
-	triggerCap, err := rc.GetTrigger(tests.Context(t), "trigger-1@1.0.0")
+	triggerCap, err := rc.GetTrigger(t.Context(), "trigger-1@1.0.0")
 	require.NoError(t, err)
 
 	// Test trigger Info()
 	testCapabilityInfo(t, triggerInfo, triggerCap)
 
 	// Test TriggerExecutable
-	triggerChan, err := triggerCap.RegisterTrigger(tests.Context(t), capabilities.TriggerRegistrationRequest{})
+	triggerChan, err := triggerCap.RegisterTrigger(t.Context(), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
 
 	triggerResponse := capabilities.TriggerResponse{
@@ -284,7 +283,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	testTrigger.XXXTestingPushToCallbackChan(triggerResponse)
 	require.Equal(t, triggerResponse, <-triggerChan)
 
-	err = triggerCap.UnregisterTrigger(tests.Context(t), capabilities.TriggerRegistrationRequest{})
+	err = triggerCap.UnregisterTrigger(t.Context(), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
 	require.Nil(t, testTrigger.callback)
 
@@ -301,7 +300,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		mockExecutableCapability: &mockExecutableCapability{callback: actionCallbackChan},
 	}
 	reg.On("GetAction", mock.Anything, "action-1@2.0.0").Return(testAction, nil)
-	actionCap, err := rc.GetAction(tests.Context(t), "action-1@2.0.0")
+	actionCap, err := rc.GetAction(t.Context(), "action-1@2.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, actionInfo, actionCap)
@@ -312,15 +311,15 @@ func TestCapabilitiesRegistry(t *testing.T) {
 			WorkflowID: "workflow-ID",
 		},
 	}
-	err = actionCap.RegisterToWorkflow(tests.Context(t), workflowRequest)
+	err = actionCap.RegisterToWorkflow(t.Context(), workflowRequest)
 	require.NoError(t, err)
 	require.Equal(t, workflowRequest.Metadata.WorkflowID, testAction.registeredWorkflowRequest.Metadata.WorkflowID)
 
 	actionCallbackChan <- capabilityResponse
-	callbackChan, err := actionCap.Execute(tests.Context(t), capabilities.CapabilityRequest{})
+	callbackChan, err := actionCap.Execute(t.Context(), capabilities.CapabilityRequest{})
 	require.NoError(t, err)
 	require.Equal(t, capabilityResponse, callbackChan)
-	err = actionCap.UnregisterFromWorkflow(tests.Context(t), capabilities.UnregisterFromWorkflowRequest{})
+	err = actionCap.UnregisterFromWorkflow(t.Context(), capabilities.UnregisterFromWorkflowRequest{})
 	require.NoError(t, err)
 	require.Nil(t, testAction.registeredWorkflowRequest)
 
@@ -335,7 +334,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		mockExecutableCapability: &mockExecutableCapability{},
 	}
 	reg.On("GetConsensus", mock.Anything, "consensus-1@3.0.0").Return(testConsensus, nil)
-	consensusCap, err := rc.GetConsensus(tests.Context(t), "consensus-1@3.0.0")
+	consensusCap, err := rc.GetConsensus(t.Context(), "consensus-1@3.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, consensusInfo, consensusCap)
@@ -351,14 +350,14 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		mockExecutableCapability: &mockExecutableCapability{},
 	}
 	reg.On("GetTarget", mock.Anything, "target-1@1.0.0").Return(testTarget, nil)
-	targetCap, err := rc.GetTarget(tests.Context(t), "target-1@1.0.0")
+	targetCap, err := rc.GetTarget(t.Context(), "target-1@1.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, targetInfo, targetCap)
 }
 
 func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, cap capabilities.BaseCapability) {
-	gotInfo, err := cap.Info(tests.Context(t))
+	gotInfo, err := cap.Info(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, expectedInfo.ID, gotInfo.ID)
 	require.Equal(t, expectedInfo.CapabilityType, gotInfo.CapabilityType)
@@ -435,7 +434,7 @@ func TestCapabilitiesRegistry_ConfigForCapabilities(t *testing.T) {
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 
-	capConf, err := rc.ConfigForCapability(tests.Context(t), capID, donID)
+	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCapConfig, capConf)
 }
@@ -484,7 +483,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 
-	capConf, err := rc.ConfigForCapability(tests.Context(t), capID, donID)
+	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
 	require.NoError(t, err)
 	assert.Equal(t, expectedCapConfig, capConf)
 	assert.Equal(t, 30*time.Second, capConf.RemoteExecutableConfig.RegistrationRefresh)

@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/jsonserializable"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type mockPipelineRunner struct {
@@ -38,7 +37,7 @@ func (c *clientAdapter) ExecuteRun(ctx context.Context, in *pb.RunRequest, opts 
 }
 
 func TestPipelineRunnerService(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	originalResults := []core.TaskResult{
 		{
 			ID: "1",
@@ -76,7 +75,7 @@ func TestPipelineRunnerService(t *testing.T) {
 }
 
 func TestPipelineRunnerService_CallArgs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	mpr := &mockPipelineRunner{}
 	srv := &RunnerServer{impl: mpr}
 	client := &pipelineRunnerServiceClient{grpc: &clientAdapter{srv: srv}}

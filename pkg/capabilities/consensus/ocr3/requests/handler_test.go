@@ -11,13 +11,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 func Test_Handler_SendsResponse(t *testing.T) {
 	lggr := logger.Test(t)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
@@ -44,7 +43,7 @@ func Test_Handler_SendsResponse(t *testing.T) {
 
 func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
@@ -70,7 +69,7 @@ func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 
 func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	lggr := logger.Test(t)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
@@ -111,7 +110,7 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 }
 
 func Test_Handler_PendingRequestsExpiry(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	lggr := logger.Test(t)
 	clock := clockwork.NewFakeClockAt(time.Now())

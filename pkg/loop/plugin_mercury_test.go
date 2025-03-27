@@ -14,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestPluginMercury(t *testing.T) {
@@ -67,7 +66,7 @@ func TestPluginMercuryExec(t *testing.T) {
 }
 
 func newMercuryProvider(t *testing.T, pr loop.PluginRelayer) types.MercuryProvider {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)

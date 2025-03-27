@@ -270,6 +270,7 @@ const (
 	Relayer_GetChainStatus_FullMethodName    = "/loop.Relayer/GetChainStatus"
 	Relayer_ListNodeStatuses_FullMethodName  = "/loop.Relayer/ListNodeStatuses"
 	Relayer_Transact_FullMethodName          = "/loop.Relayer/Transact"
+	Relayer_Replay_FullMethodName            = "/loop.Relayer/Replay"
 )
 
 // RelayerClient is the client API for Relayer service.
@@ -284,6 +285,7 @@ type RelayerClient interface {
 	GetChainStatus(ctx context.Context, in *GetChainStatusRequest, opts ...grpc.CallOption) (*GetChainStatusReply, error)
 	ListNodeStatuses(ctx context.Context, in *ListNodeStatusesRequest, opts ...grpc.CallOption) (*ListNodeStatusesReply, error)
 	Transact(ctx context.Context, in *TransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Replay(ctx context.Context, in *ReplayRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type relayerClient struct {
@@ -374,6 +376,16 @@ func (c *relayerClient) Transact(ctx context.Context, in *TransactionRequest, op
 	return out, nil
 }
 
+func (c *relayerClient) Replay(ctx context.Context, in *ReplayRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Relayer_Replay_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RelayerServer is the server API for Relayer service.
 // All implementations must embed UnimplementedRelayerServer
 // for forward compatibility.
@@ -386,6 +398,7 @@ type RelayerServer interface {
 	GetChainStatus(context.Context, *GetChainStatusRequest) (*GetChainStatusReply, error)
 	ListNodeStatuses(context.Context, *ListNodeStatusesRequest) (*ListNodeStatusesReply, error)
 	Transact(context.Context, *TransactionRequest) (*emptypb.Empty, error)
+	Replay(context.Context, *ReplayRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedRelayerServer()
 }
 
@@ -419,6 +432,9 @@ func (UnimplementedRelayerServer) ListNodeStatuses(context.Context, *ListNodeSta
 }
 func (UnimplementedRelayerServer) Transact(context.Context, *TransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Transact not implemented")
+}
+func (UnimplementedRelayerServer) Replay(context.Context, *ReplayRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Replay not implemented")
 }
 func (UnimplementedRelayerServer) mustEmbedUnimplementedRelayerServer() {}
 func (UnimplementedRelayerServer) testEmbeddedByValue()                 {}
@@ -585,6 +601,24 @@ func _Relayer_Transact_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Relayer_Replay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerServer).Replay(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Relayer_Replay_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerServer).Replay(ctx, req.(*ReplayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Relayer_ServiceDesc is the grpc.ServiceDesc for Relayer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -623,6 +657,10 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Transact",
 			Handler:    _Relayer_Transact_Handler,
+		},
+		{
+			MethodName: "Replay",
+			Handler:    _Relayer_Replay_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

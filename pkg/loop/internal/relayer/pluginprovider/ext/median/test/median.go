@@ -25,7 +25,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func PluginMedian(t *testing.T, p core.PluginMedian) {
@@ -38,7 +37,7 @@ type PluginMedianTest struct {
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog, nil)
 		require.NoError(t, err)
 
@@ -52,7 +51,7 @@ func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 
 	// when gasPriceSubunitsDataSource is meant to trigger a no-op
 	t.Run("PluginMedian (Zero GasPriceSubunitsDataSource)", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog, nil)
 		require.NoError(t, err)
 
@@ -72,12 +71,12 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(tests.Context(t), reportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), reportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
 			expectedReportingPlugin.AssertEqual(ctx, t, rp)
 		})

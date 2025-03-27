@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 import "contract_reader.proto";
 
 service PluginRelayer {
@@ -51,6 +52,7 @@ service Relayer {
   rpc GetChainStatus (GetChainStatusRequest) returns (GetChainStatusReply) {}
   rpc ListNodeStatuses (ListNodeStatusesRequest) returns (ListNodeStatusesReply) {}
   rpc Transact (TransactionRequest) returns (google.protobuf.Empty) {}
+  rpc Replay (ReplayRequest) returns (google.protobuf.Empty) {}
 }
 
 // RelayArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.RelayArgs].
@@ -151,6 +153,11 @@ message NodeStatus {
   string name = 2;
   string config = 3; // TOML
   string state = 4;
+}
+
+message ReplayRequest {
+  string fromBlock = 1;
+  google.protobuf.Struct args = 2;
 }
 
 // SendTxRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.SendTx].

@@ -45,6 +45,11 @@ type transactionRequest struct {
 	balanceCheck bool
 }
 
+type replayRequest struct {
+	fromBlock string
+	args      map[string]any
+}
+
 type nodeRequest struct {
 	pageSize  int32
 	pageToken string
@@ -73,6 +78,7 @@ type staticRelayerConfig struct {
 	nodeRequest        nodeRequest
 	nodeResponse       nodeResponse
 	transactionRequest transactionRequest
+	replayRequest      replayRequest
 	chainStatus        types.ChainStatus
 }
 
@@ -313,6 +319,15 @@ func (s staticRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b 
 	return nil
 }
 
+func (s staticRelayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	if s.StaticChecks {
+		if fromBlock != s.replayRequest.fromBlock {
+			return fmt.Errorf("expected from %s but got %s", s.replayRequest.fromBlock, fromBlock)
+		}
+	}
+	return nil
+}
+
 func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
 	t.Run("ContractReader", func(t *testing.T) {
 		//t.Parallel()
@@ -382,6 +397,13 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 		t.Parallel()
 		ctx := tests.Context(t)
 		err := relayer.Transact(ctx, s.transactionRequest.from, s.transactionRequest.to, s.transactionRequest.amount, s.transactionRequest.balanceCheck)
+		require.NoError(t, err)
+	})
+
+	t.Run("Replay", func(t *testing.T) {
+		t.Parallel()
+		ctx := tests.Context(t)
+		err := relayer.Replay(ctx, s.replayRequest.fromBlock, s.replayRequest.args)
 		require.NoError(t, err)
 	})
 }

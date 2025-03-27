@@ -117,7 +117,12 @@ message GetBalanceRequest {
 }
 
 message GetBalanceReply {
-  bytes balance = 1; // 32 bytes to represent uint256
+  TokenBalance balance = 1;
+}
+
+message TokenBalance {
+  bytes balance = 1;
+  uint32 decimals = 2;
 }
 
 message LatestHeadRequest {}

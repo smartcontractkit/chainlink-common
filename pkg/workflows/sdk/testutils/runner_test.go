@@ -22,7 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap/ocr3captest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritertest"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
@@ -34,7 +33,7 @@ func TestRunner(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		triggerMock, actionMock, consensusMock, targetMock := setupAllRunnerMocks(t, runner)
 
@@ -92,7 +91,7 @@ func TestRunner(t *testing.T) {
 			Schedule:   "oneAtATime",
 		}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
 
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		_, _, _, targetMock := setupAllRunnerMocks(t, runner)
 
 		runner.Run(workflow)
@@ -104,7 +103,7 @@ func TestRunner(t *testing.T) {
 	t.Run("Run returns errors if capabilities were registered multiple times", func(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		setupAllRunnerMocks(t, runner)
 		setupAllRunnerMocks(t, runner)
 
@@ -118,7 +117,7 @@ func TestRunner(t *testing.T) {
 			return false, expectedErr
 		})
 
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
@@ -141,7 +140,7 @@ func TestRunner(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
@@ -159,7 +158,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run registers and unregisters from capabilities", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		workflow, testTriggerConfig, testTargetConfig := registrationWorkflow()
 
@@ -178,7 +177,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run captures register errors", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		workflow, _, _ := registrationWorkflow()
 
@@ -196,7 +195,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run captures unregister errors", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		workflow, _, _ := registrationWorkflow()
 
@@ -214,7 +213,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		expected := basicactiontest.ActionForStep(runner, "action", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -229,7 +228,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns a default mock if step wasn't specified", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		expected := basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -238,7 +237,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns nil if no mock was registered", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		referenceactiontest.Action(runner, func(input referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
 			return referenceaction.SomeOutputs{}, nil
 		})
@@ -246,7 +245,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns nil if no mock was registered for a step", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		differentStep := basicactiontest.ActionForStep(runner, "step", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -281,7 +280,7 @@ func TestCompute(t *testing.T) {
 			return actual, nil
 		})
 
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "100"}, nil
 		})
@@ -304,7 +303,7 @@ func TestCompute(t *testing.T) {
 			return c, nil
 		})
 
-		runner := testutils.NewRunner(tests.Context(t), &testutils.NoopRuntime{})
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		secretToken := "superSuperSecretToken"
 		runner.Secrets = map[string]string{
 			"fidelity": secretToken,

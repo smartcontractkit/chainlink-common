@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestPluginStandardCapabilities(t *testing.T) {
@@ -29,7 +28,7 @@ func TestPluginStandardCapabilities(t *testing.T) {
 				Logger: logger.Test(t),
 				StopCh: stopCh}},
 		func(t *testing.T, s loop.StandardCapabilities) {
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			infos, err := s.Infos(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2, len(infos))
@@ -43,7 +42,7 @@ func TestPluginStandardCapabilities(t *testing.T) {
 
 func TestRunningStandardCapabilitiesPluginOutOfProcess(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	stopCh := newStopCh(t)
 
 	scs := newOutOfProcessStandardCapabilitiesService(t, true, stopCh)

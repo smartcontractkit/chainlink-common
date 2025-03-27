@@ -20,7 +20,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func newStopCh(t *testing.T) <-chan struct{} {
@@ -33,7 +32,7 @@ func newStopCh(t *testing.T) <-chan struct{} {
 
 func PluginGenericTest(t *testing.T, p core.OCR3ReportingPluginClient) {
 	t.Run("PluginServer", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewReportingPluginFactory(ctx,
 			core.ReportingPluginServiceConfig{},
 			nettest.MockConn{},
@@ -48,7 +47,7 @@ func PluginGenericTest(t *testing.T, p core.OCR3ReportingPluginClient) {
 		ocr3test.OCR3ReportingPluginFactory(t, factory)
 	})
 	t.Run("ValidationService", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		validationService, err := p.NewValidationService(ctx)
 		require.NoError(t, err)
 

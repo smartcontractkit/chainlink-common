@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -22,7 +21,7 @@ func Test_CapabilityInfo(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	gotCi, err := ci.Info(tests.Context(t))
+	gotCi, err := ci.Info(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, ci.Version(), "1.0.0")
 	assert.Equal(t, ci, gotCi)
@@ -35,7 +34,7 @@ func Test_CapabilityInfo(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	gotCi, err = ci.Info(tests.Context(t))
+	gotCi, err = ci.Info(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, ci.Version(), "1.0.0+build.1234.sha-5678")
 	assert.Equal(t, ci, gotCi)
@@ -48,7 +47,7 @@ func Test_CapabilityInfo(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	gotCi, err = ci.Info(tests.Context(t))
+	gotCi, err = ci.Info(t.Context())
 	require.NoError(t, err)
 	require.Equal(t, ci.Version(), "1.0.0-beta")
 	assert.Equal(t, ci, gotCi)
@@ -121,7 +120,7 @@ func Test_ExecuteSyncReturnValue(t *testing.T) {
 		},
 	}
 	req := CapabilityRequest{}
-	resp, err := mcwe.Execute(tests.Context(t), req)
+	resp, err := mcwe.Execute(t.Context(), req)
 
 	require.NoError(t, err)
 	unwrappedValue, err := resp.Value.Unwrap()
@@ -137,7 +136,7 @@ func Test_ExecuteSyncCapabilitySetupErrors(t *testing.T) {
 		},
 	}
 	req := CapabilityRequest{}
-	_, err := mcwe.Execute(tests.Context(t), req)
+	_, err := mcwe.Execute(t.Context(), req)
 	assert.ErrorContains(t, err, expectedErr.Error())
 }
 

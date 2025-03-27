@@ -10,7 +10,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -18,7 +17,7 @@ const testID = "test-id-1"
 
 func TestOnDemand(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{
@@ -45,7 +44,7 @@ func TestOnDemand(t *testing.T) {
 
 func TestOnDemand_ChannelDoesntExist(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	v, err := values.NewMap(map[string]any{"hello": "world"})
 	require.NoError(t, err)
@@ -61,7 +60,7 @@ func TestOnDemand_ChannelDoesntExist(t *testing.T) {
 
 func TestOnDemand_(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{

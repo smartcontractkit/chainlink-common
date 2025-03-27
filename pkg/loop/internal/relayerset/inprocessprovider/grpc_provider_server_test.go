@@ -11,12 +11,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestProviderServer(t *testing.T) {
 	r := &mockRelayer{}
-	mp, _ := r.NewPluginProvider(tests.Context(t), types.RelayArgs{ProviderType: string(types.Median)}, types.PluginArgs{})
+	mp, _ := r.NewPluginProvider(t.Context(), types.RelayArgs{ProviderType: string(types.Median)}, types.PluginArgs{})
 
 	lggr := logger.Test(t)
 	_, err := NewProviderServer(mp, "unsupported-type", lggr)

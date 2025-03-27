@@ -23,7 +23,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -89,7 +88,7 @@ func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) 
 
 func Test_GetWorkflowSpec(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
@@ -106,7 +105,7 @@ func Test_GetWorkflowSpec(t *testing.T) {
 
 func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
 	_, err := GetWorkflowSpec(
@@ -122,7 +121,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	failBinary := createTestBinary(failureBinaryCmd, failureBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
@@ -140,7 +139,7 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	d := time.Duration(0)
@@ -160,7 +159,7 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 
 func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(buildErrorBinaryCmd, buildErrorBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
@@ -177,7 +176,7 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 
 func Test_Compute_Logs(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
 
 	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
@@ -264,7 +263,7 @@ func Test_Compute_Emit(t *testing.T) {
 
 	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
 		ctxKey := "key"
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		ctxValue := "test-value"
 		ctx = context.WithValue(ctx, ctxKey, ctxValue)
 		m, err := NewModule(&ModuleConfig{
@@ -318,7 +317,7 @@ func Test_Compute_Emit(t *testing.T) {
 
 		m.Start()
 
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, assert.AnError.Error())
@@ -366,7 +365,7 @@ func Test_Compute_Emit(t *testing.T) {
 			},
 		}
 
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "failed to create emission")
@@ -377,7 +376,7 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 	t.Parallel()
 	binary := createTestBinary(computePanicBinaryCmd, computePanicBinaryLocation, true, t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	m, err := NewModule(&ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
@@ -410,7 +409,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -461,7 +460,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -515,7 +514,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
 		m, err := NewModule(&ModuleConfig{
@@ -605,7 +604,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 
-		ctx := context.WithValue(tests.Context(t), key, expectedValue)
+		ctx := context.WithValue(t.Context(), key, expectedValue)
 		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
@@ -654,7 +653,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 
-		ctx, cancel := context.WithCancel(tests.Context(t))
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		_, err = m.Run(ctx, req)
 		require.NotNil(t, err)
@@ -664,7 +663,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -709,7 +708,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	t.Run("NOK_exceed_amout_of_default_max_fetch_calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -753,7 +752,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	t.Run("OK_making_up_to_max_fetch_calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -798,7 +797,7 @@ func Test_Compute_Fetch(t *testing.T) {
 	t.Run("OK_multiple_request_reusing_module", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := sdk.FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
@@ -848,7 +847,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 func TestModule_Errors(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
@@ -895,7 +894,7 @@ func TestModule_Errors(t *testing.T) {
 }
 
 func TestModule_Sandbox_Memory(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
@@ -974,7 +973,7 @@ func TestModule_DecompressedBinarySize(t *testing.T) {
 
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	d := 1 * time.Millisecond
@@ -1000,7 +999,7 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 }
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
@@ -1021,7 +1020,7 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
@@ -1049,7 +1048,7 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 
 func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
@@ -1077,7 +1076,7 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
@@ -1105,7 +1104,7 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
 	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
@@ -1152,7 +1151,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		},
 	}
 	t.Run("success: deterministic override via module config", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
 		m, err := NewModule(&ModuleConfig{
@@ -1171,7 +1170,7 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 	})
 
 	t.Run("success: default module config is non deterministic", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
 		m, err := NewModule(&ModuleConfig{
@@ -1192,7 +1191,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 	t.Parallel()
 
 	t.Run("FetchResponse size within the limit", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
 		fetchFn := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -1225,7 +1224,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("FetchResponse size outside the limit", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
 		fetchFn := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
@@ -1262,7 +1261,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 	})
 
 	t.Run("Emitted message size within the limit", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
 		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
@@ -1298,7 +1297,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		assert.ErrorContains(t, err, "some error")
 	})
 	t.Run("Emitted message size outside the limit", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
 		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {

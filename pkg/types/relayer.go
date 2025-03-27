@@ -78,16 +78,31 @@ type NodeStatus struct {
 	State   string
 }
 
-// ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
-type ChainService interface {
-	Service
-
+type GenericChainReader interface {
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.
 	ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error)
+}
+
+type SolanaChainReader interface{}
+
+type ChainAwareChainReader interface {
+	SolanaChainReader
+}
+
+type ChainReader interface {
+	GenericChainReader
+	ChainAwareChainReader
+}
+
+// ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
+type ChainService interface {
+	Service
+
+	ChainReader
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error

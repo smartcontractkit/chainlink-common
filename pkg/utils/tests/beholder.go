@@ -65,6 +65,8 @@ func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Mess
 
 // Beholder sets the global beholder client as a message collector and returns a tester that provides helper assertion
 // functions on received messages.
+//
+// Beholder affects the whole process, it cannot be used in parallel tests or tests with parallel ancestors.
 func Beholder(t *testing.T) BeholderTester {
 	t.Helper()
 
@@ -102,6 +104,7 @@ func Beholder(t *testing.T) BeholderTester {
 	prevClient := beholder.GetClient()
 	t.Cleanup(func() {
 		beholder.SetClient(prevClient)
+		t.Setenv(packageNameBeholder, packageNameBeholder)
 	})
 	beholder.SetClient(client)
 

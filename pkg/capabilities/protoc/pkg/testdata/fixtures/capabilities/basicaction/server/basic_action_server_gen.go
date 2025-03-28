@@ -5,6 +5,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basicaction"
@@ -48,6 +49,16 @@ func (cs *basicActionServer) Initialise(ctx context.Context, config string, tele
 	}
 
 	return nil
+}
+
+func (cs *basicActionServer) Close() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-action@1.0.0"); err != nil {
+		return err
+	}
+
+	return cs.basicActionCapability.Close()
 }
 
 func (cs *basicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {

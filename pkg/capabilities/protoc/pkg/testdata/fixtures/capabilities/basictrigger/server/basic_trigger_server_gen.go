@@ -5,6 +5,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger"
@@ -48,6 +49,16 @@ func (cs *basicTriggerServer) Initialise(ctx context.Context, config string, tel
 	}
 
 	return nil
+}
+
+func (cs *basicTriggerServer) Close() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-trigger@1.0.0"); err != nil {
+		return err
+	}
+
+	return cs.basicTriggerCapability.Close()
 }
 
 func (cs *basicTriggerServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {

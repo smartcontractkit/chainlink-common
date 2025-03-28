@@ -32,40 +32,9 @@ var _ ocr3types.ContractTransmitter[[]byte] = (*ContractTransmitter)(nil)
 type ContractTransmitter struct {
 	lggr        logger.Logger
 	registry    core.CapabilitiesRegistry
-	capability  capabilities.ExecutableCapability // under the covers this is always a [*capability], but here we are in a different process space than the OCR3 capability itself, so we use the interface
+	capability  capabilities.ExecutableCapability
 	fromAccount string
 	emitter     custmsg.MessageEmitter
-}
-
-type transmitterResponse struct {
-	Method       string
-	Transmission *pbtypes.SignedReport
-	Terminate    bool
-}
-
-func (t *transmitterResponse) toMap() (*values.Map, error) {
-	m, err := values.Wrap(t)
-	if err != nil {
-		return nil, err
-	}
-	return m.(*values.Map), nil
-}
-
-func newtransmitterResponse(m *values.Map) (*transmitterResponse, error) {
-	var t transmitterResponse
-	m.UnwrapTo(t)
-	return &t, nil
-}
-
-func (t *transmitterResponse) reportToMap() (*values.Map, error) {
-	if t.Transmission == nil {
-		return nil, errors.New("no report to wrap")
-	}
-	m, err := values.Wrap(t.Transmission)
-	if err != nil {
-		return nil, err
-	}
-	return m.(*values.Map), nil
 }
 
 func extractReportInfo(data []byte) (*pbtypes.ReportInfo, error) {
@@ -127,19 +96,12 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		signedReport.ID = reportIDBytes
 		c.lggr.Debugw("ContractTransmitter added signatures and context", "nSignatures", len(sigs), "contextLen", len(repContext))
 	}
-	/*
-		resp := map[string]any{
-			methodHeader:       methodSendResponse,
-			transmissionHeader: signedReport,
-			terminateHeader:    !info.ShouldReport,
-		}
-	*/
-	resp := transmitterResponse{
-		Method:       methodSendResponse,
-		Transmission: signedReport,
-		Terminate:    !info.ShouldReport,
-	}
 
+	resp := map[string]any{
+		methodHeader:       methodSendResponse,
+		transmissionHeader: signedReport,
+		terminateHeader:    !info.ShouldReport,
+	}
 	inputs, err := values.Wrap(resp)
 	if err != nil {
 		c.lggr.Error("could not wrap report", "payload", resp)
@@ -153,8 +115,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 			return fmt.Errorf("failed to fetch ocr3 capability from registry: %w", innerErr)
 		}
 
-		//c.capability = cp.(capabilities.ExecutableCapability)
-		c.capability = cp.(*capability)
+		c.capability = cp.(capabilities.ExecutableCapability)
 	}
 
 	msg := "report with id " + info.Id.ReportId + " should be reported: " + fmt.Sprint(info.ShouldReport)
@@ -188,11 +149,10 @@ func (c *ContractTransmitter) FromAccount(_ context.Context) (types.Account, err
 	return types.Account(c.fromAccount), nil
 }
 
-/*
-	func (c *ContractTransmitter) SetCapability(capability capabilities.ExecutableCapability) {
-		c.capability = capability
-	}
-*/
+func (c *ContractTransmitter) SetCapability(capability capabilities.ExecutableCapability) {
+	c.capability = capability
+}
+
 func NewContractTransmitter(lggr logger.Logger, registry core.CapabilitiesRegistry, fromAccount string) *ContractTransmitter {
 	return &ContractTransmitter{lggr: lggr, registry: registry, fromAccount: fromAccount, emitter: custmsg.NewLabeler()}
 }

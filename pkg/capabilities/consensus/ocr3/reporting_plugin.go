@@ -28,51 +28,8 @@ import (
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
 
-/*
-	type KV interface {
-		Get(key string) ([]byte, error)
-		Put(key string, value []byte) error
-		Delete(key string) error
-	}
-
-// MapKV is a simple in-memory key-value store.
-
-	type MapKV struct {
-		mu   sync.RWMutex
-		data map[string][]byte
-	}
-
-var _ KV = (*MapKV)(nil)
-
-	func NewMapKV() *MapKV {
-		return &MapKV{
-			data: make(map[string][]byte),
-		}
-	}
-
-	func (m *MapKV) Get(key string) ([]byte, error) {
-		m.mu.RLock()
-		defer m.mu.RUnlock()
-		return m.data[key], nil
-	}
-
-	func (m *MapKV) Put(key string, value []byte) error {
-		m.mu.Lock()
-		defer m.mu.Unlock()
-		m.data[key] = value
-		return nil
-	}
-
-	func (m *MapKV) Delete(key string) error {
-		m.mu.Lock()
-		defer m.mu.Unlock()
-		delete(m.data, key)
-		return nil
-	}
-*/
 type CapabilityIface interface {
 	GetAggregator(workflowID string) (pbtypes.Aggregator, error)
-	//	GetKV() KV
 	GetEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error)
 	GetEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error)
 	GetRegisteredWorkflowsIDs() []string
@@ -598,10 +555,8 @@ func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr 
 	return true, nil
 }
 
-// ShouldTransmitAcceptedReport is always true in this implementation because
-// the OCR3 capability is repsonsible for responding to the requests, and it is that layer which determines
-// whether a the result of consensus is useful to the requestor.
 func (r *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+	// True because we always want to transmit a report, even if shouldReport = false.
 	return true, nil
 }
 

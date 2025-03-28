@@ -196,26 +196,21 @@ func (o *capability) setRequestTimeout(timeout time.Duration) {
 // LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
 // registry and calls Execute with the response, setting "method = `methodSendResponse`".
 func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
-	/*
-		m := transmitterResponse{
-			Method: methodSendResponse,
-		}
-			m := struct {
-				Method       string
-				Transmission map[string]any
-				Terminate    bool
-			}{
-				Method: methodStartRequest,
-			}
-	*/
-	m, err := newtransmitterResponse(r.Inputs)
+	m := struct {
+		Method       string
+		Transmission map[string]any
+		Terminate    bool
+	}{
+		Method: methodStartRequest,
+	}
+	err := r.Inputs.UnwrapTo(&m)
 	if err != nil {
 		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
 	}
 
 	switch m.Method {
 	case methodSendResponse:
-		inputs, err := m.reportToMap()
+		inputs, err := values.NewMap(m.Transmission)
 		if err != nil {
 			return capabilities.CapabilityResponse{}, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}

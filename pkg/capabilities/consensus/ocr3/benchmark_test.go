@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -54,16 +55,35 @@ func (m *mockCapability) UnregisterWorkflowID(workflowID string) {
 }
 
 func BenchmarkReportingPlugin_Outcome_LLOAggregator(b *testing.B) {
+	// Define test matrix parameters
+	workflowCounts := []int{1, 2, 4, 8, 16, 32, 64, 128}
+	streamCounts := []int{32, 64, 128, 256, 512, 1024}
+
+	// Create one logger for all benchmarks to reduce setup overhead
+	c := logger.Config{
+		Level: zapcore.InfoLevel, // Set to InfoLevel for benchmarks to reduce log noise
+	}
+	lggr, err := c.New()
+	require.NoError(b, err, "failed to create logger for benchmark")
+
+	// Run benchmarks for each combination
+	for _, numWorkflows := range workflowCounts {
+		for _, numStreamsPerWorkflow := range streamCounts {
+			benchName := fmt.Sprintf("workflows=%d/streams=%d", numWorkflows, numStreamsPerWorkflow)
+			b.Run(benchName, func(b *testing.B) {
+				runBenchmarkWithParams(b, lggr, numWorkflows, numStreamsPerWorkflow)
+			})
+		}
+	}
+}
+
+// runBenchmarkWithParams runs a benchmark with the specified parameters
+func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numStreamsPerWorkflow int) {
 	// Test parameters
 	const (
-		numWorkflows          = 10  // 10 distinct workflows
-		numStreamsPerWorkflow = 500 // 500 streams per workflow
-		numOracles            = 7   // Total nodes
-		f                     = 2   // Fault tolerance
+		numOracles = 4 // Total nodes
+		f          = 1 // Fault tolerance
 	)
-
-	// Create logger
-	lggr := logger.Test(b)
 
 	// Create request store
 	store := requests.NewStore()
@@ -217,12 +237,12 @@ func createTestPreviousOutcome(numWorkflows, numStreamsPerWorkflow int) ([]byte,
 // createTestAttributedObservations generates attributed observations from multiple oracles
 func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, numStreamsPerWorkflow int) []types.AttributedObservation {
 	aos := make([]types.AttributedObservation, numOracles)
-
+	ts := timestamppb.Now() // Use a consistent timestamp for all observations to ensure consensus
 	for oracle := 0; oracle < numOracles; oracle++ {
 		observationsProto := &pbtypes.Observations{
 			Observations:          make([]*pbtypes.Observation, numWorkflows),
 			RegisteredWorkflowIds: make([]string, numWorkflows),
-			Timestamp:             timestamppb.Now(),
+			Timestamp:             ts,
 		}
 
 		// Create an observation for each workflow
@@ -232,13 +252,16 @@ func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, nu
 			observationsProto.RegisteredWorkflowIds[i] = workflowID
 
 			// Create LLO events
-			lloEvent := createLLOEvent(b, numStreamsPerWorkflow)
+			lloEvent := createLLOEvent(b, numStreamsPerWorkflow, ts.AsTime())
 			wrappedEvent, err := values.Wrap(lloEvent)
 			require.NoError(b, err)
 
 			// Create list value with the LLO event
 			listVal, err := values.NewList([]interface{}{wrappedEvent})
 			require.NoError(b, err)
+
+			listProto := values.Proto(listVal).GetListValue()
+			require.NotNil(b, listProto, "listProto should not be nil") // Ensure listProto is not nil
 
 			// Add observation for this workflow
 			observationsProto.Observations[i] = &pbtypes.Observation{
@@ -252,7 +275,7 @@ func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, nu
 					ReportId:                 fmt.Sprintf("report-%d", i),
 					KeyId:                    "test-key",
 				},
-				Observations: values.ProtoList(listVal),
+				Observations: listProto,
 			}
 		}
 
@@ -271,8 +294,8 @@ func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, nu
 }
 
 // createLLOEvent creates an LLO event with the specified number of streams
-func createLLOEvent(b *testing.B, numStreams int) *datastreams.LLOStreamsTriggerEvent {
-	timestamp := uint64(time.Now().UnixNano())
+func createLLOEvent(b *testing.B, numStreams int, ts time.Time) *datastreams.LLOStreamsTriggerEvent {
+	timestamp := uint64(ts.UnixNano())
 	event := &datastreams.LLOStreamsTriggerEvent{
 		ObservationTimestampNanoseconds: timestamp,
 		Payload:                         make([]*datastreams.LLOStreamDecimal, 0, numStreams),
@@ -296,9 +319,9 @@ func createLLOEvent(b *testing.B, numStreams int) *datastreams.LLOStreamsTrigger
 // createLLOAggregator creates an LLO aggregator with the specified number of streams
 func createLLOAggregator(b *testing.B, numStreams int) (pbtypes.Aggregator, error) {
 	// Create feed configs for all streams
-	streamConfigs := make(map[uint32]datafeeds.FeedConfig, numStreams)
+	streamConfigs := make(map[string]datafeeds.FeedConfig, numStreams)
 	for i := 0; i < numStreams; i++ {
-		streamConfigs[uint32(i)] = datafeeds.FeedConfig{
+		streamConfigs[fmt.Sprintf("%d", i)] = datafeeds.FeedConfig{
 			//	Deviation:     decimal.NewFromFloat(0.01),     // 1% deviation threshold
 			Heartbeat:     3600,                           // 1 hour heartbeat
 			RemappedIDHex: fmt.Sprintf("0x%064x", i+1000), // Unique remapped ID
@@ -306,9 +329,16 @@ func createLLOAggregator(b *testing.B, numStreams int) (pbtypes.Aggregator, erro
 	}
 
 	// Create LLO config
-	//configMap := datafeeds.NewLLOconfig(b, streamConfigs, datafeeds.LLOConfigAllowStaleness(0.2))
+	c := datafeeds.LLOAggregatorConfig{
+		Streams: streamConfigs,
+	}
 
 	// Create LLO aggregator
 	//return datafeeds.NewLLOAggregator(configMap)
-	return nil, nil
+	m, err := c.ToMap()
+	if err != nil {
+		// Handle error in creating LLO aggregator
+		return nil, fmt.Errorf("failed to create LLO aggregator: %w", err)
+	}
+	return datafeeds.NewLLOAggregator(*m)
 }

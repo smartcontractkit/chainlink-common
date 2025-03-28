@@ -1,0 +1,314 @@
+package ocr3_test
+
+import (
+	"context"
+	"fmt"
+	"runtime"
+	"testing"
+	"time"
+
+	"github.com/shopspring/decimal"
+	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/libocr/offchainreporting2/types"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
+	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+)
+
+// mockCapability implements CapabilityIface for testing
+type mockCapability struct {
+	aggregators map[string]pbtypes.Aggregator
+}
+
+func (m *mockCapability) GetAggregator(workflowID string) (pbtypes.Aggregator, error) {
+	return m.aggregators[workflowID], nil
+}
+
+func (m *mockCapability) GetEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error) {
+	return nil, nil // Not used in benchmark
+}
+
+func (m *mockCapability) GetEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error) {
+	return nil, nil // Not used in benchmark
+}
+
+func (m *mockCapability) GetRegisteredWorkflowsIDs() []string {
+	ids := make([]string, 0, len(m.aggregators))
+	for id := range m.aggregators {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func (m *mockCapability) UnregisterWorkflowID(workflowID string) {
+	delete(m.aggregators, workflowID)
+}
+
+func BenchmarkReportingPlugin_Outcome_LLOAggregator(b *testing.B) {
+	// Test parameters
+	const (
+		numWorkflows          = 10  // 10 distinct workflows
+		numStreamsPerWorkflow = 500 // 500 streams per workflow
+		numOracles            = 7   // Total nodes
+		f                     = 2   // Fault tolerance
+	)
+
+	// Create logger
+	lggr := logger.Test(b)
+
+	// Create request store
+	store := requests.NewStore()
+
+	// Create capability with LLO aggregators for each workflow
+	mockCap := &mockCapability{
+		aggregators: make(map[string]pbtypes.Aggregator, numWorkflows),
+	}
+
+	// Create LLO aggregators for each workflow
+	for i := 0; i < numWorkflows; i++ {
+		workflowID := fmt.Sprintf("workflow-%d", i)
+		agg, err := createLLOAggregator(b, numStreamsPerWorkflow)
+		require.NoError(b, err)
+		mockCap.aggregators[workflowID] = agg
+	}
+
+	// Create reporting plugin
+	plugin, err := ocr3.NewReportingPlugin(
+		store,
+		mockCap,
+		numWorkflows, // batchSize
+		ocr3types.ReportingPluginConfig{
+			N: numOracles,
+			F: f,
+		},
+		100, // outcomePruningThreshold
+		lggr,
+	)
+	require.NoError(b, err)
+
+	// Create test query with 10 workflow IDs
+	query, err := createTestQuery(numWorkflows)
+	require.NoError(b, err)
+
+	// Create previous outcome with the same 10 workflow IDs
+	previousOutcome, err := createTestPreviousOutcome(numWorkflows, numStreamsPerWorkflow)
+	require.NoError(b, err)
+
+	// Create attributed observations from all oracles
+	aos := createTestAttributedObservations(b, numOracles, numWorkflows, numStreamsPerWorkflow)
+
+	// Create outcome context
+	outctx := ocr3types.OutcomeContext{
+		SeqNr:           1,
+		PreviousOutcome: previousOutcome,
+	}
+
+	// Reset timer and enable memory allocation reporting
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	// Run the benchmark
+	for i := 0; i < b.N; i++ {
+		var memStatsBefore, memStatsAfter runtime.MemStats
+		runtime.ReadMemStats(&memStatsBefore)
+
+		// Call Outcome function
+		outcome, err := plugin.Outcome(context.Background(), outctx, query, aos)
+		require.NoError(b, err)
+
+		// Measure memory usage
+		runtime.ReadMemStats(&memStatsAfter)
+		memUsage := memStatsAfter.TotalAlloc - memStatsBefore.TotalAlloc
+
+		// Measure outcome size
+		outcomeSize := len(outcome)
+
+		// Report custom metrics
+		b.ReportMetric(float64(memUsage), "B/memory")
+		b.ReportMetric(float64(outcomeSize), "B/outcome_size")
+
+		// Validate outcome contents
+		var parsedOutcome pbtypes.Outcome
+		err = proto.Unmarshal(outcome, &parsedOutcome)
+		require.NoError(b, err)
+		require.Len(b, parsedOutcome.Outcomes, numWorkflows)
+	}
+}
+
+// Helper functions
+
+// createTestQuery generates a query with the specified number of workflow IDs
+func createTestQuery(numWorkflows int) ([]byte, error) {
+	ids := make([]*pbtypes.Id, numWorkflows)
+	for i := 0; i < numWorkflows; i++ {
+		ids[i] = &pbtypes.Id{
+			WorkflowExecutionId:      fmt.Sprintf("execution-%d", i),
+			WorkflowId:               fmt.Sprintf("workflow-%d", i),
+			WorkflowOwner:            "test-owner",
+			WorkflowName:             fmt.Sprintf("Workflow %d", i),
+			WorkflowDonId:            1,
+			WorkflowDonConfigVersion: 1,
+			ReportId:                 fmt.Sprintf("report-%d", i),
+			KeyId:                    "test-key",
+		}
+	}
+
+	query := &pbtypes.Query{
+		Ids: ids,
+	}
+
+	return proto.MarshalOptions{Deterministic: true}.Marshal(query)
+}
+
+// createTestPreviousOutcome generates a previous outcome with consistent LLOOutcomeMetadata
+func createTestPreviousOutcome(numWorkflows, numStreamsPerWorkflow int) ([]byte, error) {
+	outcome := &pbtypes.Outcome{
+		Outcomes:       make(map[string]*pbtypes.AggregationOutcome, numWorkflows),
+		CurrentReports: []*pbtypes.Report{},
+	}
+
+	// Create an identical LLOOutcomeMetadata for all workflows
+	baseMetadata := &datafeeds.LLOOutcomeMetadata{
+		StreamInfo: make(map[uint32]*datafeeds.LLOStreamInfo, numStreamsPerWorkflow),
+	}
+
+	// Populate with stream info
+	baseTime := time.Now().Add(-10 * time.Minute).UnixNano()
+	zeroPrice, _ := decimal.Zero.MarshalBinary()
+
+	for i := 0; i < numStreamsPerWorkflow; i++ {
+		streamID := uint32(i)
+		baseMetadata.StreamInfo[streamID] = &datafeeds.LLOStreamInfo{
+			Timestamp: baseTime,
+			Price:     zeroPrice,
+		}
+	}
+
+	// Marshal once
+	metadataBytes, err := proto.Marshal(baseMetadata)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create outcome entries for each workflow, using the same metadata
+	for i := 0; i < numWorkflows; i++ {
+		workflowID := fmt.Sprintf("workflow-%d", i)
+		outcome.Outcomes[workflowID] = &pbtypes.AggregationOutcome{
+			Metadata:         metadataBytes,
+			LastSeenAt:       1,
+			ShouldReport:     false,
+			Timestamp:        timestamppb.Now(),
+			EncodableOutcome: nil, // Not needed for benchmark
+		}
+	}
+
+	return proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+}
+
+// createTestAttributedObservations generates attributed observations from multiple oracles
+func createTestAttributedObservations(b *testing.B, numOracles, numWorkflows, numStreamsPerWorkflow int) []types.AttributedObservation {
+	aos := make([]types.AttributedObservation, numOracles)
+
+	for oracle := 0; oracle < numOracles; oracle++ {
+		observationsProto := &pbtypes.Observations{
+			Observations:          make([]*pbtypes.Observation, numWorkflows),
+			RegisteredWorkflowIds: make([]string, numWorkflows),
+			Timestamp:             timestamppb.Now(),
+		}
+
+		// Create an observation for each workflow
+		for i := 0; i < numWorkflows; i++ {
+			workflowID := fmt.Sprintf("workflow-%d", i)
+			executionID := fmt.Sprintf("execution-%d", i)
+			observationsProto.RegisteredWorkflowIds[i] = workflowID
+
+			// Create LLO events
+			lloEvent := createLLOEvent(b, numStreamsPerWorkflow)
+			wrappedEvent, err := values.Wrap(lloEvent)
+			require.NoError(b, err)
+
+			// Create list value with the LLO event
+			listVal, err := values.NewList([]interface{}{wrappedEvent})
+			require.NoError(b, err)
+
+			// Add observation for this workflow
+			observationsProto.Observations[i] = &pbtypes.Observation{
+				Id: &pbtypes.Id{
+					WorkflowExecutionId:      executionID,
+					WorkflowId:               workflowID,
+					WorkflowOwner:            "test-owner",
+					WorkflowName:             fmt.Sprintf("Workflow %d", i),
+					WorkflowDonId:            1,
+					WorkflowDonConfigVersion: 1,
+					ReportId:                 fmt.Sprintf("report-%d", i),
+					KeyId:                    "test-key",
+				},
+				Observations: values.ProtoList(listVal),
+			}
+		}
+
+		// Marshal the observations
+		obsBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(observationsProto)
+		require.NoError(b, err)
+
+		// Create attributed observation
+		aos[oracle] = types.AttributedObservation{
+			Observation: obsBytes,
+			Observer:    ocrcommon.OracleID(oracle),
+		}
+	}
+
+	return aos
+}
+
+// createLLOEvent creates an LLO event with the specified number of streams
+func createLLOEvent(b *testing.B, numStreams int) *datastreams.LLOStreamsTriggerEvent {
+	timestamp := uint64(time.Now().UnixNano())
+	event := &datastreams.LLOStreamsTriggerEvent{
+		ObservationTimestampNanoseconds: timestamp,
+		Payload:                         make([]*datastreams.LLOStreamDecimal, 0, numStreams),
+	}
+
+	// Create stream values with consistent prices
+	for i := 0; i < numStreams; i++ {
+		price := decimal.NewFromInt(int64(100 + i%10)) // Use a few different price values
+		binary, err := price.MarshalBinary()
+		require.NoError(b, err)
+
+		event.Payload = append(event.Payload, &datastreams.LLOStreamDecimal{
+			StreamID: uint32(i),
+			Decimal:  binary,
+		})
+	}
+
+	return event
+}
+
+// createLLOAggregator creates an LLO aggregator with the specified number of streams
+func createLLOAggregator(b *testing.B, numStreams int) (pbtypes.Aggregator, error) {
+	// Create feed configs for all streams
+	streamConfigs := make(map[uint32]datafeeds.FeedConfig, numStreams)
+	for i := 0; i < numStreams; i++ {
+		streamConfigs[uint32(i)] = datafeeds.FeedConfig{
+			//	Deviation:     decimal.NewFromFloat(0.01),     // 1% deviation threshold
+			Heartbeat:     3600,                           // 1 hour heartbeat
+			RemappedIDHex: fmt.Sprintf("0x%064x", i+1000), // Unique remapped ID
+		}
+	}
+
+	// Create LLO config
+	//configMap := datafeeds.NewLLOconfig(b, streamConfigs, datafeeds.LLOConfigAllowStaleness(0.2))
+
+	// Create LLO aggregator
+	//return datafeeds.NewLLOAggregator(configMap)
+	return nil, nil
+}

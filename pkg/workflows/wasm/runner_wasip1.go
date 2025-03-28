@@ -21,17 +21,24 @@ func subscribeToTrigger(subscription unsafe.Pointer, subscriptionLen int32) int3
 func sendResponse(response unsafe.Pointer, responseLen int32) int32
 
 func NewDonRunner() sdk.DonRunner {
-	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{})
+	drt := &donRuntime{}
+	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{runtime: drt, setRuntimeId: func(id string) {
+		drt.execId = id
+	}})
 }
 
 func NewNodeRunner() sdk.NodeRunner {
-	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{})
+	nrt := &nodeRuntime{}
+	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{runtime: nrt, setRuntimeId: func(id string) {
+		nrt.execId = id
+	}})
 }
 
 type runner[T any] struct {
-	trigger *pb.Trigger
-	id      string
-	runtime T
+	trigger      *pb.Trigger
+	id           string
+	runtime      T
+	setRuntimeId func(id string)
 }
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
@@ -114,6 +121,7 @@ func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T]
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
 		run.id = execRequest.Id
+		run.setRuntimeId(execRequest.Id)
 		return run
 	}
 

@@ -32,7 +32,7 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 
 	id := make([]byte, sdk.IdLen)
 	result := callCapability(unsafe.Pointer(&marshalled[0]), int32(len(marshalled)), unsafe.Pointer(&id[0]))
-	if result == -1 {
+	if result < 0 {
 		return sdk.PromiseFromResult[*wpb.CapabilityResponse](nil, errors.New("cannot find capability "+request.Id))
 	}
 
@@ -53,8 +53,17 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 			return nil, errors.New(string(response[:-bytes]))
 		}
 
-		capResponse := &wpb.CapabilityResponse{}
-		err = proto.Unmarshal(response[:bytes], capResponse)
+		awaitResponse := &wpb.AwaitCapabilitiesResponse{}
+		err = proto.Unmarshal(response[:bytes], awaitResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		capResponse, ok := awaitResponse.Responses[string(id)]
+		if !ok {
+			return nil, errors.New("cannot find response for " + string(id))
+		}
+
 		return capResponse, err
 	})
 }
@@ -64,6 +73,7 @@ type donRuntime struct {
 }
 
 func (d *donRuntime) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *wpb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
+	// TODO verify DON runtime isn't used inside node mode :)
 	observation := fn(&nodeRuntime{})
 	wrapped, _ := anypb.New(observation)
 

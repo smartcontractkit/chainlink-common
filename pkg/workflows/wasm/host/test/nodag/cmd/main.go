@@ -19,13 +19,13 @@ func main() {
 
 func onTrigger(runtime sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {
 	action := basicaction.BasicAction{ /* TODO config */ }
-	first := action.PerformAction(runtime, &basicaction.Inputs{InputThing: true})
+	first := action.PerformAction(runtime, &basicaction.Inputs{InputThing: false})
 	firstResult, err := first.Await()
 	if err != nil {
 		return "", err
 	}
 
-	second := action.PerformAction(runtime, &basicaction.Inputs{InputThing: false})
+	second := action.PerformAction(runtime, &basicaction.Inputs{InputThing: true})
 	secondResult, err := second.Await()
 	if err != nil {
 		return "", err

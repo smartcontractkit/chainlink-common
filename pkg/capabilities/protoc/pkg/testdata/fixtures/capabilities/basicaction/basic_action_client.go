@@ -32,7 +32,7 @@ func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.P
 		case *pb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *pb.CapabilityResponse_Payload:
-			var output *Outputs
+			output := &Outputs{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

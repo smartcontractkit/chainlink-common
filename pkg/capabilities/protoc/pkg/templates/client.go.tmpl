@@ -34,7 +34,7 @@ func (c *{{$service.GoName}}) {{.GoName}}(runtime sdk.{{$.Mode}}Runtime,input *{
           		case *pb.CapabilityResponse_Error:
           			return nil, errors.New(payload.Error)
           		case *pb.CapabilityResponse_Payload:
-          			var output *{{.Output.GoIdent.GoName}}
+          			output := &{{.Output.GoIdent.GoName}}{}
           			err = payload.Payload.UnmarshalTo(output)
           			return output, err
           		default:

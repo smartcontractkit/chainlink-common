@@ -64,17 +64,25 @@ func (t *basicPromise[T]) Await() (T, error) {
 func (t *basicPromise[T]) promise() {}
 
 func Then[I, O any](p Promise[I], fn func(I) (O, error)) Promise[O] {
+	resolver := sync.Mutex{}
 	then := NewBasicPromise[O](func() (O, error) {
+		resolver.Lock()
+		defer resolver.Unlock()
 		underlyingResult, err := p.Await()
 		if err != nil {
 			var o O
 			return o, err
 		}
+		
 		return fn(underlyingResult)
 	})
 
 	p.Subscribe(func(t I, e error) {
-		_, _ = then.Await()
+		// if we're already in an await, we can't await again
+		if resolver.TryLock() {
+			defer resolver.Unlock()
+			_, _ = then.Await()
+		}
 	})
 	return then
 }

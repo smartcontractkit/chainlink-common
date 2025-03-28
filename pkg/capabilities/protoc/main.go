@@ -42,8 +42,21 @@ func main() {
 			return err
 		}
 
+		goLang := pkg.ServerLangaugeGo
+		serverLanguage, err := parseArg(args, "server_language", func(value string) (pkg.ServerLanguage, error) {
+			serverLanguage := pkg.ServerLanguage(strings.ToLower(value))
+			return serverLanguage, serverLanguage.Validate()
+		}, &goLang)
+		if err != nil {
+			return err
+		}
+
 		for _, file := range plugin.Files {
 			if err = pkg.GenerateClient(plugin, mode, trigger, capabilityId, file); err != nil {
+				return err
+			}
+
+			if err = pkg.GenerateServer(plugin, capabilityId, serverLanguage, file); err != nil {
 				return err
 			}
 		}

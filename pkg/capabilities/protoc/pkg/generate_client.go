@@ -17,7 +17,7 @@ var clientTemplates = []templateGenerator{
 	{
 		Name:             "go_client",
 		Template:         goClientTemplate,
-		FileNameTemplate: "{{.}}_client.go",
+		FileNameTemplate: "{{.}}_client_gen.go",
 	},
 }
 
@@ -28,7 +28,7 @@ var triggerClientTemplates = []templateGenerator{
 	{
 		Name:             "go_trigger_client",
 		Template:         goTriggerClientTemplate,
-		FileNameTemplate: "{{.}}_client.go",
+		FileNameTemplate: "{{.}}_client_gen.go",
 	},
 }
 

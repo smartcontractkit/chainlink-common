@@ -8,6 +8,7 @@ import (
 	"time"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -55,7 +56,8 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value *values.Map
+	Value         *values.Map
+	ResponseValue *anypb.Any
 }
 
 type RequestMetadata struct {
@@ -83,6 +85,8 @@ type CapabilityRequest struct {
 	Metadata RequestMetadata
 	Config   *values.Map
 	Inputs   *values.Map
+	Request  *anypb.Any
+	Method   string
 }
 
 type TriggerEvent struct {
@@ -92,6 +96,7 @@ type TriggerEvent struct {
 	ID string
 	// Trigger-specific payload
 	Outputs *values.Map
+	Value   *anypb.Any
 }
 
 type RegisterToWorkflowRequest struct {
@@ -132,6 +137,7 @@ type TriggerRegistrationRequest struct {
 
 	Metadata RequestMetadata
 	Config   *values.Map
+	Request  *anypb.Any
 }
 
 type TriggerResponse struct {

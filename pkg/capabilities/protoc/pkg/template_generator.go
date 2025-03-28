@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"strings"
 	"text/template"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
@@ -38,7 +39,16 @@ func (t *templateGenerator) Generate(baseFile, args any) (string, string, error)
 
 func runTemplate(name, t string, args any) (string, error) {
 	buf := &bytes.Buffer{}
-	templ, err := template.New(name).Parse(t)
+	templ, err := template.New(name).
+		Funcs(template.FuncMap{
+			"LowerFirst": func(s string) string {
+				if len(s) == 0 {
+					return s
+				}
+				return strings.ToLower(s[:1]) + s[1:]
+			},
+		}).
+		Parse(t)
 	if err != nil {
 		return "", err
 	}

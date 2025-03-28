@@ -543,7 +543,6 @@ func runWasm[I idMessage, O proto.Message](
 			return o, innerErr
 		}
 
-		// TODO this is wrong, they both have different response types
 		if any(storedRequest.response) == nil {
 			return o, fmt.Errorf("could not find response for id %s", reqId)
 		}
@@ -598,7 +597,7 @@ func (m *Module) wrapRunForNoDAG(ctx context.Context, request *wasmdagpb.Request
 		value = r.Value
 	}
 
-	output := &pb.Map{Fields: map[string]*pb.Value{"output": value}}
+	output := &pb.Map{Fields: map[string]*pb.Value{"Output": value}}
 
 	return &wasmdagpb.Response{
 		Id:     response.Id,

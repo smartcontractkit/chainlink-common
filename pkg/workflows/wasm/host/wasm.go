@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -40,11 +41,27 @@ func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 			return nil, err
 		}
 
+		/* TODO Why does this fail when the hack around below works........?
 		var unwrapped []*wasmpb.TriggerSubscriptionRequest
 		if err = v.UnwrapTo(&unwrapped); err != nil {
 			// And obviously here
 			return nil, err
 		}
+		*/
+		tmp, err := v.Unwrap()
+		if err != nil {
+			return nil, err
+		}
+
+		ia := tmp.([]any)
+		unwrapped := make([]*wasmpb.TriggerSubscriptionRequest, len(ia))
+		for i, v := range ia {
+			item := v.(map[string]any)
+			if err = mapstructure.Decode(item, &unwrapped[i]); err != nil {
+				return nil, err
+			}
+		}
+		// End of TODO this shouldn't be needed
 
 		return unwrapped, nil
 	case *wasmpb.ExecutionResult_Error:

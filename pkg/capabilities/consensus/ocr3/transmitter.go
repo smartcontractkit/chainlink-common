@@ -41,15 +41,21 @@ type ContractTransmitter struct {
 // when executing a transmission. It contains the method used to
 type transmitterResponse struct {
 	Method       string
-	Transmission *pbtypes.SignedReport
+	Transmission pbtypes.SignedReport
 	Terminate    bool
 }
 
 func newtransmitterResponse(m *values.Map) (*transmitterResponse, bool) {
 	var t transmitterResponse
-	err := m.UnwrapTo(t)
+	err := m.UnwrapTo(&t)
 	if err != nil {
 		return nil, false // we don't care about the error, only that it failed to unwrap
+	}
+	// unwrap is very lenient and will return an empty struct if the input
+	// is not compatible with the struct, so we check for the method
+	if t.Method == "" {
+		// this means that the method was not set, which is a failure
+		return nil, false
 	}
 
 	return &t, true
@@ -66,14 +72,7 @@ func (t *transmitterResponse) toMap() (*values.Map, error) {
 }
 
 func (t *transmitterResponse) reportToMap() (*values.Map, error) {
-	if t.Transmission == nil {
-		return nil, errors.New("no report to wrap")
-	}
-	m, err := values.Wrap(t.Transmission)
-	if err != nil {
-		return nil, err
-	}
-	return m.(*values.Map), nil
+	return values.WrapMap(t.Transmission)
 }
 
 func extractReportInfo(data []byte) (*pbtypes.ReportInfo, error) {
@@ -148,7 +147,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 
 	resp := transmitterResponse{
 		Method:       methodSendResponse,
-		Transmission: signedReport,
+		Transmission: *signedReport,
 		Terminate:    !info.ShouldReport,
 	}
 	inputs, err := resp.toMap()

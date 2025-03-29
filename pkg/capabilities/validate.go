@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/invopop/jsonschema"
 	jsonvalidate "github.com/santhosh-tekuri/jsonschema/v5"
@@ -28,7 +27,6 @@ type Validator[Config any, Inputs any, Outputs any] struct {
 	outputsType Outputs
 
 	// schemas is a cache of the generated schemas.
-	mu      sync.Mutex
 	schemas map[string]string
 }
 
@@ -109,9 +107,7 @@ func (v *Validator[Config, Inputs, Outputs]) Schema() (string, error) {
 		return "", errors.New("outputs is nil, please provide an outputs type")
 	}
 
-	// we allow inputs to be nil, since triggers do not have inputs
-	v.mu.Lock()
-	defer v.mu.Unlock()
+	// we allow inputs to be nil, since triggers do not have inputss
 	if inputs == nil {
 		return schemaWith(*v.SchemaReflector, ci, v.schemas, "root", v.Info)
 	}
@@ -123,18 +119,12 @@ func (v *Validator[Config, Inputs, Outputs]) Schema() (string, error) {
 // The following methods return the JSON schema for each of the types.
 
 func (v *Validator[Config, Inputs, Outputs]) ConfigSchema() (string, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
 	return schemaWith(*v.ConfigReflector, v.configType, v.schemas, "config", v.Info)
 }
 func (v *Validator[Config, Inputs, Outputs]) InputsSchema() (string, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
 	return schemaWith(*v.InputsReflector, v.inputsType, v.schemas, "inputs", v.Info)
 }
 func (v *Validator[Config, Inputs, Outputs]) OutputsSchema() (string, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
 	return schemaWith(*v.OutputsReflector, v.outputsType, v.schemas, "outputs", v.Info)
 }
 

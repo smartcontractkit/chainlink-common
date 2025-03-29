@@ -190,27 +190,27 @@ func (o *capability) setRequestTimeout(timeout time.Duration) {
 	o.requestTimeout = timeout
 }
 
-// Execute enqueues a new consensus request, passing it to the reporting plugin as needed.
+// Execute is the main entry point for executing a consensus request.
+// This implementation acts as a router, accepting requests from the engine
+// and dispatching them to the appropriate handler based on the method specified in the request.
+
 // IMPORTANT: OCR3 only exposes signatures via the contractTransmitter, which is located
 // in a separate process to the reporting plugin LOOPP. However, only the reporting plugin
 // LOOPP is able to transmit responses back to the workflow engine. As a workaround to this, we've implemented a custom contract transmitter which fetches this capability from the
 // registry and calls Execute with the response, setting "method = `methodSendResponse`".
 func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
-	m := struct {
-		Method       string
-		Transmission map[string]any
-		Terminate    bool
-	}{
-		Method: methodStartRequest,
-	}
-	err := r.Inputs.UnwrapTo(&m)
-	if err != nil {
-		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
+	method := methodStartRequest
+	// check if the request is a transmitter response
+	m, ok := newtransmitterResponse(r.Inputs)
+	if ok {
+		// If the request is a transmitter response, extract the method
+		method = m.Method
 	}
 
-	switch m.Method {
+	switch method {
 	case methodSendResponse:
-		inputs, err := values.NewMap(m.Transmission)
+		// if we are here then we have received a response from the transmitter
+		inputs, err := m.reportToMap()
 		if err != nil {
 			return capabilities.CapabilityResponse{}, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}

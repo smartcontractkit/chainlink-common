@@ -555,8 +555,10 @@ func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr 
 	return true, nil
 }
 
+// ShouldTransmitAcceptedReport is always true in this implementation because
+// the OCR3 capability is repsonsible for responding to the requests, and it is that layer which determines
+// whether a the result of consensus is useful to the requestor.
 func (r *reportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {
-	// True because we always want to transmit a report, even if shouldReport = false.
 	return true, nil
 }
 

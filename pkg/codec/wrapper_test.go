@@ -70,11 +70,11 @@ func TestWrapper(t *testing.T) {
 	t.Run("RetypeToOffChain works for whole values", func(t *testing.T) {
 		offChainType, err := wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(primitiveToWrap), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf("")}}).Kind(), offChainType.Kind())
+		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf("")}}).Kind(), offChainType.Elem().Kind())
 
 		offChainType, err = wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf(testStruct{})}}).Kind(), offChainType.Kind())
+		assert.Equal(t, reflect.StructOf([]reflect.StructField{{Name: "X", Type: reflect.TypeOf(testStruct{})}}).Kind(), offChainType.Elem().Kind())
 
 	})
 
@@ -154,7 +154,7 @@ func TestWrapper(t *testing.T) {
 		offChainType, err := wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(primitiveToWrap), "")
 		require.NoError(t, err)
 
-		offChain := reflect.New(offChainType).Elem()
+		offChain := reflect.New(offChainType.Elem()).Elem()
 		type wrappedPrimitive struct {
 			X string
 		}
@@ -176,7 +176,7 @@ func TestWrapper(t *testing.T) {
 		offChainType, err = wholeValueWrapper.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
 
-		iOffchain := reflect.New(offChainType).Elem()
+		iOffchain := reflect.New(offChainType.Elem()).Elem()
 		iOffchain.FieldByName("X").FieldByName("A").SetString("foo")
 		iOffchain.FieldByName("X").FieldByName("B").SetInt(10)
 		iOffchain.FieldByName("X").FieldByName("C").SetInt(20)

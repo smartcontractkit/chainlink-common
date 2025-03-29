@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743207244046,
+  "lastUpdate": 1743236073512,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10752,6 +10752,48 @@ window.BENCHMARK_DATA = {
             "value": 28012,
             "unit": "ns/op",
             "extra": "42807 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cfal@users.noreply.github.com",
+            "name": "cfal",
+            "username": "cfal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "84ec641e075870c9eab73b025282d2d29bba96dd",
+          "message": "fix chainwriter LOOP plugin service (#1096)\n\n* pkg/loop/internal/relayer/pluginprovider/contractwriter/contract_writer.go: actually register the contract writer\n\n* pkg/loop/internal/relayer/pluginprovider/contractwriter/contract_writer.go: fix SubmitTransaction, decode params",
+          "timestamp": "2025-03-29T08:13:13Z",
+          "tree_id": "fa3b8fd0e6119ce70d9c566140311e3e34609d09",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/84ec641e075870c9eab73b025282d2d29bba96dd"
+        },
+        "date": 1743236072073,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.6,
+            "unit": "ns/op",
+            "extra": "3284790 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 426.7,
+            "unit": "ns/op",
+            "extra": "2897170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28457,
+            "unit": "ns/op",
+            "extra": "42853 times\n4 procs"
           }
         ]
       }

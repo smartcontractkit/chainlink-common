@@ -152,4 +152,5 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 
 func RegisterContractWriterService(s *grpc.Server, contractWriter types.ContractWriter) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractWriter})
+	pb.RegisterContractWriterServer(s, NewServer(contractWriter))
 }

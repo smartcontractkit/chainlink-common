@@ -77,6 +77,149 @@ func BenchmarkReportingPlugin_Outcome_LLOAggregator(b *testing.B) {
 	}
 }
 
+func BenchmarkReportingPlugin_Observation_LLOAggregator(b *testing.B) {
+	// Define test matrix parameters
+	workflowCounts := []int{1, 2, 4, 8, 16, 32, 64, 128}
+	streamCounts := []int{32, 64, 128, 256, 512, 1024}
+
+	// Create one logger for all benchmarks to reduce setup overhead
+	c := logger.Config{
+		Level: zapcore.InfoLevel, // Set to InfoLevel for benchmarks to reduce log noise
+	}
+	lggr, err := c.New()
+	require.NoError(b, err, "failed to create logger for benchmark")
+
+	// Run benchmarks for each combination
+	for _, numWorkflows := range workflowCounts {
+		for _, numStreamsPerWorkflow := range streamCounts {
+			benchName := fmt.Sprintf("workflows=%d/streams=%d", numWorkflows, numStreamsPerWorkflow)
+			b.Run(benchName, func(b *testing.B) {
+				runObservationBenchmarkWithParams(b, lggr, numWorkflows, numStreamsPerWorkflow)
+			})
+		}
+	}
+}
+
+// runObservationBenchmarkWithParams runs a benchmark with the specified parameters
+func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numStreamsPerWorkflow int) {
+	const (
+		numOracles = 4 // Total nodes
+		f          = 1 // Fault tolerance
+	)
+
+	// Create request store with requests for each workflow
+	store := requests.NewStore()
+
+	// Create capability with LLO aggregators for each workflow
+	mockCap := &mockCapability{
+		aggregators: make(map[string]pbtypes.Aggregator, numWorkflows),
+	}
+
+	// Create LLO aggregators for each workflow and populate the store
+	for i := 0; i < numWorkflows; i++ {
+		workflowID := fmt.Sprintf("workflow-%d", i)
+		executionID := fmt.Sprintf("execution-%d", i)
+
+		// Create aggregator
+		agg, err := createLLOAggregator(b, numStreamsPerWorkflow)
+		require.NoError(b, err)
+		mockCap.aggregators[workflowID] = agg
+
+		// Populate store with observation data
+		lloEvent := createLLOEvent(b, numStreamsPerWorkflow, time.Now())
+		wrappedEvent, err := values.Wrap(lloEvent)
+		require.NoError(b, err)
+
+		// Create list with the LLO event
+		listVal, err := values.NewList([]interface{}{wrappedEvent})
+		require.NoError(b, err)
+
+		// Create and add request to store
+		req := &requests.Request{
+			WorkflowID:               workflowID,
+			WorkflowExecutionID:      executionID,
+			WorkflowName:             fmt.Sprintf("Workflow %d", i),
+			WorkflowOwner:            "test-owner",
+			WorkflowDonID:            1,
+			WorkflowDonConfigVersion: 1,
+			ReportID:                 fmt.Sprintf("report-%d", i),
+			KeyID:                    "test-key",
+			Observations:             listVal,
+		}
+
+		require.NoError(b, store.Add(req))
+	}
+
+	// Create reporting plugin
+	plugin, err := ocr3.NewReportingPlugin(
+		store,
+		mockCap,
+		numWorkflows, // batchSize matches numWorkflows
+		ocr3types.ReportingPluginConfig{
+			N: numOracles,
+			F: f,
+		},
+		100, // outcomePruningThreshold
+		lggr,
+	)
+	require.NoError(b, err)
+
+	// Create test query with workflow IDs
+	query, err := createTestQuery(numWorkflows)
+	require.NoError(b, err)
+
+	// Create outcome context (not really used for Observation)
+	outctx := ocr3types.OutcomeContext{
+		SeqNr:           1,
+		PreviousOutcome: nil, // Not needed for Observation benchmark
+	}
+
+	// Reset timer and enable memory allocation reporting
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	// Preallocate memory stats variables
+	var memStatsBefore, memStatsAfter runtime.MemStats
+
+	// Track cumulative metrics
+	var totalMemUsage uint64
+	var totalObservationSize int
+
+	// Run the benchmark
+	for i := 0; i < b.N; i++ {
+		runtime.GC() // Run garbage collection before measurement to reduce noise
+		runtime.ReadMemStats(&memStatsBefore)
+
+		// Call Observation function
+		observation, err := plugin.Observation(context.Background(), outctx, query)
+		require.NoError(b, err)
+
+		// Measure memory usage
+		runtime.ReadMemStats(&memStatsAfter)
+		memUsage := memStatsAfter.TotalAlloc - memStatsBefore.TotalAlloc
+		totalMemUsage += memUsage
+
+		// Measure observation size
+		observationSize := len(observation)
+		totalObservationSize += observationSize
+
+		// Basic validation of observation
+		var parsedObservation pbtypes.Observations
+		err = proto.Unmarshal(observation, &parsedObservation)
+		require.NoError(b, err)
+		require.Len(b, parsedObservation.Observations, numWorkflows)
+	}
+
+	// Report average metrics
+	if b.N > 0 {
+		b.ReportMetric(float64(totalMemUsage)/float64(b.N), "B/memory")
+		b.ReportMetric(float64(totalObservationSize)/float64(b.N), "B/observation_size")
+		// Report streams per second metric to understand throughput
+		streamsProcessed := numWorkflows * numStreamsPerWorkflow
+		b.ReportMetric(float64(streamsProcessed), "streams/op")
+	}
+}
+
 // runBenchmarkWithParams runs a benchmark with the specified parameters
 func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numStreamsPerWorkflow int) {
 	// Test parameters

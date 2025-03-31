@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -117,6 +118,18 @@ func (m *Map) DeleteAtPath(path string) bool {
 	}
 
 	return false
+}
+
+// ByteSizeOfMap is a utility to get the wire-size
+// of a values.Map. It should be the default utility
+// for metering/billing where the primary spend
+func ByteSizeOfMap(m *Map) int {
+	if m == nil {
+		return 0
+	}
+	pbVal := m.proto()
+	size := proto.Size(pbVal)
+	return size
 }
 
 func mapValueToMap(f reflect.Type, t reflect.Type, data any) (any, error) {

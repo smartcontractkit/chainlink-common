@@ -270,6 +270,10 @@ func transformWithMapsHelper[T any](
 		}
 
 		tmp, err := transformWithMapsHelper(elm, toType.Elem(), fields, fn, hooks)
+		if err != nil {
+			return reflect.Value{}, fmt.Errorf("failed to transform element from type %s to %s for rItem kind: %s type: %s: %w", elm.Type(), toType.Elem(), rItem.Kind(), rItem.Type().String(), err)
+		}
+
 		result := reflect.New(toType.Elem())
 		reflect.Indirect(result).Set(tmp)
 

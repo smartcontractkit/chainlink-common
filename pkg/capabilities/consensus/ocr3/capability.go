@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jonboulle/clockwork"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
@@ -213,7 +214,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		inputLenBytes := values.ByteSizeOfMap(r.Inputs)
+		inputLenBytes := byteSizeOfMap(r.Inputs)
 
 		config, err := o.ValidateConfig(r.Config)
 		if err != nil {
@@ -226,7 +227,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		}
 
 		response := <-ch
-		outputLenBytes := values.ByteSizeOfMap(response.Value)
+		outputLenBytes := byteSizeOfMap(response.Value)
 		return capabilities.CapabilityResponse{
 			Value: response.Value,
 			Metadata: capabilities.ResponseMetadata{
@@ -283,4 +284,15 @@ func (o *capability) queueRequestForProcessing(
 
 	o.reqHandler.SendRequest(ctx, r)
 	return callbackCh, nil
+}
+
+// byteSizeOfMap is a utility to get the wire-size
+// of a values.Map.
+func byteSizeOfMap(m *values.Map) int {
+	if m == nil {
+		return 0
+	}
+	pbVal := values.Proto(m)
+	size := proto.Size(pbVal)
+	return size
 }

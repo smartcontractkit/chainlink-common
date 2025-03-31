@@ -477,6 +477,10 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 	parts := strings.Split(fieldPath, ".")
 	var prevIsSlice bool
 
+	if rootType == nil {
+		return reflect.Value{}, fmt.Errorf("root type is nil")
+	}
+
 	typ := rootType
 	for typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
@@ -502,6 +506,11 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 			if prevIsSlice {
 				fieldType = reflect.SliceOf(fieldType)
 			}
+
+			if fieldType.Kind() != reflect.Slice {
+				return reflect.Value{}, &NoSliceUnderFieldPathError{}
+			}
+
 			return reflect.MakeSlice(fieldType, 0, 0), nil
 		}
 

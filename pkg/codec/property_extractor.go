@@ -376,7 +376,35 @@ func extractElement(src any, field string) (reflect.Value, error) {
 		return reflect.Value{}, err
 	}
 
-	if len(extractMaps) != 1 {
+	// if extract maps is empty, check if the underlying field is an uninitialised slice, if so initialise it and return extracted elem.
+	if len(extractMaps) == 0 {
+		typ := reflect.TypeOf(src)
+		if typ.Kind() == reflect.Ptr {
+			typ = typ.Elem()
+		}
+
+		if typ.Kind() != reflect.Struct {
+			return reflect.Value{}, fmt.Errorf("expected a pointer to struct, got pointer to %s", typ.Kind())
+		}
+
+		fieldTobeExtracted, ok := typ.FieldByName(strings.Split(field, ".")[0])
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("field %q not found in typeaa %s", name, typ.Name())
+		}
+
+		fieldTobeExtractedType := fieldTobeExtracted.Type
+		if fieldTobeExtractedType.Kind() == reflect.Pointer {
+			fieldTobeExtractedType = fieldTobeExtractedType.Elem()
+		}
+
+		if fieldTobeExtractedType.Kind() == reflect.Slice {
+			sliceType := reflect.SliceOf(fieldTobeExtractedType)
+			sliceValue := reflect.MakeSlice(sliceType, 0, 0)
+			return sliceValue, nil
+		}
+	}
+
+	if len(extractMaps) > 1 {
 		var sliceValue reflect.Value
 		var sliceInitialized bool
 		for _, fields := range extractMaps {
@@ -397,7 +425,7 @@ func extractElement(src any, field string) (reflect.Value, error) {
 		}
 
 		if !sliceInitialized || sliceValue.Len() == 0 {
-			return reflect.Value{}, fmt.Errorf("%w: cannot find %q", types.ErrInvalidType, field)
+			return reflect.Value{}, fmt.Errorf("%w: cannot find3 %q, sliceInit: %v, sliceVal len: %d, src: %q, extractmaps: %v", types.ErrInvalidType, field, sliceInitialized, sliceValue.String(), reflect.TypeOf(src), extractMaps)
 		}
 
 		return sliceValue, nil
@@ -407,7 +435,7 @@ func extractElement(src any, field string) (reflect.Value, error) {
 
 	item, ok := em[name]
 	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, field)
+		return reflect.Value{}, fmt.Errorf("%w: cannot find4 %s", types.ErrInvalidType, field)
 	}
 
 	return reflect.ValueOf(item), nil

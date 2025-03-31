@@ -232,7 +232,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			Value: response.Value,
 			Metadata: capabilities.ResponseMetadata{
 				Metering: []capabilities.MeteringNodeDetail{
-					{SpendUnit: metering.PayloadMeteringUnit.Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
+					{SpendUnit: metering.PayloadUnit.Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
 				},
 			},
 		}, response.Err

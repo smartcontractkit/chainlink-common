@@ -1,11 +1,11 @@
 package metering
 
 var (
-	PayloadMeteringUnit = unit{Name: "payload", Unit: "bytes"}
+	PayloadUnit = unit{Name: "payload", Unit: "bytes"}
 
-	// ComputeMeteringUnit is an example. The compute cap will eventually be obsoleted
+	// ComputeUnit is an example. The compute cap will eventually be obsoleted
 	// by the CRE No-DAG SDK.
-	ComputeMeteringUnit = unit{Name: "compute", Unit: "seconds"}
+	ComputeUnit = unit{Name: "compute", Unit: "seconds"}
 )
 
 // unit provides exported Name and unit fields for

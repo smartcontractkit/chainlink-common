@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743430395786,
+  "lastUpdate": 1743434647711,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10836,6 +10836,48 @@ window.BENCHMARK_DATA = {
             "value": 28061,
             "unit": "ns/op",
             "extra": "42811 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16602512+krehermann@users.noreply.github.com",
+            "name": "krehermann",
+            "username": "krehermann"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5c320a9353928934c224f1b662b540bb094a3104",
+          "message": "feat(ocr3-capability): llo benchmarks (#1095)\n\n* wip\n\n* clean up the config structs\n\n* cleanup and benchmark ocr3 reporting plugin for llo\n\n* benchmark combination of wf and streams\n\n* fix race; transmitter\n\n* add benchmark for observation phase",
+          "timestamp": "2025-03-31T09:22:48-06:00",
+          "tree_id": "477b3dce91514f6e96309d14329ddc027c861797",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5c320a9353928934c224f1b662b540bb094a3104"
+        },
+        "date": 1743434646872,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.6,
+            "unit": "ns/op",
+            "extra": "3287060 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 442.6,
+            "unit": "ns/op",
+            "extra": "2865816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28229,
+            "unit": "ns/op",
+            "extra": "42751 times\n4 procs"
           }
         ]
       }

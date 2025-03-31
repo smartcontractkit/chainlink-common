@@ -9,7 +9,6 @@ import (
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/metering"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -238,14 +237,6 @@ type ConsensusCapability interface {
 // TargetsCapability interface needs to be implemented by all target capabilities.
 type TargetCapability interface {
 	ExecutableCapability
-}
-
-// MeterableCapability interface needs to be implemented by all capabilities which
-// need to be metered in CRE
-type MeterableCapability interface {
-	// GetUnit isolates the logic to fetch what capability credit type
-	// and unit is used to meter this capability.
-	GetUnit() metering.MeteringUnit
 }
 
 // DON represents a network of connected nodes.

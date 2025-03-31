@@ -8,49 +8,18 @@ const (
 	computeUnit = "seconds"
 )
 
-// MeteringUnit stores the canonical values of the units
-// that capabilities will meter their spend on
-type MeteringUnit interface {
-	GetName() string
-	GetUnit() string
+type MeteringUnit struct {
+	Name string
+	Unit string
 }
 
-type PayloadMeteringUnit struct {
-	name string
-	unit string
+func NewPayloadMeteringUnit() *MeteringUnit {
+	return &MeteringUnit{payloadName, payloadUnit}
 }
 
-func NewPayloadMeteringUnit() PayloadMeteringUnit {
-	return PayloadMeteringUnit{
-		name: payloadName,
-		unit: payloadUnit,
-	}
-}
-
-func (p PayloadMeteringUnit) GetName() string {
-	return p.name
-}
-
-func (p PayloadMeteringUnit) GetUnit() string {
-	return p.unit
-}
-
-type ComputeMeteringUnit struct {
-	name string
-	unit string
-}
-
-func NewComputeMeteringUnit() ComputeMeteringUnit {
-	return ComputeMeteringUnit{
-		name: computeName,
-		unit: computeUnit,
-	}
-}
-
-func (c ComputeMeteringUnit) GetName() string {
-	return c.name
-}
-
-func (c ComputeMeteringUnit) GetUnit() string {
-	return c.unit
+// NewComputeMeteringUnit is an example of how MeteringUnit
+// is used for different capabilities. The capability will
+// eventually be consumed by the power of the No-DAG SDK.
+func NewComputeMeteringUnit() *MeteringUnit {
+	return &MeteringUnit{computeName, computeUnit}
 }

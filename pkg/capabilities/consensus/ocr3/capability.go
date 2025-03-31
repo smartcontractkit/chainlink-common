@@ -62,7 +62,6 @@ type capability struct {
 
 var _ CapabilityIface = (*capability)(nil)
 var _ capabilities.ConsensusCapability = (*capability)(nil)
-var _ capabilities.MeterableCapability = (*capability)(nil)
 
 func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
@@ -259,7 +258,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			Value: response.Value,
 			Metadata: capabilities.ResponseMetadata{
 				Metering: []capabilities.MeteringNodeDetail{
-					{SpendUnit: o.GetUnit().GetName(), SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
+					{SpendUnit: metering.NewPayloadMeteringUnit().Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
 				},
 			},
 		}, response.Err
@@ -311,8 +310,4 @@ func (o *capability) queueRequestForProcessing(
 
 	o.reqHandler.SendRequest(ctx, r)
 	return callbackCh, nil
-}
-
-func (o *capability) GetUnit() metering.MeteringUnit {
-	return metering.NewPayloadMeteringUnit()
 }

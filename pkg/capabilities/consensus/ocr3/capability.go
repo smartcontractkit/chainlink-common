@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/jonboulle/clockwork"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/metering"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -212,6 +214,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
+		inputLenBytes := byteSizeOfMap(r.Inputs)
 
 		config, err := o.ValidateConfig(r.Config)
 		if err != nil {
@@ -224,8 +227,14 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		}
 
 		response := <-ch
+		outputLenBytes := byteSizeOfMap(response.Value)
 		return capabilities.CapabilityResponse{
 			Value: response.Value,
+			Metadata: capabilities.ResponseMetadata{
+				Metering: []capabilities.MeteringNodeDetail{
+					{SpendUnit: metering.PayloadUnit.Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
+				},
+			},
 		}, response.Err
 	}
 
@@ -275,4 +284,15 @@ func (o *capability) queueRequestForProcessing(
 
 	o.reqHandler.SendRequest(ctx, r)
 	return callbackCh, nil
+}
+
+// byteSizeOfMap is a utility to get the wire-size
+// of a values.Map.
+func byteSizeOfMap(m *values.Map) int {
+	if m == nil {
+		return 0
+	}
+	pbVal := values.Proto(m)
+	size := proto.Size(pbVal)
+	return size
 }

@@ -8,12 +8,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/sqltest"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_disallowReplica(t *testing.T) {
 	sqltest.SkipInMemory(t)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	db := sqltest.NewDB(t, sqltest.TestURL(t))
 	t.Cleanup(func() { require.NoError(t, db.Close()) })

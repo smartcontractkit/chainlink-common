@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -44,25 +45,48 @@ var (
 type LLOAggregatorConfig struct {
 	// workaround for the fact that mapstructure doesn't support uint32 keys
 	//streams    map[uint32]feedConfig `mapstructure:"-"`
-	StreamsStr map[string]feedConfig `mapstructure:"streams"`
+	Streams map[string]FeedConfig `mapstructure:"streams"`
 	// allowedPartialStaleness is an optional optimization that tries to maximize batching.
 	// Once any deviation or heartbeat threshold hits, we will include all other feeds that are
 	// within the allowedPartialStaleness range of their own heartbeat.
 	// For example, setting 0.2 will include all feeds that are within 20% of their heartbeat.
 	//allowedPartialStaleness float64 `mapstructure:"-"`
 	// workaround for the fact that mapstructure doesn't support float64 keys
-	AllowedPartialStalenessStr string `mapstructure:"allowedPartialStaleness"`
+	AllowedPartialStaleness string `mapstructure:"allowedPartialStaleness"`
+}
+
+// ToMap converts the LLOAggregatorConfig to a values.Map, which is suitable for the
+// [NewAggegator] function in the OCR3 Aggregator interface.
+func (c LLOAggregatorConfig) ToMap() (*values.Map, error) {
+	v, err := values.WrapMap(c)
+	if err != nil {
+		// this should never happen since we are wrapping a struct
+		return &values.Map{}, fmt.Errorf("failed to wrap LLOAggregatorConfig: %w", err)
+	}
+	return v, nil
+}
+
+func NewLLOConfig(m values.Map) (LLOAggregatorConfig, error) {
+	// Create a default LLOAggregatorConfig
+	config := LLOAggregatorConfig{
+		Streams: make(map[string]FeedConfig),
+	}
+	if err := m.UnwrapTo(&config); err != nil {
+		return LLOAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map to LLOAggregatorConfig: %w", err)
+	}
+
+	return config, nil
 }
 
 func (c LLOAggregatorConfig) convertToInternal() (parsedLLOAggregatorConfig, error) {
 	parsedConfig := parsedLLOAggregatorConfig{
-		streams: make(map[uint32]feedConfig),
+		streams: make(map[uint32]FeedConfig),
 	}
 	cfgErr := func(err error) error {
 		cfgErr := fmt.Errorf("llo aggregator config: %w", ErrInvalidConfig)
 		return errors.Join(cfgErr, err)
 	}
-	for s, cfg := range c.StreamsStr {
+	for s, cfg := range c.Streams {
 		id, err := strconv.ParseUint(s, 10, 32)
 		if err != nil {
 			// this should never happen since we are using a mapstructure-compatible config
@@ -76,12 +100,12 @@ func (c LLOAggregatorConfig) convertToInternal() (parsedLLOAggregatorConfig, err
 		if cfg.RemappedIDHex == "" {
 			return parsedConfig, cfgErr(fmt.Errorf("remappedID is required for stream %d", streamID))
 		}
-		if cfg.DeviationString != "" {
-			dec, err := decimal.NewFromString(cfg.DeviationString)
+		if cfg.Deviation != "" {
+			dec, err := decimal.NewFromString(cfg.Deviation)
 			if err != nil {
 				return parsedConfig, cfgErr(fmt.Errorf("cannot parse deviation config for feed %d: %w", streamID, err))
 			}
-			cfg.Deviation = dec
+			cfg.parsedDeviation = dec
 			parsedConfig.streams[streamID] = cfg
 		}
 		trimmed := strings.TrimPrefix(cfg.RemappedIDHex, "0x")
@@ -89,12 +113,12 @@ func (c LLOAggregatorConfig) convertToInternal() (parsedLLOAggregatorConfig, err
 		if err != nil {
 			return parsedConfig, cfgErr(fmt.Errorf("cannot parse remappedId config for feed %d: %w", streamID, err))
 		}
-		cfg.RemappedID = rawRemappedID
+		cfg.remappedID = rawRemappedID
 		parsedConfig.streams[streamID] = cfg
 	}
 	// convert allowedPartialStaleness from string to float64
-	if c.AllowedPartialStalenessStr != "" {
-		allowedPartialStaleness, err := decimal.NewFromString(c.AllowedPartialStalenessStr)
+	if c.AllowedPartialStaleness != "" {
+		allowedPartialStaleness, err := decimal.NewFromString(c.AllowedPartialStaleness)
 		if err != nil {
 			return parsedConfig, cfgErr(fmt.Errorf("cannot parse allowedPartialStaleness: %w", err))
 		}
@@ -107,7 +131,7 @@ func (c LLOAggregatorConfig) convertToInternal() (parsedLLOAggregatorConfig, err
 // the separation is because mapstructure only supports string keys.
 // the are exposed in LLOAggregatorConfig for the config which is then processed into this internal representation.
 type parsedLLOAggregatorConfig struct {
-	streams                 map[uint32]feedConfig
+	streams                 map[uint32]FeedConfig
 	allowedPartialStaleness float64
 }
 
@@ -117,6 +141,8 @@ type LLOAggregator struct {
 	config parsedLLOAggregatorConfig
 }
 
+// NewLLOAggregator creates a new LLOAggregator instance based on the provided configuration.
+// The config should be a [values.Map] that has represents from the [LLOAggregatorConfig]. See [LLOAggreagatorConfig.ToMap]
 func NewLLOAggregator(config values.Map) (types.Aggregator, error) {
 	parsedConfig, err := parseLLOConfig(config)
 	if err != nil {
@@ -169,7 +195,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		}
 		newPrice := prices[streamID]
 		priceDeviation := deviationDecimal(*oldPrice, newPrice)
-		timeDiffNs := observationTimestamp - uint64(previousStreamInfo.Timestamp) //nolint:gosec // G115
+		timeDiffNs := observationTimestamp.UnixNano() - previousStreamInfo.Timestamp
 		lggr.Debugw("checking deviation and heartbeat",
 			"streamID", streamID,
 			"observationNs", observationTimestamp,
@@ -179,12 +205,12 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 			"oldPrice", oldPrice,
 			"newPrice", newPrice,
 			"currDeviation", priceDeviation,
-			"deviation", config.Deviation.InexactFloat64(),
+			"deviation", config.DeviationAsDecimal().InexactFloat64(),
 		)
-		if timeDiffNs > uint64(config.HeartbeatNanos()) || //nolint:gosec // G115
-			priceDeviation > config.Deviation.InexactFloat64() {
+		if timeDiffNs > config.HeartbeatNanos() ||
+			priceDeviation > config.DeviationAsDecimal().InexactFloat64() {
 			// this stream needs an update
-			previousStreamInfo.Timestamp = int64(observationTimestamp) //nolint: gosec // G115
+			previousStreamInfo.Timestamp = observationTimestamp.UnixNano()
 			var err2 error
 			previousStreamInfo.Price, err2 = prices[streamID].MarshalBinary()
 			if err2 != nil {
@@ -213,12 +239,12 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 
 	toWrap := make([]*EVMEncodableStreamUpdate, 0, len(mustUpdateIDs))
 	for _, streamID := range mustUpdateIDs {
-		remappedID := a.config.streams[streamID].RemappedID
+		remappedID := a.config.streams[streamID].RemappedID()
 		newPrice := prices[streamID]
 		w := &EVMEncodableStreamUpdate{
 			StreamID:   streamID,
 			Price:      decimalToBigInt(newPrice),
-			Timestamp:  observationTimestamp,
+			Timestamp:  uint32(observationTimestamp.Unix()), //nolint:gosec // G115
 			RemappedID: remappedID,
 		}
 		toWrap = append(toWrap, w)
@@ -245,7 +271,7 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 type EVMEncodableStreamUpdate struct {
 	StreamID   uint32
 	Price      *big.Int
-	Timestamp  uint64
+	Timestamp  uint32 // unix timestamp in seconds
 	RemappedID []byte
 }
 
@@ -325,22 +351,22 @@ func (a *LLOAggregator) initializeLLOState(lggr logger.Logger, previousOutcome *
 // getObservationTimestamp returns the observation timestamp that appears at least f+1 times in the LLO events.
 // it is optimistic and takes the first one that appears at least f+1 times. this is valid be we know that LLO events are coming from an OCR consensus output.
 // ErrInsufficientConsensus is returned if no timestamp appears at least f+1 times.
-func getObservationTimestamp(lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (uint64, error) {
+func getObservationTimestamp(lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (time.Time, error) {
 	// All honest nodes are expected to include the same streams trigger event in their observation.
 	// We can trust the timestamp that appears at least f+1 times.
 	counts := make(map[uint64]int)
 	for _, event := range lloEvents {
 		counts[event.ObservationTimestampNanoseconds]++
 		if counts[event.ObservationTimestampNanoseconds] >= f+1 {
-			return event.ObservationTimestampNanoseconds, nil
+			return time.Unix(0, int64(event.ObservationTimestampNanoseconds)), nil //nolint:gosec // G115
 		}
 	}
-	return 0, fmt.Errorf("%w: no timestamp appeared at least %d times", ErrInsufficientConsensus, f+1)
+	return time.Time{}, fmt.Errorf("%w: no timestamp appeared at least %d times", ErrInsufficientConsensus, f+1)
 }
 
 // lloStreamPrices returns the prices for the streams at the consensus observation timestamp.
 // it ignores any events that are not from the consensus observation timestamp.
-func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (observationTimestamp uint64, out map[uint32]decimal.Decimal, err error) {
+func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent, f int) (observationTimestamp time.Time, out map[uint32]decimal.Decimal, err error) {
 	// All honest nodes are expected to include the same streams trigger event in their observation.
 	// We can trust any price that appears at least f+1 times.
 
@@ -357,10 +383,11 @@ func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[o
 	// count all the prices across all events for the stream IDs we are interested in
 	observationTimestamp, err = getObservationTimestamp(lloEvents, f)
 	if err != nil {
-		return 0, nil, err
+		return time.Time{}, nil, err
 	}
+	observationTimestampNS := uint64(observationTimestamp.UnixNano()) //nolint:gosec // G115
 	for _, event := range lloEvents {
-		if event.ObservationTimestampNanoseconds != observationTimestamp {
+		if event.ObservationTimestampNanoseconds != observationTimestampNS {
 			// Ignore events with different timestamps. This shouldn't happen unless there are malicious nodes
 			lggr.Warnw("observation timestamp mismatch", "expected", observationTimestamp, "actual", event.ObservationTimestampNanoseconds)
 			continue
@@ -411,7 +438,7 @@ func lloStreamPrices(lggr logger.Logger, wantStreamIDs []uint32, lloEvents map[o
 // parseLLOConfig parses the user-facing, type-less, LLO aggregator in the internal typed config.
 func parseLLOConfig(config values.Map) (parsedLLOAggregatorConfig, error) {
 	converter := LLOAggregatorConfig{
-		StreamsStr: make(map[string]feedConfig),
+		Streams: make(map[string]FeedConfig),
 	}
 	if err := config.UnwrapTo(&converter); err != nil {
 		return parsedLLOAggregatorConfig{}, err

@@ -34,14 +34,13 @@ var info = capabilities.MustNewCapabilityInfo(
 )
 
 type capability struct {
-	services.StateMachine
+	services.Service
+	eng *services.Engine
+
 	capabilities.CapabilityInfo
 	capabilities.Validator[config, inputs, requests.Response]
 
 	reqHandler *requests.Handler
-	stopCh     services.StopChan
-	wg         sync.WaitGroup
-	lggr       logger.Logger
 
 	requestTimeout     time.Duration
 	requestTimeoutLock sync.RWMutex
@@ -68,11 +67,8 @@ func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 	o := &capability{
 		CapabilityInfo:    info,
 		Validator:         capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info}),
-		reqHandler:        requests.NewHandler(lggr, s, clock, requestTimeout),
 		clock:             clock,
 		requestTimeout:    requestTimeout,
-		stopCh:            make(chan struct{}),
-		lggr:              logger.Named(lggr, "OCR3CapabilityClient"),
 		aggregatorFactory: aggregatorFactory,
 		aggregators:       map[string]types.Aggregator{},
 		encoderFactory:    encoderFactory,
@@ -81,37 +77,14 @@ func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 		callbackChannelBufferSize: callbackChannelBufferSize,
 		registeredWorkflowsIDs:    map[string]bool{},
 	}
+	o.Service, o.eng = services.Config{
+		Name: "OCR3CapabilityClient",
+		NewSubServices: func(l logger.Logger) []services.Service {
+			o.reqHandler = requests.NewHandler(lggr, s, clock, requestTimeout)
+			return []services.Service{o.reqHandler}
+		},
+	}.NewServiceEngine(lggr)
 	return o
-}
-
-func (o *capability) Start(ctx context.Context) error {
-	return o.StartOnce("OCR3Capability", func() error {
-		err := o.reqHandler.Start(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to start request handler: %w", err)
-		}
-
-		return nil
-	})
-}
-
-func (o *capability) Close() error {
-	return o.StopOnce("OCR3Capability", func() error {
-		close(o.stopCh)
-		o.wg.Wait()
-		err := o.reqHandler.Close()
-		if err != nil {
-			return fmt.Errorf("failed to close request handler: %w", err)
-		}
-
-		return nil
-	})
-}
-
-func (o *capability) Name() string { return o.lggr.Name() }
-
-func (o *capability) HealthReport() map[string]error {
-	return map[string]error{o.Name(): o.Healthy()}
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
@@ -122,13 +95,13 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.lggr)
+	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.eng)
 	if err != nil {
 		return err
 	}
 	o.aggregators[request.Metadata.WorkflowID] = agg
 
-	encoder, err := o.encoderFactory(c.Encoder, c.EncoderConfig, o.lggr)
+	encoder, err := o.encoderFactory(c.Encoder, c.EncoderConfig, o.eng)
 	if err != nil {
 		return err
 	}
@@ -156,7 +129,7 @@ func (o *capability) GetEncoderByWorkflowID(workflowID string) (types.Encoder, e
 }
 
 func (o *capability) GetEncoderByName(encoderName string, config *values.Map) (types.Encoder, error) {
-	return o.encoderFactory(encoderName, config, o.lggr)
+	return o.encoderFactory(encoderName, config, o.eng)
 }
 
 func (o *capability) GetRegisteredWorkflowsIDs() []string {
@@ -206,7 +179,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 	}
 	err := r.Inputs.UnwrapTo(&m)
 	if err != nil {
-		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
+		o.eng.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
 	}
 
 	switch m.Method {
@@ -215,10 +188,10 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return capabilities.CapabilityResponse{}, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}
-		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
+		o.eng.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
 		var responseErr error
 		if m.Terminate {
-			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
+			o.eng.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
 			responseErr = capabilities.ErrStopExecution
 		}
 		out := requests.Response{
@@ -306,7 +279,7 @@ func (o *capability) queueRequestForProcessing(
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}
 
-	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
+	o.eng.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
 
 	o.reqHandler.SendRequest(ctx, r)
 	return callbackCh, nil

@@ -30,7 +30,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 var chainStatus = types.ChainStatus{
@@ -331,7 +330,7 @@ func (s staticRelayer) Replay(ctx context.Context, fromBlock string, args map[st
 func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
 	t.Run("ContractReader", func(t *testing.T) {
 		//t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		contractReader, err := relayer.NewContractReader(ctx, []byte("test"))
 		require.NoError(t, err)
 		servicetest.Run(t, contractReader)
@@ -339,7 +338,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
 		require.NoError(t, err)
 		servicetest.Run(t, configProvider)
@@ -349,7 +348,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 
 	t.Run("MedianProvider", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		ra := newRelayArgsWithProviderType(types.Median)
 		p, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
 		require.NoError(t, err)
@@ -377,7 +376,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 
 	t.Run("GetChainStatus", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		gotChain, err := relayer.GetChainStatus(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, s.chainStatus, gotChain)
@@ -385,7 +384,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 
 	t.Run("ListNodeStatuses", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, s.nodeRequest.pageSize, s.nodeRequest.pageToken)
 		require.NoError(t, err)
 		assert.Equal(t, s.nodeResponse.nodes, gotNodes)
@@ -395,14 +394,14 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 
 	t.Run("Transact", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		err := relayer.Transact(ctx, s.transactionRequest.from, s.transactionRequest.to, s.transactionRequest.amount, s.transactionRequest.balanceCheck)
 		require.NoError(t, err)
 	})
 
 	t.Run("Replay", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		err := relayer.Replay(ctx, s.replayRequest.fromBlock, s.replayRequest.args)
 		require.NoError(t, err)
 	})
@@ -429,7 +428,7 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 
 func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 	t.Run("Relayer", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, nil)
 		require.NoError(t, err)
 		servicetest.Run(t, relayer)
@@ -449,7 +448,7 @@ func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 }
 
 func Run(t *testing.T, relayer looptypes.Relayer) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	expectedRelayer := NewRelayerTester(logger.Test(t), false)
 	expectedRelayer.AssertEqual(ctx, t, relayer)
 }
@@ -476,7 +475,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.P
 			errStr:        fErr,
 		}
 
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, nil)
 
 		grpcUnavailableErr(t, err)
@@ -501,7 +500,7 @@ func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.Relayer
 		copy(rawBytes[:], fExtJobID)
 
 		relayer := relayerFunc(t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		fRelayArgs := types.RelayArgs{
 			ExternalJobID: uuid.UUID(rawBytes),
 			JobID:         fJobID,
@@ -558,7 +557,7 @@ func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) Fuzzable
 		copy(rawBytes[:], fExtJobID)
 
 		provider := providerFunc(t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		fRelayArgs := types.RelayArgs{
 			ExternalJobID: uuid.UUID(rawBytes),
 			JobID:         fJobID,

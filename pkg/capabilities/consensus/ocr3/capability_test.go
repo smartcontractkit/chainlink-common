@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -87,7 +86,7 @@ func TestOCR3Capability(t *testing.T) {
 			fc := clockwork.NewFakeClockAt(n)
 			lggr := logger.Test(t)
 
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
 			s := requests.NewStore()
 
@@ -151,7 +150,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -219,7 +218,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// This is the default expired at
@@ -290,7 +289,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	s := requests.NewStore()
 	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
@@ -410,7 +409,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	s := requests.NewStore()
 
@@ -470,7 +469,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	s := requests.NewStore()
 

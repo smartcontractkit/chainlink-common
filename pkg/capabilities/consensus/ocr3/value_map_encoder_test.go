@@ -8,7 +8,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -44,7 +43,7 @@ func Test_ValuesEncoder_Encode(t *testing.T) {
 	}
 
 	encoder := ocr3.ValueMapEncoder{}
-	actual, err := encoder.Encode(tests.Context(t), *inputWrapped)
+	actual, err := encoder.Encode(t.Context(), *inputWrapped)
 	require.NoError(t, err)
 
 	opts := proto.MarshalOptions{Deterministic: true}

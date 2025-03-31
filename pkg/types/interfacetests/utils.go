@@ -89,7 +89,7 @@ func RunTestsInParallel[T TestingT[T]](t T, tester BasicTester[T], tests []Testc
 func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, boundContracts []types.BoundContract, batchCallEntry BatchCallEntry, mockRun bool) {
 	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
 	if mockRun {
-		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchContractWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		err := cw.SubmitTransaction(t.Context(), AnyContractName, "batchContractWrite", batchCallEntry, "", "", nil, big.NewInt(0))
 		require.NoError(t, err)
 		return
 	}
@@ -115,7 +115,7 @@ func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTeste
 func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	tester.DirtyContracts()
 	txID := uuid.New().String()
-	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
+	err := cw.SubmitTransaction(t.Context(), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
 	err = WaitForTransactionStatus(t, tester, cw, txID, status, false)
@@ -126,7 +126,7 @@ func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTe
 
 // WaitForTransactionStatus waits for a transaction to reach the given status.
 func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, txID string, status types.TransactionStatus, mockRun bool) error {
-	ctx, cancel := context.WithTimeout(tests.Context(t), 15*time.Minute)
+	ctx, cancel := context.WithTimeout(t.Context(), 15*time.Minute)
 	defer cancel()
 
 	ticker := time.NewTicker(1 * time.Second)

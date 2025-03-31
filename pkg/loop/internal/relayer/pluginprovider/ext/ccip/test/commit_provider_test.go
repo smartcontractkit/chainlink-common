@@ -14,13 +14,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticCommitProvider(t *testing.T) {
 	t.Run("Self consistent Evaluate", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		lggr := logger.Test(t)
 		// static test implementation is self consistent
 		assert.NoError(t, CommitProvider(lggr).Evaluate(ctx, CommitProvider(lggr)))
@@ -37,7 +36,7 @@ func TestStaticCommitProvider(t *testing.T) {
 	t.Run("Self consistent AssertEqual", func(t *testing.T) {
 		lggr := logger.Test(t)
 		// no parallel because the AssertEqual is parallel
-		CommitProvider(lggr).AssertEqual(tests.Context(t), t, CommitProvider(lggr))
+		CommitProvider(lggr).AssertEqual(t.Context(), t, CommitProvider(lggr))
 	})
 }
 
@@ -51,35 +50,35 @@ func TestCommitProviderGRPC(t *testing.T) {
 
 func roundTripCommitProviderTests(t *testing.T, client types.CCIPCommitProvider) {
 	t.Run("CommitStore", func(t *testing.T) {
-		commitClient, err := client.NewCommitStoreReader(tests.Context(t), "ignored")
+		commitClient, err := client.NewCommitStoreReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripCommitStoreTests(t, commitClient)
 		require.NoError(t, commitClient.Close())
 	})
 
 	t.Run("OffRamp", func(t *testing.T) {
-		offRampClient, err := client.NewOffRampReader(tests.Context(t), "ignored")
+		offRampClient, err := client.NewOffRampReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripOffRampTests(t, offRampClient)
 		require.NoError(t, offRampClient.Close())
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
-		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored", 0, 0)
+		onRampClient, err := client.NewOnRampReader(t.Context(), "ignored", 0, 0)
 		require.NoError(t, err)
 		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())
 	})
 
 	t.Run("PriceGetter", func(t *testing.T) {
-		priceGetterClient, err := client.NewPriceGetter(tests.Context(t))
+		priceGetterClient, err := client.NewPriceGetter(t.Context())
 		require.NoError(t, err)
 		roundTripPriceGetterTests(t, priceGetterClient)
 		require.NoError(t, priceGetterClient.Close())
 	})
 
 	t.Run("PriceRegistry", func(t *testing.T) {
-		priceRegistryClient, err := client.NewPriceRegistryReader(tests.Context(t), "ignored")
+		priceRegistryClient, err := client.NewPriceRegistryReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripPriceRegistryTests(t, priceRegistryClient)
 		require.NoError(t, priceRegistryClient.Close())

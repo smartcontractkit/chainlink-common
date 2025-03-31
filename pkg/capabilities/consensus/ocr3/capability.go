@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jonboulle/clockwork"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
@@ -242,7 +241,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
-		inputLenBytes := proto.Size(values.Proto(r.Inputs))
+		inputLenBytes := values.ByteSizeOfMap(r.Inputs)
 
 		config, err := o.ValidateConfig(r.Config)
 		if err != nil {

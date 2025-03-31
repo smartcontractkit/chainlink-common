@@ -121,7 +121,12 @@ func WithServerEncoding(version contractreader.EncodingVersion) ServerOpt {
 }
 
 func (s *Server) SubmitTransaction(ctx context.Context, req *pb.SubmitTransactionRequest) (*emptypb.Empty, error) {
-	err := s.impl.SubmitTransaction(ctx, req.ContractName, req.Method, req.Params, req.TransactionId, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int())
+	params := map[string]any{}
+	if err := contractreader.DecodeVersionedBytes(&params, req.Params); err != nil {
+		return nil, err
+	}
+
+	err := s.impl.SubmitTransaction(ctx, req.ContractName, req.Method, params, req.TransactionId, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -152,4 +157,5 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 
 func RegisterContractWriterService(s *grpc.Server, contractWriter types.ContractWriter) {
 	pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: contractWriter})
+	pb.RegisterContractWriterServer(s, NewServer(contractWriter))
 }

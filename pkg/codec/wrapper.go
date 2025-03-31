@@ -55,6 +55,7 @@ func (m *wrapperModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (
 				Type: onChainType,
 			}})
 
+			offChainTyp = reflect.PointerTo(offChainTyp)
 			m.onToOffChainType[onChainType] = offChainTyp
 			m.offToOnChainType[offChainTyp] = onChainType
 			return offChainTyp, nil

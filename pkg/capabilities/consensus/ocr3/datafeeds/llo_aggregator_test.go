@@ -167,18 +167,20 @@ func TestGetLatestPrices(t *testing.T) {
 
 func TestLLOAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
+
 	testStartTime := time.Now()
 	remappedHex1 := "0x680084f7347baFfb5C323c2982dfC90e04F9F918"
-	remappedHex2 := "0x00001237347baFfb5C323c1112dfC90e0789FFFF"
-	remappedHex3 := "0xaaaa59b7347baFfb5C323c1112dfC90e0789FEDC"
+
 	remapped1, err := hex.DecodeString(remappedHex1[2:])
 	require.NoError(t, err)
+	remappedHex2 := "0x00001237347baFfb5C323c1112dfC90e0789FFFF"
 	remapped2, err := hex.DecodeString(remappedHex2[2:])
 	require.NoError(t, err)
+	remappedHex3 := "0xaaaa59b7347baFfb5C323c1112dfC90e0789FEDC"
 
 	tests := []struct {
 		name                 string
-		config               values.Map
+		config               datafeeds.LLOAggregatorConfig
 		previousOutcome      *types.AggregationOutcome
 		observations         map[ocrcommon.OracleID][]values.Value
 		f                    int
@@ -190,14 +192,15 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 		{
 			name: "update due to no previous outcome",
-			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-				1: {
-					Deviation:     decimal.NewFromFloat(0.01), // 1%
-					Heartbeat:     3600,                       // 1 hour
-					RemappedIDHex: remappedHex1,               //"0x680084f7347baFfb5C323c2982dfC90e04F9F918",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": datafeeds.FeedConfig{
+						Deviation:     decimal.NewFromFloat(0.01).String(), // 1%
+						Heartbeat:     3600,                                // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
 				},
-			}),
-
+			},
 			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
 				1: decimal.NewFromFloat(102.123), // 2% change, exceeds 1% threshold
 			}),
@@ -218,14 +221,15 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 		{
 			name: "update due to deviation",
-			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-				1: {
-					Deviation:     decimal.NewFromFloat(0.01), // 1%
-					Heartbeat:     3600,                       // 1 hour
-					RemappedIDHex: remappedHex1,               //"0x680084f7347baFfb5C323c2982dfC90e04F9F918",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.01).String(), // 1%
+						Heartbeat:     3600,                                // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
 				},
-			}),
-
+			},
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
 				price     decimal.Decimal
 				timestamp int64
@@ -255,14 +259,15 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 		{
 			name: "update due to heartbeat",
-			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-				1: {
-					Deviation:     decimal.NewFromFloat(0.1), // 10%
-					Heartbeat:     300,                       // 5 minutes
-					RemappedIDHex: remappedHex1,
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     300,                                // 5 min
+						RemappedIDHex: remappedHex1,
+					},
 				},
-			}),
-
+			},
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
 				price     decimal.Decimal
 				timestamp int64
@@ -291,14 +296,15 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 		{
 			name: "no update needed",
-			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-
-				1: {
-					Deviation:     decimal.NewFromFloat(0.1), // 10%
-					Heartbeat:     3600,                      // 1 hour
-					RemappedIDHex: remappedHex1,
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
 				},
-			}),
+			},
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
 				price     decimal.Decimal
 				timestamp int64
@@ -319,24 +325,26 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 		{
 			name: "partial staleness optimization",
-			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-				1: {
-					Deviation:     decimal.NewFromFloat(0.1), // 10%
-					Heartbeat:     3600,                      // 1 hour
-					RemappedIDHex: remappedHex1,
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
+					"2": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     300,                                // 5 min
+						RemappedIDHex: remappedHex2,
+					},
+					"3": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     300,                                // 5 min
+						RemappedIDHex: remappedHex3,
+					},
 				},
-				2: {
-					Deviation:     decimal.NewFromFloat(0.1), // 10%
-					Heartbeat:     300,                       // 5 minutes
-					RemappedIDHex: remappedHex2,
-				},
-				3: {
-					Deviation:     decimal.NewFromFloat(0.1), // 10%
-					Heartbeat:     300,                       // 5 minutes
-					RemappedIDHex: remappedHex3,
-				},
-			}, datafeeds.LLOConfigAllowStaleness(0.2)), // 20% allowed partial staleness
-
+				AllowedPartialStaleness: "0.2", // 20% allowed partial staleness
+			},
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
 				price     decimal.Decimal
 				timestamp int64
@@ -382,14 +390,15 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 		{
 			name: "empty observations",
-			config: datafeeds.NewLLOconfig(t, map[uint32]datafeeds.FeedConfig{
-				1: {
-					Deviation:     decimal.NewFromFloat(0.1),
-					Heartbeat:     3600,
-					RemappedIDHex: remappedHex1,
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
 				},
-			}),
-
+			},
 			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
 				price     decimal.Decimal
 				timestamp int64
@@ -404,7 +413,9 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			aggregator, err := datafeeds.NewLLOAggregator(tc.config)
+			cfgMap, err := tc.config.ToMap()
+			require.NoError(t, err, "Failed to convert config to values.Map")
+			aggregator, err := datafeeds.NewLLOAggregator(*cfgMap)
 			require.NoError(t, err)
 
 			outcome, err := aggregator.Aggregate(lggr, tc.previousOutcome, tc.observations, tc.f)
@@ -434,6 +445,107 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 					assert.Equal(t, tc.wantUpdates[i].Timestamp, report.Timestamp)
 				}
 			}
+		})
+	}
+}
+
+func TestLLOAggregatorConfig_RoundTrip(t *testing.T) {
+	testCases := []struct {
+		name   string
+		config datafeeds.LLOAggregatorConfig
+	}{
+		{
+			name: "typical config with multiple streams",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						RemappedIDHex: "0x680084f7347baFfb5C323c2982dfC90e04F9F918",
+						Deviation:     "0.01",
+						Heartbeat:     3600,
+					},
+					"2": {
+						RemappedIDHex: "0x00001237347baFfb5C323c1112dfC90e0789FFFF",
+						Deviation:     "0.02",
+						Heartbeat:     1800,
+					},
+					"42": {
+						RemappedIDHex: "0xF8D170535513B67Ce18aF7A45E9a1F1A93c0F9ac",
+						Deviation:     "0.005",
+						Heartbeat:     7200,
+					},
+				},
+				AllowedPartialStaleness: "0.2",
+			},
+		},
+		{
+			name: "config with single stream",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						RemappedIDHex: "0x680084f7347baFfb5C323c2982dfC90e04F9F918",
+						Deviation:     "0.01",
+						Heartbeat:     3600,
+					},
+				},
+				AllowedPartialStaleness: "0.1",
+			},
+		},
+		{
+			name: "config with empty staleness",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						RemappedIDHex: "0x680084f7347baFfb5C323c2982dfC90e04F9F918",
+						Deviation:     "0.01",
+						Heartbeat:     3600,
+					},
+				},
+				AllowedPartialStaleness: "",
+			},
+		},
+		{
+			name: "config with empty streams",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams:                 map[string]datafeeds.FeedConfig{},
+				AllowedPartialStaleness: "0.2",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Step 1: Convert original config to values.Map
+			configMap, err := tc.config.ToMap()
+			require.NoError(t, err, "ToMap should not error")
+			require.NotNil(t, configMap, "ToMap should return non-nil map")
+
+			// Step 2: Convert values.Map back to config
+			roundTrippedConfig, err := datafeeds.NewLLOConfig(*configMap)
+			require.NoError(t, err, "NewLLOConfig should not error")
+
+			// Step 3: Compare original and round-tripped configs
+			// We need to compare each field specifically since the derived fields won't be compared correctly
+			assert.Equal(t, len(tc.config.Streams), len(roundTrippedConfig.Streams),
+				"Number of streams should match")
+
+			// Compare streams
+			for streamID, origFeed := range tc.config.Streams {
+				roundTrippedFeed, exists := roundTrippedConfig.Streams[streamID]
+				assert.True(t, exists, "Stream %s should exist in round-tripped config", streamID)
+
+				if exists {
+					assert.Equal(t, origFeed.RemappedIDHex, roundTrippedFeed.RemappedIDHex,
+						"RemappedIDHex should match for stream %s", streamID)
+					assert.Equal(t, origFeed.Deviation, roundTrippedFeed.Deviation,
+						"DeviationString should match for stream %s", streamID)
+					assert.Equal(t, origFeed.Heartbeat, roundTrippedFeed.Heartbeat,
+						"Heartbeat should match for stream %s", streamID)
+				}
+			}
+
+			// Compare staleness
+			assert.Equal(t, tc.config.AllowedPartialStaleness, roundTrippedConfig.AllowedPartialStaleness,
+				"AllowedPartialStalenessStr should match")
 		})
 	}
 }

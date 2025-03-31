@@ -2,11 +2,13 @@ package datafeeds
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/proto"
@@ -19,23 +21,29 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+type EVMEncoderKey = string
+
 const (
 	// Aggregator outputs reports in the following format:
 	//   []Reports{FeedID []byte, RawReport []byte, Price *big.Int, Timestamp int64}
 	// Example of a compatible EVM encoder ABI config:
 	//   (bytes32 FeedID, bytes RawReport, uint256 Price, uint64 Timestamp)[] Reports
-	TopLevelListOutputFieldName = "Reports"
-	FeedIDOutputFieldName       = "FeedID"
-	RawReportOutputFieldName    = "RawReport"
-	PriceOutputFieldName        = "Price"
-	TimestampOutputFieldName    = "Timestamp"
-	RemappedIDOutputFieldName   = "RemappedID"
+
+	// The following constants are used in value maps to ensure consistent naming while the underlying
+	// implementation is untyped.
+	TopLevelListOutputFieldName = EVMEncoderKey("Reports")
+	FeedIDOutputFieldName       = EVMEncoderKey("FeedID")
+	RawReportOutputFieldName    = EVMEncoderKey("RawReport")
+	PriceOutputFieldName        = EVMEncoderKey("Price")
+	TimestampOutputFieldName    = EVMEncoderKey("Timestamp")
+	RemappedIDOutputFieldName   = EVMEncoderKey("RemappedID")
+	StreamIDOutputFieldName     = EVMEncoderKey("StreamID")
 
 	addrLen = 20
 )
 
 type aggregatorConfig struct {
-	Feeds map[datastreams.FeedID]feedConfig
+	Feeds map[datastreams.FeedID]FeedConfig
 	// AllowedPartialStaleness is an optional optimization that tries to maximize batching.
 	// Once any deviation or heartbeat threshold hits, we will include all other feeds that are
 	// within the AllowedPartialStaleness range of their own heartbeat.
@@ -44,12 +52,28 @@ type aggregatorConfig struct {
 	AllowedPartialStalenessStr string  `mapstructure:"allowedPartialStaleness"`
 }
 
-type feedConfig struct {
-	Deviation       decimal.Decimal `mapstructure:"-"`
-	Heartbeat       int
-	DeviationString string `mapstructure:"deviation"`
-	RemappedIDHex   string `mapstructure:"remappedId"`
-	RemappedID      []byte `mapstructure:"-"`
+// FeedConfig defines the configuration for each individual feed used by the aggregator.
+// It's map representation is used directly in user-defined workflows to specify the configuration for each feed.
+type FeedConfig struct {
+	Heartbeat     int    // seconds
+	Deviation     string `mapstructure:"deviation"`
+	RemappedIDHex string `mapstructure:"remappedId"` // DO NOT CHANGE THIS. It's user facing in existing DataFeeds configurations and should be kept consistent for backward compatibility.
+	// internal fields set by [ParseConfig] after parsing the config
+	// work around mapstructure limitations to allow for decimal.Decimal and byte slices
+	parsedDeviation decimal.Decimal
+	remappedID      []byte
+}
+
+func (c FeedConfig) HeartbeatNanos() int64 {
+	return int64(c.Heartbeat) * time.Second.Nanoseconds()
+}
+
+func (c FeedConfig) DeviationAsDecimal() decimal.Decimal {
+	return c.parsedDeviation
+}
+
+func (c FeedConfig) RemappedID() []byte {
+	return c.remappedID
 }
 
 type dataFeedsAggregator struct {
@@ -68,7 +92,7 @@ var _ types.Aggregator = (*dataFeedsAggregator)(nil)
 func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	allowedSigners, minRequiredSignatures, events := a.extractSignersAndPayloads(lggr, observations, f)
 	if len(events) > 0 && minRequiredSignatures == 0 {
-		return nil, fmt.Errorf("cannot process non-empty observation payloads with minRequiredSignatures set to 0")
+		return nil, errors.New("cannot process non-empty observation payloads with minRequiredSignatures set to 0")
 	}
 	lggr.Debugw("extracted signers", "nAllowedSigners", len(allowedSigners), "minRequired", minRequiredSignatures, "nEvents", len(events))
 	// find latest valid report for each feed ID
@@ -134,10 +158,10 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 			"oldPrice", oldPrice,
 			"newPrice", newPrice,
 			"currDeviation", currDeviation,
-			"deviation", config.Deviation.InexactFloat64(),
+			"deviation", config.DeviationAsDecimal().InexactFloat64(),
 		)
 		if currStaleness > int64(config.Heartbeat) ||
-			currDeviation > config.Deviation.InexactFloat64() {
+			currDeviation > config.DeviationAsDecimal().InexactFloat64() {
 			previousReportInfo.ObservationTimestamp = latestReport.ObservationTimestamp
 			previousReportInfo.BenchmarkPrice = latestReport.BenchmarkPrice
 			reportsNeedingUpdate = append(reportsNeedingUpdate, latestReport)
@@ -162,15 +186,15 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 		return nil, err
 	}
 
-	var toWrap []any
+	toWrap := make([]any, 0, len(reportsNeedingUpdate))
 	for _, report := range reportsNeedingUpdate {
 		feedID := datastreams.FeedID(report.FeedID).Bytes()
-		remappedID := a.config.Feeds[datastreams.FeedID(report.FeedID)].RemappedID
+		remappedID := a.config.Feeds[datastreams.FeedID(report.FeedID)].RemappedID()
 		if len(remappedID) == 0 { // fall back to original ID
 			remappedID = feedID[:]
 		}
 		toWrap = append(toWrap,
-			map[string]any{
+			map[EVMEncoderKey]any{
 				FeedIDOutputFieldName:     feedID[:],
 				RawReportOutputFieldName:  report.FullReport,
 				PriceOutputFieldName:      big.NewInt(0).SetBytes(report.BenchmarkPrice),
@@ -179,7 +203,7 @@ func (a *dataFeedsAggregator) Aggregate(lggr logger.Logger, previousOutcome *typ
 			})
 	}
 
-	wrappedReportsNeedingUpdates, err := values.NewMap(map[string]any{
+	wrappedReportsNeedingUpdates, err := values.NewMap(map[EVMEncoderKey]any{
 		TopLevelListOutputFieldName: toWrap,
 	})
 	if err != nil {
@@ -262,7 +286,6 @@ func (a *dataFeedsAggregator) extractSignersAndPayloads(lggr logger.Logger, obse
 	// In that case both values are legitimate and signers list will contain nodes from both DONs. However, min-required value will be the higher one (if different).
 	allowedSigners := [][]byte{}
 	for signer, count := range signers {
-		signer := signer
 		if count >= fConsensus+1 {
 			allowedSigners = append(allowedSigners, signer[:])
 		}
@@ -304,6 +327,21 @@ func deviation(oldPrice, newPrice *big.Int) float64 {
 	return diffFl / oldFl
 }
 
+// (krehermann) found it surprisingly tricky to faithfully convert from decimal.Decimal to big.Int
+// so i just used the same logic as in the original code
+func deviationDecimal(oldPrice, newPrice decimal.Decimal) float64 {
+	diff := oldPrice.Sub(newPrice).Abs()
+	if oldPrice.IsZero() {
+		if diff.IsZero() {
+			return 0.0
+		}
+		return math.MaxFloat64
+	}
+	diffFl, _ := diff.Float64()
+	oldFl, _ := oldPrice.Float64()
+	return diffFl / oldFl
+}
+
 func NewDataFeedsAggregator(config values.Map, reportCodec datastreams.ReportCodec) (types.Aggregator, error) {
 	parsedConfig, err := ParseConfig(config)
 	if err != nil {
@@ -322,15 +360,15 @@ func ParseConfig(config values.Map) (aggregatorConfig, error) {
 	}
 
 	for feedID, feedCfg := range parsedConfig.Feeds {
-		if feedCfg.DeviationString != "" {
+		if feedCfg.Deviation != "" {
 			if _, err := datastreams.NewFeedID(feedID.String()); err != nil {
 				return aggregatorConfig{}, fmt.Errorf("cannot parse feedID config for feed %s: %w", feedID, err)
 			}
-			dec, err := decimal.NewFromString(feedCfg.DeviationString)
+			dec, err := decimal.NewFromString(feedCfg.Deviation)
 			if err != nil {
 				return aggregatorConfig{}, fmt.Errorf("cannot parse deviation config for feed %s: %w", feedID, err)
 			}
-			feedCfg.Deviation = dec
+			feedCfg.parsedDeviation = dec
 			parsedConfig.Feeds[feedID] = feedCfg
 		}
 		trimmed, nonEmpty := strings.CutPrefix(feedCfg.RemappedIDHex, "0x")
@@ -339,7 +377,7 @@ func ParseConfig(config values.Map) (aggregatorConfig, error) {
 			if err != nil {
 				return aggregatorConfig{}, fmt.Errorf("cannot parse remappedId config for feed %s: %w", feedID, err)
 			}
-			feedCfg.RemappedID = rawRemappedID
+			feedCfg.remappedID = rawRemappedID
 			parsedConfig.Feeds[feedID] = feedCfg
 		}
 	}

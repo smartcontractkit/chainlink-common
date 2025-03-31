@@ -73,12 +73,16 @@ type Metadata struct {
 	MinRequiredSignatures int
 }
 
+// StreamsTriggerEvent is the underlying type passed to the dataFeedsAggregator.Aggregate
+// function via the untyped observation, which originates in the asset don.
 type StreamsTriggerEvent struct {
 	Payload   []FeedReport
 	Metadata  Metadata
 	Timestamp int64
 }
 
+// LLOStreamsTriggerEvent is the underlying type passed to the LLOAggregator.Aggregate
+// function via the untyped observation, which originates on the asset don via the LLO OCR3 plugin.
 type LLOStreamsTriggerEvent struct {
 	Payload                         []*LLOStreamDecimal
 	ObservationTimestampNanoseconds uint64
@@ -86,7 +90,7 @@ type LLOStreamsTriggerEvent struct {
 
 type LLOStreamDecimal struct {
 	StreamID uint32
-	Decimal  []byte
+	Decimal  []byte // binary representation of [llo.Decimal]: https://github.com/smartcontractkit/chainlink-data-streams/blob/d33e95631485bbcfdc22d209875035e3c73199d0/llo/stream_value.go#L147
 	// future: may add aggregation type {MODE, MEDIAN, etc...}
 }
 

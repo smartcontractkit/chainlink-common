@@ -19,7 +19,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	mercuryv1types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercuryv2types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
@@ -37,7 +36,7 @@ type PluginMercuryTest struct {
 
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
 	t.Run("PluginMercuryV4", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV4Factory(ctx, m.MercuryProvider, mercuryv4test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -46,7 +45,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 
 	t.Run("PluginMercuryV3", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercuryv3test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -55,7 +54,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercuryv2test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -64,7 +63,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercuryv1test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)

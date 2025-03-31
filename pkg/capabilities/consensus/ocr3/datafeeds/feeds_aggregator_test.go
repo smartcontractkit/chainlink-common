@@ -3,6 +3,7 @@ package datafeeds_test
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"math"
 	"math/big"
 	"testing"
 
@@ -54,7 +55,7 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	newState := &datafeeds.DataFeedsOutcomeMetadata{}
 	err = proto.Unmarshal(outcome.Metadata, newState)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(newState.FeedInfo))
+	require.Len(t, newState.FeedInfo, 2)
 	_, ok := newState.FeedInfo[feedIDA.String()]
 	require.True(t, ok)
 	require.Equal(t, []byte(nil), newState.FeedInfo[feedIDA.String()].BenchmarkPrice)
@@ -77,7 +78,7 @@ func TestDataFeedsAggregator_Aggregate_TwoRounds(t *testing.T) {
 	// validate metadata
 	err = proto.Unmarshal(outcome.Metadata, newState)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(newState.FeedInfo))
+	require.Len(t, newState.FeedInfo, 2)
 	_, ok = newState.FeedInfo[feedIDA.String()]
 	require.True(t, ok)
 	require.Equal(t, big.NewInt(100).Bytes(), newState.FeedInfo[feedIDA.String()].BenchmarkPrice)
@@ -138,7 +139,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	outcome, err := agg.Aggregate(logger.Nop(), nil, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
-	require.Equal(t, 2, len(outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields))
+	require.Len(t, outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields, 2)
 
 	// second round, B hits deviation, A is not stale
 	latestReportsRound2 := []datastreams.FeedReport{
@@ -158,7 +159,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	outcome, err = agg.Aggregate(logger.Nop(), outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
-	require.Equal(t, 1, len(outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields))
+	require.Len(t, outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields, 1)
 
 	// third round, B hits deviation, A is within allowed partial staleness threshold
 	latestReportsRound3 := []datastreams.FeedReport{
@@ -178,7 +179,7 @@ func TestDataFeedsAggregator_Aggregate_AllowedPartialStaleness(t *testing.T) {
 	outcome, err = agg.Aggregate(logger.Nop(), outcome, map[commontypes.OracleID][]values.Value{1: {mockTriggerEvent}, 2: {mockTriggerEvent}}, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
-	require.Equal(t, 2, len(outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields))
+	require.Len(t, outcome.EncodableOutcome.Fields[datafeeds.TopLevelListOutputFieldName].GetListValue().Fields, 2)
 }
 
 func TestDataFeedsAggregator_Aggregate_Failures(t *testing.T) {
@@ -205,11 +206,11 @@ func TestDataFeedsAggregator_ParseConfig(t *testing.T) {
 		config := getConfig(t, feedIDA.String(), "0.1", heartbeatA)
 		parsedConfig, err := datafeeds.ParseConfig(*config)
 		require.NoError(t, err)
-		require.Equal(t, deviationA, parsedConfig.Feeds[feedIDA].Deviation)
+		require.Equal(t, deviationA, parsedConfig.Feeds[feedIDA].DeviationAsDecimal())
 		require.Equal(t, heartbeatA, parsedConfig.Feeds[feedIDA].Heartbeat)
-		require.Equal(t, deviationB, parsedConfig.Feeds[feedIDB].Deviation)
+		require.Equal(t, deviationB, parsedConfig.Feeds[feedIDB].DeviationAsDecimal())
 		require.Equal(t, heartbeatB, parsedConfig.Feeds[feedIDB].Heartbeat)
-		require.Equal(t, allowedPartialStaleness, parsedConfig.AllowedPartialStaleness)
+		require.InEpsilon(t, allowedPartialStaleness, parsedConfig.AllowedPartialStaleness, math.SmallestNonzeroFloat64)
 	})
 
 	t.Run("invalid ID", func(t *testing.T) {

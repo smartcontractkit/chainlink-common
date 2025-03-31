@@ -12,12 +12,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticPriceRegistry(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// static test implementation is self consistent
 	assert.NoError(t, PriceRegistryReader.Evaluate(ctx, PriceRegistryReader))
 
@@ -49,19 +48,19 @@ func TestPriceRegistryGRPC(t *testing.T) {
 // do not add client.Close to this test, test that from the driver test
 func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryReader) {
 	t.Run("Address", func(t *testing.T) {
-		address, err := client.Address(tests.Context(t))
+		address, err := client.Address(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.addressResponse, address)
 	})
 
 	t.Run("GetFeeTokens", func(t *testing.T) {
-		price, err := client.GetFeeTokens(tests.Context(t))
+		price, err := client.GetFeeTokens(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.getFeeTokensResponse, price)
 	})
 
 	t.Run("GetGasPriceUpdatesCreatedAfter", func(t *testing.T) {
-		price, err := client.GetGasPriceUpdatesCreatedAfter(tests.Context(t),
+		price, err := client.GetGasPriceUpdatesCreatedAfter(t.Context(),
 			PriceRegistryReader.getGasPriceUpdatesCreatedAfterRequest.chainSelector,
 			PriceRegistryReader.getGasPriceUpdatesCreatedAfterRequest.ts,
 			PriceRegistryReader.getGasPriceUpdatesCreatedAfterRequest.confirmations,
@@ -71,7 +70,7 @@ func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryRea
 	})
 
 	t.Run("GetAllGasPriceUpdatesCreatedAfter", func(t *testing.T) {
-		price, err := client.GetAllGasPriceUpdatesCreatedAfter(tests.Context(t),
+		price, err := client.GetAllGasPriceUpdatesCreatedAfter(t.Context(),
 			PriceRegistryReader.getAllGasPriceUpdatesCreatedAfterRequest.ts,
 			PriceRegistryReader.getAllGasPriceUpdatesCreatedAfterRequest.confirmations,
 		)
@@ -80,7 +79,7 @@ func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryRea
 	})
 
 	t.Run("GetTokenPriceUpdatesCreatedAfter", func(t *testing.T) {
-		price, err := client.GetTokenPriceUpdatesCreatedAfter(tests.Context(t),
+		price, err := client.GetTokenPriceUpdatesCreatedAfter(t.Context(),
 			PriceRegistryReader.getTokenPriceUpdatesCreatedAfterRequest.ts,
 			PriceRegistryReader.getTokenPriceUpdatesCreatedAfterRequest.confirmations,
 		)
@@ -89,13 +88,13 @@ func roundTripPriceRegistryTests(t *testing.T, client cciptypes.PriceRegistryRea
 	})
 
 	t.Run("GetTokenPrices", func(t *testing.T) {
-		price, err := client.GetTokenPrices(tests.Context(t), PriceRegistryReader.getTokenPricesRequest)
+		price, err := client.GetTokenPrices(t.Context(), PriceRegistryReader.getTokenPricesRequest)
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.getTokenPricesResponse, price)
 	})
 
 	t.Run("GetTokensDecimals", func(t *testing.T) {
-		price, err := client.GetTokensDecimals(tests.Context(t), PriceRegistryReader.getTokensDecimalsRequest)
+		price, err := client.GetTokensDecimals(t.Context(), PriceRegistryReader.getTokensDecimalsRequest)
 		require.NoError(t, err)
 		assert.Equal(t, PriceRegistryReader.getTokensDecimalsResponse, price)
 	})

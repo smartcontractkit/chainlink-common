@@ -13,3 +13,14 @@ message DataFeedsMercuryReportInfo {
   int64 observation_timestamp = 3;
   bytes benchmark_price = 5; // big.Int
 }
+
+// LLOOutcomeMetadata is the state representation of the OCR3 consensus capability
+// when running the LLO aggregator.
+message LLOOutcomeMetadata {
+  map<uint32, LLOStreamInfo> streamInfo = 1;
+}
+
+message LLOStreamInfo {
+  int64 timestamp = 1; // Nanoseconds. Unix timestamp of observation produced by the LLO oracle
+  bytes price = 2; //  binary representation of [llo.Decimal]: https://github.com/smartcontractkit/chainlink-data-streams/blob/d33e95631485bbcfdc22d209875035e3c73199d0/llo/stream_value.go#L147
+}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743434647711,
+  "lastUpdate": 1743441392475,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10878,6 +10878,48 @@ window.BENCHMARK_DATA = {
             "value": 28229,
             "unit": "ns/op",
             "extra": "42751 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "00dd1822393d55515a27a38e0febdf1547040acb",
+          "message": "pkg/capabilities/consensus/ocr3: use services.Engine (#1009)",
+          "timestamp": "2025-03-31T12:15:10-05:00",
+          "tree_id": "ebfc1b39bf7d3127196cbf3bf2e3271fd2e7f7c4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/00dd1822393d55515a27a38e0febdf1547040acb"
+        },
+        "date": 1743441391105,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365,
+            "unit": "ns/op",
+            "extra": "3218314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.5,
+            "unit": "ns/op",
+            "extra": "2865387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28061,
+            "unit": "ns/op",
+            "extra": "42199 times\n4 procs"
           }
         ]
       }

@@ -105,6 +105,7 @@ type Relayer interface {
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.
+	// See evm.ContractReaderConfig
 	NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error)
 
 	NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error)

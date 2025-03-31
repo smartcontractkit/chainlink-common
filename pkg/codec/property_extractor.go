@@ -481,10 +481,7 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 		return reflect.Value{}, fmt.Errorf("root type is nil")
 	}
 
-	typ := rootType
-	for typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
+	typ := derefTypePtr(rootType)
 
 	for i, p := range parts {
 		if typ.Kind() != reflect.Struct {
@@ -496,10 +493,7 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 			return reflect.Value{}, fmt.Errorf("field %q not found in type %s", p, typ.Name())
 		}
 
-		fieldType := fieldByName.Type
-		for fieldType.Kind() == reflect.Ptr {
-			fieldType = fieldType.Elem()
-		}
+		fieldType := derefTypePtr(fieldByName.Type)
 
 		// at end of path return a slice or a slice of slice if parent was a slice
 		if i == len(parts)-1 {
@@ -521,9 +515,7 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 			prevIsSlice = true
 
 			newTyp := fieldType.Elem()
-			for newTyp.Kind() == reflect.Ptr {
-				newTyp = newTyp.Elem()
-			}
+			newTyp = derefTypePtr(newTyp)
 
 			if newTyp.Kind() == reflect.Slice {
 				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: field %q in path contains a nested slice", p)
@@ -531,10 +523,7 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 
 			typ = newTyp
 		} else {
-			typ = fieldByName.Type
-			for typ.Kind() == reflect.Ptr {
-				typ = typ.Elem()
-			}
+			typ = derefTypePtr(fieldByName.Type)
 		}
 	}
 

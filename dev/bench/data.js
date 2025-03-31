@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743236073512,
+  "lastUpdate": 1743430395786,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10794,6 +10794,48 @@ window.BENCHMARK_DATA = {
             "value": 28457,
             "unit": "ns/op",
             "extra": "42853 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "17bfd8db7e32f8932e61456966fea17be79151e5",
+          "message": "Fix wrapper mod for primitves wrapping and extractor modifiers for nested slice of slices (#1090)\n\n* Fix nested slice of slice property extractor mod\n\n* Fix wrapper modifier for primitives\n\n* Fix wrapper modifier tests",
+          "timestamp": "2025-03-31T16:11:51+02:00",
+          "tree_id": "527a230deb341e0f03715dc8bd8502c5fe405282",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/17bfd8db7e32f8932e61456966fea17be79151e5"
+        },
+        "date": 1743430395097,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.7,
+            "unit": "ns/op",
+            "extra": "3221959 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 434.6,
+            "unit": "ns/op",
+            "extra": "2896154 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28061,
+            "unit": "ns/op",
+            "extra": "42811 times\n4 procs"
           }
         ]
       }

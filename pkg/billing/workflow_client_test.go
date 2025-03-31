@@ -29,7 +29,7 @@ type testWorkflowServer struct {
 	pb.UnimplementedWorkflowServiceServer
 }
 
-func (s *testWorkflowServer) GetAccountCredits(ctx context.Context, req *pb.GetAccountCreditsRequest) (*pb.GetAccountCreditsResponse, error) {
+func (s *testWorkflowServer) GetAccountCredits(_ context.Context, _ *pb.GetAccountCreditsRequest) (*pb.GetAccountCreditsResponse, error) {
 	return &pb.GetAccountCreditsResponse{
 		Credits: []*pb.AccountCredits{
 			{CreditType: "TEST", Credits: 100},
@@ -49,7 +49,6 @@ func (d mockRequest) String() string {
 }
 
 func TestWorkflowClient_SignAndVerify(t *testing.T) {
-	lggr, _ := logger.New()
 	// Generate an ed25519 key pair for testing.
 	pub, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
@@ -58,7 +57,7 @@ func TestWorkflowClient_SignAndVerify(t *testing.T) {
 
 	// Create a workflowClient instance with the test signing key.
 	wc := &workflowClient{
-		logger:     lggr,
+		logger:     logger.Test(t),
 		signingKey: priv,
 	}
 
@@ -113,7 +112,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	// Generate a signing key so that the custom auth header is added.
 	pub, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	wc, err := NewWorkflowClient(addr,
 		WithWorkflowTransportCredentials(clientCreds), // Provided but may be overridden by TLS cert.
 		WithWorkflowTLSCert(string(certBytes)),
@@ -123,7 +122,12 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 		WithServerName("localhost"),
 	)
 	require.NoError(t, err)
-	defer wc.Close()
+	defer func(wc WorkflowClient) {
+		err2 := wc.Close()
+		if err2 != nil {
+			t.Error(err2)
+		}
+	}(wc)
 
 	// Call a method to verify that the client and server communicate over TLS.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -159,7 +163,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 
 	addr := lis.Addr().String()
 
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	wc, err := NewWorkflowClient(addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
 		WithWorkflowLogger(lggr),
@@ -171,7 +175,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 
 // Test that CanonicalStringFromRequest returns the correct string.
 func TestWorkflowClient_CanonicalString(t *testing.T) {
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	wc := &workflowClient{
 		logger: lggr,
 	}
@@ -195,7 +199,7 @@ func TestWorkflowClient_CanonicalString(t *testing.T) {
 
 // Test that VerifySignature fails when the request is altered.
 func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	pub, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
@@ -232,7 +236,7 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 }
 
 func TestWorkflowClient_CustomAuthHeader(t *testing.T) {
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	_, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
@@ -270,7 +274,7 @@ func TestWorkflowClient_CustomAuthHeader(t *testing.T) {
 
 // Test that NewWorkflowClient fails when given an invalid address.
 func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	_, err := NewWorkflowClient("invalid-address",
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
 		WithWorkflowLogger(lggr),
@@ -290,7 +294,7 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 	defer grpcServer.Stop()
 
 	addr := lis.Addr().String()
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	wc, err := NewWorkflowClient(addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
 		WithWorkflowLogger(lggr),
@@ -308,7 +312,7 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 
 // Additional test: Verify that signing produces a valid signature and repeated signing yields the same result.
 func TestWorkflowClient_RepeatedSign(t *testing.T) {
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	pub, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
@@ -331,7 +335,7 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 
 // Additional test: Verify that dialGrpc fails if an unreachable address is provided.
 func TestWorkflowClient_DialUnreachable(t *testing.T) {
-	lggr, _ := logger.New()
+	lggr := logger.Test(t)
 	unreachableAddr := "192.0.2.1:12345" // Reserved for documentation.
 	_, err := NewWorkflowClient(unreachableAddr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),

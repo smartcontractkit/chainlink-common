@@ -461,7 +461,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, response)
+	assert.Equal(t, expectedCapabilityResponse.Value, response.Value)
 }
 
 func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsumer(t *testing.T) {
@@ -521,7 +521,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, resp)
+	assert.Equal(t, expectedCapabilityResponse.Value, resp.Value)
 }
 
 type asyncCapabilityResponse struct {

@@ -139,6 +139,8 @@ func TestOCR3Capability(t *testing.T) {
 			assert.NoError(t, resp.Err)
 
 			assert.Equal(t, mresp, resp.Value)
+			assert.Equal(t, "payload", resp.Metadata.Metering[0].SpendUnit)
+			assert.Equal(t, "122", resp.Metadata.Metering[0].SpendValue)
 		})
 	}
 }
@@ -459,7 +461,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, response)
+	assert.Equal(t, expectedCapabilityResponse.Value, response.Value)
 }
 
 func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsumer(t *testing.T) {
@@ -519,7 +521,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, resp)
+	assert.Equal(t, expectedCapabilityResponse.Value, resp.Value)
 }
 
 type asyncCapabilityResponse struct {
@@ -531,7 +533,7 @@ func executeAsync(ctx context.Context, request capabilities.CapabilityRequest, t
 	respCh := make(chan asyncCapabilityResponse, 1)
 	go func() {
 		resp, err := toExecute(ctx, request)
-		respCh <- asyncCapabilityResponse{CapabilityResponse: capabilities.CapabilityResponse{Value: resp.Value}, Err: err}
+		respCh <- asyncCapabilityResponse{CapabilityResponse: capabilities.CapabilityResponse{Value: resp.Value, Metadata: resp.Metadata}, Err: err}
 		close(respCh)
 	}()
 

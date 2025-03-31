@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -378,30 +379,13 @@ func extractElement(src any, field string) (reflect.Value, error) {
 
 	// if extract maps is empty, check if the underlying field is an uninitialised slice, if so initialise it and return extracted elem.
 	if len(extractMaps) == 0 {
-		typ := reflect.TypeOf(src)
-		if typ.Kind() == reflect.Ptr {
-			typ = typ.Elem()
+		typ, err := initSliceForFieldPath(reflect.TypeOf(src), field)
+		if errors.Is(err, &NoSliceUnderFieldPathError{}) {
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q in type: %q for extraction", types.ErrInvalidType, field, reflect.TypeOf(src).String())
+		} else if err != nil {
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q in type: %q for extraction, tried to check if path leads to an uninitialised slice, but failed with %w", types.ErrInvalidType, field, reflect.TypeOf(src).String(), err)
 		}
-
-		if typ.Kind() != reflect.Struct {
-			return reflect.Value{}, fmt.Errorf("expected a pointer to struct, got pointer to %s", typ.Kind())
-		}
-
-		fieldTobeExtracted, ok := typ.FieldByName(strings.Split(field, ".")[0])
-		if !ok {
-			return reflect.Value{}, fmt.Errorf("field %q not found in typeaa %s", name, typ.Name())
-		}
-
-		fieldTobeExtractedType := fieldTobeExtracted.Type
-		if fieldTobeExtractedType.Kind() == reflect.Pointer {
-			fieldTobeExtractedType = fieldTobeExtractedType.Elem()
-		}
-
-		if fieldTobeExtractedType.Kind() == reflect.Slice {
-			sliceType := reflect.SliceOf(fieldTobeExtractedType)
-			sliceValue := reflect.MakeSlice(sliceType, 0, 0)
-			return sliceValue, nil
-		}
+		return typ, nil
 	}
 
 	if len(extractMaps) > 1 {
@@ -425,7 +409,7 @@ func extractElement(src any, field string) (reflect.Value, error) {
 		}
 
 		if !sliceInitialized || sliceValue.Len() == 0 {
-			return reflect.Value{}, fmt.Errorf("%w: cannot find3 %q, sliceInit: %v, sliceVal len: %d, src: %q, extractmaps: %v", types.ErrInvalidType, field, sliceInitialized, sliceValue.String(), reflect.TypeOf(src), extractMaps)
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q", types.ErrInvalidType, field)
 		}
 
 		return sliceValue, nil
@@ -479,4 +463,79 @@ func pathAndName(field string) ([]string, string) {
 	path = path[:len(path)-1]
 
 	return path, name
+}
+
+type NoSliceUnderFieldPathError struct {
+	Err error
+}
+
+func (e *NoSliceUnderFieldPathError) Error() string {
+	return fmt.Sprintf("field path did not resolve to a slice")
+}
+
+func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Value, error) {
+	parts := strings.Split(fieldPath, ".")
+	var prevIsSlice bool
+
+	// Start with the underlying type (unwrapping pointers).
+	typ := rootType
+	for typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+
+	// Traverse each field in the path.
+	for i, p := range parts {
+		if typ.Kind() != reflect.Struct {
+			return reflect.Value{}, fmt.Errorf("expected a struct when processing field %q, got %s", p, typ.Kind())
+		}
+
+		fieldByName, ok := typ.FieldByName(p)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("field %q not found in type %s", p, typ.Name())
+		}
+
+		// Work with the field type, unwrapping pointers.
+		fieldType := fieldByName.Type
+		for fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+		}
+
+		if i == len(parts)-1 {
+			if prevIsSlice {
+				fieldType = reflect.SliceOf(fieldType)
+			}
+			// Otherwise, the field is directly a slice.
+			return reflect.MakeSlice(fieldType, 0, 0), nil
+		}
+
+		// If this field is a slice...
+		if fieldType.Kind() == reflect.Slice {
+			// If we've already encountered a slice earlier, error out.
+			if prevIsSlice {
+				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: slice already encountered before field %q", p)
+			}
+			prevIsSlice = true
+
+			// Not at the end yet: update typ to be the element type of the slice.
+			// But check that the slice's element is not itself a slice.
+			newTyp := fieldType.Elem()
+			for newTyp.Kind() == reflect.Ptr {
+				newTyp = newTyp.Elem()
+			}
+
+			if newTyp.Kind() == reflect.Slice {
+				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: field %q contains a slice of slices", p)
+			}
+
+			typ = newTyp
+		} else {
+			// Not a slice: update typ based on the field.
+			typ = fieldByName.Type
+			for typ.Kind() == reflect.Ptr {
+				typ = typ.Elem()
+			}
+		}
+	}
+
+	return reflect.Value{}, &NoSliceUnderFieldPathError{}
 }

@@ -419,7 +419,7 @@ func extractElement(src any, field string) (reflect.Value, error) {
 
 	item, ok := em[name]
 	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot find4 %s", types.ErrInvalidType, field)
+		return reflect.Value{}, fmt.Errorf("%w: cannot find %q", types.ErrInvalidType, field)
 	}
 
 	return reflect.ValueOf(item), nil
@@ -477,13 +477,11 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 	parts := strings.Split(fieldPath, ".")
 	var prevIsSlice bool
 
-	// Start with the underlying type (unwrapping pointers).
 	typ := rootType
 	for typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
 
-	// Traverse each field in the path.
 	for i, p := range parts {
 		if typ.Kind() != reflect.Struct {
 			return reflect.Value{}, fmt.Errorf("expected a struct when processing field %q, got %s", p, typ.Kind())
@@ -494,42 +492,36 @@ func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Val
 			return reflect.Value{}, fmt.Errorf("field %q not found in type %s", p, typ.Name())
 		}
 
-		// Work with the field type, unwrapping pointers.
 		fieldType := fieldByName.Type
 		for fieldType.Kind() == reflect.Ptr {
 			fieldType = fieldType.Elem()
 		}
 
+		// at end of path return a slice or a slice of slice if parent was a slice
 		if i == len(parts)-1 {
 			if prevIsSlice {
 				fieldType = reflect.SliceOf(fieldType)
 			}
-			// Otherwise, the field is directly a slice.
 			return reflect.MakeSlice(fieldType, 0, 0), nil
 		}
 
-		// If this field is a slice...
 		if fieldType.Kind() == reflect.Slice {
-			// If we've already encountered a slice earlier, error out.
 			if prevIsSlice {
-				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: slice already encountered before field %q", p)
+				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: found a slice at field %q, but parent in path is already a slice", p)
 			}
 			prevIsSlice = true
 
-			// Not at the end yet: update typ to be the element type of the slice.
-			// But check that the slice's element is not itself a slice.
 			newTyp := fieldType.Elem()
 			for newTyp.Kind() == reflect.Ptr {
 				newTyp = newTyp.Elem()
 			}
 
 			if newTyp.Kind() == reflect.Slice {
-				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: field %q contains a slice of slices", p)
+				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: field %q in path contains a nested slice", p)
 			}
 
 			typ = newTyp
 		} else {
-			// Not a slice: update typ based on the field.
 			typ = fieldByName.Type
 			for typ.Kind() == reflect.Ptr {
 				typ = typ.Elem()

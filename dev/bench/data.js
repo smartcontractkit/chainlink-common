@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743441392475,
+  "lastUpdate": 1743455417455,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10920,6 +10920,48 @@ window.BENCHMARK_DATA = {
             "value": 28061,
             "unit": "ns/op",
             "extra": "42199 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "46f0d8f85c3cf77ca5b4b6141768059ecf6e2ab3",
+          "message": "metering for consensus cap (#1099)\n\n* metering for consensus cap\n\n* Adding MeterableCapability iface\n\n* clean up\n\n* removing MeterableCapability iface in favor of MeteringUnit struct\n\n* fixing tests\n\n* values.ByteSizeOfMap --> private utility\n\n* updating access pattern to metering.unit\n\n* metering.XyzMeteringUnit --> metering.XyzUnit",
+          "timestamp": "2025-03-31T17:09:04-04:00",
+          "tree_id": "4309cfe33643361d33d76af4e51a8b4564f35dd9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/46f0d8f85c3cf77ca5b4b6141768059ecf6e2ab3"
+        },
+        "date": 1743455416728,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.4,
+            "unit": "ns/op",
+            "extra": "3319963 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.4,
+            "unit": "ns/op",
+            "extra": "2851215 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28221,
+            "unit": "ns/op",
+            "extra": "42859 times\n4 procs"
           }
         ]
       }

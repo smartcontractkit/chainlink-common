@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package loop;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+// Represents the on-chain Solana account structure.
+message SolanaAccount {
+  // Number of lamports assigned to this account
+  uint64 lamports = 1;
+
+  // Pubkey of the program this account has been assigned to (32 bytes)
+  bytes owner = 2;
+
+  // Data associated with the account
+  bytes data = 3;
+
+  // Boolean indicating if the account contains a prchogram (and is strictly read-only)
+  bool executable = 4;
+
+  // The epoch at which this account will next owe rent (stored as a string if you need arbitrary precision)
+  string rent_epoch = 5;
+}
+
+// Request for FindProgramAddress
+message FindProgramAddressRequest {
+  // One or more seed values used to derive the program address
+  repeated bytes seeds = 1;
+
+  // The 32-byte program ID
+  bytes program_id = 2;
+}
+
+// Response for FindProgramAddress
+message FindProgramAddressReply {
+  // The derived 32-byte program address
+  bytes address = 1;
+}
+
+// Request for GetAccountData
+message GetAccountDataRequest {
+  // The 32-byte program ID (or account address)
+  bytes program_id = 1;
+}
+
+// Response for GetAccountData
+message GetAccountDataReply {
+  SolanaAccount account = 1;
+}
+
+// Request for GetMultipleAccountData
+message GetMultipleAccountDataRequest {
+  // A list of 32-byte program IDs (or account addresses)
+  repeated bytes program_ids = 1;
+}
+
+// Response for GetMultipleAccountData
+message GetMultipleAccountDataReply {
+  repeated SolanaAccount accounts = 1;
+}
+
+// Request for ReadContract
+message ReadContractRequest {
+  // Name of the EVM contract method
+  string method = 1;
+
+  // Encoded parameters for the contract call
+  bytes encoded_params = 2;
+}
+
+// Response for ReadContract
+message ReadContractReply {
+  // Encoded return data from the contract call
+  bytes result = 1;
+}
+
+// Service that aggregates both Solana and EVM chain reading capabilities.
+service ChainCapabilities {
+  // Solana-related methods
+  rpc FindProgramAddress (FindProgramAddressRequest) returns (FindProgramAddressReply);
+  rpc GetAccountData (GetAccountDataRequest) returns (GetAccountDataReply);
+  rpc GetMultipleAccountData (GetMultipleAccountDataRequest) returns (GetMultipleAccountDataReply);
+
+  // EVM-related method
+  rpc ReadContract (ReadContractRequest) returns (ReadContractReply);
+}
+

@@ -199,6 +199,8 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		return nil, err
 	}
 
+	// Create Emitter based on configuration
+
 	messageLoggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(messageLoggerResource),
 		sdklog.WithProcessor(messageLogProcessor),

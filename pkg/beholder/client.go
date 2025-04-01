@@ -25,9 +25,7 @@ type Emitter interface {
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }
 
-type messageEmitter struct {
-	messageLogger otellog.Logger
-}
+
 
 type Client struct {
 	Config Config
@@ -199,16 +197,26 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		return nil, err
 	}
 
-	// Create Emitter based on configuration
-
 	messageLoggerProvider := sdklog.NewLoggerProvider(
 		sdklog.WithResource(messageLoggerResource),
 		sdklog.WithProcessor(messageLogProcessor),
 	)
 	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
-	emitter := messageEmitter{
-		messageLogger: messageLogger,
+	// Use the messageEmitter by default
+	// This will eventually be removed in favor of chip-ingress emitter
+	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
+	emitter := NewMessageEmitter(messageLogger)
+	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
+	// eventually we will remove the dual source emitter and just use chip ingress
+	if cfg.ChipIngressEmitterEnabled {
+
+		chipIngressClient, err := NewChipIngressClient(cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		emitter = NewDualSourceEmitter(chipIngressClient, emitter)
 	}
 
 	onClose := func() (err error) {
@@ -297,25 +305,6 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 	return
-}
-
-// Emits logs the message, but does not wait for the message to be processed.
-// Open question: what are pros/cons for using use map[]any vs use otellog.KeyValue
-func (e messageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	message := NewMessage(body, attrKVs...)
-	if err := message.Validate(); err != nil {
-		return err
-	}
-	e.messageLogger.Emit(ctx, message.OtelRecord())
-	return nil
-}
-
-func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error {
-	if err := message.Validate(); err != nil {
-		return err
-	}
-	e.messageLogger.Emit(ctx, message.OtelRecord())
-	return nil
 }
 
 type shutdowner interface {

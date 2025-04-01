@@ -474,7 +474,7 @@ func SetValueAtPath(vInto, vField reflect.Value, itemType string) error {
 }
 
 func applyValue(vInto, vField reflect.Value) error {
-	if typeWithoutPtr(vInto.Type()) != typeWithoutPtr(vField.Type()) {
+	if derefTypePtr(vInto.Type()) != derefTypePtr(vField.Type()) {
 		return fmt.Errorf("value type mismatch for field")
 	}
 
@@ -522,11 +522,9 @@ func applyValue(vInto, vField reflect.Value) error {
 	return nil
 }
 
-func typeWithoutPtr(val reflect.Type) reflect.Type {
-	switch val.Kind() {
-	case reflect.Ptr:
-		return typeWithoutPtr(val.Elem())
-	default:
-		return val
+func derefTypePtr(typ reflect.Type) reflect.Type {
+	for typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
 	}
+	return typ
 }

@@ -72,10 +72,7 @@ func (m *wrapperModifier) TransformToOnChain(offChainValue any, itemType string)
 	}
 
 	// check if the offChainValue is a wrapper around the whole value
-	typ := reflect.TypeOf(offChainValue)
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
+	typ := derefTypePtr(reflect.TypeOf(offChainValue))
 
 	if typ.Kind() == reflect.Struct && typ.NumField() == 1 {
 		if m.isWholeValueWrapper() {

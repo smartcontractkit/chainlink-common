@@ -25,8 +25,6 @@ type Emitter interface {
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
 }
 
-
-
 type Client struct {
 	Config Config
 	// Logger
@@ -216,7 +214,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		emitter = NewDualSourceEmitter(chipIngressClient, emitter)
+		emitter = NewDualSourceEmitter(NewChipIngressEmitter(chipIngressClient), emitter)
 	}
 
 	onClose := func() (err error) {

@@ -27,11 +27,3 @@ func (e messageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) e
 	e.messageLogger.Emit(ctx, message.OtelRecord())
 	return nil
 }
-
-func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error {
-	if err := message.Validate(); err != nil {
-		return err
-	}
-	e.messageLogger.Emit(ctx, message.OtelRecord())
-	return nil
-}

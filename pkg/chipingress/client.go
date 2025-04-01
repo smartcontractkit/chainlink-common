@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/protobuf/proto"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
@@ -194,19 +193,14 @@ func validateEvents(events []ce.Event) error {
 	return nil
 }
 
-func NewEvent(domain, entity string, payload proto.Message) (ce.Event, error) {
+func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)
 	event.SetID(uuid.New().String())
 
-	payloadBytes, err := proto.Marshal(payload)
-	if err != nil {
-		return ce.Event{}, fmt.Errorf("failed to marshal payload: %w", err)
-	}
-
-	err = event.SetData(ceformat.ContentTypeProtobuf, payloadBytes)
+	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
 	if err != nil {
 		return ce.Event{}, fmt.Errorf("could not set data on event: %w", err)
 	}

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"log"
 )
 
 // dualSourceEmitter emits both to chip ingress and to the otel collector
@@ -27,9 +28,14 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 		return err
 	}
 
-	if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
-		return err
-	}
+	// Emit via chip ingress async
+	go func() {
+		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+			// If the chip ingress emitter fails, we log the error but do not return it
+			// because we still want to send the data to the OTLP collector and not cause disruption
+			log.Printf("Error emitting message to chip ingress: %v", err)
+		}
+	}()
 
 	return nil
 }

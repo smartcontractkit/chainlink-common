@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743522774219,
+  "lastUpdate": 1743532824978,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11046,6 +11046,48 @@ window.BENCHMARK_DATA = {
             "value": 28632,
             "unit": "ns/op",
             "extra": "42184 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d68a079c09d16d0b3391b4906d79c0470341e878",
+          "message": "Add features to wrapper and property extractor modifiers (#1098)\n\n* Change hardcoder to support TransformToOffChain for primitive variables\n\n* Fix err handling in transformWithMapsHelper\n\n* Improve extractElement to work on uninitialised slices\n\n* Add a test for hardcoder TransformToOffChain for primitives variables\n\n* Handle uninitialised slices in property extractor and add tests\n\n* Improve transformWithMapsHelper err message\n\n* minor improvements\n\n* Improve err handling in initSliceForFieldPath\n\n* Use derefPtr helper",
+          "timestamp": "2025-04-01T20:38:09+02:00",
+          "tree_id": "88945f555153f33aa3e550ec180af6e19d428619",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d68a079c09d16d0b3391b4906d79c0470341e878"
+        },
+        "date": 1743532823472,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.2,
+            "unit": "ns/op",
+            "extra": "3302316 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.3,
+            "unit": "ns/op",
+            "extra": "2884372 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28436,
+            "unit": "ns/op",
+            "extra": "42234 times\n4 procs"
           }
         ]
       }

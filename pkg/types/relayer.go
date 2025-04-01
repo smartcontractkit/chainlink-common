@@ -78,6 +78,38 @@ type NodeStatus struct {
 	State   string
 }
 
+type SolanaAccount struct {
+	// Number of lamports assigned to this account
+	Lamports uint64
+
+	// Pubkey of the program this account has been assigned to
+	Owner [32]byte
+
+	// Data associated with the account encoded as  "base58", "base64", or "base64+zstd"
+	Data []byte
+
+	// Boolean indicating if the account contains a program (and is strictly read-only)
+	Executable bool
+
+	// The epoch at which this account will next owe rent
+	RentEpoch *big.Int
+}
+
+type SolanaChainReader interface {
+	FindProgramAddress(seed [][]byte, programID [32]byte) ([32]byte, error)
+	GetAccountData(ctx context.Context, programIDs [32]byte) (SolanaAccount, error)
+	GetMultipleAccountData(ctx context.Context, programIDs [][32]byte) ([]SolanaAccount, error)
+}
+
+type EVMChainReader interface {
+	ReadContract(ctx context.Context, method string, encodedParams []byte) ([]byte, error)
+}
+
+type ChainCapabilities interface {
+	SolanaChainReader
+	EVMChainReader
+}
+
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
@@ -98,6 +130,8 @@ type ChainService interface {
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
+
+	ChainCapabilities
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

@@ -226,16 +226,20 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		response := <-ch
-		outputLenBytes := byteSizeOfMap(response.Value)
-		return capabilities.CapabilityResponse{
-			Value: response.Value,
-			Metadata: capabilities.ResponseMetadata{
-				Metering: []capabilities.MeteringNodeDetail{
-					{SpendUnit: metering.PayloadUnit.Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
+		select {
+		case <-ctx.Done():
+			return capabilities.CapabilityResponse{}, ctx.Err()
+		case response := <-ch:
+			outputLenBytes := byteSizeOfMap(response.Value)
+			return capabilities.CapabilityResponse{
+				Value: response.Value,
+				Metadata: capabilities.ResponseMetadata{
+					Metering: []capabilities.MeteringNodeDetail{
+						{SpendUnit: metering.PayloadUnit.Name, SpendValue: fmt.Sprintf("%d", inputLenBytes+outputLenBytes)},
+					},
 				},
-			},
-		}, response.Err
+			}, response.Err
+		}
 	}
 
 	return capabilities.CapabilityResponse{}, fmt.Errorf("unknown method: %s", m.Method)

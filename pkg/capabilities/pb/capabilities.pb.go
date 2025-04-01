@@ -1132,7 +1132,7 @@ var File_capabilities_pb_capabilities_proto protoreflect.FileDescriptor
 
 const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\n" +
-	"\"capabilities/pb/capabilities.proto\x12\fcapabilities\x1a\x16values/pb/values.proto\x1a\x1ecapabilities/pb/triggers.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc2\x01\n" +
+	"\"capabilities/pb/capabilities.proto\x12\fcapabilities\x1a\x16values/pb/values.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc2\x01\n" +
 	"\x13CapabilityInfoReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12E\n" +
 	"\x0fcapability_type\x18\x02 \x01(\x0e2\x1c.capabilities.CapabilityTypeR\x0ecapabilityType\x12 \n" +
@@ -1319,7 +1319,6 @@ func file_capabilities_pb_capabilities_proto_init() {
 	if File_capabilities_pb_capabilities_proto != nil {
 		return
 	}
-	file_capabilities_pb_triggers_proto_init()
 	file_capabilities_pb_capabilities_proto_msgTypes[6].OneofWrappers = []any{
 		(*TriggerResponseMessage_Ack)(nil),
 		(*TriggerResponseMessage_Response)(nil),

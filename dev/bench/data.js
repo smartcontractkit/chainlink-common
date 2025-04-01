@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743455417455,
+  "lastUpdate": 1743469112685,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -10962,6 +10962,48 @@ window.BENCHMARK_DATA = {
             "value": 28221,
             "unit": "ns/op",
             "extra": "42859 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b355c7c8c033b55384de86450d41be1af874a08",
+          "message": "Move Billing Service Proto to Common (#1088)\n\n* new billing service proto file\n\n* generate go files\n\n* remove unused import\n\n* move client to common\n\n* using test loggers\n\n---------\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-03-31T20:57:18-04:00",
+          "tree_id": "8fe27baea04a0db18b7f040a72344e463cd9e276",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1b355c7c8c033b55384de86450d41be1af874a08"
+        },
+        "date": 1743469111985,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.3,
+            "unit": "ns/op",
+            "extra": "3311097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.6,
+            "unit": "ns/op",
+            "extra": "2793524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28606,
+            "unit": "ns/op",
+            "extra": "42189 times\n4 procs"
           }
         ]
       }

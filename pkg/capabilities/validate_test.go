@@ -1,13 +1,16 @@
-package capabilities
+package capabilities_test
 
 import (
 	"encoding/json"
 	"os"
 	"testing"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -28,28 +31,28 @@ type TestOutputs struct {
 }
 
 func TestValidator_ConfigSchema(t *testing.T) {
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 	schema, err := v.ConfigSchema()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schema)
 }
 
 func TestValidator_InputsSchema(t *testing.T) {
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 	schema, err := v.InputsSchema()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schema)
 }
 
 func TestValidator_OutputsSchema(t *testing.T) {
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 	schema, err := v.OutputsSchema()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schema)
 }
 
 func TestValidator_Schema(t *testing.T) {
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 	schema, err := v.Schema()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schema)
@@ -86,7 +89,7 @@ func TestValidator_ValidateSchema(t *testing.T) {
   }
 }`
 
-	result, err := validateAgainstSchema[any](v, schema)
+	result, err := capabilities.ValidateAgainstSchema(v, schema)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 
@@ -97,12 +100,13 @@ func TestValidator_ValidateSchema(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	result, err = validateAgainstSchema[any](v, schema)
+	result, err = capabilities.ValidateAgainstSchema(v, schema)
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }
 
 func TestValidator_ValidateConfig(t *testing.T) {
+	t.Parallel()
 	m, err := values.NewMap(map[string]interface{}{
 		"baz": "world",
 	})
@@ -111,7 +115,7 @@ func TestValidator_ValidateConfig(t *testing.T) {
 	l, err := values.NewList([]interface{}{"hello", "world"})
 	assert.NoError(t, err)
 
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 	config, err := values.NewMap(
 		map[string]interface{}{
 			"foo":  l,
@@ -137,7 +141,8 @@ func TestValidator_ValidateConfig(t *testing.T) {
 }
 
 func TestValidator_ValidateInputs(t *testing.T) {
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	t.Parallel()
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 	inputs, err := values.NewMap(
 		map[string]interface{}{
 			"baz": "world",
@@ -173,7 +178,7 @@ func TestValidator_ValidateInputs(t *testing.T) {
 }
 
 func TestValidator_ValidateOutputs(t *testing.T) {
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{})
 
 	outputs, err := values.NewMap(
 		map[string]interface{}{
@@ -199,12 +204,13 @@ func TestValidator_ValidateOutputs(t *testing.T) {
 }
 
 func TestValidator_GenerateSchema(t *testing.T) {
-	capInfo := CapabilityInfo{
+	t.Parallel()
+	capInfo := capabilities.CapabilityInfo{
 		ID:             "test@1.0.0",
-		CapabilityType: CapabilityTypeTrigger,
+		CapabilityType: capabilities.CapabilityTypeTrigger,
 		Description:    "test description",
 	}
-	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{Info: capInfo})
+	v := capabilities.NewValidator[TestConfig, TestInputs, TestOutputs](capabilities.ValidatorArgs{Info: capInfo})
 	schema, err := v.Schema()
 	assert.NoError(t, err)
 	var shouldUpdate = false
@@ -222,7 +228,7 @@ func TestValidator_GenerateSchema(t *testing.T) {
 	}
 
 	// We allow inputs to be nil, since triggers do not have inputs
-	triggerValidator := NewValidator[TestConfig, any, TestOutputs](ValidatorArgs{})
+	triggerValidator := capabilities.NewValidator[TestConfig, any, TestOutputs](capabilities.ValidatorArgs{})
 	schema, err = triggerValidator.Schema()
 	assert.NoError(t, err)
 	if shouldUpdate {
@@ -241,15 +247,15 @@ func TestValidator_GenerateSchema(t *testing.T) {
 
 	// We dont allow other permutations of nil types
 	// Since we don't have the need for them currently
-	invalidValidator1 := NewValidator[TestConfig, any, any](ValidatorArgs{})
+	invalidValidator1 := capabilities.NewValidator[TestConfig, any, any](capabilities.ValidatorArgs{})
 	_, err = invalidValidator1.Schema()
 	assert.Error(t, err)
 
-	invalidValidator2 := NewValidator[any, TestInputs, any](ValidatorArgs{})
+	invalidValidator2 := capabilities.NewValidator[any, TestInputs, any](capabilities.ValidatorArgs{})
 	_, err = invalidValidator2.Schema()
 	assert.Error(t, err)
 
-	invalidValidator3 := NewValidator[any, any, TestOutputs](ValidatorArgs{})
+	invalidValidator3 := capabilities.NewValidator[any, any, TestOutputs](capabilities.ValidatorArgs{})
 	_, err = invalidValidator3.Schema()
 	assert.Error(t, err)
 }
@@ -262,3 +268,80 @@ var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
 	}
 	return out
 }))
+
+func TestCreateCapabilityIDRegex(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name           string
+		capabilityName string
+		version        *semver.Version
+		testIDs        map[string]bool // ID to expected match result
+	}{
+		{
+			name:           "streams-trigger version 1.0.0",
+			capabilityName: "streams-trigger",
+			version:        mustSemVer(t, "1"),
+			testIDs: map[string]bool{
+				"streams-trigger@1.0.0":                              true,  // No labels
+				"streams-trigger@1.77.0":                             true,  // Minor version OK
+				"streams-trigger@1.0.13":                             true,  // Patch version OK
+				"streams-trigger:DON_trigger@1.0.0":                  true,  // One label
+				"streams-trigger:DON_trigger:format_json@1.0.0":      true,  // Two labels
+				"streams-trigger:DON-trigger:format_json@1.0.0":      true,  // Hyphen in label
+				"streams-trigger:a_b:c_d:e_f@1.0.0":                  true,  // Three labels
+				"streamstrigger@1.0.0":                               false, // Wrong name
+				"streams-trigger@2.0.0":                              false, // Wrong version
+				"streams-trigger:DON trigger@1.0.0":                  false, // Space in label
+				"streams-trigger:DON_trigger:format_json@1.0.0.beta": false, // Extra version part
+				"streams-trigger:@1.0.0":                             false, // Empty label
+				"streams-trigger:DON_trigger:@1.0.0":                 false, // Empty second label
+				"streams-trigger@1.notnum.0":                         false, // Bad minor
+				"streams-trigger@1.0.badpatch":                       false, // Bad patch
+				"streams-trigger@1.0":                                false, // missing patch
+				"streams-trigger@1":                                  false, // missing minor, patch
+
+			},
+		},
+		{
+			name:           "streams-trigger version 2.0.0",
+			capabilityName: "streams-trigger",
+			version:        mustSemVer(t, "2"),
+			testIDs: map[string]bool{
+				"streams-trigger@2.0.0":                              true,  // No labels
+				"streams-trigger:DON_trigger@2.0.0":                  true,  // One label
+				"streams-trigger:DON_trigger:format_json@2.0.0":      true,  // Two labels
+				"streams-trigger:DON-trigger:format_json@2.0.0":      true,  // Hyphen in label
+				"streams-trigger:a_b:c_d:e_f@2.0.0":                  true,  // Three labels
+				"streams-trigger@2.1.0":                              true,  // minor version OK
+				"streams-trigger@2.0.1":                              true,  // patch version OK
+				"streamstrigger@2.0.0":                               false, // Wrong name
+				"streams-trigger@1.0.0":                              false, // Wrong version
+				"streams-trigger:DON trigger@2.0.0":                  false, // Space in label
+				"streams-trigger:DON_trigger:format_json@2.0.0.beta": false, // Extra version part
+				"streams-trigger:@2.0.0":                             false, // Empty label
+				"streams-trigger:DON_trigger:@2.0.0":                 false, // Empty second label
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			regex, err := capabilities.CreateCapabilityIDRegex(tt.capabilityName, tt.version)
+			require.NoError(t, err, "Failed to create regex")
+
+			for id, shouldMatch := range tt.testIDs {
+				if shouldMatch {
+					assert.True(t, regex.MatchString(id), "Expected ID to match, but it didn't: %s", id)
+				} else {
+					assert.False(t, regex.MatchString(id), "Expected ID not to match, but it did: %s", id)
+				}
+			}
+		})
+	}
+}
+
+func mustSemVer(t *testing.T, version string) *semver.Version {
+	v, err := semver.NewVersion(version)
+	require.NoError(t, err)
+	return v
+}

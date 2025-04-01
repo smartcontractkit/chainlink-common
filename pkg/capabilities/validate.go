@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/invopop/jsonschema"
 	jsonvalidate "github.com/santhosh-tekuri/jsonschema/v5"
 
@@ -217,4 +219,25 @@ func schemaWith(reflector jsonschema.Reflector, schemaType any, schemaCache map[
 
 	schemaCache[key] = string(schemaBytes)
 	return string(schemaBytes), nil
+}
+
+// CreateCapabilityIDRegex creates a regex pattern that matches capability IDs in the format:
+// {name}:{label1_key}_{label1_value}:{label2_key}_{label2_value}@{version}
+// where the labels are optional and version is a semantic version.
+func CreateCapabilityIDRegex(name string, version *semver.Version) (*regexp.Regexp, error) {
+	// Escape any regex metacharacters in the name
+	escapedName := regexp.QuoteMeta(name)
+
+	// Format the version for the regex
+	versionStr := version.Major()
+	//version.Major()
+	//escapedVersion := regexp.QuoteMeta(versionStr)
+
+	// Create pattern that matches:
+	// 1. The escaped name at the start
+	// 2. Optional label sections (zero or more) in format :key_value
+	// 3. @ symbol followed by the version
+	pattern := fmt.Sprintf(`^%s(:[a-zA-Z0-9_]+-?[a-zA-Z0-9_]+)*@%d\.[0-9]+\.[0-9]+$`, escapedName, versionStr)
+
+	return regexp.Compile(pattern)
 }

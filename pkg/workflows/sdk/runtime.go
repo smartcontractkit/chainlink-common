@@ -44,3 +44,33 @@ type FetchResponse struct {
 	Headers        map[string]any `json:"headers,omitempty"`      // HTTP headers
 	Body           []byte         `json:"body,omitempty"`         // HTTP response body
 }
+
+// NewEventEmitter creates a new event emitter that wraps the runtime's emitter
+// with additional functionality for easier logging as Beholder events.
+func NewEventEmitter(runtime Runtime) *EventEmitter {
+	return &EventEmitter{
+		runtime: runtime,
+	}
+}
+
+// EventEmitter provides a convenient way to emit messages and log events
+// in workflows.
+type EventEmitter struct {
+	runtime Runtime
+	labels  []string
+}
+
+// With adds labels to the emitter that will be included in all subsequent emits.
+// Labels are passed as key-value pairs and are cumulative.
+func (e *EventEmitter) With(kvs ...string) *EventEmitter {
+	e.labels = append(e.labels, kvs...)
+	return e
+}
+
+// Emit sends a message with the accumulated labels.
+func (e *EventEmitter) Emit(message string) {
+	err := e.runtime.Emitter().With(e.labels...).Emit(message)
+	if err != nil {
+		e.runtime.Logger().Errorf("failed to emit message: %s", message)
+	}
+}

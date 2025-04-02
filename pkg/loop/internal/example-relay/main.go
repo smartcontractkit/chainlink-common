@@ -94,6 +94,10 @@ func (r *relayer) LatestHead(ctx context.Context) (types.Head, error) {
 	return types.Head{}, errors.New("unimplemented")
 }
 
+func (r *relayer) GetBalance(ctx context.Context, address string) (types.TokenBalance, error) {
+	return types.TokenBalance{}, errors.New("unimplemented")
+}
+
 func (r *relayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	return types.ChainStatus{}, errors.New("unimplemented")
 }

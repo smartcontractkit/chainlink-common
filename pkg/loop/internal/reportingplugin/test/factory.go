@@ -8,22 +8,26 @@ import (
 
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
-	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-var Factory = staticFactory{
-	staticFactoryConfig: staticFactoryConfig{
-		ReportingPluginConfig: reportingPluginConfig,
-		rpi:                   rpi,
-		reportingPlugin:       ReportingPlugin,
-	},
+func Factory(lggr logger.Logger) staticFactory {
+	return newStaticFactory(lggr, StaticFactoryConfig)
+}
+
+var StaticFactoryConfig = staticFactoryConfig{
+	ReportingPluginConfig: reportingPluginConfig,
+	rpi:                   rpi,
+	reportingPlugin:       ReportingPlugin,
 }
 
 type staticFactoryConfig struct {
@@ -33,22 +37,21 @@ type staticFactoryConfig struct {
 }
 
 type staticFactory struct {
+	services.Service
 	staticFactoryConfig
+}
+
+func newStaticFactory(lggr logger.Logger, cfg staticFactoryConfig) staticFactory {
+	lggr = logger.Named(lggr, "staticFactory")
+	return staticFactory{
+		Service:             test.NewStaticService(lggr),
+		staticFactoryConfig: cfg,
+	}
 }
 
 var _ types.ReportingPluginFactory = staticFactory{}
 
-func (s staticFactory) Name() string { panic("implement me") }
-
-func (s staticFactory) Start(ctx context.Context) error { return nil }
-
-func (s staticFactory) Close() error { return nil }
-
-func (s staticFactory) Ready() error { panic("implement me") }
-
-func (s staticFactory) HealthReport() map[string]error { panic("implement me") }
-
-func (s staticFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
+func (s staticFactory) NewReportingPlugin(ctx context.Context, config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
 	err := s.equalConfig(config)
 	if err != nil {
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("config mismatch: %w", err)
@@ -97,25 +100,23 @@ func (s staticFactory) equalConfig(other libocr.ReportingPluginConfig) error {
 }
 
 func RunFactory(t *testing.T, factory libocr.ReportingPluginFactory) {
-	expectedFactory := Factory
+	expectedFactory := Factory(logger.Test(t))
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
-		ctx := tests.Context(t)
-		rp, gotRPI, err := factory.NewReportingPlugin(expectedFactory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), expectedFactory.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, expectedFactory.rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			expectedFactory.reportingPlugin.AssertEqual(ctx, t, rp)
+			expectedFactory.reportingPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }
 
 func RunValidation(t *testing.T, validationService core.ValidationService) {
-	ctx := tests.Context(t)
 	t.Run("ValidationService", func(t *testing.T) {
-		err := validationService.ValidateConfig(ctx, validationtest.GoodPluginConfig)
+		err := validationService.ValidateConfig(t.Context(), validationtest.GoodPluginConfig)
 		require.NoError(t, err)
-		err = validationService.ValidateConfig(ctx, nil)
+		err = validationService.ValidateConfig(t.Context(), nil)
 		require.Error(t, err)
 	})
 }

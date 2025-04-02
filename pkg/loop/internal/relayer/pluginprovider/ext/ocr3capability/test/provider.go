@@ -7,19 +7,23 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	ocr3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr3/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var OCR3CapabilityProvider = staticPluginProvider{
-	PluginProviderTester: ocr2test.AgnosticPluginProvider,
-	contractTransmitter:  ocr3test.ContractTransmitter,
+func OCR3CapabilityProvider(lggr logger.Logger) staticPluginProvider {
+	lggr = logger.Named(lggr, "staticPluginProvider")
+	return staticPluginProvider{
+		PluginProviderTester: ocr2test.AgnosticPluginProvider(lggr),
+		contractTransmitter:  ocr3test.ContractTransmitter,
+	}
 }
 
-var _ types.PluginProvider = OCR3CapabilityProvider
-var _ testtypes.OCR3CapabilityProviderTester = OCR3CapabilityProvider
+var _ types.PluginProvider = staticPluginProvider{}
+var _ testtypes.OCR3CapabilityProviderTester = staticPluginProvider{}
 
 // staticPluginProvider is a static implementation of PluginProviderTester
 type staticPluginProvider struct {

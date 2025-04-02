@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -43,10 +44,9 @@ func (p *ExecutionLoop) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serve
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.CCIPExecutionFactoryGenerator], updated with the new broker and conn.
 func (p *ExecutionLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = ccip.NewExecutionLOOPClient(broker, p.BrokerConfig, conn)
-	} else {
-		p.pluginClient.Refresh(broker, conn)
+		p.pluginClient = ccip.NewExecutionLOOPClient(p.BrokerConfig)
 	}
+	p.pluginClient.Refresh(broker, conn)
 
 	return types.CCIPExecutionFactoryGenerator(p.pluginClient), nil
 }
@@ -56,7 +56,10 @@ func (p *ExecutionLoop) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: PluginCCIPExecutionHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{CCIPExecutionLOOPName: p},
 	}
-	return ManagedGRPCClientConfig(clientConfig, p.BrokerConfig)
+	if p.pluginClient == nil {
+		p.pluginClient = ccip.NewExecutionLOOPClient(p.BrokerConfig)
+	}
+	return ManagedGRPCClientConfig(clientConfig, p.pluginClient.BrokerConfig)
 }
 
 var _ ocrtypes.ReportingPluginFactory = (*ExecutionFactoryService)(nil)
@@ -69,12 +72,16 @@ type ExecutionFactoryService struct {
 // NewExecutionService returns a new [*ExecutionFactoryService].
 // cmd must return a new exec.Cmd each time it is called.
 func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, srcProvider types.CCIPExecProvider, dstProvider types.CCIPExecProvider, srcChain uint32, dstChain uint32, sourceTokenAddress string) *ExecutionFactoryService {
-	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, error) {
+	newService := func(ctx context.Context, instance any) (types.ReportingPluginFactory, services.HealthReporter, error) {
 		plug, ok := instance.(types.CCIPExecutionFactoryGenerator)
 		if !ok {
-			return nil, fmt.Errorf("expected CCIPExecutionFactoryGenerator but got %T", instance)
+			return nil, nil, fmt.Errorf("expected CCIPExecutionFactoryGenerator but got %T", instance)
 		}
-		return plug.NewExecutionFactory(ctx, srcProvider, dstProvider, int64(srcChain), int64(dstChain), sourceTokenAddress)
+		factory, err := plug.NewExecutionFactory(ctx, srcProvider, dstProvider, int64(srcChain), int64(dstChain), sourceTokenAddress)
+		if err != nil {
+			return nil, nil, err
+		}
+		return factory, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "CCIPExecutionService")
@@ -84,9 +91,9 @@ func NewExecutionService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec
 	return &efs
 }
 
-func (m *ExecutionFactoryService) NewReportingPlugin(config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
-	if err := m.Wait(); err != nil {
+func (m *ExecutionFactoryService) NewReportingPlugin(ctx context.Context, config ocrtypes.ReportingPluginConfig) (ocrtypes.ReportingPlugin, ocrtypes.ReportingPluginInfo, error) {
+	if err := m.WaitCtx(ctx); err != nil {
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
-	return m.Service.NewReportingPlugin(config)
+	return m.Service.NewReportingPlugin(ctx, config)
 }

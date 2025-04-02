@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/commontypes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -20,39 +21,79 @@ type BasicTester[T any] interface {
 	Setup(t T)
 	Name() string
 	GetAccountBytes(i int) []byte
+	GetAccountString(i int) string
+	IsDisabled(testID string) bool
+	DisableTests(testIDs []string)
 }
 
-type testcase[T any] struct {
-	name string
-	test func(t T)
+type TestSelectionSupport struct {
+	disabledTests map[string]bool
+}
+
+func (t TestSelectionSupport) IsDisabled(testID string) bool {
+	return t.disabledTests[testID]
+}
+
+func (t *TestSelectionSupport) DisableTests(testIDs []string) {
+	if t.disabledTests == nil {
+		t.disabledTests = map[string]bool{}
+	}
+	for _, testID := range testIDs {
+		t.disabledTests[testID] = true
+	}
+}
+
+type Testcase[T any] struct {
+	Name string
+	Test func(t T)
 }
 
 type TestingT[T any] interface {
 	tests.TestingT
 	Failed() bool
 	Run(name string, f func(t T)) bool
+	Parallel()
+	Context() context.Context
 }
 
-func runTests[T TestingT[T]](t T, tester BasicTester[T], tests []testcase[T]) {
-	for _, test := range tests {
-		t.Run(test.name+" for "+tester.Name(), func(t T) {
-			tester.Setup(t)
-			test.test(t)
-		})
-	}
+// Tests execution utility function that will consider enabled / disabled test cases according to
+// Basic Tester configuration.
+func RunTests[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
+	t.Run(tester.Name(), func(t T) {
+		for _, test := range tests {
+			if !tester.IsDisabled(test.Name) {
+				t.Run(test.Name, func(t T) {
+					tester.Setup(t)
+					test.Test(t)
+				})
+			}
+		}
+	})
 }
 
-// Batch chain write takes a batch call entry and writes it to the chain using the ChainWriter.
-func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], batchCallEntry BatchCallEntry, mockRun bool) {
+func RunTestsInParallel[T TestingT[T]](t T, tester BasicTester[T], tests []Testcase[T]) {
+	// Assumes Setup() called on tester initialization to avoid race conditions on tester setup
+	t.Run(tester.Name(), func(t T) {
+		for _, test := range tests {
+			if !tester.IsDisabled(test.Name) {
+				t.Run(test.Name, func(t T) {
+					t.Parallel()
+					test.Test(t)
+				})
+			}
+		}
+	})
+}
+
+// Batch contract write takes a batch call entry and writes it to the chain using the ContractWriter.
+func batchContractWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, boundContracts []types.BoundContract, batchCallEntry BatchCallEntry, mockRun bool) {
 	// This is necessary because the mock helper function requires the entire batchCallEntry rather than an individual testStruct
 	if mockRun {
-		cw := tester.GetChainWriter(t)
-		err := cw.SubmitTransaction(tests.Context(t), AnyContractName, "batchChainWrite", batchCallEntry, "", "", nil, big.NewInt(0))
+		err := cw.SubmitTransaction(t.Context(), AnyContractName, "batchContractWrite", batchCallEntry, "", "", nil, big.NewInt(0))
 		require.NoError(t, err)
 		return
 	}
 	nameToAddress := make(map[string]string)
-	boundContracts := tester.GetBindings(t)
 	for _, bc := range boundContracts {
 		nameToAddress[bc.Name] = bc.Address
 	}
@@ -65,28 +106,27 @@ func batchChainWrite[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T
 			if !isOk {
 				require.Fail(t, "expected *TestStruct for contract: %s read: %s, but received %T", contract.Name, readEntry.Name, readEntry.ReturnValue)
 			}
-			SubmitTransactionToCW(t, tester, MethodSettingStruct, val, types.BoundContract{Name: contract.Name, Address: nameToAddress[contract.Name]}, types.Unconfirmed)
+			SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, val, types.BoundContract{Name: contract.Name, Address: nameToAddress[contract.Name]}, types.Unconfirmed)
 		}
 	}
 }
 
-// SubmitTransactionToCW submits a transaction to the ChainWriter and waits for it to reach the given status.
-func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
+// SubmitTransactionToCW submits a transaction to the ContractWriter and waits for it to reach the given status.
+func SubmitTransactionToCW[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, method string, args any, contract types.BoundContract, status types.TransactionStatus) string {
 	tester.DirtyContracts()
 	txID := uuid.New().String()
-	cw := tester.GetChainWriter(t)
-	err := cw.SubmitTransaction(tests.Context(t), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
+	err := cw.SubmitTransaction(t.Context(), contract.Name, method, args, txID, contract.Address, nil, big.NewInt(0))
 	require.NoError(t, err)
 
-	err = WaitForTransactionStatus(t, tester, txID, status, false)
+	err = WaitForTransactionStatus(t, tester, cw, txID, status, false)
 	require.NoError(t, err)
 
 	return txID
 }
 
 // WaitForTransactionStatus waits for a transaction to reach the given status.
-func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], txID string, status types.TransactionStatus, mockRun bool) error {
-	ctx, cancel := context.WithTimeout(tests.Context(t), 15*time.Minute)
+func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfaceTester[T], cw types.ContractWriter, txID string, status types.TransactionStatus, mockRun bool) error {
+	ctx, cancel := context.WithTimeout(t.Context(), 15*time.Minute)
 	defer cancel()
 
 	ticker := time.NewTicker(1 * time.Second)
@@ -101,7 +141,7 @@ func WaitForTransactionStatus[T TestingT[T]](t T, tester ChainComponentsInterfac
 				tester.GenerateBlocksTillConfidenceLevel(t, "", "", primitives.Finalized)
 				return nil
 			}
-			current, err := tester.GetChainWriter(t).GetTransactionStatus(ctx, txID)
+			current, err := cw.GetTransactionStatus(ctx, txID)
 			if err != nil {
 				return fmt.Errorf("failed to get transaction status: %w", err)
 			}
@@ -132,25 +172,41 @@ func (e ExpectedGetLatestValueArgs) String() string {
 		e.ContractName, e.ReadName, e.ConfidenceLevel, e.Params, e.ReturnVal)
 }
 
-type InnerTestStruct struct {
+type InnerDynamicTestStruct struct {
 	I int
 	S string
 }
 
-type MidLevelTestStruct struct {
+type InnerStaticTestStruct struct {
+	I int
+	A []byte
+}
+
+type MidLevelDynamicTestStruct struct {
 	FixedBytes [2]byte
-	Inner      InnerTestStruct
+	Inner      InnerDynamicTestStruct
+}
+
+type MidLevelStaticTestStruct struct {
+	FixedBytes [2]byte
+	Inner      InnerStaticTestStruct
+}
+
+type AccountStruct struct {
+	Account    []byte
+	AccountStr string
 }
 
 type TestStruct struct {
-	Field          *int32
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
-	Account        []byte
-	Accounts       [][]byte
-	DifferentField string
-	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
+	Field               *int32
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
+	AccountStruct       AccountStruct
+	Accounts            [][]byte
+	DifferentField      string
+	BigField            *big.Int
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
 }
 
 type TestStructWithExtraField struct {
@@ -159,25 +215,27 @@ type TestStructWithExtraField struct {
 }
 
 type TestStructMissingField struct {
-	DifferentField string
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
-	Account        []byte
-	Accounts       [][]byte
-	BigField       *big.Int
-	NestedStruct   MidLevelTestStruct
+	DifferentField      string
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
+	AccountStruct       AccountStruct
+	Accounts            [][]byte
+	BigField            *big.Int
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
 }
 
 // compatibleTestStruct has fields in a different order
 type compatibleTestStruct struct {
-	Account        []byte
-	Accounts       [][]byte
-	BigField       *big.Int
-	DifferentField string
-	Field          int32
-	NestedStruct   MidLevelTestStruct
-	OracleID       commontypes.OracleID
-	OracleIDs      [32]commontypes.OracleID
+	AccountStruct       AccountStruct
+	Accounts            [][]byte
+	BigField            *big.Int
+	DifferentField      string
+	Field               int32
+	NestedDynamicStruct MidLevelDynamicTestStruct
+	NestedStaticStruct  MidLevelStaticTestStruct
+	OracleID            commontypes.OracleID
+	OracleIDs           [32]commontypes.OracleID
 }
 
 type LatestParams struct {
@@ -189,29 +247,41 @@ type FilterEventParams struct {
 	Field int32
 }
 
-type BatchCallEntry map[types.BoundContract]ContractBatchEntry
-type ContractBatchEntry []ReadEntry
-type ReadEntry struct {
-	Name        string
-	ReturnValue any
-}
+type (
+	BatchCallEntry     map[types.BoundContract]ContractBatchEntry
+	ContractBatchEntry []ReadEntry
+	ReadEntry          struct {
+		Name        string
+		ReturnValue any
+	}
+)
 
 func CreateTestStruct[T any](i int, tester BasicTester[T]) TestStruct {
 	s := fmt.Sprintf("field%v", i)
 	fv := int32(i)
 	return TestStruct{
-		Field:          &fv,
-		OracleID:       commontypes.OracleID(i + 1),
-		OracleIDs:      [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
-		Account:        tester.GetAccountBytes(i + 3),
+		Field:     &fv,
+		OracleID:  commontypes.OracleID(i + 1),
+		OracleIDs: [32]commontypes.OracleID{commontypes.OracleID(i + 2), commontypes.OracleID(i + 3)},
+		AccountStruct: AccountStruct{
+			Account:    tester.GetAccountBytes(i),
+			AccountStr: tester.GetAccountString(i),
+		},
 		Accounts:       [][]byte{tester.GetAccountBytes(i + 4), tester.GetAccountBytes(i + 5)},
 		DifferentField: s,
 		BigField:       big.NewInt(int64((i + 1) * (i + 2))),
-		NestedStruct: MidLevelTestStruct{
+		NestedDynamicStruct: MidLevelDynamicTestStruct{
 			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
-			Inner: InnerTestStruct{
+			Inner: InnerDynamicTestStruct{
 				I: i,
 				S: s,
+			},
+		},
+		NestedStaticStruct: MidLevelStaticTestStruct{
+			FixedBytes: [2]byte{uint8(i), uint8(i + 1)},
+			Inner: InnerStaticTestStruct{
+				I: i,
+				A: tester.GetAccountBytes(i + 6),
 			},
 		},
 	}

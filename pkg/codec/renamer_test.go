@@ -28,9 +28,9 @@ func TestRenamer(t *testing.T) {
 		D string
 	}
 
-	renamer := codec.NewRenamer(map[string]string{"A": "X", "C": "Z"})
-	invalidRenamer := codec.NewRenamer(map[string]string{"W": "X", "C": "Z"})
-	nestedRenamer := codec.NewRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"})
+	renamer := codec.NewPathTraverseRenamer(map[string]string{"A": "X", "C": "Z"}, true)
+	invalidRenamer := codec.NewPathTraverseRenamer(map[string]string{"W": "X", "C": "Z"}, true)
+	nestedRenamer := codec.NewPathTraverseRenamer(map[string]string{"A": "X", "B.A": "X", "B.C": "Z", "C.A": "X", "C.C": "Z", "B": "Y"}, true)
 	t.Run("RetypeToOffChain renames fields keeping structure", func(t *testing.T) {
 		offChainType, err := renamer.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
 		require.NoError(t, err)
@@ -384,6 +384,45 @@ func TestRenamer(t *testing.T) {
 		newInput, err := nestedRenamer.TransformToOffChain(expected, "")
 		require.NoError(t, err)
 		assert.Equal(t, iOffchain.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on nested fields even if the field itself is renamed for path", func(t *testing.T) {
+		offChainType, err := nestedRenamer.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+		iOffchain := reflect.Indirect(reflect.New(offChainType))
+
+		iOffchain.FieldByName("X").SetString("foo")
+		rY := iOffchain.FieldByName("Y")
+		rY.FieldByName("X").SetString("foo")
+		rY.FieldByName("B").SetInt(10)
+		rY.FieldByName("Z").SetInt(20)
+
+		rC := iOffchain.FieldByName("C")
+		rC.Set(reflect.MakeSlice(rC.Type(), 2, 2))
+		iElm := rC.Index(0)
+		iElm.FieldByName("X").SetString("foo")
+		iElm.FieldByName("B").SetInt(10)
+		iElm.FieldByName("Z").SetInt(20)
+		iElm = rC.Index(1)
+		iElm.FieldByName("X").SetString("baz")
+		iElm.FieldByName("B").SetInt(15)
+		iElm.FieldByName("Z").SetInt(25)
+
+		iOffchain.FieldByName("D").SetString("bar")
+
+		output, err := nestedRenamer.TransformToOnChain(iOffchain.FieldByName("Y").Interface(), "Y")
+
+		require.NoError(t, err)
+
+		expected := testStruct{
+			A: "foo",
+			B: 10,
+			C: 20,
+		}
+		assert.Equal(t, expected, output)
+		newInput, err := nestedRenamer.TransformToOffChain(expected, "B")
+		require.NoError(t, err)
+		assert.Equal(t, iOffchain.FieldByName("Y").Interface(), newInput)
 	})
 }
 

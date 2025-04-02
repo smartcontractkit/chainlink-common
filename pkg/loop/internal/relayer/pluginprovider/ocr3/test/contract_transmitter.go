@@ -71,12 +71,12 @@ func (s staticOCR3ContractTransmitter) Transmit(ctx context.Context, configDiges
 	return nil
 }
 
-func (s staticOCR3ContractTransmitter) FromAccount() (libocr.Account, error) {
+func (s staticOCR3ContractTransmitter) FromAccount(ctx context.Context) (libocr.Account, error) {
 	return s.Account, nil
 }
 
 func (s staticOCR3ContractTransmitter) Evaluate(ctx context.Context, ct ocr3types.ContractTransmitter[[]byte]) error {
-	gotAccount, err := ct.FromAccount()
+	gotAccount, err := ct.FromAccount(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get FromAccount: %w", err)
 	}

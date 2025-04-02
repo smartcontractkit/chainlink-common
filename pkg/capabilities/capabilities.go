@@ -26,7 +26,7 @@ func (e errStopExecution) Error() string {
 }
 
 func (e errStopExecution) Is(err error) bool {
-	return err.Error() == errStopExecutionMsg
+	return strings.Contains(err.Error(), errStopExecutionMsg)
 }
 
 // CapabilityType enum values.
@@ -55,7 +55,18 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value *values.Map
+	Value    *values.Map
+	Metadata ResponseMetadata
+}
+
+type ResponseMetadata struct {
+	Metering []MeteringNodeDetail
+}
+
+type MeteringNodeDetail struct {
+	Peer2PeerID string
+	SpendUnit   string
+	SpendValue  string
 }
 
 type RequestMetadata struct {
@@ -65,12 +76,17 @@ type RequestMetadata struct {
 	WorkflowName             string
 	WorkflowDonID            uint32
 	WorkflowDonConfigVersion uint32
-	ReferenceID              string
+	// The step reference ID of the workflow
+	ReferenceID string
+	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
+	DecodedWorkflowName string
 }
 
 type RegistrationMetadata struct {
 	WorkflowID    string
 	WorkflowOwner string
+	// The step reference ID of the workflow
+	ReferenceID string
 }
 
 // CapabilityRequest is a struct for the Execute request of a capability.
@@ -78,15 +94,6 @@ type CapabilityRequest struct {
 	Metadata RequestMetadata
 	Config   *values.Map
 	Inputs   *values.Map
-}
-
-type TriggerEvent struct {
-	// The ID of the trigger capability
-	TriggerType string
-	// The ID of the trigger event
-	ID string
-	// Trigger-specific payload
-	Outputs *values.Map
 }
 
 type RegisterToWorkflowRequest struct {
@@ -132,6 +139,71 @@ type TriggerRegistrationRequest struct {
 type TriggerResponse struct {
 	Event TriggerEvent
 	Err   error
+}
+
+type TriggerEvent struct {
+	// The ID of the trigger capability
+	TriggerType string
+	// The ID of the trigger event
+	ID string
+	// Trigger-specific payload
+	Outputs *values.Map
+	// Deprecated: use Outputs instead
+	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)
+	OCREvent *OCRTriggerEvent
+}
+
+type OCRTriggerEvent struct {
+	ConfigDigest []byte
+	SeqNr        uint64
+	Report       []byte // marshaled pb.OCRTriggerReport
+	Sigs         []OCRAttributedOnchainSignature
+}
+
+// DO NOT change this. it is in the encoding of [TriggerEvent].Outputs
+//
+// TODO: a more sophisticated way to handle this would be to have add this const
+// in the protobuf definition of the TriggerEvent struct.
+const ocrTriggerEventOutputKey = "OCRTriggerEvent"
+
+func (e *OCRTriggerEvent) topLevelKey() string {
+	return ocrTriggerEventOutputKey
+}
+
+// ToMap converts the OCRTriggerEvent to a map.
+// This is useful serialization purposes with the [TriggerEvent] struct.
+func (e *OCRTriggerEvent) ToMap() (*values.Map, error) {
+	x, err := values.Wrap(e)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wrap OCRTriggerEvent: %w", err)
+	}
+	return values.NewMap(map[string]any{
+		e.topLevelKey(): x,
+	})
+}
+
+// FromMap converts a map to an OCRTriggerEvent.
+// This is useful deserialization purposes with the [TriggerEvent] struct.
+func (e *OCRTriggerEvent) FromMap(m *values.Map) error {
+	if m == nil {
+		return fmt.Errorf("nil map")
+	}
+	val, ok := m.Underlying[e.topLevelKey()]
+	if !ok {
+		return fmt.Errorf("missing key: %s", e.topLevelKey())
+	}
+	var unwrapped OCRTriggerEvent
+	err := val.UnwrapTo(&unwrapped)
+	if err != nil {
+		return fmt.Errorf("failed to unwrap OCRTriggerEvent: %w", err)
+	}
+	*e = unwrapped
+	return nil
+}
+
+type OCRAttributedOnchainSignature struct {
+	Signature []byte
+	Signer    uint32 // oracle ID (0,1,...,N-1)
 }
 
 type TriggerExecutable interface {
@@ -345,6 +417,12 @@ type RemoteTargetConfig struct {
 	RequestHashExcludedAttributes []string
 }
 
+type RemoteExecutableConfig struct {
+	RequestHashExcludedAttributes []string
+	RegistrationRefresh           time.Duration
+	RegistrationExpiry            time.Duration
+}
+
 // NOTE: consider splitting this config into values stored in Registry (KS-118)
 // and values defined locally by Capability owners.
 func (c *RemoteTriggerConfig) ApplyDefaults() {
@@ -368,8 +446,27 @@ func (c *RemoteTriggerConfig) ApplyDefaults() {
 	}
 }
 
+func (c *RemoteExecutableConfig) ApplyDefaults() {
+	if c == nil {
+		return
+	}
+	if c.RegistrationRefresh == 0 {
+		c.RegistrationRefresh = DefaultRegistrationRefresh
+	}
+	if c.RegistrationExpiry == 0 {
+		c.RegistrationExpiry = DefaultRegistrationExpiry
+	}
+}
+
 type CapabilityConfiguration struct {
-	DefaultConfig       *values.Map
-	RemoteTriggerConfig *RemoteTriggerConfig
-	RemoteTargetConfig  *RemoteTargetConfig
+	DefaultConfig *values.Map
+	// RestrictedKeys is a list of keys that can't be provided by users in their
+	// configuration; we'll remove these fields before passing them to the capability.
+	RestrictedKeys []string
+	// RestrictedConfig is configuration that can only be set by us; this
+	// takes precedence over any user-provided config.
+	RestrictedConfig       *values.Map
+	RemoteTriggerConfig    *RemoteTriggerConfig
+	RemoteTargetConfig     *RemoteTargetConfig
+	RemoteExecutableConfig *RemoteExecutableConfig
 }

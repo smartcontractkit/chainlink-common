@@ -184,7 +184,7 @@ func TestTelemetry(t *testing.T) {
 	}
 
 	for _, test := range sendTests {
-		err := c.Send(context.Background(), test.network, test.chainID, test.contractID, test.telemetryType, test.payload)
+		err := c.Send(t.Context(), test.network, test.chainID, test.contractID, test.telemetryType, test.payload)
 		if test.shouldError {
 			require.ErrorContains(t, err, test.error)
 		} else {
@@ -245,14 +245,14 @@ func TestTelemetry(t *testing.T) {
 	}
 
 	for _, test := range genMonitoringEndpointTests {
-		e, err := c.NewEndpoint(context.Background(), test.network, test.chainID, test.contractID, test.telemetryType)
+		e, err := c.NewEndpoint(t.Context(), test.network, test.chainID, test.contractID, test.telemetryType)
 		if test.shouldError {
 			require.Nil(t, e)
 			require.ErrorContains(t, err, test.error)
 		} else {
 			require.NotNil(t, e)
 			require.Nil(t, err)
-			require.Nil(t, e.SendLog(context.Background(), []byte("some-data")))
+			require.Nil(t, e.SendLog(t.Context(), []byte("some-data")))
 		}
 	}
 }

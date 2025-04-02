@@ -25,21 +25,36 @@ func TestGetMapsFromPath(t *testing.T) {
 		TestASlice []testA
 	}
 
+	type testC struct {
+		TestAPtrSlice *[]testA
+	}
+
 	type testStruct struct {
 		A    testA
 		B    testB
-		C, D int
+		C    testC
+		D, F int
 	}
 
-	testMap := map[string]any{"A": map[string]any{"B": []testStruct{{B: testB{TestASlice: []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}}, C: 10, D: 100}, {C: 20, D: 200}}}}
+	ptrSlice := &[]testA{{IntSlice: []int{4, 3, 2}}, {IntSlice: []int{1, 2, 3}}}
+	testMap := map[string]any{"A": map[string]any{"B": []testStruct{{B: testB{TestASlice: []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}}, C: testC{TestAPtrSlice: ptrSlice}, D: 10, F: 100}, {D: 20, F: 200}}}}
 	t.Parallel()
 	actual, err := getMapsFromPath(testMap, []string{"A"})
 	require.NoError(t, err)
-	assert.Equal(t, []map[string]any{{"B": []testStruct{{B: testB{TestASlice: []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}}, C: 10, D: 100}, {C: 20, D: 200}}}}, actual)
+	assert.Equal(t, []map[string]any{{"B": []testStruct{{B: testB{TestASlice: []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}}, C: testC{TestAPtrSlice: ptrSlice}, D: 10, F: 100}, {D: 20, F: 200}}}}, actual)
 
 	actual, err = getMapsFromPath(testMap, []string{"A", "B"})
 	require.NoError(t, err)
-	assert.Equal(t, []map[string]any{{"A": map[string]any{"IntSlice": []int(nil)}, "B": map[string]any{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}}, "C": 10, "D": 100}, {"A": map[string]any{"IntSlice": []int(nil)}, "B": map[string]any{"TestASlice": []testA(nil)}, "C": 20, "D": 200}}, actual)
+	assert.Equal(t, []map[string]interface{}{
+		{
+			"A": map[string]interface{}{"IntSlice": []int(nil)},
+			"B": map[string]interface{}{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}},
+			"C": map[string]interface{}{"TestAPtrSlice": ptrSlice}, "D": 10, "F": 100},
+		{
+			"A": map[string]interface{}{"IntSlice": []int(nil)},
+			"B": map[string]interface{}{"TestASlice": []testA(nil)}, "C": map[string]interface{}{"TestAPtrSlice": (*[]testA)(nil)}, "D": 20, "F": 200,
+		},
+	}, actual)
 
 	actual, err = getMapsFromPath(testMap, []string{"A", "B", "B"})
 	require.NoError(t, err)
@@ -48,6 +63,10 @@ func TestGetMapsFromPath(t *testing.T) {
 	actual, err = getMapsFromPath(testMap, []string{"A", "B", "B", "TestASlice"})
 	require.NoError(t, err)
 	assert.Equal(t, []map[string]any{{"IntSlice": []int{3, 2, 0}}, {"IntSlice": []int{0, 1, 2}}}, actual)
+
+	actual, err = getMapsFromPath(testMap, []string{"A", "B", "C", "TestAPtrSlice"})
+	require.NoError(t, err)
+	assert.Equal(t, []map[string]any{{"IntSlice": []int{4, 3, 2}}, {"IntSlice": []int{1, 2, 3}}}, actual)
 }
 
 func TestFitsInNBitsSigned(t *testing.T) {
@@ -307,5 +326,126 @@ func TestEpochToTimeHook(t *testing.T) {
 		}
 
 		require.Equal(t, expected, output)
+	})
+}
+
+func TestValueForPath(t *testing.T) {
+	t.Parallel()
+
+	type nestableStruct struct {
+		X *big.Int
+		Y string
+		Z map[string]any
+	}
+
+	type baseStruct struct {
+		A *int
+		B nestableStruct
+		C []bool
+	}
+
+	t.Run("can extract nested field value", func(t *testing.T) {
+		t.Parallel()
+
+		expected := "test"
+		str := baseStruct{B: nestableStruct{Y: expected}}
+		value, err := ValueForPath(reflect.ValueOf(str), "B.Y")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+
+		value, err = ValueForPath(reflect.ValueOf(&str), "B.Y")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("can extract nested field value with pointer", func(t *testing.T) {
+		t.Parallel()
+
+		expected := big.NewInt(42)
+		str := baseStruct{B: nestableStruct{X: expected}}
+		value, err := ValueForPath(reflect.ValueOf(str), "B.X")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+
+		value, err = ValueForPath(reflect.ValueOf(&str), "B.X")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("can extract nested field value from map", func(t *testing.T) {
+		t.Parallel()
+
+		expected := "test"
+		str := baseStruct{B: nestableStruct{Z: map[string]any{"Field": expected}}}
+		value, err := ValueForPath(reflect.ValueOf(str), "B.Z.Field")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("returns error for arrays", func(t *testing.T) {
+		t.Parallel()
+
+		str := baseStruct{C: []bool{true, false}}
+		_, err := ValueForPath(reflect.ValueOf(str), "C.[0]")
+
+		require.ErrorIs(t, err, types.ErrInvalidType)
+	})
+
+	t.Run("returns error for field not found", func(t *testing.T) {
+		t.Parallel()
+
+		expected := "test"
+		str := baseStruct{B: nestableStruct{Y: expected}}
+		_, err := ValueForPath(reflect.ValueOf(str), "B.D")
+
+		require.ErrorIs(t, err, types.ErrInvalidType)
+	})
+}
+
+func TestSetValueAtPath(t *testing.T) {
+	t.Parallel()
+
+	t.Run("works for basic structs", func(t *testing.T) {
+		t.Parallel()
+
+		type basicStruct struct {
+			A *int
+			B string
+		}
+
+		into := reflect.New(reflect.TypeOf(&basicStruct{}))
+
+		require.NoError(t, SetValueAtPath(into, reflect.ValueOf(int(42)), "A"))
+
+		output := into.Elem().Interface()
+
+		assert.Equal(t, *output.(*basicStruct).A, int(42))
+	})
+
+	t.Run("works for structs with nested structs", func(t *testing.T) {
+		t.Parallel()
+
+		type nested struct {
+			X *int
+			Y *big.Int
+		}
+
+		type nestableStruct struct {
+			A nested
+			B string
+		}
+
+		into := reflect.New(reflect.TypeOf(nestableStruct{}))
+
+		require.NoError(t, SetValueAtPath(into, reflect.ValueOf(big.NewInt(42)), "A.Y"))
+
+		output := into.Interface()
+
+		assert.Equal(t, output.(*nestableStruct).A.Y.String(), big.NewInt(42).String())
 	})
 }

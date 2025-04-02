@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/anymapaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/arrayaction/arrayactiontest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
@@ -16,10 +17,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger/basictriggertest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/externalreferenceaction/externalreferenceactiontest"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/mapaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/nestedaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/referenceactiontest"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
@@ -51,6 +52,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = trigger.CoolOutput()
 			_ = expectedOutput
+
+			trigger = basictrigger.ConstantTriggerOutputs(basictrigger.TriggerOutputs{}) //nolint
 		})
 	})
 
@@ -74,6 +77,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedOutput sdk.CapDefinition[string] //nolint
 			expectedOutput = action.AdaptedThing()
 			_ = expectedOutput
+
+			action = basicaction.ConstantActionOutputs(basicaction.ActionOutputs{}) //nolint
 		})
 	})
 
@@ -101,6 +106,8 @@ func TestTypeGeneration(t *testing.T) {
 			var expectedSigsField sdk.CapDefinition[[]string] //nolint
 			expectedSigsField = consensus.Sigs()
 			_ = expectedSigsField
+
+			consensus = basicconsensus.ConstantConsensusOutputs(basicconsensus.ConsensusOutputs{}) //nolint
 		})
 	})
 
@@ -228,8 +235,24 @@ func TestTypeGeneration(t *testing.T) {
 		})
 	})
 
+	t.Run("Maps allow input from other capabilities", func(t *testing.T) {
+		onlyVerifySyntax(func() {
+			factory := &sdk.WorkflowSpecFactory{}
+			trigger := basictrigger.TriggerConfig{}.New(factory)
+			mapaction.ActionConfig{}.New(factory, "ref", mapaction.ActionInput{Payload: sdk.Map[string, mapaction.ActionInputsPayload](map[string]sdk.CapDefinition[string]{"Foo": trigger.CoolOutput()})})
+		})
+	})
+
+	t.Run("Map any casting", func(t *testing.T) {
+		onlyVerifySyntax(func() {
+			factory := &sdk.WorkflowSpecFactory{}
+			trigger := basictrigger.TriggerConfig{}.New(factory)
+			anymapaction.MapActionConfig{}.New(factory, "ref", anymapaction.MapActionInput{Payload: sdk.AnyMap[anymapaction.MapActionInputsPayload](sdk.CapMap{"Foo": trigger.CoolOutput()})})
+		})
+	})
+
 	t.Run("casing is respected from the json schema", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Owner: "owner", Name: "name"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		ai := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "foo", SnakeCaseInSchemaForTesting: 12}.
 			New(workflow, "ref", basicaction.ActionInput{InputThing: sdk.ConstantDefinition[bool](true)})
 		spec, _ := workflow.Spec()
@@ -244,7 +267,7 @@ func TestTypeGeneration(t *testing.T) {
 
 func TestMockGeneration(t *testing.T) {
 	t.Run("Basic trigger", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		capMock := basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{}, nil
 		})
@@ -256,7 +279,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("Basic action", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := basicactiontest.Action(runner, func(_ basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
@@ -276,7 +299,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("Basic target", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		capMock := basictargettest.Target(runner, func(_ basictarget.TargetInputs) error {
 			return nil
 		})
@@ -288,7 +311,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("References", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := referenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
@@ -308,7 +331,7 @@ func TestMockGeneration(t *testing.T) {
 	})
 
 	t.Run("External references", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := externalreferenceactiontest.Action(runner, func(_ referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
@@ -331,7 +354,7 @@ func TestMockGeneration(t *testing.T) {
 	// no need to test nesting, we don't generate anything different for the mock's
 
 	t.Run("Array action", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		// nolint value is never used but it's assigned to mock to verify the type
 		capMock := arrayactiontest.Action(runner, func(_ arrayaction.ActionInputs) ([]arrayaction.ActionOutputsElem, error) {
 			return []arrayaction.ActionOutputsElem{}, nil

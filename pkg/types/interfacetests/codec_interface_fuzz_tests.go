@@ -6,8 +6,6 @@ import (
 
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
@@ -37,19 +35,29 @@ func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
 				DifferentField: differentField,
 				OracleID:       commontypes.OracleID(oracleId),
 				OracleIDs:      oids,
-				Account:        tester.GetAccountBytes(accountSeed),
-				Accounts:       [][]byte{tester.GetAccountBytes(accountsSeed + 1), tester.GetAccountBytes(accountsSeed + 2)},
-				BigField:       big.NewInt(bigField),
-				NestedStruct: MidLevelTestStruct{
+				AccountStruct: AccountStruct{
+					Account:    tester.GetAccountBytes(accountSeed),
+					AccountStr: tester.GetAccountString(accountSeed),
+				},
+				Accounts: [][]byte{tester.GetAccountBytes(accountsSeed + 1), tester.GetAccountBytes(accountsSeed + 2)},
+				BigField: big.NewInt(bigField),
+				NestedDynamicStruct: MidLevelDynamicTestStruct{
 					FixedBytes: fb,
-					Inner: InnerTestStruct{
+					Inner: InnerDynamicTestStruct{
 						I: i,
 						S: s,
 					},
 				},
+				NestedStaticStruct: MidLevelStaticTestStruct{
+					FixedBytes: fb,
+					Inner: InnerStaticTestStruct{
+						I: i,
+						A: tester.GetAccountBytes(accountsSeed + 3),
+					},
+				},
 			}
 			codec := tester.GetCodec(t)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
 			encoded, err := codec.Encode(ctx, testStruct, TestItemType)
 			require.NoError(t, err)

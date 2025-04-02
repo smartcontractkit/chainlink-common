@@ -22,6 +22,7 @@ type Metrics interface {
 	SetOffchainAggregatorAnswersRaw(answer float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string)
 	SetOffchainAggregatorAnswers(answer float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string)
 	IncOffchainAggregatorAnswersTotal(contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string)
+	SetOffchainAggregatorAnswersLatestTimestamp(latestTimestampSeconds float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string)
 	// Deprecated: use SetOffchainAggregatorJuelsPerFeeCoin
 	SetOffchainAggregatorJuelsPerFeeCoinRaw(juelsPerFeeCoin float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string)
 	SetOffchainAggregatorJuelsPerFeeCoin(juelsPerFeeCoin float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string)
@@ -100,6 +101,13 @@ var (
 		prometheus.CounterOpts{
 			Name: "offchain_aggregator_answers_total",
 			Help: "Bump this metric every time there is a transmission on chain.",
+		},
+		[]string{"contract_address", "feed_id", "chain_id", "contract_status", "contract_type", "feed_name", "feed_path", "network_id", "network_name"},
+	)
+	offchainAggregatorAnswersLatestTimestamp = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "offchain_aggregator_answers_latest_timestamp",
+			Help: "Reports the timestamp of the latest transmission on chain",
 		},
 		[]string{"contract_address", "feed_id", "chain_id", "contract_status", "contract_type", "feed_name", "feed_path", "network_id", "network_name"},
 	)
@@ -283,6 +291,20 @@ func (d *defaultMetrics) IncOffchainAggregatorAnswersTotal(contractAddress, feed
 		"network_id":       networkID,
 		"network_name":     networkName,
 	}).Inc()
+}
+
+func (d *defaultMetrics) SetOffchainAggregatorAnswersLatestTimestamp(latestTimestampSeconds float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
+	offchainAggregatorAnswersLatestTimestamp.With(prometheus.Labels{
+		"contract_address": contractAddress,
+		"feed_id":          feedID,
+		"chain_id":         chainID,
+		"contract_status":  contractStatus,
+		"contract_type":    contractType,
+		"feed_name":        feedName,
+		"feed_path":        feedPath,
+		"network_id":       networkID,
+		"network_name":     networkName,
+	}).Set(latestTimestampSeconds)
 }
 
 func (d *defaultMetrics) SetOffchainAggregatorJuelsPerFeeCoinRaw(juelsPerFeeCoin float64, contractAddress, feedID, chainID, contractStatus, contractType, feedName, feedPath, networkID, networkName string) {
@@ -513,6 +535,21 @@ func (d *defaultMetrics) Cleanup(
 		{
 			"offchain_aggregator_answers_total",
 			offchainAggregatorAnswersTotal.MetricVec,
+			prometheus.Labels{
+				"contract_address": contractAddress,
+				"feed_id":          feedID,
+				"chain_id":         chainID,
+				"contract_status":  contractStatus,
+				"contract_type":    contractType,
+				"feed_name":        feedName,
+				"feed_path":        feedPath,
+				"network_id":       networkID,
+				"network_name":     networkName,
+			},
+		},
+		{
+			"offchain_aggregator_answers_latest_timestamp",
+			offchainAggregatorAnswersLatestTimestamp.MetricVec,
 			prometheus.Labels{
 				"contract_address": contractAddress,
 				"feed_id":          feedID,

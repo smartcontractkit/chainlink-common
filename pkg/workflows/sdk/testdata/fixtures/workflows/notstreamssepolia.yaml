@@ -1,6 +1,3 @@
-workflow:
-  name: notccipethsep
-  owner: '0x00000000000000000000000000000000000000aa'
 not_stream:
   maxFrequencyMs: 5000
 ocr:
@@ -9,6 +6,7 @@ ocr:
   deviation: '0.5'
   heartbeat: 3600
   report_id: '0001'
+  key_id: 'evm'
   encoder: EVM
   encoder_config:
     Abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
@@ -16,4 +14,5 @@ chainWriter:
   address: '0xE0082363396985ae2FdcC3a9F816A586Eed88416'
   deltaStage: 45s
   schedule: oneAtATime
+  cre_step_timeout: 0
 targetChain: 'write_ethereum-testnet-sepolia@1.0.0'

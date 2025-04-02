@@ -12,16 +12,16 @@ import (
 	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestPluginRelayer(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(t, loop.PluginRelayerName,
 		&loop.GRPCPluginRelayer{
-			PluginServer: relayertest.NewRelayerTester(false),
+			PluginServer: relayertest.NewPluginRelayer(lggr, false),
 			BrokerConfig: loop.BrokerConfig{
 				Logger: logger.Test(t),
 				StopCh: stopCh}},
@@ -56,7 +56,7 @@ func FuzzRelayer(f *testing.F) {
 
 		stopCh := newStopCh(t)
 		p := newPluginRelayerExec(t, false, stopCh)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		capRegistry := mocks.NewCapabilitiesRegistry(t)
 		relayer, err := p.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, capRegistry)
 

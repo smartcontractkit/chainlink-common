@@ -6,13 +6,23 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
 
 const (
-	envDatabaseURL = "CL_DATABASE_URL"
-	envPromPort    = "CL_PROMETHEUS_PORT"
+	envDatabaseURL                    = "CL_DATABASE_URL"
+	envDatabaseIdleInTxSessionTimeout = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
+	envDatabaseLockTimeout            = "CL_DATABASE_LOCK_TIMEOUT"
+	envDatabaseQueryTimeout           = "CL_DATABASE_QUERY_TIMEOUT"
+	envDatabaseLogSQL                 = "CL_DATABASE_LOG_SQL"
+	envDatabaseMaxOpenConns           = "CL_DATABASE_MAX_OPEN_CONNS"
+	envDatabaseMaxIdleConns           = "CL_DATABASE_MAX_IDLE_CONNS"
+
+	envPromPort = "CL_PROMETHEUS_PORT"
 
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
@@ -20,18 +30,31 @@ const (
 	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
 	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
 
-	envTelemetryEnabled          = "CL_TELEMETRY_ENABLED"
-	envTelemetryEndpoint         = "CL_TELEMETRY_ENDPOINT"
-	envTelemetryInsecureConn     = "CL_TELEMETRY_INSECURE_CONNECTION"
-	envTelemetryCACertFile       = "CL_TELEMETRY_CA_CERT_FILE"
-	envTelemetryAttribute        = "CL_TELEMETRY_ATTRIBUTE_"
-	envTelemetryTraceSampleRatio = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryEnabled                   = "CL_TELEMETRY_ENABLED"
+	envTelemetryEndpoint                  = "CL_TELEMETRY_ENDPOINT"
+	envTelemetryInsecureConn              = "CL_TELEMETRY_INSECURE_CONNECTION"
+	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
+	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
+	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
+	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
+	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
+	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
+	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	DatabaseURL *url.URL
+	DatabaseURL                    *config.SecretURL
+	DatabaseIdleInTxSessionTimeout time.Duration
+	DatabaseLockTimeout            time.Duration
+	DatabaseQueryTimeout           time.Duration
+	DatabaseLogSQL                 bool
+	DatabaseMaxOpenConns           int
+	DatabaseMaxIdleConns           int
 
 	PrometheusPort int
 
@@ -41,12 +64,19 @@ type EnvConfig struct {
 	TracingTLSCertPath     string
 	TracingAttributes      map[string]string
 
-	TelemetryEnabled            bool
-	TelemetryEndpoint           string
-	TelemetryInsecureConnection bool
-	TelemetryCACertFile         string
-	TelemetryAttributes         OtelAttributes
-	TelemetryTraceSampleRatio   float64
+	TelemetryEnabled                   bool
+	TelemetryEndpoint                  string
+	TelemetryInsecureConnection        bool
+	TelemetryCACertFile                string
+	TelemetryAttributes                OtelAttributes
+	TelemetryTraceSampleRatio          float64
+	TelemetryAuthHeaders               map[string]string
+	TelemetryAuthPubKeyHex             string
+	TelemetryEmitterBatchProcessor     bool
+	TelemetryEmitterExportTimeout      time.Duration
+	TelemetryEmitterExportInterval     time.Duration
+	TelemetryEmitterExportMaxBatchSize int
+	TelemetryEmitterMaxQueueSize       int
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -56,8 +86,15 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	}
 
 	if e.DatabaseURL != nil { // optional
-		add(envDatabaseURL, e.DatabaseURL.String())
+		add(envDatabaseURL, e.DatabaseURL.URL().String())
+		add(envDatabaseIdleInTxSessionTimeout, e.DatabaseIdleInTxSessionTimeout.String())
+		add(envDatabaseLockTimeout, e.DatabaseLockTimeout.String())
+		add(envDatabaseQueryTimeout, e.DatabaseQueryTimeout.String())
+		add(envDatabaseLogSQL, strconv.FormatBool(e.DatabaseLogSQL))
+		add(envDatabaseMaxOpenConns, strconv.Itoa(e.DatabaseMaxOpenConns))
+		add(envDatabaseMaxIdleConns, strconv.Itoa(e.DatabaseMaxIdleConns))
 	}
+
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
 	add(envTracingEnabled, strconv.FormatBool(e.TracingEnabled))
@@ -78,18 +115,62 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		add(envTelemetryAttribute+k, v)
 	}
 
+	for k, v := range e.TelemetryAuthHeaders {
+		add(envTelemetryAuthHeader+k, v)
+	}
+	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
+	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.TelemetryEmitterBatchProcessor))
+	add(envTelemetryEmitterExportTimeout, e.TelemetryEmitterExportTimeout.String())
+	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
+	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
+	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
 	return
 }
 
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
-	promPortStr := os.Getenv(envPromPort)
 	var err error
-	e.DatabaseURL, err = getDatabaseURL()
+	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*config.SecretURL, error) {
+		if s == "" { // DatabaseURL is optional
+			return nil, nil
+		}
+		u, err2 := url.Parse(s)
+		if err2 != nil {
+			return nil, err2
+		}
+		return (*config.SecretURL)(u), nil
+	})
 	if err != nil {
-		return fmt.Errorf("failed to parse %s: %q", envDatabaseURL, err)
+		return err
+	}
+	if e.DatabaseURL != nil {
+		e.DatabaseIdleInTxSessionTimeout, err = getEnv(envDatabaseIdleInTxSessionTimeout, time.ParseDuration)
+		if err != nil {
+			return err
+		}
+		e.DatabaseLockTimeout, err = getEnv(envDatabaseLockTimeout, time.ParseDuration)
+		if err != nil {
+			return err
+		}
+		e.DatabaseQueryTimeout, err = getEnv(envDatabaseQueryTimeout, time.ParseDuration)
+		if err != nil {
+			return err
+		}
+		e.DatabaseLogSQL, err = getEnv(envDatabaseLogSQL, strconv.ParseBool)
+		if err != nil {
+			return err
+		}
+		e.DatabaseMaxOpenConns, err = getEnv(envDatabaseMaxOpenConns, strconv.Atoi)
+		if err != nil {
+			return err
+		}
+		e.DatabaseMaxIdleConns, err = getEnv(envDatabaseMaxIdleConns, strconv.Atoi)
+		if err != nil {
+			return err
+		}
 	}
 
+	promPortStr := os.Getenv(envPromPort)
 	e.PrometheusPort, err = strconv.Atoi(promPortStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
@@ -105,7 +186,7 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
-		e.TracingAttributes = getAttributes(envTracingAttribute)
+		e.TracingAttributes = getMap(envTracingAttribute)
 		e.TracingSamplingRatio = getFloat64OrZero(envTracingSamplingRatio)
 		e.TracingTLSCertPath = os.Getenv(envTracingTLSCertPath)
 	}
@@ -122,13 +203,36 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEndpoint, err)
 		}
 		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
-		e.TelemetryAttributes = getAttributes(envTelemetryAttribute)
+		e.TelemetryAttributes = getMap(envTelemetryAttribute)
 		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
+		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
+		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
+		e.TelemetryEmitterBatchProcessor, err = getBool(envTelemetryEmitterBatchProcessor)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)
+		}
+		e.TelemetryEmitterExportTimeout, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportTimeout))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportTimeout, err)
+		}
+		e.TelemetryEmitterExportInterval, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportInterval))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportInterval, err)
+		}
+		e.TelemetryEmitterExportMaxBatchSize, err = strconv.Atoi(os.Getenv(envTelemetryEmitterExportMaxBatchSize))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportMaxBatchSize, err)
+		}
+		e.TelemetryEmitterMaxQueueSize, err = strconv.Atoi(os.Getenv(envTelemetryEmitterMaxQueueSize))
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
+		}
 	}
 	return nil
 }
 
 // ManagedGRPCClientConfig return a Managed plugin and set grpc config values from the BrokerConfig.
+// The innermost relevant BrokerConfig should be used, to include any relevant services in the logger name.
 // Note: managed plugins shutdown when the parent process exits. We may want to change this behavior in the future
 // to enable host process restarts without restarting the plugin. To do that we would also need
 // supply the appropriate ReattachConfig to the plugin.ClientConfig.
@@ -158,14 +262,18 @@ func getValidCollectorTarget() (string, error) {
 	return tracingCollectorTarget, nil
 }
 
-func getAttributes(envKeyPrefix string) map[string]string {
-	tracingAttributes := make(map[string]string)
+func getMap(envKeyPrefix string) map[string]string {
+	m := make(map[string]string)
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, envKeyPrefix) {
-			tracingAttributes[strings.TrimPrefix(env, envKeyPrefix)] = os.Getenv(env)
+			key, value, found := strings.Cut(env, "=")
+			if found {
+				key = strings.TrimPrefix(key, envKeyPrefix)
+				m[key] = value
+			}
 		}
 	}
-	return tracingAttributes
+	return m
 }
 
 // Any errors in parsing result in a sampling ratio of 0.0.
@@ -181,16 +289,11 @@ func getFloat64OrZero(envKey string) float64 {
 	return f
 }
 
-// getDatabaseURL parses the CL_DATABASE_URL environment variable.
-func getDatabaseURL() (*url.URL, error) {
-	databaseURL := os.Getenv(envDatabaseURL)
-	if databaseURL == "" {
-		// DatabaseURL is optional
-		return nil, nil
-	}
-	u, err := url.Parse(databaseURL)
+func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
+	v := os.Getenv(key)
+	t, err = parse(v)
 	if err != nil {
-		return nil, fmt.Errorf("invalid %s: %w", envDatabaseURL, err)
+		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
-	return u, nil
+	return
 }

@@ -12,26 +12,28 @@ import (
 )
 
 func Test_KeyValueStoreClient(t *testing.T) {
+	ctx := t.Context()
 	// Setup
 	client := Client{grpc: &testGrpcClient{store: make(map[string][]byte)}}
 	key := "key"
 	insertedVal := "aval"
 
-	err := client.Store(context.Background(), key, []byte(insertedVal))
+	err := client.Store(ctx, key, []byte(insertedVal))
 	assert.NoError(t, err)
 
-	retrievedVal, err := client.Get(context.Background(), key)
+	retrievedVal, err := client.Get(ctx, key)
 	assert.NoError(t, err)
 	assert.Equal(t, insertedVal, string(retrievedVal))
 }
 
 func Test_KeyValueStoreServer(t *testing.T) {
+	ctx := t.Context()
 	// Setup
 	server := Server{impl: &testKeyValueStore{store: make(map[string][]byte)}}
 
-	_, err := server.StoreKeyValue(context.Background(), &pb.StoreKeyValueRequest{Key: "key", Value: []byte(`{"A":"a","B":1}`)})
+	_, err := server.StoreKeyValue(ctx, &pb.StoreKeyValueRequest{Key: "key", Value: []byte(`{"A":"a","B":1}`)})
 	assert.NoError(t, err)
-	resp, err := server.GetValueForKey(context.Background(), &pb.GetValueForKeyRequest{Key: "key"})
+	resp, err := server.GetValueForKey(ctx, &pb.GetValueForKeyRequest{Key: "key"})
 	assert.NoError(t, err)
 	assert.Equal(t, []byte(`{"A":"a","B":1}`), resp.Value)
 }

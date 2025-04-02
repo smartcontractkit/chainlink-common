@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	standardcapability "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -39,16 +38,10 @@ func (p *StandardCapabilitiesLoop) GRPCServer(broker *plugin.GRPCBroker, server 
 }
 
 func (p *StandardCapabilitiesLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
-	bext := &net.BrokerExt{
-		BrokerConfig: p.BrokerConfig,
-		Broker:       broker,
-	}
-
 	if p.pluginClient == nil {
-		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(bext, conn)
-	} else {
-		p.pluginClient.Refresh(broker, conn)
+		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(p.BrokerConfig)
 	}
+	p.pluginClient.Refresh(broker, conn)
 
 	return StandardCapabilities(p.pluginClient), nil
 }
@@ -58,14 +51,25 @@ func (p *StandardCapabilitiesLoop) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: StandardCapabilitiesHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginStandardCapabilitiesName: p},
 	}
-	return ManagedGRPCClientConfig(clientConfig, p.BrokerConfig)
+	if p.pluginClient == nil {
+		p.pluginClient = standardcapability.NewStandardCapabilitiesClient(p.BrokerConfig)
+	}
+	return ManagedGRPCClientConfig(clientConfig, p.pluginClient.BrokerConfig)
 }
 
 type StandardCapabilities interface {
 	services.Service
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
-		capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet) error
+	Initialise(
+		ctx context.Context,
+		config string,
+		telemetryService core.TelemetryService,
+		store core.KeyValueStore,
+		capabilityRegistry core.CapabilitiesRegistry,
+		errorLog core.ErrorLog,
+		pipelineRunner core.PipelineRunnerService,
+		relayerSet core.RelayerSet,
+		oracleFactory core.OracleFactory,
+	) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 
@@ -74,12 +78,12 @@ type StandardCapabilitiesService struct {
 }
 
 func NewStandardCapabilitiesService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd) *StandardCapabilitiesService {
-	newService := func(ctx context.Context, instance any) (StandardCapabilities, error) {
+	newService := func(ctx context.Context, instance any) (StandardCapabilities, services.HealthReporter, error) {
 		scs, ok := instance.(StandardCapabilities)
 		if !ok {
-			return nil, fmt.Errorf("expected StandardCapabilities but got %T", instance)
+			return nil, nil, fmt.Errorf("expected StandardCapabilities but got %T", instance)
 		}
-		return scs, nil
+		return scs, scs, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "StandardCapabilities")

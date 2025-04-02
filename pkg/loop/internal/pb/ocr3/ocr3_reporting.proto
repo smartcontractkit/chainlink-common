@@ -98,10 +98,11 @@ message AttributedObservation{
 message ObservationQuorumRequest {
   OutcomeContext outcomeContext=1;
   bytes query=2;
+  repeated AttributedObservation ao=3;
 }
 
 message ObservationQuorumReply {
-  int32 quorum =1;
+  bool quorumReached=1;
 }
 
 message OutcomeRequest{
@@ -120,12 +121,22 @@ message ReportsRequest{
 }
 
 message ReportsReply{
- repeated ReportWithInfo ReportWithInfo=1;
+ repeated ReportPlus reportPlus=1;
+}
+
+message ReportPlus{
+  ReportWithInfo reportWithInfo=1;
+  TransmissionSchedule transmissionScheduleOverride=2;
 }
 
 message ReportWithInfo{
   bytes report=1;
   bytes info=2;
+}
+
+message TransmissionSchedule{
+  repeated uint32 transmitters=1; // OracleID
+  repeated int64 transmissionDelays=2;
 }
 
 message ShouldAcceptAttestedReportRequest{

@@ -14,9 +14,11 @@ type Encoder string
 type EncoderConfig map[string]interface{}
 
 const EncoderEVM Encoder = "EVM"
+const EncoderValueMap Encoder = "ValueMap"
 
 var enumValues_Encoder = []interface{}{
 	"EVM",
+	"ValueMap",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -38,6 +40,8 @@ func (j *Encoder) UnmarshalJSON(b []byte) error {
 	*j = Encoder(v)
 	return nil
 }
+
+type KeyId string
 
 type ReportId string
 

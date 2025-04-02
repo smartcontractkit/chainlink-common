@@ -78,7 +78,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 		for iter.Next() {
 			mk := iter.Key()
 			mv := iter.Value()
-			if !v.CanInterface() {
+			if !mv.CanInterface() {
 				continue
 			}
 			if mv.Kind() == reflect.Ptr && mv.IsNil() {
@@ -92,7 +92,7 @@ func validate(v reflect.Value, checkInterface bool) (err error) {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < v.Len(); i++ {
 			iv := v.Index(i)
-			if !v.CanInterface() {
+			if !iv.CanInterface() {
 				continue
 			}
 			if iv.Kind() == reflect.Ptr && iv.IsNil() {

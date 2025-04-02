@@ -3,7 +3,6 @@ package grafana_test
 import (
 	"testing"
 
-	"github.com/grafana/grafana-foundation-sdk/go/expr"
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 	"github.com/stretchr/testify/require"
 )
@@ -22,17 +21,19 @@ func TestGenerateJSON(t *testing.T) {
 		builder.AddPanel(grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
 				Datasource: "datasource-name",
-				Title:      "ETH Balance",
+				Title:      grafana.Pointer("ETH Balance"),
 				Span:       12,
 				Height:     6,
-				Decimals:   2,
+				Decimals:   grafana.Pointer(2.0),
 				Query: []grafana.Query{
 					{
 						Expr:   `eth_balance`,
 						Legend: `{{account}}`,
 					},
 				},
-				AlertOptions: &grafana.AlertOptions{
+			},
+			AlertsOptions: []grafana.AlertOptions{
+				{
 					Summary:     `ETH Balance is lower than threshold`,
 					Description: `ETH Balance critically low at {{ index $values "A" }}`,
 					RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
@@ -48,14 +49,15 @@ func TestGenerateJSON(t *testing.T) {
 							Datasource: "datasource-uid",
 						},
 					},
-					Condition: &grafana.ConditionQuery{
-						RefID: "B",
-						ThresholdExpression: &grafana.ThresholdExpression{
-							Expression: "A",
-							ThresholdConditionsOptions: []grafana.ThresholdConditionsOption{
-								{
-									Params: []float64{2, 0},
-									Type:   expr.TypeThresholdTypeLt,
+					QueryRefCondition: "B",
+					Condition: []grafana.ConditionQuery{
+						{
+							RefID: "B",
+							ThresholdExpression: &grafana.ThresholdExpression{
+								Expression: "A",
+								ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+									Params: []float64{2},
+									Type:   grafana.TypeThresholdTypeLt,
 								},
 							},
 						},
@@ -64,12 +66,12 @@ func TestGenerateJSON(t *testing.T) {
 			},
 		}))
 
-		db, err := builder.Build()
+		o, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 
-		json, err := db.GenerateJSON()
+		json, err := o.GenerateJSON()
 		require.IsType(t, json, []byte{})
 	})
 }

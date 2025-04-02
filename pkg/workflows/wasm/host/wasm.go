@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -12,8 +13,8 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func GetWorkflowSpec(modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
-	m, err := NewModule(modCfg, binary)
+func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
+	m, err := NewModule(modCfg, binary, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
 	}
@@ -28,7 +29,7 @@ func GetWorkflowSpec(modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.W
 			SpecRequest: &emptypb.Empty{},
 		},
 	}
-	resp, err := m.Run(req)
+	resp, err := m.Run(ctx, req)
 	if err != nil {
 		return nil, err
 	}

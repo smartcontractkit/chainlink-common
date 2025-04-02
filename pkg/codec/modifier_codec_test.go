@@ -29,7 +29,7 @@ const anyForEncoding = true
 func TestModifierCodec(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	mod, err := codec.NewModifierCodec(&testCodec{}, testModifier{})
 	require.NoError(t, err)
 

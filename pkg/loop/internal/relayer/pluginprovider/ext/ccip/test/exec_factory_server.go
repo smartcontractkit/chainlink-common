@@ -8,15 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-var ExecFactoryServer = execFactoryServer{
-	execFactoryServerConfig: execFactoryServerConfig{
-		provider: ExecutionProvider,
-	},
+func ExecFactoryServer(lggr logger.Logger) execFactoryServer {
+	return newExecFactoryServer(lggr, execFactoryServerConfig{
+		provider: ExecutionProvider(lggr),
+	})
 }
 
 type execFactoryServerConfig struct {
@@ -26,7 +28,18 @@ type execFactoryServerConfig struct {
 var _ types.CCIPExecutionFactoryGenerator = execFactoryServer{}
 
 type execFactoryServer struct {
+	services.Service
 	execFactoryServerConfig
+	factory types.ReportingPluginFactory
+}
+
+func newExecFactoryServer(lggr logger.Logger, cfg execFactoryServerConfig) execFactoryServer {
+	lggr = logger.Named(lggr, "execFactoryServer")
+	return execFactoryServer{
+		Service:                 test.NewStaticService(lggr),
+		execFactoryServerConfig: cfg,
+		factory:                 reportingplugintest.Factory(lggr),
+	}
 }
 
 // NewExecutionFactory implements types.CCIPExecFactoryGenerator.
@@ -40,11 +53,12 @@ func (e execFactoryServer) NewExecutionFactory(ctx context.Context, srcProvider 
 	if err2 != nil {
 		return nil, err2
 	}
-	return reportingplugintest.Factory, nil
+	return e.factory, nil
 }
 
 func RunExecutionLOOP(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
-	ExecutionLOOPTester{SrcProvider: ExecutionProvider, DstProvider: ExecutionProvider, SrcChainID: 0, DstChainID: 0}.Run(t, p)
+	lggr := logger.Test(t)
+	ExecutionLOOPTester{SrcProvider: ExecutionProvider(lggr), DstProvider: ExecutionProvider(lggr), SrcChainID: 0, DstChainID: 0}.Run(t, p)
 }
 
 type ExecutionLOOPTester struct {
@@ -57,8 +71,7 @@ type ExecutionLOOPTester struct {
 
 func (e ExecutionLOOPTester) Run(t *testing.T, p types.CCIPExecutionFactoryGenerator) {
 	t.Run("ExecutionLOOP", func(t *testing.T) {
-		ctx := tests.Context(t)
-		factory, err := p.NewExecutionFactory(ctx, e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID, e.SourceTokenAddress)
+		factory, err := p.NewExecutionFactory(t.Context(), e.SrcProvider, e.DstProvider, e.SrcChainID, e.DstChainID, e.SourceTokenAddress)
 		require.NoError(t, err)
 
 		runExecReportingPluginFactory(t, factory)
@@ -83,15 +96,13 @@ func runExecReportingPluginFactory(t *testing.T, factory types.ReportingPluginFa
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(reportingplugintest.Factory.ReportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), reportingplugintest.StaticFactoryConfig.ReportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
-
-			expectedReportingPlugin.AssertEqual(ctx, t, rp)
+			expectedReportingPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }

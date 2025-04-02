@@ -20,7 +20,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func newStopCh(t *testing.T) <-chan struct{} {
@@ -33,7 +32,7 @@ func newStopCh(t *testing.T) <-chan struct{} {
 
 func PluginGenericTest(t *testing.T, p core.ReportingPluginClient) {
 	t.Run("PluginServer", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewReportingPluginFactory(ctx,
 			core.ReportingPluginServiceConfig{},
 			nettest.MockConn{},
@@ -49,7 +48,7 @@ func PluginGenericTest(t *testing.T, p core.ReportingPluginClient) {
 		reportingplugintest.RunFactory(t, factory)
 	})
 	t.Run("ValidationService", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		validationService, err := p.NewValidationService(ctx)
 		require.NoError(t, err)
 
@@ -60,14 +59,15 @@ func PluginGenericTest(t *testing.T, p core.ReportingPluginClient) {
 func TestGRPCService_MedianProvider(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
 		ocr2test.MedianID,
 		&reportingplugins.GRPCService[types.MedianProvider]{
-			PluginServer: ocr2test.MedianProviderServer,
+			PluginServer: ocr2test.MedianProviderServer(lggr),
 			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
+				Logger: lggr,
 				StopCh: stopCh,
 			},
 		},
@@ -78,14 +78,15 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 func TestGRPCService_PluginProvider(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
 	test.PluginTest(
 		t,
 		reportingplugins.PluginServiceName,
 		&reportingplugins.GRPCService[types.PluginProvider]{
-			PluginServer: ocr2test.AgnosticProviderServer,
+			PluginServer: ocr2test.AgnosticProviderServer(lggr),
 			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
+				Logger: lggr,
 				StopCh: stopCh,
 			},
 		},

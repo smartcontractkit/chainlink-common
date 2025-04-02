@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	validationtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation/test"
@@ -13,19 +14,21 @@ import (
 	mediantest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-var MedianProviderServer = medianFactoryServer{
-	medianGeneratorConfig: medianGeneratorConfig{
-		medianProvider:    mediantest.MedianProvider,
+func MedianProviderServer(lggr logger.Logger) medianFactoryServer {
+	return newMedianFactoryServer(lggr, medianGeneratorConfig{
+		medianProvider:    mediantest.MedianProvider(lggr),
 		pipeline:          pipelinetest.PipelineRunner,
 		telemetry:         telemetrytest.Telemetry,
 		validationService: validationtest.ValidationService,
-	},
+	})
 }
 
 const MedianID = "ocr2-reporting-plugin-with-median-provider"
@@ -38,7 +41,18 @@ type medianGeneratorConfig struct {
 }
 
 type medianFactoryServer struct {
+	services.Service
 	medianGeneratorConfig
+	factory types.ReportingPluginFactory
+}
+
+func newMedianFactoryServer(lggr logger.Logger, cfg medianGeneratorConfig) medianFactoryServer {
+	lggr = logger.Named(lggr, "medianFactoryServer")
+	return medianFactoryServer{
+		Service:               test.NewStaticService(lggr),
+		medianGeneratorConfig: cfg,
+		factory:               reportingplugintest.Factory(lggr),
+	}
 }
 
 var _ reportingplugins.ProviderServer[types.MedianProvider] = medianFactoryServer{}
@@ -69,23 +83,30 @@ func (s medianFactoryServer) NewReportingPluginFactory(ctx context.Context, conf
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return reportingplugintest.Factory, nil
+	return s.factory, nil
 }
 
-var AgnosticProviderServer = agnosticPluginFactoryServer{
-	provider:          ocr2test.AgnosticPluginProvider,
-	pipelineRunner:    pipelinetest.PipelineRunner,
-	telemetry:         telemetrytest.Telemetry,
-	validationService: validationtest.ValidationService,
+func AgnosticProviderServer(lggr logger.Logger) agnosticPluginFactoryServer {
+	lggr = logger.Named(lggr, "agnosticPluginFactoryServer")
+	return agnosticPluginFactoryServer{
+		Service:           test.NewStaticService(lggr),
+		provider:          ocr2test.AgnosticPluginProvider(lggr),
+		pipelineRunner:    pipelinetest.PipelineRunner,
+		telemetry:         telemetrytest.Telemetry,
+		validationService: validationtest.ValidationService,
+		factory:           reportingplugintest.Factory(lggr),
+	}
 }
 
 var _ reportingplugins.ProviderServer[types.PluginProvider] = agnosticPluginFactoryServer{}
 
 type agnosticPluginFactoryServer struct {
+	services.Service
 	provider          testtypes.PluginProviderTester
 	pipelineRunner    testtypes.PipelineEvaluator
 	telemetry         testtypes.TelemetryEvaluator
 	validationService testtypes.ValidationEvaluator
+	factory           types.ReportingPluginFactory
 }
 
 func (s agnosticPluginFactoryServer) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -114,5 +135,5 @@ func (s agnosticPluginFactoryServer) NewReportingPluginFactory(ctx context.Conte
 		return nil, fmt.Errorf("failed to evaluate telemetry: %w", err)
 	}
 
-	return reportingplugintest.Factory, nil
+	return s.factory, nil
 }

@@ -16,16 +16,19 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func PluginMedian(t *testing.T, p core.PluginMedian) {
-	PluginMedianTest{&MedianProvider}.TestPluginMedian(t, p)
+	PluginMedianTest{MedianProvider(logger.Test(t))}.TestPluginMedian(t, p)
 }
 
 type PluginMedianTest struct {
@@ -34,20 +37,30 @@ type PluginMedianTest struct {
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
-		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog)
+		ctx := t.Context()
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog, nil)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
+		servicetest.AssertHealthReportNames(t, p.HealthReport(),
+			"PluginMedianClient",
+			"PluginMedianClient.staticMedianFactoryServer",
+			"PluginMedianClient.staticMedianFactoryServer.staticReportingPluginFactory",
+		)
 	})
 
 	// when gasPriceSubunitsDataSource is meant to trigger a no-op
 	t.Run("PluginMedian (Zero GasPriceSubunitsDataSource)", func(t *testing.T) {
-		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog)
+		ctx := t.Context()
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog, nil)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
+		servicetest.AssertHealthReportNames(t, p.HealthReport(),
+			"PluginMedianClient",
+			"PluginMedianClient.staticMedianFactoryServer",
+			"PluginMedianClient.staticMedianFactoryServer.staticReportingPluginFactory",
+		)
 	})
 }
 
@@ -58,12 +71,12 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(reportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), reportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
 			expectedReportingPlugin.AssertEqual(ctx, t, rp)
 		})
@@ -80,12 +93,29 @@ type staticPluginMedianConfig struct {
 }
 
 type staticMedianFactoryServer struct {
+	services.Service
 	staticPluginMedianConfig
+	reportingPluginFactory staticReportingPluginFactory
+}
+
+func newStaticMedianFactoryServer(lggr logger.Logger, cfg staticPluginMedianConfig) staticMedianFactoryServer {
+	lggr = logger.Named(lggr, "staticMedianFactoryServer")
+	return staticMedianFactoryServer{
+		Service:                  test.NewStaticService(lggr),
+		staticPluginMedianConfig: cfg,
+		reportingPluginFactory:   newStaticReportingPluginFactory(lggr, reportingPluginConfig),
+	}
 }
 
 var _ core.PluginMedian = staticMedianFactoryServer{}
 
-func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticMedianFactoryServer) HealthReport() map[string]error {
+	hp := s.Service.HealthReport()
+	services.CopyHealth(hp, s.reportingPluginFactory.HealthReport())
+	return hp
+}
+
+func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog, deviationFuncDefinition map[string]any) (types.ReportingPluginFactory, error) {
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values
@@ -123,26 +153,23 @@ func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provide
 	if err := errorLog.SaveError(ctx, "an error"); err != nil {
 		return nil, fmt.Errorf("failed to save error: %w", err)
 	}
-	return staticReportingPluginFactory{ReportingPluginConfig: reportingPluginConfig}, nil
+	return s.reportingPluginFactory, nil
 }
 
 type staticReportingPluginFactory struct {
+	services.Service
 	libocr.ReportingPluginConfig
 }
 
-func (s staticReportingPluginFactory) Name() string { return "staticReportingPluginFactory" }
-
-func (s staticReportingPluginFactory) Start(ctx context.Context) error {
-	return nil
+func newStaticReportingPluginFactory(lggr logger.Logger, cfg libocr.ReportingPluginConfig) staticReportingPluginFactory {
+	lggr = logger.Named(lggr, "staticReportingPluginFactory")
+	return staticReportingPluginFactory{
+		Service:               test.NewStaticService(lggr),
+		ReportingPluginConfig: cfg,
+	}
 }
 
-func (s staticReportingPluginFactory) Close() error { return nil }
-
-func (s staticReportingPluginFactory) Ready() error { panic("implement me") }
-
-func (s staticReportingPluginFactory) HealthReport() map[string]error { panic("implement me") }
-
-func (s staticReportingPluginFactory) NewReportingPlugin(config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
+func (s staticReportingPluginFactory) NewReportingPlugin(ctx context.Context, config libocr.ReportingPluginConfig) (libocr.ReportingPlugin, libocr.ReportingPluginInfo, error) {
 	if config.ConfigDigest != s.ConfigDigest {
 		return nil, libocr.ReportingPluginInfo{}, fmt.Errorf("expected ConfigDigest %x but got %x", s.ConfigDigest, config.ConfigDigest)
 	}
@@ -199,20 +226,19 @@ type staticMedianProviderConfig struct {
 
 // implements types.MedianProvider and testtypes.Evaluator[types.MedianProvider]
 type staticMedianProvider struct {
+	services.Service
 	staticMedianProviderConfig
 }
 
+func newStaticMedianProvider(lggr logger.Logger, cfg staticMedianProviderConfig) staticMedianProvider {
+	lggr = logger.Named(lggr, "staticMedianProvider")
+	return staticMedianProvider{
+		Service:                    test.NewStaticService(lggr),
+		staticMedianProviderConfig: cfg,
+	}
+}
+
 var _ testtypes.MedianProviderTester = staticMedianProvider{}
-
-func (s staticMedianProvider) Start(ctx context.Context) error { return nil }
-
-func (s staticMedianProvider) Close() error { return nil }
-
-func (s staticMedianProvider) Ready() error { panic("unimplemented") }
-
-func (s staticMedianProvider) Name() string { panic("unimplemented") }
-
-func (s staticMedianProvider) HealthReport() map[string]error { panic("unimplemented") }
 
 func (s staticMedianProvider) OffchainConfigDigester() libocr.OffchainConfigDigester {
 	return s.offchainDigester
@@ -329,21 +355,21 @@ var _ testtypes.Evaluator[median.ReportCodec] = staticReportCodec{}
 var _ median.ReportCodec = staticReportCodec{}
 
 // TODO BCF-3068 remove hard coded values, use the staticXXXConfig pattern elsewhere in the test framework
-func (s staticReportCodec) BuildReport(os []median.ParsedAttributedObservation) (libocr.Report, error) {
+func (s staticReportCodec) BuildReport(ctx context.Context, os []median.ParsedAttributedObservation) (libocr.Report, error) {
 	if !assert.ObjectsAreEqual(pobs, os) {
 		return nil, fmt.Errorf("expected observations %v but got %v", pobs, os)
 	}
 	return report, nil
 }
 
-func (s staticReportCodec) MedianFromReport(r libocr.Report) (*big.Int, error) {
+func (s staticReportCodec) MedianFromReport(ctx context.Context, r libocr.Report) (*big.Int, error) {
 	if !bytes.Equal(report, r) {
 		return nil, fmt.Errorf("expected report %x but got %x", report, r)
 	}
 	return medianValue, nil
 }
 
-func (s staticReportCodec) MaxReportLength(n2 int) (int, error) {
+func (s staticReportCodec) MaxReportLength(ctx context.Context, n2 int) (int, error) {
 	if n != n2 {
 		return -1, fmt.Errorf("expected n %d but got %d", n, n2)
 	}
@@ -351,21 +377,21 @@ func (s staticReportCodec) MaxReportLength(n2 int) (int, error) {
 }
 
 func (s staticReportCodec) Evaluate(ctx context.Context, rc median.ReportCodec) error {
-	gotReport, err := rc.BuildReport(pobs)
+	gotReport, err := rc.BuildReport(ctx, pobs)
 	if err != nil {
 		return fmt.Errorf("failed to BuildReport: %w", err)
 	}
 	if !bytes.Equal(gotReport, report) {
 		return fmt.Errorf("expected Report %x but got %x", report, gotReport)
 	}
-	gotMedianValue, err := rc.MedianFromReport(report)
+	gotMedianValue, err := rc.MedianFromReport(ctx, report)
 	if err != nil {
 		return fmt.Errorf("failed to get MedianFromReport: %w", err)
 	}
 	if medianValue.Cmp(gotMedianValue) != 0 {
 		return fmt.Errorf("expected MedianValue %s but got %s", medianValue, gotMedianValue)
 	}
-	gotMax, err := rc.MaxReportLength(n)
+	gotMax, err := rc.MaxReportLength(ctx, n)
 	if err != nil {
 		return fmt.Errorf("failed to get MaxReportLength: %w", err)
 	}
@@ -446,7 +472,7 @@ type staticOnchainConfigCodec struct{}
 var _ testtypes.Evaluator[median.OnchainConfigCodec] = staticOnchainConfigCodec{}
 var _ median.OnchainConfigCodec = staticOnchainConfigCodec{}
 
-func (s staticOnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error) {
+func (s staticOnchainConfigCodec) Encode(ctx context.Context, c median.OnchainConfig) ([]byte, error) {
 	if !assert.ObjectsAreEqual(onchainConfig.Max, c.Max) {
 		return nil, fmt.Errorf("expected max %s but got %s", onchainConfig.Max, c.Max)
 	}
@@ -456,7 +482,7 @@ func (s staticOnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error)
 	return encodedOnchainConfig, nil
 }
 
-func (s staticOnchainConfigCodec) Decode(b []byte) (median.OnchainConfig, error) {
+func (s staticOnchainConfigCodec) Decode(ctx context.Context, b []byte) (median.OnchainConfig, error) {
 	if !bytes.Equal(encodedOnchainConfig, b) {
 		return median.OnchainConfig{}, fmt.Errorf("expected encoded %x but got %x", encodedOnchainConfig, b)
 	}
@@ -464,14 +490,14 @@ func (s staticOnchainConfigCodec) Decode(b []byte) (median.OnchainConfig, error)
 }
 
 func (s staticOnchainConfigCodec) Evaluate(ctx context.Context, occ median.OnchainConfigCodec) error {
-	gotEncoded, err := occ.Encode(onchainConfig)
+	gotEncoded, err := occ.Encode(ctx, onchainConfig)
 	if err != nil {
 		return fmt.Errorf("failed to Encode: %w", err)
 	}
 	if !bytes.Equal(gotEncoded, encodedOnchainConfig) {
 		return fmt.Errorf("expected Encoded %s but got %s", encodedOnchainConfig, gotEncoded)
 	}
-	gotDecoded, err := occ.Decode(encodedOnchainConfig)
+	gotDecoded, err := occ.Decode(ctx, encodedOnchainConfig)
 	if err != nil {
 		return fmt.Errorf("failed to Decode: %w", err)
 	}

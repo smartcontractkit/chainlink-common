@@ -2,6 +2,7 @@ package logger
 
 import (
 	"io"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -9,10 +10,28 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 )
 
-// Logger is a minimal subset of smartcontractkit/chainlink/core/logger.Logger implemented by go.uber.org/zap.SugaredLogger
+// Logger is a basic logging interface implemented by smartcontractkit/chainlink/core/logger.Logger and go.uber.org/zap.SugaredLogger
+//
+// Loggers should be injected (and usually Named as well): e.g. lggr.Named("<service name>")
+//
+// Tests
+//   - Tests should use a [Test] logger, with [New] being reserved for actual runtime and limited direct testing.
+//
+// Levels
+//   - Fatal: Logs and then calls os.Exit(1). Be careful about using this since it does NOT unwind the stack and may exit uncleanly.
+//   - Panic: Unrecoverable error. Example: invariant violation, programmer error
+//   - Error: Something bad happened, and it was clearly on the node op side. No need for immediate action though. Example: database write timed out
+//   - Warn: Something bad happened, not clear who/what is at fault. Node ops should have a rough look at these once in a while to see whether anything stands out. Example: connection to peer was closed unexpectedly. observation timed out.
+//   - Info: High level information. First level we’d expect node ops to look at. Example: entered new epoch with leader, made an observation with value, etc.
+//   - Debug: Useful for forensic debugging, but we don't expect nops to look at this. Example: Got a message, dropped a message, ...
+//
+// Node Operator Docs: https://docs.chain.link/docs/configuration-variables/#log_level
 type Logger interface {
+	// Name returns the fully qualified name of the logger.
 	Name() string
 
 	Debug(args ...interface{})
@@ -20,6 +39,8 @@ type Logger interface {
 	Warn(args ...interface{})
 	Error(args ...interface{})
 	Panic(args ...interface{})
+	// Fatal logs and then calls os.Exit(1)
+	// Be careful about using this since it does NOT unwind the stack and may exit uncleanly
 	Fatal(args ...interface{})
 
 	Debugf(format string, values ...interface{})
@@ -36,6 +57,8 @@ type Logger interface {
 	Panicw(msg string, keysAndValues ...interface{})
 	Fatalw(msg string, keysAndValues ...interface{})
 
+	// Sync flushes any buffered log entries.
+	// Some insignificant errors are suppressed.
 	Sync() error
 }
 
@@ -52,7 +75,14 @@ func New() (Logger, error) { return defaultConfig.New() }
 func (c *Config) New() (Logger, error) {
 	return NewWith(func(cfg *zap.Config) {
 		cfg.Level.SetLevel(c.Level)
+		cfg.InitialFields = map[string]interface{}{
+			"version": buildVersion(),
+		}
 	})
+}
+
+func buildVersion() string {
+	return fmt.Sprintf("%s@%s", build.Version, build.ChecksumPrefix)
 }
 
 // NewWith returns a new Logger from a modified [zap.Config].
@@ -83,7 +113,7 @@ func Test(tb testing.TB) Logger {
 			zapcore.DebugLevel,
 		),
 	)
-	return &logger{lggr.Sugar()}
+	return &logger{lggr.With(zap.String("version", buildVersion())).Sugar()}
 }
 
 // TestSugared returns a new test SugaredLogger.
@@ -164,6 +194,13 @@ func With(l Logger, keyvals ...interface{}) Logger {
 
 // Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
 func Named(l Logger, n string) Logger {
+	l = named(l, n)
+	if testing.Testing() {
+		l.Debugf("New logger: %s", n)
+	}
+	return l
+}
+func named(l Logger, n string) Logger {
 	switch t := l.(type) {
 	case *logger:
 		return t.named(n)

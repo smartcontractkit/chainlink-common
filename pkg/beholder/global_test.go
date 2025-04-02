@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"go.opentelemetry.io/otel"
 	otelattribute "go.opentelemetry.io/otel/attribute"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestGlobal(t *testing.T) {
@@ -45,15 +45,15 @@ func TestGlobal(t *testing.T) {
 	logger, tracer, meter, messageEmitter = beholder.GetLogger(), beholder.GetTracer(), beholder.GetMeter(), beholder.GetEmitter()
 
 	// Emit otel log record
-	logger.Emit(tests.Context(t), otellog.Record{})
+	logger.Emit(t.Context(), otellog.Record{})
 
 	// Create trace span
-	ctx, span := tracer.Start(tests.Context(t), "ExampleGlobalClient", oteltrace.WithAttributes(otelattribute.String("key", "value")))
+	ctx, span := tracer.Start(t.Context(), "ExampleGlobalClient", oteltrace.WithAttributes(otelattribute.String("key", "value")))
 	defer span.End()
 
 	// Create metric counter
 	counter, _ := meter.Int64Counter("global_counter")
-	counter.Add(tests.Context(t), 1)
+	counter.Add(t.Context(), 1)
 
 	// Emit custom message
 	err := messageEmitter.Emit(ctx, []byte("test"), beholder.Attributes{"key": "value"})
@@ -76,7 +76,7 @@ func TestClient_SetGlobalOtelProviders(t *testing.T) {
 
 	var b strings.Builder
 	client, err := beholder.NewWriterClient(&b)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Set global Otel Client
 	beholder.SetClient(client)
 

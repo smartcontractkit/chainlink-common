@@ -14,6 +14,8 @@ message AggregationOutcome {
   bool shouldReport = 3;
   uint64 lastSeenAt = 4; // this is the equivalent of a SeqNr
   google.protobuf.Timestamp timestamp = 5; // current time of the node
+  string encoderName = 6; // optional dynamic encoder override
+  values.Map encoderConfig = 7; // optional dynamic encoder config
 }
 
 message Query {
@@ -37,6 +39,8 @@ message Observation {
   Id id = 1;
   // list of observations defined in inputs.observations
   values.List observations = 4;
+  string overriddenEncoderName = 5;
+  values.Map overriddenEncoderConfig = 6;
 }
 
 message Observations {

@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"iter"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -15,6 +16,7 @@ const (
 	ErrContractReaderConfigMissing = UnimplementedError("ContractReader entry missing from RelayConfig")
 	ErrInternal                    = InternalError("internal error")
 	ErrNotFound                    = NotFoundError("not found")
+	ErrFinalityViolated            = InternalError("finality violated")
 )
 
 // ContractReader defines essential read operations a chain should implement for reading contract values and events.
@@ -46,6 +48,9 @@ type ContractReader interface {
 	// Passing in a *values.Value as the returnVal will encode the return value as an appropriate value.Value instance.
 	GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error
 
+	// GetLatestValueWithHeadData should be used in the same way as GetLatestValue, but also returns the head data if available.
+	GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (*Head, error)
+
 	// BatchGetLatestValues batches get latest value calls based on request, which is grouped by contract names that each have a slice of BatchRead.
 	// BatchGetLatestValuesRequest params and returnVal follow same rules as GetLatestValue params and returnVal arguments, with difference in how response is returned.
 	// BatchGetLatestValuesResult response is grouped by contract names, which contain read results that maintain the order from the request.
@@ -61,6 +66,25 @@ type ContractReader interface {
 
 	// QueryKey provides fetching chain agnostic events (Sequence) with general querying capability.
 	QueryKey(ctx context.Context, contract BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceDataType any) ([]Sequence, error)
+
+	// QueryKeys provides fetching chain agnostic events (Sequence) of different types with general querying capability.
+	// The iterator returns a pair of key and sequence.
+	QueryKeys(ctx context.Context, filters []ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, Sequence], error)
+
+	// HealthReport returns a full health report of the callee including its dependencies.
+	// Keys are based on Name(), with nil values when healthy or errors otherwise.
+	// Use CopyHealth to collect reports from sub-services.
+	// This should run very fast, so avoid doing computation and instead prefer reporting pre-calculated state.
+	// On finality violation report must contain at least one ErrFinalityViolation.
+	HealthReport() map[string]error
+
+	mustEmbedUnimplementedContractReader()
+}
+
+type ContractKeyFilter struct {
+	query.KeyFilter
+	Contract         BoundContract
+	SequenceDataType any
 }
 
 // BatchGetLatestValuesRequest string is contract name.
@@ -128,6 +152,10 @@ func (UnimplementedContractReader) GetLatestValue(ctx context.Context, readIdent
 	return UnimplementedError("ContractReader.GetLatestValue unimplemented")
 }
 
+func (UnimplementedContractReader) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (*Head, error) {
+	return nil, UnimplementedError("ContractReader.GetLatestValueWithHeadData unimplemented")
+}
+
 func (UnimplementedContractReader) BatchGetLatestValues(ctx context.Context, request BatchGetLatestValuesRequest) (BatchGetLatestValuesResult, error) {
 	return nil, UnimplementedError("ContractReader.BatchGetLatestValues unimplemented")
 }
@@ -144,22 +172,18 @@ func (UnimplementedContractReader) QueryKey(ctx context.Context, boundContract B
 	return nil, UnimplementedError("ContractReader.QueryKey unimplemented")
 }
 
-func (UnimplementedContractReader) Start(context.Context) error {
-	return UnimplementedError("ContractReader.Start unimplemented")
+func (UnimplementedContractReader) QueryKeys(ctx context.Context, keyQueries []ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, Sequence], error) {
+	return nil, UnimplementedError("ContractReader.QueryKeys unimplemented")
 }
 
-func (UnimplementedContractReader) Close() error {
-	return UnimplementedError("ContractReader.Close unimplemented")
-}
+func (UnimplementedContractReader) Start(context.Context) error { return nil }
 
-func (UnimplementedContractReader) HealthReport() map[string]error {
-	panic(UnimplementedError("ContractReader.HealthReport unimplemented"))
-}
+func (UnimplementedContractReader) Close() error { return nil }
 
-func (UnimplementedContractReader) Name() string {
-	panic(UnimplementedError("ContractReader.Name unimplemented"))
-}
+func (UnimplementedContractReader) HealthReport() map[string]error { return nil }
 
-func (UnimplementedContractReader) Ready() error {
-	return UnimplementedError("ContractReader.Ready unimplemented")
-}
+func (UnimplementedContractReader) Name() string { return "UnimplementedContractReader" }
+
+func (UnimplementedContractReader) Ready() error { return nil }
+
+func (UnimplementedContractReader) mustEmbedUnimplementedContractReader() {}

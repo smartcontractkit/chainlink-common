@@ -15,7 +15,7 @@ type TestingT interface {
 	Cleanup(func())
 }
 
-func Context(tb TestingT) (ctx context.Context) {
+func getContext(tb TestingT) (ctx context.Context) {
 	ctx = context.Background()
 	var cancel func()
 
@@ -67,4 +67,15 @@ func RequireSignal(t *testing.T, ch <-chan struct{}, failMsg string) {
 	case <-time.After(WaitTimeout(t)):
 		t.Fatal(failMsg)
 	}
+}
+
+// SkipShort skips tb during -short runs, and notes why.
+func SkipShort(tb testing.TB, why string) {
+	if testing.Short() {
+		tb.Skipf("skipping: %s", why)
+	}
+}
+
+func SkipFlakey(t *testing.T, ticketURL string) {
+	t.Skip("Flakey", ticketURL)
 }

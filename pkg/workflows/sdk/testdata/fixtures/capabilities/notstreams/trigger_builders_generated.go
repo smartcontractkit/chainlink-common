@@ -19,7 +19,17 @@ func (cfg TriggerConfig) New(w *sdk.WorkflowSpecFactory) FeedCap {
 	}
 
 	step := sdk.Step[Feed]{Definition: def}
-	return FeedCapFromStep(w, step)
+	raw := step.AddTo(w)
+	return FeedWrapper(raw)
+}
+
+// FeedWrapper allows access to field from an sdk.CapDefinition[Feed]
+func FeedWrapper(raw sdk.CapDefinition[Feed]) FeedCap {
+	wrapped, ok := raw.(FeedCap)
+	if ok {
+		return wrapped
+	}
+	return &feedCap{CapDefinition: raw}
 }
 
 type FeedCap interface {
@@ -30,25 +40,23 @@ type FeedCap interface {
 	private()
 }
 
-// FeedCapFromStep should only be called from generated code to assure type safety
-func FeedCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[Feed]) FeedCap {
-	raw := step.AddTo(w)
-	return &feed{CapDefinition: raw}
-}
-
-type feed struct {
+type feedCap struct {
 	sdk.CapDefinition[Feed]
 }
 
-func (*feed) private() {}
-func (c *feed) Metadata() SignerMetadataCap {
-	return &signerMetadata{CapDefinition: sdk.AccessField[Feed, SignerMetadata](c.CapDefinition, "Metadata")}
+func (*feedCap) private() {}
+func (c *feedCap) Metadata() SignerMetadataCap {
+	return SignerMetadataWrapper(sdk.AccessField[Feed, SignerMetadata](c.CapDefinition, "Metadata"))
 }
-func (c *feed) Payload() FeedReportCap {
-	return &feedReport{CapDefinition: sdk.AccessField[Feed, FeedReport](c.CapDefinition, "Payload")}
+func (c *feedCap) Payload() FeedReportCap {
+	return FeedReportWrapper(sdk.AccessField[Feed, FeedReport](c.CapDefinition, "Payload"))
 }
-func (c *feed) Timestamp() sdk.CapDefinition[int64] {
+func (c *feedCap) Timestamp() sdk.CapDefinition[int64] {
 	return sdk.AccessField[Feed, int64](c.CapDefinition, "Timestamp")
+}
+
+func ConstantFeed(value Feed) FeedCap {
+	return &feedCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewFeedFromFields(
@@ -86,6 +94,15 @@ func (c *simpleFeed) Timestamp() sdk.CapDefinition[int64] {
 
 func (c *simpleFeed) private() {}
 
+// FeedReportWrapper allows access to field from an sdk.CapDefinition[FeedReport]
+func FeedReportWrapper(raw sdk.CapDefinition[FeedReport]) FeedReportCap {
+	wrapped, ok := raw.(FeedReportCap)
+	if ok {
+		return wrapped
+	}
+	return &feedReportCap{CapDefinition: raw}
+}
+
 type FeedReportCap interface {
 	sdk.CapDefinition[FeedReport]
 	BuyPrice() sdk.CapDefinition[[]uint8]
@@ -97,34 +114,32 @@ type FeedReportCap interface {
 	private()
 }
 
-// FeedReportCapFromStep should only be called from generated code to assure type safety
-func FeedReportCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[FeedReport]) FeedReportCap {
-	raw := step.AddTo(w)
-	return &feedReport{CapDefinition: raw}
-}
-
-type feedReport struct {
+type feedReportCap struct {
 	sdk.CapDefinition[FeedReport]
 }
 
-func (*feedReport) private() {}
-func (c *feedReport) BuyPrice() sdk.CapDefinition[[]uint8] {
+func (*feedReportCap) private() {}
+func (c *feedReportCap) BuyPrice() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "BuyPrice")
 }
-func (c *feedReport) FullReport() sdk.CapDefinition[[]uint8] {
+func (c *feedReportCap) FullReport() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "FullReport")
 }
-func (c *feedReport) ObservationTimestamp() sdk.CapDefinition[int64] {
+func (c *feedReportCap) ObservationTimestamp() sdk.CapDefinition[int64] {
 	return sdk.AccessField[FeedReport, int64](c.CapDefinition, "ObservationTimestamp")
 }
-func (c *feedReport) ReportContext() sdk.CapDefinition[[]uint8] {
+func (c *feedReportCap) ReportContext() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "ReportContext")
 }
-func (c *feedReport) SellPrice() sdk.CapDefinition[[]uint8] {
+func (c *feedReportCap) SellPrice() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "SellPrice")
 }
-func (c *feedReport) Signature() sdk.CapDefinition[[]uint8] {
+func (c *feedReportCap) Signature() sdk.CapDefinition[[]uint8] {
 	return sdk.AccessField[FeedReport, []uint8](c.CapDefinition, "Signature")
+}
+
+func ConstantFeedReport(value FeedReport) FeedReportCap {
+	return &feedReportCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewFeedReportFromFields(
@@ -183,25 +198,32 @@ func (c *simpleFeedReport) Signature() sdk.CapDefinition[[]uint8] {
 
 func (c *simpleFeedReport) private() {}
 
+// SignerMetadataWrapper allows access to field from an sdk.CapDefinition[SignerMetadata]
+func SignerMetadataWrapper(raw sdk.CapDefinition[SignerMetadata]) SignerMetadataCap {
+	wrapped, ok := raw.(SignerMetadataCap)
+	if ok {
+		return wrapped
+	}
+	return &signerMetadataCap{CapDefinition: raw}
+}
+
 type SignerMetadataCap interface {
 	sdk.CapDefinition[SignerMetadata]
 	Signer() sdk.CapDefinition[string]
 	private()
 }
 
-// SignerMetadataCapFromStep should only be called from generated code to assure type safety
-func SignerMetadataCapFromStep(w *sdk.WorkflowSpecFactory, step sdk.Step[SignerMetadata]) SignerMetadataCap {
-	raw := step.AddTo(w)
-	return &signerMetadata{CapDefinition: raw}
-}
-
-type signerMetadata struct {
+type signerMetadataCap struct {
 	sdk.CapDefinition[SignerMetadata]
 }
 
-func (*signerMetadata) private() {}
-func (c *signerMetadata) Signer() sdk.CapDefinition[string] {
+func (*signerMetadataCap) private() {}
+func (c *signerMetadataCap) Signer() sdk.CapDefinition[string] {
 	return sdk.AccessField[SignerMetadata, string](c.CapDefinition, "Signer")
+}
+
+func ConstantSignerMetadata(value SignerMetadata) SignerMetadataCap {
+	return &signerMetadataCap{CapDefinition: sdk.ConstantDefinition(value)}
 }
 
 func NewSignerMetadataFromFields(

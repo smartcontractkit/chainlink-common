@@ -46,11 +46,17 @@
     },
     "encoder": {
       "type": "string",
-      "enum": ["EVM"]
+      "enum": ["EVM", "ValueMap"]
     },
     "encoder_config": {
       "type": "object",
       "additionalProperties": true
+    },
+    "key_id" : {
+      "type": "string",
+      "examples": [
+        "evm"
+      ]
     },
     "report_id" : {
       "type": "string",

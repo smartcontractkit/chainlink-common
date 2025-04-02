@@ -4,7 +4,7 @@ package chainwriter
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	ocr3cap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
@@ -14,9 +14,10 @@ func (cfg TargetConfig) New(w *sdk.WorkflowSpecFactory, id string, input TargetI
 		ID:     id,
 		Inputs: input.ToSteps(),
 		Config: map[string]any{
-			"address":    cfg.Address,
-			"deltaStage": cfg.DeltaStage,
-			"schedule":   cfg.Schedule,
+			"address":          cfg.Address,
+			"cre_step_timeout": cfg.CreStepTimeout,
+			"deltaStage":       cfg.DeltaStage,
+			"schedule":         cfg.Schedule,
 		},
 		CapabilityType: capabilities.CapabilityTypeTarget,
 	}

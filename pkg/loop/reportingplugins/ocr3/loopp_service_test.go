@@ -54,40 +54,43 @@ func TestLOOPPService(t *testing.T) {
 		},
 	}
 	for _, ts := range tests {
-		looppSvc := NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-			return NewHelperProcessCommand(ts.Plugin)
-		},
-			core.ReportingPluginServiceConfig{},
-			nettest.MockConn{},
-			pipelinetest.PipelineRunner,
-			telemetrytest.Telemetry,
-			errorlogtest.ErrorLog,
-			core.CapabilitiesRegistry(nil),
-			keyvaluestoretest.KeyValueStore{},
-			relayersettest.RelayerSet{})
-		hook := looppSvc.XXXTestHook()
-		servicetest.Run(t, looppSvc)
+		t.Run(ts.Plugin, func(t *testing.T) {
+			t.Parallel()
+			looppSvc := NewLOOPPService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+				return NewHelperProcessCommand(ts.Plugin)
+			},
+				core.ReportingPluginServiceConfig{},
+				nettest.MockConn{},
+				pipelinetest.PipelineRunner,
+				telemetrytest.Telemetry,
+				errorlogtest.ErrorLog,
+				core.CapabilitiesRegistry(nil),
+				keyvaluestoretest.KeyValueStore{},
+				relayersettest.RelayerSet{})
+			hook := looppSvc.XXXTestHook()
+			servicetest.Run(t, looppSvc)
 
-		t.Run("control", func(t *testing.T) {
-			ocr3test.OCR3ReportingPluginFactory(t, looppSvc)
-		})
+			t.Run("control", func(t *testing.T) {
+				ocr3test.OCR3ReportingPluginFactory(t, looppSvc)
+			})
 
-		t.Run("Kill", func(t *testing.T) {
-			hook.Kill()
+			t.Run("Kill", func(t *testing.T) {
+				hook.Kill()
 
-			// wait for relaunch
-			time.Sleep(2 * goplugin.KeepAliveTickDuration)
+				// wait for relaunch
+				time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-			ocr3test.OCR3ReportingPluginFactory(t, looppSvc)
-		})
+				ocr3test.OCR3ReportingPluginFactory(t, looppSvc)
+			})
 
-		t.Run("Reset", func(t *testing.T) {
-			hook.Reset()
+			t.Run("Reset", func(t *testing.T) {
+				hook.Reset()
 
-			// wait for relaunch
-			time.Sleep(2 * goplugin.KeepAliveTickDuration)
+				// wait for relaunch
+				time.Sleep(2 * goplugin.KeepAliveTickDuration)
 
-			ocr3test.OCR3ReportingPluginFactory(t, looppSvc)
+				ocr3test.OCR3ReportingPluginFactory(t, looppSvc)
+			})
 		})
 	}
 }

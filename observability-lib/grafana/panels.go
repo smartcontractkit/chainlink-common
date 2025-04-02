@@ -2,22 +2,34 @@ package grafana
 
 import (
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
+	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
+	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/gauge"
+	"github.com/grafana/grafana-foundation-sdk/go/heatmap"
 	"github.com/grafana/grafana-foundation-sdk/go/logs"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 	"github.com/grafana/grafana-foundation-sdk/go/stat"
 	"github.com/grafana/grafana-foundation-sdk/go/table"
+	"github.com/grafana/grafana-foundation-sdk/go/text"
 	"github.com/grafana/grafana-foundation-sdk/go/timeseries"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
+)
+
+type QueryType string
+
+const (
+	QueryTypeInstant QueryType = "instant"
 )
 
 type Query struct {
-	Expr    string
-	Legend  string
-	Instant bool
-	Min     float64
-	Format  prometheus.PromQueryFormat
+	Expr      string
+	Legend    string
+	Instant   bool
+	Min       float64
+	Format    prometheus.PromQueryFormat
+	QueryType QueryType
 }
 
 func newQuery(query Query) *prometheus.DataqueryBuilder {
@@ -29,6 +41,9 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 	if query.Instant {
 		res.Instant()
 	}
+	if query.QueryType != "" {
+		res.QueryType(string(query.QueryType))
+	}
 
 	return res
 }
@@ -36,6 +51,7 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 type LegendOptions struct {
 	Placement   common.LegendPlacement
 	DisplayMode common.LegendDisplayMode
+	Calcs       []string
 }
 
 func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
@@ -49,8 +65,14 @@ func newLegend(options *LegendOptions) *common.VizLegendOptionsBuilder {
 
 	builder := common.NewVizLegendOptionsBuilder().
 		ShowLegend(true).
-		Placement(options.Placement).
-		DisplayMode(options.DisplayMode)
+		Placement(options.Placement)
+
+	if len(options.Calcs) > 0 {
+		options.DisplayMode = common.LegendDisplayModeTable
+		builder.Calcs(options.Calcs)
+	}
+
+	builder.DisplayMode(options.DisplayMode)
 
 	return builder
 }
@@ -68,33 +90,95 @@ func newThresholds(options *ThresholdOptions) *dashboard.ThresholdsConfigBuilder
 	return builder
 }
 
-type TransformOptions struct {
-	ID      string
-	Options map[string]string
-}
-
-func newTransform(options *TransformOptions) dashboard.DataTransformerConfig {
+func newTransform(transform *Transform) dashboard.DataTransformerConfig {
 	return dashboard.DataTransformerConfig{
-		Id:      options.ID,
-		Options: options.Options,
+		Id:      transform.ID,
+		Options: transform.Options,
 	}
 }
 
+func newOverride(override *Override) (matcher dashboard.MatcherConfig, properties []dashboard.DynamicConfigValue) {
+	matcher = dashboard.MatcherConfig{
+		Id:      override.Matcher.ID,
+		Options: override.Matcher.Options,
+	}
+
+	for _, property := range override.Properties {
+		properties = append(
+			properties,
+			dashboard.DynamicConfigValue{
+				Id:    property.ID,
+				Value: property.Value,
+			},
+		)
+	}
+
+	return
+}
+
+type ToolTipOptions struct {
+	Mode      common.TooltipDisplayMode
+	Sort      common.SortOrder
+	MaxWidth  *float64
+	MaxHeight *float64
+}
+
+func newToolTip(options *ToolTipOptions) *common.VizTooltipOptionsBuilder {
+	if options.Mode == "" {
+		options.Mode = common.TooltipDisplayModeSingle
+	}
+
+	if options.Sort == "" {
+		options.Sort = common.SortOrderNone
+	}
+
+	builder := common.NewVizTooltipOptionsBuilder().
+		Mode(options.Mode).
+		Sort(options.Sort)
+
+	if options.MaxWidth != nil {
+		builder.MaxWidth(*options.MaxWidth)
+	}
+
+	if options.MaxHeight != nil {
+		builder.MaxHeight(*options.MaxHeight)
+	}
+
+	return builder
+}
+
 type PanelOptions struct {
-	Datasource   string
-	Title        string
-	Description  string
-	Span         uint32
-	Height       uint32
-	Decimals     float64
-	Unit         string
-	NoValue      string
-	Min          *float64
-	Max          *float64
-	Query        []Query
-	Threshold    *ThresholdOptions
-	Transform    *TransformOptions
-	AlertOptions *AlertOptions
+	Datasource    string
+	Title         *string
+	Description   string
+	Transparent   bool
+	Span          uint32
+	Height        uint32
+	Decimals      *float64
+	Unit          string
+	NoValue       string
+	Min           *float64
+	Max           *float64
+	MaxDataPoints *float64
+	Query         []Query
+	Threshold     *ThresholdOptions
+	Transforms    []*Transform
+	Overrides     []*Override
+	ColorScheme   dashboard.FieldColorModeId
+	Interval      string
+}
+
+type Panel struct {
+	statPanelBuilder             *stat.PanelBuilder
+	timeSeriesPanelBuilder       *timeseries.PanelBuilder
+	gaugePanelBuilder            *gauge.PanelBuilder
+	barGaugePanelBuilder         *bargauge.PanelBuilder
+	tablePanelBuilder            *table.PanelBuilder
+	logPanelBuilder              *logs.PanelBuilder
+	heatmapBuilder               *heatmap.PanelBuilder
+	textPanelBuilder             *text.PanelBuilder
+	businessVariablePanelBuilder *businessvariable.PanelBuilder
+	alertBuilders                []*alerting.RuleBuilder
 }
 
 // panel defaults
@@ -102,8 +186,8 @@ func setDefaults(options *PanelOptions) {
 	if options.Datasource == "" {
 		options.Datasource = "Prometheus"
 	}
-	if options.Title == "" {
-		options.Title = "Panel Title"
+	if options.Title == nil {
+		options.Title = Pointer("Panel Title")
 	}
 	if options.Span == 0 {
 		options.Span = 24
@@ -125,15 +209,7 @@ type StatPanelOptions struct {
 	GraphMode   common.BigValueGraphMode
 	TextMode    common.BigValueTextMode
 	Orientation common.VizOrientation
-}
-
-type Panel struct {
-	statPanelBuilder       *stat.PanelBuilder
-	timeSeriesPanelBuilder *timeseries.PanelBuilder
-	gaugePanelBuilder      *gauge.PanelBuilder
-	tablePanelBuilder      *table.PanelBuilder
-	logPanelBuilder        *logs.PanelBuilder
-	alertBuilder           *alerting.RuleBuilder
+	Mappings    []dashboard.ValueMapping
 }
 
 func NewStatPanel(options *StatPanelOptions) *Panel {
@@ -157,11 +233,11 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 
 	newPanel := stat.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
-		Title(options.Title).
+		Title(*options.Title).
 		Description(options.Description).
+		Transparent(options.Transparent).
 		Span(options.Span).
 		Height(options.Height).
-		Decimals(options.Decimals).
 		Unit(options.Unit).
 		NoValue(options.NoValue).
 		Text(common.NewVizTextDisplayOptionsBuilder().TitleSize(10).ValueSize(18)).
@@ -170,7 +246,20 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		TextMode(options.TextMode).
 		Orientation(options.Orientation).
 		JustifyMode(options.JustifyMode).
+		Mappings(options.Mappings).
 		ReduceOptions(common.NewReduceDataOptionsBuilder().Calcs([]string{"last"}))
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -200,17 +289,20 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			statPanelBuilder: newPanel,
-			alertBuilder:     NewAlertRule(options.AlertOptions),
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
 		}
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
 	return &Panel{
@@ -220,40 +312,169 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 
 type TimeSeriesPanelOptions struct {
 	*PanelOptions
+	AlertsOptions     []AlertOptions
+	LineWidth         *float64
 	FillOpacity       float64
 	ScaleDistribution common.ScaleDistribution
 	LegendOptions     *LegendOptions
+	ToolTipOptions    *ToolTipOptions
+	ThresholdStyle    common.GraphThresholdsStyleMode
+	DrawStyle         common.GraphDrawStyle
+	StackingMode      common.StackingMode
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	setDefaults(options.PanelOptions)
 
-	if options.FillOpacity == 0 {
-		options.FillOpacity = 2
-	}
-
 	if options.ScaleDistribution == "" {
 		options.ScaleDistribution = common.ScaleDistributionLinear
+	}
+
+	if options.LineWidth == nil {
+		options.LineWidth = Pointer[float64](1)
 	}
 
 	if options.LegendOptions == nil {
 		options.LegendOptions = &LegendOptions{}
 	}
 
+	if options.ToolTipOptions == nil {
+		options.ToolTipOptions = &ToolTipOptions{}
+	}
+
+	if options.StackingMode == "" {
+		options.StackingMode = common.StackingModeNone
+	}
+
 	newPanel := timeseries.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
-		Title(options.Title).
+		Title(*options.Title).
 		Description(options.Description).
+		Transparent(options.Transparent).
 		Span(options.Span).
 		Height(options.Height).
-		Decimals(options.Decimals).
 		Unit(options.Unit).
 		NoValue(options.NoValue).
+		LineWidth(*options.LineWidth).
 		FillOpacity(options.FillOpacity).
 		Legend(newLegend(options.LegendOptions)).
 		ScaleDistribution(common.NewScaleDistributionConfigBuilder().
 			Type(options.ScaleDistribution),
+		).
+		Tooltip(newToolTip(options.ToolTipOptions)).
+		// Time Series Panel Options
+		Stacking(common.NewStackingConfigBuilder().
+			Mode(options.StackingMode),
 		)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
+
+	if options.Min != nil {
+		newPanel.Min(*options.Min)
+	}
+
+	if options.Max != nil {
+		newPanel.Max(*options.Max)
+	}
+
+	for _, q := range options.Query {
+		newPanel.WithTarget(newQuery(q))
+	}
+
+	if options.Threshold != nil {
+		newPanel.Thresholds(newThresholds(options.Threshold))
+
+		if options.ThresholdStyle != "" {
+			newPanel.ThresholdsStyle(common.NewGraphThresholdsStyleConfigBuilder().Mode(options.ThresholdStyle))
+		}
+	}
+
+	if options.DrawStyle != "" {
+		newPanel.DrawStyle(options.DrawStyle)
+	}
+
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
+	var alertBuilders []*alerting.RuleBuilder
+	if options.AlertsOptions != nil && len(options.AlertsOptions) > 0 {
+		for _, alert := range options.AlertsOptions {
+			// this is used as an internal mechanism to set the panel title in the alert to associate panelId with alert
+			alert.PanelTitle = *options.Title
+			// if name is provided use it, otherwise use panel title
+			if alert.Title == "" {
+				alert.Title = *options.Title
+			}
+			alertBuilders = append(alertBuilders, NewAlertRule(&alert))
+		}
+	}
+
+	return &Panel{
+		timeSeriesPanelBuilder: newPanel,
+		alertBuilders:          alertBuilders,
+	}
+}
+
+type BarGaugePanelOptions struct {
+	*PanelOptions
+	ShowUnfilled bool
+	Orientation  common.VizOrientation
+}
+
+func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := bargauge.NewPanelBuilder().
+		Datasource(datasourceRef(options.Datasource)).
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		Unit(options.Unit).
+		ReduceOptions(
+			common.NewReduceDataOptionsBuilder().
+				Calcs([]string{"lastNotNull"}).Values(false),
+		)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.ShowUnfilled {
+		newPanel.ShowUnfilled(options.ShowUnfilled)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -271,21 +492,24 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
-	}
-
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			timeSeriesPanelBuilder: newPanel,
-			alertBuilder:           NewAlertRule(options.AlertOptions),
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
 		}
 	}
 
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
+	if options.Orientation != "" {
+		newPanel.Orientation(options.Orientation)
+	}
+
 	return &Panel{
-		timeSeriesPanelBuilder: newPanel,
+		barGaugePanelBuilder: newPanel,
 	}
 }
 
@@ -298,12 +522,28 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 
 	newPanel := gauge.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
-		Title(options.Title).
+		Title(*options.Title).
 		Description(options.Description).
+		Transparent(options.Transparent).
 		Span(options.Span).
 		Height(options.Height).
-		Decimals(options.Decimals).
-		Unit(options.Unit)
+		Unit(options.Unit).
+		ReduceOptions(
+			common.NewReduceDataOptionsBuilder().
+				Calcs([]string{"lastNotNull"}).Values(false),
+		)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -321,16 +561,15 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			gaugePanelBuilder: newPanel,
-			alertBuilder:      NewAlertRule(options.AlertOptions),
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
 		}
 	}
 
@@ -339,8 +578,29 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 	}
 }
 
+type SortByOptions struct {
+	DisplayName string
+	Desc        *bool
+}
+
+type FooterReducer string
+
+const (
+	FooterReducerSum FooterReducer = "sum"
+)
+
+type FooterOptions struct {
+	Show             bool
+	Reducer          FooterReducer
+	Fields           []string
+	EnablePagination bool
+}
+
 type TablePanelOptions struct {
 	*PanelOptions
+	Filterable bool
+	Footer     *FooterOptions
+	SortBy     []*SortByOptions
 }
 
 func NewTablePanel(options *TablePanelOptions) *Panel {
@@ -348,13 +608,26 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 
 	newPanel := table.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
-		Title(options.Title).
+		Title(*options.Title).
 		Description(options.Description).
+		Transparent(options.Transparent).
 		Span(options.Span).
 		Height(options.Height).
-		Decimals(options.Decimals).
 		Unit(options.Unit).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		Filterable(options.Filterable)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -372,17 +645,49 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			tablePanelBuilder: newPanel,
-			alertBuilder:      NewAlertRule(options.AlertOptions),
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
 		}
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
+	if options.Footer != nil {
+		footer := common.NewTableFooterOptionsBuilder().
+			Show(options.Footer.Show).
+			EnablePagination(options.Footer.EnablePagination)
+
+		if options.Footer.Reducer != "" && options.Footer.Fields != nil {
+			footer.
+				Reducer([]string{string(options.Footer.Reducer)}).
+				Fields(options.Footer.Fields)
+		}
+
+		newPanel.Footer(footer)
+	}
+
+	if options.SortBy != nil {
+		var sortBy []cog.Builder[common.TableSortByFieldState]
+		for _, sb := range options.SortBy {
+			tableSortBy := common.NewTableSortByFieldStateBuilder().
+				DisplayName(sb.DisplayName)
+
+			if sb.Desc != nil {
+				tableSortBy.Desc(*sb.Desc)
+			}
+
+			sortBy = append(sortBy, tableSortBy)
+		}
+		newPanel.SortBy(sortBy)
 	}
 
 	return &Panel{
@@ -392,18 +697,53 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 
 type LogPanelOptions struct {
 	*PanelOptions
+	ShowTime         bool
+	PrettifyJSON     bool
+	EnableLogDetails *bool
+	DedupStrategy    common.LogsDedupStrategy
+	SortOrder        common.LogsSortOrder
 }
 
 func NewLogPanel(options *LogPanelOptions) *Panel {
 	setDefaults(options.PanelOptions)
 
+	if options.EnableLogDetails == nil {
+		options.EnableLogDetails = Pointer[bool](true)
+	}
+
+	if options.DedupStrategy == "" {
+		options.DedupStrategy = common.LogsDedupStrategyNone
+	}
+
+	if options.SortOrder == "" {
+		options.SortOrder = common.LogsSortOrderDescending // Newest First
+	}
+
 	newPanel := logs.NewPanelBuilder().
 		Datasource(datasourceRef(options.Datasource)).
-		Title(options.Title).
+		Title(*options.Title).
 		Description(options.Description).
+		Transparent(options.Transparent).
 		Span(options.Span).
 		Height(options.Height).
-		NoValue(options.NoValue)
+		NoValue(options.NoValue).
+		ShowTime(options.ShowTime).
+		PrettifyLogMessage(options.PrettifyJSON).
+		EnableLogDetails(*options.EnableLogDetails).
+		DedupStrategy(options.DedupStrategy).
+		SortOrder(options.SortOrder)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.MaxDataPoints != nil {
+		newPanel.MaxDataPoints(*options.MaxDataPoints)
+	}
 
 	if options.Min != nil {
 		newPanel.Min(*options.Min)
@@ -421,20 +761,147 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		newPanel.Thresholds(newThresholds(options.Threshold))
 	}
 
-	if options.Transform != nil {
-		newPanel.WithTransformation(newTransform(options.Transform))
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
 	}
 
-	if options.AlertOptions != nil {
-		options.AlertOptions.Name = options.Title
-
-		return &Panel{
-			logPanelBuilder: newPanel,
-			alertBuilder:    NewAlertRule(options.AlertOptions),
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
 		}
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
 	return &Panel{
 		logPanelBuilder: newPanel,
+	}
+}
+
+type HeatmapPanelOptions struct {
+	*PanelOptions
+}
+
+func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := heatmap.NewPanelBuilder().
+		Datasource(datasourceRef(options.Datasource)).
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		Unit(options.Unit).
+		NoValue(options.NoValue)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	if options.Decimals != nil {
+		newPanel.Decimals(*options.Decimals)
+	}
+
+	if options.Min != nil {
+		newPanel.Min(*options.Min)
+	}
+
+	if options.Max != nil {
+		newPanel.Max(*options.Max)
+	}
+
+	for _, q := range options.Query {
+		q.Format = prometheus.PromQueryFormatHeatmap
+		newPanel.WithTarget(newQuery(q))
+	}
+
+	if options.Threshold != nil {
+		newPanel.Thresholds(newThresholds(options.Threshold))
+	}
+
+	if options.Transforms != nil {
+		for _, transform := range options.Transforms {
+			newPanel.WithTransformation(newTransform(transform))
+		}
+	}
+
+	if options.Overrides != nil {
+		for _, override := range options.Overrides {
+			newPanel.WithOverride(newOverride(override))
+		}
+	}
+
+	if options.ColorScheme != "" {
+		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
+	}
+
+	return &Panel{
+		heatmapBuilder: newPanel,
+	}
+}
+
+type TextPanelOptions struct {
+	*PanelOptions
+	Mode    text.TextMode
+	Content string
+}
+
+func NewTextPanel(options *TextPanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	if options.Mode == "" {
+		options.Mode = text.TextModeMarkdown
+	}
+
+	newPanel := text.NewPanelBuilder().
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		Mode(options.Mode).
+		Content(options.Content)
+
+	if options.Interval != "" {
+		newPanel.Interval(options.Interval)
+	}
+
+	return &Panel{
+		textPanelBuilder: newPanel,
+	}
+}
+
+type BusinessVariablePanelOptions struct {
+	*PanelOptions
+	DisplayMode businessvariable.DisplayMode
+	Padding     *int
+	ShowLabel   bool
+	Variable    string
+}
+
+func NewBusinessVariablePanel(options *BusinessVariablePanelOptions) *Panel {
+	setDefaults(options.PanelOptions)
+
+	newPanel := businessvariable.NewPanelBuilder().
+		Title(*options.Title).
+		Description(options.Description).
+		Transparent(options.Transparent).
+		Span(options.Span).
+		Height(options.Height).
+		DisplayMode(options.DisplayMode).
+		ShowLabel(options.ShowLabel).
+		Variable(options.Variable)
+
+	if options.Padding != nil {
+		newPanel.Padding(*options.Padding)
+	}
+
+	return &Panel{
+		businessVariablePanelBuilder: newPanel,
 	}
 }

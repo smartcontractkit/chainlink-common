@@ -3,7 +3,6 @@ package requests
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/jonboulle/clockwork"
@@ -18,9 +17,8 @@ type responseCacheEntry struct {
 }
 
 type Handler struct {
-	services.StateMachine
-
-	lggr logger.Logger
+	services.Service
+	eng *services.Engine
 
 	store *Store
 
@@ -33,14 +31,10 @@ type Handler struct {
 	requestCh  chan *Request
 
 	clock clockwork.Clock
-
-	stopCh services.StopChan
-	wg     sync.WaitGroup
 }
 
 func NewHandler(lggr logger.Logger, s *Store, clock clockwork.Clock, responseExpiryTime time.Duration) *Handler {
-	return &Handler{
-		lggr:            lggr,
+	h := &Handler{
 		store:           s,
 		pendingRequests: map[string]*Request{},
 		responseCache:   map[string]*responseCacheEntry{},
@@ -48,8 +42,12 @@ func NewHandler(lggr logger.Logger, s *Store, clock clockwork.Clock, responseExp
 		requestCh:       make(chan *Request),
 		clock:           clock,
 		cacheExpiryTime: responseExpiryTime,
-		stopCh:          make(services.StopChan),
 	}
+	h.Service, h.eng = services.Config{
+		Name:  "Handler",
+		Start: h.start,
+	}.NewServiceEngine(lggr)
+	return h
 }
 
 func (h *Handler) SendResponse(ctx context.Context, resp Response) {
@@ -68,25 +66,9 @@ func (h *Handler) SendRequest(ctx context.Context, r *Request) {
 	}
 }
 
-func (h *Handler) Start(_ context.Context) error {
-	return h.StartOnce("RequestHandler", func() error {
-		h.wg.Add(1)
-		go func() {
-			defer h.wg.Done()
-			ctx, cancel := h.stopCh.NewCtx()
-			defer cancel()
-			h.worker(ctx)
-		}()
-		return nil
-	})
-}
-
-func (h *Handler) Close() error {
-	return h.StopOnce("RequestHandler", func() error {
-		close(h.stopCh)
-		h.wg.Wait()
-		return nil
-	})
+func (h *Handler) start(_ context.Context) error {
+	h.eng.Go(h.worker)
+	return nil
 }
 
 func (h *Handler) worker(ctx context.Context) {
@@ -111,13 +93,13 @@ func (h *Handler) worker(ctx context.Context) {
 			existingResponse := h.responseCache[req.WorkflowExecutionID]
 			if existingResponse != nil {
 				delete(h.responseCache, req.WorkflowExecutionID)
-				h.lggr.Debugw("Found cached response for request", "workflowExecutionID", req.WorkflowExecutionID)
+				h.eng.Debugw("Found cached response for request", "workflowExecutionID", req.WorkflowExecutionID)
 				h.sendResponse(ctx, req, existingResponse.response)
 				continue
 			}
 
 			if err := h.store.Add(req); err != nil {
-				h.lggr.Errorw("failed to add request to store", "err", err)
+				h.eng.Errorw("failed to add request to store", "err", err)
 			}
 
 		case resp := <-h.responseCh:
@@ -127,7 +109,7 @@ func (h *Handler) worker(ctx context.Context) {
 					response:  resp,
 					entryTime: h.clock.Now(),
 				}
-				h.lggr.Debugw("Caching response without request", "workflowExecutionID", resp.WorkflowExecutionID)
+				h.eng.Debugw("Caching response without request", "workflowExecutionID", resp.WorkflowExecutionID)
 				continue
 			}
 
@@ -165,7 +147,7 @@ func (h *Handler) expireCachedResponses() {
 	for k, v := range h.responseCache {
 		if h.clock.Since(v.entryTime) > h.cacheExpiryTime {
 			delete(h.responseCache, k)
-			h.lggr.Debugw("Expired response", "workflowExecutionID", k)
+			h.eng.Debugw("Expired response", "workflowExecutionID", k)
 		}
 	}
 }

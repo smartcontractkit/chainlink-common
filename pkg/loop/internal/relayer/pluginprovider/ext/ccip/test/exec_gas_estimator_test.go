@@ -12,12 +12,11 @@ import (
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticExecGasEstimator(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// ensure GasPriceEstimatorExec fixture is self consistent
 	assert.NoError(t, GasPriceEstimatorExec.Evaluate(ctx, GasPriceEstimatorExec))
 
@@ -41,32 +40,28 @@ func TestGasPriceEstimatorExecGRPC(t *testing.T) {
 // do not add client.Close to this test, test that from the driver test
 func roundTripGasPriceEstimatorExecTests(t *testing.T, client *ccip.ExecGasEstimatorGRPCClient) {
 	t.Run("GetGasPrice", func(t *testing.T) {
-		price, err := client.GetGasPrice(tests.Context(t))
+		price, err := client.GetGasPrice(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.getGasPriceResponse, price)
 	})
 
 	t.Run("DenoteInUSD", func(t *testing.T) {
-		usd, err := client.DenoteInUSD(
-			GasPriceEstimatorExec.denoteInUSDRequest.p,
-			GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice,
-		)
+		ctx := t.Context()
+		usd, err := client.DenoteInUSD(ctx, GasPriceEstimatorExec.denoteInUSDRequest.p, GasPriceEstimatorExec.denoteInUSDRequest.wrappedNativePrice)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.denoteInUSDResponse.result, usd)
 	})
 
 	t.Run("EstimateMsgCostUSD", func(t *testing.T) {
-		cost, err := client.EstimateMsgCostUSD(
-			GasPriceEstimatorExec.estimateMsgCostUSDRequest.p,
-			GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice,
-			GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg,
-		)
+		ctx := t.Context()
+		cost, err := client.EstimateMsgCostUSD(ctx, GasPriceEstimatorExec.estimateMsgCostUSDRequest.p, GasPriceEstimatorExec.estimateMsgCostUSDRequest.wrappedNativePrice, GasPriceEstimatorExec.estimateMsgCostUSDRequest.msg)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.estimateMsgCostUSDResponse, cost)
 	})
 
 	t.Run("Median", func(t *testing.T) {
-		median, err := client.Median(GasPriceEstimatorExec.medianRequest.gasPrices)
+		ctx := t.Context()
+		median, err := client.Median(ctx, GasPriceEstimatorExec.medianRequest.gasPrices)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorExec.medianResponse, median)
 	})

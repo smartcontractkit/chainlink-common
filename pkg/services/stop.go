@@ -1,6 +1,9 @@
 package services
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // A StopChan signals when some work should stop.
 // Use StopChanR if you already have a read only <-chan.
@@ -14,6 +17,11 @@ func (s StopChan) NewCtx() (context.Context, context.CancelFunc) {
 // Ctx cancels a [context.Context] when StopChan is closed.
 func (s StopChan) Ctx(ctx context.Context) (context.Context, context.CancelFunc) {
 	return StopRChan((<-chan struct{})(s)).Ctx(ctx)
+}
+
+// CtxWithTimeout cancels a [context.Context] when StopChan is closed.
+func (s StopChan) CtxWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return s.CtxCancel(context.WithTimeout(context.Background(), timeout))
 }
 
 // CtxCancel cancels a [context.Context] when StopChan is closed.
@@ -34,6 +42,11 @@ func (s StopRChan) NewCtx() (context.Context, context.CancelFunc) {
 // Ctx cancels a [context.Context] when StopChan is closed.
 func (s StopRChan) Ctx(ctx context.Context) (context.Context, context.CancelFunc) {
 	return s.CtxCancel(context.WithCancel(ctx))
+}
+
+// CtxWithTimeout cancels a [context.Context] when StopChan is closed.
+func (s StopRChan) CtxWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return s.CtxCancel(context.WithTimeout(context.Background(), timeout))
 }
 
 // CtxCancel cancels a [context.Context] when StopChan is closed.

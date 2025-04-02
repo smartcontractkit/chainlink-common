@@ -30,7 +30,8 @@ func (v *validationServiceClient) ValidateConfig(ctx context.Context, config map
 }
 
 func NewValidationServiceClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *validationServiceClient {
-	return &validationServiceClient{b.WithName("ReportingPluginProviderClient"), goplugin.NewServiceClient(b, cc), pb.NewValidationServiceClient(cc)}
+	b = b.WithName("ReportingPluginProviderClient")
+	return &validationServiceClient{b, goplugin.NewServiceClient(b, cc), pb.NewValidationServiceClient(cc)}
 }
 
 type validationServiceServer struct {

@@ -14,6 +14,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
+type fieldCodec interface {
+	FieldCodec(string) (encodings.TypeCodec, error)
+}
+
 func TestStructCodec(t *testing.T) {
 	t.Parallel()
 	t.Run("NewStructCodec returns an error if names are repeated", func(t *testing.T) {
@@ -175,6 +179,17 @@ func TestStructCodec(t *testing.T) {
 	t.Run("SizeAtTopLevel returns error if elements return error", func(t *testing.T) {
 		_, err := structCodecWithErr.SizeAtTopLevel(100)
 		assert.Equal(t, errCodec.Err, err)
+	})
+
+	t.Run("FieldCodec returns a nested field codec", func(t *testing.T) {
+		fc, ok := structCodec.(fieldCodec)
+
+		require.True(t, ok)
+
+		tc, err := fc.FieldCodec("Bar")
+
+		require.NoError(t, err)
+		assert.Equal(t, reflect.PointerTo(reflect.TypeOf(uint64(0))), tc.GetType())
 	})
 }
 

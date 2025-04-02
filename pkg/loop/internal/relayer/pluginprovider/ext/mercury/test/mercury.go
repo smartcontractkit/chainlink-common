@@ -11,12 +11,14 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	mercuryv1test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v1/test"
 	mercuryv2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v2/test"
 	mercuryv3test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v3/test"
 	mercuryv4test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/v4/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 
 	mercuryv1types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v1"
 	mercuryv2types "github.com/smartcontractkit/chainlink-common/pkg/types/mercury/v2"
@@ -25,7 +27,7 @@ import (
 )
 
 func PluginMercury(t *testing.T, p types.PluginMercury) {
-	PluginMercuryTest{MercuryProvider}.TestPluginMercury(t, p)
+	PluginMercuryTest{MercuryProvider(logger.Test(t))}.TestPluginMercury(t, p)
 }
 
 type PluginMercuryTest struct {
@@ -34,7 +36,7 @@ type PluginMercuryTest struct {
 
 func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury) {
 	t.Run("PluginMercuryV4", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV4Factory(ctx, m.MercuryProvider, mercuryv4test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -43,7 +45,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 
 	t.Run("PluginMercuryV3", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV3Factory(ctx, m.MercuryProvider, mercuryv3test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -52,7 +54,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 
 	t.Run("PluginMercuryV2", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV2Factory(ctx, m.MercuryProvider, mercuryv2test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -61,7 +63,7 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 
 	t.Run("PluginMercuryV1", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		factory, err := p.NewMercuryV1Factory(ctx, m.MercuryProvider, mercuryv1test.DataSource)
 		require.NoError(t, err)
 		require.NotNil(t, factory)
@@ -70,47 +72,51 @@ func (m PluginMercuryTest) TestPluginMercury(t *testing.T, p types.PluginMercury
 	})
 }
 
-var FactoryServer = staticMercuryServer{
-	provider:     MercuryProvider,
-	dataSourceV1: mercuryv1test.DataSource,
-	dataSourceV2: mercuryv2test.DataSource,
-	dataSourceV3: mercuryv3test.DataSource,
-	dataSourceV4: mercuryv4test.DataSource,
+func FactoryServer(lggr logger.Logger) staticMercuryServer {
+	return staticMercuryServer{
+		staticMercuryProvider: MercuryProvider(lggr),
+		dataSourceV1:          mercuryv1test.DataSource,
+		dataSourceV2:          mercuryv2test.DataSource,
+		dataSourceV3:          mercuryv3test.DataSource,
+		dataSourceV4:          mercuryv4test.DataSource,
+		factory:               newStaticMercuryPluginFactory(lggr),
+	}
 }
 
 var _ types.PluginMercury = staticMercuryServer{}
 
 type staticMercuryServer struct {
-	provider     staticMercuryProvider
+	staticMercuryProvider
 	dataSourceV1 mercuryv1test.DataSourceEvaluator
 	dataSourceV2 mercuryv2test.DataSourceEvaluator
 	dataSourceV3 mercuryv3test.DataSourceEvaluator
 	dataSourceV4 mercuryv4test.DataSourceEvaluator
+	factory      staticMercuryPluginFactory
 }
 
 var _ types.PluginMercury = staticMercuryServer{}
 
 func (s staticMercuryServer) commonValidation(ctx context.Context, provider types.MercuryProvider) error {
 	ocd := provider.OffchainConfigDigester()
-	err := s.provider.offchainDigester.Evaluate(ctx, ocd)
+	err := s.offchainDigester.Evaluate(ctx, ocd)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate offchainDigester: %w", err)
 	}
 
 	cct := provider.ContractConfigTracker()
-	err = s.provider.contractTracker.Evaluate(ctx, cct)
+	err = s.contractTracker.Evaluate(ctx, cct)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate contractTracker: %w", err)
 	}
 
 	ct := provider.ContractTransmitter()
-	err = s.provider.contractTransmitter.Evaluate(ctx, ct)
+	err = s.contractTransmitter.Evaluate(ctx, ct)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate contractTransmitter: %w", err)
 	}
 
 	occ := provider.OnchainConfigCodec()
-	err = s.provider.onchainConfigCodec.Evaluate(ctx, occ)
+	err = s.onchainConfigCodec.Evaluate(ctx, occ)
 	if err != nil {
 		return fmt.Errorf("failed to evaluate onchainConfigCodec: %w", err)
 	}
@@ -130,7 +136,7 @@ func (s staticMercuryServer) NewMercuryV4Factory(ctx context.Context, provider t
 	}
 
 	rc := provider.ReportCodecV4()
-	err = s.provider.reportCodecV4.Evaluate(ctx, rc)
+	err = s.reportCodecV4.Evaluate(ctx, rc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate reportCodecV4: %w", err)
 	}
@@ -140,7 +146,7 @@ func (s staticMercuryServer) NewMercuryV4Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
 	}
 
-	return staticMercuryPluginFactory{}, nil
+	return s.factory, nil
 }
 
 func (s staticMercuryServer) NewMercuryV3Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercuryv3types.DataSource) (types.MercuryPluginFactory, error) {
@@ -156,7 +162,7 @@ func (s staticMercuryServer) NewMercuryV3Factory(ctx context.Context, provider t
 	}
 
 	rc := provider.ReportCodecV3()
-	err = s.provider.reportCodecV3.Evaluate(ctx, rc)
+	err = s.reportCodecV3.Evaluate(ctx, rc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate reportCodecV3: %w", err)
 	}
@@ -166,7 +172,7 @@ func (s staticMercuryServer) NewMercuryV3Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
 	}
 
-	return staticMercuryPluginFactory{}, nil
+	return s.factory, nil
 }
 
 func (s staticMercuryServer) NewMercuryV2Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercuryv2types.DataSource) (types.MercuryPluginFactory, error) {
@@ -182,7 +188,7 @@ func (s staticMercuryServer) NewMercuryV2Factory(ctx context.Context, provider t
 	}
 
 	rc := provider.ReportCodecV2()
-	err = s.provider.reportCodecV2.Evaluate(ctx, rc)
+	err = s.reportCodecV2.Evaluate(ctx, rc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate reportCodecV2: %w", err)
 	}
@@ -191,7 +197,7 @@ func (s staticMercuryServer) NewMercuryV2Factory(ctx context.Context, provider t
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
 	}
-	return staticMercuryPluginFactory{}, nil
+	return s.factory, nil
 }
 
 func (s staticMercuryServer) NewMercuryV1Factory(ctx context.Context, provider types.MercuryProvider, dataSource mercuryv1types.DataSource) (types.MercuryPluginFactory, error) {
@@ -207,7 +213,7 @@ func (s staticMercuryServer) NewMercuryV1Factory(ctx context.Context, provider t
 	}
 
 	rc := provider.ReportCodecV1()
-	err = s.provider.reportCodecV1.Evaluate(ctx, rc)
+	err = s.reportCodecV1.Evaluate(ctx, rc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate reportCodecV1: %w", err)
 	}
@@ -217,22 +223,21 @@ func (s staticMercuryServer) NewMercuryV1Factory(ctx context.Context, provider t
 		return nil, fmt.Errorf("failed to evaluate dataSource: %w", err)
 	}
 
-	return staticMercuryPluginFactory{}, nil
+	return s.factory, nil
 }
 
-type staticMercuryPluginFactory struct{}
+type staticMercuryPluginFactory struct {
+	services.Service
+}
 
-func (s staticMercuryPluginFactory) Name() string { panic("implement me") }
+func newStaticMercuryPluginFactory(lggr logger.Logger) staticMercuryPluginFactory {
+	lggr = logger.Named(lggr, "staticMercuryPluginFactory")
+	return staticMercuryPluginFactory{
+		Service: test.NewStaticService(lggr),
+	}
+}
 
-func (s staticMercuryPluginFactory) Start(ctx context.Context) error { return nil }
-
-func (s staticMercuryPluginFactory) Close() error { return nil }
-
-func (s staticMercuryPluginFactory) Ready() error { panic("implement me") }
-
-func (s staticMercuryPluginFactory) HealthReport() map[string]error { panic("implement me") }
-
-func (s staticMercuryPluginFactory) NewMercuryPlugin(config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
+func (s staticMercuryPluginFactory) NewMercuryPlugin(ctx context.Context, config ocr3types.MercuryPluginConfig) (ocr3types.MercuryPlugin, ocr3types.MercuryPluginInfo, error) {
 	if config.ConfigDigest != mercuryPluginConfig.ConfigDigest {
 		return nil, ocr3types.MercuryPluginInfo{}, fmt.Errorf("expected ConfigDigest %x but got %x", mercuryPluginConfig.ConfigDigest, config.ConfigDigest)
 	}
@@ -265,13 +270,12 @@ func (s staticMercuryPluginFactory) NewMercuryPlugin(config ocr3types.MercuryPlu
 func MercuryPluginFactory(t *testing.T, factory types.MercuryPluginFactory) {
 	expectedMercuryPlugin := OCR3Plugin
 	t.Run("ReportingPluginFactory", func(t *testing.T) {
-		ctx := tests.Context(t)
-		rp, gotRPI, err := factory.NewMercuryPlugin(mercuryPluginConfig)
+		rp, gotRPI, err := factory.NewMercuryPlugin(t.Context(), mercuryPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, mercuryPluginInfo, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			expectedMercuryPlugin.AssertEqual(ctx, t, rp)
+			expectedMercuryPlugin.AssertEqual(t.Context(), t, rp)
 		})
 	})
 }

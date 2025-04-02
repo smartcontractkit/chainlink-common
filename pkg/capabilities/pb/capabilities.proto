@@ -36,6 +36,7 @@ message RequestMetadata {
   uint32 workflow_don_id = 6;
   uint32 workflow_don_config_version = 7;
   string reference_id = 8;
+  string decoded_workflow_name = 9;
 }
 
 message CapabilityRequest {
@@ -51,6 +52,7 @@ message TriggerRegistrationRequest {
 }
 
 message TriggerEvent {
+  reserved 5; // Previously used for v1.OCRTriggerEvent
   string triggerType = 1;
   string id = 2;
   values.Map outputs = 4;
@@ -76,10 +78,17 @@ service TriggerExecutable {
 message CapabilityResponse {
   values.Map value = 1;
   string error = 2;
+  ResponseMetadata metadata = 3;
+}
+
+message ResponseMetadata {
+  repeated MeteringReportNodeDetail metering = 1;
 }
 
 message RegistrationMetadata {
   string workflow_id = 1;
+  string reference_id = 2;
+  string workflow_owner = 3;
 }
 
 message RegisterToWorkflowRequest {
@@ -111,8 +120,23 @@ message InitialiseRequest {
   uint32 capRegistry_id = 5;
   uint32 keyValueStore_id = 6;
   uint32 relayer_set_id = 7;
+  uint32 oracle_factory_id = 8;
 }
 
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
+}
+
+message MeteringReportNodeDetail {
+	string peer_2_peer_id = 1;
+	string spend_unit = 2;
+	string spend_value = 3;
+}
+
+message MeteringReportStep {
+  repeated MeteringReportNodeDetail nodes = 1;
+}
+
+message MeteringReport {
+  map<string, MeteringReportStep> steps = 1;
 }

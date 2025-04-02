@@ -9,14 +9,17 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oraclefactory"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	oraclefactorypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oraclefactory"
 	relayersetpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -27,7 +30,7 @@ type StandardCapabilities interface {
 	services.Service
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
 		capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet) error
+		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 
@@ -42,18 +45,20 @@ type StandardCapabilitiesClient struct {
 
 var _ StandardCapabilities = (*StandardCapabilitiesClient)(nil)
 
-func NewStandardCapabilitiesClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *StandardCapabilitiesClient {
+func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabilitiesClient {
+	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "StandardCapabilitiesClient")
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &StandardCapabilitiesClient{
-		PluginClient:               goplugin.NewPluginClient(brokerExt.Broker, brokerExt.BrokerConfig, conn),
-		ServiceClient:              goplugin.NewServiceClient(brokerExt, conn),
-		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(conn),
-		BrokerExt:                  brokerExt,
+		PluginClient:               pc,
+		ServiceClient:              goplugin.NewServiceClient(pc.BrokerExt, pc),
+		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(pc),
+		BrokerExt:                  pc.BrokerExt,
 	}
 }
 
 func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService,
 	keyValueStore core.KeyValueStore, capabilitiesRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet) error {
+	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	telemetryID, telemetryRes, err := c.ServeNew("Telemetry", func(s *grpc.Server) {
 		pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 	})
@@ -110,8 +115,19 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 		c.CloseAll(resources...)
 		return fmt.Errorf("failed to serve relayer set: %w", err)
 	}
-
 	resources = append(resources, relayerSetRes)
+
+	oracleFactoryServer, oracleFactoryServerRes := oraclefactory.NewServer(c.Logger, oracleFactory, c.BrokerExt)
+	resources = append(resources, oracleFactoryServerRes)
+
+	oracleFactoryID, oracleFactoryRes, err := c.ServeNew("OracleFactory", func(s *grpc.Server) {
+		oraclefactorypb.RegisterOracleFactoryServer(s, oracleFactoryServer)
+	})
+	if err != nil {
+		c.CloseAll(resources...)
+		return fmt.Errorf("failed to serve oracle factory: %w", err)
+	}
+	resources = append(resources, oracleFactoryRes)
 
 	_, err = c.StandardCapabilitiesClient.Initialise(ctx, &capabilitiespb.InitialiseRequest{
 		Config:           config,
@@ -121,6 +137,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 		CapRegistryId:    capabilitiesRegistryID,
 		KeyValueStoreId:  keyValueStoreID,
 		RelayerSetId:     relayerSetID,
+		OracleFactoryId:  oracleFactoryID,
 	})
 
 	if err != nil {
@@ -197,6 +214,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 
 	var resources []net.Resource
 	resources = append(resources, net.Resource{Closer: telemetryConn, Name: "TelemetryConn"})
+
 	telemetry := telemetry.NewTelemetryServiceClient(telemetryConn)
 
 	keyValueStoreConn, err := s.Dial(request.KeyValueStoreId)
@@ -239,7 +257,15 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: relayersetConn, Name: "RelayerSet"})
 	relayerSet := relayerset.NewRelayerSetClient(s.Logger, s.BrokerExt, relayersetConn)
 
-	if err = s.impl.Initialise(ctx, request.Config, telemetry, keyValueStore, capabilitiesRegistry, errorLog, pipelineRunner, relayerSet); err != nil {
+	oracleFactoryConn, err := s.Dial(request.OracleFactoryId)
+	if err != nil {
+		s.CloseAll(resources...)
+		return nil, net.ErrConnDial{Name: "OracleFactory", ID: request.OracleFactoryId, Err: err}
+	}
+	resources = append(resources, net.Resource{Closer: oracleFactoryConn, Name: "OracleFactory"})
+	oracleFactory := oraclefactory.NewClient(s.Logger, s.BrokerExt, oracleFactoryConn)
+
+	if err = s.impl.Initialise(ctx, request.Config, telemetry, keyValueStore, capabilitiesRegistry, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		s.CloseAll(resources...)
 		return nil, fmt.Errorf("failed to initialise standard capability: %w", err)
 	}

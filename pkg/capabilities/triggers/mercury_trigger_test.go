@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -51,7 +50,8 @@ func registerTrigger(
 	return triggerEventsCh, registerRequest
 }
 
-var (
+const (
+	triggerID = "streams-trigger@4.5.6"
 	feedOne   = "0x1111111111111111111100000000000000000000000000000000000000000000"
 	feedTwo   = "0x2222222222222222222200000000000000000000000000000000000000000000"
 	feedThree = "0x3333333333333333333300000000000000000000000000000000000000000000"
@@ -60,9 +60,10 @@ var (
 )
 
 func TestMercuryTrigger(t *testing.T) {
-	ts := NewMercuryTriggerService(100, logger.Nop())
-	ctx := tests.Context(t)
-	err := ts.Start(ctx)
+	ts, err := NewMercuryTriggerService(100, "", "4.5.6", logger.Nop())
+	require.NoError(t, err)
+	ctx := t.Context()
+	err = ts.Start(ctx)
 	require.NoError(t, err)
 	// use registerTriggerHelper to register a trigger
 	callback, registerUnregisterRequest := registerTrigger(
@@ -100,9 +101,10 @@ func TestMercuryTrigger(t *testing.T) {
 }
 
 func TestMultipleMercuryTriggers(t *testing.T) {
-	ts := NewMercuryTriggerService(100, logger.Nop())
-	ctx := tests.Context(t)
-	err := ts.Start(ctx)
+	ts, err := NewMercuryTriggerService(100, "", "4.5.6", logger.Nop())
+	require.NoError(t, err)
+	ctx := t.Context()
+	err = ts.Start(ctx)
 	require.NoError(t, err)
 	callback1, cr1 := registerTrigger(
 		ctx,
@@ -214,8 +216,9 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 }
 
 func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
-	ts := NewMercuryTriggerService(100, logger.Nop())
-	ctx := tests.Context(t)
+	ts, err := NewMercuryTriggerService(100, "", "4.5.6", logger.Nop())
+	require.NoError(t, err)
+	ctx := t.Context()
 	require.NoError(t, ts.Start(ctx))
 
 	cm := map[string]interface{}{
@@ -293,7 +296,8 @@ func TestMercuryTrigger_ConfigValidation(t *testing.T) {
 		return newConfig(t, []string{feedID}, 1000)
 	}
 
-	ts := NewMercuryTriggerService(1000, logger.Nop())
+	ts, err := NewMercuryTriggerService(1000, "", "4.5.6", logger.Nop())
+	require.NoError(t, err)
 	rawConf := newConfigSingleFeed(t, "012345678901234567890123456789012345678901234567890123456789000000")
 	conf, err := ts.ValidateConfig(rawConf)
 	require.Error(t, err)
@@ -355,7 +359,7 @@ func TestMercuryTrigger_WrapReports(t *testing.T) {
 			ObservationTimestamp: 876543,
 		})
 	}
-	wrapped, err := wrapReports(reportList, "event_id", 1234, meta)
+	wrapped, err := WrapReports(reportList, "event_id", 1234, meta, triggerID)
 	require.NoError(t, err)
 	require.NotNil(t, wrapped.Event)
 	require.Len(t, wrapped.Event.Outputs.Underlying["Payload"].(*values.List).Underlying, P)

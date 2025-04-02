@@ -1,6 +1,3 @@
-workflow:
-  name: ccipethsep
-  owner: '0x00000000000000000000000000000000000000aa'
 streams:
   feedIds:
     - '0x0003fbba4fce42f65d6032b18aee53efdf526cc734ad296cb57565979d883bdd'
@@ -52,6 +49,7 @@ ocr:
         deviation: '0.05'
         heartbeat: 3600
   report_id: '0001'
+  key_id: 'evm'
   encoder: EVM
   encoder_config:
     abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
@@ -59,4 +57,5 @@ chainWriter:
   address: '0xE0082363396985ae2FdcC3a9F816A586Eed88416'
   deltaStage: 45s
   schedule: oneAtATime
+  cre_step_timeout: 0
 targetChain: 'write_ethereum-testnet-sepolia@1.0.0'

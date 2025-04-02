@@ -12,26 +12,27 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func NewRunner(ctx context.Context) *Runner {
+func NewRunner(ctx context.Context, runtime sdk.Runtime) *Runner {
+	if runtime == nil {
+		runtime = &NoopRuntime{}
+	}
+
 	return &Runner{
 		ctx:          ctx,
 		registry:     map[string]capabilities.ExecutableCapability{},
 		results:      runnerResults{},
 		idToStep:     map[string]sdk.StepDefinition{},
 		dependencies: map[string][]string{},
-		runtime:      &runtime{},
+		runtime:      runtime,
 	}
-}
-
-type ConsensusMock interface {
-	capabilities.ConsensusCapability
-	SingleToManyObservations(value values.Value) (*values.Map, error)
 }
 
 type Runner struct {
 	RawConfig []byte
+	Secrets   map[string]string
 	// Context is held in this runner because it's for testing and capability calls are made by it.
 	// The real SDK implementation will be for the WASM guest and will make host calls, and callbacks to the program.
 	// nolint
@@ -79,7 +80,19 @@ func (r *Runner) Err() error {
 }
 
 func (r *Runner) ensureGraph(spec sdk.WorkflowSpec) error {
-	g, err := workflows.BuildDependencyGraph(spec)
+	// BuildDependencyGraph expects non-aliased types as inputs in order to be able to generate the graph correctly.
+	// Serialize and deserialize the workflow to automatically convert the Spec to a supported format.
+	proto, err := wasmpb.WorkflowSpecToProto(&spec)
+	if err != nil {
+		return err
+	}
+
+	newspec, err := wasmpb.ProtoToWorkflowSpec(proto)
+	if err != nil {
+		return err
+	}
+
+	g, err := workflows.BuildDependencyGraph(*newspec)
 	if err != nil {
 		return err
 	}
@@ -173,12 +186,6 @@ func (r *Runner) walk(spec sdk.WorkflowSpec, ref string) error {
 		return err
 	}
 
-	if c, ok := mock.(ConsensusMock); ok {
-		if request.Inputs, err = c.SingleToManyObservations(request.Inputs); err != nil {
-			return err
-		}
-	}
-
 	results, err := mock.Execute(r.ctx, request)
 	if err != nil {
 		return err
@@ -198,7 +205,17 @@ func (r *Runner) walk(spec sdk.WorkflowSpec, ref string) error {
 }
 
 func (r *Runner) buildRequest(spec sdk.WorkflowSpec, capability sdk.StepDefinition) (capabilities.CapabilityRequest, error) {
-	conf, err := values.NewMap(capability.Config)
+	env := exec.Env{
+		Config:  r.RawConfig,
+		Binary:  []byte{},
+		Secrets: r.Secrets,
+	}
+	config, err := exec.FindAndInterpolateEnvVars(capability.Config, env)
+	if err != nil {
+		return capabilities.CapabilityRequest{}, err
+	}
+
+	conf, err := values.NewMap(config.(map[string]any))
 	if err != nil {
 		return capabilities.CapabilityRequest{}, err
 	}

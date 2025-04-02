@@ -14,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticOnRamp(t *testing.T) {
@@ -49,19 +48,19 @@ func TestOnRampGRPC(t *testing.T) {
 
 func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
 	t.Run("Address", func(t *testing.T) {
-		got, err := client.Address(tests.Context(t))
+		got, err := client.Address(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.addressResponse, got)
 	})
 
 	t.Run("GetDynamicConfig", func(t *testing.T) {
-		got, err := client.GetDynamicConfig(tests.Context(t))
+		got, err := client.GetDynamicConfig(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.dynamicConfigResponse, got)
 	})
 
 	t.Run("GetSendRequestsBetweenSeqNums", func(t *testing.T) {
-		got, err := client.GetSendRequestsBetweenSeqNums(tests.Context(t), OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMin, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMax, OnRampReader.getSendRequestsBetweenSeqNums.Finalized)
+		got, err := client.GetSendRequestsBetweenSeqNums(t.Context(), OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMin, OnRampReader.getSendRequestsBetweenSeqNums.SeqNumMax, OnRampReader.getSendRequestsBetweenSeqNums.Finalized)
 		require.NoError(t, err)
 		if !reflect.DeepEqual(OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got) {
 			t.Errorf("expected %v, got %v", OnRampReader.getSendRequestsBetweenSeqNumsResponse.EVM2EVMMessageWithTxMeta, got)
@@ -69,25 +68,25 @@ func roundTripOnRampTests(t *testing.T, client cciptypes.OnRampReader) {
 	})
 
 	t.Run("IsSourceChainHealthy", func(t *testing.T) {
-		got, err := client.IsSourceChainHealthy(tests.Context(t))
+		got, err := client.IsSourceChainHealthy(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.isSourceChainHealthyResponse, got)
 	})
 
 	t.Run("IsSourceCursed", func(t *testing.T) {
-		got, err := client.IsSourceCursed(tests.Context(t))
+		got, err := client.IsSourceCursed(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.isSourceCursedResponse, got)
 	})
 
 	t.Run("RouterAddress", func(t *testing.T) {
-		got, err := client.RouterAddress(tests.Context(t))
+		got, err := client.RouterAddress(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.routerResponse, got)
 	})
 
 	t.Run("SourcePriceRegistryAddress", func(t *testing.T) {
-		got, err := client.SourcePriceRegistryAddress(tests.Context(t))
+		got, err := client.SourcePriceRegistryAddress(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, OnRampReader.sourcePriceRegistryResponse, got)
 	})

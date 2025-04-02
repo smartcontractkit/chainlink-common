@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"os"
-	"runtime/debug"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,6 +20,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
@@ -53,6 +53,9 @@ type TracingConfig struct {
 
 	// OnDialError is called when the dialer fails, providing an opportunity to log.
 	OnDialError func(error)
+
+	// Auth
+	AuthHeaders map[string]string
 }
 
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
@@ -97,21 +100,10 @@ func SetupTracing(config TracingConfig) error {
 }
 
 func (config TracingConfig) Attributes() []attribute.KeyValue {
-	var version string
-	var service string
-	buildInfo, ok := debug.ReadBuildInfo()
-	if !ok {
-		version = "unknown"
-		service = "cl-node"
-	} else {
-		version = buildInfo.Main.Version
-		service = buildInfo.Main.Path
-	}
-
 	attributes := []attribute.KeyValue{
-		semconv.ServiceNameKey.String(service),
+		semconv.ServiceNameKey.String(build.Program),
 		semconv.ProcessPIDKey.Int(os.Getpid()),
-		semconv.ServiceVersionKey.String(version),
+		semconv.ServiceVersionKey.String(build.Version),
 	}
 
 	for k, v := range config.NodeAttributes {
@@ -150,7 +142,10 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 		return nil, err
 	}
 
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	traceExporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithGRPCConn(conn),
+		otlptracegrpc.WithHeaders(config.AuthHeaders),
+	)
 	if err != nil {
 		return nil, err
 	}

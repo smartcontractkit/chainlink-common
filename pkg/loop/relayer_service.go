@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -22,16 +23,16 @@ type RelayerService struct {
 // NewRelayerService returns a new [*RelayerService].
 // cmd must return a new exec.Cmd each time it is called.
 func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
-	newService := func(ctx context.Context, instance any) (Relayer, error) {
+	newService := func(ctx context.Context, instance any) (Relayer, services.HealthReporter, error) {
 		plug, ok := instance.(PluginRelayer)
 		if !ok {
-			return nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
+			return nil, nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
 		}
 		r, err := plug.NewRelayer(ctx, config, keystore, capabilityRegistry)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create Relayer: %w", err)
+			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
 		}
-		return r, nil
+		return r, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "RelayerService")
@@ -48,11 +49,11 @@ func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderCo
 	return r.Service.NewContractReader(ctx, contractReaderConfig)
 }
 
-func (r *RelayerService) NewChainWriter(ctx context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+func (r *RelayerService) NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewChainWriter(ctx, chainWriterConfig)
+	return r.Service.NewContractWriter(ctx, contractWriterConfig)
 }
 
 func (r *RelayerService) NewConfigProvider(ctx context.Context, args types.RelayArgs) (types.ConfigProvider, error) {
@@ -102,4 +103,11 @@ func (r *RelayerService) Transact(ctx context.Context, from, to string, amount *
 		return err
 	}
 	return r.Service.Transact(ctx, from, to, amount, balanceCheck)
+}
+
+func (r *RelayerService) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	if err := r.WaitCtx(ctx); err != nil {
+		return err
+	}
+	return r.Service.Replay(ctx, fromBlock, args)
 }

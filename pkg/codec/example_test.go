@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/codec"
@@ -36,7 +37,7 @@ func (ExampleStructJSONCodec) GetMaxEncodingSize(_ context.Context, n int, _ str
 func (ExampleStructJSONCodec) Decode(_ context.Context, raw []byte, into any, _ string) error {
 	err := json.Unmarshal(raw, into)
 	if err != nil {
-		return fmt.Errorf("%w: %s", types.ErrInvalidType, err)
+		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 	}
 	return nil
 }
@@ -51,6 +52,26 @@ func (ExampleStructJSONCodec) CreateType(_ string, _ bool) (any, error) {
 	// this allows remote execution to know how to decode the incoming message
 	// and for [codec.NewModifierCodec] to know what type to expect for intermediate phases.
 	return &OnChainStruct{}, nil
+}
+
+type ExampleOffChainNestedTestStruct struct {
+	X *int
+	Y *big.Int
+	Z map[string]any
+}
+
+type ExampleOffChainTestStruct struct {
+	A string
+	B ExampleOffChainNestedTestStruct
+	C []byte
+}
+
+type ExampleOnChainNestedTestStruct struct{}
+
+type ExampleOnChainTestStruct struct {
+	A []byte
+	B ExampleOnChainNestedTestStruct
+	C [32]byte
 }
 
 type OnChainStruct struct {

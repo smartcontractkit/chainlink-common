@@ -1,20 +1,22 @@
-package beholder
+package beholder_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type MockExporter struct {
@@ -49,10 +51,36 @@ func TestClient(t *testing.T) {
 			"byte_key_1":           []byte("byte_val_1"),
 			"str_slice_key_1":      []string{"str_val_1", "str_val_2"},
 			"nil_key_1":            nil,
+			"beholder_domain":      "TestDomain",        // Required field
+			"beholder_entity":      "TestEntity",        // Required field
 			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
 		}
 	}
 	defaultMessageBody := []byte("body bytes")
+
+	mustNewGRPCClient := func(t *testing.T, exporterMock *mocks.OTLPExporter) *beholder.Client {
+		// Override exporter factory which is used by Client
+		exporterFactory := func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return exporterMock, nil
+		}
+		client, err := beholder.NewGRPCClient(beholder.TestDefaultConfig(), exporterFactory)
+		if err != nil {
+			t.Fatalf("Error creating beholder client: %v", err)
+		}
+		return client
+	}
+
+	mustNewHTTPClient := func(t *testing.T, exporterMock *mocks.OTLPExporter) *beholder.Client {
+		// Override exporter factory which is used by Client
+		exporterFactory := func(...otlploghttp.Option) (sdklog.Exporter, error) {
+			return exporterMock, nil
+		}
+		client, err := beholder.NewHTTPClient(beholder.TestDefaultConfigHTTPClient(), exporterFactory)
+		if err != nil {
+			t.Fatalf("Error creating beholder client: %v", err)
+		}
+		return client
+	}
 
 	testCases := []struct {
 		name                   string
@@ -61,19 +89,35 @@ func TestClient(t *testing.T) {
 		messageCount           int
 		exporterMockErrorCount int
 		exporterOutputExpected bool
-		messageGenerator       func(client *Client, messageBody []byte, customAttributes map[string]any)
+		messageGenerator       func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any)
+		mustNewGrpcClient      func(*testing.T, *mocks.OTLPExporter) *beholder.Client
 	}{
 		{
-			name:                   "Test Emit",
+			name:                   "Test Emit (GRPC Client)",
 			makeCustomAttributes:   defaultCustomAttributes,
 			messageBody:            defaultMessageBody,
 			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			messageGenerator: func(client *Client, messageBody []byte, customAttributes map[string]any) {
-				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
+			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
+				err := client.Emitter.Emit(t.Context(), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
+			mustNewGrpcClient: mustNewGRPCClient,
+		},
+
+		{
+			name:                   "Test Emit (HTTP Client)",
+			makeCustomAttributes:   defaultCustomAttributes,
+			messageBody:            defaultMessageBody,
+			messageCount:           10,
+			exporterMockErrorCount: 0,
+			exporterOutputExpected: true,
+			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
+				err := client.Emitter.Emit(t.Context(), messageBody, customAttributes)
+				assert.NoError(t, err)
+			},
+			mustNewGrpcClient: mustNewHTTPClient,
 		},
 	}
 
@@ -82,29 +126,23 @@ func TestClient(t *testing.T) {
 			exporterMock := mocks.NewOTLPExporter(t)
 			defer exporterMock.AssertExpectations(t)
 
-			// Override exporter factory which is used by Client
-			exporterFactory := func(...otlploggrpc.Option) (sdklog.Exporter, error) {
-				return exporterMock, nil
-			}
-			client, err := newClient(TestDefaultConfig(), exporterFactory)
-			if err != nil {
-				t.Fatalf("Error creating beholder client: %v", err)
-			}
+			client := tc.mustNewGrpcClient(t, exporterMock)
+
 			otel.SetErrorHandler(otelMustNotErr(t))
 			// Number of exported messages
 			exportedMessageCount := 0
 
 			// Simulate exporter error if configured
 			if tc.exporterMockErrorCount > 0 {
-				exporterMock.On("Export", mock.Anything, mock.Anything).Return(fmt.Errorf("an error occurred")).Times(tc.exporterMockErrorCount)
+				exporterMock.On("Export", mock.Anything, mock.Anything).Return(errors.New("an error occurred")).Times(tc.exporterMockErrorCount)
 			}
 			customAttributes := tc.makeCustomAttributes()
 			if tc.exporterOutputExpected {
 				exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.messageCount).
 					Run(func(args mock.Arguments) {
-						assert.IsType(t, args.Get(1), []sdklog.Record{}, "Record type mismatch")
+						assert.IsType(t, []sdklog.Record{}, args.Get(1), "Record type mismatch")
 						records := args.Get(1).([]sdklog.Record)
-						assert.Equal(t, 1, len(records), "batching is disabled, expecte 1 record")
+						assert.Len(t, records, 1, "batching is disabled, expecte 1 record")
 						record := records[0]
 						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
@@ -115,9 +153,9 @@ func TestClient(t *testing.T) {
 							if !ok {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
-							expectedKv := OtelAttr(key, expectedValue)
+							expectedKv := beholder.OtelAttr(key, expectedValue)
 							equal := kv.Value.Equal(expectedKv.Value)
-							assert.True(t, equal, fmt.Sprintf("Record attributes mismatch for key %v", key))
+							assert.True(t, equal, "Record attributes mismatch for key %v", key)
 							return true
 						})
 						for key := range customAttributes {
@@ -129,7 +167,7 @@ func TestClient(t *testing.T) {
 					})
 			}
 			for i := 0; i < tc.messageCount; i++ {
-				tc.messageGenerator(client, tc.messageBody, customAttributes)
+				tc.messageGenerator(t, client, tc.messageBody, customAttributes)
 			}
 			assert.Equal(t, tc.messageCount, exportedMessageCount, "Expect all emitted messages to be exported")
 		})
@@ -137,9 +175,9 @@ func TestClient(t *testing.T) {
 }
 
 func TestEmitterMessageValidation(t *testing.T) {
-	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
-		client, err := newClient(
-			TestDefaultConfig(),
+	getEmitter := func(exporterMock *mocks.OTLPExporter) beholder.Emitter {
+		client, err := beholder.NewGRPCClient(
+			beholder.TestDefaultConfig(),
 			// Override exporter factory which is used by Client
 			func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 				return exporterMock, nil
@@ -152,13 +190,13 @@ func TestEmitterMessageValidation(t *testing.T) {
 
 	for _, tc := range []struct {
 		name                string
-		attrs               Attributes
+		attrs               beholder.Attributes
 		exporterCalledTimes int
 		expectedError       string
 	}{
 		{
 			name: "Missing required attribute",
-			attrs: Attributes{
+			attrs: beholder.Attributes{
 				"key": "value",
 			},
 			exporterCalledTimes: 0,
@@ -166,16 +204,70 @@ func TestEmitterMessageValidation(t *testing.T) {
 		},
 		{
 			name: "Invalid URI",
-			attrs: Attributes{
+			attrs: beholder.Attributes{
+				"beholder_domain":      "TestDomain",
+				"beholder_entity":      "TestEntity",
 				"beholder_data_schema": "example-schema",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
 		},
 		{
-			name:                "Valid URI",
+			name: "Invalid Beholder domain (double underscore)",
+			attrs: beholder.Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "TestEntity",
+				"beholder_domain":      "Test__Domain",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
+		},
+		{
+			name: "Invalid Beholder domain (special characters)",
+			attrs: beholder.Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "TestEntity",
+				"beholder_domain":      "TestDomain*$",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
+		},
+		{
+			name: "Invalid Beholder entity (double underscore)",
+			attrs: beholder.Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "Test__Entity",
+				"beholder_domain":      "TestDomain",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
+		},
+		{
+			name: "Invalid Beholder entity (special characters)",
+			attrs: beholder.Attributes{
+				"beholder_data_schema": "/example-schema/versions/1",
+				"beholder_entity":      "TestEntity*$",
+				"beholder_domain":      "TestDomain",
+			},
+			exporterCalledTimes: 0,
+			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
+		},
+		{
+			name:                "Valid Attributes",
 			exporterCalledTimes: 1,
-			attrs: Attributes{
+			attrs: beholder.Attributes{
+				"beholder_domain":      "TestDomain",
+				"beholder_entity":      "TestEntity",
+				"beholder_data_schema": "/example-schema/versions/1",
+			},
+			expectedError: "",
+		},
+		{
+			name:                "Valid Attributes (special characters)",
+			exporterCalledTimes: 1,
+			attrs: beholder.Attributes{
+				"beholder_domain":      "Test.Domain_42-1",
+				"beholder_entity":      "Test.Entity_42-1",
 				"beholder_data_schema": "/example-schema/versions/1",
 			},
 			expectedError: "",
@@ -189,14 +281,14 @@ func TestEmitterMessageValidation(t *testing.T) {
 					exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.exporterCalledTimes)
 				}
 				emitter := getEmitter(exporterMock)
-				message := NewMessage([]byte("test"), tc.attrs)
+				message := beholder.NewMessage([]byte("test"), tc.attrs)
 				// Emit
-				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
+				err := emitter.Emit(t.Context(), message.Body, tc.attrs)
 				// Assert expectations
 				if tc.expectedError != "" {
-					assert.ErrorContains(t, err, tc.expectedError)
+					require.ErrorContains(t, err, tc.expectedError)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 				}
 				if tc.exporterCalledTimes > 0 {
 					exporterMock.AssertExpectations(t)
@@ -212,11 +304,11 @@ func TestClient_Close(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 
-	client, err := NewStdoutClient()
-	assert.NoError(t, err)
+	client, err := beholder.NewStdoutClient()
+	require.NoError(t, err)
 
 	err = client.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	exporterMock.AssertExpectations(t)
 }
@@ -225,17 +317,17 @@ func TestClient_ForPackage(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 	var b strings.Builder
-	client, err := NewWriterClient(&b)
-	assert.NoError(t, err)
+	client, err := beholder.NewWriterClient(&b)
+	require.NoError(t, err)
 	clientForTest := client.ForPackage("TestClient_ForPackage")
 
 	// Log
-	clientForTest.Logger.Emit(tests.Context(t), otellog.Record{})
+	clientForTest.Logger.Emit(t.Context(), otellog.Record{})
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	b.Reset()
 
 	// Trace
-	_, span := clientForTest.Tracer.Start(tests.Context(t), "testSpan")
+	_, span := clientForTest.Tracer.Start(t.Context(), "testSpan")
 	span.End()
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testSpan")
@@ -243,7 +335,7 @@ func TestClient_ForPackage(t *testing.T) {
 
 	// Meter
 	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
-	counter.Add(tests.Context(t), 1)
+	counter.Add(t.Context(), 1)
 	clientForTest.Close()
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testMetric")
@@ -251,4 +343,41 @@ func TestClient_ForPackage(t *testing.T) {
 
 func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
 	return func(err error) { t.Fatalf("otel error: %v", err) }
+}
+
+func TestNewClient(t *testing.T) {
+	t.Run("both endpoints set", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			OtelExporterHTTPEndpoint: "http-endpoint",
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Equal(t, "only one exporter endpoint should be set", err.Error())
+	})
+
+	t.Run("no endpoints set", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Equal(t, "at least one exporter endpoint should be set", err.Error())
+	})
+
+	t.Run("GRPC endpoint set", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.Client{}, client)
+	})
+
+	t.Run("HTTP endpoint set", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterHTTPEndpoint: "http-endpoint",
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.Client{}, client)
+	})
 }

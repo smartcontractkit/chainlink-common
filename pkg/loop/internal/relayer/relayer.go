@@ -11,14 +11,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury"
@@ -33,14 +34,15 @@ var _ looptypes.PluginRelayer = (*PluginRelayerClient)(nil)
 
 type PluginRelayerClient struct {
 	*goplugin.PluginClient
+	*goplugin.ServiceClient
 
-	grpc pb.PluginRelayerClient
+	pluginRelayer pb.PluginRelayerClient
 }
 
-func NewPluginRelayerClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginRelayerClient {
+func NewPluginRelayerClient(brokerCfg net.BrokerConfig) *PluginRelayerClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginRelayerClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
-	return &PluginRelayerClient{PluginClient: pc, grpc: pb.NewPluginRelayerClient(pc)}
+	pc := goplugin.NewPluginClient(brokerCfg)
+	return &PluginRelayerClient{PluginClient: pc, pluginRelayer: pb.NewPluginRelayerClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
 func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
@@ -62,7 +64,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		}
 		deps.Add(capabilityRegistryResource)
 
-		reply, err := p.grpc.NewRelayer(ctx, &pb.NewRelayerRequest{
+		reply, err := p.pluginRelayer.NewRelayer(ctx, &pb.NewRelayerRequest{
 			Config:               config,
 			KeystoreID:           id,
 			CapabilityRegistryID: capabilityRegistryID,
@@ -84,6 +86,7 @@ type pluginRelayerServer struct {
 }
 
 func RegisterPluginRelayerServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl looptypes.PluginRelayer) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterPluginRelayerServer(server, newPluginRelayerServer(broker, brokerCfg, impl))
 	return nil
 }
@@ -191,19 +194,19 @@ type relayerClient struct {
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
-	b = b.WithName("ChainRelayerClient")
+	b = b.WithName("RelayerClient")
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *relayerClient) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
-	cwc := r.NewClientConn("ChainWriter", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewChainWriter(ctx, &pb.NewChainWriterRequest{ChainWriterConfig: chainWriterConfig})
+func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
+	cwc := r.NewClientConn("ContractWriter", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewContractWriter(ctx, &pb.NewContractWriterRequest{ContractWriterConfig: contractWriterConfig})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.ChainWriterID, nil, nil
+		return reply.ContractWriterID, nil, nil
 	})
-	return chainwriter.NewClient(r.WithName("ChainWriterClient"), cwc), nil
+	return contractwriter.NewClient(r.WithName("ContractWriterClient"), cwc), nil
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
@@ -261,7 +264,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 
 	broker := r.BrokerExt
 
-	return WrapProviderClientConnection(rargs.ProviderType, cc, broker)
+	return WrapProviderClientConnection(ctx, rargs.ProviderType, cc, broker)
 }
 
 type PluginProviderClient interface {
@@ -269,13 +272,15 @@ type PluginProviderClient interface {
 	goplugin.GRPCClientConn
 }
 
-func WrapProviderClientConnection(providerType string, cc grpc.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
+func WrapProviderClientConnection(ctx context.Context, providerType string, cc grpc.ClientConnInterface, broker *net.BrokerExt) (PluginProviderClient, error) {
 	// TODO: Remove this when we have fully transitioned all relayers to running in LOOPPs.
 	// This allows callers to type assert a PluginProvider into a product provider type (eg. MedianProvider)
 	// for interoperability with legacy code.
 	switch providerType {
 	case string(types.Median):
-		return median.NewProviderClient(broker, cc), nil
+		pc := median.NewProviderClient(broker, cc)
+		pc.RmUnimplemented(ctx)
+		return pc, nil
 	case string(types.GenericPlugin):
 		return ocr2.NewPluginProviderClient(broker, cc), nil
 	case string(types.OCR3Capability):
@@ -360,6 +365,19 @@ func (r *relayerClient) Transact(ctx context.Context, from, to string, amount *b
 	return err
 }
 
+func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	argsStruct, err := structpb.NewStruct(args)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.relayer.Replay(ctx, &pb.ReplayRequest{
+		FromBlock: fromBlock,
+		Args:      argsStruct,
+	})
+	return err
+}
+
 var _ pb.RelayerServer = (*relayerServer)(nil)
 
 // relayerServer exposes [Relayer] as a GRPC [pb.RelayerServer].
@@ -375,8 +393,8 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
-func (r *relayerServer) NewChainWriter(ctx context.Context, request *pb.NewChainWriterRequest) (*pb.NewChainWriterReply, error) {
-	cw, err := r.impl.NewChainWriter(ctx, request.GetChainWriterConfig())
+func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {
+	cw, err := r.impl.NewContractWriter(ctx, request.GetContractWriterConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -385,15 +403,15 @@ func (r *relayerServer) NewChainWriter(ctx context.Context, request *pb.NewChain
 		return nil, err
 	}
 
-	const name = "ChainWriter"
+	const name = "ContractWriter"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chainwriter.RegisterChainWriterService(s, cw)
+		contractwriter.RegisterContractWriterService(s, cw)
 	}, net.Resource{Closer: cw, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.NewChainWriterReply{ChainWriterID: id}, nil
+	return &pb.NewContractWriterReply{ContractWriterID: id}, nil
 }
 
 func (r *relayerServer) NewContractReader(ctx context.Context, request *pb.NewContractReaderRequest) (*pb.NewContractReaderReply, error) {
@@ -716,6 +734,10 @@ func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNo
 
 func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionRequest) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
+}
+
+func (r *relayerServer) Replay(ctx context.Context, request *pb.ReplayRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, r.impl.Replay(ctx, request.FromBlock, request.Args.AsMap())
 }
 
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,

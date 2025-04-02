@@ -9,8 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
@@ -28,19 +31,19 @@ type CommitProviderTester interface {
 
 // CommitProvider is a static implementation of the CommitProviderTester interface.
 // It is to be used in tests the verify grpc implementations of the CommitProvider interface.
-var CommitProvider = staticCommitProvider{
-	staticCommitProviderConfig: staticCommitProviderConfig{
+func CommitProvider(lggr logger.Logger) staticCommitProvider {
+	return newStaticCommitProvider(lggr, staticCommitProviderConfig{
 		addr:                      ccip.Address("some address"),
 		offchainDigester:          ocr2test.OffchainConfigDigester,
 		contractTracker:           ocr2test.ContractConfigTracker,
 		contractTransmitter:       ocr2test.ContractTransmitter,
-		commitStoreReader:         CommitStoreReader,
+		commitStoreReader:         CommitStoreReader(lggr),
 		offRampReader:             OffRampReader,
 		onRampReader:              OnRampReader,
 		priceGetter:               PriceGetter,
 		priceRegistryReader:       PriceRegistryReader,
 		sourceNativeTokenResponse: ccip.Address("source native token response"),
-	},
+	})
 }
 
 var _ CommitProviderTester = staticCommitProvider{}
@@ -60,16 +63,20 @@ type staticCommitProviderConfig struct {
 }
 
 type staticCommitProvider struct {
+	services.Service
 	staticCommitProviderConfig
+}
+
+func newStaticCommitProvider(lggr logger.Logger, cfg staticCommitProviderConfig) staticCommitProvider {
+	lggr = logger.Named(lggr, "staticCommitProvider")
+	return staticCommitProvider{
+		Service:                    test.NewStaticService(lggr),
+		staticCommitProviderConfig: cfg,
+	}
 }
 
 // ContractReader implements CommitProviderEvaluator.
 func (s staticCommitProvider) ContractReader() types.ContractReader {
-	return nil
-}
-
-// Close implements CommitProviderEvaluator.
-func (s staticCommitProvider) Close() error {
 	return nil
 }
 
@@ -151,16 +158,6 @@ func (s staticCommitProvider) Evaluate(ctx context.Context, other types.CCIPComm
 	return nil
 }
 
-// HealthReport implements CommitProviderEvaluator.
-func (s staticCommitProvider) HealthReport() map[string]error {
-	panic("unimplemented")
-}
-
-// Name implements CommitProviderEvaluator.
-func (s staticCommitProvider) Name() string {
-	panic("unimplemented")
-}
-
 // NewCommitStoreReader implements CommitProviderEvaluator.
 func (s staticCommitProvider) NewCommitStoreReader(ctx context.Context, addr ccip.Address) (ccip.CommitStoreReader, error) {
 	return s.commitStoreReader, nil
@@ -191,19 +188,9 @@ func (s staticCommitProvider) OffchainConfigDigester() libocr.OffchainConfigDige
 	return s.offchainDigester
 }
 
-// Ready implements CommitProviderEvaluator.
-func (s staticCommitProvider) Ready() error {
-	return nil
-}
-
 // SourceNativeToken implements CommitProviderEvaluator.
 func (s staticCommitProvider) SourceNativeToken(ctx context.Context, addr ccip.Address) (ccip.Address, error) {
 	return s.sourceNativeTokenResponse, nil
-}
-
-// Start implements CommitProviderEvaluator.
-func (s staticCommitProvider) Start(context.Context) error {
-	return nil
 }
 
 // AssertEqual implements CommitProviderTester.

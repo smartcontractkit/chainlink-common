@@ -25,7 +25,7 @@ type grpcPlugin interface {
 	ClientConfig() *plugin.ClientConfig
 }
 
-// pluginService is a [types.Service] wrapper that maintains an internal [types.Service] created from a [grpcPlugin]
+// PluginService is a [types.Service] wrapper that maintains an internal [types.Service] created from a [grpcPlugin]
 // client instance by launching and re-launching as necessary.
 type PluginService[P grpcPlugin, S services.Service] struct {
 	services.StateMachine
@@ -36,28 +36,44 @@ type PluginService[P grpcPlugin, S services.Service] struct {
 	cmd  func() *exec.Cmd
 
 	wg     sync.WaitGroup
-	stopCh chan struct{}
+	stopCh services.StopChan
 
 	grpcPlug P
 
 	client         *plugin.Client
 	clientProtocol plugin.ClientProtocol
 
-	newService func(context.Context, any) (S, error)
+	newService NewService[S]
 
-	serviceCh chan struct{} // closed when service is available
-	Service   S
+	serviceCh      chan struct{} // closed when service is available
+	Service        S
+	HealthReporter services.HealthReporter // may be the same as Service
 
 	testInterrupt chan func(*PluginService[P, S]) // tests only (via TestHook) to enable access to internals without racing
 }
 
-func (s *PluginService[P, S]) Init(pluginName string, p P, newService func(context.Context, any) (S, error),
-	lggr logger.Logger, cmd func() *exec.Cmd, stopCh chan struct{}) {
+// NewService funcs returns an S and a HeathReporter, which should provide the top level health report for the whole
+// plugin, and which may be the same as S.
+type NewService[S services.Service] func(context.Context, any) (S, services.HealthReporter, error)
+
+// Init initializes s and should be called from the constructor of the type that embeds it.
+//
+// newService transforms the type-less plugin in to a Service and HealthReporter. If the plugin is only type-cast to S
+// then it should be returned as the HealthReporter too. If additional calls are made after casting to create S, then
+// the originally cast value should be returned as the HealthReporter to provide a root level health report.
+func (s *PluginService[P, S]) Init(
+	pluginName string,
+	grpcPlug P,
+	newService NewService[S],
+	lggr logger.Logger,
+	cmd func() *exec.Cmd,
+	stopCh chan struct{},
+) {
 	s.pluginName = pluginName
 	s.lggr = lggr
 	s.cmd = cmd
 	s.stopCh = stopCh
-	s.grpcPlug = p
+	s.grpcPlug = grpcPlug
 	s.newService = newService
 	s.serviceCh = make(chan struct{})
 }
@@ -118,6 +134,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	s.lggr.Debug("Launching")
 
 	cc := s.grpcPlug.ClientConfig()
+	cc.SkipHostEnv = true
 	cc.Cmd = s.cmd()
 	client := plugin.NewClient(cc)
 	cp, err := client.Client()
@@ -141,7 +158,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	case <-s.serviceCh:
 		// s.service already set
 	default:
-		s.Service, err = s.newService(ctx, i)
+		s.Service, s.HealthReporter, err = s.newService(ctx, i)
 		if err != nil {
 			abort()
 			return nil, nil, fmt.Errorf("failed to create service: %w", err)
@@ -171,14 +188,35 @@ func (s *PluginService[P, S]) Ready() error {
 func (s *PluginService[P, S]) Name() string { return s.lggr.Name() }
 
 func (s *PluginService[P, S]) HealthReport() map[string]error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	select {
-	case <-s.serviceCh:
-		hr := map[string]error{s.Name(): s.Healthy()}
-		services.CopyHealth(hr, s.Service.HealthReport())
-		return hr
-	default:
+	case <-s.stopCh:
+		return map[string]error{s.Name(): fmt.Errorf("service was stoped while waiting: %w", context.Canceled)}
+	case <-ctx.Done():
 		return map[string]error{s.Name(): ErrPluginUnavailable}
+	case <-s.serviceCh:
 	}
+
+	hr := map[string]error{s.Name(): s.Healthy()}
+
+	// wait until service is ready, which also triggers the deferred construction to ensure a complete HealthReport
+	err := s.Service.Ready()
+	for err != nil {
+		select {
+		case <-s.stopCh:
+			return map[string]error{s.Name(): fmt.Errorf("service was stoped while waiting: %w", context.Canceled)}
+		case <-ctx.Done():
+			hr[s.Service.Name()] = err
+			return hr
+		case <-time.After(time.Second):
+			err = s.Service.Ready()
+		}
+	}
+
+	services.CopyHealth(hr, s.HealthReporter.HealthReport())
+	return hr
 }
 
 func (s *PluginService[P, S]) Close() error {
@@ -188,7 +226,7 @@ func (s *PluginService[P, S]) Close() error {
 
 		select {
 		case <-s.serviceCh:
-			if cerr := s.Service.Close(); !errors.Is(cerr, context.Canceled) && status.Code(cerr) != codes.Canceled {
+			if cerr := s.Service.Close(); !isCanceled(cerr) {
 				err = errors.Join(err, cerr)
 			}
 		default:
@@ -200,7 +238,7 @@ func (s *PluginService[P, S]) Close() error {
 
 func (s *PluginService[P, S]) closeClient() (err error) {
 	if s.clientProtocol != nil {
-		if cerr := s.clientProtocol.Close(); !errors.Is(cerr, context.Canceled) {
+		if cerr := s.clientProtocol.Close(); !isCanceled(cerr) {
 			err = cerr
 		}
 	}
@@ -221,11 +259,6 @@ func (s *PluginService[P, S]) WaitCtx(ctx context.Context) error {
 	case <-s.stopCh:
 		return fmt.Errorf("service was stoped while waiting: %w", context.Canceled)
 	}
-}
-
-// Wait is the context-ignorant version of WaitCtx above.
-func (s *PluginService[P, S]) Wait() error {
-	return s.WaitCtx(context.Background())
 }
 
 // XXXTestHook returns a TestPluginService.
@@ -256,4 +289,8 @@ func (ch TestPluginService[P, S]) Reset() {
 		r.clientProtocol = nil
 	}
 	<-done
+}
+
+func isCanceled(err error) bool {
+	return errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled
 }

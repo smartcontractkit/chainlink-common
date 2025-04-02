@@ -2,6 +2,8 @@ package median
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
@@ -28,13 +30,13 @@ type PluginMedianClient struct {
 	median pb.PluginMedianClient
 }
 
-func NewPluginMedianClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginMedianClient {
+func NewPluginMedianClient(brokerCfg net.BrokerConfig) *PluginMedianClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "PluginMedianClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &PluginMedianClient{PluginClient: pc, median: pb.NewPluginMedianClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog core.ErrorLog, deviationFuncDefinition map[string]any) (types.ReportingPluginFactory, error) {
 	cc := m.NewClientConn("MedianPluginFactory", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
 		dataSourceID, dsRes, err := m.ServeNew("DataSource", func(s *grpc.Server) {
 			pb.RegisterDataSourceServer(s, newDataSourceServer(dataSource))
@@ -84,6 +86,14 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 		}
 		deps.Add(errorLogRes)
 
+		var deviationFuncDefinitionJSON []byte
+		if deviationFuncDefinition != nil {
+			deviationFuncDefinitionJSON, err = json.Marshal(deviationFuncDefinition)
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed to marshal deviationFuncDefinition: %w", err)
+			}
+		}
+
 		reply, err := m.median.NewMedianFactory(ctx, &pb.NewMedianFactoryRequest{
 			MedianProviderID:             providerID,
 			ContractID:                   contractID,
@@ -91,6 +101,7 @@ func (m *PluginMedianClient) NewMedianFactory(ctx context.Context, provider type
 			JuelsPerFeeCoinDataSourceID:  juelsPerFeeCoinDataSourceID,
 			GasPriceSubunitsDataSourceID: gasPriceSubunitsDataSourceID,
 			ErrorLogID:                   errorLogID,
+			DeviationFuncDefinition:      deviationFuncDefinitionJSON,
 		})
 		if err != nil {
 			return 0, nil, err
@@ -110,6 +121,7 @@ type pluginMedianServer struct {
 }
 
 func RegisterPluginMedianServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.PluginMedian) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterPluginMedianServer(server, newPluginMedianServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }
@@ -149,6 +161,7 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	}
 	providerRes := net.Resource{Closer: providerConn, Name: "MedianProvider"}
 	provider := medianprovider.NewProviderClient(m.BrokerExt, providerConn)
+	provider.RmUnimplemented(ctx)
 
 	errorLogConn, err := m.Dial(request.ErrorLogID)
 	if err != nil {
@@ -158,7 +171,15 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 	errorLogRes := net.Resource{Closer: errorLogConn, Name: "ErrorLog"}
 	errorLog := errorlog.NewClient(errorLogConn)
 
-	factory, err := m.impl.NewMedianFactory(ctx, provider, request.ContractID, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog)
+	var deviationFuncDefinition map[string]any
+	if len(request.DeviationFuncDefinition) > 0 {
+		if err = json.Unmarshal(request.DeviationFuncDefinition, deviationFuncDefinition); err != nil {
+			m.CloseAll(dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
+			return nil, fmt.Errorf("failed to unmarshal deviationFuncDefinition: %w", err)
+		}
+	}
+
+	factory, err := m.impl.NewMedianFactory(ctx, provider, request.ContractID, dataSource, juelsPerFeeCoin, gasPriceSubunits, errorLog, deviationFuncDefinition)
 	if err != nil {
 		m.CloseAll(dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 		return nil, err

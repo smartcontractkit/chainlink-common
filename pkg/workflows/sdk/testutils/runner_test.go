@@ -3,7 +3,9 @@ package testutils_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap/ocr3captest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritertest"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
@@ -32,7 +33,7 @@ func TestRunner(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		triggerMock, actionMock, consensusMock, targetMock := setupAllRunnerMocks(t, runner)
 
@@ -52,7 +53,7 @@ func TestRunner(t *testing.T) {
 		assert.True(t, helper.transformTriggerCalled)
 		consensus := consensusMock.GetStepDecoded("consensus")
 		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
-		require.Len(t, consensus.Input.Observations, 1)
+		require.NotNil(t, consensus.Input.Observations[0])
 
 		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
@@ -62,7 +63,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run allows hard-coded values", func(t *testing.T) {
-		workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+		workflow := sdk.NewWorkflowSpecFactory()
 		trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 		hardCodedInput := basicaction.NewActionOutputsFromFields(sdk.ConstantDefinition("hard-coded"))
 		tTransform := sdk.Compute2[basictrigger.TriggerOutputs, basicaction.ActionOutputs, bool](
@@ -82,7 +83,7 @@ func TestRunner(t *testing.T) {
 		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 			Encoder:       "Test",
 			EncoderConfig: ocr3.EncoderConfig{},
-		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 		chainwriter.TargetConfig{
 			Address:    "0x123",
@@ -90,7 +91,7 @@ func TestRunner(t *testing.T) {
 			Schedule:   "oneAtATime",
 		}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
 
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		_, _, _, targetMock := setupAllRunnerMocks(t, runner)
 
 		runner.Run(workflow)
@@ -102,7 +103,7 @@ func TestRunner(t *testing.T) {
 	t.Run("Run returns errors if capabilities were registered multiple times", func(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		setupAllRunnerMocks(t, runner)
 		setupAllRunnerMocks(t, runner)
 
@@ -116,7 +117,7 @@ func TestRunner(t *testing.T) {
 			return false, expectedErr
 		})
 
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
@@ -139,7 +140,7 @@ func TestRunner(t *testing.T) {
 		helper := &testHelper{t: t}
 		workflow := createBasicTestWorkflow(helper.transformTrigger)
 
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
@@ -157,7 +158,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run registers and unregisters from capabilities", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		workflow, testTriggerConfig, testTargetConfig := registrationWorkflow()
 
@@ -176,7 +177,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run captures register errors", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		workflow, _, _ := registrationWorkflow()
 
@@ -194,7 +195,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("Run captures unregister errors", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
 		workflow, _, _ := registrationWorkflow()
 
@@ -212,7 +213,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns the mock for a step", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		expected := basicactiontest.ActionForStep(runner, "action", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -227,7 +228,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns a default mock if step wasn't specified", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		expected := basicactiontest.Action(runner, func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -236,7 +237,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns nil if no mock was registered", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		referenceactiontest.Action(runner, func(input referenceaction.SomeInputs) (referenceaction.SomeOutputs, error) {
 			return referenceaction.SomeOutputs{}, nil
 		})
@@ -244,7 +245,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("GetRegisteredMock returns nil if no mock was registered for a step", func(t *testing.T) {
-		runner := testutils.NewRunner(tests.Context(t))
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 		differentStep := basicactiontest.ActionForStep(runner, "step", func(input basicaction.ActionInputs) (basicaction.ActionOutputs, error) {
 			return basicaction.ActionOutputs{}, nil
 		})
@@ -253,8 +254,73 @@ func TestRunner(t *testing.T) {
 	})
 }
 
+type ComputeConfig struct {
+	Fidelity sdk.SecretValue
+}
+
+func TestCompute(t *testing.T) {
+	t.Run("Inputs don't loose integer types when any is deserialized to", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory()
+		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
+		toMap := sdk.Compute1(workflow, "tomap", sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, i0 string) (map[string]any, error) {
+			v, err := strconv.Atoi(i0)
+			if err != nil {
+				return nil, err
+			}
+
+			return map[string]any{"a": int64(v)}, nil
+		})
+
+		sdk.Compute1(workflow, "compute", sdk.Compute1Inputs[map[string]any]{Arg0: toMap.Value()}, func(runtime sdk.Runtime, input map[string]any) (any, error) {
+			actual := input["a"]
+			if int64(100) != actual {
+				return nil, fmt.Errorf("expected uint64(100), got %v of type %T", actual, actual)
+			}
+
+			return actual, nil
+		})
+
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "100"}, nil
+		})
+
+		runner.Run(workflow)
+
+		require.NoError(t, runner.Err())
+	})
+
+	t.Run("Config interpolates secrets", func(t *testing.T) {
+		workflow := sdk.NewWorkflowSpecFactory()
+		trigger := basictrigger.TriggerConfig{Name: "foo", Number: 100}.New(workflow)
+
+		conf := ComputeConfig{
+			Fidelity: sdk.Secret("fidelity"),
+		}
+		var gotC ComputeConfig
+		sdk.Compute1WithConfig(workflow, "tomap", &sdk.ComputeConfig[ComputeConfig]{Config: conf}, sdk.Compute1Inputs[string]{Arg0: trigger.CoolOutput()}, func(runtime sdk.Runtime, c ComputeConfig, i0 string) (ComputeConfig, error) {
+			gotC = c
+			return c, nil
+		})
+
+		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
+		secretToken := "superSuperSecretToken"
+		runner.Secrets = map[string]string{
+			"fidelity": secretToken,
+		}
+		basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
+			return basictrigger.TriggerOutputs{CoolOutput: "100"}, nil
+		})
+
+		runner.Run(workflow)
+
+		require.NoError(t, runner.Err())
+		assert.Equal(t, gotC.Fidelity, sdk.SecretValue(secretToken))
+	})
+}
+
 func registrationWorkflow() (*sdk.WorkflowSpecFactory, map[string]any, map[string]any) {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	workflow := sdk.NewWorkflowSpecFactory()
 	testTriggerConfig := map[string]any{"something": "from nothing"}
 	trigger := sdk.Step[int]{
 		Definition: sdk.StepDefinition{
@@ -302,7 +368,7 @@ func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.Tri
 type actionTransform func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error)
 
 func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecFactory {
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{Name: "tester", Owner: "ryan"})
+	workflow := sdk.NewWorkflowSpecFactory()
 	trigger := basictrigger.TriggerConfig{Name: "trigger", Number: 100}.New(workflow)
 	tTransform := sdk.Compute1[basictrigger.TriggerOutputs, bool](
 		workflow,
@@ -315,7 +381,7 @@ func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecF
 
 	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
 		Encoder: "Test", EncoderConfig: ocr3.EncoderConfig{},
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observations: action})
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
 
 	chainwriter.TargetConfig{
 		Address:    "0x123",

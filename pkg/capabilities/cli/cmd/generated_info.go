@@ -2,12 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
-	"reflect"
 	"strings"
-	"unicode"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
@@ -36,43 +31,19 @@ func (g GeneratedInfo) RootType() Struct {
 	}
 }
 
-func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (GeneratedInfo, error) {
-	fset := token.NewFileSet()
+func generatedInfoFromSrc(
+	src, fullPkg string, capID *string, typeInfo TypeInfo, includeType func(name string) bool) (GeneratedInfo, error) {
+	reader := GoStructReader{IncludeType: includeType}
 
-	// Parse the source code string
-	node, err := parser.ParseFile(fset, "", src, parser.AllErrors)
+	generatedStructs, pkg, extraImports, err := reader.Read(src)
 	if err != nil {
 		return GeneratedInfo{}, err
 	}
-	pkg := node.Name.Name
-
-	generatedStructs := map[string]Struct{}
-	var extraImports []string
-	ast.Inspect(node, func(n ast.Node) bool {
-		return inspectNode(n, fset, src, generatedStructs, &extraImports)
-	})
 
 	root := generatedStructs[typeInfo.RootType]
 	input, config := extractInputAndConfig(generatedStructs, typeInfo, root)
 
 	output := root.Outputs["Outputs"]
-
-	fullPkg := typeInfo.SchemaID
-
-	// drop protocol
-	index := strings.Index(typeInfo.SchemaID, "//")
-	if index != -1 {
-		fullPkg = fullPkg[index+2:]
-	}
-
-	// drop the capability name and version
-	index = strings.LastIndex(fullPkg, "/")
-	if index == -1 {
-		return GeneratedInfo{},
-			fmt.Errorf("invalid schema ID: %s must end in /capability_name and optioanlly a version", typeInfo.SchemaID)
-	}
-
-	fullPkg = fullPkg[:index]
 
 	return GeneratedInfo{
 		Package:        pkg,
@@ -87,6 +58,25 @@ func generatedInfoFromSrc(src string, capID *string, typeInfo TypeInfo) (Generat
 		ID:             capID,
 		FullPackage:    fullPkg,
 	}, nil
+}
+
+func packageFromSchemaID(schemaID string) (string, error) {
+	fullPkg := schemaID
+
+	// drop protocol
+	index := strings.Index(fullPkg, "//")
+	if index != -1 {
+		fullPkg = fullPkg[index+2:]
+	}
+
+	// drop the capability name and version
+	index = strings.LastIndex(fullPkg, "/")
+	if index == -1 {
+		return "", fmt.Errorf("invalid schema ID: %s must end in /capability_name and optioanlly a version", schemaID)
+	}
+
+	fullPkg = fullPkg[:index]
+	return fullPkg, nil
 }
 
 func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo, root Struct) (*Struct, Struct) {
@@ -122,76 +112,6 @@ func extractInputAndConfig(generatedStructs map[string]Struct, typeInfo TypeInfo
 		}
 	}
 	return input, config
-}
-
-func inspectNode(n ast.Node, fset *token.FileSet, src string, rawInfo map[string]Struct, extraImports *[]string) bool {
-	if ts, ok := n.(*ast.TypeSpec); ok {
-		s := Struct{
-			Name:    strings.TrimSpace(ts.Name.Name),
-			Outputs: map[string]Field{},
-		}
-
-		if structType, ok := ts.Type.(*ast.StructType); ok {
-			for _, field := range structType.Fields.List {
-				start := fset.Position(field.Type.Pos()).Offset
-				end := fset.Position(field.Type.End()).Offset
-				typeStr := src[start:end]
-				if typeStr == "interface{}" {
-					typeStr = "any"
-				}
-				f := Field{}
-
-				if field.Tag != nil {
-					// This is safe because the generator used to create the structs from jsonschema
-					// will always have json tag if there's tags on the field, per configuration.
-					// The substring removes the quotes around that tag.
-					tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1])
-					jsonTag := tag.Get("json")
-					if jsonTag != "" {
-						jsonName := strings.Split(jsonTag, ",")[0]
-						if jsonName != "" {
-							f.ConfigName = jsonName
-						}
-					}
-				}
-
-				f.Type = typeStr
-				if f.ConfigName == "" {
-					f.ConfigName = field.Names[0].Name
-				}
-
-				for strings.HasPrefix(f.Type, "[]") {
-					f.NumSlice++
-					f.Type = f.Type[2:]
-				}
-
-				f.Type = strings.TrimPrefix(f.Type, "*")
-				t := f.Type
-				for t[0] == '*' {
-					t = t[1:]
-				}
-
-				f.IsPrimitive = unicode.IsLower(rune(t[0]))
-				s.Outputs[field.Names[0].Name] = f
-			}
-		}
-
-		// artifact used for deserializing
-		if s.Name != "Plain" {
-			rawInfo[ts.Name.Name] = s
-		}
-	} else if imp, ok := n.(*ast.ImportSpec); ok {
-		switch imp.Path.Value {
-		case `"reflect"`, `"fmt"`, `"encoding/json"`, `"regexp"`:
-		default:
-			importStr := imp.Path.Value
-			if imp.Name != nil {
-				importStr = imp.Name.Name + " " + importStr
-			}
-			*extraImports = append(*extraImports, importStr)
-		}
-	}
-	return true
 }
 
 func lastAfterDot(s string) string {

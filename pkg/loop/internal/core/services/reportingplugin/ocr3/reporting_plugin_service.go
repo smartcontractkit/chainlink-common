@@ -31,9 +31,9 @@ type ReportingPluginServiceClient struct {
 	reportingPluginService pb.ReportingPluginServiceClient
 }
 
-func NewReportingPluginServiceClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {
+func NewReportingPluginServiceClient(brokerCfg net.BrokerConfig) *ReportingPluginServiceClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
@@ -129,7 +129,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		}
 		return reply.ID, nil, nil
 	})
-	return newReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
+	return NewReportingPluginFactoryClient(o.PluginClient.BrokerExt, cc), nil
 }
 
 func (o *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -241,7 +241,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 
 	id, _, err := m.ServeNew("ReportingPluginProvider", func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: factory})
-		ocr3pb.RegisterReportingPluginFactoryServer(s, newReportingPluginFactoryServer(factory, m.BrokerExt))
+		ocr3pb.RegisterReportingPluginFactoryServer(s, NewReportingPluginFactoryServer(factory, m.BrokerExt))
 	}, providerRes, errorLogRes, pipelineRunnerRes, telemetryRes, capRegistryRes, keyValueStoreRes, relayerSetRes)
 	if err != nil {
 		return nil, err
@@ -251,6 +251,7 @@ func (m reportingPluginServiceServer) NewReportingPluginFactory(ctx context.Cont
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.OCR3ReportingPluginClient) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }

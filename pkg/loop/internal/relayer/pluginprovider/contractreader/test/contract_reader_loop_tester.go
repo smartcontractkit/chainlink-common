@@ -33,7 +33,7 @@ func TestAllEncodings(t *testing.T, test func(contractreader.EncodingVersion) fu
 
 type LoopTesterOpt func(*contractReaderLoopTester)
 
-// WrapContractReaderTesterForLoop allows you to test a [types.ContractReader] and [types.ChainWriter] implementation behind a LOOP server
+// WrapContractReaderTesterForLoop allows you to test a [types.ContractReader] and [types.ContractWriter] implementation behind a LOOP server
 func WrapContractReaderTesterForLoop(wrapped ChainComponentsInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainComponentsInterfaceTester[*testing.T] {
 	tester := &contractReaderLoopTester{
 		ChainComponentsInterfaceTester: wrapped,
@@ -56,6 +56,7 @@ func WithContractReaderLoopEncoding(version contractreader.EncodingVersion) Loop
 type contractReaderLoopTester struct {
 	ChainComponentsInterfaceTester[*testing.T]
 	lst        loopServerTester
+	conn       *grpc.ClientConn
 	encodeWith contractreader.EncodingVersion
 }
 
@@ -71,10 +72,11 @@ func (c *contractReaderLoopTester) Setup(t *testing.T) {
 	}
 
 	c.lst.Setup(t)
+	c.conn = c.lst.GetConn(t)
 }
 
 func (c *contractReaderLoopTester) GetContractReader(t *testing.T) types.ContractReader {
-	return contractreader.NewClient(nil, c.lst.GetConn(t), contractreader.WithClientEncoding(c.encodeWith))
+	return contractreader.NewClient(nil, c.conn, contractreader.WithClientEncoding(c.encodeWith))
 }
 
 func (c *contractReaderLoopTester) Name() string {

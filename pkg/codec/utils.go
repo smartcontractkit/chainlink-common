@@ -321,6 +321,10 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 			}
 
 			iItem := reflect.ValueOf(item)
+			if iItem.Kind() == reflect.Ptr {
+				iItem = iItem.Elem()
+			}
+
 			switch iItem.Kind() {
 			case reflect.Array, reflect.Slice:
 				length := iItem.Len()
@@ -340,7 +344,8 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 
 				// cleanup empty values for non path keys
 				for k, v := range m {
-					if k != p && reflect.ValueOf(v).IsZero() {
+					valueOfV := reflect.ValueOf(v)
+					if k != p && valueOfV.IsValid() && valueOfV.IsZero() && valueOfV.Kind() != reflect.Uint8 {
 						delete(m, k)
 					}
 				}
@@ -364,4 +369,162 @@ func addr(value reflect.Value) reflect.Value {
 	tmp := reflect.New(value.Type())
 	tmp.Elem().Set(value)
 	return tmp
+}
+
+func ValueForPath(from reflect.Value, itemType string) (any, error) {
+	if itemType == "" {
+		return from.Interface(), nil
+	}
+
+	switch from.Kind() {
+	case reflect.Pointer:
+		elem, err := ValueForPath(from.Elem(), itemType)
+		if err != nil {
+			return nil, err
+		}
+
+		return elem, nil
+	case reflect.Array, reflect.Slice:
+		return nil, fmt.Errorf("%w: cannot extract a field from an array or slice", types.ErrInvalidType)
+	case reflect.Struct:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := from.FieldByName(head)
+		if !field.IsValid() {
+			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
+		}
+
+		if tail == "" {
+			return field.Interface(), nil
+		}
+
+		return ValueForPath(field, tail)
+	case reflect.Map:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := from.MapIndex(reflect.ValueOf(head))
+		if !field.IsValid() {
+			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
+		}
+
+		if tail == "" {
+			return field.Interface(), nil
+		}
+
+		return ValueForPath(reflect.ValueOf(field.Interface()), tail)
+	default:
+		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
+	}
+}
+
+func SetValueAtPath(vInto, vField reflect.Value, itemType string) error {
+	switch vInto.Kind() {
+	case reflect.Pointer:
+		if !vInto.Elem().IsValid() {
+			into := reflect.New(vInto.Type().Elem())
+
+			vInto.Set(into)
+		}
+
+		err := SetValueAtPath(vInto.Elem(), vField, itemType)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	case reflect.Array, reflect.Slice:
+		return fmt.Errorf("%w: cannot set a field from an array or slice", types.ErrInvalidType)
+	case reflect.Struct:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := vInto.FieldByName(head)
+		if !field.IsValid() {
+			return fmt.Errorf("%w: invalid field for type %s and name %s", types.ErrInvalidType, vInto, head)
+		}
+
+		if tail == "" {
+			if err := applyValue(field, vField); err != nil {
+				return fmt.Errorf("%w: %w for field %s", types.ErrInvalidType, err, head)
+			}
+
+			return nil
+		}
+
+		return SetValueAtPath(field, vField, tail)
+	case reflect.Map:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := vInto.MapIndex(reflect.ValueOf(head))
+		if !field.IsValid() {
+			return fmt.Errorf("%w: field not found for itemType %s", types.ErrInvalidType, itemType)
+		}
+
+		if tail == "" {
+			if err := applyValue(field, vField); err != nil {
+				return fmt.Errorf("%w: %w for field %s", types.ErrInvalidType, err, head)
+			}
+
+			return nil
+		}
+
+		return SetValueAtPath(field, vField, tail)
+	default:
+		return fmt.Errorf("%w: cannot set a field from kind %s", types.ErrInvalidType, vInto.Kind())
+	}
+}
+
+func applyValue(vInto, vField reflect.Value) error {
+	if derefTypePtr(vInto.Type()) != derefTypePtr(vField.Type()) {
+		return fmt.Errorf("value type mismatch for field")
+	}
+
+	switch vInto.Kind() {
+	case reflect.Ptr:
+		switch vField.Kind() {
+		case reflect.Ptr:
+			if vInto.CanSet() {
+				vInto.Set(vField)
+
+				return nil
+			}
+
+			if !vInto.Elem().IsValid() {
+				return fmt.Errorf("value to set is unaddressable")
+			}
+
+			if vField.IsNil() {
+				vField = reflect.New(vField.Type().Elem())
+			}
+
+			vInto.Elem().Set(vField.Elem())
+		default:
+			if !vInto.Elem().IsValid() {
+				vInto.Set(reflect.New(vInto.Type().Elem()))
+			}
+
+			vInto.Elem().Set(vField)
+		}
+	default:
+		if vInto.CanSet() {
+			switch vField.Kind() {
+			case reflect.Ptr:
+				vInto.Set(vField.Elem())
+			default:
+				vInto.Set(vField)
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("value is not settable")
+	}
+
+	return nil
+}
+
+func derefTypePtr(typ reflect.Type) reflect.Type {
+	for typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+	return typ
 }

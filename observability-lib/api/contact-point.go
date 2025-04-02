@@ -80,7 +80,7 @@ func (c *Client) DeleteContactPoint(uid string) (DeleteContactPointResponse, *re
 	}
 
 	statusCode := resp.StatusCode()
-	if statusCode != 204 {
+	if statusCode != 202 {
 		return DeleteContactPointResponse{}, resp, fmt.Errorf("error deleting contact point, received unexpected status code %d: %s", statusCode, resp.String())
 	}
 
@@ -95,6 +95,7 @@ func (c *Client) PostContactPoint(contactPoint alerting.ContactPoint) (PostConta
 
 	resp, err := c.resty.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Disable-Provenance", "true").
 		SetBody(contactPoint).
 		SetResult(&grafanaResp).
 		Post("/api/v1/provisioning/contact-points")
@@ -119,6 +120,7 @@ func (c *Client) PutContactPoint(uid string, contactPoint alerting.ContactPoint)
 
 	resp, err := c.resty.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("X-Disable-Provenance", "true").
 		SetBody(contactPoint).
 		SetResult(&grafanaResp).
 		Put(fmt.Sprintf("/api/v1/provisioning/contact-points/%s", uid))

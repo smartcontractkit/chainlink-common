@@ -7,6 +7,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -15,18 +16,24 @@ import (
 
 func TestIdenticalConsensus(t *testing.T) {
 	t.Parallel()
-	workflow := sdk.NewWorkflowSpecFactory(sdk.NewWorkflowParams{
-		Owner: "0x1234",
-		Name:  "Test",
-	})
+	workflow := sdk.NewWorkflowSpecFactory()
 
 	trigger := basictrigger.TriggerConfig{Name: "1234", Number: 1}.New(workflow)
 
 	consensus := ocr3.IdenticalConsensusConfig[basictrigger.TriggerOutputs]{
 		Encoder:       ocr3.EncoderEVM,
 		EncoderConfig: ocr3.EncoderConfig{},
-		ReportID:      "0001",
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{Observations: trigger})
+		AggregationConfig: aggregators.IdenticalAggConfig{
+			KeyOverrides:            []string{"evm"},
+			ExpectedObservationsLen: 1,
+		},
+		ReportID: "0001",
+		KeyID:    "evm",
+	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basictrigger.TriggerOutputs]{
+		Observation:   trigger,
+		Encoder:       "evm",
+		EncoderConfig: ocr3.EncoderConfig(map[string]any{"foo": "bar"}),
+	})
 
 	chainwriter.TargetConfig{
 		Address:    "0x1235",
@@ -38,8 +45,6 @@ func TestIdenticalConsensus(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := sdk.WorkflowSpec{
-		Name:  "Test",
-		Owner: "0x1234",
 		Triggers: []sdk.StepDefinition{
 			{
 				ID:     "basic-test-trigger@1.0.0",
@@ -55,14 +60,23 @@ func TestIdenticalConsensus(t *testing.T) {
 		Actions: []sdk.StepDefinition{},
 		Consensus: []sdk.StepDefinition{
 			{
-				ID:     "offchain_reporting@1.0.0",
-				Ref:    "consensus",
-				Inputs: sdk.StepInputs{Mapping: map[string]any{"observations": "$(trigger.outputs)"}},
+				ID:  "offchain_reporting@1.0.0",
+				Ref: "consensus",
+				Inputs: sdk.StepInputs{Mapping: map[string]any{
+					"observations":  []any{"$(trigger.outputs)"},
+					"encoder":       "evm",
+					"encoderConfig": map[string]any{"foo": "bar"},
+				}},
 				Config: map[string]any{
 					"encoder":            "EVM",
 					"encoder_config":     map[string]any{},
 					"aggregation_method": "identical",
-					"report_id":          "0001",
+					"aggregation_config": map[string]any{
+						"KeyOverrides":            []string{"evm"},
+						"ExpectedObservationsLen": 1,
+					},
+					"report_id": "0001",
+					"key_id":    "evm",
 				},
 				CapabilityType: capabilities.CapabilityTypeConsensus,
 			},
@@ -74,9 +88,10 @@ func TestIdenticalConsensus(t *testing.T) {
 					Mapping: map[string]any{"signed_report": "$(consensus.outputs)"},
 				},
 				Config: map[string]any{
-					"address":    "0x1235",
-					"deltaStage": "45s",
-					"schedule":   "oneAtATime",
+					"address":          "0x1235",
+					"deltaStage":       "45s",
+					"schedule":         "oneAtATime",
+					"cre_step_timeout": 0,
 				},
 				CapabilityType: capabilities.CapabilityTypeTarget,
 			},

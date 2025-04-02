@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	cciptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip/test"
@@ -22,11 +23,13 @@ import (
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
 	ocr3capabilitytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability/test"
 	ocr2test "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 var chainStatus = types.ChainStatus{
@@ -41,6 +44,11 @@ type transactionRequest struct {
 	balanceCheck bool
 }
 
+type replayRequest struct {
+	fromBlock string
+	args      map[string]any
+}
+
 type nodeRequest struct {
 	pageSize  int32
 	pageToken string
@@ -51,7 +59,7 @@ type nodeResponse struct {
 	nextPage string
 	total    int
 }
-type staticPluginRelayerConfig struct {
+type staticRelayerConfig struct {
 	StaticChecks           bool
 	relayArgs              types.RelayArgs
 	pluginArgs             types.PluginArgs
@@ -69,49 +77,72 @@ type staticPluginRelayerConfig struct {
 	nodeRequest        nodeRequest
 	nodeResponse       nodeResponse
 	transactionRequest transactionRequest
+	replayRequest      replayRequest
 	chainStatus        types.ChainStatus
 }
 
-func NewRelayerTester(staticChecks bool) testtypes.RelayerTester {
-	return staticPluginRelayer{
-		staticPluginRelayerConfig: staticPluginRelayerConfig{
-			StaticChecks:           staticChecks,
-			relayArgs:              RelayArgs,
-			pluginArgs:             PluginArgs,
-			contractReaderConfig:   []byte("test"),
-			medianProvider:         mediantest.MedianProvider,
-			mercuryProvider:        mercurytest.MercuryProvider,
-			executionProvider:      cciptest.ExecutionProvider,
-			agnosticProvider:       ocr2test.AgnosticProvider,
-			configProvider:         ocr2test.ConfigProvider,
-			ocr3CapabilityProvider: ocr3capabilitytest.OCR3CapabilityProvider,
-			contractReaderProvider: chaincomponentstest.ContractReader,
-			nodeRequest: nodeRequest{
-				pageSize:  137,
-				pageToken: "",
-			},
-			nodeResponse: nodeResponse{
-				nodes:    nodes,
-				nextPage: "",
-				total:    len(nodes),
-			},
-			transactionRequest: transactionRequest{
-				from:         "me",
-				to:           "you",
-				amount:       big.NewInt(97),
-				balanceCheck: true,
-			},
-			chainStatus: chainStatus,
+func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayerConfig {
+	return staticRelayerConfig{
+		StaticChecks:           staticChecks,
+		relayArgs:              RelayArgs,
+		pluginArgs:             PluginArgs,
+		contractReaderConfig:   []byte("test"),
+		medianProvider:         mediantest.MedianProvider(lggr),
+		mercuryProvider:        mercurytest.MercuryProvider(lggr),
+		executionProvider:      cciptest.ExecutionProvider(lggr),
+		agnosticProvider:       ocr2test.AgnosticPluginProvider(lggr),
+		configProvider:         ocr2test.ConfigProvider(lggr),
+		ocr3CapabilityProvider: ocr3capabilitytest.OCR3CapabilityProvider(lggr),
+		contractReaderProvider: chaincomponentstest.ContractReader,
+		commitProvider:         cciptest.CommitProvider(lggr),
+		nodeRequest: nodeRequest{
+			pageSize:  137,
+			pageToken: "",
 		},
+		nodeResponse: nodeResponse{
+			nodes:    nodes,
+			nextPage: "",
+			total:    len(nodes),
+		},
+		transactionRequest: transactionRequest{
+			from:         "me",
+			to:           "you",
+			amount:       big.NewInt(97),
+			balanceCheck: true,
+		},
+		chainStatus: chainStatus,
 	}
 }
 
+func NewPluginRelayer(lggr logger.Logger, staticChecks bool) looptypes.PluginRelayer {
+	return newStaticPluginRelayer(lggr, staticChecks)
+}
+
+func NewRelayerTester(lggr logger.Logger, staticChecks bool) testtypes.RelayerTester {
+	return newStaticRelayer(lggr, staticChecks)
+}
+
 type staticPluginRelayer struct {
-	staticPluginRelayerConfig
+	services.Service
+	relayer staticRelayer
+}
+
+func newStaticPluginRelayer(lggr logger.Logger, staticChecks bool) staticPluginRelayer {
+	lggr = logger.Named(lggr, "staticPluginRelayer")
+	return staticPluginRelayer{
+		Service: test.NewStaticService(lggr),
+		relayer: newStaticRelayer(lggr, staticChecks),
+	}
+}
+
+func (s staticPluginRelayer) HealthReport() map[string]error {
+	hp := s.Service.HealthReport()
+	services.CopyHealth(hp, s.relayer.HealthReport())
+	return hp
 }
 
 func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
-	if s.StaticChecks && config != ConfigTOML {
+	if s.relayer.StaticChecks && config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
 	keys, err := keystore.Accounts(ctx)
@@ -122,38 +153,55 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 		return nil, fmt.Errorf("expected at least one key but got none")
 	}
 
-	return s, nil
+	return s.relayer, nil
 }
 
-func (s staticPluginRelayer) Start(ctx context.Context) error { return nil }
+type staticRelayer struct {
+	services.Service
+	staticRelayerConfig
+}
 
-func (s staticPluginRelayer) Close() error { return nil }
+func newStaticRelayer(lggr logger.Logger, staticChecks bool) staticRelayer {
+	lggr = logger.Named(lggr, "staticRelayer")
+	cfg := newStaticRelayerConfig(lggr, staticChecks)
+	return staticRelayer{
+		Service:             test.NewStaticService(lggr),
+		staticRelayerConfig: cfg,
+	}
+}
 
-func (s staticPluginRelayer) Ready() error { panic("unimplemented") }
+func (s staticRelayer) HealthReport() map[string]error {
+	hp := s.Service.HealthReport()
+	services.CopyHealth(hp, s.contractReaderProvider.HealthReport())
+	services.CopyHealth(hp, s.configProvider.HealthReport())
+	services.CopyHealth(hp, s.medianProvider.HealthReport())
+	services.CopyHealth(hp, s.agnosticProvider.HealthReport())
+	services.CopyHealth(hp, s.ocr3CapabilityProvider.HealthReport())
+	services.CopyHealth(hp, s.mercuryProvider.HealthReport())
+	services.CopyHealth(hp, s.executionProvider.HealthReport())
+	services.CopyHealth(hp, s.commitProvider.HealthReport())
+	return hp
+}
 
-func (s staticPluginRelayer) Name() string { panic("unimplemented") }
-
-func (s staticPluginRelayer) HealthReport() map[string]error { panic("unimplemented") }
-
-func (s staticPluginRelayer) NewChainWriter(_ context.Context, chainWriterConfig []byte) (types.ChainWriter, error) {
+func (s staticRelayer) NewContractWriter(_ context.Context, _ []byte) (types.ContractWriter, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s staticPluginRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
+func (s staticRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if s.StaticChecks && !(bytes.Equal(s.contractReaderConfig, contractReaderConfig)) {
 		return nil, fmt.Errorf("expected contractReaderConfig:\n\t%v\nbut got:\n\t%v", string(s.contractReaderConfig), string(contractReaderConfig))
 	}
 	return s.contractReaderProvider, nil
 }
 
-func (s staticPluginRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
+func (s staticRelayer) NewConfigProvider(ctx context.Context, r types.RelayArgs) (types.ConfigProvider, error) {
 	if s.StaticChecks && !equalRelayArgs(r, s.relayArgs) {
 		return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", s.relayArgs, r)
 	}
 	return s.configProvider, nil
 }
 
-func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
+func (s staticRelayer) NewMedianProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MedianProvider, error) {
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
@@ -167,7 +215,7 @@ func (s staticPluginRelayer) NewMedianProvider(ctx context.Context, r types.Rela
 	return s.medianProvider, nil
 }
 
-func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
+func (s staticRelayer) NewPluginProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.PluginProvider, error) {
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.Median)
 		if !equalRelayArgs(r, ra) {
@@ -180,7 +228,7 @@ func (s staticPluginRelayer) NewPluginProvider(ctx context.Context, r types.Rela
 	return s.agnosticProvider, nil
 }
 
-func (s staticPluginRelayer) NewOCR3CapabilityProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.OCR3CapabilityProvider, error) {
+func (s staticRelayer) NewOCR3CapabilityProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.OCR3CapabilityProvider, error) {
 	if s.StaticChecks {
 		ra := newRelayArgsWithProviderType(types.OCR3Capability)
 		if !equalRelayArgs(r, ra) {
@@ -193,7 +241,7 @@ func (s staticPluginRelayer) NewOCR3CapabilityProvider(ctx context.Context, r ty
 	return s.ocr3CapabilityProvider, nil
 }
 
-func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
+func (s staticRelayer) NewMercuryProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.MercuryProvider, error) {
 	if s.StaticChecks {
 		if !equalRelayArgs(r, mercurytest.RelayArgs) {
 			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", mercurytest.RelayArgs, r)
@@ -205,7 +253,7 @@ func (s staticPluginRelayer) NewMercuryProvider(ctx context.Context, r types.Rel
 	return s.mercuryProvider, nil
 }
 
-func (s staticPluginRelayer) NewExecutionProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.CCIPExecProvider, error) {
+func (s staticRelayer) NewExecutionProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.CCIPExecProvider, error) {
 	if s.StaticChecks {
 		if !equalRelayArgs(r, cciptest.ExecutionRelayArgs) {
 			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", cciptest.ExecutionRelayArgs, r)
@@ -217,7 +265,7 @@ func (s staticPluginRelayer) NewExecutionProvider(ctx context.Context, r types.R
 	return s.executionProvider, nil
 }
 
-func (s staticPluginRelayer) NewCommitProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.CCIPCommitProvider, error) {
+func (s staticRelayer) NewCommitProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.CCIPCommitProvider, error) {
 	if s.StaticChecks {
 		if !equalRelayArgs(r, cciptest.CommitRelayArgs) {
 			return nil, fmt.Errorf("expected relay args:\n\t%v\nbut got:\n\t%v", cciptest.CommitRelayArgs, r)
@@ -229,19 +277,19 @@ func (s staticPluginRelayer) NewCommitProvider(ctx context.Context, r types.Rela
 	return s.commitProvider, nil
 }
 
-func (s staticPluginRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
+func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p types.PluginArgs) (types.LLOProvider, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s staticPluginRelayer) LatestHead(ctx context.Context) (types.Head, error) {
+func (s staticRelayer) LatestHead(ctx context.Context) (types.Head, error) {
 	return types.Head{}, errors.New("not implemented")
 }
 
-func (s staticPluginRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
+func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	return s.chainStatus, nil
 }
 
-func (s staticPluginRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
+func (s staticRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
 	if s.StaticChecks && s.nodeRequest.pageSize != pageSize {
 		return nil, "", -1, fmt.Errorf("expected page_size %d but got %d", s.nodeRequest.pageSize, pageSize)
 	}
@@ -251,7 +299,7 @@ func (s staticPluginRelayer) ListNodeStatuses(ctx context.Context, pageSize int3
 	return s.nodeResponse.nodes, s.nodeResponse.nextPage, s.nodeResponse.total, nil
 }
 
-func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b bool) error {
+func (s staticRelayer) Transact(ctx context.Context, f, t string, a *big.Int, b bool) error {
 	if s.StaticChecks {
 		if f != s.transactionRequest.from {
 			return fmt.Errorf("expected from %s but got %s", s.transactionRequest.from, f)
@@ -270,38 +318,43 @@ func (s staticPluginRelayer) Transact(ctx context.Context, f, t string, a *big.I
 	return nil
 }
 
-func (s staticPluginRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
+func (s staticRelayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	if s.StaticChecks {
+		if fromBlock != s.replayRequest.fromBlock {
+			return fmt.Errorf("expected from %s but got %s", s.replayRequest.fromBlock, fromBlock)
+		}
+	}
+	return nil
+}
+
+func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
 	t.Run("ContractReader", func(t *testing.T) {
-		t.Parallel()
-		ctx := tests.Context(t)
+		//t.Parallel()
+		ctx := t.Context()
 		contractReader, err := relayer.NewContractReader(ctx, []byte("test"))
 		require.NoError(t, err)
-		require.NoError(t, contractReader.Start(ctx))
-
-		t.Cleanup(func() { assert.NoError(t, contractReader.Close()) })
+		servicetest.Run(t, contractReader)
 	})
 
 	t.Run("ConfigProvider", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
 		require.NoError(t, err)
-		require.NoError(t, configProvider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, configProvider.Close()) })
+		servicetest.Run(t, configProvider)
 
 		s.configProvider.AssertEqual(ctx, t, configProvider)
 	})
 
 	t.Run("MedianProvider", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		ra := newRelayArgsWithProviderType(types.Median)
 		p, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
 		require.NoError(t, err)
 		require.NotNil(t, p)
 		provider := p.(types.MedianProvider)
-		require.NoError(t, provider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
+		servicetest.Run(t, provider)
 
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
@@ -311,22 +364,19 @@ func (s staticPluginRelayer) AssertEqual(_ context.Context, t *testing.T, relaye
 
 	t.Run("PluginProvider", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
 		ra := newRelayArgsWithProviderType(types.GenericPlugin)
-		provider, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
+		provider, err := relayer.NewPluginProvider(t.Context(), ra, PluginArgs)
 		require.NoError(t, err)
-		require.NoError(t, provider.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, provider.Close()) })
+		servicetest.Run(t, provider)
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
 			t.Parallel()
-			ctx := tests.Context(t)
-			s.agnosticProvider.AssertEqual(ctx, t, provider)
+			s.agnosticProvider.AssertEqual(t.Context(), t, provider)
 		})
 	})
 
 	t.Run("GetChainStatus", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		gotChain, err := relayer.GetChainStatus(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, s.chainStatus, gotChain)
@@ -334,7 +384,7 @@ func (s staticPluginRelayer) AssertEqual(_ context.Context, t *testing.T, relaye
 
 	t.Run("ListNodeStatuses", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, s.nodeRequest.pageSize, s.nodeRequest.pageToken)
 		require.NoError(t, err)
 		assert.Equal(t, s.nodeResponse.nodes, gotNodes)
@@ -344,8 +394,15 @@ func (s staticPluginRelayer) AssertEqual(_ context.Context, t *testing.T, relaye
 
 	t.Run("Transact", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		err := relayer.Transact(ctx, s.transactionRequest.from, s.transactionRequest.to, s.transactionRequest.amount, s.transactionRequest.balanceCheck)
+		require.NoError(t, err)
+	})
+
+	t.Run("Replay", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		err := relayer.Replay(ctx, s.replayRequest.fromBlock, s.replayRequest.args)
 		require.NoError(t, err)
 	})
 }
@@ -371,18 +428,28 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 
 func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 	t.Run("Relayer", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, nil)
 		require.NoError(t, err)
-		require.NoError(t, relayer.Start(ctx))
-		t.Cleanup(func() { assert.NoError(t, relayer.Close()) })
+		servicetest.Run(t, relayer)
 		Run(t, relayer)
+		servicetest.AssertHealthReportNames(t, relayer.HealthReport(),
+			"PluginRelayerClient.RelayerClient",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticCommitProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticConfigProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticExecProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticMedianProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticMercuryProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider",
+			"PluginRelayerClient.RelayerClient.staticPluginRelayer.staticRelayer.staticPluginProvider.staticPluginProvider",
+		)
 	})
 }
 
 func Run(t *testing.T, relayer looptypes.Relayer) {
-	ctx := tests.Context(t)
-	expectedRelayer := NewRelayerTester(false)
+	ctx := t.Context()
+	expectedRelayer := NewRelayerTester(logger.Test(t), false)
 	expectedRelayer.AssertEqual(ctx, t, relayer)
 }
 
@@ -408,7 +475,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.P
 			errStr:        fErr,
 		}
 
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, nil)
 
 		grpcUnavailableErr(t, err)
@@ -433,7 +500,7 @@ func RunFuzzRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.Relayer
 		copy(rawBytes[:], fExtJobID)
 
 		relayer := relayerFunc(t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		fRelayArgs := types.RelayArgs{
 			ExternalJobID: uuid.UUID(rawBytes),
 			JobID:         fJobID,
@@ -490,7 +557,7 @@ func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) Fuzzable
 		copy(rawBytes[:], fExtJobID)
 
 		provider := providerFunc(t)
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		fRelayArgs := types.RelayArgs{
 			ExternalJobID: uuid.UUID(rawBytes),
 			JobID:         fJobID,

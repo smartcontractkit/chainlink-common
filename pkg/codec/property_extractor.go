@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -376,7 +377,18 @@ func extractElement(src any, field string) (reflect.Value, error) {
 		return reflect.Value{}, err
 	}
 
-	if len(extractMaps) != 1 {
+	// if extract maps is empty, check if the underlying field is an uninitialised slice, if so initialise it and return extracted elem.
+	if len(extractMaps) == 0 {
+		typ, err := initSliceForFieldPath(reflect.TypeOf(src), field)
+		if errors.Is(err, &NoSliceUnderFieldPathError{}) {
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q in type: %q for extraction", types.ErrInvalidType, field, reflect.TypeOf(src).String())
+		} else if err != nil {
+			return reflect.Value{}, fmt.Errorf("%w: cannot find %q in type: %q for extraction, tried to check if path leads to an uninitialised slice, but failed with %w", types.ErrInvalidType, field, reflect.TypeOf(src).String(), err)
+		}
+		return typ, nil
+	}
+
+	if len(extractMaps) > 1 {
 		var sliceValue reflect.Value
 		var sliceInitialized bool
 		for _, fields := range extractMaps {
@@ -407,7 +419,7 @@ func extractElement(src any, field string) (reflect.Value, error) {
 
 	item, ok := em[name]
 	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: cannot find %s", types.ErrInvalidType, field)
+		return reflect.Value{}, fmt.Errorf("%w: cannot find %q", types.ErrInvalidType, field)
 	}
 
 	return reflect.ValueOf(item), nil
@@ -451,4 +463,69 @@ func pathAndName(field string) ([]string, string) {
 	path = path[:len(path)-1]
 
 	return path, name
+}
+
+type NoSliceUnderFieldPathError struct {
+	Err error
+}
+
+func (e *NoSliceUnderFieldPathError) Error() string {
+	return fmt.Sprintf("field path did not resolve to a slice")
+}
+
+func initSliceForFieldPath(rootType reflect.Type, fieldPath string) (reflect.Value, error) {
+	parts := strings.Split(fieldPath, ".")
+	var prevIsSlice bool
+
+	if rootType == nil {
+		return reflect.Value{}, fmt.Errorf("root type is nil")
+	}
+
+	typ := derefTypePtr(rootType)
+
+	for i, p := range parts {
+		if typ.Kind() != reflect.Struct {
+			return reflect.Value{}, fmt.Errorf("expected a struct when processing field %q, got %s", p, typ.Kind())
+		}
+
+		fieldByName, ok := typ.FieldByName(p)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("field %q not found in type %s", p, typ.Name())
+		}
+
+		fieldType := derefTypePtr(fieldByName.Type)
+
+		// at end of path return a slice or a slice of slice if parent was a slice
+		if i == len(parts)-1 {
+			if prevIsSlice {
+				fieldType = reflect.SliceOf(fieldType)
+			}
+
+			if fieldType.Kind() != reflect.Slice {
+				return reflect.Value{}, &NoSliceUnderFieldPathError{}
+			}
+
+			return reflect.MakeSlice(fieldType, 0, 0), nil
+		}
+
+		if fieldType.Kind() == reflect.Slice {
+			if prevIsSlice {
+				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: found a slice at field %q, but parent in path is already a slice", p)
+			}
+			prevIsSlice = true
+
+			newTyp := fieldType.Elem()
+			newTyp = derefTypePtr(newTyp)
+
+			if newTyp.Kind() == reflect.Slice {
+				return reflect.Value{}, fmt.Errorf("multiple nested slices are not allowed: field %q in path contains a nested slice", p)
+			}
+
+			typ = newTyp
+		} else {
+			typ = derefTypePtr(fieldByName.Type)
+		}
+	}
+
+	return reflect.Value{}, &NoSliceUnderFieldPathError{}
 }

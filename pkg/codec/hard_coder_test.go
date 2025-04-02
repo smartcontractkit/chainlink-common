@@ -470,6 +470,20 @@ func TestHardCoder(t *testing.T) {
 		assert.Equal(t, int32(123), reflect.ValueOf(offChain).FieldByName("B").Interface())
 	})
 
+	t.Run("TransformToOffChain works on primitive variables", func(t *testing.T) {
+		hardCoder, err = codec.NewHardCoder(map[string]any{}, map[string]any{"": "test"})
+		require.NoError(t, err)
+
+		var a string
+		_, err = hardCoder.RetypeToOffChain(reflect.TypeOf(a), "")
+		require.NoError(t, err)
+
+		offChain, err := hardCoder.TransformToOffChain(a, "")
+		require.NoError(t, err)
+
+		assert.Equal(t, "test", offChain)
+	})
+
 	t.Run("TransformToOnChain and TransformToOffChain works for itemType path", func(t *testing.T) {
 		nestedHardCoder, err := codec.NewPathTraverseHardCoder(map[string]any{
 			"A":   "Top",

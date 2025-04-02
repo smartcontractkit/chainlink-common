@@ -12,7 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
 
-// TODO: duplicate of "github.com/smartcontractkit/chainlink-aptos/relayer/write_target.ChainInfo" (reuse)
+// TODO: duplicate of "github.com/smartcontractkit/chainlink-framework/capabilities/write_target.ChainInfo" (reuse)
 // ChainInfo contains the chain information (used as execution context)
 type ChainInfo struct {
 	ChainFamilyName string

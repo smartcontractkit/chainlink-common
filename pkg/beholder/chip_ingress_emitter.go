@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type ChipIngressEmitter struct {
@@ -19,25 +18,6 @@ func NewChipIngressEmitter(client chipingress.ChipIngressClient) (Emitter, error
 	}
 
 	return &ChipIngressEmitter{client: client}, nil
-}
-
-func NewChipIngressClient(cfg Config) (chipingress.ChipIngressClient, error) {
-
-	if cfg.ChipIngressEmitterGRPCEndpoint == "" {
-		return nil, fmt.Errorf("missing chip ingress emitter gRPC endpoint")
-	}
-
-	// TODO: add support for csa auth signing interceptor
-	// We should add csa signed headers, that will be authenticated on the server-side
-	client, err := chipingress.NewChipIngressClient(
-		cfg.ChipIngressEmitterGRPCEndpoint,
-		chipingress.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
 
 func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {

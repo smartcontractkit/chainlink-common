@@ -25,24 +25,6 @@ func TestNewChipIngressEmitter(t *testing.T) {
 	})
 }
 
-func TestNewChipIngressClient(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
-		client, err := beholder.NewChipIngressClient(beholder.Config{
-			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
-		})
-		assert.NoError(t, err)
-		assert.NotNil(t, client)
-	})
-
-	t.Run("returns error when endpoint is empty", func(t *testing.T) {
-		client, err := beholder.NewChipIngressClient(beholder.Config{
-			ChipIngressEmitterGRPCEndpoint: "",
-		})
-		assert.Error(t, err)
-		assert.Nil(t, client)
-	})
-}
-
 func TestChipIngressEmit(t *testing.T) {
 
 	body := []byte("test body")

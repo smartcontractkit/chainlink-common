@@ -12,7 +12,9 @@ import (
 )
 
 // CtxKeyTracingID is the context key for tracing ID
-const CtxKeyTracingID = "tracingID"
+type ctxKey string
+
+const CtxKeyTracingID ctxKey = "tracingID"
 
 // Exponential backoff (default) is used to handle retries with increasing wait times in case of errors
 var BackoffStrategyDefault = backoff.Backoff{

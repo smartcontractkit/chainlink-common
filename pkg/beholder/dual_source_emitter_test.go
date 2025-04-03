@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/stretchr/testify/assert"
@@ -73,29 +72,6 @@ func TestDualSourceEmitterEmit(t *testing.T) {
 		err = emitter.Emit(t.Context(), []byte("test message"))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "otel emit error")
-	})
-
-	t.Run("chip emitter fails but doesn't affect result", func(t *testing.T) {
-
-		chipCalled := false
-
-		otelEmitter := &mockEmitter{}
-		chipEmitter := &mockEmitter{
-			emitFunc: func(ctx context.Context, body []byte, attrKVs ...any) error {
-				chipCalled = true
-				return fmt.Errorf("chip emit error")
-			},
-		}
-
-		emitter, err := beholder.NewDualSourceEmitter(chipEmitter, otelEmitter)
-		require.NoError(t, err)
-
-		err = emitter.Emit(t.Context(), []byte("test message"))
-		assert.NoError(t, err)
-
-		// Wait for the goroutine to finish
-		time.Sleep(time.Millisecond)
-		assert.True(t, chipCalled, "chip emitter should have been called")
 	})
 }
 

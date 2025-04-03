@@ -34,6 +34,10 @@ type Config struct {
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []sdkmetric.View
 
+	// Custom Events via Chip Ingress Emitter
+	ChipIngressEmitterEnabled      bool
+	ChipIngressEmitterGRPCEndpoint string
+
 	// OTel Log
 	LogExportTimeout      time.Duration
 	LogExportInterval     time.Duration

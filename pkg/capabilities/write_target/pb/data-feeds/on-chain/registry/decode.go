@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/big"
 
-	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/beholder/capabilities/write_target/pb/platform/write-target"
+	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/pb/platform"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/data_feeds"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/platform"

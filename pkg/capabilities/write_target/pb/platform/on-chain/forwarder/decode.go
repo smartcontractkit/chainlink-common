@@ -5,7 +5,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/platform"
 
-	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/beholder/capabilities/write_target/pb/platform/write-target"
+	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/pb/platform"
 )
 
 // DecodeAsReportProcessed decodes a 'platform.write-target.WriteConfirmed' message

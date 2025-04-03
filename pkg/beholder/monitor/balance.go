@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 )
 
-// TODO: duplicate of "github.com/smartcontractkit/chainlink-framework/capabilities/write_target.ChainInfo" (reuse)
 // ChainInfo contains the chain information (used as execution context)
 type ChainInfo struct {
 	ChainFamilyName string
@@ -45,10 +44,6 @@ type BalanceMonitorOpts struct {
 	KeyToAccountMapper func(context.Context, string) (string, error)
 }
 
-// TODO: This implementation is chain-agnotic, so it should be moved to the common package and reused by all chains.
-//   - Solana: /solana/pkg/solana/monitor
-//   - TRON: /tron/relayer/monitor
-//
 // NewBalanceMonitor returns a balance monitoring services.Service which reports the balance of all Keystore accounts.
 func NewBalanceMonitor(opts BalanceMonitorOpts) (services.Service, error) {
 	return newBalanceMonitor(opts)

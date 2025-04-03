@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/beholder/capabilities/write_target/pb/platform/write-target"
+	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/pb/platform"
 )
 
 func TestDecodeAsReportProcessed(t *testing.T) {

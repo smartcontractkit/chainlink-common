@@ -17,23 +17,22 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
 )
 
-type mockRPCCredentials struct{}
-
-func (m *mockRPCCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	return map[string]string{}, nil
-}
-
-func (m *mockRPCCredentials) RequireTransportSecurity() bool {
-	return false
-}
-
 func TestClient(t *testing.T) {
 
 	t.Run("NewClient", func(t *testing.T) {
 		// Create new client
-		client, err := NewChipIngressClient("localhost:8080", WithLogger(zap.NewNop()))
+		client, err := NewChipIngressClient(
+			"localhost:8080",
+			WithLogger(zap.NewNop()),
+			WithTransportCredentials(insecure.NewCredentials()))
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
+	})
+
+	t.Run("NewClient errors when address is empty", func(t *testing.T) {
+		client, err := NewChipIngressClient("", WithLogger(zap.NewNop()))
+		assert.Nil(t, client)
+		assert.ErrorContains(t, err, "is empty")
 	})
 
 	t.Run("Publish", func(t *testing.T) {
@@ -177,13 +176,6 @@ func TestOptions(t *testing.T) {
 		config := defaultConfig()
 		WithTransportCredentials(creds)(&config)
 		assert.Equal(t, creds, config.transportCredentials)
-	})
-
-	t.Run("WithBasicAuth", func(t *testing.T) {
-		creds := &mockRPCCredentials{}
-		config := defaultConfig()
-		WithBasicAuth(creds)(&config)
-		assert.Equal(t, creds, config.perRPCCredentials)
 	})
 }
 func TestPublishBatch(t *testing.T) {

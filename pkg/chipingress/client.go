@@ -41,11 +41,14 @@ type Opt func(*chipIngressClientConfig)
 type chipIngressClientConfig struct {
 	log                  *zap.Logger
 	transportCredentials credentials.TransportCredentials
-	perRPCCredentials    credentials.PerRPCCredentials
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
 func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error) {
+
+	if address == "" {
+		return nil, fmt.Errorf("address for chip ingress service is empty")
+	}
 
 	cfg := defaultConfig()
 
@@ -55,10 +58,6 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
-	}
-
-	if cfg.perRPCCredentials != nil {
-		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))
 	}
 
 	conn, err := grpc.NewClient(
@@ -168,12 +167,6 @@ func WithLogger(logger *zap.Logger) Opt {
 func WithTransportCredentials(credentials credentials.TransportCredentials) Opt {
 	return func(c *chipIngressClientConfig) {
 		c.transportCredentials = credentials
-	}
-}
-
-func WithBasicAuth(credentials credentials.PerRPCCredentials) Opt {
-	return func(c *chipIngressClientConfig) {
-		c.perRPCCredentials = credentials
 	}
 }
 

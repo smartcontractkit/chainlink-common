@@ -18,5 +18,5 @@ message Outputs {
 }
 
 service BasicAction {
-  rpc PerformAction (Inputs) returns (Outputs) {}
+  rpc PerformAction (Inputs) returns (Outputs);
 }

@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -214,7 +215,15 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		emitter = NewDualSourceEmitter(NewChipIngressEmitter(chipIngressClient), emitter)
+		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+		}
+
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
+		}
 	}
 
 	onClose := func() (err error) {

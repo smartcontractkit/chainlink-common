@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"fmt"
 	"log"
 )
 
@@ -14,11 +15,20 @@ type DualSourceEmitter struct {
 	otelCollectorEmitter Emitter
 }
 
-func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) Emitter {
+func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
+	
+	if chipIngressEmitter == nil {
+		return nil, fmt.Errorf("chip ingress emitter is nil")
+	}
+
+	if otelCollectorEmitter == nil {
+		return nil, fmt.Errorf("otel collector emitter is nil")
+	}
+	
 	return &DualSourceEmitter{
 		chipIngressEmitter:   chipIngressEmitter,
 		otelCollectorEmitter: otelCollectorEmitter,
-	}
+	}, nil
 }
 
 func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {

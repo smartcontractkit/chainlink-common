@@ -13,14 +13,15 @@ import (
 func TestNewChipIngressEmitter(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := &mocks.ChipIngressClient{}
-		emitter := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		require.NoError(t, err)
 		assert.NotNil(t, emitter)
 	})
 
 	t.Run("returns error when client is nil", func(t *testing.T) {
-		assert.Panics(t, func() {
-			beholder.NewChipIngressEmitter(nil)
-		})
+		emitter, err := beholder.NewChipIngressEmitter(nil)
+		assert.Error(t, err)
+		assert.Nil(t, emitter)
 	})
 }
 
@@ -56,9 +57,10 @@ func TestChipIngressEmit(t *testing.T) {
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, nil)
 
-		emitter := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		require.NoError(t, err)
 
-		err := emitter.Emit(t.Context(), body, "beholder_domain", domain, "beholder_entity", entity)
+		err = emitter.Emit(t.Context(), body, "beholder_domain", domain, "beholder_entity", entity)
 		require.NoError(t, err)
 
 		clientMock.AssertExpectations(t)
@@ -72,9 +74,10 @@ func TestChipIngressEmit(t *testing.T) {
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, nil)
 
-		emitter := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		require.NoError(t, err)
 
-		err := emitter.Emit(t.Context(), body, "beholder_domain", domain)
+		err = emitter.Emit(t.Context(), body, "beholder_domain", domain)
 		assert.Error(t, err)
 	})
 
@@ -85,9 +88,10 @@ func TestChipIngressEmit(t *testing.T) {
 			On("Publish", mock.Anything, mock.Anything).
 			Return(nil, assert.AnError)
 
-		emitter := beholder.NewChipIngressEmitter(clientMock)
+		emitter, err := beholder.NewChipIngressEmitter(clientMock)
+		require.NoError(t, err)
 
-		err := emitter.Emit(t.Context(), body, "beholder_domain", domain, "beholder_entity", entity)
+		err = emitter.Emit(t.Context(), body, "beholder_domain", domain, "beholder_entity", entity)
 		require.Error(t, err)
 
 		clientMock.AssertExpectations(t)

@@ -12,13 +12,13 @@ type ChipIngressEmitter struct {
 	client chipingress.ChipIngressClient
 }
 
-func NewChipIngressEmitter(client chipingress.ChipIngressClient) Emitter {
+func NewChipIngressEmitter(client chipingress.ChipIngressClient) (Emitter, error) {
 
 	if client == nil {
-		panic("chip ingress emitter client cannot be nil")
+		return nil, fmt.Errorf("chip ingress client is nil")
 	}
 
-	return &ChipIngressEmitter{client: client}
+	return &ChipIngressEmitter{client: client}, nil
 }
 
 func NewChipIngressClient(cfg Config) (chipingress.ChipIngressClient, error) {

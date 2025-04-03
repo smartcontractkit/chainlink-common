@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743532824978,
+  "lastUpdate": 1743693313473,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11088,6 +11088,48 @@ window.BENCHMARK_DATA = {
             "value": 28436,
             "unit": "ns/op",
             "extra": "42234 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "11e6c9259f652d7164daaa249f3770c819e8efd9",
+          "message": "Change element extractor to not initialise slice elem for nil values (#1109)",
+          "timestamp": "2025-04-04T00:13:00+09:00",
+          "tree_id": "ec3a0d6e91e11ba8f48a36e8106803ceceb43c13",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/11e6c9259f652d7164daaa249f3770c819e8efd9"
+        },
+        "date": 1743693312800,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.1,
+            "unit": "ns/op",
+            "extra": "3300536 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.5,
+            "unit": "ns/op",
+            "extra": "2888721 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28888,
+            "unit": "ns/op",
+            "extra": "42164 times\n4 procs"
           }
         ]
       }

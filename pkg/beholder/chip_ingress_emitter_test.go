@@ -48,7 +48,7 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock.AssertExpectations(t)
 	})
 
-	t.Run("returns error when extractSourceAndType fails", func(t *testing.T) {
+	t.Run("returns error when ExtractSourceAndType fails", func(t *testing.T) {
 
 		clientMock := &mocks.ChipIngressClient{}
 
@@ -64,6 +64,7 @@ func TestChipIngressEmit(t *testing.T) {
 	})
 
 	t.Run("returns error when Publish fails", func(t *testing.T) {
+		
 		clientMock := &mocks.ChipIngressClient{}
 
 		clientMock.

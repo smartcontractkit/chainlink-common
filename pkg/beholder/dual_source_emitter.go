@@ -16,7 +16,7 @@ type DualSourceEmitter struct {
 }
 
 func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
-	
+
 	if chipIngressEmitter == nil {
 		return nil, fmt.Errorf("chip ingress emitter is nil")
 	}
@@ -24,7 +24,7 @@ func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitt
 	if otelCollectorEmitter == nil {
 		return nil, fmt.Errorf("otel collector emitter is nil")
 	}
-	
+
 	return &DualSourceEmitter{
 		chipIngressEmitter:   chipIngressEmitter,
 		otelCollectorEmitter: otelCollectorEmitter,

@@ -273,7 +273,7 @@ func TestNewClient(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Equal(t, "missing chip ingress emitter gRPC endpoint", err.Error())
+		assert.Equal(t, "address for chip ingress service is empty", err.Error())
 	})
 
 }

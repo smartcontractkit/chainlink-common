@@ -1,37 +1,49 @@
 package {{.GoPackageName}}
 
 import (
-    "errors"
-    
     "google.golang.org/protobuf/types/known/anypb"
 
     "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
 {{- range .Services}}
-{{- $method := index .Methods 0 }}
+{{ $service := . }}
 type {{.GoName}} struct {
-    *{{ $method.Input.GoIdent.GoName }}
-    cachedAny *anypb.Any
+    // TODO config types (optional)
+    // TODO capability interfaces.
+        // Is this required if we're not doing chain abstraction?
+        // KV store could use it if we have different kinds...
 }
 
-func (*{{.GoName}}) Is{{$.Mode}}Trigger(){}
+{{- range .Methods}}
 
-func (*{{.GoName}}) NewT() *{{ $method.Output.GoIdent.GoName }} {
-    return &{{ $method.Output.GoIdent.GoName }}{}
-}
-
-func (*{{.GoName}}) Id() string {
-    // TODO interfaces
-    return "{{$.CapabilityId}}"
-}
-
-func (t *{{.GoName}}) ConfigAsAny() *anypb.Any {
-    if t.cachedAny == nil {
-        t.cachedAny, _ = anypb.New(t.{{ $method.Input.GoIdent.GoName }})
+func (c {{$service.GoName}}) {{.GoName}}(config *{{ .Input.GoIdent.GoName }}) sdk.{{$.Mode}}Trigger[*{{.Output.GoIdent.GoName}}] {
+    configAny, _ := anypb.New(config)
+    return &{{$service.GoName|LowerFirst}}{{.GoName}} {
+        config: configAny,
     }
+}
 
-    return t.cachedAny
+type {{$service.GoName|LowerFirst}}{{.GoName}} struct {
+    config *anypb.Any
+}
+
+func (*{{$service.GoName|LowerFirst}}{{.GoName}}) Is{{$.Mode}}Trigger(){}
+func (*{{$service.GoName|LowerFirst}}{{.GoName}}) NewT() *{{ .Output.GoIdent.GoName }} {
+    return &{{ .Output.GoIdent.GoName }}{}
+}
+
+func (*{{$service.GoName|LowerFirst}}{{.GoName}}) Id() string {
+ // TODO interfaces
+ return "{{$.CapabilityId}}"
+}
+
+
+
+func (t *{{$service.GoName|LowerFirst}}{{.GoName}}) ConfigAsAny() *anypb.Any {
+    return t.config
 }
 
 {{- end }}
+{{- end }}
+

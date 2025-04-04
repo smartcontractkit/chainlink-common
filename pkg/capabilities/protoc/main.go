@@ -56,7 +56,7 @@ func main() {
 				return err
 			}
 
-			if err = pkg.GenerateServer(plugin, capabilityId, serverLanguage, file); err != nil {
+			if err = pkg.GenerateServer(plugin, trigger, capabilityId, serverLanguage, file); err != nil {
 				return err
 			}
 		}

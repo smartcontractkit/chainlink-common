@@ -4,28 +4,38 @@ package basictrigger
 
 import (
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 
-type BasicTrigger struct {
-	*Config
-	cachedAny *anypb.Any
+type Basic struct {
+	// TODO config types (optional)
+	// TODO capability interfaces.
+	// Is this required if we're not doing chain abstraction?
+	// KV store could use it if we have different kinds...
 }
 
-func (*BasicTrigger) IsDonTrigger() {}
+func (c Basic) Trigger(config *Config) sdk.DonTrigger[*Outputs] {
+	configAny, _ := anypb.New(config)
+	return &basicTrigger{
+		config: configAny,
+	}
+}
 
-func (*BasicTrigger) NewT() *Outputs {
+type basicTrigger struct {
+	config *anypb.Any
+}
+
+func (*basicTrigger) IsDonTrigger() {}
+func (*basicTrigger) NewT() *Outputs {
 	return &Outputs{}
 }
 
-func (*BasicTrigger) Id() string {
+func (*basicTrigger) Id() string {
 	// TODO interfaces
 	return "basic-test-trigger@1.0.0"
 }
 
-func (t *BasicTrigger) ConfigAsAny() *anypb.Any {
-	if t.cachedAny == nil {
-		t.cachedAny, _ = anypb.New(t.Config)
-	}
-
-	return t.cachedAny
+func (t *basicTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
 }

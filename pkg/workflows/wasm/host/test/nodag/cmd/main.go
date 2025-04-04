@@ -11,10 +11,11 @@ import (
 
 func main() {
 	runner := wasm.NewDonRunner()
-	sdk.SubscribeToDonTrigger(runner, &basictrigger.BasicTrigger{Config: &basictrigger.Config{
+	basic := &basictrigger.Basic{}
+	sdk.SubscribeToDonTrigger(runner, basic.Trigger(&basictrigger.Config{
 		Name:   "name",
 		Number: 100,
-	}}, onTrigger)
+	}), onTrigger)
 }
 
 func onTrigger(runtime sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {

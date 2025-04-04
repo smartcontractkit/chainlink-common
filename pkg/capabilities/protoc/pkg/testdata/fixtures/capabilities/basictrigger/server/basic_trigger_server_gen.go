@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-type BasicTriggerCapability interface {
+type BasicCapability interface {
 	Trigger(ctx context.Context, input *basictrigger.Config /* TODO config */) (*basictrigger.Outputs, error)
 	Start(ctx context.Context) error
 	Close() error
@@ -24,26 +24,26 @@ type BasicTriggerCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewBasicTriggerServer(capability BasicTriggerCapability) loop.StandardCapabilities {
-	return &basicTriggerServer{
-		basicTriggerCapability: basicTriggerCapability{BasicTriggerCapability: capability},
+func NewBasicServer(capability BasicCapability) loop.StandardCapabilities {
+	return &basicServer{
+		basicCapability: basicCapability{BasicCapability: capability},
 	}
 }
 
-type basicTriggerServer struct {
-	basicTriggerCapability
+type basicServer struct {
+	basicCapability
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-func (cs *basicTriggerServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
-	if err := cs.BasicTriggerCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+func (cs *basicServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+	if err := cs.BasicCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
 	cs.capabilityRegistry = capabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &basicTriggerCapability{
-		BasicTriggerCapability: cs.BasicTriggerCapability,
+	if err := capabilityRegistry.Add(ctx, &basicCapability{
+		BasicCapability: cs.BasicCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -51,68 +51,41 @@ func (cs *basicTriggerServer) Initialise(ctx context.Context, config string, tel
 	return nil
 }
 
-func (cs *basicTriggerServer) Close() error {
+func (cs *basicServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-trigger@1.0.0"); err != nil {
 		return err
 	}
 
-	return cs.basicTriggerCapability.Close()
+	return cs.basicCapability.Close()
 }
 
-func (cs *basicTriggerServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *basicServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	// TODO if we get rid of targets in favour of actions that return empty proto, do we need Consensus stil?
-	info, err := cs.basicTriggerCapability.Info(ctx)
+	info, err := cs.basicCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return []capabilities.CapabilityInfo{info}, nil
 }
 
-type basicTriggerCapability struct {
-	BasicTriggerCapability
+type basicCapability struct {
+	BasicCapability
 }
 
-var _ capabilities.ActionCapability = (*basicTriggerCapability)(nil)
+var _ capabilities.TriggerCapability = (*basicCapability)(nil)
 
-func (c *basicTriggerCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
-	return capabilities.NewCapabilityInfo("basic-test-trigger@1.0.0", capabilities.CapabilityTypeAction, c.BasicTriggerCapability.Description())
+func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	return capabilities.NewCapabilityInfo("basic-test-trigger@1.0.0", capabilities.CapabilityTypeAction, c.BasicCapability.Description())
 }
 
-func (c *basicTriggerCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *basicTriggerCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	//TODO implement me
 	panic("implement me")
-}
-
-func (c *basicTriggerCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
-	response := capabilities.CapabilityResponse{}
-	switch request.Method {
-	case "Trigger":
-		// TODO config
-		config := &basictrigger.Config{}
-		input := &basictrigger.Config{}
-		migrated, err := capabilities.UnwrapRequest(request, config, input)
-		if err != nil {
-			return response, fmt.Errorf("error when unwrapping request: %w", err)
-		}
-
-		output, err := c.Trigger(ctx, input /*TODO config */)
-		if err != nil {
-			return response, err
-		}
-
-		if err = capabilities.SetResponse(response, migrated, output); err != nil {
-			return response, fmt.Errorf("error when setting response: %w", err)
-		}
-
-		return response, nil
-	default:
-		return response, fmt.Errorf("method %s not found", request.Method)
-	}
 }

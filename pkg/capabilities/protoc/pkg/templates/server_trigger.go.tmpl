@@ -1,0 +1,96 @@
+package server
+
+import (
+    "context"
+    "time"
+
+    {{.GoImportPath}}
+    "github.com/smartcontractkit/chainlink-common/pkg/types/core"
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+)
+
+{{- range .Services}}
+{{ $service := . }}
+type {{.GoName}}Capability interface {
+    {{- range .Methods}}
+    {{.GoName}}(ctx context.Context, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}/* TODO config */) (*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}, error)
+    {{- end }}
+    Start(ctx context.Context) error
+    Close() error
+    HealthReport() map[string]error
+    Name() string
+    Description() string
+    Ready() error
+    Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
+}
+
+func New{{.GoName}}Server(capability {{.GoName}}Capability) loop.StandardCapabilities {
+    return &{{.GoName|LowerFirst}}Server{
+        {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability},
+    }
+}
+
+type {{.GoName|LowerFirst}}Server struct {
+    {{.GoName|LowerFirst}}Capability
+    capabilityRegistry core.CapabilitiesRegistry
+}
+
+
+func (cs *{{.GoName|LowerFirst}}Server) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+    if err := cs.{{.GoName}}Capability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+        return fmt.Errorf("error when initializing capability: %w", err)
+    }
+
+    cs.capabilityRegistry = capabilityRegistry
+
+	if err := capabilityRegistry.Add(ctx, &{{.GoName|LowerFirst}}Capability{
+	    {{.GoName}}Capability: cs.{{.GoName}}Capability,
+	}); err != nil {
+		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
+	}
+
+	return nil
+}
+
+func (cs *{{.GoName|LowerFirst}}Server) Close() error{
+    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+    if err := cs.capabilityRegistry.Remove(ctx, "{{$.CapabilityId}}"); err != nil {
+		return err
+	}
+
+	return cs.{{.GoName|LowerFirst}}Capability.Close()
+}
+
+
+func (cs *{{.GoName|LowerFirst}}Server) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+    // TODO if we get rid of targets in favour of actions that return empty proto, do we need Consensus stil?
+    info, err := cs.{{.GoName|LowerFirst}}Capability.Info(ctx)
+    if err != nil {
+        return nil, err
+    }
+    return []capabilities.CapabilityInfo{info}, nil
+}
+
+type {{.GoName|LowerFirst}}Capability struct {
+    {{.GoName}}Capability
+}
+
+var _ capabilities.TriggerCapability = (*{{.GoName|LowerFirst}}Capability)(nil)
+
+
+func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	return capabilities.NewCapabilityInfo("{{$.CapabilityId}}", capabilities.CapabilityTypeAction, c.{{.GoName}}Capability.Description())
+}
+
+func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+{{- end }}

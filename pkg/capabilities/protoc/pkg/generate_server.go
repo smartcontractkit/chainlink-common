@@ -40,12 +40,28 @@ var serverTemplates = map[ServerLanguage]templateGenerator{
 	},
 }
 
-func GenerateServer(plugin *protogen.Plugin, capabilityId string, serverLanguage ServerLanguage, file *protogen.File) error {
+//go:embed templates/server_trigger.go.tmpl
+var goTriggerServerTemplate string
+
+var triggerServerTemplates = map[ServerLanguage]templateGenerator{
+	ServerLangaugeGo: {
+		Name:             "go_trigger_server",
+		Template:         goTriggerServerTemplate,
+		FileNameTemplate: "{{.}}_server_gen.go",
+	},
+}
+
+func GenerateServer(plugin *protogen.Plugin, trigger bool, capabilityId string, serverLanguage ServerLanguage, file *protogen.File) error {
 	if len(file.Services) == 0 {
 		return nil
 	}
 
-	template, ok := serverTemplates[serverLanguage]
+	templates := serverTemplates
+	if trigger {
+		templates = triggerServerTemplates
+	}
+
+	template, ok := templates[serverLanguage]
 	if !ok {
 		return fmt.Errorf("unsupported server language: %s", serverLanguage)
 	}

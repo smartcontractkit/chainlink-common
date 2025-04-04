@@ -14,7 +14,9 @@ import (
 )
 
 type BasicActionCapability interface {
-	PerformAction(ctx context.Context, input *basicaction.Inputs /* TODO config */) (*basicaction.Outputs, error)
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs /* TODO this isn't right */, config *basicaction.Inputs) (*basicaction.Outputs, error)
+	PerformActionRegister(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+	PerformActionUnregister(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -74,11 +76,13 @@ type basicActionCapability struct {
 	BasicActionCapability
 }
 
-var _ capabilities.ActionCapability = (*basicActionCapability)(nil)
-
 func (c *basicActionCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	// TODO this is problematic right not because we can do both...?
+	// Maybe we do need to split it out, even if the user doesn't see it
 	return capabilities.NewCapabilityInfo("basic-test-action@1.0.0", capabilities.CapabilityTypeAction, c.BasicActionCapability.Description())
 }
+
+var _ capabilities.ActionCapability = (*basicActionCapability)(nil)
 
 func (c *basicActionCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	//TODO implement me
@@ -94,24 +98,10 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "PerformAction":
+		input := &basicaction.Inputs{}
 		// TODO config
 		config := &basicaction.Inputs{}
-		input := &basicaction.Inputs{}
-		migrated, err := capabilities.UnwrapRequest(request, config, input)
-		if err != nil {
-			return response, fmt.Errorf("error when unwrapping request: %w", err)
-		}
-
-		output, err := c.PerformAction(ctx, input /*TODO config */)
-		if err != nil {
-			return response, err
-		}
-
-		if err = capabilities.SetResponse(response, migrated, output); err != nil {
-			return response, fmt.Errorf("error when setting response: %w", err)
-		}
-
-		return response, nil
+		return capabilities.Execute(ctx, request, input, config, c.PerformAction)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

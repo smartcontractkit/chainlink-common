@@ -45,7 +45,7 @@ message CapabilityRequest {
   values.Map config = 2;
   values.Map inputs = 3;
   google.protobuf.Any request = 4;
-  google.protobuf.Any config = 5;
+  google.protobuf.Any configAny = 5;
   string method = 6;
 }
 
@@ -54,6 +54,7 @@ message TriggerRegistrationRequest {
   RequestMetadata metadata = 2;
   values.Map config = 3;
   google.protobuf.Any request = 4;
+  string method = 5;
 }
 
 message TriggerEvent {
@@ -96,6 +97,7 @@ message RegisterToWorkflowRequest {
   RegistrationMetadata metadata = 1;
   values.Map config = 2;
   google.protobuf.Any value = 3;
+  string method = 4;
 }
 
 message UnregisterFromWorkflowRequest {

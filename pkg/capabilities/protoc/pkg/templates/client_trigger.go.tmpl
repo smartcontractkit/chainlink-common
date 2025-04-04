@@ -1,49 +1,25 @@
-package {{.GoPackageName}}
-
-import (
-    "google.golang.org/protobuf/types/known/anypb"
-
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-)
-
-{{- range .Services}}
-{{ $service := . }}
-type {{.GoName}} struct {
-    // TODO config types (optional)
-    // TODO capability interfaces.
-        // Is this required if we're not doing chain abstraction?
-        // KV store could use it if we have different kinds...
-}
-
-{{- range .Methods}}
-
-func (c {{$service.GoName}}) {{.GoName}}(config *{{ .Input.GoIdent.GoName }}) sdk.{{$.Mode}}Trigger[*{{.Output.GoIdent.GoName}}] {
+{{define "trigger_method"}}
+func (c {{.Service.GoName}}) {{.Method.GoName}}(config *{{.InputType}}) sdk.{{.Mode}}Trigger[*{{.OutputType}}] {
     configAny, _ := anypb.New(config)
-    return &{{$service.GoName|LowerFirst}}{{.GoName}} {
+    return &{{.Service.GoName | LowerFirst}}{{.Method.GoName}} {
         config: configAny,
     }
 }
 
-type {{$service.GoName|LowerFirst}}{{.GoName}} struct {
+type {{.Service.GoName | LowerFirst}}{{.Method.GoName}} struct {
     config *anypb.Any
 }
 
-func (*{{$service.GoName|LowerFirst}}{{.GoName}}) Is{{$.Mode}}Trigger(){}
-func (*{{$service.GoName|LowerFirst}}{{.GoName}}) NewT() *{{ .Output.GoIdent.GoName }} {
-    return &{{ .Output.GoIdent.GoName }}{}
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Is{{.Mode}}Trigger() {}
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) NewT() *{{.OutputType}} {
+    return &{{.OutputType}}{}
 }
 
-func (*{{$service.GoName|LowerFirst}}{{.GoName}}) Id() string {
- // TODO interfaces
- return "{{$.CapabilityId}}"
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Id() string {
+    return "{{.CapabilityId}}"
 }
 
-
-
-func (t *{{$service.GoName|LowerFirst}}{{.GoName}}) ConfigAsAny() *anypb.Any {
+func (t *{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) ConfigAsAny() *anypb.Any {
     return t.config
 }
-
-{{- end }}
-{{- end }}
-
+{{end}}

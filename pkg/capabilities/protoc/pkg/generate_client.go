@@ -11,24 +11,23 @@ import (
 )
 
 //go:embed templates/client.go.tmpl
-var goClientTemplate string
+var goClientBaseTemplate string
+
+//go:embed templates/client_trigger.go.tmpl
+var goTriggerMethodTemplate string
+
+//go:embed templates/client_action.go.tmpl
+var goActionMethodTemplate string
 
 var clientTemplates = []templateGenerator{
 	{
 		Name:             "go_client",
-		Template:         goClientTemplate,
+		Template:         goClientBaseTemplate,
 		FileNameTemplate: "{{.}}_client_gen.go",
-	},
-}
-
-//go:embed templates/client_trigger.go.tmpl
-var goTriggerClientTemplate string
-
-var triggerClientTemplates = []templateGenerator{
-	{
-		Name:             "go_trigger_client",
-		Template:         goTriggerClientTemplate,
-		FileNameTemplate: "{{.}}_client_gen.go",
+		Partials: map[string]string{
+			"trigger_method": goTriggerMethodTemplate,
+			"action_method":  goActionMethodTemplate,
+		},
 	},
 }
 
@@ -42,17 +41,12 @@ func (c clientArgs) Mode() string {
 	return strcase.ToCamel(wasmpb.Mode_name[int32(*c.mode)])
 }
 
-func GenerateClient(plugin *protogen.Plugin, mode *wasmpb.Mode, trigger bool, capabilityId string, file *protogen.File) error {
+func GenerateClient(plugin *protogen.Plugin, mode *wasmpb.Mode, capabilityId string, file *protogen.File) error {
 	if len(file.Services) == 0 {
 		return nil
 	}
-
-	templates := clientTemplates
-	if trigger {
-		templates = triggerClientTemplates
-	}
-
-	for _, template := range templates {
+	
+	for _, template := range clientTemplates {
 		args := clientArgs{mode: mode, File: file, CapabilityId: capabilityId}
 		fileName, content, err := template.Generate(path.Base(file.GeneratedFilenamePrefix), args)
 		if err != nil {

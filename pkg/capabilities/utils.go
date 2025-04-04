@@ -1,6 +1,9 @@
 package capabilities
 
 import (
+	"context"
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -59,4 +62,29 @@ func fromValueOrAny(value values.Value, any *anypb.Any, into proto.Message) (boo
 
 	err := value.UnwrapTo(into)
 	return false, err
+}
+
+func Execute[I, C, O proto.Message](
+	ctx context.Context,
+	request CapabilityRequest,
+	input I,
+	config C,
+	exec func(context.Context, RequestMetadata, I, C) (O, error)) (CapabilityResponse, error) {
+
+	response := CapabilityResponse{}
+	migrated, err := UnwrapRequest(request, config, input)
+	if err != nil {
+		return response, fmt.Errorf("error when unwrapping request: %w", err)
+	}
+
+	output, err := exec(ctx, request.Metadata, input, config)
+	if err != nil {
+		return response, err
+	}
+
+	if err = SetResponse(response, migrated, output); err != nil {
+		return response, fmt.Errorf("error when setting response: %w", err)
+	}
+
+	return response, nil
 }

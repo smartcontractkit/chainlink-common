@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type BasicCapability interface {
-	Trigger(ctx context.Context, input *basictrigger.Config /* TODO config */) (*basictrigger.Outputs, error)
+
+	// TODO trigger
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -74,11 +74,13 @@ type basicCapability struct {
 	BasicCapability
 }
 
-var _ capabilities.TriggerCapability = (*basicCapability)(nil)
-
 func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+	// TODO this is problematic right not because we can do both...?
+	// Maybe we do need to split it out, even if the user doesn't see it
 	return capabilities.NewCapabilityInfo("basic-test-trigger@1.0.0", capabilities.CapabilityTypeAction, c.BasicCapability.Description())
 }
+
+var _ capabilities.TriggerCapability = (*basicCapability)(nil)
 
 func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	//TODO implement me

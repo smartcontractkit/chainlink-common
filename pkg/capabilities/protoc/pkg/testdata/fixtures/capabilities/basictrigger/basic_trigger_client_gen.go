@@ -11,8 +11,6 @@ import (
 type Basic struct {
 	// TODO config types (optional)
 	// TODO capability interfaces.
-	// Is this required if we're not doing chain abstraction?
-	// KV store could use it if we have different kinds...
 }
 
 func (c Basic) Trigger(config *Config) sdk.DonTrigger[*Outputs] {
@@ -32,7 +30,6 @@ func (*basicTrigger) NewT() *Outputs {
 }
 
 func (*basicTrigger) Id() string {
-	// TODO interfaces
 	return "basic-test-trigger@1.0.0"
 }
 

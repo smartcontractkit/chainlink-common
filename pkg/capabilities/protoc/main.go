@@ -25,23 +25,7 @@ func main() {
 		if !ok {
 			return fmt.Errorf("missing required argument capability_id")
 		}
-
-		f := false
-		trigger, err := parseArg(args, "trigger", func(value string) (bool, error) {
-			switch strings.ToLower(value) {
-			case "true", "t":
-				return true, nil
-			case "false", "f":
-				return false, nil
-			default:
-				return false, fmt.Errorf("invalid value for trigger, expected true or false")
-			}
-		}, &f)
-
-		if err != nil {
-			return err
-		}
-
+		
 		goLang := pkg.ServerLangaugeGo
 		serverLanguage, err := parseArg(args, "server_language", func(value string) (pkg.ServerLanguage, error) {
 			serverLanguage := pkg.ServerLanguage(strings.ToLower(value))
@@ -52,11 +36,11 @@ func main() {
 		}
 
 		for _, file := range plugin.Files {
-			if err = pkg.GenerateClient(plugin, mode, trigger, capabilityId, file); err != nil {
+			if err = pkg.GenerateClient(plugin, mode, capabilityId, file); err != nil {
 				return err
 			}
 
-			if err = pkg.GenerateServer(plugin, trigger, capabilityId, serverLanguage, file); err != nil {
+			if err = pkg.GenerateServer(plugin, capabilityId, serverLanguage, file); err != nil {
 				return err
 			}
 		}

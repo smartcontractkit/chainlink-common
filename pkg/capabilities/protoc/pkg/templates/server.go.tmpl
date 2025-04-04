@@ -10,10 +10,20 @@ import (
 )
 
 {{- range .Services}}
+{{ $hasTriggers := false }}
+{{ $hasActions := false }}
 {{ $service := . }}
 type {{.GoName}}Capability interface {
     {{- range .Methods}}
-    {{.GoName}}(ctx context.Context, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}/* TODO config */) (*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}, error)
+        {{- if isTrigger . }}
+            {{ $hasTriggers = true }}
+            // TODO trigger
+        {{- else }}
+            {{ $hasActions = true }}
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}, /* TODO this isn't right */ config *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) (*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}, error)
+    {{.GoName}}Register(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
+    {{.GoName}}Unregister(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
+        {{- end }}
     {{- end }}
     Start(ctx context.Context) error
     Close() error
@@ -76,12 +86,28 @@ type {{.GoName|LowerFirst}}Capability struct {
     {{.GoName}}Capability
 }
 
-var _ capabilities.ActionCapability = (*{{.GoName|LowerFirst}}Capability)(nil)
-
-
 func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+    // TODO this is problematic right not because we can do both...?
+    // Maybe we do need to split it out, even if the user doesn't see it
 	return capabilities.NewCapabilityInfo("{{$.CapabilityId}}", capabilities.CapabilityTypeAction, c.{{.GoName}}Capability.Description())
 }
+
+{{- if $hasTriggers }}
+var _ capabilities.TriggerCapability = (*{{.GoName|LowerFirst}}Capability)(nil)
+func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	//TODO implement me
+	panic("implement me")
+}
+{{- end }}
+
+{{- if $hasActions }}
+var _ capabilities.ActionCapability = (*{{.GoName|LowerFirst}}Capability)(nil)
+
 
 func (c *{{.GoName|LowerFirst}}Capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	//TODO implement me
@@ -97,29 +123,18 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
     response := capabilities.CapabilityResponse{}
 	switch request.Method {
     {{- range .Methods}}
+    {{- if  not (isTrigger .) }}
         case "{{.GoName}}":
-    	    // TODO config
-            config := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
             input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
-            migrated, err := capabilities.UnwrapRequest(request, config, input)
-             if err != nil {
-                 return response, fmt.Errorf("error when unwrapping request: %w", err)
-             }
-
-             output, err := c.{{.GoName}}(ctx, input /*TODO config */)
-             if err != nil {
-                 return response, err
-             }
-
-             if err = capabilities.SetResponse(response, migrated, output); err != nil {
-                 return response, fmt.Errorf("error when setting response: %w", err)
-             }
-
-             return response, nil
+            // TODO config
+            config := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+            return capabilities.Execute(ctx, request, input, config, c.{{.GoName}})
+    {{- end }}
     {{- end }}
     	default:
     	    return response, fmt.Errorf("method %s not found", request.Method)
     }
 }
 
+{{- end }}
 {{- end }}

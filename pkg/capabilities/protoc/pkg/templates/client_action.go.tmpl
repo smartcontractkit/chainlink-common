@@ -1,0 +1,24 @@
+{{define "action_method"}}
+func (c *{{.Service.GoName}}) {{.Method.GoName}}(runtime sdk.{{.Mode}}Runtime, input *{{.InputType}}) sdk.Promise[*{{.OutputType}}] {
+    wrapped, err := anypb.New(input)
+    if err != nil {
+        return sdk.PromiseFromResult[*{{.OutputType}}](nil, err)
+    }
+    return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+        Id:      "{{.CapabilityId}}",
+        Payload: wrapped,
+        Method:  "{{.Method.GoName}}",
+    }), func(i *pb.CapabilityResponse) (*{{.OutputType}}, error) {
+        switch payload := i.Response.(type) {
+        case *pb.CapabilityResponse_Error:
+            return nil, errors.New(payload.Error)
+        case *pb.CapabilityResponse_Payload:
+            output := &{{.OutputType}}{}
+            err = payload.Payload.UnmarshalTo(output)
+            return output, err
+        default:
+            return nil, errors.New("unexpected response type")
+        }
+    })
+}
+{{end}}

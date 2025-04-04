@@ -2,11 +2,10 @@ package {{.GoPackageName}}
 
 import (
     "errors"
-    
     "google.golang.org/protobuf/types/known/anypb"
 
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
 {{- range .Services}}
@@ -14,33 +13,21 @@ import (
 type {{.GoName}} struct {
     // TODO config types (optional)
     // TODO capability interfaces.
-        // Is this required if we're not doing chain abstraction?
-        // KV store could use it if we have different kinds...
 }
-
 
     {{- range .Methods}}
-func (c *{{$service.GoName}}) {{.GoName}}(runtime sdk.{{$.Mode}}Runtime,input *{{.Input.GoIdent.GoName}}) sdk.Promise[*{{.Output.GoIdent.GoName}}] {
-    wrapped, err := anypb.New(input)
-    	if err != nil {
-    		return sdk.PromiseFromResult[*{{.Output.GoIdent.GoName}}](nil, err)
-    	}
-    	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
-    		Id:      "{{$.CapabilityId}}",
-    		Payload: wrapped,
-    		Method: "{{.GoName}}",
-    	}), func(i *pb.CapabilityResponse) (*{{.Output.GoIdent.GoName}}, error) {
-          		switch payload := i.Response.(type) {
-          		case *pb.CapabilityResponse_Error:
-          			return nil, errors.New(payload.Error)
-          		case *pb.CapabilityResponse_Payload:
-          			output := &{{.Output.GoIdent.GoName}}{}
-          			err = payload.Payload.UnmarshalTo(output)
-          			return output, err
-          		default:
-          			return nil, errors.New("unexpected response type")
-          		}
-          	})
-}
+    {{- $args := dict
+        "Service" $service
+        "Method" .
+        "CapabilityId" $.CapabilityId
+        "Mode" $.Mode
+        "InputType" .Input.GoIdent.GoName
+        "OutputType" .Output.GoIdent.GoName
+    }}
+        {{- if isTrigger . }}
+            {{template "trigger_method" $args}}
+        {{- else }}
+            {{template "action_method" $args}}
+        {{- end }}
     {{- end }}
 {{- end }}

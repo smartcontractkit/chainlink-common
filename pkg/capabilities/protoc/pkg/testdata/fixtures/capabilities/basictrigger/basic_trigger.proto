@@ -4,6 +4,7 @@ package basic_test_trigger.v1;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger";
 
+import "metadata.proto";
 
 message Config {
   string name = 1;
@@ -15,5 +16,7 @@ message Outputs {
 }
 
 service Basic {
-  rpc Trigger(Config) returns (Outputs);
+  rpc Trigger(Config) returns (Outputs) {
+    option (cre.metadata.callType) = Trigger;
+  }
 }

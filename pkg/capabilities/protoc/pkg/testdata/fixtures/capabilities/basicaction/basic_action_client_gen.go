@@ -14,8 +14,6 @@ import (
 type BasicAction struct {
 	// TODO config types (optional)
 	// TODO capability interfaces.
-	// Is this required if we're not doing chain abstraction?
-	// KV store could use it if we have different kinds...
 }
 
 func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.Promise[*Outputs] {

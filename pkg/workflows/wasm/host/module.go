@@ -23,6 +23,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -93,7 +94,7 @@ type ModuleConfig struct {
 	InitialFuel               uint64
 	Logger                    logger.Logger
 	IsUncompressed            bool
-	Fetch                     func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error)
+	Fetch                     func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
 	MaxFetchRequests          int
 	MaxCompressedBinarySize   uint64
 	MaxDecompressedBinarySize uint64
@@ -146,7 +147,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.Fetch == nil {
-		modCfg.Fetch = func(context.Context, *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+		modCfg.Fetch = func(context.Context, *FetchRequest) (*FetchResponse, error) {
 			return nil, fmt.Errorf("fetch not implemented")
 		}
 	}
@@ -459,6 +460,72 @@ func createSendResponseFn(logger logger.Logger, requestStore *store) func(caller
 	}
 }
 
+func toSdkReq(req *wasmpb.FetchRequest) *FetchRequest {
+	h := map[string]string{}
+	for k, v := range req.Headers.GetFields() {
+		h[k] = v.GetStringValue()
+	}
+
+	md := FetchRequestMetadata{}
+	if req.Metadata != nil {
+		md = FetchRequestMetadata{
+			WorkflowID:          req.Metadata.WorkflowId,
+			WorkflowName:        req.Metadata.WorkflowName,
+			WorkflowOwner:       req.Metadata.WorkflowOwner,
+			WorkflowExecutionID: req.Metadata.WorkflowExecutionId,
+			DecodedWorkflowName: req.Metadata.DecodedWorkflowName,
+		}
+	}
+	return &FetchRequest{
+		FetchRequest: sdk.FetchRequest{
+			URL:       req.Url,
+			Method:    req.Method,
+			Headers:   h,
+			Body:      req.Body,
+			TimeoutMs: req.TimeoutMs,
+		},
+		Metadata: md,
+	}
+}
+
+func fromSdkResp(resp *sdk.FetchResponse) (*wasmpb.FetchResponse, error) {
+	h := map[string]any{}
+	if resp.Headers != nil {
+		for k, v := range resp.Headers {
+			h[k] = v
+		}
+	}
+	m, err := values.WrapMap(h)
+	if err != nil {
+		return nil, err
+	}
+	return &wasmpb.FetchResponse{
+		ExecutionError: resp.ExecutionError,
+		ErrorMessage:   resp.ErrorMessage,
+		StatusCode:     resp.StatusCode,
+		Headers:        values.ProtoMap(m),
+		Body:           resp.Body,
+	}, nil
+
+}
+
+type FetchRequestMetadata struct {
+	WorkflowID          string
+	WorkflowName        string
+	WorkflowOwner       string
+	WorkflowExecutionID string
+	DecodedWorkflowName string
+}
+
+type FetchRequest struct {
+	sdk.FetchRequest
+	Metadata FetchRequestMetadata
+}
+
+// Use an alias here to allow extending the FetchResponse with additional
+// metadata in the future, as with the FetchRequest above.
+type FetchResponse = sdk.FetchResponse
+
 func createFetchFn(
 	logger logger.Logger,
 	reader unsafeReaderFunc,
@@ -522,13 +589,20 @@ func createFetchFn(
 		}
 		storedRequest.fetchRequestsCounter++
 
-		fetchResp, innerErr := modCfg.Fetch(storedRequest.ctx(), req)
+		fetchResp, innerErr := modCfg.Fetch(storedRequest.ctx(), toSdkReq(req))
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return writeErr(innerErr)
 		}
 
-		respBytes, innerErr := proto.Marshal(fetchResp)
+		protoResp, innerErr := fromSdkResp(fetchResp)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
+			return writeErr(innerErr)
+		}
+
+		// convert struct to proto
+		respBytes, innerErr := proto.Marshal(protoResp)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return writeErr(innerErr)

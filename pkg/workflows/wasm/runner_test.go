@@ -599,7 +599,7 @@ func Test_createFetchFn(t *testing.T) {
 		response, err := runtimeFetch(sdk.FetchRequest{})
 		assert.NoError(t, err)
 		assert.Equal(t, sdk.FetchResponse{
-			Headers: map[string]any{},
+			Headers: map[string]string{},
 		}, response)
 	})
 

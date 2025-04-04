@@ -25,6 +25,9 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 			return rsdk.Fetch(sdk.FetchRequest{
 				Method: http.MethodGet,
 				URL:    "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=BTC",
+				Headers: map[string]string{
+					"foo": "bar",
+				},
 			})
 		})
 

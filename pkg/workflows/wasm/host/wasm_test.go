@@ -23,8 +23,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -183,7 +183,7 @@ func Test_Compute_Logs(t *testing.T) {
 	m, err := NewModule(&ModuleConfig{
 		Logger:         logger,
 		IsUncompressed: true,
-		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+		Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 			return nil, nil
 		},
 	}, binary)
@@ -257,7 +257,7 @@ func Test_Compute_Emit(t *testing.T) {
 		},
 	}
 
-	fetchFunc := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+	fetchFunc := func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 		return nil, nil
 	}
 
@@ -407,24 +407,25 @@ func Test_Compute_Fetch(t *testing.T) {
 	t.Parallel()
 	binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
-	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
+	t.Run("OK: default runtime config", func(t *testing.T) {
 		t.Parallel()
+
 		ctx := t.Context()
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -449,7 +450,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
-		actual := sdk.FetchResponse{}
+		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
 		require.NoError(t, err)
 		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
@@ -458,24 +459,77 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
+	t.Run("OK: successfully transmits headers", func(t *testing.T) {
 		t.Parallel()
+
 		ctx := t.Context()
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				assert.Equal(t, "bar", req.Headers["foo"])
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
+				}, nil
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &capabilitiespb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &capabilitiespb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		response, err := m.Run(ctx, req)
+		assert.Nil(t, err)
+
+		actual := FetchResponse{}
+		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
+		require.NoError(t, err)
+		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("OK: custom runtime cfg", func(t *testing.T) {
+		t.Parallel()
+		ctx := tests.Context(t)
+		expected := FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]string{},
+		}
+
+		m, err := NewModule(&ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -503,7 +557,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
-		actual := sdk.FetchResponse{}
+		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
 		require.NoError(t, err)
 		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
@@ -512,7 +566,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
+	t.Run("NOK: fetch error returned", func(t *testing.T) {
 		t.Parallel()
 		ctx := t.Context()
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
@@ -520,7 +574,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger,
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 				return nil, assert.AnError
 			},
 		}, binary)
@@ -558,27 +612,27 @@ func Test_Compute_Fetch(t *testing.T) {
 		}
 	})
 
-	t.Run("OK_context_propagation", func(t *testing.T) {
+	t.Run("OK: context propagation", func(t *testing.T) {
 		t.Parallel()
 		type testkey string
 		var key testkey = "test-key"
 		var expectedValue string = "test-value"
 
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte(expectedValue),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           []byte(ctx.Value(key).(string)),
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -608,7 +662,7 @@ func Test_Compute_Fetch(t *testing.T) {
 		response, err := m.Run(ctx, req)
 		assert.Nil(t, err)
 
-		actual := sdk.FetchResponse{}
+		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
 		require.NoError(t, err)
 		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
@@ -617,17 +671,17 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("OK_context_cancelation", func(t *testing.T) {
+	t.Run("OK: context cancelation", func(t *testing.T) {
 		t.Parallel()
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 				select {
 				case <-ctx.Done():
 					return nil, assert.AnError
 				default:
-					return &wasmpb.FetchResponse{}, nil
+					return &FetchResponse{}, nil
 				}
 			},
 		}, binary)
@@ -660,25 +714,25 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.ErrorContains(t, err, fmt.Sprintf("error executing runner: error executing custom compute: %s", assert.AnError))
 	})
 
-	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {
+	t.Run("NOK: exceeded maximum fetch calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := t.Context()
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 			MaxFetchRequests: 1,
@@ -705,25 +759,25 @@ func Test_Compute_Fetch(t *testing.T) {
 		require.NotNil(t, err)
 	})
 
-	t.Run("NOK_exceed_amout_of_default_max_fetch_calls", func(t *testing.T) {
+	t.Run("NOK: exceeded default max fetch calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := t.Context()
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -749,25 +803,25 @@ func Test_Compute_Fetch(t *testing.T) {
 		require.NotNil(t, err)
 	})
 
-	t.Run("OK_making_up_to_max_fetch_calls", func(t *testing.T) {
+	t.Run("OK: making up to max fetch calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := t.Context()
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 			MaxFetchRequests: 6,
@@ -794,25 +848,26 @@ func Test_Compute_Fetch(t *testing.T) {
 		require.Nil(t, err)
 	})
 
-	t.Run("OK_multiple_request_reusing_module", func(t *testing.T) {
+	t.Run("OK: multiple request reusing module", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
 		ctx := t.Context()
-		expected := sdk.FetchResponse{
+		t.Context()
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 			MaxFetchRequests: 6,
@@ -1194,8 +1249,8 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		ctx := t.Context()
 		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
-		fetchFn := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-			return &wasmpb.FetchResponse{
+		fetchFn := func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+			return &FetchResponse{
 				Body: make([]byte, 2*1024),
 			}, nil
 		}
@@ -1227,8 +1282,8 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		ctx := t.Context()
 		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
-		fetchFn := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-			return &wasmpb.FetchResponse{
+		fetchFn := func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+			return &FetchResponse{
 				Body: make([]byte, 2*1024),
 			}, nil
 		}
@@ -1256,8 +1311,8 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		}
 		_, err = m.Run(ctx, req)
 
-		// a response with a 2KB body when marshaled is 2051 bytes
-		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 2051, maxResponseSizeBytes))
+		// a response with a 2KB body when marshaled is 2053 bytes
+		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 2053, maxResponseSizeBytes))
 	})
 
 	t.Run("Emitted message size within the limit", func(t *testing.T) {

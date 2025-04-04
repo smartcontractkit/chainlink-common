@@ -262,21 +262,23 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Relayer_NewContractWriter_FullMethodName = "/loop.Relayer/NewContractWriter"
-	Relayer_NewContractReader_FullMethodName = "/loop.Relayer/NewContractReader"
-	Relayer_NewConfigProvider_FullMethodName = "/loop.Relayer/NewConfigProvider"
-	Relayer_NewPluginProvider_FullMethodName = "/loop.Relayer/NewPluginProvider"
-	Relayer_LatestHead_FullMethodName        = "/loop.Relayer/LatestHead"
-	Relayer_GetChainStatus_FullMethodName    = "/loop.Relayer/GetChainStatus"
-	Relayer_ListNodeStatuses_FullMethodName  = "/loop.Relayer/ListNodeStatuses"
-	Relayer_Transact_FullMethodName          = "/loop.Relayer/Transact"
-	Relayer_Replay_FullMethodName            = "/loop.Relayer/Replay"
+	Relayer_NewChainCapabilities_FullMethodName = "/loop.Relayer/NewChainCapabilities"
+	Relayer_NewContractWriter_FullMethodName    = "/loop.Relayer/NewContractWriter"
+	Relayer_NewContractReader_FullMethodName    = "/loop.Relayer/NewContractReader"
+	Relayer_NewConfigProvider_FullMethodName    = "/loop.Relayer/NewConfigProvider"
+	Relayer_NewPluginProvider_FullMethodName    = "/loop.Relayer/NewPluginProvider"
+	Relayer_LatestHead_FullMethodName           = "/loop.Relayer/LatestHead"
+	Relayer_GetChainStatus_FullMethodName       = "/loop.Relayer/GetChainStatus"
+	Relayer_ListNodeStatuses_FullMethodName     = "/loop.Relayer/ListNodeStatuses"
+	Relayer_Transact_FullMethodName             = "/loop.Relayer/Transact"
+	Relayer_Replay_FullMethodName               = "/loop.Relayer/Replay"
 )
 
 // RelayerClient is the client API for Relayer service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RelayerClient interface {
+	NewChainCapabilities(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewChainCapabilitiesReply, error)
 	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterReply, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error)
 	NewConfigProvider(ctx context.Context, in *NewConfigProviderRequest, opts ...grpc.CallOption) (*NewConfigProviderReply, error)
@@ -294,6 +296,16 @@ type relayerClient struct {
 
 func NewRelayerClient(cc grpc.ClientConnInterface) RelayerClient {
 	return &relayerClient{cc}
+}
+
+func (c *relayerClient) NewChainCapabilities(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewChainCapabilitiesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NewChainCapabilitiesReply)
+	err := c.cc.Invoke(ctx, Relayer_NewChainCapabilities_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *relayerClient) NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterReply, error) {
@@ -390,6 +402,7 @@ func (c *relayerClient) Replay(ctx context.Context, in *ReplayRequest, opts ...g
 // All implementations must embed UnimplementedRelayerServer
 // for forward compatibility.
 type RelayerServer interface {
+	NewChainCapabilities(context.Context, *emptypb.Empty) (*NewChainCapabilitiesReply, error)
 	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterReply, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error)
 	NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error)
@@ -409,6 +422,9 @@ type RelayerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRelayerServer struct{}
 
+func (UnimplementedRelayerServer) NewChainCapabilities(context.Context, *emptypb.Empty) (*NewChainCapabilitiesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewChainCapabilities not implemented")
+}
 func (UnimplementedRelayerServer) NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
 }
@@ -455,6 +471,24 @@ func RegisterRelayerServer(s grpc.ServiceRegistrar, srv RelayerServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Relayer_ServiceDesc, srv)
+}
+
+func _Relayer_NewChainCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerServer).NewChainCapabilities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Relayer_NewChainCapabilities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerServer).NewChainCapabilities(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Relayer_NewContractWriter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -626,6 +660,10 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.Relayer",
 	HandlerType: (*RelayerServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "NewChainCapabilities",
+			Handler:    _Relayer_NewChainCapabilities_Handler,
+		},
 		{
 			MethodName: "NewContractWriter",
 			Handler:    _Relayer_NewContractWriter_Handler,

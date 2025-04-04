@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chaincapabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset/inprocessprovider"
@@ -137,6 +138,50 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 	s.serverResources.Add(providerRes)
 
 	return &relayerset.NewPluginProviderResponse{PluginProviderId: providerID}, nil
+}
+
+// RelayerSet is supposed to serve relayers, which then hold ChainCapabilities.
+// Serving NewChainCapabilities from RelayerSet is a way to save us from instantiating an extra server for the Relayer.
+//
+//		Without this approach, the calls we would make normally are
+//	  - RelayerSet.Get -> Relayer
+//	  - Relayer.NewChainCapabilities -> ChainCapabilities
+//
+// We could translate this to the GRPC world by having each call to RelayerSet.Get wrap the returned relayer in a server
+// and register that to the GRPC server. However this is actually pretty inefficient since a relayer object on its own
+// is not useful. Users will always want to use the relayer to instantiate chainCapabilities. So we can avoid
+// the intermediate server for the relayer by just storing a reference to the relayerSet client and the relayer we want
+// to fetch. I.e. the calls described above instead would become:
+//   - RelayerSet.Get -> (RelayerSetClient, RelayerID). Effectively this call just acts as check that Relayer exists
+//
+// RelayerClient.NewChainCapabilities -> This is a call to RelayerSet.NewChainCapabilities with (relayerID);
+// The implementation will then fetch the relayer and call NewChainCapabilities on it
+func (s *Server) NewChainCapabilities(ctx context.Context, req *relayerset.NewChainCapabilitiesRequest) (*relayerset.NewChainCapabilitiesResponse, error) {
+	relayer, err := s.getRelayer(ctx, req.RelayerId)
+	if err != nil {
+		return nil, err
+	}
+
+	cc, err := relayer.NewChainCapabilities(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error creating chain capabilities: %v", err)
+	}
+
+	// Start ChainCapabilities service
+	if err = cc.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	// Start gRPC service for the ChainCapabilities service above
+	const name = "ChainCapabilitiesInRelayerSet"
+	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
+		chaincapabilities.RegisterChainCapabilitiesService(s, cc)
+	}, net.Resource{Closer: cc, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &relayerset.NewChainCapabilitiesResponse{ChainCapabilitiesId: id}, nil
 }
 
 // RelayerSet is supposed to serve relayers, which then hold a ContractReader and ContractWriter. Serving NewContractReader

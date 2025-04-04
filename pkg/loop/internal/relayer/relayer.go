@@ -18,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chaincapabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -196,6 +197,17 @@ type relayerClient struct {
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+}
+
+func (r *relayerClient) NewChainCapabilities(_ context.Context) (types.ChainCapabilities, error) {
+	cc := r.NewClientConn("ChainCapabilities", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewChainCapabilities(ctx, &emptypb.Empty{})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.ChainCapabilitiesID, nil, nil
+	})
+	return chaincapabilities.NewClient(r.WithName("ChainCapabilitiesClient"), cc), nil
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -391,6 +403,27 @@ type relayerServer struct {
 
 func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
+}
+
+func (r *relayerServer) NewChainCapabilities(ctx context.Context, _ *emptypb.Empty) (*pb.NewChainCapabilitiesReply, error) {
+	cc, err := r.impl.NewChainCapabilities(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cc.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	const name = "ChainCapabilities"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		chaincapabilities.RegisterChainCapabilitiesService(s, cc)
+	}, net.Resource{Closer: cc, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewChainCapabilitiesReply{ChainCapabilitiesID: id}, nil
 }
 
 func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {

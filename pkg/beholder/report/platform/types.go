@@ -99,6 +99,10 @@ func Decode(rawReport []byte) (*Report, error) {
 
 	// Decode data
 	report.Data = make([]byte, buf.Len())
+	if len(report.Data) == 0 {
+		// No data to read
+		return report, nil
+	}
 	if _, err := buf.Read(report.Data); err != nil {
 		return nil, err
 	}

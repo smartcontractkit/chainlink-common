@@ -544,6 +544,94 @@ func (x *NewPluginProviderResponse) GetPluginProviderId() uint32 {
 	return 0
 }
 
+type NewChainCapabilitiesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NewChainCapabilitiesRequest) Reset() {
+	*x = NewChainCapabilitiesRequest{}
+	mi := &file_relayerset_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NewChainCapabilitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewChainCapabilitiesRequest) ProtoMessage() {}
+
+func (x *NewChainCapabilitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewChainCapabilitiesRequest.ProtoReflect.Descriptor instead.
+func (*NewChainCapabilitiesRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *NewChainCapabilitiesRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+type NewChainCapabilitiesResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ChainCapabilitiesId uint32                 `protobuf:"varint,1,opt,name=chainCapabilitiesId,proto3" json:"chainCapabilitiesId,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *NewChainCapabilitiesResponse) Reset() {
+	*x = NewChainCapabilitiesResponse{}
+	mi := &file_relayerset_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NewChainCapabilitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewChainCapabilitiesResponse) ProtoMessage() {}
+
+func (x *NewChainCapabilitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewChainCapabilitiesResponse.ProtoReflect.Descriptor instead.
+func (*NewChainCapabilitiesResponse) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *NewChainCapabilitiesResponse) GetChainCapabilitiesId() uint32 {
+	if x != nil {
+		return x.ChainCapabilitiesId
+	}
+	return 0
+}
+
 type NewContractReaderRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	RelayerId            *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
@@ -554,7 +642,7 @@ type NewContractReaderRequest struct {
 
 func (x *NewContractReaderRequest) Reset() {
 	*x = NewContractReaderRequest{}
-	mi := &file_relayerset_proto_msgTypes[10]
+	mi := &file_relayerset_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -566,7 +654,7 @@ func (x *NewContractReaderRequest) String() string {
 func (*NewContractReaderRequest) ProtoMessage() {}
 
 func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[10]
+	mi := &file_relayerset_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -579,7 +667,7 @@ func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderRequest.ProtoReflect.Descriptor instead.
 func (*NewContractReaderRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{10}
+	return file_relayerset_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NewContractReaderRequest) GetRelayerId() *RelayerId {
@@ -605,7 +693,7 @@ type NewContractReaderResponse struct {
 
 func (x *NewContractReaderResponse) Reset() {
 	*x = NewContractReaderResponse{}
-	mi := &file_relayerset_proto_msgTypes[11]
+	mi := &file_relayerset_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -617,7 +705,7 @@ func (x *NewContractReaderResponse) String() string {
 func (*NewContractReaderResponse) ProtoMessage() {}
 
 func (x *NewContractReaderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[11]
+	mi := &file_relayerset_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -630,7 +718,7 @@ func (x *NewContractReaderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderResponse.ProtoReflect.Descriptor instead.
 func (*NewContractReaderResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{11}
+	return file_relayerset_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NewContractReaderResponse) GetContractReaderId() uint32 {
@@ -650,7 +738,7 @@ type NewContractWriterRequest struct {
 
 func (x *NewContractWriterRequest) Reset() {
 	*x = NewContractWriterRequest{}
-	mi := &file_relayerset_proto_msgTypes[12]
+	mi := &file_relayerset_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -662,7 +750,7 @@ func (x *NewContractWriterRequest) String() string {
 func (*NewContractWriterRequest) ProtoMessage() {}
 
 func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[12]
+	mi := &file_relayerset_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -675,7 +763,7 @@ func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterRequest.ProtoReflect.Descriptor instead.
 func (*NewContractWriterRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{12}
+	return file_relayerset_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NewContractWriterRequest) GetRelayerId() *RelayerId {
@@ -701,7 +789,7 @@ type NewContractWriterResponse struct {
 
 func (x *NewContractWriterResponse) Reset() {
 	*x = NewContractWriterResponse{}
-	mi := &file_relayerset_proto_msgTypes[13]
+	mi := &file_relayerset_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -713,7 +801,7 @@ func (x *NewContractWriterResponse) String() string {
 func (*NewContractWriterResponse) ProtoMessage() {}
 
 func (x *NewContractWriterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[13]
+	mi := &file_relayerset_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -726,7 +814,7 @@ func (x *NewContractWriterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterResponse.ProtoReflect.Descriptor instead.
 func (*NewContractWriterResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{13}
+	return file_relayerset_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *NewContractWriterResponse) GetContractWriterId() uint32 {
@@ -745,7 +833,7 @@ type LatestHeadRequest struct {
 
 func (x *LatestHeadRequest) Reset() {
 	*x = LatestHeadRequest{}
-	mi := &file_relayerset_proto_msgTypes[14]
+	mi := &file_relayerset_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -757,7 +845,7 @@ func (x *LatestHeadRequest) String() string {
 func (*LatestHeadRequest) ProtoMessage() {}
 
 func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[14]
+	mi := &file_relayerset_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -770,7 +858,7 @@ func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadRequest.ProtoReflect.Descriptor instead.
 func (*LatestHeadRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{14}
+	return file_relayerset_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *LatestHeadRequest) GetRelayerId() *RelayerId {
@@ -791,7 +879,7 @@ type LatestHeadResponse struct {
 
 func (x *LatestHeadResponse) Reset() {
 	*x = LatestHeadResponse{}
-	mi := &file_relayerset_proto_msgTypes[15]
+	mi := &file_relayerset_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -803,7 +891,7 @@ func (x *LatestHeadResponse) String() string {
 func (*LatestHeadResponse) ProtoMessage() {}
 
 func (x *LatestHeadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[15]
+	mi := &file_relayerset_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -816,7 +904,7 @@ func (x *LatestHeadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadResponse.ProtoReflect.Descriptor instead.
 func (*LatestHeadResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{15}
+	return file_relayerset_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *LatestHeadResponse) GetHeight() string {
@@ -849,7 +937,7 @@ type RelayerHealthReportResponse struct {
 
 func (x *RelayerHealthReportResponse) Reset() {
 	*x = RelayerHealthReportResponse{}
-	mi := &file_relayerset_proto_msgTypes[16]
+	mi := &file_relayerset_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -861,7 +949,7 @@ func (x *RelayerHealthReportResponse) String() string {
 func (*RelayerHealthReportResponse) ProtoMessage() {}
 
 func (x *RelayerHealthReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[16]
+	mi := &file_relayerset_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -874,7 +962,7 @@ func (x *RelayerHealthReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerHealthReportResponse.ProtoReflect.Descriptor instead.
 func (*RelayerHealthReportResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{16}
+	return file_relayerset_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RelayerHealthReportResponse) GetReport() map[string]string {
@@ -893,7 +981,7 @@ type RelayerNameResponse struct {
 
 func (x *RelayerNameResponse) Reset() {
 	*x = RelayerNameResponse{}
-	mi := &file_relayerset_proto_msgTypes[17]
+	mi := &file_relayerset_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -905,7 +993,7 @@ func (x *RelayerNameResponse) String() string {
 func (*RelayerNameResponse) ProtoMessage() {}
 
 func (x *RelayerNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[17]
+	mi := &file_relayerset_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -918,7 +1006,7 @@ func (x *RelayerNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerNameResponse.ProtoReflect.Descriptor instead.
 func (*RelayerNameResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{17}
+	return file_relayerset_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RelayerNameResponse) GetName() string {
@@ -968,7 +1056,11 @@ const file_relayerset_proto_rawDesc = "" +
 	"pluginArgs\x18\x03 \x01(\v2\x1b.loop.relayerset.PluginArgsR\n" +
 	"pluginArgs\"I\n" +
 	"\x19NewPluginProviderResponse\x12,\n" +
-	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"\x88\x01\n" +
+	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"W\n" +
+	"\x1bNewChainCapabilitiesRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"P\n" +
+	"\x1cNewChainCapabilitiesResponse\x120\n" +
+	"\x13chainCapabilitiesId\x18\x01 \x01(\rR\x13chainCapabilitiesId\"\x88\x01\n" +
 	"\x18NewContractReaderRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\"G\n" +
@@ -991,12 +1083,13 @@ const file_relayerset_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\")\n" +
 	"\x13RelayerNameResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name2\xed\a\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name2\xe4\b\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
 	"\x04List\x12'.loop.relayerset.ListAllRelayersRequest\x1a(.loop.relayerset.ListAllRelayersResponse\"\x00\x12l\n" +
-	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12l\n" +
+	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12u\n" +
+	"\x14NewChainCapabilities\x12,.loop.relayerset.NewChainCapabilitiesRequest\x1a-.loop.relayerset.NewChainCapabilitiesResponse\"\x00\x12l\n" +
 	"\x11NewContractReader\x12).loop.relayerset.NewContractReaderRequest\x1a*.loop.relayerset.NewContractReaderResponse\"\x00\x12l\n" +
 	"\x11NewContractWriter\x12).loop.relayerset.NewContractWriterRequest\x1a*.loop.relayerset.NewContractWriterResponse\"\x00\x12D\n" +
 	"\fStartRelayer\x12\x1a.loop.relayerset.RelayerId\x1a\x16.google.protobuf.Empty\"\x00\x12D\n" +
@@ -1018,28 +1111,30 @@ func file_relayerset_proto_rawDescGZIP() []byte {
 	return file_relayerset_proto_rawDescData
 }
 
-var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_relayerset_proto_goTypes = []any{
-	(*RelayerId)(nil),                   // 0: loop.relayerset.RelayerId
-	(*GetRelayerRequest)(nil),           // 1: loop.relayerset.GetRelayerRequest
-	(*GetRelayerResponse)(nil),          // 2: loop.relayerset.GetRelayerResponse
-	(*ListAllRelayersRequest)(nil),      // 3: loop.relayerset.ListAllRelayersRequest
-	(*ListAllRelayersResponse)(nil),     // 4: loop.relayerset.ListAllRelayersResponse
-	(*RelayArgs)(nil),                   // 5: loop.relayerset.RelayArgs
-	(*MercuryCredentials)(nil),          // 6: loop.relayerset.MercuryCredentials
-	(*PluginArgs)(nil),                  // 7: loop.relayerset.PluginArgs
-	(*NewPluginProviderRequest)(nil),    // 8: loop.relayerset.NewPluginProviderRequest
-	(*NewPluginProviderResponse)(nil),   // 9: loop.relayerset.NewPluginProviderResponse
-	(*NewContractReaderRequest)(nil),    // 10: loop.relayerset.NewContractReaderRequest
-	(*NewContractReaderResponse)(nil),   // 11: loop.relayerset.NewContractReaderResponse
-	(*NewContractWriterRequest)(nil),    // 12: loop.relayerset.NewContractWriterRequest
-	(*NewContractWriterResponse)(nil),   // 13: loop.relayerset.NewContractWriterResponse
-	(*LatestHeadRequest)(nil),           // 14: loop.relayerset.LatestHeadRequest
-	(*LatestHeadResponse)(nil),          // 15: loop.relayerset.LatestHeadResponse
-	(*RelayerHealthReportResponse)(nil), // 16: loop.relayerset.RelayerHealthReportResponse
-	(*RelayerNameResponse)(nil),         // 17: loop.relayerset.RelayerNameResponse
-	nil,                                 // 18: loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	(*emptypb.Empty)(nil),               // 19: google.protobuf.Empty
+	(*RelayerId)(nil),                    // 0: loop.relayerset.RelayerId
+	(*GetRelayerRequest)(nil),            // 1: loop.relayerset.GetRelayerRequest
+	(*GetRelayerResponse)(nil),           // 2: loop.relayerset.GetRelayerResponse
+	(*ListAllRelayersRequest)(nil),       // 3: loop.relayerset.ListAllRelayersRequest
+	(*ListAllRelayersResponse)(nil),      // 4: loop.relayerset.ListAllRelayersResponse
+	(*RelayArgs)(nil),                    // 5: loop.relayerset.RelayArgs
+	(*MercuryCredentials)(nil),           // 6: loop.relayerset.MercuryCredentials
+	(*PluginArgs)(nil),                   // 7: loop.relayerset.PluginArgs
+	(*NewPluginProviderRequest)(nil),     // 8: loop.relayerset.NewPluginProviderRequest
+	(*NewPluginProviderResponse)(nil),    // 9: loop.relayerset.NewPluginProviderResponse
+	(*NewChainCapabilitiesRequest)(nil),  // 10: loop.relayerset.NewChainCapabilitiesRequest
+	(*NewChainCapabilitiesResponse)(nil), // 11: loop.relayerset.NewChainCapabilitiesResponse
+	(*NewContractReaderRequest)(nil),     // 12: loop.relayerset.NewContractReaderRequest
+	(*NewContractReaderResponse)(nil),    // 13: loop.relayerset.NewContractReaderResponse
+	(*NewContractWriterRequest)(nil),     // 14: loop.relayerset.NewContractWriterRequest
+	(*NewContractWriterResponse)(nil),    // 15: loop.relayerset.NewContractWriterResponse
+	(*LatestHeadRequest)(nil),            // 16: loop.relayerset.LatestHeadRequest
+	(*LatestHeadResponse)(nil),           // 17: loop.relayerset.LatestHeadResponse
+	(*RelayerHealthReportResponse)(nil),  // 18: loop.relayerset.RelayerHealthReportResponse
+	(*RelayerNameResponse)(nil),          // 19: loop.relayerset.RelayerNameResponse
+	nil,                                  // 20: loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	(*emptypb.Empty)(nil),                // 21: google.protobuf.Empty
 }
 var file_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
@@ -1050,37 +1145,40 @@ var file_relayerset_proto_depIdxs = []int32{
 	0,  // 5: loop.relayerset.NewPluginProviderRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	5,  // 6: loop.relayerset.NewPluginProviderRequest.relayArgs:type_name -> loop.relayerset.RelayArgs
 	7,  // 7: loop.relayerset.NewPluginProviderRequest.pluginArgs:type_name -> loop.relayerset.PluginArgs
-	0,  // 8: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 9: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 10: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	18, // 11: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	1,  // 12: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
-	3,  // 13: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
-	8,  // 14: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
-	10, // 15: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
-	12, // 16: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
-	0,  // 17: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
-	0,  // 18: loop.relayerset.RelayerSet.CloseRelayer:input_type -> loop.relayerset.RelayerId
-	0,  // 19: loop.relayerset.RelayerSet.RelayerReady:input_type -> loop.relayerset.RelayerId
-	0,  // 20: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
-	0,  // 21: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
-	14, // 22: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
-	2,  // 23: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
-	4,  // 24: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
-	9,  // 25: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
-	11, // 26: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
-	13, // 27: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
-	19, // 28: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
-	19, // 29: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
-	19, // 30: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
-	16, // 31: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
-	17, // 32: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
-	15, // 33: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
-	23, // [23:34] is the sub-list for method output_type
-	12, // [12:23] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	0,  // 8: loop.relayerset.NewChainCapabilitiesRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 9: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 10: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 11: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	20, // 12: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	1,  // 13: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
+	3,  // 14: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
+	8,  // 15: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
+	10, // 16: loop.relayerset.RelayerSet.NewChainCapabilities:input_type -> loop.relayerset.NewChainCapabilitiesRequest
+	12, // 17: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
+	14, // 18: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
+	0,  // 19: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
+	0,  // 20: loop.relayerset.RelayerSet.CloseRelayer:input_type -> loop.relayerset.RelayerId
+	0,  // 21: loop.relayerset.RelayerSet.RelayerReady:input_type -> loop.relayerset.RelayerId
+	0,  // 22: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
+	0,  // 23: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
+	16, // 24: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
+	2,  // 25: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
+	4,  // 26: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
+	9,  // 27: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
+	11, // 28: loop.relayerset.RelayerSet.NewChainCapabilities:output_type -> loop.relayerset.NewChainCapabilitiesResponse
+	13, // 29: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
+	15, // 30: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
+	21, // 31: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
+	21, // 32: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
+	21, // 33: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
+	18, // 34: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
+	19, // 35: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
+	17, // 36: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
+	25, // [25:37] is the sub-list for method output_type
+	13, // [13:25] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_relayerset_proto_init() }
@@ -1094,7 +1192,7 @@ func file_relayerset_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_relayerset_proto_rawDesc), len(file_relayerset_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

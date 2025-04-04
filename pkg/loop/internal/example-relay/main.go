@@ -110,6 +110,10 @@ func (r *relayer) Replay(ctx context.Context, fromBlock string, args map[string]
 	return errors.New("unimplemented")
 }
 
+func (r *relayer) NewChainCapabilities(_ context.Context) (types.ChainCapabilities, error) {
+	return nil, errors.New("unimplemented")
+}
+
 func (r *relayer) NewContractWriter(ctx context.Context, chainWriterConfig []byte) (types.ContractWriter, error) {
 	return nil, errors.New("unimplemented")
 }

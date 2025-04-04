@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type RelayID struct {
@@ -106,6 +108,8 @@ type EVMChainReader interface {
 }
 
 type ChainCapabilities interface {
+	services.Service
+
 	SolanaChainReader
 	EVMChainReader
 }
@@ -131,7 +135,7 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
-	ChainCapabilities
+	NewChainCapabilities(ctx context.Context) (ChainCapabilities, error)
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

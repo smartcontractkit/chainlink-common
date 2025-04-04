@@ -58,6 +58,14 @@ message NewPluginProviderResponse {
   uint32 plugin_provider_id = 1;
 }
 
+message NewChainCapabilitiesRequest {
+  RelayerId relayerId = 1;
+}
+
+message NewChainCapabilitiesResponse {
+  uint32 chainCapabilitiesId = 1;
+}
+
 message NewContractReaderRequest {
   RelayerId relayerId = 1;
   bytes contractReaderConfig = 2;
@@ -98,6 +106,7 @@ service RelayerSet {
   rpc Get(GetRelayerRequest) returns (GetRelayerResponse) {}
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
+  rpc NewChainCapabilities(NewChainCapabilitiesRequest) returns (NewChainCapabilitiesResponse) {}
   rpc NewContractReader(NewContractReaderRequest) returns (NewContractReaderResponse) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterResponse) {}
 

@@ -347,6 +347,64 @@ func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call 
 	return _c
 }
 
+// NewChainCapabilities provides a mock function with given fields: ctx
+func (_m *Relayer) NewChainCapabilities(ctx context.Context) (types.ChainCapabilities, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewChainCapabilities")
+	}
+
+	var r0 types.ChainCapabilities
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (types.ChainCapabilities, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) types.ChainCapabilities); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.ChainCapabilities)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewChainCapabilities_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewChainCapabilities'
+type Relayer_NewChainCapabilities_Call struct {
+	*mock.Call
+}
+
+// NewChainCapabilities is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Relayer_Expecter) NewChainCapabilities(ctx interface{}) *Relayer_NewChainCapabilities_Call {
+	return &Relayer_NewChainCapabilities_Call{Call: _e.mock.On("NewChainCapabilities", ctx)}
+}
+
+func (_c *Relayer_NewChainCapabilities_Call) Run(run func(ctx context.Context)) *Relayer_NewChainCapabilities_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewChainCapabilities_Call) Return(_a0 types.ChainCapabilities, _a1 error) *Relayer_NewChainCapabilities_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewChainCapabilities_Call) RunAndReturn(run func(context.Context) (types.ChainCapabilities, error)) *Relayer_NewChainCapabilities_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewConfigProvider provides a mock function with given fields: _a0, _a1
 func (_m *Relayer) NewConfigProvider(_a0 context.Context, _a1 types.RelayArgs) (types.ConfigProvider, error) {
 	ret := _m.Called(_a0, _a1)

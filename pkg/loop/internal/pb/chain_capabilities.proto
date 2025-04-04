@@ -15,7 +15,7 @@ message SolanaAccount {
   // Data associated with the account
   bytes data = 3;
 
-  // Boolean indicating if the account contains a prchogram (and is strictly read-only)
+  // Boolean indicating if the account contains a program (and is strictly read-only)
   bool executable = 4;
 
   // The epoch at which this account will next owe rent (stored as a string if you need arbitrary precision)

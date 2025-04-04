@@ -140,6 +140,17 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 	return resp.PluginProviderId, nil
 }
 
+func (k *Client) NewChainCapabilities(ctx context.Context, relayID types.RelayID) (uint32, error) {
+	req := &relayerset.NewChainCapabilitiesRequest{
+		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+	}
+	resp, err := k.relayerSetClient.NewChainCapabilities(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("error getting new chain capabilities: %w", err)
+	}
+	return resp.ChainCapabilitiesId, nil
+}
+
 func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (uint32, error) {
 	req := &relayerset.NewContractReaderRequest{
 		RelayerId:            &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},

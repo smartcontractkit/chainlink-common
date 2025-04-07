@@ -3,6 +3,7 @@ package values
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"math/big"
 	"reflect"
@@ -185,12 +186,12 @@ func Test_Value(t *testing.T) {
 				binary.BigEndian.PutUint32(d1, 11)
 				var d3 []byte
 				// This fails the equivalence check if uint32 is used for StreamID.
-				// TODO: Is this a blocker, do these need to pass type equivalnce too?
 				m := map[string]any{
 					"Payload":                         []any{map[string]any{"StreamID": int64(1), "Decimal": d1}, nil, map[string]any{"StreamID": int64(3), "Decimal": d3}},
 					"ObservationTimestampNanoseconds": int64(123456789),
 				}
 				err := mapstructure.Decode(m, &v)
+				fmt.Printf("v %#v", v.Payload[0].StreamID)
 				if err != nil {
 					return nil, nil, err
 				}

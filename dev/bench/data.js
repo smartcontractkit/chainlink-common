@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744020107367,
+  "lastUpdate": 1744045261887,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11172,6 +11172,48 @@ window.BENCHMARK_DATA = {
             "value": 28511,
             "unit": "ns/op",
             "extra": "39883 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "55789e74a0d558e85fea356875ffb973157118f5",
+          "message": "INFOPLAT-2071 Beholder emits to chip ingress (#1106)\n\n* INFOPLAT-2071  Adds `chip-ingress` grpc client\n\n* INFOPLAT-2071 Adds chipingress configuration settings\n\nThis needs to be configurable\n\n* INFOPLAT-2071 Adds new emitter implementation using chipingress client\n\n* INFOPLAT-2071 Adds new emitter dual source emitter\n\n* INFOPLAT-2071 Handles creating emitter based on if chip ingress is configured\n\nINFOPLAT-2071 Adjusts code comment\n\nINFOPLAT-2071 Refactor emitters\n\n* INFOPLAT-2071 Adds testing for chip-ingress emitter\n\nINFOPLAT-2071 Adds tests for creating new client\n\nINFOPLAT-2071 Refactors DualSourceEmitter\n\nINFOPLAT-2071 Fixes test\n\n- runs `go fmt`\n\nINFOPLAT-2071 Runs `go fmt`\n\nINFOPLAT-2071 Adds more testing\n\nINFOPLAT-2071 Adds more testing\n\n* INFOPLAT-2071 Makes chip-ingress emitter log error rather than returning it\n\n- minimize disruptions\n- makes it async too\n\n* INFOPLAT-2071 Removes basic auth config from client\n\n* INFOPLAT-2071 Removes panic on nil check\n\n* INFOPLAT-2071 Adds nil checks and more tests\n\n* INFOPLAT-2071 Refactors ChipIngress Client creation\n\n* INFOPLAT-2071 Fixes test\n\n- `go fmt`\n\nINFOPLAT-2071 Small tidyup\n\n* INFOPLAT-2071 Removes race condition test\n\n* INFOPLAT-2071 Use logger from `pkg`",
+          "timestamp": "2025-04-07T12:58:44-04:00",
+          "tree_id": "222da7795edb1d0b5b45b1bb82b03f2ca6da6795",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/55789e74a0d558e85fea356875ffb973157118f5"
+        },
+        "date": 1744045261165,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.3,
+            "unit": "ns/op",
+            "extra": "3264577 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 430.1,
+            "unit": "ns/op",
+            "extra": "2881746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28476,
+            "unit": "ns/op",
+            "extra": "42663 times\n4 procs"
           }
         ]
       }

@@ -53,12 +53,14 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 			continue
 		}
 
-		if key == "beholder_domain" {
+		// TODO
+		// Retrieve source and type using either ChIP or legacy attribute names, prioritizing source/type
+		if key == "source" || key == "beholder_domain" && sourceDomain == "" {
 			if val, ok := attrKVs[i+1].(string); ok {
 				sourceDomain = val
 			}
 		}
-		if key == "beholder_entity" {
+		if key == "type" || key == "beholder_entity" && entityType == "" {
 			if val, ok := attrKVs[i+1].(string); ok {
 				entityType = val
 			}
@@ -66,11 +68,11 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 	}
 
 	if sourceDomain == "" {
-		return "", "", fmt.Errorf("beholder_domain not found in provided key/value attributes")
+		return "", "", fmt.Errorf("source/beholder_domain not found in provided key/value attributes")
 	}
 
 	if entityType == "" {
-		return "", "", fmt.Errorf("beholder_entity not found in provided key/value attributes")
+		return "", "", fmt.Errorf("type/beholder_entity not found in provided key/value attributes")
 	}
 
 	return sourceDomain, entityType, nil

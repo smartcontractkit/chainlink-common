@@ -20,6 +20,7 @@ func TestPropertyExtractor(t *testing.T) {
 
 	type testStruct2 struct {
 		D [16]uint8
+		F int
 	}
 
 	type testStruct3 struct {
@@ -164,6 +165,43 @@ func TestPropertyExtractor(t *testing.T) {
 		offChainValue, err := nestedExtractorFieldUnderSlice.TransformToOffChain(onChainValue, "")
 		require.NoError(t, err)
 		require.Equal(t, [][16]uint8{{1}, {2}}, offChainValue)
+	})
+
+	t.Run("TransformToOffChain works on filed that is an uninitialised slice", func(t *testing.T) {
+		_, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+
+		onChainValue := nestedTestStruct{
+			A: "test",
+			B: testStruct{
+				A: true,
+				B: 42,
+			},
+			C: testStruct3{},
+		}
+
+		// can't be transformed back to on-chain, its completely lossy
+		offChainValue, err := nestedExtractorFieldUnderSlice.TransformToOffChain(onChainValue, "")
+		require.NoError(t, err)
+		require.Equal(t, [][16]uint8{}, offChainValue)
+
+		uninitialisedSliceExtractor := codec.NewPropertyExtractor("C.E")
+		_, err = uninitialisedSliceExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+
+		// can't be transformed back to on-chain, its completely lossy
+		offChainValue, err = uninitialisedSliceExtractor.TransformToOffChain(onChainValue, "")
+		require.NoError(t, err)
+		require.Equal(t, []testStruct2{}, offChainValue)
+
+		uninitialisedSliceExtractor = codec.NewPropertyExtractor("C.E.F")
+		_, err = uninitialisedSliceExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		require.NoError(t, err)
+
+		// can't be transformed back to on-chain, its completely lossy
+		offChainValue, err = uninitialisedSliceExtractor.TransformToOffChain(onChainValue, "")
+		require.NoError(t, err)
+		require.Equal(t, []int{}, offChainValue)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {

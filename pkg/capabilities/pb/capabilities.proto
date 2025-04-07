@@ -104,6 +104,7 @@ message UnregisterFromWorkflowRequest {
   RegistrationMetadata metadata = 1;
   values.Map config = 2;
   google.protobuf.Any value = 3;
+  string method = 5;
 }
 
 service Executable {

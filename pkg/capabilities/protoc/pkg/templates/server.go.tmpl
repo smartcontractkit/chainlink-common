@@ -17,12 +17,13 @@ type {{.GoName}}Capability interface {
     {{- range .Methods}}
         {{- if isTrigger . }}
             {{ $hasTriggers = true }}
-            // TODO trigger
+    Register{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}], error)
+    Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) error
         {{- else }}
             {{ $hasActions = true }}
     {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}, /* TODO this isn't right */ config *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) (*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}, error)
-    {{.GoName}}Register(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
-    {{.GoName}}Unregister(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
+    Register{{.GoName}}(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
+    Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
         {{- end }}
     {{- end }}
     Start(ctx context.Context) error
@@ -95,13 +96,36 @@ func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabiliti
 {{- if $hasTriggers }}
 var _ capabilities.TriggerCapability = (*{{.GoName|LowerFirst}}Capability)(nil)
 func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	//TODO implement me
-	panic("implement me")
+    switch request.Method {
+        {{- range .Methods}}
+        {{- if (isTrigger .) }}
+            case "{{.GoName}}":
+                input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+                return capabilities.RegisterTrigger(ctx, "{{$.CapabilityId}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
+        {{- end }}
+        {{- end }}
+        	default:
+        	    return nil, fmt.Errorf("method %s not found", request.Method)
+        }
+
 }
 
 func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	//TODO implement me
-	panic("implement me")
+	    switch request.Method {
+            {{- range .Methods}}
+            {{- if (isTrigger .) }}
+                case "{{.GoName}}":
+                    input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+                    _, err := capabilities.FromValueOrAny(request.Config, request.Request, input)
+                    if err != nil {
+                        return err
+                    }
+                    return c.{{$service.GoName}}Capability.Unregister{{.GoName}}(ctx, request.Metadata, input)
+            {{- end }}
+            {{- end }}
+            	default:
+            	    return fmt.Errorf("method %s not found", request.Method)
+            }
 }
 {{- end }}
 
@@ -128,7 +152,7 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
             input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
             // TODO config
             config := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
-            return capabilities.Execute(ctx, request, input, config, c.{{.GoName}})
+            return capabilities.Execute(ctx, request, input, config, c.{{$service.GoName}}Capability.{{.GoName}})
     {{- end }}
     {{- end }}
     	default:

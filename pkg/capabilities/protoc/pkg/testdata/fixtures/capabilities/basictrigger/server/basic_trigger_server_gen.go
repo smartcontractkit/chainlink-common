@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type BasicCapability interface {
-
-	// TODO trigger
+	RegisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
+	UnregisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -83,11 +84,26 @@ func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo
 var _ capabilities.TriggerCapability = (*basicCapability)(nil)
 
 func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	switch request.Method {
+	case "Trigger":
+		input := &basictrigger.Config{}
+		return capabilities.RegisterTrigger(ctx, "basic-test-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
+	default:
+		return nil, fmt.Errorf("method %s not found", request.Method)
+	}
+
 }
 
 func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	//TODO implement me
-	panic("implement me")
+	switch request.Method {
+	case "Trigger":
+		input := &basictrigger.Config{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Request, input)
+		if err != nil {
+			return err
+		}
+		return c.BasicCapability.UnregisterTrigger(ctx, request.Metadata, input)
+	default:
+		return fmt.Errorf("method %s not found", request.Method)
+	}
 }

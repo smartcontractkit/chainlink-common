@@ -102,11 +102,15 @@ type TriggerEvent struct {
 type RegisterToWorkflowRequest struct {
 	Metadata RegistrationMetadata
 	Config   *values.Map
+	Value    *anypb.Any
+	Method   string
 }
 
 type UnregisterFromWorkflowRequest struct {
 	Metadata RegistrationMetadata
 	Config   *values.Map
+	Value    *anypb.Any
+	Method   string
 }
 
 // Executable is an interface for executing a capability.
@@ -138,6 +142,7 @@ type TriggerRegistrationRequest struct {
 	Metadata RequestMetadata
 	Config   *values.Map
 	Request  *anypb.Any
+	Method   string
 }
 
 type TriggerResponse struct {

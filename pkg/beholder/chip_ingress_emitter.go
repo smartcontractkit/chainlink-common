@@ -53,7 +53,6 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 			continue
 		}
 
-		// TODO
 		// Retrieve source and type using either ChIP or legacy attribute names, prioritizing source/type
 		if key == "source" || key == "beholder_domain" && sourceDomain == "" {
 			if val, ok := attrKVs[i+1].(string); ok {

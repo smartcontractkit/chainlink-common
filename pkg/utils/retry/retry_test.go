@@ -109,7 +109,7 @@ func TestWithRetry(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, tt.timeout)
 			defer cancel()
 
-			result, err := WithRetry(ctx, lggr, tt.fn)
+			result, err := With(ctx, lggr, tt.fn)
 			if tt.errMsg != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.errMsg)

@@ -178,6 +178,10 @@ func createFetchFn(
 	fetch func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
 ) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
 	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
+		headers := map[string]any{}
+		for k, v := range req.Headers {
+			headers[k] = v
+		}
 		headerspb, err := values.NewMap(req.Headers)
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to create headers map: %w", err)
@@ -246,13 +250,13 @@ func createFetchFn(
 		}
 
 		fields := response.Headers.GetFields()
-		headersResp := make(map[string]any, len(fields))
+		headersResp := make(map[string]string, len(fields))
 		for k, v := range fields {
-			headersResp[k] = v
+			headersResp[k] = v.GetStringValue()
 		}
 
 		return sdk.FetchResponse{
-			StatusCode: uint8(response.StatusCode),
+			StatusCode: response.StatusCode,
 			Headers:    headersResp,
 			Body:       response.Body,
 		}, nil

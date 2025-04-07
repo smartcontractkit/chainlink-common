@@ -26,6 +26,13 @@ func TestElementExtractor(t *testing.T) {
 		D uint64
 	}
 
+	type nilFields struct {
+		A *int64
+		B string
+		C *testStruct
+		D []testStruct
+	}
+
 	type nestedTestStruct struct {
 		A string
 		B testStruct
@@ -128,6 +135,27 @@ func TestElementExtractor(t *testing.T) {
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A"}))
 		iInput.FieldByName("C").Set(reflect.ValueOf([]int64{20}))
 		iInput.FieldByName("D").Set(reflect.ValueOf([]uint64{30}))
+		assert.Equal(t, iInput.Interface(), newInput)
+	})
+
+	t.Run("TransformToOnChain and TransformToOffChain works on nil ptr by initialising empty values", func(t *testing.T) {
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(nilFields{}), "")
+		require.NoError(t, err)
+
+		iInput := reflect.Indirect(reflect.New(inputType))
+		output, err := extractor.TransformToOnChain(iInput.Interface(), "")
+		require.NoError(t, err)
+
+		expected := nilFields{}
+		assert.Equal(t, expected, output)
+
+		newInput, err := extractor.TransformToOffChain(expected, "")
+		require.NoError(t, err)
+
+		// Lossy modification
+		iInput.FieldByName("A").Set(reflect.ValueOf([]*int64{}))
+		iInput.FieldByName("C").Set(reflect.ValueOf([]*testStruct{}))
+		iInput.FieldByName("D").Set(reflect.ValueOf([][]testStruct{}))
 		assert.Equal(t, iInput.Interface(), newInput)
 	})
 

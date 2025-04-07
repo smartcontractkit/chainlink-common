@@ -13,8 +13,12 @@ import (
 
 type ctxKey string
 
-// CtxKeyRetryID is the context key for tracing ID
-const CtxKeyRetryID ctxKey = "retryID"
+// ctxKeyID is the context key for tracing ID
+const ctxKeyID ctxKey = "retryID"
+
+func CtxWithID(ctx context.Context, retryID string) context.Context {
+	return context.WithValue(ctx, ctxKeyID, retryID)
+}
 
 // Exponential backoff (default) is used to handle retries with increasing wait times in case of errors
 var BackoffStrategyDefault = backoff.Backoff{
@@ -26,11 +30,11 @@ var BackoffStrategyDefault = backoff.Backoff{
 // WithStrategy applies a retry strategy to a given function.
 func WithStrategy[R any](ctx context.Context, lggr logger.Logger, strategy backoff.Backoff, fn func(ctx context.Context) (R, error)) (R, error) {
 	// Generate a new tracing ID if not present, used to track retries
-	retryID, ok := ctx.Value(CtxKeyRetryID).(string)
-	if !ok {
+	retryID := ctx.Value(ctxKeyID)
+	if retryID == nil {
 		retryID = uuid.New().String()
 		// Add the generated tracing ID to the context (as it was not already present)
-		ctx = context.WithValue(ctx, CtxKeyRetryID, retryID)
+		ctx = context.WithValue(ctx, ctxKeyID, retryID)
 	}
 
 	// Track the number of retries

@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	mercury_v3 "github.com/smartcontractkit/chainlink-common/pkg/beholder/report/mercury/v3"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/platform"
+	mercury_v3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/mercury/v3"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/platform"
 )
 
 func TestDecodeReportV3(t *testing.T) {

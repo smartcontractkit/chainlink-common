@@ -3,7 +3,7 @@ package forwarder
 import (
 	"fmt"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/platform"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/platform"
 
 	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/pb/platform"
 )

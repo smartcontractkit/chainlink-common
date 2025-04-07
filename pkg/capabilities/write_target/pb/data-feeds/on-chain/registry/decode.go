@@ -7,12 +7,12 @@ import (
 
 	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/pb/platform"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/data_feeds"
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/platform"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/data_feeds"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/platform"
 
-	mercury_vX "github.com/smartcontractkit/chainlink-common/pkg/beholder/report/mercury/common"
-	mercury_v3 "github.com/smartcontractkit/chainlink-common/pkg/beholder/report/mercury/v3"
-	mercury_v4 "github.com/smartcontractkit/chainlink-common/pkg/beholder/report/mercury/v4"
+	mercury_vX "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/mercury/common"
+	mercury_v3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/mercury/v3"
+	mercury_v4 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/mercury/v4"
 )
 
 // DecodeAsFeedUpdated decodes a 'platform.write-target.WriteConfirmed' message

@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder/report/data_feeds"
 	wt_msg "github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/pb/platform"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/write_target/report/data_feeds"
 )
 
 func TestDecodeAsReportProcessed(t *testing.T) {

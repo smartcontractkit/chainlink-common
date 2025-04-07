@@ -266,8 +266,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 				MaxFetchRequests: 5,
 			},
@@ -302,8 +302,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -338,8 +338,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -378,8 +378,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -423,7 +423,7 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 					return nil, assert.AnError
 				},
 				MaxFetchRequests: 1,
@@ -463,8 +463,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -502,8 +502,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,

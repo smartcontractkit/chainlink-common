@@ -1,13 +1,16 @@
 package wasm
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"time"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -48,6 +51,19 @@ func defaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeC
 var _ sdk.Runtime = (*Runtime)(nil)
 
 func (r *Runtime) Fetch(req sdk.FetchRequest) (sdk.FetchResponse, error) {
+	if len(req.RetryOptions) > 0 {
+		operation := func() (sdk.FetchResponse, error) {
+			return r.fetchFn(req)
+		}
+
+		opts := req.RetryOptions
+		if req.TimeoutMs > 0 {
+			timeout := time.Duration(req.TimeoutMs) * time.Millisecond
+			opts = append(opts, backoff.WithMaxElapsedTime(timeout))
+		}
+
+		return backoff.Retry(context.Background(), operation, opts...)
+	}
 	return r.fetchFn(req)
 }
 
@@ -174,7 +190,7 @@ func createEmitFn(
 // binary.
 func createFetchFn(
 	sdkConfig *RuntimeConfig,
-	l logger.Logger,
+	_ logger.Logger,
 	fetch func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
 ) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
 	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {

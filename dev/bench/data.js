@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743693313473,
+  "lastUpdate": 1744020107367,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11130,6 +11130,48 @@ window.BENCHMARK_DATA = {
             "value": 28888,
             "unit": "ns/op",
             "extra": "42164 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dfdf9600557b8d4b4ec047bab6d1cfbb8375e210",
+          "message": "[CAPPL-685] Pass through headers correctly (#1110)",
+          "timestamp": "2025-04-07T11:00:46+01:00",
+          "tree_id": "045206bedf9b073d7037c83ed1669f24208f38f5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/dfdf9600557b8d4b4ec047bab6d1cfbb8375e210"
+        },
+        "date": 1744020106709,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.5,
+            "unit": "ns/op",
+            "extra": "3379287 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.5,
+            "unit": "ns/op",
+            "extra": "2827130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28511,
+            "unit": "ns/op",
+            "extra": "39883 times\n4 procs"
           }
         ]
       }

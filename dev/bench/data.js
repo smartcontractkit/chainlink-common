@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744045261887,
+  "lastUpdate": 1744051452207,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11214,6 +11214,48 @@ window.BENCHMARK_DATA = {
             "value": 28476,
             "unit": "ns/op",
             "extra": "42663 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "168561091+engnke@users.noreply.github.com",
+            "name": "engnke",
+            "username": "engnke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d68eef7f6097bf3e622172cee9c5465fa5cf4991",
+          "message": "beholder client - custom msg - add support for source/type attribute (#1111)\n\n* beholder client - custom msg - add support for source/type attribute name\n\n* comments\n\n* refactoring extract funtion",
+          "timestamp": "2025-04-07T14:43:00-04:00",
+          "tree_id": "da3dfb971a26fefdbc7c95ec3a671ea28bebf94e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d68eef7f6097bf3e622172cee9c5465fa5cf4991"
+        },
+        "date": 1744051450853,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.7,
+            "unit": "ns/op",
+            "extra": "3304754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.4,
+            "unit": "ns/op",
+            "extra": "2917315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28171,
+            "unit": "ns/op",
+            "extra": "42543 times\n4 procs"
           }
         ]
       }

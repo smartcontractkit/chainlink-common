@@ -64,7 +64,7 @@ func TestChipIngressEmit(t *testing.T) {
 	})
 
 	t.Run("returns error when Publish fails", func(t *testing.T) {
-		
+
 		clientMock := &mocks.ChipIngressClient{}
 
 		clientMock.

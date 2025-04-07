@@ -3,7 +3,8 @@ package beholder
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // dualSourceEmitter emits both to chip ingress and to the otel collector
@@ -13,6 +14,7 @@ import (
 type DualSourceEmitter struct {
 	chipIngressEmitter   Emitter
 	otelCollectorEmitter Emitter
+	log                  logger.Logger
 }
 
 func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitter) (Emitter, error) {
@@ -25,9 +27,15 @@ func NewDualSourceEmitter(chipIngressEmitter Emitter, otelCollectorEmitter Emitt
 		return nil, fmt.Errorf("otel collector emitter is nil")
 	}
 
+	logger, err := logger.New()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create logger: %w", err)
+	}
+
 	return &DualSourceEmitter{
 		chipIngressEmitter:   chipIngressEmitter,
 		otelCollectorEmitter: otelCollectorEmitter,
+		log:                  logger,
 	}, nil
 }
 
@@ -41,9 +49,9 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 	// Emit via chip ingress async
 	go func() {
 		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
-			// If the chip ingress emitter fails, we log the error but do not return it
+			// If the chip ingress emitter fails, we ONLY log the error
 			// because we still want to send the data to the OTLP collector and not cause disruption
-			log.Printf("Error emitting message to chip ingress: %v", err)
+			d.log.Infof("failed to emit to chip ingress: %v", err)
 		}
 	}()
 

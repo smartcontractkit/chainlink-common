@@ -1,4 +1,4 @@
-package utils
+package beholder
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
 // MetricInfo is a struct for metrics information
@@ -55,7 +53,7 @@ type MetricsCapBasic struct {
 
 // NewMetricsCapBasic creates a new MetricsCapBasic using the provided MetricsInfoCapBasic
 func NewMetricsCapBasic(info MetricsInfoCapBasic) (MetricsCapBasic, error) {
-	meter := beholder.GetMeter()
+	meter := GetMeter()
 	set := MetricsCapBasic{}
 
 	// Create new metrics

@@ -1,4 +1,4 @@
-package utils
+package beholder
 
 import (
 	"go.opentelemetry.io/otel/metric"

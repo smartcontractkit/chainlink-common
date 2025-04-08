@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744108708162,
+  "lastUpdate": 1744124148259,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11298,6 +11298,48 @@ window.BENCHMARK_DATA = {
             "value": 28138,
             "unit": "ns/op",
             "extra": "42480 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "david@makewhat.is",
+            "name": "David Johansen",
+            "username": "makewhatis"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "361235460f0a51a6cfc3f89c2b4fda931d8bba39",
+          "message": "O11Y-1066 - include Type and Id in fields returned from datasource query (#1114)",
+          "timestamp": "2025-04-08T16:53:25+02:00",
+          "tree_id": "10cdeb4a61e6dc415b5ba982126a81188d8ce24b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/361235460f0a51a6cfc3f89c2b4fda931d8bba39"
+        },
+        "date": 1744124146915,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 374.3,
+            "unit": "ns/op",
+            "extra": "3261441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.2,
+            "unit": "ns/op",
+            "extra": "2952630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28186,
+            "unit": "ns/op",
+            "extra": "42314 times\n4 procs"
           }
         ]
       }

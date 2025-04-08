@@ -2,24 +2,19 @@ package backoff
 
 import (
 	"context"
-	"errors"
 	"time"
 )
 
 // DefaultMaxElapsedTime sets a default limit for the total retry duration.
-const DefaultMaxElapsedTime = 15 * time.Minute
+const DefaultMaxElapsedTime = 1 * time.Minute
 
 // Operation is a function that attempts an operation and may be retried.
 type Operation[T any] func() (T, error)
-
-// Notify is a function called on operation error with the error and backoff duration.
-type Notify func(error, time.Duration)
 
 // retryOptions holds configuration settings for the retry mechanism.
 type retryOptions struct {
 	BackOff        BackOff       // Strategy for calculating backoff periods.
 	Timer          timer         // Timer to manage retry delays.
-	Notify         Notify        // Optional function to notify on each retry error.
 	MaxTries       uint          // Maximum number of retry attempts.
 	MaxElapsedTime time.Duration // Maximum total time for all retries.
 }
@@ -37,13 +32,6 @@ func WithBackOff(b BackOff) RetryOption {
 func withTimer(t timer) RetryOption {
 	return func(args *retryOptions) {
 		args.Timer = t
-	}
-}
-
-// WithNotify sets a notification function to handle retry errors.
-func WithNotify(n Notify) RetryOption {
-	return func(args *retryOptions) {
-		args.Notify = n
 	}
 }
 
@@ -94,12 +82,6 @@ func Retry[T any](ctx context.Context, operation Operation[T], opts ...RetryOpti
 			return res, err
 		}
 
-		// Handle permanent errors without retrying.
-		var permanent *PermanentError
-		if errors.As(err, &permanent) {
-			return res, err
-		}
-
 		// Stop retrying if context is cancelled.
 		if cerr := context.Cause(ctx); cerr != nil {
 			return res, cerr
@@ -111,21 +93,9 @@ func Retry[T any](ctx context.Context, operation Operation[T], opts ...RetryOpti
 			return res, err
 		}
 
-		// Reset backoff if RetryAfterError is encountered.
-		var retryAfter *RetryAfterError
-		if errors.As(err, &retryAfter) {
-			next = retryAfter.Duration
-			args.BackOff.Reset()
-		}
-
 		// Stop retrying if maximum elapsed time exceeded.
 		if args.MaxElapsedTime > 0 && time.Since(startedAt)+next > args.MaxElapsedTime {
 			return res, err
-		}
-
-		// Notify on error if a notifier function is provided.
-		if args.Notify != nil {
-			args.Notify(err, next)
 		}
 
 		// Wait for the next backoff period or context cancellation.

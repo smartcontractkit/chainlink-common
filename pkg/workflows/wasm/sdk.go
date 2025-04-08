@@ -174,7 +174,7 @@ func createEmitFn(
 // binary.
 func createFetchFn(
 	sdkConfig *RuntimeConfig,
-	l logger.Logger,
+	_ logger.Logger,
 	fetch func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
 ) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
 	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
@@ -192,13 +192,13 @@ func createFetchFn(
 		}
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
-			Id:        *sdkConfig.RequestID,
-			Url:       req.URL,
-			Method:    req.Method,
-			Headers:   values.ProtoMap(headerspb),
-			Body:      req.Body,
-			TimeoutMs: req.TimeoutMs,
-
+			Id:         *sdkConfig.RequestID,
+			Url:        req.URL,
+			Method:     req.Method,
+			Headers:    values.ProtoMap(headerspb),
+			Body:       req.Body,
+			TimeoutMs:  req.TimeoutMs,
+			MaxRetries: req.MaxRetries,
 			Metadata: &wasmpb.FetchRequestMetadata{
 				WorkflowId:          sdkConfig.Metadata.WorkflowID,
 				WorkflowName:        sdkConfig.Metadata.WorkflowName,

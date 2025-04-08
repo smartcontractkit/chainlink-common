@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"testing"
 	"time"
@@ -109,7 +108,7 @@ func TestRetryContext(t *testing.T) {
 		return false, fmt.Errorf("error (%d)", i)
 	}
 
-	_, err := Retry(ctx, f, WithBackOff(NewConstantBackOff(time.Millisecond)), withTimer(&testTimer{}))
+	_, err := Retry(ctx, f, WithBackOff(&ZeroBackOff{}), withTimer(&testTimer{}))
 	if err == nil {
 		t.Errorf("error is unexpectedly nil")
 	}
@@ -118,109 +117,5 @@ func TestRetryContext(t *testing.T) {
 	}
 	if i != cancelOn {
 		t.Errorf("invalid number of retries: %d", i)
-	}
-}
-
-func TestRetryPermanent(t *testing.T) {
-	ensureRetries := func(test string, shouldRetry bool, f func() (int, error), expectRes int) {
-		numRetries := -1
-		maxRetries := 1
-
-		res, _ := Retry(
-			context.Background(),
-			func() (int, error) {
-				numRetries++
-				if numRetries >= maxRetries {
-					return -1, Permanent(errors.New("forced"))
-				}
-				return f()
-			},
-			WithBackOff(NewExponentialBackOff()),
-			withTimer(&testTimer{}),
-		)
-
-		if shouldRetry && numRetries == 0 {
-			t.Errorf("Test: '%s', backoff should have retried", test)
-		}
-
-		if !shouldRetry && numRetries > 0 {
-			t.Errorf("Test: '%s', backoff should not have retried", test)
-		}
-
-		if res != expectRes {
-			t.Errorf("Test: '%s', got res %d but expected %d", test, res, expectRes)
-		}
-	}
-
-	for _, testCase := range []struct {
-		name        string
-		f           func() (int, error)
-		shouldRetry bool
-		res         int
-	}{
-		{
-			"nil test",
-			func() (int, error) {
-				return 1, nil
-			},
-			false,
-			1,
-		},
-		{
-			"io.EOF",
-			func() (int, error) {
-				return 2, io.EOF
-			},
-			true,
-			-1,
-		},
-		{
-			"Permanent(io.EOF)",
-			func() (int, error) {
-				return 3, Permanent(io.EOF)
-			},
-			false,
-			3,
-		},
-		{
-			"Wrapped: Permanent(io.EOF)",
-			func() (int, error) {
-				return 4, fmt.Errorf("Wrapped error: %w", Permanent(io.EOF))
-			},
-			false,
-			4,
-		},
-	} {
-		ensureRetries(testCase.name, testCase.shouldRetry, testCase.f, testCase.res)
-	}
-}
-
-func TestPermanent(t *testing.T) {
-	want := errors.New("foo")
-	other := errors.New("bar")
-	var err error = Permanent(want)
-
-	got := errors.Unwrap(err)
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-
-	if is := errors.Is(err, want); !is {
-		t.Errorf("err: %v is not %v", err, want)
-	}
-
-	if is := errors.Is(err, other); is {
-		t.Errorf("err: %v is %v", err, other)
-	}
-
-	wrapped := fmt.Errorf("wrapped: %w", err)
-	var permanent *PermanentError
-	if !errors.As(wrapped, &permanent) {
-		t.Errorf("errors.As(%v, %v)", wrapped, permanent)
-	}
-
-	err = Permanent(nil)
-	if err != nil {
-		t.Errorf("got %v, want nil", err)
 	}
 }

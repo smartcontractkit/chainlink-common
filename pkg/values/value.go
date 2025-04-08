@@ -146,7 +146,10 @@ func Wrap(v any) (Value, error) {
 	case reflect.Struct:
 		return CreateMapFromStruct(v)
 	case reflect.Pointer:
-		// pointer can't be null or the switch statement above would catch it.
+		if val.IsNil() {
+			return nil, nil
+		}
+		// pointer can't be null or the statement above would catch it.
 		return Wrap(val.Elem().Interface())
 	case reflect.String:
 		return Wrap(val.Convert(reflect.TypeOf("")).Interface())

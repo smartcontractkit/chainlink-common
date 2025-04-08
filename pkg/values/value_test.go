@@ -2,6 +2,8 @@ package values
 
 import (
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"math"
 	"math/big"
 	"reflect"
@@ -24,6 +26,16 @@ type TestValueEvent struct {
 type TestReport struct {
 	FeedID     int64  `json:"feedId"`
 	FullReport string `json:"fullreport"`
+}
+
+type LLOStreamDecimal struct {
+	StreamID uint32 `json:"streamId"`
+	Decimal  []byte `json:"decimal"`
+}
+
+type LLOStreamsTriggerEvent struct {
+	Payload                         []*LLOStreamDecimal `json:"payload"`
+	ObservationTimestampNanoseconds uint64              `json:"observationTimestampNanoseconds"`
 }
 
 func Test_Value(t *testing.T) {
@@ -159,6 +171,27 @@ func Test_Value(t *testing.T) {
 					"FullReport": "world",
 				}
 				err := mapstructure.Decode(m, &v)
+				if err != nil {
+					return nil, nil, err
+				}
+				vv, err := Wrap(&v)
+				return m, vv, err
+			},
+		},
+		{
+			name: "nilStructPointer",
+			newValue: func() (any, Value, error) {
+				var v LLOStreamsTriggerEvent
+				var d1 = make([]byte, 4)
+				binary.BigEndian.PutUint32(d1, 11)
+				var d3 []byte
+				// This fails the equivalence check if uint32 is used for StreamID.
+				m := map[string]any{
+					"Payload":                         []any{map[string]any{"StreamID": int64(1), "Decimal": d1}, nil, map[string]any{"StreamID": int64(3), "Decimal": d3}},
+					"ObservationTimestampNanoseconds": int64(123456789),
+				}
+				err := mapstructure.Decode(m, &v)
+				fmt.Printf("v %#v", v.Payload[0].StreamID)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -310,20 +343,46 @@ func Test_IntTypes(t *testing.T) {
 	}
 }
 
-func Test_FloatTypes(t *testing.T) {
-	testCases := []struct {
-		name string
-		test func(tt *testing.T)
-	}{
-		{name: "wrap float64 as float64", test: func(tt *testing.T) { wrappableTest[float64, float64](tt, float64(100.01)) }},
-		{name: "wrap float32 as float64", test: func(tt *testing.T) { wrappableTest[float32, float64](tt, float32(100.01)) }},
+func Test_NilStructWrapUnwrap(t *testing.T) {
+	payload := make([]*LLOStreamDecimal, 3)
+	var d1 = make([]byte, 4)
+	binary.BigEndian.PutUint32(d1, 11)
+	var d3 []byte
+	payload[0] = &LLOStreamDecimal{
+		StreamID: 1,
+		Decimal:  d1,
 	}
+	// Leave index 1 nil
+	payload[2] = &LLOStreamDecimal{
+		StreamID: 3,
+		Decimal:  d3,
+	}
+	ste := LLOStreamsTriggerEvent{
+		Payload:                         payload,
+		ObservationTimestampNanoseconds: 123456789,
+	}
+	wrapped, err := WrapMap(ste)
+	require.NoError(t, err)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(st *testing.T) {
-			tc.test(st)
-		})
+	unwrapped := LLOStreamsTriggerEvent{}
+	err = wrapped.UnwrapTo(&unwrapped)
+
+	require.NoError(t, err)
+
+	// The wrap/unwrap process doesn't create equal objects, due to nil values being cast to:
+	// { StreamID: uint32(0), Decimal: []uint8([]byte(nil)) }
+
+	assert.Equal(t, len(payload), len(unwrapped.Payload))
+	for i, streamData := range payload {
+		if streamData == nil {
+			assert.Equal(t, uint32(0), unwrapped.Payload[i].StreamID)
+			assert.Equal(t, []uint8([]byte(nil)), unwrapped.Payload[i].Decimal)
+			continue
+		}
+		assert.Equal(t, streamData.StreamID, unwrapped.Payload[i].StreamID)
+		assert.Equal(t, streamData.Decimal, unwrapped.Payload[i].Decimal)
 	}
+	assert.Equal(t, ste.ObservationTimestampNanoseconds, unwrapped.ObservationTimestampNanoseconds)
 }
 
 func Test_StructWrapUnwrap(t *testing.T) {
@@ -611,6 +670,22 @@ func Test_Aliases(t *testing.T) {
 				})
 			},
 		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			tc.test(st)
+		})
+	}
+}
+
+func Test_FloatTypes(t *testing.T) {
+	testCases := []struct {
+		name string
+		test func(tt *testing.T)
+	}{
+		{name: "wrap float64 as float64", test: func(tt *testing.T) { wrappableTest[float64, float64](tt, float64(100.01)) }},
+		{name: "wrap float32 as float64", test: func(tt *testing.T) { wrappableTest[float32, float64](tt, float32(100.01)) }},
 	}
 
 	for _, tc := range testCases {

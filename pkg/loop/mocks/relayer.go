@@ -172,6 +172,69 @@ func (_c *Relayer_HealthReport_Call) RunAndReturn(run func() map[string]error) *
 	return _c
 }
 
+// LatestAndFinalizedHead provides a mock function with given fields: ctx
+func (_m *Relayer) LatestAndFinalizedHead(ctx context.Context) (types.Head, types.Head, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestAndFinalizedHead")
+	}
+
+	var r0 types.Head
+	var r1 types.Head
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (types.Head, types.Head, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) types.Head); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(types.Head)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) types.Head); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Get(1).(types.Head)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Relayer_LatestAndFinalizedHead_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestAndFinalizedHead'
+type Relayer_LatestAndFinalizedHead_Call struct {
+	*mock.Call
+}
+
+// LatestAndFinalizedHead is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Relayer_Expecter) LatestAndFinalizedHead(ctx interface{}) *Relayer_LatestAndFinalizedHead_Call {
+	return &Relayer_LatestAndFinalizedHead_Call{Call: _e.mock.On("LatestAndFinalizedHead", ctx)}
+}
+
+func (_c *Relayer_LatestAndFinalizedHead_Call) Run(run func(ctx context.Context)) *Relayer_LatestAndFinalizedHead_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_LatestAndFinalizedHead_Call) Return(_a0 types.Head, _a1 types.Head, _a2 error) *Relayer_LatestAndFinalizedHead_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *Relayer_LatestAndFinalizedHead_Call) RunAndReturn(run func(context.Context) (types.Head, types.Head, error)) *Relayer_LatestAndFinalizedHead_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // LatestHead provides a mock function with given fields: ctx
 func (_m *Relayer) LatestHead(ctx context.Context) (types.Head, error) {
 	ret := _m.Called(ctx)

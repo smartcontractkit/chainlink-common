@@ -84,6 +84,8 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// LatestAndFinalizedHead returns the latest head and finalized head for the underlying chain.
+	LatestAndFinalizedHead(ctx context.Context) (Head, Head, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.

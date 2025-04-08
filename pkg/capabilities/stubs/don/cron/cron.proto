@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package don.cron.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron";
+
+import "metadata.proto";
+
+message Config{
+  string schedule = 1;
+}
+
+message CronTrigger {
+  int64 scheduled_execution_time = 1;
+}
+
+service Cron {
+  rpc Trigger(Config) returns (CronTrigger) {
+    option (cre.metadata.callType) = Trigger;
+  }
+}

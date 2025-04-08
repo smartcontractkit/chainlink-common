@@ -27,6 +27,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/jonboulle/clockwork v0.4.0
 	github.com/jpillora/backoff v1.0.0
+	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.9
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/marcboeker/go-duckdb v1.8.3

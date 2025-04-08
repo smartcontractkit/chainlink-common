@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	meter "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -68,9 +69,9 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 }
 
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
-	metering := make([]*MeteringReportNodeDetail, len(resp.Metadata.Metering))
+	metering := make([]*meter.MeteringReportNodeDetail, len(resp.Metadata.Metering))
 	for idx, detail := range resp.Metadata.Metering {
-		metering[idx] = &MeteringReportNodeDetail{
+		metering[idx] = &meter.MeteringReportNodeDetail{
 			Peer_2PeerId: detail.Peer2PeerID,
 			SpendUnit:    detail.SpendUnit,
 			SpendValue:   detail.SpendValue,

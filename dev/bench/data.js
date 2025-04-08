@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744051452207,
+  "lastUpdate": 1744108708162,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11256,6 +11256,48 @@ window.BENCHMARK_DATA = {
             "value": 28171,
             "unit": "ns/op",
             "extra": "42543 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cawthornegd@gmail.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4581dd3fccdcf58344abb87cd6f8b245a767f296",
+          "message": "Fix values Wrap(v any) null Interface{} bug (#1104)\n\n* Fix values Wrap(v any) nil ptr bug\n\n* Add tests\n\n* Remove fixture change\n\n* Update comment\n\n---------\n\nCo-authored-by: Cedric <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2025-04-08T11:37:19+01:00",
+          "tree_id": "89f77bea8ef587e6d89f99749378fff4965c643e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4581dd3fccdcf58344abb87cd6f8b245a767f296"
+        },
+        "date": 1744108707445,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.6,
+            "unit": "ns/op",
+            "extra": "3268617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.1,
+            "unit": "ns/op",
+            "extra": "2867019 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28138,
+            "unit": "ns/op",
+            "extra": "42480 times\n4 procs"
           }
         ]
       }

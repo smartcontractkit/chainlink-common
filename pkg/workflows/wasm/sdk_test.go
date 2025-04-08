@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v5"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/backoff"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 
 	"github.com/stretchr/testify/assert"

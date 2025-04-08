@@ -7,7 +7,6 @@ require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/atombender/go-jsonschema v0.16.1-0.20240916205339-a74cd4e2851c
 	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
-	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.15.2
 	github.com/cloudevents/sdk-go/v2 v2.16.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0

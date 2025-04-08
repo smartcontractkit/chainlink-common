@@ -34,4 +34,10 @@ packages:
       Relayer:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
     interfaces:
-      OTLPExporter:
+      OTLPExporter: {}
+  github.com/smartcontractkit/chainlink-common/pkg/chipingress:
+    interfaces:
+      ChipIngressClient: {}
+  github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb:
+    interfaces:
+      ChipIngressClient: {}

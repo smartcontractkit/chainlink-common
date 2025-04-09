@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"maps"
 
-	_ "google.golang.org/protobuf/proto"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"

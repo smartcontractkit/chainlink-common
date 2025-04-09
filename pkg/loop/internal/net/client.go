@@ -2,7 +2,6 @@ package net
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -109,31 +108,6 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	return nil, context.Cause(ctx)
 }
 
-// AppError represents a custom application error that wraps another error.
-type AppError struct {
-	Err error // Wrapped error
-}
-
-// Error implements the error interface for AppError.
-func (e *AppError) Error() string {
-	if e.Err != nil {
-		return e.Err.Error()
-	}
-	return ""
-}
-
-// Unwrap allows access to the wrapped error.
-func (e *AppError) Unwrap() error {
-	return e.Err
-}
-
-// NewAppError creates a new AppError instance.
-func NewAppError(err error) *AppError {
-	return &AppError{
-		Err: err,
-	}
-}
-
 // refresh replaces c.cc with a new (different from orig) *grpc.ClientConn, and returns it as well.
 // It will block until a new connection is successfully dialed, or return nil if the context expires.
 func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.ClientConn, error) {
@@ -155,9 +129,7 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.
 		if err != nil {
 			c.Logger.Errorw("Client refresh attempt failed", "err", err)
 			c.CloseAll(deps...)
-
-			var appErr *AppError
-			if errors.As(err, &appErr) {
+			if !isErrTerminal(err) {
 				return false, err
 			}
 

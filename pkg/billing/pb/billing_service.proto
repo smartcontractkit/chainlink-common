@@ -4,6 +4,7 @@ package pb;
 
 import "google/protobuf/timestamp.proto";
 import "capabilities/pb/capabilities.proto";
+import "metering/pb/metering.proto";
 
 option go_package = "./pb";
 
@@ -107,7 +108,7 @@ message SubmitWorkflowReceiptRequest {
   string account_id = 1;
   string workflow_id = 2;
   string workflow_execution_id = 3;
-  capabilities.MeteringReport metering = 4;
+  metering.MeteringReport metering = 4;
 }
 message SubmitWorkflowReceiptResponse {
   bool success = 1;

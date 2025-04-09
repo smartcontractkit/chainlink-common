@@ -46,7 +46,9 @@ func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfi
 		return contractReaderID, nil, nil
 	})
 
-	return contractreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractReaderClientInRelayerSet"), cc), nil
+	client := contractreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractReaderClientInRelayerSet"), cc)
+	err := client.Ready()
+	return client, err
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {

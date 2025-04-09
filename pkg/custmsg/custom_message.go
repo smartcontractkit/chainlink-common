@@ -112,6 +112,8 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	if err != nil {
 		return fmt.Errorf("sending custom message failed to marshal to JSON: %w", err)
 	}
+	fmt.Printf("sending custom message: %s\n", msg+"\n")
+	fmt.Printf("sending custom message, encoded: %s\n", string(buf.Bytes())+"\n")
 
 	err = beholder.GetEmitter().Emit(ctx, buf.Bytes(),
 		"beholder_data_schema", "/beholder-base-message/versions/1", // required

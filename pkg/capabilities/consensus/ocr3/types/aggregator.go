@@ -1,6 +1,8 @@
 package types
 
 import (
+	"bytes"
+	"encoding/binary"
 	"strings"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
@@ -21,6 +23,23 @@ type Metadata struct {
 	WorkflowName     string // 10 hex bytes (string len = 20)
 	WorkflowOwner    string // 20 hex bytes (string len = 40)
 	ReportID         string //  2 hex bytes (string len = 4)
+}
+
+func (m Metadata) Encode() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := binary.Write(buf, binary.BigEndian, m)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (m Metadata) Length() int {
+	bytes, err := m.Encode()
+	if err != nil {
+		return 0
+	}
+	return len(bytes)
 }
 
 // the contract requires exactly 10 bytes for the workflow name

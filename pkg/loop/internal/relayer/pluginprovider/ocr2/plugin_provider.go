@@ -1,8 +1,9 @@
 package ocr2
 
 import (
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
+
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -26,7 +27,7 @@ var _ goplugin.GRPCClientConn = (*PluginProviderClient)(nil)
 func NewPluginProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *PluginProviderClient {
 	p := &PluginProviderClient{ConfigProviderClient: NewConfigProviderClient(b.WithName("PluginProviderClient"), cc)}
 	p.contractTransmitter = &contractTransmitterClient{b, pb.NewContractTransmitterClient(cc)}
-	p.contractReader = contractreader.NewClient(b, cc)
+	p.contractReader = contractreader.NewClient(goplugin.NewServiceClient(b, cc), pb.NewContractReaderClient(cc))
 	p.codec = contractreader.NewCodecClient(b, cc)
 	return p
 }

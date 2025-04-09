@@ -76,7 +76,7 @@ func (c *contractReaderLoopTester) Setup(t *testing.T) {
 }
 
 func (c *contractReaderLoopTester) GetContractReader(t *testing.T) types.ContractReader {
-	return contractreader.NewClient(nil, c.conn, contractreader.WithClientEncoding(c.encodeWith))
+	return contractreader.NewClient(nil, pb.NewContractReaderClient(c.conn), contractreader.WithClientEncoding(c.encodeWith))
 }
 
 func (c *contractReaderLoopTester) Name() string {

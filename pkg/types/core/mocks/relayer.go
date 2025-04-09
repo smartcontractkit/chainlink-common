@@ -336,23 +336,23 @@ func (_c *Relayer_NewContractWriter_Call) RunAndReturn(run func(context.Context,
 }
 
 // NewPluginProvider provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Relayer) NewPluginProvider(_a0 context.Context, _a1 core.RelayArgs, _a2 core.PluginArgs) (types.PluginProvider, error) {
+func (_m *Relayer) NewPluginProvider(_a0 context.Context, _a1 core.RelayArgs, _a2 core.PluginArgs) (core.PluginProvider, error) {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewPluginProvider")
 	}
 
-	var r0 types.PluginProvider
+	var r0 core.PluginProvider
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.RelayArgs, core.PluginArgs) (types.PluginProvider, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.RelayArgs, core.PluginArgs) (core.PluginProvider, error)); ok {
 		return rf(_a0, _a1, _a2)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, core.RelayArgs, core.PluginArgs) types.PluginProvider); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.RelayArgs, core.PluginArgs) core.PluginProvider); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(types.PluginProvider)
+			r0 = ret.Get(0).(core.PluginProvider)
 		}
 	}
 
@@ -385,12 +385,12 @@ func (_c *Relayer_NewPluginProvider_Call) Run(run func(_a0 context.Context, _a1 
 	return _c
 }
 
-func (_c *Relayer_NewPluginProvider_Call) Return(_a0 types.PluginProvider, _a1 error) *Relayer_NewPluginProvider_Call {
+func (_c *Relayer_NewPluginProvider_Call) Return(_a0 core.PluginProvider, _a1 error) *Relayer_NewPluginProvider_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Relayer_NewPluginProvider_Call) RunAndReturn(run func(context.Context, core.RelayArgs, core.PluginArgs) (types.PluginProvider, error)) *Relayer_NewPluginProvider_Call {
+func (_c *Relayer_NewPluginProvider_Call) RunAndReturn(run func(context.Context, core.RelayArgs, core.PluginArgs) (core.PluginProvider, error)) *Relayer_NewPluginProvider_Call {
 	_c.Call.Return(run)
 	return _c
 }

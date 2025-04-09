@@ -4,7 +4,17 @@ import (
     "context"
     "time"
 
-    {{.GoImportPath}}
+    {{- range .Services }}
+        {{- range .Methods }}
+            {{- addImport .Input.GoIdent.GoImportPath "" }}
+            {{- addImport .Output.GoIdent.GoImportPath "" }}
+        {{- end }}
+    {{- end }}
+
+    {{- range allimports }}
+    {{.}}
+    {{- end }}
+
     "github.com/smartcontractkit/chainlink-common/pkg/types/core"
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
@@ -17,11 +27,11 @@ type {{.GoName}}Capability interface {
     {{- range .Methods}}
         {{- if isTrigger . }}
             {{ $hasTriggers = true }}
-    Register{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}], error)
-    Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) error
+    Register{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) (<- chan capabilities.TriggerAndId[*{{name .Output.GoIdent ""}}], error)
+    Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) error
         {{- else }}
             {{ $hasActions = true }}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}, /* TODO this isn't right */ config *{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}) (*{{$.GoPackageName}}.{{.Output.GoIdent.GoName}}, error)
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}, /* TODO this isn't right */ config *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
     Register{{.GoName}}(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
     Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
         {{- end }}
@@ -100,7 +110,7 @@ func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, 
         {{- range .Methods}}
         {{- if (isTrigger .) }}
             case "{{.GoName}}":
-                input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+                input := &{{name .Input.GoIdent ""}}{}
                 return capabilities.RegisterTrigger(ctx, "{{$.CapabilityId}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- end }}
@@ -115,7 +125,7 @@ func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context
             {{- range .Methods}}
             {{- if (isTrigger .) }}
                 case "{{.GoName}}":
-                    input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+                    input := &{{name .Input.GoIdent ""}}{}
                     _, err := capabilities.FromValueOrAny(request.Config, request.Request, input)
                     if err != nil {
                         return err
@@ -149,9 +159,9 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
     {{- range .Methods}}
     {{- if  not (isTrigger .) }}
         case "{{.GoName}}":
-            input := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+            input := &{{name .Input.GoIdent ""}}{}
             // TODO config
-            config := &{{$.GoPackageName}}.{{.Input.GoIdent.GoName}}{}
+            config := &{{name .Input.GoIdent ""}}{}
             return capabilities.Execute(ctx, request, input, config, c.{{$service.GoName}}Capability.{{.GoName}})
     {{- end }}
     {{- end }}

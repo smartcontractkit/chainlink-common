@@ -46,6 +46,7 @@ func (t *templateGenerator) Generate(baseFile, args any) (string, string, error)
 
 func runTemplate(name, tmplText string, args any, partials map[string]string) (string, error) {
 	buf := &bytes.Buffer{}
+	imports := map[string]bool{}
 	templ := template.New(name).Funcs(template.FuncMap{
 		"LowerFirst": func(s string) string {
 			if len(s) == 0 {
@@ -68,6 +69,31 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 			return m, nil
 		},
 		"isTrigger": isTrigger,
+		"addImport": func(name protogen.GoImportPath, ignore string) string {
+			if ignore != name.String() {
+				imports[name.String()] = true
+			}
+
+			return ""
+		},
+		"allimports": func() []string {
+			var allImports []string
+			for i := range imports {
+				allImports = append(allImports, i)
+			}
+			return allImports
+		},
+		"name": func(ident protogen.GoIdent, ignore string) string {
+			importPath := ident.GoImportPath.String()
+			if ignore == importPath {
+				return ident.GoName
+			}
+
+			// remove quotes
+			importPath = importPath[1 : len(importPath)-1]
+			parts := strings.Split(importPath, "/")
+			return fmt.Sprintf("%s.%s", parts[len(parts)-1], ident.GoName)
+		},
 	})
 
 	// Register partials
@@ -99,8 +125,4 @@ func isTrigger(method *protogen.Method) bool {
 	callType := proto.GetExtension(opts, pb.E_CallType).(pb.CallType)
 
 	return callType == pb.CallType_Trigger
-}
-
-func removeRegistrationMethods(file *protogen.File) {
-
 }

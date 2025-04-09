@@ -12,6 +12,9 @@ enum CallType {
   Trigger = 1;
 }
 
+// TODO should trigger just use stream?
+// If we need pre-registration, we'll need this anyways.
+// But we can use it only for that case.
 extend google.protobuf.MethodOptions {
   CallType callType = 50011;
 }

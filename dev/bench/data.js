@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744124148259,
+  "lastUpdate": 1744208799429,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11340,6 +11340,48 @@ window.BENCHMARK_DATA = {
             "value": 28186,
             "unit": "ns/op",
             "extra": "42314 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8b1123f4d37664e49bd6a70484d6065d39b11315",
+          "message": "refactoring protos (#1113)\n\n* refactoring protos\n\n* fixing make generate",
+          "timestamp": "2025-04-09T10:25:20-04:00",
+          "tree_id": "caadeeab0ab03fe7e3ddf89c2c45d6791461b786",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8b1123f4d37664e49bd6a70484d6065d39b11315"
+        },
+        "date": 1744208798453,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.7,
+            "unit": "ns/op",
+            "extra": "3297996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.3,
+            "unit": "ns/op",
+            "extra": "2960071 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29519,
+            "unit": "ns/op",
+            "extra": "42650 times\n4 procs"
           }
         ]
       }

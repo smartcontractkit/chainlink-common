@@ -13,6 +13,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -97,6 +98,75 @@ func Test_RelayerSet(t *testing.T) {
 	name := relayerClient.Name()
 	require.Equal(t, "test-relayer", name)
 	relayer1.AssertCalled(t, "Name")
+}
+
+// Test_GetAndUseContractReader tests getting and using a contract reader from the relayer set.
+func Test_GetAndUseContractReader(t *testing.T) {
+	ctx := t.Context()
+	stopCh := make(chan struct{})
+	log := logger.Test(t)
+
+	// Mock relayer and contract reader
+	relayer := mocks.NewRelayer(t)
+	contractReader := mocks.NewContractReader(t)
+
+	relayer.On("NewContractReader", mock.Anything, mock.Anything, mock.Anything).Return(contractReader, nil)
+
+	relayers := map[types.RelayID]core.Relayer{
+		{
+			Network: "N1",
+			ChainID: "C1",
+		}: relayer,
+	}
+
+	pluginName := "relayerset-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRelaySetPlugin{
+				log:  log,
+				impl: &TestRelayerSet{relayers: relayers},
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: log,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	relayerSetClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := relayerSetClient.(*Client)
+	require.True(t, ok)
+
+	rc.NewContractReader()
+
+	// Get the relayer
+	relayerClient, err := rc.Get(ctx, types.RelayID{
+		Network: "N1",
+		ChainID: "C1",
+	})
+	require.NoError(t, err)
+
+	// Create a contract reader
+	contractReaderConfig := []byte(`{"key": "value"}`)
+	contractReaderClient, err := relayerClient.NewContractReader(ctx, contractReaderConfig)
+	require.NoError(t, err)
+
+	// Use the contract reader
+	contractReader.On("GetLatestValue", mock.Anything, mock.Anything, mock.Anything).Return(&pb.GetLatestValueReply{}, nil)
+	resp, err := contractReaderClient.GetLatestValue(ctx, &pb.GetLatestValueRequest{})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	contractReader.AssertCalled(t, "GetLatestValue", mock.Anything, mock.Anything, mock.Anything)
 }
 
 type TestRelayerSet struct {

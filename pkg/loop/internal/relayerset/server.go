@@ -3,22 +3,31 @@ package relayerset
 import (
 	"context"
 	"fmt"
+	"sync"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	"github.com/smartcontractkit/grpc-proxy/proxy"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset/inprocessprovider"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
+
+type readerAndServer struct {
+	reader types.ContractReader
+	server pb.ContractReaderServer
+}
 
 type Server struct {
 	log logger.Logger
@@ -29,12 +38,17 @@ type Server struct {
 
 	serverResources net.Resources
 
+	readers map[string]*readerAndServer
+
 	Name string
+
+	readersMux sync.Mutex
 }
 
 func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *net.BrokerExt) (*Server, net.Resource) {
 	pluginProviderServers := make(net.Resources, 0)
-	server := &Server{log: log, impl: underlying, broker: broker, serverResources: pluginProviderServers}
+	server := &Server{log: log, impl: underlying, broker: broker, serverResources: pluginProviderServers,
+		readers: map[string]*readerAndServer{}}
 
 	return server, net.Resource{
 		Name:   "PluginProviderServers",
@@ -50,6 +64,32 @@ func (s *Server) Close() error {
 	}
 
 	return nil
+}
+
+func (s *Server) getReader(id string) (*readerAndServer, error) {
+	s.readersMux.Lock()
+	defer s.readersMux.Unlock()
+
+	reader, ok := s.readers[id]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "contract reader not found for id %s", id)
+	}
+
+	return reader, nil
+}
+
+func (s *Server) addReader(id string, reader *readerAndServer) {
+	s.readersMux.Lock()
+	defer s.readersMux.Unlock()
+
+	s.readers[id] = reader
+}
+
+func (s *Server) removeReader(id string) {
+	s.readersMux.Lock()
+	defer s.readersMux.Unlock()
+
+	delete(s.readers, id)
 }
 
 func (s *Server) Get(ctx context.Context, req *relayerset.GetRelayerRequest) (*relayerset.GetRelayerResponse, error) {
@@ -155,31 +195,108 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 // RelayerClient.NewContractReader -> This is a call to RelayerSet.NewContractReader with (relayerID, []contractReaderConfig);
 // The implementation will then fetch the relayer and call NewContractReader on it
 func (s *Server) NewContractReader(ctx context.Context, req *relayerset.NewContractReaderRequest) (*relayerset.NewContractReaderResponse, error) {
+
 	relayer, err := s.getRelayer(ctx, req.RelayerId)
 	if err != nil {
 		return nil, err
 	}
 
-	contractReader, err := relayer.NewContractReader(ctx, req.ContractReaderConfig)
+	reader, err := relayer.NewContractReader(ctx, req.ContractReaderConfig)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error creating contract reader: %v", err)
 	}
 
-	// Start ContractReader service
-	if err = contractReader.Start(ctx); err != nil {
-		return nil, err
-	}
+	readerId := uuid.New().String()
+	server := contractreader.NewServer(reader)
 
-	// Start gRPC service for the ContractReader service above
-	const name = "ContractReaderInRelayerSet"
-	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
-		contractreader.RegisterContractReaderService(s, contractReader)
-	}, net.Resource{Closer: contractReader, Name: name})
+	s.addReader(readerId, &readerAndServer{
+		reader: reader,
+		server: server,
+	})
+
+	return &relayerset.NewContractReaderResponse{ContractReaderId: readerId}, nil
+}
+
+func (s *Server) ContractReaderStart(ctx context.Context, req *relayerset.ContractReaderStartRequest) (*emptypb.Empty, error) {
+	reader, err := s.getReader(req.ContractReaderId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &relayerset.NewContractReaderResponse{ContractReaderId: id}, nil
+	return &emptypb.Empty{}, reader.reader.Start(ctx)
+}
+
+func (s *Server) ContractReaderClose(ctx context.Context, req *relayerset.ContractReaderCloseRequest) (*emptypb.Empty, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	s.removeReader(req.ContractReaderId)
+	return &emptypb.Empty{}, reader.reader.Close()
+}
+
+func (s *Server) ContractReaderGetLatestValue(ctx context.Context, req *relayerset.ContractReaderGetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.GetLatestValue(ctx, req.GetRequest())
+}
+
+func (s *Server) ContractReaderGetLatestValueWithHeadData(ctx context.Context, req *relayerset.ContractReaderGetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.GetLatestValueWithHeadData(ctx, req.GetRequest())
+}
+
+func (s *Server) ContractReaderBatchGetLatestValues(ctx context.Context, req *relayerset.ContractReaderBatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.BatchGetLatestValues(ctx, req.GetRequest())
+}
+
+func (s *Server) ContractReaderQueryKeys(ctx context.Context, req *relayerset.ContractReaderQueryKeysRequest) (*pb.QueryKeysReply, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.QueryKeys(ctx, req.GetRequest())
+}
+
+func (s *Server) ContractReaderQueryKey(ctx context.Context, req *relayerset.ContractReaderQueryKeyRequest) (*pb.QueryKeyReply, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.QueryKey(ctx, req.GetRequest())
+}
+
+func (s *Server) ContractReaderBind(ctx context.Context, req *relayerset.ContractReaderBindRequest) (*emptypb.Empty, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.Bind(ctx, req.GetRequest())
+}
+
+func (s *Server) ContractReaderUnbind(ctx context.Context, req *relayerset.ContractReaderUnbindRequest) (*emptypb.Empty, error) {
+	reader, err := s.getReader(req.ContractReaderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader.server.Unbind(ctx, req.GetRequest())
 }
 
 // RelayerSet is supposed to serve relayers, which then hold a ContractReader and ContractWriter. Serving NewContractWriter

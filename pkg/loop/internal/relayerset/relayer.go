@@ -7,7 +7,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -36,17 +35,8 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	return relayer.WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
 }
 
-func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
-	cc := r.relayerSetClient.NewClientConn("ContractReader", func(ctx context.Context) (uint32, net.Resources, error) {
-		contractReaderID, err := r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
-		if err != nil {
-			return 0, nil, fmt.Errorf("error getting NewContractReader from relayerSetServer: %w", err)
-		}
-
-		return contractReaderID, nil, nil
-	})
-
-	return contractreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractReaderClientInRelayerSet"), cc), nil
+func (r *relayerClient) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
+	return r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {

@@ -36,13 +36,13 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	return relayer.WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
 }
 
-func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
-	cc := r.relayerSetClient.NewClientConn("ContractReader", func(ctx context.Context) (uint32, net.Resources, error) {
-		contractReaderID, err := r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
-		if err != nil {
-			return 0, nil, fmt.Errorf("error getting NewContractReader from relayerSetServer: %w", err)
-		}
+func (r *relayerClient) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
+	contractReaderID, err := r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
+	if err != nil {
+		return nil, fmt.Errorf("error getting NewContractReader from relayerSetServer: %w", err)
+	}
 
+	cc := r.relayerSetClient.NewClientConn("ContractReader", func(ctx context.Context) (uint32, net.Resources, error) {
 		return contractReaderID, nil, nil
 	})
 

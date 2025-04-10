@@ -51,6 +51,9 @@ func TestEnvConfig_parse(t *testing.T) {
 		expectedTelemetryEmitterExportInterval     time.Duration
 		expectedTelemetryEmitterExportMaxBatchSize int
 		expectedTelemetryEmitterMaxQueueSize       int
+
+		expectedChipIngressEnabled  bool
+		expectedChipIngressEndpoint string
 	}{
 		{
 			name: "All variables set correctly",
@@ -84,6 +87,9 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
+
+				envChipIngressEnabled:  "true",
+				envChipIngressEndpoint: "http://chip-ingress.example.com",
 			},
 			expectError: false,
 
@@ -114,6 +120,9 @@ func TestEnvConfig_parse(t *testing.T) {
 			expectedTelemetryEmitterExportInterval:     2 * time.Second,
 			expectedTelemetryEmitterExportMaxBatchSize: 100,
 			expectedTelemetryEmitterMaxQueueSize:       1000,
+
+			expectedChipIngressEnabled:  true,
+			expectedChipIngressEndpoint: "http://chip-ingress.example.com",
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -136,6 +145,149 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTracingEnabled: "invalid_bool",
 			},
 			expectError: true,
+		},
+		{
+			name: "ChipIngress enabled but endpoint missing",
+			envVars: map[string]string{
+				envChipIngressEnabled: "true",
+			},
+			expectError: true,
+		},
+		{
+			name: "ChipIngress enabled with invalid boolean",
+			envVars: map[string]string{
+				envDatabaseURL:                    "postgres://user:password@localhost:5432/db",
+				envDatabaseIdleInTxSessionTimeout: "42s",
+				envDatabaseLockTimeout:            "8m",
+				envDatabaseQueryTimeout:           "7s",
+				envDatabaseLogSQL:                 "true",
+				envDatabaseMaxOpenConns:           "9999",
+				envDatabaseMaxIdleConns:           "8080",
+
+				envPromPort:                 "8080",
+				envTracingEnabled:           "true",
+				envTracingCollectorTarget:   "some:target",
+				envTracingSamplingRatio:     "1.0",
+				envTracingTLSCertPath:       "internal/test/fixtures/client.pem",
+				envTracingAttribute + "XYZ": "value",
+
+				envTelemetryEnabled:                   "true",
+				envTelemetryEndpoint:                  "example.com/beholder",
+				envTelemetryInsecureConn:              "true",
+				envTelemetryCACertFile:                "foo/bar",
+				envTelemetryAttribute + "foo":         "bar",
+				envTelemetryAttribute + "baz":         "42",
+				envTelemetryTraceSampleRatio:          "0.42",
+				envTelemetryAuthHeader + "header-key": "header-value",
+				envTelemetryAuthPubKeyHex:             "pub-key-hex",
+				envTelemetryEmitterBatchProcessor:     "true",
+				envTelemetryEmitterExportTimeout:      "1s",
+				envTelemetryEmitterExportInterval:     "2s",
+				envTelemetryEmitterExportMaxBatchSize: "100",
+				envTelemetryEmitterMaxQueueSize:       "1000",
+
+				envChipIngressEnabled: "not-a-bool",
+			},
+			expectError: false,
+
+			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
+			expectedDatabaseIdleInTxSessionTimeout: 42 * time.Second,
+			expectedDatabaseLockTimeout:            8 * time.Minute,
+			expectedDatabaseQueryTimeout:           7 * time.Second,
+			expectedDatabaseLogSQL:                 true,
+			expectedDatabaseMaxOpenConns:           9999,
+			expectedDatabaseMaxIdleConns:           8080,
+
+			expectedPrometheusPort:         8080,
+			expectedTracingEnabled:         true,
+			expectedTracingCollectorTarget: "some:target",
+			expectedTracingSamplingRatio:   1.0,
+			expectedTracingTLSCertPath:     "internal/test/fixtures/client.pem",
+
+			expectedTelemetryEnabled:                   true,
+			expectedTelemetryEndpoint:                  "example.com/beholder",
+			expectedTelemetryInsecureConn:              true,
+			expectedTelemetryCACertFile:                "foo/bar",
+			expectedTelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+			expectedTelemetryTraceSampleRatio:          0.42,
+			expectedTelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+			expectedTelemetryAuthPubKeyHex:             "pub-key-hex",
+			expectedTelemetryEmitterBatchProcessor:     true,
+			expectedTelemetryEmitterExportTimeout:      1 * time.Second,
+			expectedTelemetryEmitterExportInterval:     2 * time.Second,
+			expectedTelemetryEmitterExportMaxBatchSize: 100,
+			expectedTelemetryEmitterMaxQueueSize:       1000,
+
+			expectedChipIngressEnabled:  false,
+			expectedChipIngressEndpoint: "",
+		},
+		{
+			name: "ChipIngress disabled with no endpoint",
+			envVars: map[string]string{
+				envDatabaseURL:                    "postgres://user:password@localhost:5432/db",
+				envDatabaseIdleInTxSessionTimeout: "42s",
+				envDatabaseLockTimeout:            "8m",
+				envDatabaseQueryTimeout:           "7s",
+				envDatabaseLogSQL:                 "true",
+				envDatabaseMaxOpenConns:           "9999",
+				envDatabaseMaxIdleConns:           "8080",
+
+				envPromPort:                 "8080",
+				envTracingEnabled:           "true",
+				envTracingCollectorTarget:   "some:target",
+				envTracingSamplingRatio:     "1.0",
+				envTracingTLSCertPath:       "internal/test/fixtures/client.pem",
+				envTracingAttribute + "XYZ": "value",
+
+				envTelemetryEnabled:                   "true",
+				envTelemetryEndpoint:                  "example.com/beholder",
+				envTelemetryInsecureConn:              "true",
+				envTelemetryCACertFile:                "foo/bar",
+				envTelemetryAttribute + "foo":         "bar",
+				envTelemetryAttribute + "baz":         "42",
+				envTelemetryTraceSampleRatio:          "0.42",
+				envTelemetryAuthHeader + "header-key": "header-value",
+				envTelemetryAuthPubKeyHex:             "pub-key-hex",
+				envTelemetryEmitterBatchProcessor:     "true",
+				envTelemetryEmitterExportTimeout:      "1s",
+				envTelemetryEmitterExportInterval:     "2s",
+				envTelemetryEmitterExportMaxBatchSize: "100",
+				envTelemetryEmitterMaxQueueSize:       "1000",
+
+				envChipIngressEnabled: "false",
+			},
+			expectError: false,
+
+			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
+			expectedDatabaseIdleInTxSessionTimeout: 42 * time.Second,
+			expectedDatabaseLockTimeout:            8 * time.Minute,
+			expectedDatabaseQueryTimeout:           7 * time.Second,
+			expectedDatabaseLogSQL:                 true,
+			expectedDatabaseMaxOpenConns:           9999,
+			expectedDatabaseMaxIdleConns:           8080,
+
+			expectedPrometheusPort:         8080,
+			expectedTracingEnabled:         true,
+			expectedTracingCollectorTarget: "some:target",
+			expectedTracingSamplingRatio:   1.0,
+			expectedTracingTLSCertPath:     "internal/test/fixtures/client.pem",
+
+			expectedTelemetryEnabled:                   true,
+			expectedTelemetryEndpoint:                  "example.com/beholder",
+			expectedTelemetryInsecureConn:              true,
+			expectedTelemetryCACertFile:                "foo/bar",
+			expectedTelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+			expectedTelemetryTraceSampleRatio:          0.42,
+			expectedTelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+			expectedTelemetryAuthPubKeyHex:             "pub-key-hex",
+			expectedTelemetryEmitterBatchProcessor:     true,
+			expectedTelemetryEmitterExportTimeout:      1 * time.Second,
+			expectedTelemetryEmitterExportInterval:     2 * time.Second,
+			expectedTelemetryEmitterExportMaxBatchSize: 100,
+			expectedTelemetryEmitterMaxQueueSize:       1000,
+
+			expectedChipIngressEnabled:  false,
+			expectedChipIngressEndpoint: "",
 		},
 	}
 
@@ -232,6 +384,14 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.TelemetryEmitterMaxQueueSize != tc.expectedTelemetryEmitterMaxQueueSize {
 						t.Errorf("Expected telemetryEmitterMaxQueueSize %d, got %d", tc.expectedTelemetryEmitterMaxQueueSize, config.TelemetryEmitterMaxQueueSize)
 					}
+
+					// Check ChipIngress settings
+					if config.ChipIngressEnabled != tc.expectedChipIngressEnabled {
+						t.Errorf("Expected ChipIngressEnabled %v, got %v", tc.expectedChipIngressEnabled, config.ChipIngressEnabled)
+					}
+					if config.ChipIngressEndpoint != tc.expectedChipIngressEndpoint {
+						t.Errorf("Expected ChipIngressEndpoint %s, got %s", tc.expectedChipIngressEndpoint, config.ChipIngressEndpoint)
+					}
 				}
 			}
 		})
@@ -286,6 +446,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TelemetryEmitterExportInterval:     2 * time.Second,
 		TelemetryEmitterExportMaxBatchSize: 100,
 		TelemetryEmitterMaxQueueSize:       1000,
+
+		ChipIngressEnabled:  true,
+		ChipIngressEndpoint: "http://chip-ingress.example.com",
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -317,6 +480,10 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
+
+	// Assert ChipIngress environment variables
+	assert.Equal(t, "true", got[envChipIngressEnabled])
+	assert.Equal(t, "http://chip-ingress.example.com", got[envChipIngressEndpoint])
 }
 
 func TestGetMap(t *testing.T) {

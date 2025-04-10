@@ -43,6 +43,9 @@ const (
 	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
+
+	envChipIngressEnabled  = "CL_CHIP_INGRESS_ENABLED"
+	envChipIngressEndpoint = "CL_CHIP_INGRESS_ENDPOINT"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
@@ -77,6 +80,9 @@ type EnvConfig struct {
 	TelemetryEmitterExportInterval     time.Duration
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
+
+	ChipIngressEnabled  bool
+	ChipIngressEndpoint string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -124,6 +130,10 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
+
+	add(envChipIngressEnabled, strconv.FormatBool(e.ChipIngressEnabled))
+	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
+
 	return
 }
 
@@ -228,6 +238,21 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
 		}
 	}
+
+	// Chip Ingress
+	e.ChipIngressEnabled, err = getBool(envChipIngressEnabled)
+	if err != nil {
+		e.ChipIngressEnabled = false
+		// TODO: uncomment this after INFOPLAT-2202/chip-ingress is merged in chainlink repo
+		// return fmt.Errorf("failed to parse %s: %w", envChipIngressEnabled, err)
+	}
+	if e.ChipIngressEnabled {
+		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
+		if e.ChipIngressEndpoint == "" {
+			return fmt.Errorf("missing %s", envChipIngressEndpoint)
+		}
+	}
+
 	return nil
 }
 

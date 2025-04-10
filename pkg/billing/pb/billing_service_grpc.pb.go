@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SubscriptionService_GetAccountCredits_FullMethodName = "/pb.SubscriptionService/GetAccountCredits"
-	SubscriptionService_AllocateCredits_FullMethodName   = "/pb.SubscriptionService/AllocateCredits"
-	SubscriptionService_BillAccount_FullMethodName       = "/pb.SubscriptionService/BillAccount"
+	SubscriptionService_GetAccountCredits_FullMethodName = "/billing.SubscriptionService/GetAccountCredits"
+	SubscriptionService_AllocateCredits_FullMethodName   = "/billing.SubscriptionService/AllocateCredits"
+	SubscriptionService_BillAccount_FullMethodName       = "/billing.SubscriptionService/BillAccount"
 )
 
 // SubscriptionServiceClient is the client API for SubscriptionService service.
@@ -180,7 +180,7 @@ func _SubscriptionService_BillAccount_Handler(srv interface{}, ctx context.Conte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SubscriptionService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.SubscriptionService",
+	ServiceName: "billing.SubscriptionService",
 	HandlerType: (*SubscriptionServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -201,13 +201,13 @@ var SubscriptionService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	WorkflowService_GetAccountCredits_FullMethodName          = "/pb.WorkflowService/GetAccountCredits"
-	WorkflowService_BatchGetCreditsForAccounts_FullMethodName = "/pb.WorkflowService/BatchGetCreditsForAccounts"
-	WorkflowService_ReserveCredits_FullMethodName             = "/pb.WorkflowService/ReserveCredits"
-	WorkflowService_ReleaseReservation_FullMethodName         = "/pb.WorkflowService/ReleaseReservation"
-	WorkflowService_ConsumeCredits_FullMethodName             = "/pb.WorkflowService/ConsumeCredits"
-	WorkflowService_ConsumeReservation_FullMethodName         = "/pb.WorkflowService/ConsumeReservation"
-	WorkflowService_WorkflowReceipt_FullMethodName            = "/pb.WorkflowService/WorkflowReceipt"
+	WorkflowService_GetAccountCredits_FullMethodName          = "/billing.WorkflowService/GetAccountCredits"
+	WorkflowService_BatchGetCreditsForAccounts_FullMethodName = "/billing.WorkflowService/BatchGetCreditsForAccounts"
+	WorkflowService_ReserveCredits_FullMethodName             = "/billing.WorkflowService/ReserveCredits"
+	WorkflowService_ReleaseReservation_FullMethodName         = "/billing.WorkflowService/ReleaseReservation"
+	WorkflowService_ConsumeCredits_FullMethodName             = "/billing.WorkflowService/ConsumeCredits"
+	WorkflowService_ConsumeReservation_FullMethodName         = "/billing.WorkflowService/ConsumeReservation"
+	WorkflowService_WorkflowReceipt_FullMethodName            = "/billing.WorkflowService/WorkflowReceipt"
 )
 
 // WorkflowServiceClient is the client API for WorkflowService service.
@@ -498,7 +498,7 @@ func _WorkflowService_WorkflowReceipt_Handler(srv interface{}, ctx context.Conte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var WorkflowService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.WorkflowService",
+	ServiceName: "billing.WorkflowService",
 	HandlerType: (*WorkflowServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

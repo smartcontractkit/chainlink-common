@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package pb;
+package billing;
 
 import "google/protobuf/timestamp.proto";
 import "capabilities/pb/capabilities.proto";

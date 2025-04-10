@@ -2,14 +2,12 @@ module github.com/smartcontractkit/chainlink-common/pkg/monitoring
 
 go 1.24
 
-replace github.com/smartcontractkit/chainlink-common => ../..
-
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/prometheus/client_golang v1.21.1
 	github.com/riferrei/srclient v0.5.4
-	github.com/smartcontractkit/chainlink-common v0.6.0
+	github.com/smartcontractkit/chainlink-common v0.6.1-0.20250410123243-8c3a44de58d6
 	github.com/smartcontractkit/libocr v0.0.0-20250220133800-f3b940c4f298
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/goleak v1.3.0

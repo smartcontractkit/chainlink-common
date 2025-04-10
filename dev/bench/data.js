@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744208799429,
+  "lastUpdate": 1744306740397,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11382,6 +11382,48 @@ window.BENCHMARK_DATA = {
             "value": 29519,
             "unit": "ns/op",
             "extra": "42650 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aef05efee9859f223d28d3482bd5d194914de762",
+          "message": "change billing proto package to billing (#1122)\n\n* change billing proto package to billing\n\n* update tool versions",
+          "timestamp": "2025-04-10T12:37:46-05:00",
+          "tree_id": "05657fab563d82303d76865f4d0f3eaf7516139b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/aef05efee9859f223d28d3482bd5d194914de762"
+        },
+        "date": 1744306739624,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.9,
+            "unit": "ns/op",
+            "extra": "3237975 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.4,
+            "unit": "ns/op",
+            "extra": "2859433 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28238,
+            "unit": "ns/op",
+            "extra": "42603 times\n4 procs"
           }
         ]
       }

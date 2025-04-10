@@ -9,7 +9,7 @@ var BreakErr = capabilities.ErrStopExecution
 
 type MessageEmitter interface {
 	// Emit sends a message to the labeler's destination.
-	Emit(string) error
+	Emit(string)
 
 	// With sets the labels for the message to be emitted.  Labels are passed as key-value pairs
 	// and are cumulative.

@@ -56,29 +56,33 @@ func (r *Runtime) Logger() logger.Logger {
 }
 
 func (r *Runtime) Emitter() sdk.MessageEmitter {
-	return newWasmGuestEmitter(r.emitFn)
+	return newWasmGuestEmitter(r.emitFn, r.logger)
 }
 
 type wasmGuestEmitter struct {
 	base   custmsg.MessageEmitter
 	emitFn func(string, map[string]string) error
 	labels map[string]string
+	logger logger.Logger
 }
 
-func newWasmGuestEmitter(emitFn func(string, map[string]string) error) wasmGuestEmitter {
+func newWasmGuestEmitter(emitFn func(string, map[string]string) error, logger logger.Logger) wasmGuestEmitter {
 	return wasmGuestEmitter{
 		emitFn: emitFn,
 		labels: make(map[string]string),
 		base:   custmsg.NewLabeler(),
+		logger: logger,
 	}
 }
 
-func (w wasmGuestEmitter) Emit(msg string) error {
-	return w.emitFn(msg, w.labels)
+func (w wasmGuestEmitter) Emit(msg string) {
+	if err := w.emitFn(msg, w.labels); err != nil {
+		w.logger.Error(fmt.Sprintf("error emitting message: %v", err))
+	}
 }
 
 func (w wasmGuestEmitter) With(keyValues ...string) sdk.MessageEmitter {
-	newEmitter := newWasmGuestEmitter(w.emitFn)
+	newEmitter := newWasmGuestEmitter(w.emitFn, w.logger)
 	newEmitter.base = w.base.With(keyValues...)
 	newEmitter.labels = newEmitter.base.Labels()
 	return newEmitter

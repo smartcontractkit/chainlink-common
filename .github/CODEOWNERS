@@ -8,7 +8,6 @@
 
 /pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag 
-/pkg/monitoring/ @topliceanu @pedrovsg
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone
 /pkg/beholder/ @smartcontractkit/realtime

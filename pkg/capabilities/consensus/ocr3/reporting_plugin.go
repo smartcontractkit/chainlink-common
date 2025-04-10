@@ -475,16 +475,10 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 
 		var rawReport []byte
 		if info.ShouldReport {
-			meta := &pbtypes.Metadata{
-				Version:          1,
-				ExecutionID:      id.WorkflowExecutionId,
-				Timestamp:        uint32(outcome.Timestamp.AsTime().Unix()),
-				DONID:            id.WorkflowDonId,
-				DONConfigVersion: id.WorkflowDonConfigVersion,
-				WorkflowID:       id.WorkflowId,
-				WorkflowName:     id.WorkflowName,
-				WorkflowOwner:    id.WorkflowOwner,
-				ReportID:         id.ReportId,
+			meta, err := ConvertPbToMetadata(*id, 1, uint32(outcome.Timestamp.AsTime().Unix()))
+			if err != nil {
+				lggr.Errorw("could not convert id to metadata", "error", err, "executionID", report.Id.WorkflowExecutionId)
+				continue
 			}
 			newOutcome, err := pbtypes.AppendMetadata(outcome, meta)
 			if err != nil {
@@ -548,6 +542,49 @@ func (r *reportingPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr
 
 	r.lggr.Debugw("Reports complete", "len", len(reports))
 	return reports, nil
+}
+
+// decodeFixed decodes a hex string into a given byte slice.
+// It returns an error if the string does not represent exactly len(out) bytes.
+func decodeFixed(hexStr string, out []byte) error {
+	decoded, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return err
+	}
+	if len(decoded) != len(out) {
+		return fmt.Errorf("expected %d bytes, got %d", len(out), len(decoded))
+	}
+	copy(out, decoded)
+	return nil
+}
+
+// ConvertPbToMetadata converts a PbMetadata into Metadata.
+func ConvertPbToMetadata(id pbtypes.Id, version uint8, timestamp uint32) (*pbtypes.Metadata, error) {
+	var m pbtypes.Metadata
+	// Set fixed fields directly.
+	m.Version = version
+	m.Timestamp = timestamp
+	m.DonID = id.WorkflowDonId
+	m.DonConfigVersion = id.WorkflowDonConfigVersion
+
+	// Decode each string field (which is expected to be a proper hex string) into the fixed‑size arrays.
+	if err := decodeFixed(id.WorkflowExecutionId, m.WorkflowExecutionID[:]); err != nil {
+		return nil, fmt.Errorf("failed to decode WorkflowExecutionID: %w", err)
+	}
+	if err := decodeFixed(id.WorkflowId, m.WorkflowCID[:]); err != nil {
+		return nil, fmt.Errorf("failed to decode WorkflowID: %w", err)
+	}
+	if err := decodeFixed(id.WorkflowName, m.WorkflowName[:]); err != nil {
+		return nil, fmt.Errorf("failed to decode WorkflowName: %w", err)
+	}
+	if err := decodeFixed(id.WorkflowOwner, m.WorkflowOwner[:]); err != nil {
+		return nil, fmt.Errorf("failed to decode WorkflowOwner: %w", err)
+	}
+	if err := decodeFixed(id.ReportId, m.ReportID[:]); err != nil {
+		return nil, fmt.Errorf("failed to decode ReportID: %w", err)
+	}
+
+	return &m, nil
 }
 
 func (r *reportingPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, rwi ocr3types.ReportWithInfo[[]byte]) (bool, error) {

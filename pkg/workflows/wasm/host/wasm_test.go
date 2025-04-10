@@ -17,7 +17,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
@@ -174,63 +173,63 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 	assert.ErrorContains(t, err, "oops")
 }
 
-func Test_Compute_Logs(t *testing.T) {
-	t.Parallel()
-	ctx := t.Context()
-	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
-
-	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-	m, err := NewModule(&ModuleConfig{
-		Logger:         logger,
-		IsUncompressed: true,
-		Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-			return nil, nil
-		},
-	}, binary)
-	require.NoError(t, err)
-
-	m.Start()
-
-	req := &wasmpb.Request{
-		Id: uuid.New().String(),
-		Message: &wasmpb.Request_ComputeRequest{
-			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
-					Inputs: &valuespb.Map{},
-					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
-						ReferenceId: "transform",
-					},
-				},
-			},
-		},
-	}
-	_, err = m.Run(ctx, req)
-	assert.Nil(t, err)
-
-	require.Len(t, logs.AllUntimed(), 2)
-	expectedEntries := []Entry{
-		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
-			Fields: []zapcore.Field{
-				zap.String("test-string-field-key", "this is a test field content"),
-				zap.Float64("test-numeric-field-key", 6400000),
-			},
-		},
-		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "Sanitized symbols *********** Not sanitized symbols ッÖжγ"},
-			Fields: []zapcore.Field{
-				zap.String("test-string-field-key", "this is a test field content"),
-				zap.Float64("test-numeric-field-key", 6400000),
-			},
-		},
-	}
-	for i := range expectedEntries {
-		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
-		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
-	}
-}
+//func Test_Compute_Logs(t *testing.T) {
+//	t.Parallel()
+//	ctx := t.Context()
+//	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
+//
+//	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
+//	m, err := NewModule(&ModuleConfig{
+//		Logger:         logger,
+//		IsUncompressed: true,
+//		Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+//			return nil, nil
+//		},
+//	}, binary)
+//	require.NoError(t, err)
+//
+//	m.Start()
+//
+//	req := &wasmpb.Request{
+//		Id: uuid.New().String(),
+//		Message: &wasmpb.Request_ComputeRequest{
+//			ComputeRequest: &wasmpb.ComputeRequest{
+//				Request: &capabilitiespb.CapabilityRequest{
+//					Inputs: &valuespb.Map{},
+//					Config: &valuespb.Map{},
+//					Metadata: &capabilitiespb.RequestMetadata{
+//						ReferenceId: "transform",
+//					},
+//				},
+//			},
+//		},
+//	}
+//	_, err = m.Run(ctx, req)
+//	assert.Nil(t, err)
+//
+//	require.Len(t, logs.AllUntimed(), 2)
+//	expectedEntries := []Entry{
+//		{
+//			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
+//			Fields: []zapcore.Field{
+//				zap.String("test-string-field-key", "this is a test field content"),
+//				zap.Float64("test-numeric-field-key", 6400000),
+//			},
+//		},
+//		{
+//			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "Sanitized symbols *********** Not sanitized symbols ッÖжγ"},
+//			Fields: []zapcore.Field{
+//				zap.String("test-string-field-key", "this is a test field content"),
+//				zap.Float64("test-numeric-field-key", 6400000),
+//			},
+//		},
+//	}
+//	for i := range expectedEntries {
+//		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+//		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+//		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
+//	}
+//}
 
 func Test_Compute_Emit(t *testing.T) {
 	t.Parallel()

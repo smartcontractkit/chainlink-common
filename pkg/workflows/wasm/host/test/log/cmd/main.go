@@ -20,14 +20,14 @@ func BuildWorkflow(config []byte) *sdk.WorkflowSpecFactory {
 		"transform",
 		sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
 		func(rsdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error) {
-			rsdk.Logger().Infow("building workflow...", []interface{}{
-				"test-string-field-key", "this is a test field content",
-				"test-numeric-field-key", 6400000,
-			}...)
-			rsdk.Logger().Infow("Sanitized symbols []\\/><&{}:; Not sanitized symbols ッÖжγ", []interface{}{
-				"test-string-field-key", "this is a test field content",
-				"test-numeric-field-key", 6400000,
-			}...)
+			//rsdk.Logger().Infow("building workflow...", []interface{}{
+			//	"test-string-field-key", "this is a test field content",
+			//	"test-numeric-field-key", 6400000,
+			//}...)
+			//rsdk.Logger().Infow("Sanitized symbols []\\/><&{}:; Not sanitized symbols ッÖжγ", []interface{}{
+			//	"test-string-field-key", "this is a test field content",
+			//	"test-numeric-field-key", 6400000,
+			//}...)
 			return false, nil
 		})
 

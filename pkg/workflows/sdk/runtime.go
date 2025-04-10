@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // BreakErr can be used inside the compute capability function to stop the execution of the workflow.
@@ -18,11 +17,9 @@ type MessageEmitter interface {
 }
 
 // Runtime exposes external system calls to workflow authors.
-// - `Logger` can be used to log messages
 // - `Emitter` can be used to send messages to beholder
 // - `Fetch` can be used to make external HTTP calls
 type Runtime interface {
-	Logger() logger.Logger
 	Fetch(req FetchRequest) (FetchResponse, error)
 
 	// Emitter sends the given message and labels to the configured collector.

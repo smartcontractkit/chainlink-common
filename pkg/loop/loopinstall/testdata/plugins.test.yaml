@@ -1,0 +1,25 @@
+# Test plugin configuration
+defaults:
+  goflags: "-ldflags=-s -w"
+  goprivate: "github.com/example/*"
+
+plugins:
+  aptos:
+    - moduleURI: "github.com/example/aptos"
+      gitRef: "v1.0.0"
+      installPath: "./cmd/aptos"
+      libs: []
+
+  cosmos:
+    - moduleURI: "github.com/example/cosmos"
+      gitRef: "v2.0.0"
+      installPath: "./cmd/cosmos"
+      libs:
+        - "/go/pkg/mod/github.com/CosmWasm/wasmvm@v1.0.0/internal/api/libwasmvm.*.so"
+
+  test-plugin:
+    - moduleURI: "github.com/example/module"
+      gitRef: "v1.0.0"
+      installPath: "./cmd/example"
+      libs:
+        - "/go/pkg/mod/github.com/example/module@v1.0.0/lib/libexample.so"

@@ -1,16 +1,19 @@
 # CODEOWNERS Best Practices
+
 # 1. Per Github docs: "Order is important; the last matching pattern takes the most precedence."
+
 # Please define less specific codeowner paths before more specific codeowner paths in order for the more specific rule to have priority
 
 * @smartcontractkit/foundations
 
 /observability-lib/ @Atrax1
 
+/pkg/beholder/ @smartcontractkit/realtime
 /pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
-/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag 
+/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag
+/pkg/loop/loopinstall @smartcontractkit/devex-cicd
 /pkg/monitoring/ @topliceanu @pedrovsg
+/pkg/types/ccip @smartcontractkit/ccip-offchain
+/pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone
-/pkg/beholder/ @smartcontractkit/realtime
-/pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
-/pkg/types/ccip @smartcontractkit/ccip-offchain

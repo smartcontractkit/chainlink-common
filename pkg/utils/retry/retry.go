@@ -28,21 +28,35 @@ var BackoffStrategyDefault = backoff.Backoff{
 }
 
 type option struct {
+	// Max Retries set the max number of times to execute a function that has failed.  Each function is called at least once.
+	// By default, an infinite number of retries is allowed, limited only by the context.
 	MaxRetries uint
+	Strategy   backoff.Backoff
 }
 
+// WithMaxRetries sets the max number of times to execute a function that has failed.  Each function is called at least once.
+// By default, an infinite number of retries is allowed, limited only by the context.
 func WithMaxRetries(n uint) func(*option) {
 	return func(o *option) {
 		o.MaxRetries = n
 	}
 }
 
+// WithStrategy sets the backoff strategy to apply
+func WithStrategy(b backoff.Backoff) func(*option) {
+	return func(o *option) {
+		o.Strategy = b
+	}
+}
+
 type Option func(*option)
 
-// WithStrategy applies a retry strategy to a given function.
-func WithStrategy[R any](ctx context.Context, lggr logger.Logger, strategy backoff.Backoff, fn func(ctx context.Context) (R, error), opts ...Option) (R, error) {
+// Do applies a default retry strategy to a given function.
+func Do[R any](ctx context.Context, lggr logger.Logger, fn func(ctx context.Context) (R, error), opts ...Option) (R, error) {
 	// Apply options
-	option := &option{}
+	option := &option{
+		Strategy: BackoffStrategyDefault,
+	}
 	for _, opt := range opts {
 		opt(option)
 	}
@@ -56,7 +70,7 @@ func WithStrategy[R any](ctx context.Context, lggr logger.Logger, strategy backo
 	}
 
 	// Track the number of retries
-	for numRetries := int(strategy.Attempt()); ; numRetries++ {
+	for numRetries := int(option.Strategy.Attempt()); ; numRetries++ {
 		if option.MaxRetries > 0 {
 			if numRetries > int(option.MaxRetries) {
 				var empty R
@@ -69,7 +83,7 @@ func WithStrategy[R any](ctx context.Context, lggr logger.Logger, strategy backo
 			return result, nil
 		}
 
-		wait := strategy.Duration()
+		wait := option.Strategy.Duration()
 		message := fmt.Sprintf("Failed to execute function, retrying in %s ...", wait)
 		lggr.Warnw(message, "wait", wait, "numRetries", numRetries, "retryID", retryID, "err", err)
 
@@ -80,9 +94,4 @@ func WithStrategy[R any](ctx context.Context, lggr logger.Logger, strategy backo
 			// Continue with the next retry
 		}
 	}
-}
-
-// With applies a default retry strategy to a given function.
-func With[R any](ctx context.Context, lggr logger.Logger, fn func(ctx context.Context) (R, error), opts ...Option) (R, error) {
-	return WithStrategy(ctx, lggr, BackoffStrategyDefault, fn, opts...)
 }

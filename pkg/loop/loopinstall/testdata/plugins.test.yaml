@@ -9,9 +9,6 @@ plugins:
       gitRef: "v1.0.0"
       installPath: "./cmd/aptos"
       additionalFiles: []
-      docker:
-        env:
-          CL_APTOS_CMD: "chainlink-aptos"
 
   cosmos:
     - moduleURI: "github.com/example/cosmos"

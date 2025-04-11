@@ -107,7 +107,6 @@ func TestWithRetry(t *testing.T) {
 		{
 			name: "obeys limit of 1 max retry",
 			strategy: &Strategy[string]{
-				Backoff:    BackoffStrategyDefault,
 				MaxRetries: 1,
 			},
 			fn: func() exampleFunc {
@@ -135,7 +134,6 @@ func TestWithRetry(t *testing.T) {
 				return "", errors.New("temporary error")
 			},
 			strategy: &Strategy[string]{
-				Backoff:    BackoffStrategyDefault,
 				MaxRetries: 1,
 			},
 			errMsg:  "max retry attempts reached",

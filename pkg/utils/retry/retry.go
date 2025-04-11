@@ -28,11 +28,21 @@ var BackoffStrategyDefault = backoff.Backoff{
 }
 
 type Strategy[R any] struct {
-	Backoff    backoff.Backoff
+	Backoff *backoff.Backoff
+
+	// MaxRetries is the number of attempts to call a function that has errored.
+	// A default 0 value retries indefinitely until the context is canceled.
+	// Every function is called at least once.
 	MaxRetries uint
 }
 
-func (s Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx context.Context) (R, error)) (R, error) {
+// Do executes a func according to the strategy.
+func (s *Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx context.Context) (R, error)) (R, error) {
+	if s.Backoff == nil {
+		s.Backoff = BackoffStrategyDefault.Copy()
+	}
+	s.Backoff.Reset()
+
 	// Generate a new tracing ID if not present, used to track retries
 	retryID := ctx.Value(ctxKeyID)
 	if retryID == nil {
@@ -70,7 +80,5 @@ func (s Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx con
 
 // Do applies a default retry strategy to a given function.
 func Do[R any](ctx context.Context, lggr logger.Logger, fn func(ctx context.Context) (R, error)) (R, error) {
-	return Strategy[R]{
-		Backoff: BackoffStrategyDefault,
-	}.Do(ctx, lggr, fn)
+	return new(Strategy[R]).Do(ctx, lggr, fn)
 }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744398617604,
+  "lastUpdate": 1744400289309,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11508,6 +11508,48 @@ window.BENCHMARK_DATA = {
             "value": 28172,
             "unit": "ns/op",
             "extra": "42632 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b9b85f941ff7ff15a80a96460718979afe2f61ed",
+          "message": "feat(wasm): passes MaxRetries from workflow to host (#1128)\n\n* feat(backoff): adds a backoff library to utils\n\n* adds maxTries param to request\n\n* add license and readme\n\n* removes MaxElapsedTime in favor of context\n\n* simplify timing mechanism\n\n* feat(utils): adds retry utils to common\n\n* refactor: change name and remove unnecessary function\n\n* remove functional options\n\n* move default instance\n\n* remove backoff utils\n\n* docstring",
+          "timestamp": "2025-04-11T15:36:56-04:00",
+          "tree_id": "e24fb097b3ba58136cf05d38064265bd8f8cfe47",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b9b85f941ff7ff15a80a96460718979afe2f61ed"
+        },
+        "date": 1744400288615,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.8,
+            "unit": "ns/op",
+            "extra": "3310918 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 432.8,
+            "unit": "ns/op",
+            "extra": "2911065 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28164,
+            "unit": "ns/op",
+            "extra": "42466 times\n4 procs"
           }
         ]
       }

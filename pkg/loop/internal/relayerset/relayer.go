@@ -40,13 +40,15 @@ func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfi
 	cc := r.relayerSetClient.NewClientConn("ContractReader", func(ctx context.Context) (uint32, net.Resources, error) {
 		contractReaderID, err := r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
 		if err != nil {
-			return 0, nil, fmt.Errorf("error getting NewContractReader from relayerSetServer: %w", err)
+			return 0, nil, net.NewAppError(err)
 		}
 
 		return contractReaderID, nil, nil
 	})
 
-	return contractreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractReaderClientInRelayerSet"), cc), nil
+	client := contractreader.NewClient(r.relayerSetClient.BrokerExt.WithName("ContractReaderClientInRelayerSet"), cc)
+	err := client.Ready()
+	return client, err
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {

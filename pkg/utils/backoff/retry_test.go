@@ -6,26 +6,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
-	"time"
 )
-
-type testTimer struct {
-	timer *time.Timer
-}
-
-func (t *testTimer) Start(duration time.Duration) {
-	t.timer = time.NewTimer(0)
-}
-
-func (t *testTimer) Stop() {
-	if t.timer != nil {
-		t.timer.Stop()
-	}
-}
-
-func (t *testTimer) C() <-chan time.Time {
-	return t.timer.C
-}
 
 func TestRetry(t *testing.T) {
 	const successOn = 3
@@ -45,7 +26,7 @@ func TestRetry(t *testing.T) {
 		return false, errors.New("error")
 	}
 
-	_, err := Retry(context.Background(), f, WithBackOff(NewExponentialBackOff()), withTimer(&testTimer{}))
+	_, err := Retry(context.Background(), f, WithBackOff(&ZeroBackOff{}))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
 	}
@@ -72,7 +53,7 @@ func TestRetryWithData(t *testing.T) {
 		return 1, errors.New("error")
 	}
 
-	res, err := Retry(context.Background(), f, WithBackOff(NewExponentialBackOff()), withTimer(&testTimer{}))
+	res, err := Retry(context.Background(), f, WithBackOff(&ZeroBackOff{}))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
 	}
@@ -108,7 +89,7 @@ func TestRetryContext(t *testing.T) {
 		return false, fmt.Errorf("error (%d)", i)
 	}
 
-	_, err := Retry(ctx, f, WithBackOff(&ZeroBackOff{}), withTimer(&testTimer{}))
+	_, err := Retry(ctx, f, WithBackOff(&ZeroBackOff{}))
 	if err == nil {
 		t.Errorf("error is unexpectedly nil")
 	}

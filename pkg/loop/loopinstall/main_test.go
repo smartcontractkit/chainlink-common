@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
 )
 
+// TestExpandEnvVars tests the expansion of environment variables in strings
 func TestExpandEnvVars(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -60,6 +65,7 @@ func TestExpandEnvVars(t *testing.T) {
 	}
 }
 
+// TestIsPluginEnabled tests the enabled state of plugins
 func TestIsPluginEnabled(t *testing.T) {
 	trueBool := true
 	falseBool := false
@@ -95,6 +101,7 @@ func TestIsPluginEnabled(t *testing.T) {
 	}
 }
 
+// TestConfigParsing tests the parsing of plugin configuration files
 func TestConfigParsing(t *testing.T) {
 	data, err := os.ReadFile("testdata/plugins.test.yaml")
 	if err != nil {
@@ -129,6 +136,7 @@ func TestConfigParsing(t *testing.T) {
 	}
 }
 
+// TestWriteBuildManifest tests the writing of build manifests
 func TestWriteBuildManifest(t *testing.T) {
 	dir, err := os.MkdirTemp("", "build-manifest-test")
 	if err != nil {
@@ -183,5 +191,222 @@ func TestWriteBuildManifest(t *testing.T) {
 	}
 	if test.AdditionalFiles[0].Src != "/go/pkg/mod/github.com/test@v1.0.0/lib/libtest.so" {
 		t.Errorf("Unexpected additional file source: %s", test.AdditionalFiles[0].Src)
+	}
+}
+
+// TestFileSpecificDefaults tests that defaults from each YAML file
+// are applied only to plugins from that file
+func TestFileSpecificDefaults(t *testing.T) {
+	// Create temp directory for test files
+	tempDir, err := os.MkdirTemp("", "loopinstall-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create first config file with complex ldflags
+	file1Content := `
+defaults:
+  goflags: "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0"
+  goprivate: "github.com/test/private1"
+plugins:
+  test1:
+    - moduleURI: "github.com/test/module1"
+      gitRef: "v1.0.0"
+      installPath: "github.com/test/module1/cmd/test"
+`
+	file1Path := filepath.Join(tempDir, "config1.yaml")
+	// Use writeErr instead of err to avoid shadowing
+	if writeErr := os.WriteFile(file1Path, []byte(file1Content), 0600); writeErr != nil {
+		t.Fatalf("Failed to write test file: %v", writeErr)
+	}
+
+	// Create second config file with different ldflags
+	file2Content := `
+defaults:
+  goflags: "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef"
+  goprivate: "github.com/test/private2"
+plugins:
+  test2:
+    - moduleURI: "github.com/test/module2"
+      gitRef: "v1.0.0"
+      installPath: "github.com/test/module2/cmd/test"
+`
+	file2Path := filepath.Join(tempDir, "config2.yaml")
+	// Use writeErr2 instead of err to avoid shadowing
+	if writeErr2 := os.WriteFile(file2Path, []byte(file2Content), 0600); writeErr2 != nil {
+		t.Fatalf("Failed to write test file: %v", writeErr2)
+	}
+
+	// Process both files
+	tasks1, err := processConfigFile(file1Path, false)
+	if err != nil {
+		t.Fatalf("Failed to process first config file: %v", err)
+	}
+
+	tasks2, err := processConfigFile(file2Path, false)
+	if err != nil {
+		t.Fatalf("Failed to process second config file: %v", err)
+	}
+
+	// Combine tasks
+	allTasks := append(tasks1, tasks2...)
+
+	// Verify each task has the correct defaults from its source file
+	for _, task := range allTasks {
+		switch task.PluginType {
+		case "test1":
+			expectedFlags := "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0"
+			if task.Defaults.GoFlags != expectedFlags {
+				t.Errorf("test1 plugin has incorrect goflags: %s, expected: %s", task.Defaults.GoFlags, expectedFlags)
+			}
+			if task.Defaults.GoPrivate != "github.com/test/private1" {
+				t.Errorf("test1 plugin has incorrect goprivate: %s", task.Defaults.GoPrivate)
+			}
+		case "test2":
+			expectedFlags := "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef"
+			if task.Defaults.GoFlags != expectedFlags {
+				t.Errorf("test2 plugin has incorrect goflags: %s, expected: %s", task.Defaults.GoFlags, expectedFlags)
+			}
+			if task.Defaults.GoPrivate != "github.com/test/private2" {
+				t.Errorf("test2 plugin has incorrect goprivate: %s", task.Defaults.GoPrivate)
+			}
+		default:
+			t.Errorf("Unexpected plugin type: %s", task.PluginType)
+		}
+	}
+
+	originalExecCommand := execCommand
+	defer func() { execCommand = originalExecCommand }()
+
+	// Mock execCommand to avoid actual command execution and provide proper JSON output
+	execCommandCalls := []string{}
+	execCommand = func(cmd *exec.Cmd) error {
+		cmdStr := strings.Join(cmd.Args, " ")
+		execCommandCalls = append(execCommandCalls, cmdStr)
+
+		// For the go mod download -json commands, we need to provide valid JSON output
+		if strings.Contains(cmdStr, "go mod download -json") {
+			// Extract module path to use in the mocked directory path
+			parts := strings.Split(cmdStr, " ")
+			modulePath := parts[len(parts)-1]
+
+			// Create a fake module directory based on the module name
+			moduleDir := filepath.Join(tempDir, "mocked-modules", strings.ReplaceAll(modulePath, "@", "-"))
+
+			// Create a mock response with proper JSON format
+			jsonResponse := fmt.Sprintf(`{"Path":"%s","Version":"v1.0.0","Dir":"%s"}`,
+				strings.Split(modulePath, "@")[0], moduleDir)
+
+			// Access stdout field of the exec.Cmd struct to write our mocked JSON response
+			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+				stdout.WriteString(jsonResponse)
+			}
+		}
+
+		return nil
+	}
+
+	// Set test output directory
+	outputDir := filepath.Join(tempDir, "output")
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		t.Fatalf("Failed to create output directory: %v", err)
+	}
+
+	// Skip actual module download and installation since we're mocking
+	// by not executing the real commands, but still call installPlugins
+	// to test the file-specific defaults behavior
+	if err := installPlugins(allTasks, 1, true, outputDir); err != nil {
+		t.Fatalf("Failed to install plugins: %v", err)
+	}
+
+	// Verify commands were called with the correct flags - looking for the complex flag values
+	foundTest1 := false
+	foundTest2 := false
+	for _, cmdStr := range execCommandCalls {
+		if strings.Contains(cmdStr, "github.com/test/module1") &&
+			strings.Contains(cmdStr, "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0") {
+			foundTest1 = true
+		}
+		if strings.Contains(cmdStr, "github.com/test/module2") &&
+			strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef") {
+			foundTest2 = true
+		}
+	}
+
+	if !foundTest1 {
+		t.Error("Did not find command with correct flags for test1 module")
+	}
+	if !foundTest2 {
+		t.Error("Did not find command with correct flags for test2 module")
+	}
+}
+
+// Replace TestExtractFlagNames with TestValidateGoFlags
+func TestValidateGoFlags(t *testing.T) {
+	tests := []struct {
+		name    string
+		flags   string
+		wantErr bool
+	}{
+		{
+			name:    "simple flags",
+			flags:   "-v -ldflags -tags",
+			wantErr: false,
+		},
+		{
+			name:    "flags with values",
+			flags:   "-ldflags=-s -w -tags=netgo",
+			wantErr: false,
+		},
+		{
+			name:    "complex ldflags",
+			flags:   "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0",
+			wantErr: false,
+		},
+		{
+			name:    "quoted values",
+			flags:   `-ldflags="-s -w" -tags="netgo osusergo"`,
+			wantErr: false,
+		},
+		{
+			name:    "race flag",
+			flags:   "-race -ldflags=-s",
+			wantErr: false,
+		},
+		{
+			name:    "bench flag",
+			flags:   "-bench=. -ldflags=-s",
+			wantErr: false,
+		},
+		{
+			name:    "fuzz flag now allowed",
+			flags:   "-fuzz=FuzzFunc -ldflags=-s",
+			wantErr: false,
+		},
+		{
+			name:    "dangerous character semicolon",
+			flags:   "-ldflags=-s; rm -rf /",
+			wantErr: true,
+		},
+		{
+			name:    "dangerous command chaining",
+			flags:   "-ldflags=-s && echo malicious",
+			wantErr: true,
+		},
+		{
+			name:    "dangerous rm command",
+			flags:   "-ldflags=-s -X rm -rf /",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateGoFlags(tt.flags)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateGoFlags(%q) error = %v, wantErr %v", tt.flags, err, tt.wantErr)
+			}
+		})
 	}
 }

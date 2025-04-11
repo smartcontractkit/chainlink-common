@@ -141,47 +141,26 @@ func validateInstallPath(path string) error {
 	return nil
 }
 
-// validateGoFlags ensures only allowed Go flags are used
+// validateGoFlags ensures flags are safe and prevents command injection
 func validateGoFlags(flags string) error {
-	allowedFlags := map[string]bool{
-		"-ldflags": true,
-		"-tags":    true,
-		"-v":       true,
+	// Check for potentially dangerous characters that could enable command injection
+	dangerousPatterns := []string{
+		";", "&&", "||", "`", "$", "|", "<", ">", "#", "//",
+		"shutdown", "reboot", "rm -", "format", "mkfs", "dd",
 	}
 
-	for _, field := range strings.Fields(flags) {
-		// Extract the flag name (before any equals sign or value)
-		flagName := strings.SplitN(field, "=", 2)[0]
-
-		// For flags with values passed as separate arguments
-		if strings.HasPrefix(flagName, "-") {
-			if !allowedFlags[flagName] {
-				return fmt.Errorf("disallowed go flag: %s", flagName)
-			}
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(flags, pattern) {
+			return fmt.Errorf("potentially unsafe pattern in go flags: %s", pattern)
 		}
 	}
+
 	return nil
 }
 
-// validateDefaults checks if defaults are already set from another file and returns an error if there's a conflict
-func validateDefaults(config *PluginConfig, source string, existingSource *DefaultsSource) error {
-	if config.Defaults.GoFlags != "" {
-		if existingSource.GoFlagsSource != "" && existingSource.GoFlagsSource != source {
-			return fmt.Errorf("default goflags already set in %s, cannot set again in %s",
-				existingSource.GoFlagsSource, source)
-		}
-		existingSource.GoFlagsSource = source
-	}
-
-	if config.Defaults.GoPrivate != "" {
-		if existingSource.GoPrivateSource != "" && existingSource.GoPrivateSource != source {
-			return fmt.Errorf("default goprivate already set in %s, cannot set again in %s",
-				existingSource.GoPrivateSource, source)
-		}
-		existingSource.GoPrivateSource = source
-	}
-
-	return nil
+// execCommand is a function variable that can be replaced in tests
+var execCommand = func(cmd *exec.Cmd) error {
+	return cmd.Run()
 }
 
 // downloadAndInstallPlugin downloads and installs a single plugin
@@ -253,7 +232,7 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		cmd.Stdout = &out
 		cmd.Stderr = os.Stderr
 
-		if err := cmd.Run(); err != nil {
+		if err := execCommand(cmd); err != nil {
 			return fmt.Errorf("failed to download module %s: %w", fullModulePath, err)
 		}
 
@@ -298,7 +277,7 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)
 
-		if err := cmd.Run(); err != nil {
+		if err := execCommand(cmd); err != nil {
 			return fmt.Errorf("failed to install plugin %s[%d]: %w", pluginType, pluginIdx, err)
 		}
 	}
@@ -350,7 +329,7 @@ func printHelp() {
 	fmt.Println("Chainlink Plugin Installer")
 	fmt.Println("\nA tool for installing Chainlink plugins from YAML configuration files.")
 	fmt.Println("\nUsage:")
-	fmt.Println("  plugin-installer [options] <plugin-config-file> [<plugin-config-file>...]")
+	fmt.Println("  loopinstall [options] <plugin-config-file> [<plugin-config-file>...]")
 	fmt.Println("\nOptions:")
 	fmt.Println("  -h, --help                Show this help message")
 	fmt.Println("  -v, --verbose             Enable verbose output")
@@ -360,16 +339,16 @@ func printHelp() {
 	fmt.Println("                             (default: docker/additional_files)")
 	fmt.Println("\nExamples:")
 	fmt.Println("  # Install plugins from the default configuration")
-	fmt.Println("  plugin-installer plugins.default.yaml")
+	fmt.Println("  loopinstall plugins.default.yaml")
 	fmt.Println("")
 	fmt.Println("  # Install plugins from both default and private configurations with higher concurrency")
-	fmt.Println("  plugin-installer -c 10 plugins.default.yaml plugins.private.yaml")
+	fmt.Println("  loopinstall -c 10 plugins.default.yaml plugins.private.yaml")
 	fmt.Println("")
 	fmt.Println("  # Install plugins sequentially")
-	fmt.Println("  plugin-installer -s plugins.default.yaml")
+	fmt.Println("  loopinstall -s plugins.default.yaml")
 	fmt.Println("")
 	fmt.Println("  # Install plugins with environment variable overrides")
-	fmt.Println("  CL_PLUGIN_GOFLAGS=\"-ldflags='-s -w'\" plugin-installer plugins.default.yaml")
+	fmt.Println("  CL_PLUGIN_GOFLAGS=\"-ldflags='-s -w'\" loopinstall plugins.default.yaml")
 	fmt.Println("")
 	fmt.Println("Environment Variables:")
 	fmt.Println("  CL_PLUGIN_GOFLAGS  Override the goflags option from the configuration")
@@ -389,7 +368,7 @@ func printHelp() {
 }
 
 // processConfigFile parses a plugin configuration file and collects installation tasks
-func processConfigFile(configFile string, verbose bool, defaultsSource *DefaultsSource) ([]PluginInstallTask, error) {
+func processConfigFile(configFile string, verbose bool) ([]PluginInstallTask, error) {
 	log.Printf("Processing plugin configuration file: %s", configFile)
 
 	data, err := os.ReadFile(configFile)
@@ -400,11 +379,6 @@ func processConfigFile(configFile string, verbose bool, defaultsSource *Defaults
 	var config PluginConfig
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
-	}
-
-	// Validate defaults across multiple files
-	if err := validateDefaults(&config, configFile, defaultsSource); err != nil {
-		return nil, err
 	}
 
 	var tasks []PluginInstallTask
@@ -622,12 +596,9 @@ func main() {
 	seenPlugins := make(map[string]string)
 	var allTasks []PluginInstallTask
 
-	// Track defaults across files
-	defaultsSource := &DefaultsSource{}
-
 	// Process each config file
 	for _, configFile := range flag.Args() {
-		tasks, err := processConfigFile(configFile, verbose, defaultsSource)
+		tasks, err := processConfigFile(configFile, verbose)
 		if err != nil {
 			log.Fatalf("Failed to process config file %s: %v", configFile, err)
 		}

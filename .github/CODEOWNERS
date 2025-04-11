@@ -4,7 +4,7 @@
 
 # Please define less specific codeowner paths before more specific codeowner paths in order for the more specific rule to have priority
 
-- @smartcontractkit/foundations
+* @smartcontractkit/foundations
 
 /observability-lib/ @Atrax1
 

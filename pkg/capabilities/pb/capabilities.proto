@@ -5,7 +5,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 package capabilities;
 
 import "values/pb/values.proto";
-import "metering/pb/meteringdetail.proto";
 import "google/protobuf/empty.proto";
 
 service BaseCapability {
@@ -83,16 +82,7 @@ message CapabilityResponse {
 }
 
 message ResponseMetadata {
-  // MeteringReportNodeDetail is repeated here due to
-  // the identical response aggregation strategy at the Don2Don layer.
-  // We expect identical responses from capabilities, but not identical
-  // metering reports. Since we pass the CapabilityResponse through the
-  // protocol layer to the engine, this field needs to be repeated to
-  // eventually hold all the reports from each capability response node.
-  //
-  // If you are working with this in a capability, you should not emit
-  // more than one metering report per node.
-  repeated metering.MeteringReportNodeDetail metering = 1;
+  repeated MeteringReportNodeDetail metering = 1;
 }
 
 message RegistrationMetadata {
@@ -135,4 +125,18 @@ message InitialiseRequest {
 
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
+}
+
+message MeteringReportNodeDetail {
+	string peer_2_peer_id = 1;
+	string spend_unit = 2;
+	string spend_value = 3;
+}
+
+message MeteringReportStep {
+  repeated MeteringReportNodeDetail nodes = 1;
+}
+
+message MeteringReport {
+  map<string, MeteringReportStep> steps = 1;
 }

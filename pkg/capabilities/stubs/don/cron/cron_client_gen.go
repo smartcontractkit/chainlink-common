@@ -25,12 +25,17 @@ type cronTrigger struct {
 }
 
 func (*cronTrigger) IsDonTrigger() {}
+
 func (*cronTrigger) NewT() *CronTrigger {
 	return &CronTrigger{}
 }
 
 func (*cronTrigger) Id() string {
 	return "cron@1.0.0"
+}
+
+func (*cronTrigger) Method() string {
+	return "Trigger"
 }
 
 func (t *cronTrigger) ConfigAsAny() *anypb.Any {

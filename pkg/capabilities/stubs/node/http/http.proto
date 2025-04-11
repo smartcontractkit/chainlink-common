@@ -24,3 +24,7 @@ message HttpFetchResponse {
   map<string, string> headers = 2;
   // TODO: add more fields if needed
 }
+
+service Client {
+  rpc Fetch(HttpFetchRequest) returns (HttpFetchResponse);
+}

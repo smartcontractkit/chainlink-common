@@ -2,7 +2,6 @@ package pkg
 
 import (
 	_ "embed"
-	"path"
 
 	"github.com/iancoleman/strcase"
 	"google.golang.org/protobuf/compiler/protogen"
@@ -19,6 +18,9 @@ var goTriggerMethodTemplate string
 //go:embed templates/client_action.go.tmpl
 var goActionMethodTemplate string
 
+//go:embed templates/mock.go.tmpl
+var goMockTemplate string
+
 var clientTemplates = []templateGenerator{
 	{
 		Name:             "go_client",
@@ -28,6 +30,11 @@ var clientTemplates = []templateGenerator{
 			"trigger_method": goTriggerMethodTemplate,
 			"action_method":  goActionMethodTemplate,
 		},
+	},
+	{
+		Name:             "go_mock",
+		Template:         goMockTemplate,
+		FileNameTemplate: "{{.}}mock/{{.}}_mock_gen.go",
 	},
 }
 
@@ -45,16 +52,12 @@ func GenerateClient(plugin *protogen.Plugin, mode *wasmpb.Mode, capabilityId str
 	if len(file.Services) == 0 {
 		return nil
 	}
-	
+
 	for _, template := range clientTemplates {
 		args := clientArgs{mode: mode, File: file, CapabilityId: capabilityId}
-		fileName, content, err := template.Generate(path.Base(file.GeneratedFilenamePrefix), args)
-		if err != nil {
+		if err := template.GenerateFile(file, plugin, args); err != nil {
 			return err
 		}
-
-		g := plugin.NewGeneratedFile(fileName, "")
-		g.P(content)
 	}
 
 	return nil

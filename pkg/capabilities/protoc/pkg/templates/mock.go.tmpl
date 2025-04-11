@@ -1,0 +1,53 @@
+package server
+
+import (
+    "context"
+    "time"
+
+    {{- range .Services }}
+        {{- range .Methods }}
+            {{- addImport .Input.GoIdent.GoImportPath "" }}
+            {{- addImport .Output.GoIdent.GoImportPath "" }}
+        {{- end }}
+    {{- end }}
+
+    {{- range allimports }}
+    {{.}}
+    {{- end }}
+
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+    "github.com/smartcontractkit/chainlink-common/pkg/types/core"
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+
+    "github.com/stretchr/testify/mock"
+)
+
+{{- range .Services}}
+{{ $service := . }}
+type {{.GoName}}Capability struct {
+    m mock.Mock
+}
+
+
+// TODO register?
+
+
+{{- range .Methods}}
+    {{- if isTrigger . }}
+func (c *{{$service.GoName}}Capability) On{{.GoName}}(func(ctx context.Context, input *{{name .Input.GoIdent ""}})) *testutils.MockCapabilityCall[{{name .Output.GoIdent ""}}] {
+    return &testutils.MockCapabilityCall[{{name .Output.GoIdent ""}}] {
+        Call: c.m.On("On{{.GoName}}", mock.AnythingOfType(ctx), mock.AnythingOfType(input)),
+    }
+}
+    {{- else }}
+func On{{$service.GoName}}(func(ctx context.Context, input *{{name .Input.GoIdent ""}}, /* TODO this isn't right */ config *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)) testutils.MockCapabilityCall[{{name .Output.GoIdent ""}}] {
+    return &testutils.MockCapabilityCall[{{name .Output.GoIdent ""}}] {
+        Call: c.m.On("On{{.GoName}}", mock.AnythingOfType(ctx), mock.AnythingOfType(input)),
+    }
+}
+// TODO register if needed...
+    {{- end }}
+{{- end }}
+
+
+{{- end }}

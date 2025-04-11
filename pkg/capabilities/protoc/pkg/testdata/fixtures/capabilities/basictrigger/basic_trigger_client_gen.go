@@ -25,12 +25,17 @@ type basicTrigger struct {
 }
 
 func (*basicTrigger) IsDonTrigger() {}
+
 func (*basicTrigger) NewT() *Outputs {
 	return &Outputs{}
 }
 
 func (*basicTrigger) Id() string {
 	return "basic-test-trigger@1.0.0"
+}
+
+func (*basicTrigger) Method() string {
+	return "Trigger"
 }
 
 func (t *basicTrigger) ConfigAsAny() *anypb.Any {

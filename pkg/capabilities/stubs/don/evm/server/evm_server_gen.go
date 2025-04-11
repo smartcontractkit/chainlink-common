@@ -17,7 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-type EvmCapabilityCapability interface {
+type ClientCapability interface {
 	GetTxResult(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TxID /* TODO this isn't right */, config *evm.TxID) (*crosschain.TxResult, error)
 	RegisterGetTxResult(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterGetTxResult(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
@@ -45,26 +45,26 @@ type EvmCapabilityCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewEvmCapabilityServer(capability EvmCapabilityCapability) loop.StandardCapabilities {
-	return &evmCapabilityServer{
-		evmCapabilityCapability: evmCapabilityCapability{EvmCapabilityCapability: capability},
+func NewClientServer(capability ClientCapability) loop.StandardCapabilities {
+	return &clientServer{
+		clientCapability: clientCapability{ClientCapability: capability},
 	}
 }
 
-type evmCapabilityServer struct {
-	evmCapabilityCapability
+type clientServer struct {
+	clientCapability
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-func (cs *evmCapabilityServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
-	if err := cs.EvmCapabilityCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+func (cs *clientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+	if err := cs.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
 	cs.capabilityRegistry = capabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &evmCapabilityCapability{
-		EvmCapabilityCapability: cs.EvmCapabilityCapability,
+	if err := capabilityRegistry.Add(ctx, &clientCapability{
+		ClientCapability: cs.ClientCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -72,49 +72,49 @@ func (cs *evmCapabilityServer) Initialise(ctx context.Context, config string, te
 	return nil
 }
 
-func (cs *evmCapabilityServer) Close() error {
+func (cs *clientServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := cs.capabilityRegistry.Remove(ctx, "evm@1.0.0"); err != nil {
 		return err
 	}
 
-	return cs.evmCapabilityCapability.Close()
+	return cs.clientCapability.Close()
 }
 
-func (cs *evmCapabilityServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *clientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	// TODO if we get rid of targets in favour of actions that return empty proto, do we need Consensus stil?
-	info, err := cs.evmCapabilityCapability.Info(ctx)
+	info, err := cs.clientCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return []capabilities.CapabilityInfo{info}, nil
 }
 
-type evmCapabilityCapability struct {
-	EvmCapabilityCapability
+type clientCapability struct {
+	ClientCapability
 }
 
-func (c *evmCapabilityCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// TODO this is problematic right not because we can do both...?
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("evm@1.0.0", capabilities.CapabilityTypeAction, c.EvmCapabilityCapability.Description())
+	return capabilities.NewCapabilityInfo("evm@1.0.0", capabilities.CapabilityTypeAction, c.ClientCapability.Description())
 }
 
-var _ capabilities.TriggerCapability = (*evmCapabilityCapability)(nil)
+var _ capabilities.TriggerCapability = (*clientCapability)(nil)
 
-func (c *evmCapabilityCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
-		return capabilities.RegisterTrigger(ctx, "evm@1.0.0", request, input, c.EvmCapabilityCapability.RegisterOnFinalityViolation)
+		return capabilities.RegisterTrigger(ctx, "evm@1.0.0", request, input, c.ClientCapability.RegisterOnFinalityViolation)
 	default:
 		return nil, fmt.Errorf("method %s not found", request.Method)
 	}
 
 }
 
-func (c *evmCapabilityCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
@@ -122,47 +122,47 @@ func (c *evmCapabilityCapability) UnregisterTrigger(ctx context.Context, request
 		if err != nil {
 			return err
 		}
-		return c.EvmCapabilityCapability.UnregisterOnFinalityViolation(ctx, request.Metadata, input)
+		return c.ClientCapability.UnregisterOnFinalityViolation(ctx, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}
 }
 
-var _ capabilities.ActionCapability = (*evmCapabilityCapability)(nil)
+var _ capabilities.ActionCapability = (*clientCapability)(nil)
 
-func (c *evmCapabilityCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *evmCapabilityCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (c *evmCapabilityCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "GetTxResult":
 		input := &evm.TxID{}
 		// TODO config
 		config := &evm.TxID{}
-		return capabilities.Execute(ctx, request, input, config, c.EvmCapabilityCapability.GetTxResult)
+		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.GetTxResult)
 	case "ReadMethod":
 		input := &evm.ReadMethodRequest{}
 		// TODO config
 		config := &evm.ReadMethodRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.EvmCapabilityCapability.ReadMethod)
+		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.ReadMethod)
 	case "QueryLogs":
 		input := &evm.QueryLogsRequest{}
 		// TODO config
 		config := &evm.QueryLogsRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.EvmCapabilityCapability.QueryLogs)
+		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.QueryLogs)
 	case "SubmitTransaction":
 		input := &evm.SubmitTransactionRequest{}
 		// TODO config
 		config := &evm.SubmitTransactionRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.EvmCapabilityCapability.SubmitTransaction)
+		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.SubmitTransaction)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

@@ -14,12 +14,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-type EvmCapability struct {
+type Client struct {
 	// TODO config types (optional)
 	// TODO capability interfaces.
 }
 
-func (c *EvmCapability) GetTxResult(runtime sdk.DonRuntime, input *TxID) sdk.Promise[*crosschain.TxResult] {
+func (c *Client) GetTxResult(runtime sdk.DonRuntime, input *TxID) sdk.Promise[*crosschain.TxResult] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*crosschain.TxResult](nil, err)
@@ -42,7 +42,7 @@ func (c *EvmCapability) GetTxResult(runtime sdk.DonRuntime, input *TxID) sdk.Pro
 	})
 }
 
-func (c *EvmCapability) ReadMethod(runtime sdk.DonRuntime, input *ReadMethodRequest) sdk.Promise[*crosschain.ByteArray] {
+func (c *Client) ReadMethod(runtime sdk.DonRuntime, input *ReadMethodRequest) sdk.Promise[*crosschain.ByteArray] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*crosschain.ByteArray](nil, err)
@@ -65,7 +65,7 @@ func (c *EvmCapability) ReadMethod(runtime sdk.DonRuntime, input *ReadMethodRequ
 	})
 }
 
-func (c *EvmCapability) QueryLogs(runtime sdk.DonRuntime, input *QueryLogsRequest) sdk.Promise[*LogList] {
+func (c *Client) QueryLogs(runtime sdk.DonRuntime, input *QueryLogsRequest) sdk.Promise[*LogList] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*LogList](nil, err)
@@ -88,7 +88,7 @@ func (c *EvmCapability) QueryLogs(runtime sdk.DonRuntime, input *QueryLogsReques
 	})
 }
 
-func (c *EvmCapability) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransactionRequest) sdk.Promise[*TxID] {
+func (c *Client) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransactionRequest) sdk.Promise[*TxID] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*TxID](nil, err)
@@ -111,26 +111,31 @@ func (c *EvmCapability) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitT
 	})
 }
 
-func (c EvmCapability) OnFinalityViolation(config *emptypb.Empty) sdk.DonTrigger[*crosschain.BlockRange] {
+func (c Client) OnFinalityViolation(config *emptypb.Empty) sdk.DonTrigger[*crosschain.BlockRange] {
 	configAny, _ := anypb.New(config)
-	return &evmCapabilityOnFinalityViolation{
+	return &clientOnFinalityViolation{
 		config: configAny,
 	}
 }
 
-type evmCapabilityOnFinalityViolation struct {
+type clientOnFinalityViolation struct {
 	config *anypb.Any
 }
 
-func (*evmCapabilityOnFinalityViolation) IsDonTrigger() {}
-func (*evmCapabilityOnFinalityViolation) NewT() *crosschain.BlockRange {
+func (*clientOnFinalityViolation) IsDonTrigger() {}
+
+func (*clientOnFinalityViolation) NewT() *crosschain.BlockRange {
 	return &crosschain.BlockRange{}
 }
 
-func (*evmCapabilityOnFinalityViolation) Id() string {
+func (*clientOnFinalityViolation) Id() string {
 	return "evm@1.0.0"
 }
 
-func (t *evmCapabilityOnFinalityViolation) ConfigAsAny() *anypb.Any {
+func (*clientOnFinalityViolation) Method() string {
+	return "OnFinalityViolation"
+}
+
+func (t *clientOnFinalityViolation) ConfigAsAny() *anypb.Any {
 	return t.config
 }

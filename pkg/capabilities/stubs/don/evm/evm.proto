@@ -14,7 +14,7 @@ message TxID {
 
 message ReadMethodRequest {
   string address = 1;
-  string calldata = 2;
+  bytes calldata = 2;
   ConfidenceLevel confidence_level = 3;
 }
 
@@ -28,11 +28,10 @@ message QueryLogsRequest {
 message SubmitTransactionRequest {
   string to_address = 1;
   GasConfig gas_config = 2;
-  string calldata = 3; // Optional
+  bytes calldata = 3; // Optional
 }
 
-// Service definition for EvmCapability
-service EvmCapability {
+service Client {
   rpc GetTxResult (TxID) returns (don.crosschain.v1.TxResult);
   rpc ReadMethod (ReadMethodRequest) returns (don.crosschain.v1.ByteArray);
   rpc QueryLogs (QueryLogsRequest) returns (LogList);
@@ -59,10 +58,10 @@ message LogList {
   repeated Log logs = 1;
 }
 
-// Confidence level enum
 enum ConfidenceLevel {
   CONFIDENCE_LEVEL_UNSPECIFIED = 0;
   LOW = 1;
   MEDIUM = 2;
   HIGH = 3;
+  FINALITY = 4;
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testutils"
 )
 
 // IdenticalConsensus registers a new capability mock with the runner

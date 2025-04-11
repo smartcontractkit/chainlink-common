@@ -10,6 +10,7 @@ message TriggerSubscriptionRequest {
   string execId = 1;
   string id = 2;
   google.protobuf.Any payload = 3;
+  string method = 4;
 }
 
 message Trigger {

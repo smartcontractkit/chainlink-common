@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"path"
 
 	"google.golang.org/protobuf/compiler/protogen"
 )
@@ -36,7 +35,7 @@ var serverTemplates = map[ServerLanguage]templateGenerator{
 	ServerLangaugeGo: {
 		Name:             "go_server",
 		Template:         goServerTemplate,
-		FileNameTemplate: "{{.}}_server_gen.go",
+		FileNameTemplate: "server/{{.}}_server_gen.go",
 	},
 }
 
@@ -51,13 +50,5 @@ func GenerateServer(plugin *protogen.Plugin, capabilityId string, serverLanguage
 	}
 
 	args := serverArgs{File: file, CapabilityId: capabilityId}
-	fileName, content, err := template.Generate(file.GeneratedFilenamePrefix, args)
-	if err != nil {
-		return err
-	}
-
-	g := plugin.NewGeneratedFile(path.Join("server", path.Base(fileName)), "")
-	g.P(content)
-
-	return nil
+	return template.GenerateFile(file, plugin, args)
 }

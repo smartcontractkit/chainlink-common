@@ -15,6 +15,7 @@ import (
 
 type runtimeBase struct {
 	execId string
+	config []byte
 }
 
 //go:wasmimport env call_capability
@@ -66,6 +67,10 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 
 		return capResponse, err
 	})
+}
+
+func (r *runtimeBase) Config() []byte {
+	return r.config
 }
 
 type donRuntime struct {

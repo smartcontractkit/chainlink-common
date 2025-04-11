@@ -20,12 +20,11 @@ func main() {
 		if err != nil {
 			return err
 		}
-
 		capabilityId, ok := args["id"]
 		if !ok {
 			return fmt.Errorf("missing required argument capability_id")
 		}
-		
+
 		goLang := pkg.ServerLangaugeGo
 		serverLanguage, err := parseArg(args, "server_language", func(value string) (pkg.ServerLanguage, error) {
 			serverLanguage := pkg.ServerLanguage(strings.ToLower(value))

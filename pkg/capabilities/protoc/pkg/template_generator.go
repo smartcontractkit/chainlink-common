@@ -3,6 +3,7 @@ package pkg
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"strings"
 	"text/template"
 
@@ -19,6 +20,17 @@ type templateGenerator struct {
 	Template         string
 	FileNameTemplate string
 	Partials         map[string]string
+}
+
+func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
+	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args)
+	if err != nil {
+		return err
+	}
+
+	g := plugin.NewGeneratedFile(fileName, "")
+	g.P(content)
+	return nil
 }
 
 func (t *templateGenerator) Generate(baseFile, args any) (string, string, error) {

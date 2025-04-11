@@ -1,6 +1,6 @@
 .PHONY: gomods
 gomods: ## Install gomods
-	go install github.com/jmank88/gomods@v0.1.3
+	go install github.com/jmank88/gomods@v0.1.5
 
 .PHONY: gomodtidy
 gomodtidy: gomods
@@ -35,8 +35,8 @@ rm-builders:
 
 .PHONY: generate
 generate: mockery install-protoc gomods
-	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -w go generate -x ./...
-	mockery
+	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -go generate -x ./...
+	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files
 
 .PHONY: lint-workspace lint
 GOLANGCI_LINT_VERSION := 1.64.8

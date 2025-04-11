@@ -43,7 +43,7 @@ func TestMaxTriesHappy(t *testing.T) {
 	}
 }
 
-// https://github.com/cenkalti/backoff/issues/80
+// Calling with 0 MaxRetries calls the operation once.
 func TestMaxTriesZero(t *testing.T) {
 	var called int
 

@@ -2,12 +2,12 @@ package backoff
 
 import (
 	"context"
+	"time"
 )
 
 // retryOptions holds configuration settings for the retry mechanism.
 type retryOptions struct {
 	BackOff  BackOff // Strategy for calculating backoff periods.
-	Timer    timer   // Timer to manage retry delays.
 	MaxTries uint    // Maximum number of retry attempts.
 }
 
@@ -27,7 +27,7 @@ func WithMaxTries(n uint) RetryOption {
 	}
 }
 
-// Retry attempts the operation until success, a permanent error, or backoff completion.
+// Retry attempts the operation until success or backoff completion.
 // It ensures the operation is executed at least once.
 //
 // Returns the operation result or error if retries are exhausted or context is cancelled.
@@ -35,15 +35,12 @@ func Retry[T any](ctx context.Context, operation func() (T, error), opts ...Retr
 	// Initialize default retry options.
 	args := &retryOptions{
 		BackOff: NewExponentialBackOff(),
-		Timer:   &defaultTimer{},
 	}
 
 	// Apply user-provided options to the default settings.
 	for _, opt := range opts {
 		opt(args)
 	}
-
-	defer args.Timer.Stop()
 
 	args.BackOff.Reset()
 	for numTries := uint(1); ; numTries++ {
@@ -70,9 +67,8 @@ func Retry[T any](ctx context.Context, operation func() (T, error), opts ...Retr
 		}
 
 		// Wait for the next backoff period or context cancellation.
-		args.Timer.Start(next)
 		select {
-		case <-args.Timer.C():
+		case <-time.After(next):
 		case <-ctx.Done():
 			return res, context.Cause(ctx)
 		}

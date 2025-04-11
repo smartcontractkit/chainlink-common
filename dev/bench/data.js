@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744381393154,
+  "lastUpdate": 1744398617604,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11466,6 +11466,48 @@ window.BENCHMARK_DATA = {
             "value": 28159,
             "unit": "ns/op",
             "extra": "42558 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f78111abeb25a99f7a5220131fb2615f262875c",
+          "message": "feat(utils): adds retry utils to common (#1127)\n\n* feat(utils): adds retry utils to common\n\n* refactor: change name and remove unnecessary function\n\n* remove functional options\n\n* move default instance",
+          "timestamp": "2025-04-11T15:09:08-04:00",
+          "tree_id": "c8b5e0857e58963a6b101a370f7791c5e36f60e2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0f78111abeb25a99f7a5220131fb2615f262875c"
+        },
+        "date": 1744398616860,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.4,
+            "unit": "ns/op",
+            "extra": "3118258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.6,
+            "unit": "ns/op",
+            "extra": "2938077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28172,
+            "unit": "ns/op",
+            "extra": "42632 times\n4 procs"
           }
         ]
       }

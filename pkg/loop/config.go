@@ -44,7 +44,6 @@ const (
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
 
-	envChipIngressEnabled  = "CL_CHIP_INGRESS_ENABLED"
 	envChipIngressEndpoint = "CL_CHIP_INGRESS_ENDPOINT"
 )
 
@@ -81,7 +80,6 @@ type EnvConfig struct {
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
 
-	ChipIngressEnabled  bool
 	ChipIngressEndpoint string
 }
 
@@ -131,7 +129,6 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
 
-	add(envChipIngressEnabled, strconv.FormatBool(e.ChipIngressEnabled))
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 
 	return
@@ -237,20 +234,8 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
 		}
-	}
-
-	// Chip Ingress
-	e.ChipIngressEnabled, err = getBool(envChipIngressEnabled)
-	if err != nil {
-		e.ChipIngressEnabled = false
-		// TODO: uncomment this after INFOPLAT-2202/chip-ingress is merged in chainlink repo
-		// return fmt.Errorf("failed to parse %s: %w", envChipIngressEnabled, err)
-	}
-	if e.ChipIngressEnabled {
+		// Optional
 		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
-		if e.ChipIngressEndpoint == "" {
-			return fmt.Errorf("missing %s", envChipIngressEndpoint)
-		}
 	}
 
 	return nil

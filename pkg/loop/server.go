@@ -105,7 +105,6 @@ func (s *Server) start() error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
-
 		beholderCfg := beholder.Config{
 			InsecureConnection:             envCfg.TelemetryInsecureConnection,
 			CACertFile:                     envCfg.TelemetryCACertFile,
@@ -119,7 +118,7 @@ func (s *Server) start() error {
 			EmitterExportInterval:          envCfg.TelemetryEmitterExportInterval,
 			EmitterExportMaxBatchSize:      envCfg.TelemetryEmitterExportMaxBatchSize,
 			EmitterMaxQueueSize:            envCfg.TelemetryEmitterMaxQueueSize,
-			ChipIngressEmitterEnabled:      envCfg.ChipIngressEnabled,
+			ChipIngressEmitterEnabled:      envCfg.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: envCfg.ChipIngressEndpoint,
 		}
 

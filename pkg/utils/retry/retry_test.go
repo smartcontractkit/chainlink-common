@@ -13,18 +13,19 @@ import (
 
 // exampleFunc is a function type used for testing retry strategies
 type exampleFunc func(ctx context.Context) (string, error)
+type testCase struct {
+	name     string
+	fn       exampleFunc
+	expected string
+	errMsg   string
+	timeout  time.Duration
+	strategy *Strategy[string]
+}
 
 func TestWithRetry(t *testing.T) {
 	lggr := logger.Test(t)
 
-	tests := []struct {
-		name     string
-		fn       exampleFunc
-		expected string
-		errMsg   string
-		timeout  time.Duration
-		opts     []Option
-	}{
+	tests := []testCase{
 		{
 			name: "successful function",
 			fn: func(ctx context.Context) (string, error) {
@@ -105,7 +106,10 @@ func TestWithRetry(t *testing.T) {
 		},
 		{
 			name: "obeys limit of 1 max retry",
-			opts: []Option{WithMaxRetries(1)},
+			strategy: &Strategy[string]{
+				Backoff:    BackoffStrategyDefault,
+				MaxRetries: 1,
+			},
 			fn: func() exampleFunc {
 				calls := make(chan struct{}, 1)
 				called := 0
@@ -127,9 +131,12 @@ func TestWithRetry(t *testing.T) {
 		},
 		{
 			name: "fails until max retries is met",
-			opts: []Option{WithMaxRetries(1)},
 			fn: func(ctx context.Context) (string, error) {
 				return "", errors.New("temporary error")
+			},
+			strategy: &Strategy[string]{
+				Backoff:    BackoffStrategyDefault,
+				MaxRetries: 1,
 			},
 			errMsg:  "max retry attempts reached",
 			timeout: 1 * time.Second,
@@ -142,7 +149,16 @@ func TestWithRetry(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, tt.timeout)
 			defer cancel()
 
-			result, err := Do(ctx, lggr, tt.fn, tt.opts...)
+			var (
+				result string
+				err    error
+			)
+			if tt.strategy == nil {
+				result, err = Do(ctx, lggr, tt.fn)
+			} else {
+				result, err = tt.strategy.Do(ctx, lggr, tt.fn)
+			}
+
 			if tt.errMsg != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.errMsg)

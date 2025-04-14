@@ -211,7 +211,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled {
 		chipIngressOpts := []chipingress.Opt{
-			chipingress.WithTransportCredentials(insecure.NewCredentials()),
+			chipingress.WithTransportCredentials(creds),
 		}
 		
 		// Only add headers if they exist

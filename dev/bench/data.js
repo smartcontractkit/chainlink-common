@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744400289309,
+  "lastUpdate": 1744646880316,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11550,6 +11550,48 @@ window.BENCHMARK_DATA = {
             "value": 28164,
             "unit": "ns/op",
             "extra": "42466 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a816cede13685cc1be78125a9a84f9380027568d",
+          "message": "(feat): Add mode quorum 'all' to reduce aggregator of OCR3 capability (#1129)",
+          "timestamp": "2025-04-14T09:06:46-07:00",
+          "tree_id": "ef9b2503b58c6482cb5636822d73335e5c1a23a4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a816cede13685cc1be78125a9a84f9380027568d"
+        },
+        "date": 1744646879440,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 376,
+            "unit": "ns/op",
+            "extra": "3286149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.4,
+            "unit": "ns/op",
+            "extra": "2907574 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28241,
+            "unit": "ns/op",
+            "extra": "42409 times\n4 procs"
           }
         ]
       }

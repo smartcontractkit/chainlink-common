@@ -33,7 +33,7 @@ Example configuration file structure:
 
 ```yaml
 defaults:
-  goflags: "-ldflags='-s -w'" # Default Go build flags
+  goflags: "-ldflags='-s'" # Default Go build flags
   goprivate: "github.com/myorg/myrepo,github.com/private-org/*" # Comma-separated list of private repo patterns
 
 plugins:

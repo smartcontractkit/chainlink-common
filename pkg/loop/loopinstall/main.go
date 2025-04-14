@@ -363,7 +363,7 @@ func printHelp() {
 	fmt.Println("  loopinstall -s plugins.default.yaml")
 	fmt.Println("")
 	fmt.Println("  # Install plugins with environment variable overrides")
-	fmt.Println("  CL_PLUGIN_GOFLAGS=\"-ldflags='-s -w'\" loopinstall plugins.default.yaml")
+	fmt.Println("  CL_PLUGIN_GOFLAGS=\"-ldflags='-s'\" loopinstall plugins.default.yaml")
 	fmt.Println("")
 	fmt.Println("Environment Variables:")
 	fmt.Println("  CL_PLUGIN_GOFLAGS  Override the goflags option from the configuration")

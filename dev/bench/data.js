@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744646880316,
+  "lastUpdate": 1744649744089,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11592,6 +11592,48 @@ window.BENCHMARK_DATA = {
             "value": 28241,
             "unit": "ns/op",
             "extra": "42409 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lei.shi@smartcontract.com",
+            "name": "Lei",
+            "username": "shileiwill"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3a2ccad2faaa95c8f44ac6a96ba977817e8e3689",
+          "message": "DEVSVCS-1554 add NewEventEmitter to sdk (#1101)\n\n* remove Logger from interface\n\n* remove error from Emit()\n\n---------\n\nCo-authored-by: Justin Kaseman <justinkaseman@live.com>",
+          "timestamp": "2025-04-14T09:54:34-07:00",
+          "tree_id": "7461cf2e633519202ccec0ec3f7204a8331c8c99",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3a2ccad2faaa95c8f44ac6a96ba977817e8e3689"
+        },
+        "date": 1744649743198,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.3,
+            "unit": "ns/op",
+            "extra": "3309363 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.9,
+            "unit": "ns/op",
+            "extra": "2948216 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28155,
+            "unit": "ns/op",
+            "extra": "42368 times\n4 procs"
           }
         ]
       }

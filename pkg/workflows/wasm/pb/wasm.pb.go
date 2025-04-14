@@ -658,6 +658,7 @@ type FetchRequest struct {
 	TimeoutMs     uint32                 `protobuf:"varint,5,opt,name=timeoutMs,proto3" json:"timeoutMs,omitempty"`
 	Id            string                 `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`
 	Metadata      *FetchRequestMetadata  `protobuf:"bytes,7,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	MaxRetries    uint32                 `protobuf:"varint,8,opt,name=maxRetries,proto3" json:"maxRetries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -739,6 +740,13 @@ func (x *FetchRequest) GetMetadata() *FetchRequestMetadata {
 		return x.Metadata
 	}
 	return nil
+}
+
+func (x *FetchRequest) GetMaxRetries() uint32 {
+	if x != nil {
+		return x.MaxRetries
+	}
+	return 0
 }
 
 type FetchResponse struct {
@@ -1014,7 +1022,7 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\fworkflowName\x18\x02 \x01(\tR\fworkflowName\x12$\n" +
 	"\rworkflowOwner\x18\x03 \x01(\tR\rworkflowOwner\x120\n" +
 	"\x13workflowExecutionId\x18\x04 \x01(\tR\x13workflowExecutionId\x120\n" +
-	"\x13decodedWorkflowName\x18\x05 \x01(\tR\x13decodedWorkflowName\"\xd8\x01\n" +
+	"\x13decodedWorkflowName\x18\x05 \x01(\tR\x13decodedWorkflowName\"\xf8\x01\n" +
 	"\fFetchRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12%\n" +
@@ -1022,7 +1030,10 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1c\n" +
 	"\ttimeoutMs\x18\x05 \x01(\rR\ttimeoutMs\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x125\n" +
-	"\bmetadata\x18\a \x01(\v2\x19.sdk.FetchRequestMetadataR\bmetadata\"\xb6\x01\n" +
+	"\bmetadata\x18\a \x01(\v2\x19.sdk.FetchRequestMetadataR\bmetadata\x12\x1e\n" +
+	"\n" +
+	"maxRetries\x18\b \x01(\rR\n" +
+	"maxRetries\"\xb6\x01\n" +
 	"\rFetchResponse\x12&\n" +
 	"\x0eexecutionError\x18\x01 \x01(\bR\x0eexecutionError\x12\"\n" +
 	"\ferrorMessage\x18\x02 \x01(\tR\ferrorMessage\x12\x1e\n" +

@@ -59,8 +59,9 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	config := pkg.Config{
 		EvmTokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
 		EvmPorAddress:   "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-		Schedule:        "0 0 * * *",
 		PublicKey:       string(pubKeyBytes),
+		Schedule:        "0 0 * * *",
+		Url:             "https://reserves.gousd.com/por.json",
 	}
 	cfgBytes, err := json.Marshal(config)
 	require.NoError(t, err)
@@ -81,7 +82,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	httpMock := &httpmock.ClientCapability{
 		Fetch: func(ctx context.Context, input *http.HttpFetchRequest) (*http.HttpFetchResponse, error) {
 			assert.Equal(t, http.HttpMethod_GET, input.Method)
-			assert.Equal(t, "https://reserves.gousd.com/por.json", input.Url)
+			assert.Equal(t, config.Url, input.Url)
 			assert.Empty(t, input.Body)
 			return &http.HttpFetchResponse{Body: payload}, nil
 		},
@@ -96,9 +97,9 @@ func TestWorkflow_HappyPath(t *testing.T) {
 			assert.Equal(t, evm.ConfidenceLevel_FINALITY, input.ConfidenceLevel)
 			erc20, err := abi.JSON(strings.NewReader(pkg.Erc20Abi))
 			require.NoError(t, err)
-			args := map[string]any{}
-			require.NoError(t, erc20.UnpackIntoMap(args, pkg.TotalSupplyMethod, input.Calldata))
-			require.Empty(t, args)
+
+			method := erc20.Methods[pkg.TotalSupplyMethod]
+			assert.Equal(t, method.ID, input.Calldata)
 
 			response, err := erc20.Methods[pkg.TotalSupplyMethod].Outputs.Pack(numEvmTokens)
 			require.NoError(t, err)
@@ -108,15 +109,20 @@ func TestWorkflow_HappyPath(t *testing.T) {
 			assert.Equal(t, config.EvmPorAddress, input.ToAddress)
 			reserveManager, err := abi.JSON(strings.NewReader(pkg.ReserveManagerAbi))
 			require.NoError(t, err)
-			args := map[string]any{}
-			require.NoError(t, reserveManager.UnpackIntoMap(args, pkg.UpdateReservesMethod, input.Calldata))
+			method := reserveManager.Methods[pkg.UpdateReservesMethod]
+			callId := input.Calldata[0:len(method.ID)]
+			assert.Equal(t, method.ID, callId)
 
-			require.Len(t, args, 2)
+			argData := input.Calldata[len(method.ID):]
+			args := map[string]any{}
+			assert.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
+
+			assert.Len(t, args, 2)
 			reserve, err := decimal.NewFromString(totalReserve)
 			require.NoError(t, err)
 			reserve = reserve.Mul(decimal.New(10, 18))
-			require.Equal(t, reserve.BigInt(), args["reserve"])
-			require.Equal(t, totalTokens, args["totalSupply"])
+			assert.Equal(t, reserve.BigInt(), args["totalReserve"])
+			assert.Equal(t, totalTokens, args["totalMinted"])
 
 			return &evm.TxID{Value: "fake transaction"}, nil
 		},

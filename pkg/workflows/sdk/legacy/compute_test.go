@@ -10,7 +10,7 @@ import (
 	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testdata/fixtures/capabilities/notstreams"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testutils"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"

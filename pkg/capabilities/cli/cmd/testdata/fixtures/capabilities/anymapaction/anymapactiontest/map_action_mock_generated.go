@@ -6,7 +6,7 @@ package anymapactiontest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/anymapaction"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testutils"
 )
 
 // MapAction registers a new capability mock with the runner

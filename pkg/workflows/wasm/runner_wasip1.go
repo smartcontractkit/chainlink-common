@@ -103,7 +103,7 @@ func (d *subscriber[T]) Config() []byte {
 }
 
 type genericRunner[T any] interface {
-	SubscribeToTrigger(id string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error))
+	SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error))
 	Config() []byte
 }
 

@@ -6,7 +6,7 @@ package readcontracttest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/readcontract"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testutils"
 )
 
 // Action registers a new capability mock with the runner

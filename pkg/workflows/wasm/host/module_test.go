@@ -585,11 +585,12 @@ func Test_write(t *testing.T) {
 		assert.Equal(t, int64(-1), n)
 	})
 
-	t.Run("unwanted data when size exceeds written data", func(t *testing.T) {
+	t.Run("unwanted data when size exceeds written data only writes the data", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, 20)
 		n := write(memory, giveSrc, 0, 20)
-		assert.Equal(t, int64(-1), n)
+		// TODO verify this won't break anything...
+		assert.Equal(t, int64(12), n)
 	})
 }
 

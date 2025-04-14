@@ -6,7 +6,7 @@ package crontest
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers/cron"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/legacy/testutils"
 )
 
 // Trigger registers a new capability mock with the runner

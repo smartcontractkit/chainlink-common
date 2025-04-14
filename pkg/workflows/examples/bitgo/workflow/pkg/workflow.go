@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm"
@@ -29,14 +30,15 @@ var Erc20Abi string
 //go:embed solc/bin/IReserveManager.abi
 var ReserveManagerAbi string
 
-const TotalSupplyMethod = "TotalSupplyMethod"
+const TotalSupplyMethod = "totalSupply"
 const UpdateReservesMethod = "updateReserves"
 
 type Config struct {
 	EvmTokenAddress string
 	EvmPorAddress   string
-	Schedule        string
 	PublicKey       string
+	Schedule        string
+	Url             string
 }
 
 func Workflow(runner sdk.DonRunner) {
@@ -55,7 +57,12 @@ func Workflow(runner sdk.DonRunner) {
 }
 
 func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Config) (struct{}, error) {
-	reserveInfo, err := sdk.RunInNodeModeWithBuiltInConsensus(runtime, fetchPor, pb.SimpleConsensusType_MEDIAN_OF_FIELDS).
+	reserveInfo, err := sdk.RunInNodeModeWithBuiltInConsensus(
+		runtime,
+		func(nodeRuntime sdk.NodeRuntime) (*ReserveInfo, error) {
+			return fetchPor(nodeRuntime, config)
+		},
+		pb.SimpleConsensusType_MEDIAN_OF_FIELDS).
 		Await()
 
 	if err != nil {
@@ -112,7 +119,12 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 
 	totalSupply = totalSupply.Add(totalSupply, evmSupply)
 	// TODO add other chains
-	evmSupplyCallData, err := reserveManager.Pack(UpdateReservesMethod, totalSupply, reserveInfo.TotalReserve)
+
+	totalReserveScaled := reserveInfo.TotalReserve.Mul(decimal.NewFromUint64(10e18)).BigInt()
+	evmSupplyCallData, err := reserveManager.Pack(UpdateReservesMethod, totalSupply, totalReserveScaled)
+	if err != nil {
+		return struct{}{}, err
+	}
 
 	evmTx := evmClient.SubmitTransaction(runtime, &evm.SubmitTransactionRequest{
 		ToAddress: config.EvmPorAddress,
@@ -136,8 +148,8 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 	return struct{}{}, nil
 }
 
-func fetchPor(runtime sdk.NodeRuntime) (*ReserveInfo, error) {
-	request := &http.HttpFetchRequest{Url: "https://reserves.gousd.com/por.json"}
+func fetchPor(runtime sdk.NodeRuntime, config *Config) (*ReserveInfo, error) {
+	request := &http.HttpFetchRequest{Url: config.Url}
 	client := &http.Client{}
 	response, err := client.Fetch(runtime, request).Await()
 	if err != nil {
@@ -149,7 +161,7 @@ func fetchPor(runtime sdk.NodeRuntime) (*ReserveInfo, error) {
 		return nil, err
 	}
 
-	err = verifySignature(porResponse)
+	err = verifySignature(porResponse, config.PublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -166,31 +178,36 @@ func fetchPor(runtime sdk.NodeRuntime) (*ReserveInfo, error) {
 	return reserve, nil
 }
 
-func verifySignature(porResponse *PorResponse) error {
+func verifySignature(porResponse *PorResponse, publicKey string) error {
+	// Decode the signature
 	rawSig, err := base64.RawURLEncoding.DecodeString(porResponse.DataSignature)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode signature: %w", err)
 	}
 
-	block, _ := pem.Decode(rawSig)
+	// Parse the PEM public key
+	block, _ := pem.Decode([]byte(publicKey))
 	if block == nil || block.Type != "PUBLIC KEY" {
 		return fmt.Errorf("invalid PEM block")
 	}
+
 	pubInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
 		return fmt.Errorf("failed to parse public key: %w", err)
 	}
+
 	pubKey, ok := pubInterface.(*rsa.PublicKey)
 	if !ok {
 		return fmt.Errorf("not an RSA public key")
 	}
 
+	// Hash the payload
 	hasher := crypto.SHA256.New()
 	hasher.Write([]byte(porResponse.Data))
 	digest := hasher.Sum(nil)
 
-	err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, digest, rawSig)
-	if err != nil {
+	// Verify
+	if err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, digest, rawSig); err != nil {
 		return fmt.Errorf("signature verification failed: %w", err)
 	}
 	return nil

@@ -76,6 +76,7 @@ message FetchRequest {
   uint32 timeoutMs = 5;
   string id = 6;
   FetchRequestMetadata metadata = 7;
+  uint32 maxRetries = 8;
 }
 
 message FetchResponse {

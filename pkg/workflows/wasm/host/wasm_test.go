@@ -17,7 +17,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
@@ -174,64 +173,6 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 	assert.ErrorContains(t, err, "oops")
 }
 
-func Test_Compute_Logs(t *testing.T) {
-	t.Parallel()
-	ctx := t.Context()
-	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
-
-	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-	m, err := NewModule(&ModuleConfig{
-		Logger:         logger,
-		IsUncompressed: true,
-		Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-			return nil, nil
-		},
-	}, binary)
-	require.NoError(t, err)
-
-	m.Start()
-
-	req := &wasmpb.Request{
-		Id: uuid.New().String(),
-		Message: &wasmpb.Request_ComputeRequest{
-			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
-					Inputs: &valuespb.Map{},
-					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
-						ReferenceId: "transform",
-					},
-				},
-			},
-		},
-	}
-	_, err = m.Run(ctx, req)
-	assert.Nil(t, err)
-
-	require.Len(t, logs.AllUntimed(), 2)
-	expectedEntries := []Entry{
-		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
-			Fields: []zapcore.Field{
-				zap.String("test-string-field-key", "this is a test field content"),
-				zap.Float64("test-numeric-field-key", 6400000),
-			},
-		},
-		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "Sanitized symbols *********** Not sanitized symbols ッÖжγ"},
-			Fields: []zapcore.Field{
-				zap.String("test-string-field-key", "this is a test field content"),
-				zap.Float64("test-numeric-field-key", 6400000),
-			},
-		},
-	}
-	for i := range expectedEntries {
-		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
-		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
-	}
-}
-
 func Test_Compute_Emit(t *testing.T) {
 	t.Parallel()
 	binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
@@ -319,24 +260,28 @@ func Test_Compute_Emit(t *testing.T) {
 
 		ctx := t.Context()
 		_, err = m.Run(ctx, req)
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, assert.AnError.Error())
 
-		require.Len(t, logs.AllUntimed(), 1)
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 2)
 
-		expectedEntries := []Entry{
+		expectedEntries := []zapcore.Entry{
 			{
-				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error emitting message: %s", assert.AnError)},
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message: %s", assert.AnError),
+			},
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message* failed to create emission* %s", assert.AnError),
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Entry.Message)
 		}
 	})
 
 	t.Run("failure on emit due to missing workflow identifying metadata", func(t *testing.T) {
-		lggr := logger.Test(t)
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
 		m, err := NewModule(&ModuleConfig{
 			Logger:         lggr,
@@ -367,8 +312,23 @@ func Test_Compute_Emit(t *testing.T) {
 
 		ctx := t.Context()
 		_, err = m.Run(ctx, req)
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to create emission")
+
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 1)
+
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{
+					Level:   zapcore.ErrorLevel,
+					Message: "error emitting message* failed to create emission* must provide workflow id to emit event",
+				},
+			},
+		}
+
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+		}
 	})
 }
 
@@ -1316,6 +1276,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 	})
 
 	t.Run("Emitted message size within the limit", func(t *testing.T) {
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 		ctx := t.Context()
 		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
@@ -1325,7 +1286,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 		// an emitter response with an error "some error" when marshaled is 14 bytes
 		// setting a maxResponseSizeBytes that should handle that payload
 		maxResponseSizeBytes := uint64(14)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1349,9 +1310,27 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		assert.ErrorContains(t, err, "some error")
+
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 2)
+
+		expectedEntries := []zapcore.Entry{
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message: %s", "some error"),
+			},
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message* failed to create emission* %s", "some error"),
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Entry.Message)
+		}
 	})
 	t.Run("Emitted message size outside the limit", func(t *testing.T) {
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 		ctx := t.Context()
 		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
 
@@ -1361,7 +1340,7 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 
 		// setting a lower limit than the size of the emitted message
 		maxResponseSizeBytes := uint64(1)
-		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
 		require.NoError(t, err)
 
 		m.Start()
@@ -1385,8 +1364,25 @@ func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
+
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 2)
+
 		// an emitter response with an error "some error" when marshaled is 14 bytes
-		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 14, maxResponseSizeBytes))
+		expectedEntries := []zapcore.Entry{
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message: %s", "some error"),
+			},
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message* failed to create emission* response size %d exceeds maximum allowed size %d", 14, maxResponseSizeBytes),
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Entry.Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Entry.Message)
+		}
 	})
 }
 

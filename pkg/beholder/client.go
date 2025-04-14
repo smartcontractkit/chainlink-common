@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
@@ -211,20 +210,18 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled {
-
-		// Generate auth headers if they don't exist yet
-		if len(cfg.AuthHeaders) == 0 && cfg.'AuthPrivateKey' != nil {
-			var err error
-			cfg.AuthHeaders, err = NewAuthHeaders(cfg.AuthPrivateKey)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create auth headers: %w", err)
-			}
+		chipIngressOpts := []chipingress.Opt{
+			chipingress.WithTransportCredentials(insecure.NewCredentials()),
+		}
+		
+		// Only add headers if they exist
+		if len(cfg.AuthHeaders) > 0 {
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithHeaders(cfg.AuthHeaders))
 		}
 
 		chipIngressClient, err := chipingress.NewChipIngressClient(
 			cfg.ChipIngressEmitterGRPCEndpoint,
-			chipingress.WithTransportCredentials(insecure.NewCredentials()),
-			chipingress.WithHeaders(cfg.AuthHeaders),
+			chipIngressOpts...,
 		)
 		if err != nil {
 			return nil, err

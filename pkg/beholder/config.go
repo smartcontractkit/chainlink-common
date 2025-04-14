@@ -1,7 +1,6 @@
 package beholder
 
 import (
-	"crypto"
 	"time"
 
 	otelattr "go.opentelemetry.io/otel/attribute"
@@ -50,7 +49,6 @@ type Config struct {
 
 	// Auth
 	AuthPublicKeyHex string
-	AuthPrivateKey   crypto.Signer
 	AuthHeaders      map[string]string
 }
 
@@ -114,8 +112,6 @@ func DefaultConfig() Config {
 		LogExportInterval:     1 * time.Second,
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
-		// Auth
-		AuthHeaders: make(map[string]string),
 	}
 }
 

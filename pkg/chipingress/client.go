@@ -166,7 +166,6 @@ func defaultConfig() chipIngressClientConfig {
 	return chipIngressClientConfig{
 		log:                  zap.NewNop(),
 		transportCredentials: insecure.NewCredentials(),
-		headers:              make(map[string]string),
 	}
 }
 

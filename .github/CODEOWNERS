@@ -11,7 +11,7 @@
 /pkg/beholder/ @smartcontractkit/realtime
 /pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag
-/pkg/loop/loopinstall @smartcontractkit/devex-cicd
+/pkg/loop/cmd/loopinstall @smartcontractkit/devex-cicd
 /pkg/monitoring/ @topliceanu @pedrovsg
 /pkg/types/ccip @smartcontractkit/ccip-offchain
 /pkg/types/ccipocr3 @smartcontractkit/ccip-offchain

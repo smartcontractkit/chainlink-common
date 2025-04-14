@@ -614,7 +614,7 @@ func TestBuilder_ValidSpec(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("Capabilities can be used multiple times with different references", func(t *testing.T) {
+	t.Run("capabilities can be used multiple times with different references", func(t *testing.T) {
 		conf, err := UnmarshalYaml[Config](sepoliaConfig)
 		require.NoError(t, err)
 

@@ -6,26 +6,26 @@ package testutils
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
 type runner[T any] struct {
-	ran            bool
-	config         []byte
-	result         any
-	err            error
-	ctx            context.Context
-	workflowId     string
-	executionId    string
-	registry       *Registry
-	strictTriggers bool
+	ran               bool
+	config            []byte
+	result            any
+	err               error
+	ctx               context.Context
+	workflowId        string
+	executionId       string
+	registry          *Registry
+	strictTriggers    bool
+	asyncCapabilities bool
+	runtime           T
 }
 
 type TestRunner interface {
@@ -34,6 +34,10 @@ type TestRunner interface {
 	// SetStrictTriggers causes the workflow to fail if a trigger isn't in the registry
 	// this is useful for testing the workflow registrations.
 	SetStrictTriggers(strict bool)
+
+	// SetCallCapabilitiesAsync creates a go routine to call capabilities
+	// Defaults to false
+	SetCallCapabilitiesAsync(async bool)
 }
 
 type DonRunner interface {
@@ -46,28 +50,51 @@ type NodeRunner interface {
 	TestRunner
 }
 
-type Registry struct {
-	Capabilities map[string]Capability
-	Triggers     map[string]Trigger
-}
-
 func NewDonRunner(ctx context.Context, config []byte, registry *Registry) (DonRunner, error) {
-	return newRunner[sdk.DonRuntime](ctx, config, registry)
+	return newRunner[sdk.DonRuntime](ctx, config, registry, &runtime[sdk.DonRuntime]{})
 }
 
 func NewNodeRunner(ctx context.Context, config []byte, registry *Registry) (NodeRunner, error) {
-	return newRunner[sdk.NodeRuntime](ctx, config, registry)
+	return newRunner[sdk.NodeRuntime](ctx, config, registry, &runtime[sdk.NodeRuntime]{})
 }
 
-func newRunner[T any](ctx context.Context, config []byte, registry *Registry) (*runner[T], error) {
-
-	return &runner[T]{
+func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t T) (*runner[T], error) {
+	r := &runner[T]{
 		config:      config,
 		ctx:         ctx,
 		workflowId:  uuid.NewString(),
 		executionId: uuid.NewString(),
 		registry:    registry,
-	}, nil
+		runtime:     t,
+	}
+
+	tmp := any(r.runtime).(*runtime[T])
+	tmp.runner = r
+
+	return r, nil
+}
+
+func (r *runner[T]) SetCallCapabilitiesAsync(async bool) {
+	r.asyncCapabilities = async
+}
+
+func (r *runner[T]) nodeRunner() *runner[sdk.NodeRuntime] {
+	rt := &runtime[sdk.NodeRuntime]{}
+	tmp := &runner[sdk.NodeRuntime]{
+		ran:               r.ran,
+		config:            r.config,
+		result:            r.result,
+		err:               r.err,
+		ctx:               r.ctx,
+		workflowId:        r.workflowId,
+		executionId:       r.executionId,
+		registry:          r.registry,
+		strictTriggers:    r.strictTriggers,
+		asyncCapabilities: r.asyncCapabilities,
+		runtime:           rt,
+	}
+	rt.runner = tmp
+	return tmp
 }
 
 func (r *runner[T]) SetStrictTriggers(strict bool) {
@@ -80,7 +107,7 @@ func (r *runner[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.Any,
 		return
 	}
 
-	trigger, ok := r.registry.Triggers[id]
+	trigger, ok := r.registry.capabilities[id]
 	if !ok {
 		if r.strictTriggers {
 			r.err = fmt.Errorf("trigger %s not found", id)
@@ -89,30 +116,27 @@ func (r *runner[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.Any,
 		return
 	}
 
-	request := capabilities.TriggerRegistrationRequest{
-		// TODO I think this is the id for the trigger so we can differenciate them
-		TriggerID: id,
-		Metadata: capabilities.RequestMetadata{
-			WorkflowID:          r.workflowId,
-			WorkflowOwner:       "mock",
-			WorkflowExecutionID: r.executionId,
-			WorkflowName:        "testworkflow",
-			ReferenceID:         uuid.NewString(),
-			DecodedWorkflowName: "test workflow",
-		},
-		Request: triggerCfg,
+	request := &pb.TriggerSubscriptionRequest{
+		ExecId:  r.executionId,
+		Id:      uuid.NewString(),
+		Payload: triggerCfg,
 		Method:  method,
 	}
-	ch, err := r.trigger.RegisterTrigger(r.ctx, request)
+
+	// TODO decide if this should be allowed to be async since it's for starting a workflow...
+	response, err := trigger.InvokeTrigger(r.ctx, request)
 	if err != nil {
 		r.err = err
 		return
 	}
-	// TODO multiple registrations to the same trigger, need some way to know if we expect anything form this registration or not
-	trigger := <-ch
-	_ = trigger
-	r.result, r.err = handler(r.ctx, trigger.Event.Value)
-	//handler()
+
+	// trigger did not fire
+	if response == nil {
+		return
+	}
+
+	// TODO multiple results???
+	r.result, r.err = handler(r.runtime, response.Payload)
 }
 
 func (r *runner[T]) Config() []byte {

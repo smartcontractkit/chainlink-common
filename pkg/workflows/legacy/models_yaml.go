@@ -235,7 +235,7 @@ type triggerDefinitionYaml struct {
 	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 	ID stepDefinitionID `json:"id" jsonschema:"required"`
 
-	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
+	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. triggers can optionally specify  if they need to be referenced.
 	//
 	// The “ref” supports [a-z0-9_] characters.
 	//
@@ -248,7 +248,7 @@ type triggerDefinitionYaml struct {
 	// NOTE: Should introduce a custom validator to cover trigger case
 	Ref string `json:"ref,omitempty" jsonschema:"pattern=^[a-z0-9_-]+$"`
 
-	// The configuration of a Capability will be done using the “config” property. Each capability is responsible for defining an external interface used during setup. This interface may be unique or identical, meaning multiple Capabilities might use the same configuration properties.
+	// The configuration of a Capability will be done using the “config” property. Each capability is responsible for defining an external interface used during setup. This interface may be unique or identical, meaning multiple capabilities might use the same configuration properties.
 	//
 	// The interpolation of “inputs”
 	//
@@ -312,7 +312,7 @@ type stepDefinitionYaml struct {
 	// [semver regex]: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 	ID stepDefinitionID `json:"id" jsonschema:"required"`
 
-	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. Triggers can optionally specify  if they need to be referenced.
+	// Actions and Consensus capabilities have a required “ref” property that must be unique within a Workflow file (not universally) This property enables referencing outputs and is required because Actions and Consensus always need to be referenced in the following phases. triggers can optionally specify  if they need to be referenced.
 	//
 	// The “ref” supports [a-z0-9_] characters.
 	//
@@ -325,7 +325,7 @@ type stepDefinitionYaml struct {
 	// NOTE: Should introduce a custom validator to cover trigger case
 	Ref string `json:"ref,omitempty" jsonschema:"pattern=^[a-z0-9_-]+$"`
 
-	// Capabilities can specify an additional optional ”inputs” property. It allows specifying a dependency on the result of one or more other capabilities. These are always runtime values that cannot be provided upfront. It takes a map of the argument name internal to the capability and an explicit reference to the values.
+	// capabilities can specify an additional optional ”inputs” property. It allows specifying a dependency on the result of one or more other capabilities. These are always runtime values that cannot be provided upfront. It takes a map of the argument name internal to the capability and an explicit reference to the values.
 	//
 	// References are specified using the [id].[path_to_value] pattern.
 	//
@@ -337,7 +337,7 @@ type stepDefinitionYaml struct {
 	// NOTE: Should introduce a custom validator to cover trigger case
 	Inputs inputs `json:"inputs" jsonschema:"required"`
 
-	// The configuration of a Capability will be done using the “config” property. Each capability is responsible for defining an external interface used during setup. This interface may be unique or identical, meaning multiple Capabilities might use the same configuration properties.
+	// The configuration of a Capability will be done using the “config” property. Each capability is responsible for defining an external interface used during setup. This interface may be unique or identical, meaning multiple capabilities might use the same configuration properties.
 	//
 	// The interpolation of “inputs”
 	//

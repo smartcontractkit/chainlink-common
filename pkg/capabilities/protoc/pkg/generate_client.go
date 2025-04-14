@@ -34,7 +34,7 @@ var clientTemplates = []templateGenerator{
 	{
 		Name:             "go_mock",
 		Template:         goMockTemplate,
-		FileNameTemplate: "{{.}}mock/{{.}}_mock_gen.go",
+		FileNameTemplate: "{{ToLower .}}mock/{{.}}_mock_gen.go",
 	},
 }
 

@@ -24,13 +24,13 @@ import (
 )
 
 //go:embed solc/bin/IERC20.abi
-var erc20Abi string
+var Erc20Abi string
 
 //go:embed solc/bin/IReserveManager.abi
-var reserveManagerAbi string
+var ReserveManagerAbi string
 
-const totalSupplyMethod = "totalSupplyMethod"
-const updateReservesMethod = "updateReserves"
+const TotalSupplyMethod = "TotalSupplyMethod"
+const UpdateReservesMethod = "updateReserves"
 
 type Config struct {
 	EvmTokenAddress string
@@ -62,23 +62,23 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 		return struct{}{}, err
 	}
 
-	if reserveInfo.LastUpdated.Before(time.Unix(trigger.ScheduledExecutionTime, 0).Add(-time.Hour)) {
+	if reserveInfo.LastUpdated.Before(time.Unix(trigger.ScheduledExecutionTime, 0).Add(-time.Hour * 24)) {
 		return struct{}{}, errors.New("reserved time is too old")
 	}
 	totalSupply := big.NewInt(0)
 
-	erc20, err := abi.JSON(strings.NewReader(erc20Abi))
+	erc20, err := abi.JSON(strings.NewReader(Erc20Abi))
 	if err != nil {
 		return struct{}{}, err
 	}
 
-	reserveManager, err := abi.JSON(strings.NewReader(reserveManagerAbi))
+	reserveManager, err := abi.JSON(strings.NewReader(ReserveManagerAbi))
 	if err != nil {
 		return struct{}{}, err
 	}
 	evmClient := &evm.Client{}
 
-	supplyPayload, err := erc20.Pack(totalSupplyMethod)
+	supplyPayload, err := erc20.Pack(TotalSupplyMethod)
 	if err != nil {
 		return struct{}{}, err
 	}
@@ -96,7 +96,7 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 		return struct{}{}, err
 	}
 
-	evmSupplyResponse, err := erc20.Unpack(totalSupplyMethod, evmRead.Value)
+	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, evmRead.Value)
 	if err != nil {
 		return struct{}{}, err
 	}
@@ -112,7 +112,7 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 
 	totalSupply = totalSupply.Add(totalSupply, evmSupply)
 	// TODO add other chains
-	evmSupplyCallData, err := reserveManager.Pack(updateReservesMethod, totalSupply, reserveInfo.TotalReserve)
+	evmSupplyCallData, err := reserveManager.Pack(UpdateReservesMethod, totalSupply, reserveInfo.TotalReserve)
 
 	evmTx := evmClient.SubmitTransaction(runtime, &evm.SubmitTransactionRequest{
 		ToAddress: config.EvmPorAddress,

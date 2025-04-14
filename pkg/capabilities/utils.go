@@ -10,17 +10,17 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-func UnwrapRequest(request CapabilityRequest, config proto.Message, value proto.Message) (bool, error) {
+func UnwrapRequest(request CapabilityRequest /*config proto.Message,*/, value proto.Message) (bool, error) {
 	migrated, err := FromValueOrAny(request.Inputs, request.Request, value)
 	if err != nil {
 		return migrated, err
 	}
 
-	// TODO config
-	_, err = FromValueOrAny(request.Config /* TODO */, nil, config)
+	/*// TODO config
+	_, err = FromValueOrAny(request.Config, nil, config)
 	if err != nil {
 		return migrated, err
-	}
+	}*/
 
 	return migrated, nil
 }
@@ -64,20 +64,20 @@ func FromValueOrAny(value values.Value, any *anypb.Any, into proto.Message) (boo
 	return false, err
 }
 
-func Execute[I, C, O proto.Message](
+func Execute[I /*, C*/, O proto.Message](
 	ctx context.Context,
 	request CapabilityRequest,
 	input I,
-	config C,
-	exec func(context.Context, RequestMetadata, I, C) (O, error)) (CapabilityResponse, error) {
+	/*config C,*/
+	exec func(context.Context, RequestMetadata, I /*, C*/) (O, error)) (CapabilityResponse, error) {
 
 	response := CapabilityResponse{}
-	migrated, err := UnwrapRequest(request, config, input)
+	migrated, err := UnwrapRequest(request /*, config*/, input)
 	if err != nil {
 		return response, fmt.Errorf("error when unwrapping request: %w", err)
 	}
 
-	output, err := exec(ctx, request.Metadata, input, config)
+	output, err := exec(ctx, request.Metadata, input /*, config*/)
 	if err != nil {
 		return response, err
 	}

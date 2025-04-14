@@ -7,13 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 type ClientCapability interface {
-	Fetch(ctx context.Context, metadata capabilities.RequestMetadata, input *http.HttpFetchRequest /* TODO this isn't right */, config *http.HttpFetchRequest) (*http.HttpFetchResponse, error)
+	Fetch(ctx context.Context, metadata capabilities.RequestMetadata, input *http.HttpFetchRequest /* TODO  config http.HttpFetchRequest*/) (*http.HttpFetchResponse, error)
 	RegisterFetch(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterFetch(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	Start(ctx context.Context) error
@@ -99,8 +101,7 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	case "Fetch":
 		input := &http.HttpFetchRequest{}
 		// TODO config
-		config := &http.HttpFetchRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.Fetch)
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.Fetch)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

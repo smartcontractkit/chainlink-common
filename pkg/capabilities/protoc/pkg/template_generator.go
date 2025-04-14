@@ -66,6 +66,9 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 			}
 			return strings.ToLower(s[:1]) + s[1:]
 		},
+		"ToLower": func(s string) string {
+			return strings.ToLower(s)
+		},
 		"dict": func(values ...any) (map[string]any, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("dict requires even number of arguments")

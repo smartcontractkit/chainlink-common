@@ -9,12 +9,15 @@ import (
 type Capability interface {
 	// TODO config if needed for register and unregister
 
-	Invoke(ctx context.Context, request *pb.CapabilityRequest) (<-chan *pb.CapabilityResponse, error)
+	Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse
+	InvokeTrigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error)
 	ID() string
 }
 
-type Trigger interface {
-	Trigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error)
-	ID() string
-	// TODO unregister
+type NoTriggerStub string
+
+func (n NoTriggerStub) Error() string {
+	return "Stub not implemented for trigger: " + string(n)
 }
+
+var _ error = NoTriggerStub("")

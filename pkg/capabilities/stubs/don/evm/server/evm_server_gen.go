@@ -18,19 +18,19 @@ import (
 )
 
 type ClientCapability interface {
-	GetTxResult(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TxID /* TODO this isn't right */, config *evm.TxID) (*crosschain.TxResult, error)
+	GetTxResult(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TxID /* TODO  config evm.TxID*/) (*crosschain.TxResult, error)
 	RegisterGetTxResult(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterGetTxResult(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
-	ReadMethod(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.ReadMethodRequest /* TODO this isn't right */, config *evm.ReadMethodRequest) (*crosschain.ByteArray, error)
+	ReadMethod(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.ReadMethodRequest /* TODO  config evm.ReadMethodRequest*/) (*crosschain.ByteArray, error)
 	RegisterReadMethod(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterReadMethod(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
-	QueryLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryLogsRequest /* TODO this isn't right */, config *evm.QueryLogsRequest) (*evm.LogList, error)
+	QueryLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryLogsRequest /* TODO  config evm.QueryLogsRequest*/) (*evm.LogList, error)
 	RegisterQueryLogs(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterQueryLogs(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
-	SubmitTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.SubmitTransactionRequest /* TODO this isn't right */, config *evm.SubmitTransactionRequest) (*evm.TxID, error)
+	SubmitTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.SubmitTransactionRequest /* TODO  config evm.SubmitTransactionRequest*/) (*evm.TxID, error)
 	RegisterSubmitTransaction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterSubmitTransaction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
@@ -146,23 +146,19 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	case "GetTxResult":
 		input := &evm.TxID{}
 		// TODO config
-		config := &evm.TxID{}
-		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.GetTxResult)
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.GetTxResult)
 	case "ReadMethod":
 		input := &evm.ReadMethodRequest{}
 		// TODO config
-		config := &evm.ReadMethodRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.ReadMethod)
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.ReadMethod)
 	case "QueryLogs":
 		input := &evm.QueryLogsRequest{}
 		// TODO config
-		config := &evm.QueryLogsRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.QueryLogs)
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.QueryLogs)
 	case "SubmitTransaction":
 		input := &evm.SubmitTransactionRequest{}
 		// TODO config
-		config := &evm.SubmitTransactionRequest{}
-		return capabilities.Execute(ctx, request, input, config, c.ClientCapability.SubmitTransaction)
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.SubmitTransaction)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

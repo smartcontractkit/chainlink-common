@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type ReserveInfo struct {
-	LastUpdated  time.Time `json:"lastUpdated"`
-	TotalReserve string    `json:"totalReserve"`
+	LastUpdated  time.Time       `json:"lastUpdated"`
+	TotalReserve decimal.Decimal `json:"totalReserve"`
 }
 
 type PorResponse struct {

@@ -31,7 +31,7 @@ type {{.GoName}}Capability interface {
     Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) error
         {{- else }}
             {{ $hasActions = true }}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}, /* TODO this isn't right */ config *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}, /* TODO  config {{name .Input.GoIdent ""}}*/) (*{{name .Output.GoIdent ""}}, error)
     Register{{.GoName}}(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
     Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RegistrationMetadata/* TODO config */) error
         {{- end }}
@@ -161,8 +161,7 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
         case "{{.GoName}}":
             input := &{{name .Input.GoIdent ""}}{}
             // TODO config
-            config := &{{name .Input.GoIdent ""}}{}
-            return capabilities.Execute(ctx, request, input, config, c.{{$service.GoName}}Capability.{{.GoName}})
+            return capabilities.Execute(ctx, request, input, c.{{$service.GoName}}Capability.{{.GoName}})
     {{- end }}
     {{- end }}
     	default:

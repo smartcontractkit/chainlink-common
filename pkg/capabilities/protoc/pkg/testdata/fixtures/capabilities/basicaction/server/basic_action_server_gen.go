@@ -15,7 +15,7 @@ import (
 )
 
 type BasicActionCapability interface {
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs /* TODO this isn't right */, config *basicaction.Inputs) (*basicaction.Outputs, error)
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs /* TODO  config basicaction.Inputs*/) (*basicaction.Outputs, error)
 	RegisterPerformAction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterPerformAction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	Start(ctx context.Context) error
@@ -101,8 +101,7 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	case "PerformAction":
 		input := &basicaction.Inputs{}
 		// TODO config
-		config := &basicaction.Inputs{}
-		return capabilities.Execute(ctx, request, input, config, c.BasicActionCapability.PerformAction)
+		return capabilities.Execute(ctx, request, input, c.BasicActionCapability.PerformAction)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

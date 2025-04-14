@@ -2,7 +2,6 @@ package beholder
 
 import (
 	"context"
-	"crypto"
 	"errors"
 	"fmt"
 	"time"
@@ -214,7 +213,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	if cfg.ChipIngressEmitterEnabled {
 
 		// Generate auth headers if they don't exist yet
-		if len(cfg.AuthHeaders) == 0 && cfg.AuthPrivateKey != nil {
+		if len(cfg.AuthHeaders) == 0 && cfg.'AuthPrivateKey' != nil {
 			var err error
 			cfg.AuthHeaders, err = NewAuthHeaders(cfg.AuthPrivateKey)
 			if err != nil {

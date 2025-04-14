@@ -39,7 +39,6 @@ defaults:
 plugins:
   cosmos:
     - name: "default"
-      enabled: true
       moduleURI: "github.com/smartcontractkit/chainlink-cosmos"
       gitRef: "f740e9ae54e79762991bdaf8ad6b50363261c056"
       installPath: "github.com/smartcontractkit/chainlink-cosmos/pkg/cosmos/cmd/chainlink-cosmos"

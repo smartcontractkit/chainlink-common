@@ -111,6 +111,58 @@ func (c *Client) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransact
 	})
 }
 
+func (c *Client) WriteReport(runtime sdk.DonRuntime, input *WriteReportRequest) sdk.Promise[*TxID] {
+	wrapped, err := anypb.New(input)
+	if err != nil {
+		return sdk.PromiseFromResult[*TxID](nil, err)
+	}
+	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+		Id:      "evm@1.0.0",
+		Payload: wrapped,
+		Method:  "WriteReport",
+	}), func(i *pb.CapabilityResponse) (*TxID, error) {
+		switch payload := i.Response.(type) {
+		case *pb.CapabilityResponse_Error:
+			return nil, errors.New(payload.Error)
+		case *pb.CapabilityResponse_Payload:
+			output := &TxID{}
+			err = payload.Payload.UnmarshalTo(output)
+			return output, err
+		default:
+			return nil, errors.New("unexpected response type")
+		}
+	})
+}
+
+func (c Client) LogTrigger(config *LogTriggerRequest) sdk.DonTrigger[*Log] {
+	configAny, _ := anypb.New(config)
+	return &clientLogTrigger{
+		config: configAny,
+	}
+}
+
+type clientLogTrigger struct {
+	config *anypb.Any
+}
+
+func (*clientLogTrigger) IsDonTrigger() {}
+
+func (*clientLogTrigger) NewT() *Log {
+	return &Log{}
+}
+
+func (*clientLogTrigger) Id() string {
+	return "evm@1.0.0"
+}
+
+func (*clientLogTrigger) Method() string {
+	return "LogTrigger"
+}
+
+func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
+}
+
 func (c Client) OnFinalityViolation(config *emptypb.Empty) sdk.DonTrigger[*crosschain.BlockRange] {
 	configAny, _ := anypb.New(config)
 	return &clientOnFinalityViolation{

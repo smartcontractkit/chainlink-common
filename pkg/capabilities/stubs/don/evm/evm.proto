@@ -5,8 +5,8 @@ package don.evm.v1;
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm";
 
 import "google/protobuf/empty.proto";
-import "capabilities/stubs/don/crosschain/crosschain.proto";
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "crosschain.proto";
+import "metadata.proto";
 
 message TxID {
   string value = 1;
@@ -24,35 +24,81 @@ message QueryLogsRequest {
   ConfidenceLevel confidence_level = 2;
 }
 
-// Represents a request to submit a transaction
-message SubmitTransactionRequest {
+message SubmitTransactionRequest { // TODO: Remove
   string to_address = 1;
   GasConfig gas_config = 2;
   bytes calldata = 3; // Optional
+};
+
+
+message SignedReport {
+  bytes report = 1;
+  bytes context  = 2;
+  repeated bytes signatures = 3;
+  bytes id = 4;
+}
+
+// Represents a request to submit a transaction
+message WriteReportRequest {
+  GasConfig gas_config = 1;
+  SignedReport report = 2; 
+}
+
+message Log {
+  string address = 1; // common.Address represented as bytes
+  repeated bytes topics = 2; // []common.Hash represented as repeated bytes
+  bytes data = 3; // []byte represented as bytes
+  uint64 block_number = 4; // uint64
+  string tx_hash = 5; // common.Hash represented as string
+  uint32 tx_index = 6; // uint represented as uint32
+  string block_hash = 7; // common.Hash represented as string
+  uint32 index = 8; // uint represented as uint32
+  bool removed = 9; // bool
+}
+
+message FilterQuery {
+  oneof from_block {
+    uint64 from_block_number = 1;
+    string from_block_tag = 2; // e.g., "latest"
+  }
+
+  oneof to_block {
+    uint64 to_block_number = 3;
+    string to_block_tag = 4; // e.g., "latest"
+  }
+
+  repeated string address = 5;
+
+  // Nested topics definition to support string | Array<string> | null
+  message Topic {
+    repeated string values = 1;
+  }
+
+  repeated Topic topics = 6;
+
+  string block_hash = 7;
+}
+
+message LogTriggerRequest {
+  FilterQuery filterQuery = 1;
 }
 
 service Client {
-  option (cre.metadata.capability) = {
-    mode: DON
-    capability_id: "evm@1.0.0"
-  };
   rpc GetTxResult (TxID) returns (don.crosschain.v1.TxResult);
   rpc ReadMethod (ReadMethodRequest) returns (don.crosschain.v1.ByteArray);
   rpc QueryLogs (QueryLogsRequest) returns (LogList);
-  rpc SubmitTransaction (SubmitTransactionRequest) returns (TxID);
-  rpc OnFinalityViolation (google.protobuf.Empty) returns (stream don.crosschain.v1.BlockRange);
+  rpc SubmitTransaction (SubmitTransactionRequest) returns (TxID); //TODO remove
+  rpc WriteReport (WriteReportRequest) returns (TxID);
+  rpc LogTrigger (LogTriggerRequest) returns (Log) {
+    option (cre.metadata.callType) = Trigger;
+  };
+  rpc OnFinalityViolation (google.protobuf.Empty) returns (don.crosschain.v1.BlockRange) {
+    option (cre.metadata.callType) = Trigger;
+  };
 }
 
 // Placeholder messages for types defined elsewhere
 message GasConfig {
-  // Fill this in based on your domain model
-}
-
-message FilterQuery {
-  // Fill this in based on your domain model
-}
-
-message Log {
   // Fill this in based on your domain model
 }
 

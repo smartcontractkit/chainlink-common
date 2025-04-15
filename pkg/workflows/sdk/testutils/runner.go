@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -26,6 +27,11 @@ type runner[T any] struct {
 	strictTriggers    bool
 	asyncCapabilities bool
 	runtime           T
+	logger            logger.Logger
+}
+
+func (r *runner[T]) Logger() logger.Logger {
+	return r.logger
 }
 
 type TestRunner interface {
@@ -50,15 +56,15 @@ type NodeRunner interface {
 	TestRunner
 }
 
-func NewDonRunner(ctx context.Context, config []byte, registry *Registry) (DonRunner, error) {
-	return newRunner[sdk.DonRuntime](ctx, config, registry, &runtime[sdk.DonRuntime]{})
+func NewDonRunner(ctx context.Context, config []byte, registry *Registry, logger logger.Logger) (DonRunner, error) {
+	return newRunner[sdk.DonRuntime](ctx, config, registry, &runtime[sdk.DonRuntime]{}, logger)
 }
 
-func NewNodeRunner(ctx context.Context, config []byte, registry *Registry) (NodeRunner, error) {
-	return newRunner[sdk.NodeRuntime](ctx, config, registry, &runtime[sdk.NodeRuntime]{})
+func NewNodeRunner(ctx context.Context, config []byte, registry *Registry, logger logger.Logger) (NodeRunner, error) {
+	return newRunner[sdk.NodeRuntime](ctx, config, registry, &runtime[sdk.NodeRuntime]{}, logger)
 }
 
-func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t T) (*runner[T], error) {
+func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t T, logger logger.Logger) (*runner[T], error) {
 	r := &runner[T]{
 		config:      config,
 		ctx:         ctx,
@@ -66,6 +72,7 @@ func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t 
 		executionId: uuid.NewString(),
 		registry:    registry,
 		runtime:     t,
+		logger:      logger,
 	}
 
 	tmp := any(r.runtime).(*runtime[T])

@@ -30,6 +30,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm/evmmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http/httpmock"
+	logger2 "github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
@@ -129,8 +130,9 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	}
 	require.NoError(t, registry.RegisterCapability(evmMock))
 
+	logger := logger2.Test(t)
 	ctx := context.Background()
-	runner, err := testutils.NewDonRunner(ctx, cfgBytes, registry)
+	runner, err := testutils.NewDonRunner(ctx, cfgBytes, registry, logger)
 	require.NoError(t, err)
 
 	pkg.Workflow(runner)

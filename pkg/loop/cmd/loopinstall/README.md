@@ -7,7 +7,7 @@ A tool for installing Chainlink LOOP plugins from YAML configuration files.
 To install from source:
 
 ```bash
-go install github.com/smartcontractkit/chainlink-common/pkg/loop/loopinstall@latest
+go install github.com/smartcontractkit/chainlink-common/pkg/loop/cmd/loopinstall@latest
 ```
 
 Or clone and install locally:
@@ -15,7 +15,7 @@ Or clone and install locally:
 ```bash
 git clone https://github.com/smartcontractkit/chainlink-common.git
 cd chainlink-common
-go install ./pkg/loop/loopinstall
+go install ./pkg/loop/cmd/loopinstall
 ```
 
 ## Usage

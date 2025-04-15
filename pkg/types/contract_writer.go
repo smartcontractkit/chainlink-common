@@ -25,6 +25,9 @@ type ContractWriter interface {
 
 	// GetFeeComponents retrieves the associated gas costs for executing a transaction.
 	GetFeeComponents(ctx context.Context) (*ChainFeeComponents, error)
+
+	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
+	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
 }
 
 // TxMeta contains metadata fields for a transaction.
@@ -48,6 +51,11 @@ const (
 	Failed
 	Fatal
 )
+
+type TransactionFee struct {
+	TransactionFee    *big.Int
+	TransactionStatus TransactionStatus
+}
 
 // ChainFeeComponents contains the different cost components of executing a transaction.
 type ChainFeeComponents struct {

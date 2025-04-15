@@ -77,6 +77,18 @@ func (c *Client) GetTransactionStatus(ctx context.Context, transactionID string)
 	return types.TransactionStatus(reply.TransactionStatus), nil
 }
 
+func (c *Client) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	reply, err := c.grpc.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &types.TransactionFee{
+		TransactionFee:    reply.TransationFee.Int(),
+		TransactionStatus: types.TransactionStatus(reply.TransactionStatus),
+	}, nil
+}
+
 func (c *Client) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponents, error) {
 	reply, err := c.grpc.GetFeeComponents(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -141,6 +153,18 @@ func (s *Server) GetTransactionStatus(ctx context.Context, req *pb.GetTransactio
 	}
 
 	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(status)}, nil
+}
+
+func (s *Server) GetTransactionFee(ctx context.Context, req *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
+	reply, err := s.impl.GetTransactionFee(ctx, req.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetTransactionFeeReply{
+		TransationFee:     pb.NewBigIntFromInt(reply.TransactionFee),
+		TransactionStatus: pb.TransactionStatus(reply.TransactionStatus),
+	}, nil
 }
 
 func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.GetFeeComponentsReply, error) {

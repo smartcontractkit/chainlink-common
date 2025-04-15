@@ -11,6 +11,7 @@ import "google/protobuf/empty.proto";
 service ContractWriter {
     rpc SubmitTransaction(SubmitTransactionRequest) returns (google.protobuf.Empty) {}
     rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply) {}
+    rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
     rpc GetFeeComponents(google.protobuf.Empty) returns (GetFeeComponentsReply) {}
 }
 
@@ -33,6 +34,18 @@ message TransactionMeta {
 message GetTransactionStatusRequest {
     string transaction_id = 1;
 }
+
+// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
+message GetTransactionFeeRequest {
+    string transaction_id = 1;
+}
+
+// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
+message GetTransactionFeeReply {
+    TransactionStatus transaction_status = 1;
+    BigInt transation_fee = 2;
+}
+
 
 // TransactionStatus is an enum for the status of a transaction.
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].

@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ContractWriter_SubmitTransaction_FullMethodName    = "/loop.ContractWriter/SubmitTransaction"
 	ContractWriter_GetTransactionStatus_FullMethodName = "/loop.ContractWriter/GetTransactionStatus"
+	ContractWriter_GetTransactionFee_FullMethodName    = "/loop.ContractWriter/GetTransactionFee"
 	ContractWriter_GetFeeComponents_FullMethodName     = "/loop.ContractWriter/GetFeeComponents"
 )
 
@@ -31,6 +32,7 @@ const (
 type ContractWriterClient interface {
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
+	GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error)
 	GetFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFeeComponentsReply, error)
 }
 
@@ -62,6 +64,16 @@ func (c *contractWriterClient) GetTransactionStatus(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *contractWriterClient) GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransactionFeeReply)
+	err := c.cc.Invoke(ctx, ContractWriter_GetTransactionFee_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *contractWriterClient) GetFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFeeComponentsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetFeeComponentsReply)
@@ -78,6 +90,7 @@ func (c *contractWriterClient) GetFeeComponents(ctx context.Context, in *emptypb
 type ContractWriterServer interface {
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
+	GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error)
 	GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error)
 	mustEmbedUnimplementedContractWriterServer()
 }
@@ -94,6 +107,9 @@ func (UnimplementedContractWriterServer) SubmitTransaction(context.Context, *Sub
 }
 func (UnimplementedContractWriterServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
+func (UnimplementedContractWriterServer) GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
 }
 func (UnimplementedContractWriterServer) GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeComponents not implemented")
@@ -155,6 +171,24 @@ func _ContractWriter_GetTransactionStatus_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ContractWriter_GetTransactionFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ContractWriterServer).GetTransactionFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ContractWriter_GetTransactionFee_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ContractWriterServer).GetTransactionFee(ctx, req.(*GetTransactionFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ContractWriter_GetFeeComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -187,6 +221,10 @@ var ContractWriter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTransactionStatus",
 			Handler:    _ContractWriter_GetTransactionStatus_Handler,
+		},
+		{
+			MethodName: "GetTransactionFee",
+			Handler:    _ContractWriter_GetTransactionFee_Handler,
 		},
 		{
 			MethodName: "GetFeeComponents",

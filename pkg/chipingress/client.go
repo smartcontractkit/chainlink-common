@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
@@ -41,6 +42,7 @@ type Opt func(*chipIngressClientConfig)
 type chipIngressClientConfig struct {
 	log                  *zap.Logger
 	transportCredentials credentials.TransportCredentials
+	headers              map[string]string
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
@@ -58,6 +60,17 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
+	}
+
+	// Add headers as a unary interceptor
+	if len(cfg.headers) > 0 {
+		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(
+			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				for k, v := range cfg.headers {
+					ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+				}
+				return invoker(ctx, method, req, reply, cc, opts...)
+			}))
 	}
 
 	conn, err := grpc.NewClient(
@@ -167,6 +180,13 @@ func WithLogger(logger *zap.Logger) Opt {
 func WithTransportCredentials(credentials credentials.TransportCredentials) Opt {
 	return func(c *chipIngressClientConfig) {
 		c.transportCredentials = credentials
+	}
+}
+
+// WithHeaders sets the headers for requests to the ChipIngress service.
+func WithHeaders(headers map[string]string) Opt {
+	return func(c *chipIngressClientConfig) {
+		c.headers = headers
 	}
 }
 

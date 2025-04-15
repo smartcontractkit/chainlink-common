@@ -210,10 +210,18 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled {
+		chipIngressOpts := []chipingress.Opt{
+			chipingress.WithTransportCredentials(creds),
+		}
+		
+		// Only add headers if they exist
+		if len(cfg.AuthHeaders) > 0 {
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithHeaders(cfg.AuthHeaders))
+		}
 
 		chipIngressClient, err := chipingress.NewChipIngressClient(
 			cfg.ChipIngressEmitterGRPCEndpoint,
-			chipingress.WithTransportCredentials(insecure.NewCredentials()),
+			chipIngressOpts...,
 		)
 		if err != nil {
 			return nil, err

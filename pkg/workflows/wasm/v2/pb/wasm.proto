@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/v2/sdk/pb";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "values/pb/values.proto";
+
+message TriggerSubscriptionRequest {
+  string execId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
+  string method = 4;
+}
+
+message Trigger {
+  string id = 1;
+  google.protobuf.Any payload = 2;
+}
+
+message ExecuteRequest {
+  string id = 1;
+  bytes config = 2;
+  oneof request {
+    google.protobuf.Empty subscribe = 3;
+    Trigger trigger = 4;
+  }
+}
+
+message ExecutionResult {
+  string id = 1;
+  oneof result {
+    values.Value value = 2;
+    string error = 3;
+  }
+}
+
+
+message CapabilityRequest {
+  string executionId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
+  string method = 4;
+}
+
+message AwaitCapabilitiesRequest {
+  string execId = 1;
+  repeated string ids = 2;
+}
+
+message CapabilityResponse {
+  oneof response {
+    google.protobuf.Any payload = 1;
+    string error = 2;
+  }
+}
+
+message AwaitCapabilitiesResponse {
+  map<string, CapabilityResponse> responses = 1;
+}
+
+enum SimpleConsensusType {
+  MEDIAN = 0;
+  MEDIAN_OF_FIELDS = 1;
+  IDENTICAL = 2;
+}
+
+message PrimitiveConsensus {
+  oneof consensus {
+    SimpleConsensusType simple = 1;
+  }
+}
+
+message BuiltInConsensusRequest {
+  PrimitiveConsensus primitiveConsensus = 1;
+  oneof observation {
+    values.Value value = 2;
+    string error = 3;
+  }
+  optional values.Value default_value = 4;
+}
+
+enum Mode {
+  DON = 0;
+  NODE = 1;
+}
+
+message ChangeModeRequest {
+  Mode mode = 1;
+}

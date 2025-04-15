@@ -1,7 +1,8 @@
 package sdk
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"io"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -10,7 +11,7 @@ type RuntimeBase interface {
 	// CallCapability is meant to be called by generated code
 	CallCapability(request *pb.CapabilityRequest) Promise[*pb.CapabilityResponse]
 	Config() []byte
-	Logger() logger.Logger
+	LogWriter() io.Writer
 }
 
 type NodeRuntime interface {

@@ -35,10 +35,6 @@ func (r runtime[T]) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*p
 	})
 }
 
-func (r runtime[T]) Config() []byte {
-	return r.runner.config
-}
-
 func (r runtime[T]) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *pb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
 	result := fn(r.nodeRunner().runtime)
 

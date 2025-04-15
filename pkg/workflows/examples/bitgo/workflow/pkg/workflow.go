@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"strings"
 	"time"
@@ -42,9 +43,10 @@ type Config struct {
 }
 
 func Workflow(runner sdk.DonRunner) {
+	logger := slog.New(slog.NewTextHandler(runner.LogWriter(), nil))
 	config := &Config{}
 	if err := json.Unmarshal(runner.Config(), config); err != nil {
-		runner.Logger().Fatalf("error unmarshalling config: %v", err)
+		logger.Error("error unmarshalling config", "err", err)
 		return
 	}
 
@@ -57,6 +59,7 @@ func Workflow(runner sdk.DonRunner) {
 }
 
 func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Config) (struct{}, error) {
+	logger := slog.New(slog.NewTextHandler(runtime.LogWriter(), nil))
 	reserveInfo, err := sdk.RunInNodeModeWithBuiltInConsensus(
 		runtime,
 		func(nodeRuntime sdk.NodeRuntime) (*ReserveInfo, error) {
@@ -134,13 +137,13 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 	var writeErrors []error
 	txId, err := evmTx.Await()
 	if err == nil {
-		runtime.Logger().Debugf("transaction id: %s", txId)
+		logger.Debug("Submitted transaction", "txId", txId)
 	} else {
 		writeErrors = append(writeErrors, err)
 	}
 
 	if len(writeErrors) > 0 {
-		runtime.Logger().Errorf("failed to submit transaction: %v", writeErrors)
+		logger.Error("failed to submit transaction", "err", writeErrors)
 		return struct{}{}, errors.Join(writeErrors...)
 	}
 

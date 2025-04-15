@@ -3,13 +3,13 @@ package wasm
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -43,7 +43,6 @@ type runner[T any] struct {
 	runtime    T
 	setRuntime func(id string, config []byte)
 	config     []byte
-	logger     logger.Logger
 }
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
@@ -77,14 +76,13 @@ func (d *runner[T]) Config() []byte {
 	return d.config
 }
 
-func (d *runner[T]) Logger() logger.Logger {
-	return d.logger
+func (d *runner[T]) LogWriter() io.Writer {
+	return &wasmWriteSyncer{}
 }
 
 type subscriber[T any] struct {
 	id     string
 	config []byte
-	logger logger.Logger
 }
 
 var _ sdk.DonRunner = &subscriber[sdk.DonRuntime]{}
@@ -111,14 +109,14 @@ func (d *subscriber[T]) Config() []byte {
 	return d.config
 }
 
-func (d *subscriber[T]) Logger() logger.Logger {
-	return d.logger
+func (d *subscriber[T]) LogWriter() io.Writer {
+	return &wasmWriteSyncer{}
 }
 
 type genericRunner[T any] interface {
 	SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error))
 	Config() []byte
-	Logger() logger.Logger
+	LogWriter() io.Writer
 }
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
@@ -147,13 +145,11 @@ func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T]
 	case *pb.ExecuteRequest_Subscribe:
 		subscribe.id = execRequest.Id
 		subscribe.config = execRequest.Config
-		subscribe.logger = logger.NewWithSync(&wasmWriteSyncer{})
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
 		run.id = execRequest.Id
 		run.config = execRequest.Config
-		run.logger = logger.NewWithSync(&wasmWriteSyncer{})
 		run.setRuntime(execRequest.Id, execRequest.Config)
 		return run
 	}

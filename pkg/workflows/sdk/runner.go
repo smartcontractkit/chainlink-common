@@ -1,14 +1,14 @@
 package sdk
 
 import (
+	"io"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 type RunnerBase interface {
-	Logger() logger.Logger
+	LogWriter() io.Writer
 	Config() []byte
 }
 

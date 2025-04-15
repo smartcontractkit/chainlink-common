@@ -2,12 +2,12 @@ package wasm
 
 import (
 	"errors"
+	"io"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -17,7 +17,6 @@ import (
 type runtimeBase struct {
 	execId string
 	config []byte
-	logger logger.Logger
 }
 
 //go:wasmimport env call_capability
@@ -90,8 +89,8 @@ func (r *runtimeBase) Config() []byte {
 	return r.config
 }
 
-func (r *runtimeBase) Logger() logger.Logger {
-	return r.logger
+func (r *runtimeBase) LogWriter() io.Writer {
+	return &wasmWriteSyncer{}
 }
 
 type donRuntime struct {

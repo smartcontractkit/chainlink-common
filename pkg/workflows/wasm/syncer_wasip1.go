@@ -1,6 +1,9 @@
 package wasm
 
-import "unsafe"
+import (
+	"io"
+	"unsafe"
+)
 
 //go:wasmimport env log
 func log(message unsafe.Pointer, messageLen int32)
@@ -16,3 +19,5 @@ func (wws *wasmWriteSyncer) Write(p []byte) (n int, err error) {
 	log(ptr, ptrlen)
 	return int(ptrlen), nil
 }
+
+var _ io.Writer = (*wasmWriteSyncer)(nil)

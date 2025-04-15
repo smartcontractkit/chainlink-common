@@ -6,11 +6,11 @@ package testutils
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -27,11 +27,19 @@ type runner[T any] struct {
 	strictTriggers    bool
 	asyncCapabilities bool
 	runtime           T
-	logger            logger.Logger
+	writer            *testWriter
 }
 
-func (r *runner[T]) Logger() logger.Logger {
-	return r.logger
+func (r *runner[T]) Logs() []string {
+	logs := make([]string, len(r.writer.logs))
+	for i, log := range r.writer.logs {
+		logs[i] = string(log)
+	}
+	return logs
+}
+
+func (r *runner[T]) LogWriter() io.Writer {
+	return r.writer
 }
 
 type TestRunner interface {
@@ -44,6 +52,8 @@ type TestRunner interface {
 	// SetCallCapabilitiesAsync creates a go routine to call capabilities
 	// Defaults to false
 	SetCallCapabilitiesAsync(async bool)
+
+	Logs() []string
 }
 
 type DonRunner interface {
@@ -56,15 +66,15 @@ type NodeRunner interface {
 	TestRunner
 }
 
-func NewDonRunner(ctx context.Context, config []byte, registry *Registry, logger logger.Logger) (DonRunner, error) {
-	return newRunner[sdk.DonRuntime](ctx, config, registry, &runtime[sdk.DonRuntime]{}, logger)
+func NewDonRunner(ctx context.Context, config []byte, registry *Registry) (DonRunner, error) {
+	return newRunner[sdk.DonRuntime](ctx, config, registry, &runtime[sdk.DonRuntime]{})
 }
 
-func NewNodeRunner(ctx context.Context, config []byte, registry *Registry, logger logger.Logger) (NodeRunner, error) {
-	return newRunner[sdk.NodeRuntime](ctx, config, registry, &runtime[sdk.NodeRuntime]{}, logger)
+func NewNodeRunner(ctx context.Context, config []byte, registry *Registry) (NodeRunner, error) {
+	return newRunner[sdk.NodeRuntime](ctx, config, registry, &runtime[sdk.NodeRuntime]{})
 }
 
-func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t T, logger logger.Logger) (*runner[T], error) {
+func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t T) (*runner[T], error) {
 	r := &runner[T]{
 		config:      config,
 		ctx:         ctx,
@@ -72,7 +82,6 @@ func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t 
 		executionId: uuid.NewString(),
 		registry:    registry,
 		runtime:     t,
-		logger:      logger,
 	}
 
 	tmp := any(r.runtime).(*runtime[T])

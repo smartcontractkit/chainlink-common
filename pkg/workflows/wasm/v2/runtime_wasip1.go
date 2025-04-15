@@ -9,8 +9,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	sdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	wpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/sdk"
 )
 
 type runtimeBase struct {

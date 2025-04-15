@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744649744089,
+  "lastUpdate": 1744741167570,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11634,6 +11634,48 @@ window.BENCHMARK_DATA = {
             "value": 28155,
             "unit": "ns/op",
             "extra": "42368 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "secure.michele@smartcontract.com",
+            "name": "secure-michelemin",
+            "username": "secure-michelemin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "970c51f3a4781e7ed0e792631b116696ca49c9b2",
+          "message": "Update CODEOWNERS (#1124)\n\n* Update CODEOWNERS\n\nUpdating CODEOWNERS as described in the Q1 2025 GitHub UAR.\n\n* Update CODEOWNERS\n\nRemove individual users from code owners.\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-04-15T14:17:07-04:00",
+          "tree_id": "58ce8f77883f3a6b6d4c6bd11ab9fa3f70829509",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/970c51f3a4781e7ed0e792631b116696ca49c9b2"
+        },
+        "date": 1744741166214,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.8,
+            "unit": "ns/op",
+            "extra": "3284539 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.6,
+            "unit": "ns/op",
+            "extra": "2813292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28493,
+            "unit": "ns/op",
+            "extra": "42097 times\n4 procs"
           }
         ]
       }

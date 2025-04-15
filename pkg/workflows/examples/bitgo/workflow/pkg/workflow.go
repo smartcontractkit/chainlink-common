@@ -43,7 +43,7 @@ type Config struct {
 }
 
 func Workflow(runner sdk.DonRunner) {
-	logger := slog.New(slog.NewTextHandler(runner.LogWriter(), nil))
+	logger := slog.Default()
 	config := &Config{}
 	if err := json.Unmarshal(runner.Config(), config); err != nil {
 		logger.Error("error unmarshalling config", "err", err)
@@ -59,7 +59,7 @@ func Workflow(runner sdk.DonRunner) {
 }
 
 func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Config) (struct{}, error) {
-	logger := slog.New(slog.NewTextHandler(runtime.LogWriter(), nil))
+	logger := slog.Default()
 	reserveInfo, err := sdk.RunInNodeModeWithBuiltInConsensus(
 		runtime,
 		func(nodeRuntime sdk.NodeRuntime) (*ReserveInfo, error) {

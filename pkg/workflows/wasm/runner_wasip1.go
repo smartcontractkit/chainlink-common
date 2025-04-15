@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"unsafe"
 
@@ -120,6 +121,8 @@ type genericRunner[T any] interface {
 }
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
+	slog.SetDefault(slog.NewTextHandler(&wasmWriteSyncer{}, nil))
+
 	// We expect exactly 2 args, i.e. `wasm <blob>`,
 	// where <blob> is a base64 encoded protobuf message.
 	if len(os.Args) != 2 {

@@ -37,11 +37,12 @@ const (
 	REPORT_FORMAT_ARRAY     = "array"
 	REPORT_FORMAT_VALUE     = "value"
 	MODE_QUORUM_OCR         = "ocr"
+	MODE_QUORUM_ALL         = "all"
 	MODE_QUORUM_ANY         = "any"
 
 	DEFAULT_REPORT_FORMAT     = REPORT_FORMAT_MAP
 	DEFAULT_OUTPUT_FIELD_NAME = "Reports"
-	DEFAULT_MODE_QUORUM       = MODE_QUORUM_ANY
+	DEFAULT_MODE_QUORUM       = MODE_QUORUM_OCR
 )
 
 type ReduceAggConfig struct {
@@ -476,6 +477,11 @@ func modeHasQuorum(quorumType string, count int, f int) error {
 			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, f+1)
 		}
 		return nil
+	case MODE_QUORUM_ALL:
+		if count < 2*f+1 {
+			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, 2*f+1)
+		}
+		return nil
 	default:
 		// invariant, config should be validated
 		return fmt.Errorf("unsupported mode quorum %s", quorumType)
@@ -592,11 +598,11 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE)
 		}
 		if field.Method == AGGREGATION_METHOD_MODE && len(field.ModeQuorum) == 0 {
-			field.ModeQuorum = MODE_QUORUM_OCR
-			parsedConfig.Fields[i].ModeQuorum = MODE_QUORUM_OCR
+			field.ModeQuorum = DEFAULT_MODE_QUORUM
+			parsedConfig.Fields[i].ModeQuorum = DEFAULT_MODE_QUORUM
 		}
-		if field.Method == AGGREGATION_METHOD_MODE && !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR}) {
-			return ReduceAggConfig{}, fmt.Errorf("mode quorum must be one of options: [%s, %s]", MODE_QUORUM_ANY, MODE_QUORUM_OCR)
+		if field.Method == AGGREGATION_METHOD_MODE && !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR, MODE_QUORUM_ALL}) {
+			return ReduceAggConfig{}, fmt.Errorf("mode quorum must be one of options: [%s, %s, %s]", MODE_QUORUM_ANY, MODE_QUORUM_OCR, MODE_QUORUM_ALL)
 		}
 		if len(field.DeviationString) > 0 && isOneOf(field.DeviationType, []string{DEVIATION_TYPE_NONE, DEVIATION_TYPE_ANY}) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field cannot have deviation with a deviation type of %s", field.DeviationType)

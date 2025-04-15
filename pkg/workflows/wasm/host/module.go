@@ -291,6 +291,16 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 	triggers := &triggerStore{}
 
+	logger := modCfg.Logger
+	err = linker.FuncWrap(
+		"env",
+		"log",
+		createLogFn(logger),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
 	if isLegacyDAG {
 		if err = linkLegacyDAG(linker, modCfg, requestStore); err != nil {
 			return nil, err
@@ -368,15 +378,6 @@ func linkLegacyDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, requestStore *
 	)
 	if err != nil {
 		return fmt.Errorf("error wrapping sendResponse func: %w", err)
-	}
-
-	err = linker.FuncWrap(
-		"env",
-		"log",
-		createLogFn(logger),
-	)
-	if err != nil {
-		return fmt.Errorf("error wrapping log func: %w", err)
 	}
 
 	err = linker.FuncWrap(

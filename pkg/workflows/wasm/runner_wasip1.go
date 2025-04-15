@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -42,6 +43,7 @@ type runner[T any] struct {
 	runtime    T
 	setRuntime func(id string, config []byte)
 	config     []byte
+	logger     logger.Logger
 }
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
@@ -66,7 +68,8 @@ func (d *runner[T]) SubscribeToTrigger(id, _ string, _ *anypb.Any, handler func(
 			execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
 		}
 		marshalled, _ := proto.Marshal(execResponse)
-		sendResponse(unsafe.Pointer(&marshalled[0]), int32(len(marshalled)))
+		marshalledPtr, marshalledLen, _ := bufferToPointerLen(marshalled)
+		sendResponse(marshalledPtr, marshalledLen)
 	}
 }
 
@@ -74,9 +77,14 @@ func (d *runner[T]) Config() []byte {
 	return d.config
 }
 
+func (d *runner[T]) Logger() logger.Logger {
+	return d.logger
+}
+
 type subscriber[T any] struct {
 	id     string
 	config []byte
+	logger logger.Logger
 }
 
 var _ sdk.DonRunner = &subscriber[sdk.DonRuntime]{}
@@ -91,8 +99,9 @@ func (d *subscriber[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.
 	}
 
 	configBytes, _ := proto.Marshal(triggerSubscription)
+	configPtr, configLen, _ := bufferToPointerLen(configBytes)
 
-	result := subscribeToTrigger(unsafe.Pointer(&configBytes[0]), int32(len(configBytes)))
+	result := subscribeToTrigger(configPtr, configLen)
 	if result < 0 {
 		panic(fmt.Sprintf("could not subscribe to trigger: %s", id))
 	}
@@ -102,9 +111,14 @@ func (d *subscriber[T]) Config() []byte {
 	return d.config
 }
 
+func (d *subscriber[T]) Logger() logger.Logger {
+	return d.logger
+}
+
 type genericRunner[T any] interface {
 	SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error))
 	Config() []byte
+	Logger() logger.Logger
 }
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
@@ -133,11 +147,13 @@ func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T]
 	case *pb.ExecuteRequest_Subscribe:
 		subscribe.id = execRequest.Id
 		subscribe.config = execRequest.Config
+		subscribe.logger = logger.NewWithSync(&wasmWriteSyncer{})
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
 		run.id = execRequest.Id
 		run.config = execRequest.Config
+		run.logger = logger.NewWithSync(&wasmWriteSyncer{})
 		run.setRuntime(execRequest.Id, execRequest.Config)
 		return run
 	}

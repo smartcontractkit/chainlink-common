@@ -44,7 +44,7 @@ type Config struct {
 func Workflow(runner sdk.DonRunner) {
 	config := &Config{}
 	if err := json.Unmarshal(runner.Config(), config); err != nil {
-		// TODO log
+		runner.Logger().Fatalf("error unmarshalling config: %v", err)
 		return
 	}
 
@@ -134,14 +134,13 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 	var writeErrors []error
 	txId, err := evmTx.Await()
 	if err == nil {
-		// TODO log txId
-		_ = txId
+		runtime.Logger().Debugf("transaction id: %s", txId)
 	} else {
 		writeErrors = append(writeErrors, err)
 	}
 
 	if len(writeErrors) > 0 {
-		// TODO log errors
+		runtime.Logger().Errorf("failed to submit transaction: %v", writeErrors)
 		return struct{}{}, errors.Join(writeErrors...)
 	}
 

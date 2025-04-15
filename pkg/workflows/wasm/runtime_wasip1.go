@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -16,6 +17,7 @@ import (
 type runtimeBase struct {
 	execId string
 	config []byte
+	logger logger.Logger
 }
 
 //go:wasmimport env call_capability
@@ -32,7 +34,12 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 	}
 
 	id := make([]byte, sdk.IdLen)
-	result := callCapability(unsafe.Pointer(&marshalled[0]), int32(len(marshalled)), unsafe.Pointer(&id[0]))
+	marshalledPtr, marshalledLen, err := bufferToPointerLen(marshalled)
+	if err != nil {
+		return sdk.PromiseFromResult[*wpb.CapabilityResponse](nil, err)
+	}
+
+	result := callCapability(marshalledPtr, marshalledLen, unsafe.Pointer(&id[0]))
 	if result < 0 {
 		return sdk.PromiseFromResult[*wpb.CapabilityResponse](nil, errors.New("cannot find capability "+request.Id))
 	}
@@ -47,9 +54,19 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 			return nil, err
 		}
 
+		mptr, mlen, err := bufferToPointerLen(m)
+		if err != nil {
+			return nil, err
+		}
+
 		// TODO make this configurable?
 		response := make([]byte, 2048)
-		bytes := awaitCapabilities(unsafe.Pointer(&m[0]), int32(len(m)), unsafe.Pointer(&response[0]), int32(len(response)))
+		responsePtr, responseLen, err := bufferToPointerLen(response)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes := awaitCapabilities(mptr, mlen, responsePtr, responseLen)
 		if bytes < 0 {
 			return nil, errors.New(string(response[:-bytes]))
 		}
@@ -71,6 +88,10 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 
 func (r *runtimeBase) Config() []byte {
 	return r.config
+}
+
+func (r *runtimeBase) Logger() logger.Logger {
+	return r.logger
 }
 
 type donRuntime struct {

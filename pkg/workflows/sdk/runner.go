@@ -3,21 +3,30 @@ package sdk
 import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
+type RunnerBase interface {
+	Logger() logger.Logger
+	Config() []byte
+}
+
 type DonRunner interface {
+	RunnerBase
+
 	// SubscribeToTrigger is meant to be called by SubscribeToDONTrigger only
 	SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime DonRuntime, triggerOutputs *anypb.Any) (any, error))
-	Config() []byte
 }
 
 // NOTE that some triggers in node mode need callbacks into the WASM when setting up (like WebSocket trigger).
 // This is not in this interface yet.
 
 type NodeRunner interface {
+	RunnerBase
+
 	// SubscribeToTrigger is meant to be called by SubscribeToNodeTrigger only
 	SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime NodeRuntime, triggerOutputs *anypb.Any) (any, error))
-	Config() []byte
 }
 
 type Trigger[T proto.Message] interface {

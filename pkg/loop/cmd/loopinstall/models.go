@@ -9,7 +9,6 @@ type PluginConfig struct {
 // DefaultsConfig holds the default configuration values
 type DefaultsConfig struct {
 	GoFlags   string `yaml:"goflags"`
-	GoPrivate string `yaml:"goprivate"`
 }
 
 // PluginDef defines a single plugin instance

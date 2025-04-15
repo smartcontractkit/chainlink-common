@@ -114,8 +114,8 @@ func TestConfigParsing(t *testing.T) {
 	}
 
 	// Check defaults
-	if config.Defaults.GoFlags != "-ldflags=-s -w" {
-		t.Errorf("Expected GoFlags=%q, got %q", "-ldflags=-s -w", config.Defaults.GoFlags)
+	if config.Defaults.GoFlags != "-ldflags=-s" {
+		t.Errorf("Expected GoFlags=%q, got %q", "-ldflags=-s", config.Defaults.GoFlags)
 	}
 
 	// Check plugins
@@ -256,8 +256,7 @@ func TestFileSpecificDefaults(t *testing.T) {
 	// Create first config file with complex ldflags
 	file1Content := `
 defaults:
-  goflags: "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0"
-  goprivate: "github.com/test/private1"
+  goflags: "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0"
 plugins:
   test1:
     - moduleURI: "github.com/test/module1"
@@ -274,7 +273,6 @@ plugins:
 	file2Content := `
 defaults:
   goflags: "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef"
-  goprivate: "github.com/test/private2"
 plugins:
   test2:
     - moduleURI: "github.com/test/module2"
@@ -305,20 +303,14 @@ plugins:
 	for _, task := range allTasks {
 		switch task.PluginType {
 		case "test1":
-			expectedFlags := "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0"
+			expectedFlags := "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0"
 			if task.Defaults.GoFlags != expectedFlags {
 				t.Errorf("test1 plugin has incorrect goflags: %s, expected: %s", task.Defaults.GoFlags, expectedFlags)
-			}
-			if task.Defaults.GoPrivate != "github.com/test/private1" {
-				t.Errorf("test1 plugin has incorrect goprivate: %s", task.Defaults.GoPrivate)
 			}
 		case "test2":
 			expectedFlags := "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef"
 			if task.Defaults.GoFlags != expectedFlags {
 				t.Errorf("test2 plugin has incorrect goflags: %s, expected: %s", task.Defaults.GoFlags, expectedFlags)
-			}
-			if task.Defaults.GoPrivate != "github.com/test/private2" {
-				t.Errorf("test2 plugin has incorrect goprivate: %s", task.Defaults.GoPrivate)
 			}
 		default:
 			t.Errorf("Unexpected plugin type: %s", task.PluginType)
@@ -371,7 +363,7 @@ plugins:
 	foundTest2 := false
 	for _, cmdStr := range execCommandCalls {
 		if strings.Contains(cmdStr, "github.com/test/module1") &&
-			strings.Contains(cmdStr, "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0") {
+			strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0") {
 			foundTest1 = true
 		}
 		if strings.Contains(cmdStr, "github.com/test/module2") &&
@@ -402,17 +394,17 @@ func TestValidateGoFlags(t *testing.T) {
 		},
 		{
 			name:    "flags with values",
-			flags:   "-ldflags=-s -w -tags=netgo",
+			flags:   "-ldflags=-s -tags=netgo",
 			wantErr: false,
 		},
 		{
 			name:    "complex ldflags",
-			flags:   "-ldflags=-s -w -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0",
+			flags:   "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0",
 			wantErr: false,
 		},
 		{
 			name:    "quoted values",
-			flags:   `-ldflags="-s -w" -tags="netgo osusergo"`,
+			flags:   `-ldflags="-s" -tags="netgo osusergo"`,
 			wantErr: false,
 		},
 		{
@@ -543,7 +535,7 @@ func TestProcessConfigFile(t *testing.T) {
 	// Config with duplicate plugin definition
 	duplicateContent := `
 defaults:
-  goflags: "-ldflags=-s -w"
+  goflags: "-ldflags=-s"
 plugins:
   test:
     - moduleURI: "github.com/example/test"
@@ -615,7 +607,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				InstallPath: "./cmd/test",
 			},
 			defaults: DefaultsConfig{
-				GoFlags: "-ldflags=-s -w",
+				GoFlags: "-ldflags=-s",
 			},
 			mockDownload: func(cmd *exec.Cmd) error {
 				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {

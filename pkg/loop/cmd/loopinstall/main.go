@@ -122,7 +122,6 @@ func printHelp() {
 	fmt.Println("Plugin Configuration Format:")
 	fmt.Println("  defaults:")
 	fmt.Println("    goflags: \"\"     # Default Go build flags")
-	fmt.Println("    goprivate: \"\"   # GOPRIVATE setting for private repos")
 	fmt.Println("")
 	fmt.Println("  plugins:")
 	fmt.Println("    plugin-type:")

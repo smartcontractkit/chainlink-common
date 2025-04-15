@@ -26,24 +26,6 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		return nil
 	}
 
-	// Handle GOPRIVATE environment variable
-	origGoPrivate := os.Getenv("GOPRIVATE")
-	envGoPrivate := origGoPrivate
-
-	// Set GOPRIVATE based on the defaults and existing environment variable
-	if defaults.GoPrivate != "" || envGoPrivate != "" {
-		goPrivate := defaults.GoPrivate
-
-		if goPrivate != "" && envGoPrivate != "" {
-			goPrivate = goPrivate + "," + envGoPrivate
-		} else if goPrivate == "" && envGoPrivate != "" {
-			goPrivate = envGoPrivate
-		}
-
-		os.Setenv("GOPRIVATE", goPrivate)
-		defer os.Setenv("GOPRIVATE", origGoPrivate)
-	}
-
 	// Expand environment variables
 	moduleURI := expandEnvVars(plugin.ModuleURI)
 	gitRef := expandEnvVars(plugin.GitRef)
@@ -75,6 +57,9 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 	log.Printf("Installing plugin %s[%d] from %s", pluginType, pluginIdx, fullModulePath)
 
+	// Get GOPRIVATE environment variable
+	goPrivate := os.Getenv("GOPRIVATE")
+
 	// Download the module and get its directory
 	var moduleDir string
 	{
@@ -82,6 +67,29 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		var out bytes.Buffer
 		cmd.Stdout = &out
 		cmd.Stderr = os.Stderr
+
+		// Set GOPRIVATE environment variable while preserving other environment variables
+		if goPrivate != "" {
+			// Start with all current environment variables
+			env := os.Environ()
+
+			// Find and replace GOPRIVATE if it exists, or add it if it doesn't
+			goprivateFound := false
+			for i, e := range env {
+				if strings.HasPrefix(e, "GOPRIVATE=") {
+					env[i] = "GOPRIVATE=" + goPrivate
+					goprivateFound = true
+					break
+				}
+			}
+
+			// Add GOPRIVATE if it wasn't already in the environment
+			if !goprivateFound {
+				env = append(env, "GOPRIVATE="+goPrivate)
+			}
+
+			cmd.Env = env
+		}
 
 		if err := execCommand(cmd); err != nil {
 			return fmt.Errorf("failed to download module %s: %w", fullModulePath, err)
@@ -125,6 +133,29 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		cmd.Dir = moduleDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+
+		// Set GOPRIVATE environment variable while preserving other environment variables
+		if goPrivate != "" {
+			// Start with all current environment variables
+			env := os.Environ()
+
+			// Find and replace GOPRIVATE if it exists, or add it if it doesn't
+			goprivateFound := false
+			for i, e := range env {
+				if strings.HasPrefix(e, "GOPRIVATE=") {
+					env[i] = "GOPRIVATE=" + goPrivate
+					goprivateFound = true
+					break
+				}
+			}
+
+			// Add GOPRIVATE if it wasn't already in the environment
+			if !goprivateFound {
+				env = append(env, "GOPRIVATE="+goPrivate)
+			}
+
+			cmd.Env = env
+		}
 
 		log.Printf("Running install command: go %s (in directory: %s)", strings.Join(args, " "), moduleDir)
 

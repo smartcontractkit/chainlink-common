@@ -1,7 +1,6 @@
 defaults:
   # Can be overridden with CL_PLUGIN_GOFLAGS environment variable
   goflags: "-ldflags='-s'"
-  goprivate: "github.com/smartcontractkit/example-private-repo"
 
 plugins:
   feeds:

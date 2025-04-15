@@ -34,7 +34,6 @@ Example configuration file structure:
 ```yaml
 defaults:
   goflags: "-ldflags='-s'" # Default Go build flags
-  goprivate: "github.com/myorg/myrepo,github.com/private-org/*" # Comma-separated list of private repo patterns
 
 plugins:
   cosmos:
@@ -60,15 +59,9 @@ To install plugins from private repositories:
    git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
    ```
 
-3. Configure GOPRIVATE using one of these methods:
-   - In your config file under `defaults`:
-     ```yaml
-     defaults:
-       goprivate: "github.com/myorg/*,github.com/private-org/*"
-     ```
-   - Or via environment variable:
-     ```bash
-     export GOPRIVATE=github.com/myorg/*,github.com/another-org/*
-     ```
+3. Configure GOPRIVATE via environment variable:
+   ```bash
+   export GOPRIVATE=github.com/myorg/*,github.com/another-org/*
+   ```
 
-The `goprivate` setting supports glob patterns (e.g., `github.com/myorg/*`) and tells Go to bypass the public module proxy for these repositories.
+The `GOPRIVATE` environment variable supports glob patterns (e.g., `github.com/myorg/*`) and tells Go to bypass the public module proxy for these repositories.

@@ -1,7 +1,6 @@
 # Test plugin configuration
 defaults:
-  goflags: "-ldflags=-s -w"
-  goprivate: "github.com/example/*"
+  goflags: "-ldflags=-s"
 
 plugins:
   aptos:

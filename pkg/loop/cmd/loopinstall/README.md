@@ -33,6 +33,10 @@ Example configuration file structure:
 
 ```yaml
 defaults:
+  # Go build flags.
+  # The `-s` flag is added to strip debug information from the binary to reduce
+  # the binary size for releases.
+  # See: `go tool link -help`
   goflags: "-ldflags='-s'" # Default Go build flags
 
 plugins:

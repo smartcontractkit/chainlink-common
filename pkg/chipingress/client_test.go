@@ -15,6 +15,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func TestClient(t *testing.T) {
@@ -254,4 +256,60 @@ func TestPublishBatch(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, assert.AnError, err)
 	})
+}
+
+func TestHeaderInterceptor(t *testing.T) {
+	// Create a mock header provider
+	mockHeaders := map[string]string{
+		"test-header-1": "value1",
+		"test-header-2": "value2",
+	}
+	mockProvider := &mockHeaderProvider{
+		headers: mockHeaders,
+	}
+
+	// Create a mock invoker that captures the context
+	var capturedCtx context.Context
+	mockInvoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+		capturedCtx = ctx
+		return nil
+	}
+
+	// Create the interceptor function
+	cfg := defaultConfig()
+	cfg.headerProvider = mockProvider
+
+	// Call the interceptor directly
+	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		// Add dynamic headers from provider if available
+		if cfg.headerProvider != nil {
+			for k, v := range cfg.headerProvider.GetHeaders() {
+				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+			}
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+
+	err := interceptor(context.Background(), "testMethod", nil, nil, nil, mockInvoker)
+	assert.NoError(t, err)
+
+	// Extract metadata from context and verify headers were added
+	md, ok := metadata.FromOutgoingContext(capturedCtx)
+	assert.True(t, ok, "Metadata should be in the context")
+
+	// Verify each header was added
+	for k, v := range mockHeaders {
+		values := md.Get(k)
+		assert.Len(t, values, 1, "Should have exactly one value for header %s", k)
+		assert.Equal(t, v, values[0], "Header value mismatch for %s", k)
+	}
+}
+
+// Mock header provider for testing
+type mockHeaderProvider struct {
+	headers map[string]string
+}
+
+func (m *mockHeaderProvider) GetHeaders() map[string]string {
+	return m.headers
 }

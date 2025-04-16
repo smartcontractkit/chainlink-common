@@ -1,6 +1,23 @@
 package testutils
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
+
+var testRegistries = map[testing.TB]*Registry{}
+
+func GetRegistry(t testing.TB) *Registry {
+	if r, ok := testRegistries[t]; ok {
+		return r
+	}
+	r := &Registry{}
+	testRegistries[t] = r
+	t.Cleanup(func() {
+		delete(testRegistries, t)
+	})
+	return r
+}
 
 type Registry struct {
 	capabilities map[string]Capability
@@ -24,6 +41,6 @@ func (r *Registry) GetCapability(id string) (Capability, error) {
 	if !ok {
 		return nil, NoCapability(id)
 	}
-	
+
 	return c, nil
 }

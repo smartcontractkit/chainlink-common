@@ -3,6 +3,7 @@ package testutils_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -97,37 +98,34 @@ func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
 	}
 	require.NoError(t, reg.RegisterCapability(trigger))
 
-	capability := &basicactionmock.BasicActionCapability{
-		PerformAction: func(_ context.Context, _ *basicaction.Inputs) (*basicaction.Outputs, error) {
-			assert.Fail(t, "should not be called")
-			return nil, errors.New("should not be called")
+	nodeCapability := &nodeactionmock.BasicActionCapability{
+		PerformAction: func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
+			assert.Fail(t, "node capability should not be called")
+			return nil, fmt.Errorf("should not be called")
 		},
 	}
 
-	require.NoError(t, reg.RegisterCapability(capability))
+	require.NoError(t, reg.RegisterCapability(nodeCapability))
 
 	runner, err := testutils.NewDonRunner(ctx, nil, reg)
 	require.NoError(t, err)
 
-	var nrt sdk.NodeRuntime
 	sdk.SubscribeToDonTrigger(
 		runner,
 		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-			consensus := sdk.RunInNodeModeWithBuiltInConsensus(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
+			var nrt sdk.NodeRuntime
+			sdk.RunInNodeModeWithBuiltInConsensus(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
 				nrt = nodeRuntime
 				return 0, err
 			}, pb.SimpleConsensusType_MEDIAN)
-
-			_, err = consensus.Await()
-			require.Error(t, err)
-
-			return consensusResult, nil
+			na := nodeaction.BasicAction{}
+			return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
 		},
 	)
 
 	_, _, err = runner.Result()
-	assert.Equal(t, sdk.NodeModeCallInDonMode, err)
+	assert.Equal(t, sdk.NodeModeCallInDonMode(), err)
 }
 
 func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
@@ -167,15 +165,12 @@ func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
 				return 0, err
 			}, pb.SimpleConsensusType_MEDIAN)
 
-			consensusResult, err := consensus.Await()
-			require.NoError(t, err)
-			return consensusResult, nil
-
+			return consensus.Await()
 		},
 	)
 
 	_, _, err = runner.Result()
-	assert.Equal(t, sdk.DonModeCallInNodeMode, err)
+	assert.Equal(t, sdk.DonModeCallInNodeMode(), err)
 }
 
 func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
@@ -210,6 +205,10 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 	require.Equal(t, testutils.NoCapability(notRegistered.ID()), err)
 	assert.ErrorContains(t, err, "Capability not found")
 	assert.ErrorContains(t, err, notRegistered.ID())
+}
+
+func TestRuntime_NumericalConsensusShouldReturnErrorIfInputIsntNumerical(t *testing.T) {
+	assert.Fail(t, "Not written yet")
 }
 
 func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {

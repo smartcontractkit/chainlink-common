@@ -36,11 +36,17 @@ type BuiltInConsensus[T any] interface {
 	pb.SimpleConsensusType | *PrimitiveConsensusWithDefault[T]
 }
 
-// TODO we would add links to documentation
 var nodeModeCallInDonMode = errors.New("cannot use NodeRuntime outside RunInNodeModeWithBuiltInConsensus")
-var NodeModeCallInDonMode = nodeModeCallInDonMode
+
+func NodeModeCallInDonMode() error {
+	return nodeModeCallInDonMode
+}
+
 var donModeCallInNodeMode = errors.New("cannot use the DonRuntime inside RunInNodeModeWithBuiltInConsensus")
-var DonModeCallInNodeMode = donModeCallInNodeMode
+
+func DonModeCallInNodeMode() error {
+	return donModeCallInNodeMode
+}
 
 func RunInNodeModeWithBuiltInConsensus[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), consensus C) Promise[T] {
 	observationFn := func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest {

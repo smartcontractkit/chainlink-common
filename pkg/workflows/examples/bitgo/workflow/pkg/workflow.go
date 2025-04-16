@@ -55,11 +55,13 @@ func Workflow(runner sdk.DonRunner) {
 		cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
 		func(runtime sdk.DonRuntime, trigger *cron.CronTrigger) (struct{}, error) {
 			return onCronTrigger(runtime, trigger, config)
-		})
+		},
+	)
 }
 
 func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Config) (struct{}, error) {
 	logger := slog.Default()
+
 	reserveInfo, err := sdk.RunInNodeModeWithBuiltInConsensus(
 		runtime,
 		func(nodeRuntime sdk.NodeRuntime) (*ReserveInfo, error) {

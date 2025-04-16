@@ -67,6 +67,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 
 	registry := &testutils.Registry{}
 
+	// New pattern, hide registry in a map from testingT to registry.
 	cronMock := &cronmock.CronCapability{
 		Trigger: func(ctx context.Context, input *cron.Config) (*cron.CronTrigger, error) {
 			assert.Equal(t, config.Schedule, input.Schedule)

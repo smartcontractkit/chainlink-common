@@ -13,6 +13,22 @@ var authHeaderKey = "X-Beholder-Node-Auth-Token"
 // authHeaderVersion is the version of the auth header format
 var authHeaderVersion = "1"
 
+type AuthHeaderProvider interface {
+	GetHeaders() map[string]string
+}
+
+type staticAuthHeaderProvider struct {
+	headers map[string]string
+}
+
+func (p *staticAuthHeaderProvider) GetHeaders() map[string]string {
+	return p.headers
+}
+
+func NewStaticAuthHeaderProvider(headers map[string]string) AuthHeaderProvider {
+	return &staticAuthHeaderProvider{headers: headers}
+}
+
 // BuildAuthHeaders creates the auth header value to be included on requests.
 // The current format for the header is:
 //

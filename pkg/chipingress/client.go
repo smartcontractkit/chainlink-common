@@ -47,7 +47,6 @@ type Opt func(*chipIngressClientConfig)
 type chipIngressClientConfig struct {
 	log                  *zap.Logger
 	transportCredentials credentials.TransportCredentials
-	headers              map[string]string
 	headerProvider       HeaderProvider
 }
 
@@ -69,13 +68,9 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 	}
 
 	// Add headers as a unary interceptor
-	if len(cfg.headers) > 0 || cfg.headerProvider != nil {
+	if cfg.headerProvider != nil {
 		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(
 			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-				// Add static headers
-				for k, v := range cfg.headers {
-					ctx = metadata.AppendToOutgoingContext(ctx, k, v)
-				}
 
 				// Add dynamic headers from provider if available
 				if cfg.headerProvider != nil {
@@ -196,13 +191,6 @@ func WithLogger(logger *zap.Logger) Opt {
 func WithTransportCredentials(credentials credentials.TransportCredentials) Opt {
 	return func(c *chipIngressClientConfig) {
 		c.transportCredentials = credentials
-	}
-}
-
-// WithHeaders sets the headers for requests to the ChipIngress service.
-func WithHeaders(headers map[string]string) Opt {
-	return func(c *chipIngressClientConfig) {
-		c.headers = headers
 	}
 }
 

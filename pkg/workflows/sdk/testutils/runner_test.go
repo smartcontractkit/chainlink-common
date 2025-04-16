@@ -3,6 +3,8 @@ package testutils_test
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,10 +13,10 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/actionandtrigger"
 	actionandtriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/actionandtrigger/action_and_triggermock"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basicaction"
-	basicactionmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basicaction/basic_actionmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger"
 	basictriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger/basic_triggermock"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/nodetrigger"
+	nodetriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/nodetrigger/node_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 )
@@ -193,6 +195,7 @@ func TestRunner_FiringTwoTriggersReturnsAnError(t *testing.T) {
 
 	ran, _, err := runner.Result()
 	require.True(t, errors.Is(err, testutils.TooManyTriggers{}))
+	assert.True(t, strings.Contains(err.Error(), "too many triggers fired during execution"))
 	assert.True(t, ran)
 	assert.True(t, called)
 }
@@ -239,7 +242,41 @@ func TestRunner_StrictTriggers_FailsIfTriggerIsNotRegistered(t *testing.T) {
 	assert.True(t, errors.Is(err, testutils.NoCapability(missing.ID())))
 }
 
-func TestRunner_CallCapabilityIsAsync(t *testing.T) {
+func TestRunner_CanStartInNodeMode(t *testing.T) {
+	ctx := context.Background()
+	reg := &testutils.Registry{}
+
+	anyConfig := &nodetrigger.Config{Name: "name", Number: 123}
+	anyTrigger := &nodetrigger.Outputs{CoolOutput: "cool"}
+
+	trigger := &nodetriggermock.NodeEventCapability{
+		Trigger: func(_ context.Context, config *nodetrigger.Config) (*nodetrigger.Outputs, error) {
+			assert.True(t, proto.Equal(anyConfig, config))
+			return anyTrigger, nil
+		},
+	}
+	require.NoError(t, reg.RegisterCapability(trigger))
+
+	runner, err := testutils.NewNodeRunner(ctx, nil, reg)
+	require.NoError(t, err)
+
+	anyResult := "ok"
+	sdk.SubscribeToNodeTrigger(
+		runner,
+		nodetrigger.NodeEvent{}.Trigger(anyConfig),
+		func(rt sdk.NodeRuntime, input *nodetrigger.Outputs) (string, error) {
+			assert.True(t, proto.Equal(anyTrigger, input))
+			return anyResult, nil
+		},
+	)
+
+	ran, result, err := runner.Result()
+	require.NoError(t, err)
+	assert.True(t, ran)
+	assert.Equal(t, anyResult, result)
+}
+
+func TestRunner_Logs(t *testing.T) {
 	ctx := context.Background()
 	reg := &testutils.Registry{}
 
@@ -248,29 +285,75 @@ func TestRunner_CallCapabilityIsAsync(t *testing.T) {
 
 	trigger := &basictriggermock.BasicCapability{
 		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
 			return anyTrigger, nil
 		},
 	}
 	require.NoError(t, reg.RegisterCapability(trigger))
 
-	ch := make(chan struct{}, 1)
-	anyResult1 := "ok1"
-	action1 := &basicactionmock.BasicActionCapability{
-		PerformAction: func(_ context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
-			<-ch
-			return &basicaction.Outputs{AdaptedThing: anyResult1}, nil
-		},
-	}
-	require.NoError(t, reg.RegisterCapability(action1))
+	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	require.NoError(t, err)
 
-	anyResult2 := "ok2"
-	action2 := &actionandtriggermock.BasicCapability{
-		Action: func(ctx context.Context, input *actionandtrigger.Input) (*actionandtrigger.Output, error) {
-			return &actionandtrigger.Output{Welcome: anyResult2}, nil
+	runner.SetDefaultLogger()
+
+	anyResult := "ok"
+	sdk.SubscribeToDonTrigger(
+		runner,
+		basictrigger.Basic{}.Trigger(anyConfig),
+		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+			logger := slog.Default()
+			logger.Info(anyResult)
+			logger.Warn(anyResult + "2")
+			return anyResult, nil
+		},
+	)
+
+	_, _, err = runner.Result()
+	require.NoError(t, err)
+
+	expected := []string{
+		"level=INFO msg=ok\n",
+		"level=WARN msg=ok2\n",
+	}
+
+	var actual []string
+	for _, log := range runner.Logs() {
+		// Extract only the level and msg fields
+		parts := strings.Split(log, " ")
+		var filtered []string
+		for _, part := range parts {
+			if strings.HasPrefix(part, "level=") || strings.HasPrefix(part, "msg=") {
+				filtered = append(filtered, part)
+			}
+		}
+		actual = append(actual, strings.Join(filtered, " "))
+	}
+
+	assert.Equal(t, expected, actual)
+
+}
+
+func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
+	ctx := context.Background()
+	reg := &testutils.Registry{}
+
+	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+	anyError := errors.New("some error")
+
+	trigger := &basictriggermock.BasicCapability{
+		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+			return nil, anyError
 		},
 	}
-	require.NoError(t, reg.RegisterCapability(action2))
+	require.NoError(t, reg.RegisterCapability(trigger))
+
+	trigger2 := &actionandtriggermock.BasicCapability{
+		Trigger: func(ctx context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
+			assert.Fail(t, "workflow should halt if a trigger has an error")
+			return nil, nil
+		},
+	}
+
+	require.NoError(t, reg.RegisterCapability(trigger2))
 
 	runner, err := testutils.NewDonRunner(ctx, nil, reg)
 	require.NoError(t, err)
@@ -278,39 +361,20 @@ func TestRunner_CallCapabilityIsAsync(t *testing.T) {
 	sdk.SubscribeToDonTrigger(
 		runner,
 		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
-			workflowAction1 := &basicaction.BasicAction{}
-			call1 := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
-
-			workflowAction2 := &actionandtrigger.Basic{}
-			call2 := workflowAction2.Action(rt, &actionandtrigger.Input{Name: "input"})
-			result2, err := call2.Await()
-			require.NoError(t, err)
-			ch <- struct{}{}
-			result1, err := call1.Await()
-			require.NoError(t, err)
-			return result1.AdaptedThing + result2.Welcome, nil
+		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+			assert.Fail(t, "This trigger shouldn't fire as there is already an error")
+			return "", nil
 		},
 	)
 
-	ran, result, err := runner.Result()
-	require.NoError(t, err)
-	assert.True(t, ran)
-	assert.Equal(t, anyResult1+anyResult2, result)
-}
+	sdk.SubscribeToDonTrigger(
+		runner,
+		actionandtrigger.Basic{}.Trigger(&actionandtrigger.Config{Name: "b"}),
+		func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (string, error) {
+			assert.Fail(t, "This trigger shouldn't fire")
+			return "", nil
+		})
 
-func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
-	assert.Fail(t, "Not written yet")
-}
-
-func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
-	assert.Fail(t, "Not written yet")
-}
-
-func TestNodeRunner_UsesNodeRuntimeCapability(t *testing.T) {
-	assert.Fail(t, "Not written yet")
-}
-
-func TestRunner_Logs(t *testing.T) {
-	assert.Fail(t, "Not written yet")
+	_, _, err = runner.Result()
+	assert.Equal(t, anyError, err)
 }

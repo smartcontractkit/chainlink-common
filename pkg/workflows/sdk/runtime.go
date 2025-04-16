@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"errors"
 	"io"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -35,24 +36,17 @@ type BuiltInConsensus[T any] interface {
 	pb.SimpleConsensusType | *PrimitiveConsensusWithDefault[T]
 }
 
+// TODO we would add links to documentation
+var nodeModeCallInDonMode = errors.New("cannot use NodeRuntime outside RunInNodeModeWithBuiltInConsensus")
+var NodeModeCallInDonMode = nodeModeCallInDonMode
+var donModeCallInNodeMode = errors.New("cannot use the DonRuntime inside RunInNodeModeWithBuiltInConsensus")
+var DonModeCallInNodeMode = donModeCallInNodeMode
+
 func RunInNodeModeWithBuiltInConsensus[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), consensus C) Promise[T] {
 	observationFn := func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest {
-		result, err := fn(nodeRuntime)
-		if err != nil {
-			return &pb.BuiltInConsensusRequest{
-				Observation: &pb.BuiltInConsensusRequest_Error{Error: err.Error()},
-			}
-		}
-
-		wrapped, err := values.Wrap(result)
-		if err != nil {
-			return &pb.BuiltInConsensusRequest{
-				Observation: &pb.BuiltInConsensusRequest_Error{Error: err.Error()},
-			}
-		}
-
 		var primitiveConsensus *pb.PrimitiveConsensus
 		var defaultValue values.Value
+		var err error
 		switch c := any(consensus).(type) {
 		case *PrimitiveConsensusWithDefault[T]:
 			defaultValue, err = values.Wrap(c.DefaultValue)
@@ -66,11 +60,24 @@ func RunInNodeModeWithBuiltInConsensus[T any, C BuiltInConsensus[T]](runtime Don
 			primitiveConsensus = &pb.PrimitiveConsensus{Consensus: &pb.PrimitiveConsensus_Simple{Simple: c}}
 		}
 
-		return &pb.BuiltInConsensusRequest{
+		consensusRequest := &pb.BuiltInConsensusRequest{
 			PrimitiveConsensus: primitiveConsensus,
-			Observation:        &pb.BuiltInConsensusRequest_Value{Value: values.Proto(wrapped)},
 			DefaultValue:       values.Proto(defaultValue),
 		}
+
+		result, err := fn(nodeRuntime)
+		if err == nil {
+			wrapped, err := values.Wrap(result)
+			if err != nil {
+				consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
+			} else {
+				consensusRequest.Observation = &pb.BuiltInConsensusRequest_Value{Value: values.Proto(wrapped)}
+			}
+		} else {
+			consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
+		}
+
+		return consensusRequest
 	}
 
 	return Then(runtime.RunInNodeModeWithBuiltInConsensus(observationFn), func(v values.Value) (T, error) {

@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -18,7 +17,7 @@ func (r runtime[T]) IsNodeRuntime() {}
 func (r runtime[T]) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
 	capability, ok := r.runner.registry.capabilities[request.Id]
 	if !ok {
-		return sdk.PromiseFromResult((*pb.CapabilityResponse)(nil), fmt.Errorf("capability %s not found", request.Id))
+		return sdk.PromiseFromResult((*pb.CapabilityResponse)(nil), NoCapability(request.Id))
 	}
 
 	response := make(chan *pb.CapabilityResponse, 1)
@@ -35,16 +34,15 @@ func (r runtime[T]) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.No
 	result := fn(r.nodeRunner().runtime)
 
 	observation := result.Observation
-	if observation == nil && result.DefaultValue != nil {
-		return sdk.PromiseFromResult(values.Value(nil), nil)
-	}
-
 	switch o := observation.(type) {
 	case *pb.BuiltInConsensusRequest_Value:
-		value, err := values.FromProto(o.Value)
-		return sdk.PromiseFromResult(value, err)
+		return sdk.PromiseFromResult(values.FromProto(o.Value))
 	case *pb.BuiltInConsensusRequest_Error:
-		return sdk.PromiseFromResult(values.Value(nil), errors.New(o.Error))
+		if result.DefaultValue.Value == nil {
+			return sdk.PromiseFromResult(values.Value(nil), errors.New(o.Error))
+		}
+
+		return sdk.PromiseFromResult(values.FromProto(result.DefaultValue))
 	}
 
 	return sdk.PromiseFromResult(values.Value(nil), errors.New("should not get here"))

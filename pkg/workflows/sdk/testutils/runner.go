@@ -6,6 +6,7 @@ package testutils
 import (
 	"context"
 	"io"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -47,6 +48,10 @@ type TestRunner interface {
 	// this is useful for testing the workflow registrations.
 	SetStrictTriggers(strict bool)
 
+	// SetDefaultLogger sets the default logger to write to logs.
+	// This allows workflows that use the logger to behave as-if they were a WASM.
+	SetDefaultLogger()
+
 	Logs() []string
 }
 
@@ -76,6 +81,7 @@ func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t 
 		executionId: uuid.NewString(),
 		registry:    registry,
 		runtime:     t,
+		writer:      &testWriter{},
 	}
 
 	tmp := any(r.runtime).(*runtime[T])
@@ -153,6 +159,10 @@ func (r *runner[T]) Config() []byte {
 
 func (r *runner[T]) Result() (bool, any, error) {
 	return r.ran, r.result, r.err
+}
+
+func (r *runner[T]) SetDefaultLogger() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(r.LogWriter(), nil)))
 }
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}

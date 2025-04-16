@@ -20,6 +20,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
+// HeaderProvider defines an interface for providing headers
+type HeaderProvider interface {
+	GetHeaders() map[string]string
+}
+
 type ChipIngressClient interface {
 	Ping(ctx context.Context) (string, error)
 	Publish(ctx context.Context, event ce.Event) (*pb.PublishResponse, error)
@@ -43,6 +48,7 @@ type chipIngressClientConfig struct {
 	log                  *zap.Logger
 	transportCredentials credentials.TransportCredentials
 	headers              map[string]string
+	headerProvider       HeaderProvider
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
@@ -63,12 +69,21 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 	}
 
 	// Add headers as a unary interceptor
-	if len(cfg.headers) > 0 {
+	if len(cfg.headers) > 0 || cfg.headerProvider != nil {
 		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(
 			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				// Add static headers
 				for k, v := range cfg.headers {
 					ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 				}
+
+				// Add dynamic headers from provider if available
+				if cfg.headerProvider != nil {
+					for k, v := range cfg.headerProvider.GetHeaders() {
+						ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+					}
+				}
+
 				return invoker(ctx, method, req, reply, cc, opts...)
 			}))
 	}
@@ -166,6 +181,7 @@ func defaultConfig() chipIngressClientConfig {
 	return chipIngressClientConfig{
 		log:                  zap.NewNop(),
 		transportCredentials: insecure.NewCredentials(),
+		headerProvider:       nil,
 	}
 }
 
@@ -187,6 +203,13 @@ func WithTransportCredentials(credentials credentials.TransportCredentials) Opt 
 func WithHeaders(headers map[string]string) Opt {
 	return func(c *chipIngressClientConfig) {
 		c.headers = headers
+	}
+}
+
+// WithHeaderProvider sets a dynamic header provider for requests
+func WithHeaderProvider(provider HeaderProvider) Opt {
+	return func(c *chipIngressClientConfig) {
+		c.headerProvider = provider
 	}
 }
 

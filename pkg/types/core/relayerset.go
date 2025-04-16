@@ -35,8 +35,7 @@ type Relayer interface {
 	LatestHead(context.Context) (types.Head, error)
 }
 
-// PluginProvider provides common components for any OCR2 plugin.
-// It watches config and is able to transmit.
+// PluginProvider provides config required by the oracle factory.
 type PluginProvider interface {
 	types.ConfigProvider
 }

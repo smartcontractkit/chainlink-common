@@ -601,7 +601,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					require.NoError(t, err)
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
 				},
-				errString: "initializeCurrentState Unmarshal error: proto: cannot parse invalid wire-format data",
+				errString: "initializeCurrentState Unmarshal error:", // the proto package discourages full string error comparisons
 			},
 			{
 				name:            "not enough extracted values",

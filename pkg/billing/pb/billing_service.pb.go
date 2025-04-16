@@ -7,7 +7,8 @@
 package pb
 
 import (
-	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1216,7 +1217,7 @@ var File_billing_pb_billing_service_proto protoreflect.FileDescriptor
 
 const file_billing_pb_billing_service_proto_rawDesc = "" +
 	"\n" +
-	" billing/pb/billing_service.proto\x12\abilling\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"capabilities/pb/capabilities.proto\"\x0e\n" +
+	" billing/pb/billing_service.proto\x12\abilling\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"capabilities/pb/capabilities.proto\x1a\x1ametering/pb/metering.proto\"\x0e\n" +
 	"\fEmptyRequest\")\n" +
 	"\rEmptyResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"P\n" +
@@ -1295,14 +1296,14 @@ const file_billing_pb_billing_service_proto_rawDesc = "" +
 	"workflowId\x122\n" +
 	"\x15workflow_execution_id\x18\x03 \x01(\tR\x13workflowExecutionId\"6\n" +
 	"\x1aConsumeReservationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xcc\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xc8\x01\n" +
 	"\x1cSubmitWorkflowReceiptRequest\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
 	"\vworkflow_id\x18\x02 \x01(\tR\n" +
 	"workflowId\x122\n" +
-	"\x15workflow_execution_id\x18\x03 \x01(\tR\x13workflowExecutionId\x128\n" +
-	"\bmetering\x18\x04 \x01(\v2\x1c.capabilities.MeteringReportR\bmetering\"9\n" +
+	"\x15workflow_execution_id\x18\x03 \x01(\tR\x13workflowExecutionId\x124\n" +
+	"\bmetering\x18\x04 \x01(\v2\x18.metering.MeteringReportR\bmetering\"9\n" +
 	"\x1dSubmitWorkflowReceiptResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\x91\x02\n" +
 	"\x13SubscriptionService\x12Z\n" +
@@ -1356,7 +1357,7 @@ var file_billing_pb_billing_service_proto_goTypes = []any{
 	(*SubmitWorkflowReceiptRequest)(nil),       // 21: billing.SubmitWorkflowReceiptRequest
 	(*SubmitWorkflowReceiptResponse)(nil),      // 22: billing.SubmitWorkflowReceiptResponse
 	(*timestamppb.Timestamp)(nil),              // 23: google.protobuf.Timestamp
-	(*pb.MeteringReport)(nil),                  // 24: capabilities.MeteringReport
+	(*pb.MeteringReport)(nil),                  // 24: metering.MeteringReport
 }
 var file_billing_pb_billing_service_proto_depIdxs = []int32{
 	2,  // 0: billing.AllocateCreditsRequest.credits:type_name -> billing.AccountCreditsInput
@@ -1367,7 +1368,7 @@ var file_billing_pb_billing_service_proto_depIdxs = []int32{
 	11, // 5: billing.AccountWithCredits.credits:type_name -> billing.AccountCredits
 	2,  // 6: billing.ReserveCreditsRequest.credits:type_name -> billing.AccountCreditsInput
 	2,  // 7: billing.ConsumeCreditsRequest.credits:type_name -> billing.AccountCreditsInput
-	24, // 8: billing.SubmitWorkflowReceiptRequest.metering:type_name -> capabilities.MeteringReport
+	24, // 8: billing.SubmitWorkflowReceiptRequest.metering:type_name -> metering.MeteringReport
 	7,  // 9: billing.SubscriptionService.GetAccountCredits:input_type -> billing.GetAccountCreditsRequest
 	3,  // 10: billing.SubscriptionService.AllocateCredits:input_type -> billing.AllocateCreditsRequest
 	5,  // 11: billing.SubscriptionService.BillAccount:input_type -> billing.BillAccountRequest

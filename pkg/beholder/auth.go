@@ -5,6 +5,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"fmt"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
@@ -12,10 +14,6 @@ var authHeaderKey = "X-Beholder-Node-Auth-Token"
 
 // authHeaderVersion is the version of the auth header format
 var authHeaderVersion = "1"
-
-type AuthHeaderProvider interface {
-	GetHeaders() map[string]string
-}
 
 type staticAuthHeaderProvider struct {
 	headers map[string]string
@@ -25,7 +23,7 @@ func (p *staticAuthHeaderProvider) GetHeaders() map[string]string {
 	return p.headers
 }
 
-func NewStaticAuthHeaderProvider(headers map[string]string) AuthHeaderProvider {
+func NewStaticAuthHeaderProvider(headers map[string]string) chipingress.HeaderProvider {
 	return &staticAuthHeaderProvider{headers: headers}
 }
 

@@ -320,7 +320,7 @@ func (x *GetTransactionFeeRequest) GetTransactionId() string {
 type GetTransactionFeeReply struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	TransactionStatus TransactionStatus      `protobuf:"varint,1,opt,name=transaction_status,json=transactionStatus,proto3,enum=loop.TransactionStatus" json:"transaction_status,omitempty"`
-	TransationFee     *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"`
+	TransationFee     *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"` // transaction fee is the cost of transaction execution in native currency
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }

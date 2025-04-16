@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron/cronmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/crosschain"
@@ -69,11 +68,10 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	registry := &testutils.Registry{}
 
 	cronMock := &cronmock.CronCapability{
-		Trigger: func(ctx context.Context, input *cron.Config) (capabilities.TriggerAndId[*cron.CronTrigger], error) {
+		Trigger: func(ctx context.Context, input *cron.Config) (*cron.CronTrigger, error) {
 			assert.Equal(t, config.Schedule, input.Schedule)
-			return capabilities.TriggerAndId[*cron.CronTrigger]{
-				Trigger: &cron.CronTrigger{ScheduledExecutionTime: testTime.Truncate(24 * time.Hour).Add(time.Hour * 24).Unix()},
-			}, nil
+			triggerTime := testTime.Truncate(24 * time.Hour).Add(time.Hour * 24).Unix()
+			return &cron.CronTrigger{ScheduledExecutionTime: triggerTime}, nil
 		},
 	}
 
@@ -128,7 +126,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 		},
 	}
 	require.NoError(t, registry.RegisterCapability(evmMock))
-	
+
 	ctx := context.Background()
 	runner, err := testutils.NewDonRunner(ctx, cfgBytes, registry)
 	require.NoError(t, err)

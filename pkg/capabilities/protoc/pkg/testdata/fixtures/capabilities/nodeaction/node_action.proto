@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package basic_test_node_action.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/nodeaction";
+
+message Config {
+  string camel_case_in_schema_for_testing = 1;
+  int32 snake_case_in_schema_for_testing = 2;
+}
+
+message NodeInputs {
+  bool input_thing = 1;
+}
+
+message NodeOutputs {
+  int32 output_thing = 1;
+}
+
+service BasicAction {
+  rpc PerformAction (NodeInputs) returns (NodeOutputs);
+}

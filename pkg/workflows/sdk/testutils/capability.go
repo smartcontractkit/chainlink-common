@@ -21,3 +21,11 @@ func (n NoTriggerStub) Error() string {
 }
 
 var _ error = NoTriggerStub("")
+
+type NoCapability string
+
+func (n NoCapability) Error() string {
+	return "Capability not found: " + string(n)
+}
+
+var _ error = NoCapability("")

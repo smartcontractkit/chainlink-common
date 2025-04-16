@@ -18,3 +18,12 @@ func (r *Registry) RegisterCapability(c Capability) error {
 	r.capabilities[c.ID()] = c
 	return nil
 }
+
+func (r *Registry) GetCapability(id string) (Capability, error) {
+	c, ok := r.capabilities[id]
+	if !ok {
+		return nil, NoCapability(id)
+	}
+	
+	return c, nil
+}

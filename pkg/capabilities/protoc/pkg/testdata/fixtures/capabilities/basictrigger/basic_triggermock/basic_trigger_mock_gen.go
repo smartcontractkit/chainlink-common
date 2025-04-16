@@ -23,7 +23,7 @@ var _ = testutils.Registry{}
 type BasicCapability struct {
 	// TODO teardown with unrgister if register is needed, or allow setup and teardown
 
-	Trigger func(ctx context.Context, input *basictrigger.Config) (capabilities.TriggerAndId[*basictrigger.Outputs], error)
+	Trigger func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error)
 }
 
 func (cap *BasicCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
@@ -49,12 +49,16 @@ func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.Trigg
 		if err != nil {
 			return nil, err
 		} else {
-			payload, err := anypb.New(resp.Trigger)
+			if resp == nil {
+				return nil, nil
+			}
+
+			payload, err := anypb.New(resp)
 			if err != nil {
 				return nil, err
 			}
 			trigger.Payload = payload
-			trigger.Id = resp.Id
+			trigger.Id = "mock"
 		}
 	default:
 		return nil, fmt.Errorf("method %s not found", request.Method)

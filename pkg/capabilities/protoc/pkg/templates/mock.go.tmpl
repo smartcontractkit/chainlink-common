@@ -37,7 +37,7 @@ type {{.GoName}}Capability struct {
     {{- range .Methods}}
       {{- if isTrigger . }}
     {{ $hasTriggers = true }}
-    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (capabilities.TriggerAndId[*{{name .Output.GoIdent ""}}], error)
+    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
         {{- else }}
     // TODO register if needed...
     {{- $hasActions = true }}
@@ -105,12 +105,16 @@ func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb
             if err != nil {
                 return nil, err
             } else {
-                payload, err := anypb.New(resp.Trigger)
+                if resp == nil {
+                    return nil, nil
+                }
+
+                payload, err := anypb.New(resp)
                 if err != nil {
                     return nil, err
                 }
                 trigger.Payload = payload
-                trigger.Id = resp.Id
+                trigger.Id = "mock"
             }
                 {{- end }}
             {{- end }}

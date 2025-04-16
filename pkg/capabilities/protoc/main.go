@@ -10,6 +10,16 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
+/* TODOs:
+- Should node/DON mode be on the service (defaulted to DON) instead of a parameter?
+	- Can both be generated in different namespaces?
+- Capability ID should probably be on the service instead of a parameter
+- Capabilities that have IDs that depend on an argument (eg evm chain id)
+- Config for a capability, pending on Product team's requirements
+- Legacy capability conversion
+- Could use stream for return type of the trigger instead of metadata
+*/
+
 func main() {
 	args := map[string]string{}
 	protogen.Options{ParamFunc: func(name, value string) error {

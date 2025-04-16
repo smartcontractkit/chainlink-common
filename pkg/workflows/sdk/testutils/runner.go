@@ -5,7 +5,6 @@ package testutils
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/google/uuid"
@@ -16,18 +15,17 @@ import (
 )
 
 type runner[T any] struct {
-	ran               bool
-	config            []byte
-	result            any
-	err               error
-	ctx               context.Context
-	workflowId        string
-	executionId       string
-	registry          *Registry
-	strictTriggers    bool
-	asyncCapabilities bool
-	runtime           T
-	writer            *testWriter
+	ran            bool
+	config         []byte
+	result         any
+	err            error
+	ctx            context.Context
+	workflowId     string
+	executionId    string
+	registry       *Registry
+	strictTriggers bool
+	runtime        T
+	writer         *testWriter
 }
 
 func (r *runner[T]) Logs() []string {
@@ -48,10 +46,6 @@ type TestRunner interface {
 	// SetStrictTriggers causes the workflow to fail if a trigger isn't in the registry
 	// this is useful for testing the workflow registrations.
 	SetStrictTriggers(strict bool)
-
-	// SetCallCapabilitiesAsync creates a go routine to call capabilities
-	// Defaults to false
-	SetCallCapabilitiesAsync(async bool)
 
 	Logs() []string
 }
@@ -90,24 +84,19 @@ func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t 
 	return r, nil
 }
 
-func (r *runner[T]) SetCallCapabilitiesAsync(async bool) {
-	r.asyncCapabilities = async
-}
-
 func (r *runner[T]) nodeRunner() *runner[sdk.NodeRuntime] {
 	rt := &runtime[sdk.NodeRuntime]{}
 	tmp := &runner[sdk.NodeRuntime]{
-		ran:               r.ran,
-		config:            r.config,
-		result:            r.result,
-		err:               r.err,
-		ctx:               r.ctx,
-		workflowId:        r.workflowId,
-		executionId:       r.executionId,
-		registry:          r.registry,
-		strictTriggers:    r.strictTriggers,
-		asyncCapabilities: r.asyncCapabilities,
-		runtime:           rt,
+		ran:            r.ran,
+		config:         r.config,
+		result:         r.result,
+		err:            r.err,
+		ctx:            r.ctx,
+		workflowId:     r.workflowId,
+		executionId:    r.executionId,
+		registry:       r.registry,
+		strictTriggers: r.strictTriggers,
+		runtime:        rt,
 	}
 	rt.runner = tmp
 	return tmp
@@ -118,17 +107,15 @@ func (r *runner[T]) SetStrictTriggers(strict bool) {
 }
 
 func (r *runner[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
-	r.ran = true
 	if r.err != nil {
 		return
 	}
 
-	trigger, ok := r.registry.capabilities[id]
-	if !ok {
+	trigger, err := r.registry.GetCapability(id)
+	if err != nil {
 		if r.strictTriggers {
-			r.err = fmt.Errorf("trigger %s not found", id)
+			r.err = err
 		}
-
 		return
 	}
 
@@ -151,7 +138,12 @@ func (r *runner[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.Any,
 		return
 	}
 
-	// TODO multiple results???
+	if r.ran {
+		r.err = TooManyTriggers{}
+		return
+	}
+
+	r.ran = true
 	r.result, r.err = handler(r.runtime, response.Payload)
 }
 
@@ -165,3 +157,9 @@ func (r *runner[T]) Result() (bool, any, error) {
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
 var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
+
+type TooManyTriggers struct{}
+
+func (e TooManyTriggers) Error() string {
+	return "too many triggers fired during execution"
+}

@@ -34,7 +34,7 @@ type ClientCapability struct {
 	// TODO register if needed...
 	SubmitTransaction func(ctx context.Context, input *evm.SubmitTransactionRequest /* TODO config? */) (*evm.TxID, error)
 
-	OnFinalityViolation func(ctx context.Context, input *emptypb.Empty) (capabilities.TriggerAndId[*crosschain.BlockRange], error)
+	OnFinalityViolation func(ctx context.Context, input *emptypb.Empty) (*crosschain.BlockRange, error)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
@@ -151,12 +151,16 @@ func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *pb.Trig
 		if err != nil {
 			return nil, err
 		} else {
-			payload, err := anypb.New(resp.Trigger)
+			if resp == nil {
+				return nil, nil
+			}
+
+			payload, err := anypb.New(resp)
 			if err != nil {
 				return nil, err
 			}
 			trigger.Payload = payload
-			trigger.Id = resp.Id
+			trigger.Id = "mock"
 		}
 	default:
 		return nil, fmt.Errorf("method %s not found", request.Method)

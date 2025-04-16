@@ -22,13 +22,9 @@ func (r runtime[T]) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*p
 	}
 
 	response := make(chan *pb.CapabilityResponse, 1)
-	if r.asyncCapabilities {
-		go func() {
-			response <- capability.Invoke(r.ctx, request)
-		}()
-	} else {
+	go func() {
 		response <- capability.Invoke(r.ctx, request)
-	}
+	}()
 
 	return sdk.NewBasicPromise(func() (*pb.CapabilityResponse, error) {
 		return <-response, nil

@@ -173,7 +173,8 @@ func (m *pluginMedianServer) NewMedianFactory(ctx context.Context, request *pb.N
 
 	var deviationFuncDefinition map[string]any
 	if len(request.DeviationFuncDefinition) > 0 {
-		if err = json.Unmarshal(request.DeviationFuncDefinition, deviationFuncDefinition); err != nil {
+		deviationFuncDefinition = make(map[string]any)
+		if err = json.Unmarshal(request.DeviationFuncDefinition, &deviationFuncDefinition); err != nil {
 			m.CloseAll(dsRes, juelsRes, gasPriceSubunitsRes, providerRes, errorLogRes)
 			return nil, fmt.Errorf("failed to unmarshal deviationFuncDefinition: %w", err)
 		}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744761544293,
+  "lastUpdate": 1744837320011,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11718,6 +11718,48 @@ window.BENCHMARK_DATA = {
             "value": 28488,
             "unit": "ns/op",
             "extra": "42314 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "615547d9128099ec4e9f87b4d91db414dba05bd9",
+          "message": "Revert \"revert 8b1123f4d37664e49bd6a70484d6065d39b11315 (#1126)\" (#1136)\n\n* Revert \"revert 8b1123f4d37664e49bd6a70484d6065d39b11315 (#1126)\"\n\nThis reverts commit 317a06a50e203f4fff5007105266ba2059d88805.\n\n* simplify error comparison\n\n---------\n\nCo-authored-by: Awbrey Hughlett <awbrey.hughlett@smartcontract.com>",
+          "timestamp": "2025-04-16T16:59:44-04:00",
+          "tree_id": "07b8ec89a31400c6fb05936a01ca7becfb8be512",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/615547d9128099ec4e9f87b4d91db414dba05bd9"
+        },
+        "date": 1744837319293,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.8,
+            "unit": "ns/op",
+            "extra": "3276382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.4,
+            "unit": "ns/op",
+            "extra": "2888659 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28454,
+            "unit": "ns/op",
+            "extra": "42436 times\n4 procs"
           }
         ]
       }

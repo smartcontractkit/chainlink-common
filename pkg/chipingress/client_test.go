@@ -179,6 +179,15 @@ func TestOptions(t *testing.T) {
 		WithTransportCredentials(creds)(&config)
 		assert.Equal(t, creds, config.transportCredentials)
 	})
+
+	t.Run("WithHeaderProvider", func(t *testing.T) {
+		mockProvider := &mockHeaderProvider{
+			headers: map[string]string{"key": "value"},
+		}
+		config := defaultConfig()
+		WithHeaderProvider(mockProvider)(&config)
+		assert.Equal(t, mockProvider, config.headerProvider)
+	})
 }
 func TestPublishBatch(t *testing.T) {
 	t.Run("successful batch publish", func(t *testing.T) {
@@ -275,21 +284,10 @@ func TestHeaderInterceptor(t *testing.T) {
 		return nil
 	}
 
-	// Create the interceptor function
-	cfg := defaultConfig()
-	cfg.headerProvider = mockProvider
+	// Get the interceptor from the function in client.go
+	interceptor := newHeaderInterceptor(mockProvider)
 
-	// Call the interceptor directly
-	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		// Add dynamic headers from provider if available
-		if cfg.headerProvider != nil {
-			for k, v := range cfg.headerProvider.GetHeaders() {
-				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
-			}
-		}
-		return invoker(ctx, method, req, reply, cc, opts...)
-	}
-
+	// Call the interceptor
 	err := interceptor(context.Background(), "testMethod", nil, nil, nil, mockInvoker)
 	assert.NoError(t, err)
 

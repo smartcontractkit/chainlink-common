@@ -50,6 +50,19 @@ type chipIngressClientConfig struct {
 	headerProvider       HeaderProvider
 }
 
+// newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
+func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		// Add dynamic headers from provider if available
+		if provider != nil {
+			for k, v := range provider.GetHeaders() {
+				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+			}
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
 func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error) {
 
@@ -69,18 +82,7 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 
 	// Add headers as a unary interceptor
 	if cfg.headerProvider != nil {
-		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(
-			func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-
-				// Add dynamic headers from provider if available
-				if cfg.headerProvider != nil {
-					for k, v := range cfg.headerProvider.GetHeaders() {
-						ctx = metadata.AppendToOutgoingContext(ctx, k, v)
-					}
-				}
-
-				return invoker(ctx, method, req, reply, cc, opts...)
-			}))
+		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
 	}
 
 	conn, err := grpc.NewClient(

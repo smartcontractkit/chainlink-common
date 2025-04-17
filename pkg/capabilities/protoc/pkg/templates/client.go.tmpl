@@ -1,0 +1,45 @@
+package {{.GoPackageName}}
+
+import (
+    "errors"
+    "google.golang.org/protobuf/types/known/anypb"
+
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+
+    {{- range .Services }}
+        {{- range .Methods }}
+            {{- addImport .Input.GoIdent.GoImportPath $.GoImportPath.String }}
+            {{- addImport .Output.GoIdent.GoImportPath $.GoImportPath.String }}
+        {{- end }}
+    {{- end }}
+
+    {{- range allimports }}
+    {{.}}
+    {{- end }}
+)
+
+{{- range .Services}}
+{{ $service := . }}
+type {{.GoName}} struct {
+    // TODO config types (optional)
+    // TODO capability interfaces.
+}
+
+    {{- range .Methods}}
+    {{- $args := dict
+        "Service" $service
+        "Method" .
+        "CapabilityId" $.CapabilityId
+        "Mode" $.Mode
+        "InputType" .Input.GoIdent
+        "OutputType" .Output.GoIdent
+        "GoPackageName" $.GoImportPath.String
+    }}
+        {{- if isTrigger . }}
+            {{template "trigger_method" $args}}
+        {{- else }}
+            {{template "action_method" $args}}
+        {{- end }}
+    {{- end }}
+{{- end }}

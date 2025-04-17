@@ -51,6 +51,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	if req.Config != nil {
 		config = req.Config
 	}
+
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
@@ -62,14 +63,18 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
 		},
-		Inputs: values.ProtoMap(inputs),
-		Config: values.ProtoMap(config),
+		Config:  values.ProtoMap(config),
+		Inputs:  values.ProtoMap(inputs),
+		Request: req.Request,
+		Method:  req.Method,
+		// TODO ConfigValue: req.ConfigValue,
 	}
 }
 
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
 	return &CapabilityResponse{
-		Value: values.ProtoMap(resp.Value),
+		Value:         values.ProtoMap(resp.Value),
+		ResponseValue: resp.ResponseValue,
 	}
 }
 
@@ -104,8 +109,11 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			ReferenceID:              md.ReferenceId,
 			DecodedWorkflowName:      md.DecodedWorkflowName,
 		},
-		Config: config,
-		Inputs: inputs,
+		Config:  config,
+		Inputs:  inputs,
+		Request: pr.Request,
+		Method:  pr.Method,
+		// TODO ConfigValue: pr.ConfigValue,
 	}
 	return req, nil
 }
@@ -121,7 +129,8 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 	}
 
 	resp := capabilities.CapabilityResponse{
-		Value: val,
+		Value:         val,
+		ResponseValue: pr.ResponseValue,
 	}
 
 	return resp, err
@@ -164,6 +173,8 @@ func RegisterToWorkflowRequestToProto(req capabilities.RegisterToWorkflowRequest
 			WorkflowOwner: req.Metadata.WorkflowOwner,
 		},
 		Config: values.ProtoMap(config),
+		Value:  req.Value,
+		Method: req.Method,
 	}
 }
 
@@ -188,6 +199,8 @@ func RegisterToWorkflowRequestFromProto(req *RegisterToWorkflowRequest) (capabil
 			WorkflowOwner: req.Metadata.WorkflowOwner,
 		},
 		Config: config,
+		Value:  req.Value,
+		Method: req.Method,
 	}, nil
 }
 
@@ -204,6 +217,8 @@ func UnregisterFromWorkflowRequestToProto(req capabilities.UnregisterFromWorkflo
 			WorkflowOwner: req.Metadata.WorkflowOwner,
 		},
 		Config: values.ProtoMap(config),
+		Value:  req.Value,
+		Method: req.Method,
 	}
 }
 
@@ -228,6 +243,8 @@ func UnregisterFromWorkflowRequestFromProto(req *UnregisterFromWorkflowRequest) 
 			WorkflowOwner: req.Metadata.WorkflowOwner,
 		},
 		Config: config,
+		Value:  req.Value,
+		Method: req.Method,
 	}, nil
 }
 
@@ -273,7 +290,9 @@ func TriggerRegistrationRequestToProto(req capabilities.TriggerRegistrationReque
 			WorkflowDonId:            md.WorkflowDonID,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 		},
-		Config: values.ProtoMap(config),
+		Config:  values.ProtoMap(config),
+		Request: req.Request,
+		Method:  req.Method,
 	}
 }
 
@@ -303,7 +322,9 @@ func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capab
 			WorkflowDonID:            md.WorkflowDonId,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 		},
-		Config: config,
+		Config:  config,
+		Request: req.Request,
+		Method:  req.Method,
 	}, nil
 }
 
@@ -318,6 +339,7 @@ func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse 
 			TriggerType: resp.Event.TriggerType,
 			Id:          resp.Event.ID,
 			Outputs:     values.ProtoMap(resp.Event.Outputs),
+			Value:       resp.Event.Value,
 		},
 	}
 }
@@ -338,6 +360,7 @@ func TriggerResponseFromProto(resp *TriggerResponse) (capabilities.TriggerRespon
 			return capabilities.TriggerResponse{}, fmt.Errorf("could not unmarshal event payload: %w", err)
 		}
 		event.Outputs = outputs
+		event.Value = eventpb.Value
 	}
 
 	var err error

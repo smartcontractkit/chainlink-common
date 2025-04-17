@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package cre.metadata;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/pb";
+
+enum CallType {
+  Action = 0;
+  Trigger = 1;
+}
+
+// TODO should trigger just use stream?
+// If we need pre-registration, we'll need this anyways.
+// But we can use it only for that case.
+extend google.protobuf.MethodOptions {
+  CallType callType = 50011;
+}
+
+
+extend google.protobuf.ServiceOptions {
+  google.protobuf.Any service_config = 50022;
+}

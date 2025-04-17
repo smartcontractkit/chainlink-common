@@ -1,0 +1,144 @@
+package {{.GoPackageName}}mock
+
+import (
+    "context"
+    "fmt"
+    "testing"
+
+    "google.golang.org/protobuf/types/known/anypb"
+
+    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+
+    {{- range .Services }}
+        {{- range .Methods }}
+            {{- addImport .Input.GoIdent.GoImportPath "" }}
+            {{- addImport .Output.GoIdent.GoImportPath "" }}
+        {{- end }}
+    {{- end }}
+
+    {{- range allimports }}
+    {{.}}
+    {{- end }}
+
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+)
+
+// avoid unused imports
+var _ = capabilities.CapabilityInfo{}
+var _ = testutils.Registry{}
+
+{{- range .Services}}
+{{ $service := . }}
+{{ $hasTriggers := false }}
+{{ $hasActions := false }}
+
+func New{{.GoName}}Capability(t testing.TB) (*{{.GoName}}Capability, error) {
+    c := &{{.GoName}}Capability{}
+    registry := testutils.GetRegistry(t)
+    err := registry.RegisterCapability(c)
+    return c, err
+}
+
+type {{.GoName}}Capability struct {
+    // TODO teardown with unrgister if register is needed, or allow setup and teardown
+    {{- range .Methods}}
+      {{- if isTrigger . }}
+    {{ $hasTriggers = true }}
+    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
+        {{- else }}
+    // TODO register if needed...
+    {{- $hasActions = true }}
+    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}, /* TODO config? */) (*{{name .Output.GoIdent ""}}, error)
+        {{- end }}
+    {{- end }}
+}
+
+func (cap *{{.GoName}}Capability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
+    capResp := &pb.CapabilityResponse{}
+    {{- if $hasActions }}
+    switch request.Method {
+        {{- range .Methods }}
+            {{- if not (isTrigger .) }}
+    case "{{.GoName}}":
+        input := &{{name .Input.GoIdent ""}}{}
+        if err := request.Payload.UnmarshalTo(input); err != nil {
+            capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+            break
+        }
+
+        if cap.{{.GoName}} == nil {
+            capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for {{.GoName}}"}
+            break
+        }
+        resp, err := cap.{{.GoName}}(ctx, input)
+        if err != nil {
+            capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+        } else {
+            payload, err := anypb.New(resp)
+            if err == nil {
+                capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+            } else {
+                capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+            }
+        }
+            {{- end }}
+        {{- end }}
+    default:
+        capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+    }
+    {{- else }}
+    capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+    {{- end }}
+    return capResp
+}
+
+func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error){
+    {{- if $hasTriggers }}
+    trigger := &pb.Trigger{}
+    switch request.Method {
+            {{- range .Methods }}
+                {{- if isTrigger . }}
+        case "{{.GoName}}":
+            input := &{{name .Input.GoIdent ""}}{}
+            if err := request.Payload.UnmarshalTo(input); err != nil {
+                return nil, err
+            }
+
+            if cap.{{.GoName}} == nil {
+                return  nil, testutils.NoTriggerStub("{{.GoName}}")
+            }
+
+            resp, err := cap.{{.GoName}}(ctx, input)
+            if err != nil {
+                return nil, err
+            } else {
+                if resp == nil {
+                    return nil, nil
+                }
+
+                payload, err := anypb.New(resp)
+                if err != nil {
+                    return nil, err
+                }
+                trigger.Payload = payload
+                trigger.Id = "mock"
+            }
+                {{- end }}
+            {{- end }}
+        default:
+            return nil, fmt.Errorf("method %s not found", request.Method)
+        }
+        return trigger, nil
+        {{- else }}
+        return nil, fmt.Errorf("method %s not found", request.Method)
+        {{- end }}
+}
+
+func (cap *{{.GoName}}Capability) ID() string {
+    return "{{$.CapabilityId}}"
+}
+
+
+{{- end }}

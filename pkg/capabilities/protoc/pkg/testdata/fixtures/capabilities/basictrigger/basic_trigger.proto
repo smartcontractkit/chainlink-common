@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package basic_test_trigger.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger";
+
+import "metadata.proto";
+
+message Config {
+  string name = 1;
+  int32 number = 2;
+}
+
+message Outputs {
+  string cool_output = 1;
+}
+
+service Basic {
+  rpc Trigger(Config) returns (Outputs) {
+    option (cre.metadata.callType) = Trigger;
+  }
+}

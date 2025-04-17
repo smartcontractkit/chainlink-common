@@ -63,7 +63,7 @@ const (
 
 func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) []byte {
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
-	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
+	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))

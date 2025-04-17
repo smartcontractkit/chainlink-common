@@ -1,6 +1,10 @@
 package sdk
 
-import "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+import (
+	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+)
 
 type StepInputs struct {
 	OutputRef string
@@ -11,11 +15,11 @@ type StepInputs struct {
 //
 // Within the workflow spec, they are called "Capability Properties".
 type StepDefinition struct {
-	ID     string
-	Ref    string
-	Inputs StepInputs
-	Config map[string]any
-
+	ID             string
+	Ref            string
+	Inputs         StepInputs
+	Config         map[string]any
+	ConfigProto    *anypb.Any
 	CapabilityType capabilities.CapabilityType
 }
 

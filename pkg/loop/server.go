@@ -105,20 +105,21 @@ func (s *Server) start() error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
-
 		beholderCfg := beholder.Config{
-			InsecureConnection:        envCfg.TelemetryInsecureConnection,
-			CACertFile:                envCfg.TelemetryCACertFile,
-			OtelExporterGRPCEndpoint:  envCfg.TelemetryEndpoint,
-			ResourceAttributes:        append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
-			TraceSampleRatio:          envCfg.TelemetryTraceSampleRatio,
-			AuthHeaders:               envCfg.TelemetryAuthHeaders,
-			AuthPublicKeyHex:          envCfg.TelemetryAuthPubKeyHex,
-			EmitterBatchProcessor:     envCfg.TelemetryEmitterBatchProcessor,
-			EmitterExportTimeout:      envCfg.TelemetryEmitterExportTimeout,
-			EmitterExportInterval:     envCfg.TelemetryEmitterExportInterval,
-			EmitterExportMaxBatchSize: envCfg.TelemetryEmitterExportMaxBatchSize,
-			EmitterMaxQueueSize:       envCfg.TelemetryEmitterMaxQueueSize,
+			InsecureConnection:             envCfg.TelemetryInsecureConnection,
+			CACertFile:                     envCfg.TelemetryCACertFile,
+			OtelExporterGRPCEndpoint:       envCfg.TelemetryEndpoint,
+			ResourceAttributes:             append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
+			TraceSampleRatio:               envCfg.TelemetryTraceSampleRatio,
+			AuthHeaders:                    envCfg.TelemetryAuthHeaders,
+			AuthPublicKeyHex:               envCfg.TelemetryAuthPubKeyHex,
+			EmitterBatchProcessor:          envCfg.TelemetryEmitterBatchProcessor,
+			EmitterExportTimeout:           envCfg.TelemetryEmitterExportTimeout,
+			EmitterExportInterval:          envCfg.TelemetryEmitterExportInterval,
+			EmitterExportMaxBatchSize:      envCfg.TelemetryEmitterExportMaxBatchSize,
+			EmitterMaxQueueSize:            envCfg.TelemetryEmitterMaxQueueSize,
+			ChipIngressEmitterEnabled:      envCfg.ChipIngressEndpoint != "",
+			ChipIngressEmitterGRPCEndpoint: envCfg.ChipIngressEndpoint,
 		}
 
 		if tracingConfig.Enabled {

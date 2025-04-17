@@ -17,8 +17,6 @@ var _ types.EVMChain = (*Client)(nil)
 type ClientOpt func(*Client)
 
 type Client struct {
-	types.UnimplementedEVMChain
-
 	serviceClient *goplugin.ServiceClient
 	grpc          pb.EVMChainClient
 }

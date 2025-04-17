@@ -14,3 +14,6 @@
 /pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone
+/pkg/beholder/ @smartcontractkit/data-tooling
+/pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
+/pkg/types/ccip @smartcontractkit/ccip-offchain

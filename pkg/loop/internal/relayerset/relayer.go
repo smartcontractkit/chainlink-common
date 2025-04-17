@@ -7,6 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chaincapabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -34,6 +35,19 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	})
 
 	return relayer.WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
+}
+
+func (r *relayerClient) NewAptosChainService(_ context.Context) (types.AptosChainService, error) {
+	cc := r.relayerSetClient.NewClientConn("AptosChainService", func(ctx context.Context) (uint32, net.Resources, error) {
+		aptosChainServiceID, err := r.relayerSetClient.NewAptosChainService(ctx, r.relayerID)
+		if err != nil {
+			return 0, nil, fmt.Errorf("error getting NewAptosChainService from relayerSetServer: %w", err)
+		}
+
+		return aptosChainServiceID, nil, nil
+	})
+
+	return chaincapabilities.NewClient(r.relayerSetClient.BrokerExt.WithName("AptosChainServiceInRelayerSet"), cc), nil
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

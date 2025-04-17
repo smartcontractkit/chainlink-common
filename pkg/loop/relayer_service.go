@@ -42,6 +42,13 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 	return &rs
 }
 
+func (r *RelayerService) NewAptosChainService(ctx context.Context) (types.AptosChainService, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return nil, err
+	}
+	return r.Service.NewAptosChainService(ctx)
+}
+
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err

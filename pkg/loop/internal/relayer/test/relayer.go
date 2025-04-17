@@ -183,6 +183,10 @@ func (s staticRelayer) HealthReport() map[string]error {
 	return hp
 }
 
+func (s staticRelayer) NewAptosChainService(_ context.Context) (types.AptosChainService, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (s staticRelayer) NewContractWriter(_ context.Context, _ []byte) (types.ContractWriter, error) {
 	return nil, errors.New("not implemented")
 }

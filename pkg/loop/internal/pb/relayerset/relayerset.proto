@@ -58,6 +58,14 @@ message NewPluginProviderResponse {
   uint32 plugin_provider_id = 1;
 }
 
+message NewAptosChainServiceRequest {
+  RelayerId relayerId = 1;
+}
+
+message NewAptosChainServiceResponse {
+  uint32 aptosChainServiceID = 1;
+}
+
 message NewContractReaderRequest {
   RelayerId relayerId = 1;
   bytes contractReaderConfig = 2;
@@ -98,6 +106,7 @@ service RelayerSet {
   rpc Get(GetRelayerRequest) returns (GetRelayerResponse) {}
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
+  rpc NewAptosChainService(NewAptosChainServiceRequest) returns (NewAptosChainServiceResponse) {}
   rpc NewContractReader(NewContractReaderRequest) returns (NewContractReaderResponse) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterResponse) {}
 

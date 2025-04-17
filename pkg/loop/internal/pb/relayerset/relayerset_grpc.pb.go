@@ -20,17 +20,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RelayerSet_Get_FullMethodName                 = "/loop.relayerset.RelayerSet/Get"
-	RelayerSet_List_FullMethodName                = "/loop.relayerset.RelayerSet/List"
-	RelayerSet_NewPluginProvider_FullMethodName   = "/loop.relayerset.RelayerSet/NewPluginProvider"
-	RelayerSet_NewContractReader_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractReader"
-	RelayerSet_NewContractWriter_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractWriter"
-	RelayerSet_StartRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/StartRelayer"
-	RelayerSet_CloseRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/CloseRelayer"
-	RelayerSet_RelayerReady_FullMethodName        = "/loop.relayerset.RelayerSet/RelayerReady"
-	RelayerSet_RelayerHealthReport_FullMethodName = "/loop.relayerset.RelayerSet/RelayerHealthReport"
-	RelayerSet_RelayerName_FullMethodName         = "/loop.relayerset.RelayerSet/RelayerName"
-	RelayerSet_RelayerLatestHead_FullMethodName   = "/loop.relayerset.RelayerSet/RelayerLatestHead"
+	RelayerSet_Get_FullMethodName                  = "/loop.relayerset.RelayerSet/Get"
+	RelayerSet_List_FullMethodName                 = "/loop.relayerset.RelayerSet/List"
+	RelayerSet_NewPluginProvider_FullMethodName    = "/loop.relayerset.RelayerSet/NewPluginProvider"
+	RelayerSet_NewAptosChainService_FullMethodName = "/loop.relayerset.RelayerSet/NewAptosChainService"
+	RelayerSet_NewContractReader_FullMethodName    = "/loop.relayerset.RelayerSet/NewContractReader"
+	RelayerSet_NewContractWriter_FullMethodName    = "/loop.relayerset.RelayerSet/NewContractWriter"
+	RelayerSet_StartRelayer_FullMethodName         = "/loop.relayerset.RelayerSet/StartRelayer"
+	RelayerSet_CloseRelayer_FullMethodName         = "/loop.relayerset.RelayerSet/CloseRelayer"
+	RelayerSet_RelayerReady_FullMethodName         = "/loop.relayerset.RelayerSet/RelayerReady"
+	RelayerSet_RelayerHealthReport_FullMethodName  = "/loop.relayerset.RelayerSet/RelayerHealthReport"
+	RelayerSet_RelayerName_FullMethodName          = "/loop.relayerset.RelayerSet/RelayerName"
+	RelayerSet_RelayerLatestHead_FullMethodName    = "/loop.relayerset.RelayerSet/RelayerLatestHead"
 )
 
 // RelayerSetClient is the client API for RelayerSet service.
@@ -40,6 +41,7 @@ type RelayerSetClient interface {
 	Get(ctx context.Context, in *GetRelayerRequest, opts ...grpc.CallOption) (*GetRelayerResponse, error)
 	List(ctx context.Context, in *ListAllRelayersRequest, opts ...grpc.CallOption) (*ListAllRelayersResponse, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error)
+	NewAptosChainService(ctx context.Context, in *NewAptosChainServiceRequest, opts ...grpc.CallOption) (*NewAptosChainServiceResponse, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderResponse, error)
 	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterResponse, error)
 	StartRelayer(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -82,6 +84,16 @@ func (c *relayerSetClient) NewPluginProvider(ctx context.Context, in *NewPluginP
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NewPluginProviderResponse)
 	err := c.cc.Invoke(ctx, RelayerSet_NewPluginProvider_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) NewAptosChainService(ctx context.Context, in *NewAptosChainServiceRequest, opts ...grpc.CallOption) (*NewAptosChainServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NewAptosChainServiceResponse)
+	err := c.cc.Invoke(ctx, RelayerSet_NewAptosChainService_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +187,7 @@ type RelayerSetServer interface {
 	Get(context.Context, *GetRelayerRequest) (*GetRelayerResponse, error)
 	List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error)
+	NewAptosChainService(context.Context, *NewAptosChainServiceRequest) (*NewAptosChainServiceResponse, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error)
 	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterResponse, error)
 	StartRelayer(context.Context, *RelayerId) (*emptypb.Empty, error)
@@ -201,6 +214,9 @@ func (UnimplementedRelayerSetServer) List(context.Context, *ListAllRelayersReque
 }
 func (UnimplementedRelayerSetServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+func (UnimplementedRelayerSetServer) NewAptosChainService(context.Context, *NewAptosChainServiceRequest) (*NewAptosChainServiceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAptosChainService not implemented")
 }
 func (UnimplementedRelayerSetServer) NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
@@ -297,6 +313,24 @@ func _RelayerSet_NewPluginProvider_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RelayerSetServer).NewPluginProvider(ctx, req.(*NewPluginProviderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_NewAptosChainService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewAptosChainServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).NewAptosChainService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_NewAptosChainService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).NewAptosChainService(ctx, req.(*NewAptosChainServiceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -463,6 +497,10 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewPluginProvider",
 			Handler:    _RelayerSet_NewPluginProvider_Handler,
+		},
+		{
+			MethodName: "NewAptosChainService",
+			Handler:    _RelayerSet_NewAptosChainService_Handler,
 		},
 		{
 			MethodName: "NewContractReader",

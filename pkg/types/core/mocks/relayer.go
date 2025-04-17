@@ -217,6 +217,64 @@ func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call 
 	return _c
 }
 
+// NewAptosChainService provides a mock function with given fields: _a0
+func (_m *Relayer) NewAptosChainService(_a0 context.Context) (types.AptosChainService, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewAptosChainService")
+	}
+
+	var r0 types.AptosChainService
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (types.AptosChainService, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) types.AptosChainService); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.AptosChainService)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewAptosChainService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewAptosChainService'
+type Relayer_NewAptosChainService_Call struct {
+	*mock.Call
+}
+
+// NewAptosChainService is a helper method to define mock.On call
+//   - _a0 context.Context
+func (_e *Relayer_Expecter) NewAptosChainService(_a0 interface{}) *Relayer_NewAptosChainService_Call {
+	return &Relayer_NewAptosChainService_Call{Call: _e.mock.On("NewAptosChainService", _a0)}
+}
+
+func (_c *Relayer_NewAptosChainService_Call) Run(run func(_a0 context.Context)) *Relayer_NewAptosChainService_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewAptosChainService_Call) Return(_a0 types.AptosChainService, _a1 error) *Relayer_NewAptosChainService_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewAptosChainService_Call) RunAndReturn(run func(context.Context) (types.AptosChainService, error)) *Relayer_NewAptosChainService_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewContractReader provides a mock function with given fields: _a0, contractReaderConfig
 func (_m *Relayer) NewContractReader(_a0 context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	ret := _m.Called(_a0, contractReaderConfig)

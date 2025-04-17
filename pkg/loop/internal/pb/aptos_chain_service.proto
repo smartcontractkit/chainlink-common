@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package loop;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+
+// Example
+message ReadContractRequest {
+  // Example
+  string method = 1;
+  bytes encoded_params = 2;
+}
+
+// Example
+message ReadContractReply {
+  bytes result = 1;
+}
+
+// Aptos chain service
+service AptosChainService {
+  rpc ReadContract (ReadContractRequest) returns (ReadContractReply);
+}
+

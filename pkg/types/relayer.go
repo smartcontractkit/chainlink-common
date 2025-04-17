@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type RelayID struct {
@@ -78,6 +80,11 @@ type NodeStatus struct {
 	State   string
 }
 
+type AptosChainService interface {
+	services.Service
+	ReadContract(ctx context.Context, method string, encodedParams []byte) ([]byte, error)
+}
+
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
@@ -98,6 +105,8 @@ type ChainService interface {
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
+
+	NewAptosChainService(ctx context.Context) (AptosChainService, error)
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

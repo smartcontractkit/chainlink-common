@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744908482660,
+  "lastUpdate": 1744910827206,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11844,6 +11844,48 @@ window.BENCHMARK_DATA = {
             "value": 28193,
             "unit": "ns/op",
             "extra": "42607 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "albertpun8@gmail.com",
+            "name": "AP12",
+            "username": "albert597"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ed69fd072ac14fa2a56fe10bcac55cf4a3d20c19",
+          "message": "added csa auth to chip ingress (#1132)\n\n* added csa auth to chip ingress\n\n* add header provider\n\n* remove cfg.headers and add static auth\n\n* use imported HeaderProvider from chipingress\n\n* add tests for interceptor\n\n* test auth header\n\n* move unary interceptor into own func with tests\n\n---------\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-04-17T13:25:57-04:00",
+          "tree_id": "efc9c9114d8ec9f88de97aa590ef0fe9d732ca81",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ed69fd072ac14fa2a56fe10bcac55cf4a3d20c19"
+        },
+        "date": 1744910826490,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.8,
+            "unit": "ns/op",
+            "extra": "3313747 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.3,
+            "unit": "ns/op",
+            "extra": "2883499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28329,
+            "unit": "ns/op",
+            "extra": "42465 times\n4 procs"
           }
         ]
       }

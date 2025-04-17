@@ -43,7 +43,7 @@ message SignReply {
 }
 
 service Relayer {
-  rpc NewAptosChainService(google.protobuf.Empty) returns (NewAptosChainServiceReply) {}
+  rpc NewEVMChainService(google.protobuf.Empty) returns (NewEVMChainServiceReply) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterReply) {}
   rpc NewContractReader (NewContractReaderRequest) returns (NewContractReaderReply) {}
   rpc NewConfigProvider (NewConfigProviderRequest) returns (NewConfigProviderReply) {}
@@ -72,9 +72,9 @@ message PluginArgs {
   bytes pluginConfig = 2;
 }
 
-// NewAptosChainService has reply parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewAptosChainService].
-message NewAptosChainServiceReply {
-  uint32 aptosChainServiceID = 1;
+// NewEVMChainService has reply parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewEVMChainService].
+message NewEVMChainServiceReply {
+  uint32 EVMChainServiceID = 1;
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].

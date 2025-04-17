@@ -544,27 +544,27 @@ func (x *NewPluginProviderResponse) GetPluginProviderId() uint32 {
 	return 0
 }
 
-type NewAptosChainServiceRequest struct {
+type NewEVMChainServiceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NewAptosChainServiceRequest) Reset() {
-	*x = NewAptosChainServiceRequest{}
+func (x *NewEVMChainServiceRequest) Reset() {
+	*x = NewEVMChainServiceRequest{}
 	mi := &file_relayerset_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NewAptosChainServiceRequest) String() string {
+func (x *NewEVMChainServiceRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewAptosChainServiceRequest) ProtoMessage() {}
+func (*NewEVMChainServiceRequest) ProtoMessage() {}
 
-func (x *NewAptosChainServiceRequest) ProtoReflect() protoreflect.Message {
+func (x *NewEVMChainServiceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_relayerset_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -576,39 +576,39 @@ func (x *NewAptosChainServiceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewAptosChainServiceRequest.ProtoReflect.Descriptor instead.
-func (*NewAptosChainServiceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NewEVMChainServiceRequest.ProtoReflect.Descriptor instead.
+func (*NewEVMChainServiceRequest) Descriptor() ([]byte, []int) {
 	return file_relayerset_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *NewAptosChainServiceRequest) GetRelayerId() *RelayerId {
+func (x *NewEVMChainServiceRequest) GetRelayerId() *RelayerId {
 	if x != nil {
 		return x.RelayerId
 	}
 	return nil
 }
 
-type NewAptosChainServiceResponse struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	AptosChainServiceID uint32                 `protobuf:"varint,1,opt,name=aptosChainServiceID,proto3" json:"aptosChainServiceID,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+type NewEVMChainServiceResponse struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	EVMChainServiceID uint32                 `protobuf:"varint,1,opt,name=EVMChainServiceID,proto3" json:"EVMChainServiceID,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
-func (x *NewAptosChainServiceResponse) Reset() {
-	*x = NewAptosChainServiceResponse{}
+func (x *NewEVMChainServiceResponse) Reset() {
+	*x = NewEVMChainServiceResponse{}
 	mi := &file_relayerset_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NewAptosChainServiceResponse) String() string {
+func (x *NewEVMChainServiceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewAptosChainServiceResponse) ProtoMessage() {}
+func (*NewEVMChainServiceResponse) ProtoMessage() {}
 
-func (x *NewAptosChainServiceResponse) ProtoReflect() protoreflect.Message {
+func (x *NewEVMChainServiceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_relayerset_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -620,14 +620,14 @@ func (x *NewAptosChainServiceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewAptosChainServiceResponse.ProtoReflect.Descriptor instead.
-func (*NewAptosChainServiceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NewEVMChainServiceResponse.ProtoReflect.Descriptor instead.
+func (*NewEVMChainServiceResponse) Descriptor() ([]byte, []int) {
 	return file_relayerset_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *NewAptosChainServiceResponse) GetAptosChainServiceID() uint32 {
+func (x *NewEVMChainServiceResponse) GetEVMChainServiceID() uint32 {
 	if x != nil {
-		return x.AptosChainServiceID
+		return x.EVMChainServiceID
 	}
 	return 0
 }
@@ -1056,11 +1056,11 @@ const file_relayerset_proto_rawDesc = "" +
 	"pluginArgs\x18\x03 \x01(\v2\x1b.loop.relayerset.PluginArgsR\n" +
 	"pluginArgs\"I\n" +
 	"\x19NewPluginProviderResponse\x12,\n" +
-	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"W\n" +
-	"\x1bNewAptosChainServiceRequest\x128\n" +
-	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"P\n" +
-	"\x1cNewAptosChainServiceResponse\x120\n" +
-	"\x13aptosChainServiceID\x18\x01 \x01(\rR\x13aptosChainServiceID\"\x88\x01\n" +
+	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"U\n" +
+	"\x19NewEVMChainServiceRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"J\n" +
+	"\x1aNewEVMChainServiceResponse\x12,\n" +
+	"\x11EVMChainServiceID\x18\x01 \x01(\rR\x11EVMChainServiceID\"\x88\x01\n" +
 	"\x18NewContractReaderRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\"G\n" +
@@ -1083,13 +1083,13 @@ const file_relayerset_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\")\n" +
 	"\x13RelayerNameResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name2\xe4\b\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name2\xde\b\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
 	"\x04List\x12'.loop.relayerset.ListAllRelayersRequest\x1a(.loop.relayerset.ListAllRelayersResponse\"\x00\x12l\n" +
-	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12u\n" +
-	"\x14NewAptosChainService\x12,.loop.relayerset.NewAptosChainServiceRequest\x1a-.loop.relayerset.NewAptosChainServiceResponse\"\x00\x12l\n" +
+	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12o\n" +
+	"\x12NewEVMChainService\x12*.loop.relayerset.NewEVMChainServiceRequest\x1a+.loop.relayerset.NewEVMChainServiceResponse\"\x00\x12l\n" +
 	"\x11NewContractReader\x12).loop.relayerset.NewContractReaderRequest\x1a*.loop.relayerset.NewContractReaderResponse\"\x00\x12l\n" +
 	"\x11NewContractWriter\x12).loop.relayerset.NewContractWriterRequest\x1a*.loop.relayerset.NewContractWriterResponse\"\x00\x12D\n" +
 	"\fStartRelayer\x12\x1a.loop.relayerset.RelayerId\x1a\x16.google.protobuf.Empty\"\x00\x12D\n" +
@@ -1113,28 +1113,28 @@ func file_relayerset_proto_rawDescGZIP() []byte {
 
 var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_relayerset_proto_goTypes = []any{
-	(*RelayerId)(nil),                    // 0: loop.relayerset.RelayerId
-	(*GetRelayerRequest)(nil),            // 1: loop.relayerset.GetRelayerRequest
-	(*GetRelayerResponse)(nil),           // 2: loop.relayerset.GetRelayerResponse
-	(*ListAllRelayersRequest)(nil),       // 3: loop.relayerset.ListAllRelayersRequest
-	(*ListAllRelayersResponse)(nil),      // 4: loop.relayerset.ListAllRelayersResponse
-	(*RelayArgs)(nil),                    // 5: loop.relayerset.RelayArgs
-	(*MercuryCredentials)(nil),           // 6: loop.relayerset.MercuryCredentials
-	(*PluginArgs)(nil),                   // 7: loop.relayerset.PluginArgs
-	(*NewPluginProviderRequest)(nil),     // 8: loop.relayerset.NewPluginProviderRequest
-	(*NewPluginProviderResponse)(nil),    // 9: loop.relayerset.NewPluginProviderResponse
-	(*NewAptosChainServiceRequest)(nil),  // 10: loop.relayerset.NewAptosChainServiceRequest
-	(*NewAptosChainServiceResponse)(nil), // 11: loop.relayerset.NewAptosChainServiceResponse
-	(*NewContractReaderRequest)(nil),     // 12: loop.relayerset.NewContractReaderRequest
-	(*NewContractReaderResponse)(nil),    // 13: loop.relayerset.NewContractReaderResponse
-	(*NewContractWriterRequest)(nil),     // 14: loop.relayerset.NewContractWriterRequest
-	(*NewContractWriterResponse)(nil),    // 15: loop.relayerset.NewContractWriterResponse
-	(*LatestHeadRequest)(nil),            // 16: loop.relayerset.LatestHeadRequest
-	(*LatestHeadResponse)(nil),           // 17: loop.relayerset.LatestHeadResponse
-	(*RelayerHealthReportResponse)(nil),  // 18: loop.relayerset.RelayerHealthReportResponse
-	(*RelayerNameResponse)(nil),          // 19: loop.relayerset.RelayerNameResponse
-	nil,                                  // 20: loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	(*emptypb.Empty)(nil),                // 21: google.protobuf.Empty
+	(*RelayerId)(nil),                   // 0: loop.relayerset.RelayerId
+	(*GetRelayerRequest)(nil),           // 1: loop.relayerset.GetRelayerRequest
+	(*GetRelayerResponse)(nil),          // 2: loop.relayerset.GetRelayerResponse
+	(*ListAllRelayersRequest)(nil),      // 3: loop.relayerset.ListAllRelayersRequest
+	(*ListAllRelayersResponse)(nil),     // 4: loop.relayerset.ListAllRelayersResponse
+	(*RelayArgs)(nil),                   // 5: loop.relayerset.RelayArgs
+	(*MercuryCredentials)(nil),          // 6: loop.relayerset.MercuryCredentials
+	(*PluginArgs)(nil),                  // 7: loop.relayerset.PluginArgs
+	(*NewPluginProviderRequest)(nil),    // 8: loop.relayerset.NewPluginProviderRequest
+	(*NewPluginProviderResponse)(nil),   // 9: loop.relayerset.NewPluginProviderResponse
+	(*NewEVMChainServiceRequest)(nil),   // 10: loop.relayerset.NewEVMChainServiceRequest
+	(*NewEVMChainServiceResponse)(nil),  // 11: loop.relayerset.NewEVMChainServiceResponse
+	(*NewContractReaderRequest)(nil),    // 12: loop.relayerset.NewContractReaderRequest
+	(*NewContractReaderResponse)(nil),   // 13: loop.relayerset.NewContractReaderResponse
+	(*NewContractWriterRequest)(nil),    // 14: loop.relayerset.NewContractWriterRequest
+	(*NewContractWriterResponse)(nil),   // 15: loop.relayerset.NewContractWriterResponse
+	(*LatestHeadRequest)(nil),           // 16: loop.relayerset.LatestHeadRequest
+	(*LatestHeadResponse)(nil),          // 17: loop.relayerset.LatestHeadResponse
+	(*RelayerHealthReportResponse)(nil), // 18: loop.relayerset.RelayerHealthReportResponse
+	(*RelayerNameResponse)(nil),         // 19: loop.relayerset.RelayerNameResponse
+	nil,                                 // 20: loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	(*emptypb.Empty)(nil),               // 21: google.protobuf.Empty
 }
 var file_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
@@ -1145,7 +1145,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	0,  // 5: loop.relayerset.NewPluginProviderRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	5,  // 6: loop.relayerset.NewPluginProviderRequest.relayArgs:type_name -> loop.relayerset.RelayArgs
 	7,  // 7: loop.relayerset.NewPluginProviderRequest.pluginArgs:type_name -> loop.relayerset.PluginArgs
-	0,  // 8: loop.relayerset.NewAptosChainServiceRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 8: loop.relayerset.NewEVMChainServiceRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 9: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 10: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 11: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
@@ -1153,7 +1153,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	1,  // 13: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
 	3,  // 14: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
 	8,  // 15: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
-	10, // 16: loop.relayerset.RelayerSet.NewAptosChainService:input_type -> loop.relayerset.NewAptosChainServiceRequest
+	10, // 16: loop.relayerset.RelayerSet.NewEVMChainService:input_type -> loop.relayerset.NewEVMChainServiceRequest
 	12, // 17: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
 	14, // 18: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
 	0,  // 19: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
@@ -1165,7 +1165,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	2,  // 25: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
 	4,  // 26: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
 	9,  // 27: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
-	11, // 28: loop.relayerset.RelayerSet.NewAptosChainService:output_type -> loop.relayerset.NewAptosChainServiceResponse
+	11, // 28: loop.relayerset.RelayerSet.NewEVMChainService:output_type -> loop.relayerset.NewEVMChainServiceResponse
 	13, // 29: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
 	15, // 30: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
 	21, // 31: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty

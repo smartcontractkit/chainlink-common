@@ -110,7 +110,7 @@ func (r *relayer) Replay(ctx context.Context, fromBlock string, args map[string]
 	return errors.New("unimplemented")
 }
 
-func (r *relayer) NewAptosChainService(_ context.Context) (types.AptosChainService, error) {
+func (r *relayer) NewEVMChainService(_ context.Context) (types.EVMChainService, error) {
 	return nil, errors.New("unimplemented")
 }
 

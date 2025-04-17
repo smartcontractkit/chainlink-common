@@ -80,7 +80,7 @@ type NodeStatus struct {
 	State   string
 }
 
-type AptosChainService interface {
+type EVMChainService interface {
 	services.Service
 	ReadContract(ctx context.Context, method string, encodedParams []byte) ([]byte, error)
 }
@@ -106,7 +106,7 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
-	NewAptosChainService(ctx context.Context) (AptosChainService, error)
+	NewEVMChainService(ctx context.Context) (EVMChainService, error)
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

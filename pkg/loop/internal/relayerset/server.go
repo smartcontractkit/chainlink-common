@@ -140,48 +140,48 @@ func (s *Server) NewPluginProvider(ctx context.Context, req *relayerset.NewPlugi
 	return &relayerset.NewPluginProviderResponse{PluginProviderId: providerID}, nil
 }
 
-// RelayerSet is supposed to serve relayers, which then hold AptosChainService.
-// Serving NewAptosChainService from RelayerSet is a way to save us from instantiating an extra server for the Relayer.
+// RelayerSet is supposed to serve relayers, which then hold EVMChainService.
+// Serving NewEVMChainService from RelayerSet is a way to save us from instantiating an extra server for the Relayer.
 //
 //		Without this approach, the calls we would make normally are
 //	  - RelayerSet.Get -> Relayer
-//	  - Relayer.NewAptosChainService -> AptosChainService
+//	  - Relayer.NewEVMChainService -> EVMChainService
 //
 // We could translate this to the GRPC world by having each call to RelayerSet.Get wrap the returned relayer in a server
 // and register that to the GRPC server. However this is actually pretty inefficient since a relayer object on its own
-// is not useful. Users will always want to use the relayer to instantiate AptosChainService. So we can avoid
+// is not useful. Users will always want to use the relayer to instantiate EVMChainService. So we can avoid
 // the intermediate server for the relayer by just storing a reference to the relayerSet client and the relayer we want
 // to fetch. I.e. the calls described above instead would become:
 //   - RelayerSet.Get -> (RelayerSetClient, RelayerID). Effectively this call just acts as check that Relayer exists
 //
-// RelayerClient.NewAptosChainService -> This is a call to RelayerSet.NewAptosChainService with (relayerID);
-// The implementation will then fetch the relayer and call NewAptosChainService on it
-func (s *Server) NewAptosChainService(ctx context.Context, req *relayerset.NewAptosChainServiceRequest) (*relayerset.NewAptosChainServiceResponse, error) {
+// RelayerClient.NewEVMChainService -> This is a call to RelayerSet.NewEVMChainService with (relayerID);
+// The implementation will then fetch the relayer and call NewEVMChainService on it
+func (s *Server) NewEVMChainService(ctx context.Context, req *relayerset.NewEVMChainServiceRequest) (*relayerset.NewEVMChainServiceResponse, error) {
 	relayer, err := s.getRelayer(ctx, req.RelayerId)
 	if err != nil {
 		return nil, err
 	}
 
-	cc, err := relayer.NewAptosChainService(ctx)
+	cc, err := relayer.NewEVMChainService(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error creating aptos chain service: %v", err)
+		return nil, status.Errorf(codes.Internal, "error creating evm chain service: %v", err)
 	}
 
-	// Start AptosChainService
+	// Start EVMChainService
 	if err = cc.Start(ctx); err != nil {
 		return nil, err
 	}
 
-	// Start gRPC service for the AptosChainService above
-	const name = "AptosChainServicesInRelayerSet"
+	// Start gRPC service for the EVMChainService above
+	const name = "EVMChainServicesInRelayerSet"
 	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
-		chaincapabilities.RegisterAptosChainService(s, cc)
+		chaincapabilities.RegisterEVMChainService(s, cc)
 	}, net.Resource{Closer: cc, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &relayerset.NewAptosChainServiceResponse{AptosChainServiceID: id}, nil
+	return &relayerset.NewEVMChainServiceResponse{EVMChainServiceID: id}, nil
 }
 
 // RelayerSet is supposed to serve relayers, which then hold a ContractReader and ContractWriter. Serving NewContractReader

@@ -46,7 +46,7 @@ type OCR3CapabilityProvider interface {
 type Relayer interface {
 	types.ChainService
 
-	NewAptosChainService(ctx context.Context) (types.AptosChainService, error)
+	NewEVMChainService(ctx context.Context) (types.EVMChainService, error)
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

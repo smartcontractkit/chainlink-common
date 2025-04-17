@@ -37,17 +37,17 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	return relayer.WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
 }
 
-func (r *relayerClient) NewAptosChainService(_ context.Context) (types.AptosChainService, error) {
-	cc := r.relayerSetClient.NewClientConn("AptosChainService", func(ctx context.Context) (uint32, net.Resources, error) {
-		aptosChainServiceID, err := r.relayerSetClient.NewAptosChainService(ctx, r.relayerID)
+func (r *relayerClient) NewEVMChainService(_ context.Context) (types.EVMChainService, error) {
+	cc := r.relayerSetClient.NewClientConn("EVMChainService", func(ctx context.Context) (uint32, net.Resources, error) {
+		EVMChainServiceID, err := r.relayerSetClient.NewEVMChainService(ctx, r.relayerID)
 		if err != nil {
-			return 0, nil, fmt.Errorf("error getting NewAptosChainService from relayerSetServer: %w", err)
+			return 0, nil, fmt.Errorf("error getting NewEVMChainService from relayerSetServer: %w", err)
 		}
 
-		return aptosChainServiceID, nil, nil
+		return EVMChainServiceID, nil, nil
 	})
 
-	return chaincapabilities.NewClient(r.relayerSetClient.BrokerExt.WithName("AptosChainServiceInRelayerSet"), cc), nil
+	return chaincapabilities.NewClient(r.relayerSetClient.BrokerExt.WithName("EVMChainServiceInRelayerSet"), cc), nil
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

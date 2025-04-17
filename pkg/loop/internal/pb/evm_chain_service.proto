@@ -17,8 +17,8 @@ message ReadContractReply {
   bytes result = 1;
 }
 
-// Aptos chain service
-service AptosChainService {
+// EVM chain service
+service EVMChainService {
   rpc ReadContract (ReadContractRequest) returns (ReadContractReply);
 }
 

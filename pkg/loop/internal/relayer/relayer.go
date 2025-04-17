@@ -199,15 +199,15 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *relayerClient) NewAptosChainService(_ context.Context) (types.AptosChainService, error) {
-	cc := r.NewClientConn("AptosChainService", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewAptosChainService(ctx, &emptypb.Empty{})
+func (r *relayerClient) NewEVMChainService(_ context.Context) (types.EVMChainService, error) {
+	cc := r.NewClientConn("EVMChainService", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewEVMChainService(ctx, &emptypb.Empty{})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.AptosChainServiceID, nil, nil
+		return reply.EVMChainServiceID, nil, nil
 	})
-	return chaincapabilities.NewClient(r.WithName("AptosChainServiceClient"), cc), nil
+	return chaincapabilities.NewClient(r.WithName("EVMChainServiceClient"), cc), nil
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -405,8 +405,8 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
-func (r *relayerServer) NewAptosChainService(ctx context.Context, _ *emptypb.Empty) (*pb.NewAptosChainServiceReply, error) {
-	cc, err := r.impl.NewAptosChainService(ctx)
+func (r *relayerServer) NewEVMChainService(ctx context.Context, _ *emptypb.Empty) (*pb.NewEVMChainServiceReply, error) {
+	cc, err := r.impl.NewEVMChainService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -415,15 +415,15 @@ func (r *relayerServer) NewAptosChainService(ctx context.Context, _ *emptypb.Emp
 		return nil, err
 	}
 
-	const name = "AptosChainService"
+	const name = "EVMChainService"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chaincapabilities.RegisterAptosChainService(s, cc)
+		chaincapabilities.RegisterEVMChainService(s, cc)
 	}, net.Resource{Closer: cc, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.NewAptosChainServiceReply{AptosChainServiceID: id}, nil
+	return &pb.NewEVMChainServiceReply{EVMChainServiceID: id}, nil
 }
 
 func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {

@@ -12,21 +12,21 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ types.AptosChainService = (*Client)(nil)
+var _ types.EVMChainService = (*Client)(nil)
 
 type ClientOpt func(*Client)
 
 type Client struct {
-	types.UnimplementedAptosChainService
+	types.UnimplementedEVMChainService
 
 	serviceClient *goplugin.ServiceClient
-	grpc          pb.AptosChainServiceClient
+	grpc          pb.EVMChainServiceClient
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		serviceClient: goplugin.NewServiceClient(b, cc),
-		grpc:          pb.NewAptosChainServiceClient(cc),
+		grpc:          pb.NewEVMChainServiceClient(cc),
 	}
 
 	for _, opt := range opts {
@@ -56,16 +56,16 @@ func (c *Client) Name() string {
 	return c.serviceClient.Name()
 }
 
-var _ pb.AptosChainServiceServer = (*Server)(nil)
+var _ pb.EVMChainServiceServer = (*Server)(nil)
 
 type ServerOpt func(*Server)
 
 type Server struct {
-	pb.UnimplementedAptosChainServiceServer
-	impl types.AptosChainService
+	pb.UnimplementedEVMChainServiceServer
+	impl types.EVMChainService
 }
 
-func NewServer(impl types.AptosChainService, opts ...ServerOpt) pb.AptosChainServiceServer {
+func NewServer(impl types.EVMChainService, opts ...ServerOpt) pb.EVMChainServiceServer {
 	server := &Server{
 		impl: impl,
 	}
@@ -77,10 +77,10 @@ func NewServer(impl types.AptosChainService, opts ...ServerOpt) pb.AptosChainSer
 	return server
 }
 
-func RegisterAptosChainService(s *grpc.Server, AptosChainService types.AptosChainService) {
-	service := goplugin.ServiceServer{Srv: AptosChainService}
+func RegisterEVMChainService(s *grpc.Server, EVMChainService types.EVMChainService) {
+	service := goplugin.ServiceServer{Srv: EVMChainService}
 	pb.RegisterServiceServer(s, &service)
-	pb.RegisterAptosChainServiceServer(s, NewServer(AptosChainService))
+	pb.RegisterEVMChainServiceServer(s, NewServer(EVMChainService))
 }
 
 // ReadContract calls the EVM method, passing encodedParams directly.

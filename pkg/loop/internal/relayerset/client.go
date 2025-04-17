@@ -140,15 +140,15 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 	return resp.PluginProviderId, nil
 }
 
-func (k *Client) NewAptosChainService(ctx context.Context, relayID types.RelayID) (uint32, error) {
-	req := &relayerset.NewAptosChainServiceRequest{
+func (k *Client) NewEVMChainService(ctx context.Context, relayID types.RelayID) (uint32, error) {
+	req := &relayerset.NewEVMChainServiceRequest{
 		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
 	}
-	resp, err := k.relayerSetClient.NewAptosChainService(ctx, req)
+	resp, err := k.relayerSetClient.NewEVMChainService(ctx, req)
 	if err != nil {
 		return 0, fmt.Errorf("error getting new aptos chain service: %w", err)
 	}
-	return resp.AptosChainServiceID, nil
+	return resp.EVMChainServiceID, nil
 }
 
 func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (uint32, error) {

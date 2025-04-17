@@ -51,6 +51,7 @@ func TestEnvConfig_parse(t *testing.T) {
 		expectedTelemetryEmitterExportInterval     time.Duration
 		expectedTelemetryEmitterExportMaxBatchSize int
 		expectedTelemetryEmitterMaxQueueSize       int
+		expectedChipIngressEndpoint                string
 	}{
 		{
 			name: "All variables set correctly",
@@ -84,6 +85,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
+				envChipIngressEndpoint:                "http://chip-ingress.example.com",
 			},
 			expectError: false,
 
@@ -114,6 +116,7 @@ func TestEnvConfig_parse(t *testing.T) {
 			expectedTelemetryEmitterExportInterval:     2 * time.Second,
 			expectedTelemetryEmitterExportMaxBatchSize: 100,
 			expectedTelemetryEmitterMaxQueueSize:       1000,
+			expectedChipIngressEndpoint:                "http://chip-ingress.example.com",
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -232,6 +235,9 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.TelemetryEmitterMaxQueueSize != tc.expectedTelemetryEmitterMaxQueueSize {
 						t.Errorf("Expected telemetryEmitterMaxQueueSize %d, got %d", tc.expectedTelemetryEmitterMaxQueueSize, config.TelemetryEmitterMaxQueueSize)
 					}
+					if config.ChipIngressEndpoint != tc.expectedChipIngressEndpoint {
+						t.Errorf("Expected ChipIngressEndpoint %s, got %s", tc.expectedChipIngressEndpoint, config.ChipIngressEndpoint)
+					}
 				}
 			}
 		})
@@ -286,6 +292,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TelemetryEmitterExportInterval:     2 * time.Second,
 		TelemetryEmitterExportMaxBatchSize: 100,
 		TelemetryEmitterMaxQueueSize:       1000,
+
+		ChipIngressEndpoint: "http://chip-ingress.example.com",
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -317,6 +325,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
+
+	// Assert ChipIngress environment variables
+	assert.Equal(t, "http://chip-ingress.example.com", got[envChipIngressEndpoint])
 }
 
 func TestGetMap(t *testing.T) {

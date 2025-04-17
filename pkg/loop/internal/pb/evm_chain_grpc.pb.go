@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EVMChain_ReadContract_FullMethodName = "/loop.EVMChain/ReadContract"
+	EVMChain_ReadContract_FullMethodName      = "/loop.EVMChain/ReadContract"
+	EVMChain_GetTransactionFee_FullMethodName = "/loop.EVMChain/GetTransactionFee"
 )
 
 // EVMChainClient is the client API for EVMChain service.
@@ -29,6 +30,7 @@ const (
 // EVM chain
 type EVMChainClient interface {
 	ReadContract(ctx context.Context, in *ReadContractRequest, opts ...grpc.CallOption) (*ReadContractReply, error)
+	GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error)
 }
 
 type eVMChainClient struct {
@@ -49,6 +51,16 @@ func (c *eVMChainClient) ReadContract(ctx context.Context, in *ReadContractReque
 	return out, nil
 }
 
+func (c *eVMChainClient) GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransactionFeeReply)
+	err := c.cc.Invoke(ctx, EVMChain_GetTransactionFee_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EVMChainServer is the server API for EVMChain service.
 // All implementations must embed UnimplementedEVMChainServer
 // for forward compatibility.
@@ -56,6 +68,7 @@ func (c *eVMChainClient) ReadContract(ctx context.Context, in *ReadContractReque
 // EVM chain
 type EVMChainServer interface {
 	ReadContract(context.Context, *ReadContractRequest) (*ReadContractReply, error)
+	GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error)
 	mustEmbedUnimplementedEVMChainServer()
 }
 
@@ -68,6 +81,9 @@ type UnimplementedEVMChainServer struct{}
 
 func (UnimplementedEVMChainServer) ReadContract(context.Context, *ReadContractRequest) (*ReadContractReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReadContract not implemented")
+}
+func (UnimplementedEVMChainServer) GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
 }
 func (UnimplementedEVMChainServer) mustEmbedUnimplementedEVMChainServer() {}
 func (UnimplementedEVMChainServer) testEmbeddedByValue()                  {}
@@ -108,6 +124,24 @@ func _EVMChain_ReadContract_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVMChain_GetTransactionFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMChainServer).GetTransactionFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVMChain_GetTransactionFee_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMChainServer).GetTransactionFee(ctx, req.(*GetTransactionFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EVMChain_ServiceDesc is the grpc.ServiceDesc for EVMChain service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -118,6 +152,10 @@ var EVMChain_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReadContract",
 			Handler:    _EVMChain_ReadContract_Handler,
+		},
+		{
+			MethodName: "GetTransactionFee",
+			Handler:    _EVMChain_GetTransactionFee_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

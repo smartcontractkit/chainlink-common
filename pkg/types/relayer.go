@@ -83,6 +83,9 @@ type NodeStatus struct {
 type EVMChain interface {
 	services.Service
 	ReadContract(ctx context.Context, method string, encodedParams []byte) ([]byte, error)
+
+	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
+	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
 }
 
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.

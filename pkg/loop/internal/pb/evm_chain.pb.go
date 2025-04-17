@@ -120,18 +120,122 @@ func (x *ReadContractReply) GetResult() []byte {
 	return nil
 }
 
+// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
+type GetTransactionFeeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"` // idempotency key used when transaction was submitted
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTransactionFeeRequest) Reset() {
+	*x = GetTransactionFeeRequest{}
+	mi := &file_evm_chain_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionFeeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionFeeRequest) ProtoMessage() {}
+
+func (x *GetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_chain_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionFeeRequest.ProtoReflect.Descriptor instead.
+func (*GetTransactionFeeRequest) Descriptor() ([]byte, []int) {
+	return file_evm_chain_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetTransactionFeeRequest) GetTransactionId() string {
+	if x != nil {
+		return x.TransactionId
+	}
+	return ""
+}
+
+// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
+type GetTransactionFeeReply struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	TransactionStatus TransactionStatus      `protobuf:"varint,1,opt,name=transaction_status,json=transactionStatus,proto3,enum=loop.TransactionStatus" json:"transaction_status,omitempty"`
+	TransationFee     *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"` // transaction fee is the cost of transaction execution in native currency
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetTransactionFeeReply) Reset() {
+	*x = GetTransactionFeeReply{}
+	mi := &file_evm_chain_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTransactionFeeReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTransactionFeeReply) ProtoMessage() {}
+
+func (x *GetTransactionFeeReply) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_chain_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTransactionFeeReply.ProtoReflect.Descriptor instead.
+func (*GetTransactionFeeReply) Descriptor() ([]byte, []int) {
+	return file_evm_chain_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetTransactionFeeReply) GetTransactionStatus() TransactionStatus {
+	if x != nil {
+		return x.TransactionStatus
+	}
+	return TransactionStatus_TRANSACTION_STATUS_UNKNOWN
+}
+
+func (x *GetTransactionFeeReply) GetTransationFee() *BigInt {
+	if x != nil {
+		return x.TransationFee
+	}
+	return nil
+}
+
 var File_evm_chain_proto protoreflect.FileDescriptor
 
 const file_evm_chain_proto_rawDesc = "" +
 	"\n" +
-	"\x0fevm_chain.proto\x12\x04loop\"T\n" +
+	"\x0fevm_chain.proto\x12\x04loop\x1a\x15contract_writer.proto\x1a\rrelayer.proto\"T\n" +
 	"\x13ReadContractRequest\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12%\n" +
 	"\x0eencoded_params\x18\x02 \x01(\fR\rencodedParams\"+\n" +
 	"\x11ReadContractReply\x12\x16\n" +
-	"\x06result\x18\x01 \x01(\fR\x06result2N\n" +
+	"\x06result\x18\x01 \x01(\fR\x06result\"A\n" +
+	"\x18GetTransactionFeeRequest\x12%\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"\x95\x01\n" +
+	"\x16GetTransactionFeeReply\x12F\n" +
+	"\x12transaction_status\x18\x01 \x01(\x0e2\x17.loop.TransactionStatusR\x11transactionStatus\x123\n" +
+	"\x0etransation_fee\x18\x02 \x01(\v2\f.loop.BigIntR\rtransationFee2\xa3\x01\n" +
 	"\bEVMChain\x12B\n" +
-	"\fReadContract\x12\x19.loop.ReadContractRequest\x1a\x17.loop.ReadContractReplyBCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
+	"\fReadContract\x12\x19.loop.ReadContractRequest\x1a\x17.loop.ReadContractReply\x12S\n" +
+	"\x11GetTransactionFee\x12\x1e.loop.GetTransactionFeeRequest\x1a\x1c.loop.GetTransactionFeeReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
 	file_evm_chain_proto_rawDescOnce sync.Once
@@ -145,19 +249,27 @@ func file_evm_chain_proto_rawDescGZIP() []byte {
 	return file_evm_chain_proto_rawDescData
 }
 
-var file_evm_chain_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_evm_chain_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_evm_chain_proto_goTypes = []any{
-	(*ReadContractRequest)(nil), // 0: loop.ReadContractRequest
-	(*ReadContractReply)(nil),   // 1: loop.ReadContractReply
+	(*ReadContractRequest)(nil),      // 0: loop.ReadContractRequest
+	(*ReadContractReply)(nil),        // 1: loop.ReadContractReply
+	(*GetTransactionFeeRequest)(nil), // 2: loop.GetTransactionFeeRequest
+	(*GetTransactionFeeReply)(nil),   // 3: loop.GetTransactionFeeReply
+	(TransactionStatus)(0),           // 4: loop.TransactionStatus
+	(*BigInt)(nil),                   // 5: loop.BigInt
 }
 var file_evm_chain_proto_depIdxs = []int32{
-	0, // 0: loop.EVMChain.ReadContract:input_type -> loop.ReadContractRequest
-	1, // 1: loop.EVMChain.ReadContract:output_type -> loop.ReadContractReply
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: loop.GetTransactionFeeReply.transaction_status:type_name -> loop.TransactionStatus
+	5, // 1: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
+	0, // 2: loop.EVMChain.ReadContract:input_type -> loop.ReadContractRequest
+	2, // 3: loop.EVMChain.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
+	1, // 4: loop.EVMChain.ReadContract:output_type -> loop.ReadContractReply
+	3, // 5: loop.EVMChain.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_evm_chain_proto_init() }
@@ -165,13 +277,15 @@ func file_evm_chain_proto_init() {
 	if File_evm_chain_proto != nil {
 		return
 	}
+	file_contract_writer_proto_init()
+	file_relayer_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_evm_chain_proto_rawDesc), len(file_evm_chain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -98,6 +98,18 @@ func (c *Client) ReadContract(ctx context.Context, method string, encodedParams 
 	return resp.Result, nil
 }
 
+func (c *Client) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	reply, err := c.grpc.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &types.TransactionFee{
+		TransactionFee:    reply.TransationFee.Int(),
+		TransactionStatus: types.TransactionStatus(reply.TransactionStatus),
+	}, nil
+}
+
 // ReadContract handles the EVM RPC call by passing the raw bytes directly.
 func (s *Server) ReadContract(ctx context.Context, req *pb.ReadContractRequest) (*pb.ReadContractReply, error) {
 	result, err := s.impl.ReadContract(ctx, req.Method, req.EncodedParams)
@@ -105,4 +117,16 @@ func (s *Server) ReadContract(ctx context.Context, req *pb.ReadContractRequest) 
 		return nil, fmt.Errorf("ReadContract: %w", err)
 	}
 	return &pb.ReadContractReply{Result: result}, nil
+}
+
+func (s *Server) GetTransactionFee(ctx context.Context, req *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
+	reply, err := s.impl.GetTransactionFee(ctx, req.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetTransactionFeeReply{
+		TransationFee:     pb.NewBigIntFromInt(reply.TransactionFee),
+		TransactionStatus: pb.TransactionStatus(reply.TransactionStatus),
+	}, nil
 }

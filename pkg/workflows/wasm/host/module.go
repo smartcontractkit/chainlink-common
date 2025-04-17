@@ -28,6 +28,8 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
+const v2ImportPrefix = "version_v2"
+
 type RequestData struct {
 	fetchRequestsCounter int
 	response             *wasmpb.Response
@@ -120,6 +122,8 @@ type Module struct {
 
 	wg     sync.WaitGroup
 	stopCh chan struct{}
+
+	isLegacyDAG bool
 }
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
@@ -238,6 +242,15 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
 
+	isLegacyDAG := true
+	for _, modImport := range mod.Imports() {
+		name := modImport.Name()
+		if modImport.Module() == "env" && name != nil && strings.HasPrefix(*name, v2ImportPrefix) {
+			isLegacyDAG = false
+			break
+		}
+	}
+
 	requestStore := &store{
 		m: map[string]*RequestData{},
 	}
@@ -289,6 +302,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		cfg: modCfg,
 
 		stopCh: make(chan struct{}),
+
+		isLegacyDAG: isLegacyDAG,
 	}
 
 	return m, nil
@@ -319,6 +334,10 @@ func (m *Module) Close() {
 	m.engine.Close()
 	m.module.Close()
 	m.wconfig.Close()
+}
+
+func (m *Module) IsLegacyDAG() bool {
+	return m.isLegacyDAG
 }
 
 func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {

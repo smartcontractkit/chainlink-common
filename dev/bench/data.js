@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744837320011,
+  "lastUpdate": 1744897750513,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11760,6 +11760,48 @@ window.BENCHMARK_DATA = {
             "value": 28454,
             "unit": "ns/op",
             "extra": "42436 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "96362174+chainchad@users.noreply.github.com",
+            "name": "chainchad",
+            "username": "chainchad"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96abde478d080b087758dde98973f4f3928f8f71",
+          "message": "Migrate over loopinstall for installing loop plugins (#1125)",
+          "timestamp": "2025-04-17T09:46:54-04:00",
+          "tree_id": "9b0c1015c8283b07b031f223e8e031fe803e074d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/96abde478d080b087758dde98973f4f3928f8f71"
+        },
+        "date": 1744897749722,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 371.6,
+            "unit": "ns/op",
+            "extra": "3305356 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.5,
+            "unit": "ns/op",
+            "extra": "2933192 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28167,
+            "unit": "ns/op",
+            "extra": "41802 times\n4 procs"
           }
         ]
       }

@@ -6,7 +6,7 @@
 
 * @smartcontractkit/foundations
 
-/pkg/beholder/ @smartcontractkit/realtime
+/pkg/beholder/ @smartcontractkit/data-tooling
 /pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations
 /pkg/loop/cmd/loopinstall @smartcontractkit/devex-cicd
@@ -14,4 +14,3 @@
 /pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone
-/pkg/beholder/ @smartcontractkit/data-tooling

@@ -28,3 +28,18 @@ func TestBuildAuthHeaders(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, expectedHeaders, headers)
 }
+
+func TestStaticAuthHeaderProvider(t *testing.T) {
+	// Create test headers
+	testHeaders := map[string]string{
+		"header1": "value1",
+		"header2": "value2",
+	}
+
+	// Create new header provider
+	provider := beholder.NewStaticAuthHeaderProvider(testHeaders)
+
+	// Get headers and verify they match
+	headers := provider.GetHeaders()
+	assert.Equal(t, testHeaders, headers)
+}

@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
@@ -18,6 +19,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
+
+// HeaderProvider defines an interface for providing headers
+type HeaderProvider interface {
+	GetHeaders() map[string]string
+}
 
 type ChipIngressClient interface {
 	Ping(ctx context.Context) (string, error)
@@ -41,6 +47,20 @@ type Opt func(*chipIngressClientConfig)
 type chipIngressClientConfig struct {
 	log                  *zap.Logger
 	transportCredentials credentials.TransportCredentials
+	headerProvider       HeaderProvider
+}
+
+// newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
+func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		// Add dynamic headers from provider if available
+		if provider != nil {
+			for k, v := range provider.GetHeaders() {
+				ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+			}
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
@@ -58,6 +78,11 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
+	}
+
+	// Add headers as a unary interceptor
+	if cfg.headerProvider != nil {
+		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
 	}
 
 	conn, err := grpc.NewClient(
@@ -153,6 +178,7 @@ func defaultConfig() chipIngressClientConfig {
 	return chipIngressClientConfig{
 		log:                  zap.NewNop(),
 		transportCredentials: insecure.NewCredentials(),
+		headerProvider:       nil,
 	}
 }
 
@@ -167,6 +193,13 @@ func WithLogger(logger *zap.Logger) Opt {
 func WithTransportCredentials(credentials credentials.TransportCredentials) Opt {
 	return func(c *chipIngressClientConfig) {
 		c.transportCredentials = credentials
+	}
+}
+
+// WithHeaderProvider sets a dynamic header provider for requests
+func WithHeaderProvider(provider HeaderProvider) Opt {
+	return func(c *chipIngressClientConfig) {
+		c.headerProvider = provider
 	}
 }
 

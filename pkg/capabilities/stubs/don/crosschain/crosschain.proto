@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package don.crosschain.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/crosschain";
+
+
+enum TxStatus {
+  SUCCESS = 0;
+  FAILURE = 1;
+}
+
+message TxError {
+  string message = 1;
+  // Add more fields like code or metadata if needed
+}
+
+message TxResult {
+  TxStatus status = 1;
+  TxError error = 2;
+}
+
+message ByteArray {
+  bytes value = 1;
+}
+
+message BlockRange {
+  repeated uint64 blocks = 1;
+}

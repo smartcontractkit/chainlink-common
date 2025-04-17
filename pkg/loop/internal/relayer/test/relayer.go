@@ -183,7 +183,7 @@ func (s staticRelayer) HealthReport() map[string]error {
 	return hp
 }
 
-func (s staticRelayer) NewEVMChainService(_ context.Context) (types.EVMChainService, error) {
+func (s staticRelayer) NewEVMChain(_ context.Context) (types.EVMChain, error) {
 	return nil, errors.New("not implemented")
 }
 

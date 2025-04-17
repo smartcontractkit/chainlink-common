@@ -80,7 +80,7 @@ type NodeStatus struct {
 	State   string
 }
 
-type EVMChainService interface {
+type EVMChain interface {
 	services.Service
 	ReadContract(ctx context.Context, method string, encodedParams []byte) ([]byte, error)
 }
@@ -106,7 +106,7 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
-	NewEVMChainService(ctx context.Context) (EVMChainService, error)
+	NewEVMChain(ctx context.Context) (EVMChain, error)
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

@@ -18,7 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chaincapabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -199,15 +199,15 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
-func (r *relayerClient) NewEVMChainService(_ context.Context) (types.EVMChainService, error) {
-	cc := r.NewClientConn("EVMChainService", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewEVMChainService(ctx, &emptypb.Empty{})
+func (r *relayerClient) NewEVMChain(_ context.Context) (types.EVMChain, error) {
+	cc := r.NewClientConn("EVMChain", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewEVMChain(ctx, &emptypb.Empty{})
 		if err != nil {
 			return 0, nil, err
 		}
-		return reply.EVMChainServiceID, nil, nil
+		return reply.EVMChainID, nil, nil
 	})
-	return chaincapabilities.NewClient(r.WithName("EVMChainServiceClient"), cc), nil
+	return chains.NewClient(r.WithName("EVMChainClient"), cc), nil
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -405,8 +405,8 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
 }
 
-func (r *relayerServer) NewEVMChainService(ctx context.Context, _ *emptypb.Empty) (*pb.NewEVMChainServiceReply, error) {
-	cc, err := r.impl.NewEVMChainService(ctx)
+func (r *relayerServer) NewEVMChain(ctx context.Context, _ *emptypb.Empty) (*pb.NewEVMChainReply, error) {
+	cc, err := r.impl.NewEVMChain(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -415,15 +415,15 @@ func (r *relayerServer) NewEVMChainService(ctx context.Context, _ *emptypb.Empty
 		return nil, err
 	}
 
-	const name = "EVMChainService"
+	const name = "EVMChain"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chaincapabilities.RegisterEVMChainService(s, cc)
+		chains.RegisterEVMChain(s, cc)
 	}, net.Resource{Closer: cc, Name: name})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.NewEVMChainServiceReply{EVMChainServiceID: id}, nil
+	return &pb.NewEVMChainReply{EVMChainID: id}, nil
 }
 
 func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {

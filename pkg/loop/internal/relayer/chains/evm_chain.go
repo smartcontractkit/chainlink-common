@@ -1,4 +1,4 @@
-package chaincapabilities
+package chains
 
 import (
 	"context"
@@ -12,21 +12,21 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
-var _ types.EVMChainService = (*Client)(nil)
+var _ types.EVMChain = (*Client)(nil)
 
 type ClientOpt func(*Client)
 
 type Client struct {
-	types.UnimplementedEVMChainService
+	types.UnimplementedEVMChain
 
 	serviceClient *goplugin.ServiceClient
-	grpc          pb.EVMChainServiceClient
+	grpc          pb.EVMChainClient
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		serviceClient: goplugin.NewServiceClient(b, cc),
-		grpc:          pb.NewEVMChainServiceClient(cc),
+		grpc:          pb.NewEVMChainClient(cc),
 	}
 
 	for _, opt := range opts {
@@ -56,16 +56,16 @@ func (c *Client) Name() string {
 	return c.serviceClient.Name()
 }
 
-var _ pb.EVMChainServiceServer = (*Server)(nil)
+var _ pb.EVMChainServer = (*Server)(nil)
 
 type ServerOpt func(*Server)
 
 type Server struct {
-	pb.UnimplementedEVMChainServiceServer
-	impl types.EVMChainService
+	pb.UnimplementedEVMChainServer
+	impl types.EVMChain
 }
 
-func NewServer(impl types.EVMChainService, opts ...ServerOpt) pb.EVMChainServiceServer {
+func NewServer(impl types.EVMChain, opts ...ServerOpt) pb.EVMChainServer {
 	server := &Server{
 		impl: impl,
 	}
@@ -77,10 +77,10 @@ func NewServer(impl types.EVMChainService, opts ...ServerOpt) pb.EVMChainService
 	return server
 }
 
-func RegisterEVMChainService(s *grpc.Server, EVMChainService types.EVMChainService) {
-	service := goplugin.ServiceServer{Srv: EVMChainService}
+func RegisterEVMChain(s *grpc.Server, EVMChain types.EVMChain) {
+	service := goplugin.ServiceServer{Srv: EVMChain}
 	pb.RegisterServiceServer(s, &service)
-	pb.RegisterEVMChainServiceServer(s, NewServer(EVMChainService))
+	pb.RegisterEVMChainServer(s, NewServer(EVMChain))
 }
 
 // ReadContract calls the EVM method, passing encodedParams directly.

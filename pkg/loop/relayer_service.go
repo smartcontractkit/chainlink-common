@@ -42,11 +42,11 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 	return &rs
 }
 
-func (r *RelayerService) NewEVMChainService(ctx context.Context) (types.EVMChainService, error) {
+func (r *RelayerService) NewEVMChain(ctx context.Context) (types.EVMChain, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
 	}
-	return r.Service.NewEVMChainService(ctx)
+	return r.Service.NewEVMChain(ctx)
 }
 
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

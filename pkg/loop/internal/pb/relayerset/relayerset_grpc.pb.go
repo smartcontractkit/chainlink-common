@@ -23,7 +23,7 @@ const (
 	RelayerSet_Get_FullMethodName                 = "/loop.relayerset.RelayerSet/Get"
 	RelayerSet_List_FullMethodName                = "/loop.relayerset.RelayerSet/List"
 	RelayerSet_NewPluginProvider_FullMethodName   = "/loop.relayerset.RelayerSet/NewPluginProvider"
-	RelayerSet_NewEVMChainService_FullMethodName  = "/loop.relayerset.RelayerSet/NewEVMChainService"
+	RelayerSet_NewEVMChain_FullMethodName         = "/loop.relayerset.RelayerSet/NewEVMChain"
 	RelayerSet_NewContractReader_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractReader"
 	RelayerSet_NewContractWriter_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractWriter"
 	RelayerSet_StartRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/StartRelayer"
@@ -41,7 +41,7 @@ type RelayerSetClient interface {
 	Get(ctx context.Context, in *GetRelayerRequest, opts ...grpc.CallOption) (*GetRelayerResponse, error)
 	List(ctx context.Context, in *ListAllRelayersRequest, opts ...grpc.CallOption) (*ListAllRelayersResponse, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error)
-	NewEVMChainService(ctx context.Context, in *NewEVMChainServiceRequest, opts ...grpc.CallOption) (*NewEVMChainServiceResponse, error)
+	NewEVMChain(ctx context.Context, in *NewEVMChainRequest, opts ...grpc.CallOption) (*NewEVMChainResponse, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderResponse, error)
 	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterResponse, error)
 	StartRelayer(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -90,10 +90,10 @@ func (c *relayerSetClient) NewPluginProvider(ctx context.Context, in *NewPluginP
 	return out, nil
 }
 
-func (c *relayerSetClient) NewEVMChainService(ctx context.Context, in *NewEVMChainServiceRequest, opts ...grpc.CallOption) (*NewEVMChainServiceResponse, error) {
+func (c *relayerSetClient) NewEVMChain(ctx context.Context, in *NewEVMChainRequest, opts ...grpc.CallOption) (*NewEVMChainResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(NewEVMChainServiceResponse)
-	err := c.cc.Invoke(ctx, RelayerSet_NewEVMChainService_FullMethodName, in, out, cOpts...)
+	out := new(NewEVMChainResponse)
+	err := c.cc.Invoke(ctx, RelayerSet_NewEVMChain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ type RelayerSetServer interface {
 	Get(context.Context, *GetRelayerRequest) (*GetRelayerResponse, error)
 	List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error)
-	NewEVMChainService(context.Context, *NewEVMChainServiceRequest) (*NewEVMChainServiceResponse, error)
+	NewEVMChain(context.Context, *NewEVMChainRequest) (*NewEVMChainResponse, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error)
 	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterResponse, error)
 	StartRelayer(context.Context, *RelayerId) (*emptypb.Empty, error)
@@ -215,8 +215,8 @@ func (UnimplementedRelayerSetServer) List(context.Context, *ListAllRelayersReque
 func (UnimplementedRelayerSetServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
 }
-func (UnimplementedRelayerSetServer) NewEVMChainService(context.Context, *NewEVMChainServiceRequest) (*NewEVMChainServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewEVMChainService not implemented")
+func (UnimplementedRelayerSetServer) NewEVMChain(context.Context, *NewEVMChainRequest) (*NewEVMChainResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewEVMChain not implemented")
 }
 func (UnimplementedRelayerSetServer) NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
@@ -317,20 +317,20 @@ func _RelayerSet_NewPluginProvider_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RelayerSet_NewEVMChainService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewEVMChainServiceRequest)
+func _RelayerSet_NewEVMChain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewEVMChainRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RelayerSetServer).NewEVMChainService(ctx, in)
+		return srv.(RelayerSetServer).NewEVMChain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RelayerSet_NewEVMChainService_FullMethodName,
+		FullMethod: RelayerSet_NewEVMChain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelayerSetServer).NewEVMChainService(ctx, req.(*NewEVMChainServiceRequest))
+		return srv.(RelayerSetServer).NewEVMChain(ctx, req.(*NewEVMChainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -499,8 +499,8 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RelayerSet_NewPluginProvider_Handler,
 		},
 		{
-			MethodName: "NewEVMChainService",
-			Handler:    _RelayerSet_NewEVMChainService_Handler,
+			MethodName: "NewEVMChain",
+			Handler:    _RelayerSet_NewEVMChain_Handler,
 		},
 		{
 			MethodName: "NewContractReader",

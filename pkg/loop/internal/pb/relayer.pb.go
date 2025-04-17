@@ -405,28 +405,28 @@ func (x *PluginArgs) GetPluginConfig() []byte {
 	return nil
 }
 
-// NewEVMChainService has reply parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewEVMChainService].
-type NewEVMChainServiceReply struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	EVMChainServiceID uint32                 `protobuf:"varint,1,opt,name=EVMChainServiceID,proto3" json:"EVMChainServiceID,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+// NewEVMChain has reply parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewEVMChain].
+type NewEVMChainReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EVMChainID    uint32                 `protobuf:"varint,1,opt,name=EVMChainID,proto3" json:"EVMChainID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NewEVMChainServiceReply) Reset() {
-	*x = NewEVMChainServiceReply{}
+func (x *NewEVMChainReply) Reset() {
+	*x = NewEVMChainReply{}
 	mi := &file_relayer_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NewEVMChainServiceReply) String() string {
+func (x *NewEVMChainReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewEVMChainServiceReply) ProtoMessage() {}
+func (*NewEVMChainReply) ProtoMessage() {}
 
-func (x *NewEVMChainServiceReply) ProtoReflect() protoreflect.Message {
+func (x *NewEVMChainReply) ProtoReflect() protoreflect.Message {
 	mi := &file_relayer_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -438,14 +438,14 @@ func (x *NewEVMChainServiceReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewEVMChainServiceReply.ProtoReflect.Descriptor instead.
-func (*NewEVMChainServiceReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use NewEVMChainReply.ProtoReflect.Descriptor instead.
+func (*NewEVMChainReply) Descriptor() ([]byte, []int) {
 	return file_relayer_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *NewEVMChainServiceReply) GetEVMChainServiceID() uint32 {
+func (x *NewEVMChainReply) GetEVMChainID() uint32 {
 	if x != nil {
-		return x.EVMChainServiceID
+		return x.EVMChainID
 	}
 	return 0
 }
@@ -2584,9 +2584,11 @@ const file_relayer_proto_rawDesc = "" +
 	"\n" +
 	"PluginArgs\x12$\n" +
 	"\rtransmitterID\x18\x01 \x01(\tR\rtransmitterID\x12\"\n" +
-	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"G\n" +
-	"\x17NewEVMChainServiceReply\x12,\n" +
-	"\x11EVMChainServiceID\x18\x01 \x01(\rR\x11EVMChainServiceID\"N\n" +
+	"\fpluginConfig\x18\x02 \x01(\fR\fpluginConfig\"2\n" +
+	"\x10NewEVMChainReply\x12\x1e\n" +
+	"\n" +
+	"EVMChainID\x18\x01 \x01(\rR\n" +
+	"EVMChainID\"N\n" +
 	"\x18NewContractWriterRequest\x122\n" +
 	"\x14contractWriterConfig\x18\x01 \x01(\fR\x14contractWriterConfig\"D\n" +
 	"\x16NewContractWriterReply\x12*\n" +
@@ -2708,9 +2710,9 @@ const file_relayer_proto_rawDesc = "" +
 	"NewRelayer\x12\x17.loop.NewRelayerRequest\x1a\x15.loop.NewRelayerReply\"\x002s\n" +
 	"\bKeystore\x129\n" +
 	"\bAccounts\x12\x16.google.protobuf.Empty\x1a\x13.loop.AccountsReply\"\x00\x12,\n" +
-	"\x04Sign\x12\x11.loop.SignRequest\x1a\x0f.loop.SignReply\"\x002\x83\x06\n" +
-	"\aRelayer\x12M\n" +
-	"\x12NewEVMChainService\x12\x16.google.protobuf.Empty\x1a\x1d.loop.NewEVMChainServiceReply\"\x00\x12S\n" +
+	"\x04Sign\x12\x11.loop.SignRequest\x1a\x0f.loop.SignReply\"\x002\xf5\x05\n" +
+	"\aRelayer\x12?\n" +
+	"\vNewEVMChain\x12\x16.google.protobuf.Empty\x1a\x16.loop.NewEVMChainReply\"\x00\x12S\n" +
 	"\x11NewContractWriter\x12\x1e.loop.NewContractWriterRequest\x1a\x1c.loop.NewContractWriterReply\"\x00\x12S\n" +
 	"\x11NewContractReader\x12\x1e.loop.NewContractReaderRequest\x1a\x1c.loop.NewContractReaderReply\"\x00\x12S\n" +
 	"\x11NewConfigProvider\x12\x1e.loop.NewConfigProviderRequest\x1a\x1c.loop.NewConfigProviderReply\"\x00\x12S\n" +
@@ -2759,7 +2761,7 @@ var file_relayer_proto_goTypes = []any{
 	(*SignReply)(nil),                         // 4: loop.SignReply
 	(*RelayArgs)(nil),                         // 5: loop.RelayArgs
 	(*PluginArgs)(nil),                        // 6: loop.PluginArgs
-	(*NewEVMChainServiceReply)(nil),           // 7: loop.NewEVMChainServiceReply
+	(*NewEVMChainReply)(nil),                  // 7: loop.NewEVMChainReply
 	(*NewContractWriterRequest)(nil),          // 8: loop.NewContractWriterRequest
 	(*NewContractWriterReply)(nil),            // 9: loop.NewContractWriterReply
 	(*NewContractReaderRequest)(nil),          // 10: loop.NewContractReaderRequest
@@ -2829,7 +2831,7 @@ var file_relayer_proto_depIdxs = []int32{
 	0,  // 17: loop.PluginRelayer.NewRelayer:input_type -> loop.NewRelayerRequest
 	54, // 18: loop.Keystore.Accounts:input_type -> google.protobuf.Empty
 	3,  // 19: loop.Keystore.Sign:input_type -> loop.SignRequest
-	54, // 20: loop.Relayer.NewEVMChainService:input_type -> google.protobuf.Empty
+	54, // 20: loop.Relayer.NewEVMChain:input_type -> google.protobuf.Empty
 	8,  // 21: loop.Relayer.NewContractWriter:input_type -> loop.NewContractWriterRequest
 	10, // 22: loop.Relayer.NewContractReader:input_type -> loop.NewContractReaderRequest
 	14, // 23: loop.Relayer.NewConfigProvider:input_type -> loop.NewConfigProviderRequest
@@ -2854,7 +2856,7 @@ var file_relayer_proto_depIdxs = []int32{
 	1,  // 42: loop.PluginRelayer.NewRelayer:output_type -> loop.NewRelayerReply
 	2,  // 43: loop.Keystore.Accounts:output_type -> loop.AccountsReply
 	4,  // 44: loop.Keystore.Sign:output_type -> loop.SignReply
-	7,  // 45: loop.Relayer.NewEVMChainService:output_type -> loop.NewEVMChainServiceReply
+	7,  // 45: loop.Relayer.NewEVMChain:output_type -> loop.NewEVMChainReply
 	9,  // 46: loop.Relayer.NewContractWriter:output_type -> loop.NewContractWriterReply
 	11, // 47: loop.Relayer.NewContractReader:output_type -> loop.NewContractReaderReply
 	15, // 48: loop.Relayer.NewConfigProvider:output_type -> loop.NewConfigProviderReply

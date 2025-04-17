@@ -110,7 +110,7 @@ func (r *relayer) Replay(ctx context.Context, fromBlock string, args map[string]
 	return errors.New("unimplemented")
 }
 
-func (r *relayer) NewEVMChainService(_ context.Context) (types.EVMChainService, error) {
+func (r *relayer) NewEVMChain(_ context.Context) (types.EVMChain, error) {
 	return nil, errors.New("unimplemented")
 }
 

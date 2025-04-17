@@ -544,27 +544,27 @@ func (x *NewPluginProviderResponse) GetPluginProviderId() uint32 {
 	return 0
 }
 
-type NewEVMChainServiceRequest struct {
+type NewEVMChainRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NewEVMChainServiceRequest) Reset() {
-	*x = NewEVMChainServiceRequest{}
+func (x *NewEVMChainRequest) Reset() {
+	*x = NewEVMChainRequest{}
 	mi := &file_relayerset_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NewEVMChainServiceRequest) String() string {
+func (x *NewEVMChainRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewEVMChainServiceRequest) ProtoMessage() {}
+func (*NewEVMChainRequest) ProtoMessage() {}
 
-func (x *NewEVMChainServiceRequest) ProtoReflect() protoreflect.Message {
+func (x *NewEVMChainRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_relayerset_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -576,39 +576,39 @@ func (x *NewEVMChainServiceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewEVMChainServiceRequest.ProtoReflect.Descriptor instead.
-func (*NewEVMChainServiceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NewEVMChainRequest.ProtoReflect.Descriptor instead.
+func (*NewEVMChainRequest) Descriptor() ([]byte, []int) {
 	return file_relayerset_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *NewEVMChainServiceRequest) GetRelayerId() *RelayerId {
+func (x *NewEVMChainRequest) GetRelayerId() *RelayerId {
 	if x != nil {
 		return x.RelayerId
 	}
 	return nil
 }
 
-type NewEVMChainServiceResponse struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	EVMChainServiceID uint32                 `protobuf:"varint,1,opt,name=EVMChainServiceID,proto3" json:"EVMChainServiceID,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+type NewEVMChainResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EVMChainID    uint32                 `protobuf:"varint,1,opt,name=EVMChainID,proto3" json:"EVMChainID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NewEVMChainServiceResponse) Reset() {
-	*x = NewEVMChainServiceResponse{}
+func (x *NewEVMChainResponse) Reset() {
+	*x = NewEVMChainResponse{}
 	mi := &file_relayerset_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NewEVMChainServiceResponse) String() string {
+func (x *NewEVMChainResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewEVMChainServiceResponse) ProtoMessage() {}
+func (*NewEVMChainResponse) ProtoMessage() {}
 
-func (x *NewEVMChainServiceResponse) ProtoReflect() protoreflect.Message {
+func (x *NewEVMChainResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_relayerset_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -620,14 +620,14 @@ func (x *NewEVMChainServiceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewEVMChainServiceResponse.ProtoReflect.Descriptor instead.
-func (*NewEVMChainServiceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NewEVMChainResponse.ProtoReflect.Descriptor instead.
+func (*NewEVMChainResponse) Descriptor() ([]byte, []int) {
 	return file_relayerset_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *NewEVMChainServiceResponse) GetEVMChainServiceID() uint32 {
+func (x *NewEVMChainResponse) GetEVMChainID() uint32 {
 	if x != nil {
-		return x.EVMChainServiceID
+		return x.EVMChainID
 	}
 	return 0
 }
@@ -1056,11 +1056,13 @@ const file_relayerset_proto_rawDesc = "" +
 	"pluginArgs\x18\x03 \x01(\v2\x1b.loop.relayerset.PluginArgsR\n" +
 	"pluginArgs\"I\n" +
 	"\x19NewPluginProviderResponse\x12,\n" +
-	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"U\n" +
-	"\x19NewEVMChainServiceRequest\x128\n" +
-	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"J\n" +
-	"\x1aNewEVMChainServiceResponse\x12,\n" +
-	"\x11EVMChainServiceID\x18\x01 \x01(\rR\x11EVMChainServiceID\"\x88\x01\n" +
+	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"N\n" +
+	"\x12NewEVMChainRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"5\n" +
+	"\x13NewEVMChainResponse\x12\x1e\n" +
+	"\n" +
+	"EVMChainID\x18\x01 \x01(\rR\n" +
+	"EVMChainID\"\x88\x01\n" +
 	"\x18NewContractReaderRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x122\n" +
 	"\x14contractReaderConfig\x18\x02 \x01(\fR\x14contractReaderConfig\"G\n" +
@@ -1083,13 +1085,13 @@ const file_relayerset_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\")\n" +
 	"\x13RelayerNameResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name2\xde\b\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name2\xc9\b\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
 	"\x04List\x12'.loop.relayerset.ListAllRelayersRequest\x1a(.loop.relayerset.ListAllRelayersResponse\"\x00\x12l\n" +
-	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12o\n" +
-	"\x12NewEVMChainService\x12*.loop.relayerset.NewEVMChainServiceRequest\x1a+.loop.relayerset.NewEVMChainServiceResponse\"\x00\x12l\n" +
+	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12Z\n" +
+	"\vNewEVMChain\x12#.loop.relayerset.NewEVMChainRequest\x1a$.loop.relayerset.NewEVMChainResponse\"\x00\x12l\n" +
 	"\x11NewContractReader\x12).loop.relayerset.NewContractReaderRequest\x1a*.loop.relayerset.NewContractReaderResponse\"\x00\x12l\n" +
 	"\x11NewContractWriter\x12).loop.relayerset.NewContractWriterRequest\x1a*.loop.relayerset.NewContractWriterResponse\"\x00\x12D\n" +
 	"\fStartRelayer\x12\x1a.loop.relayerset.RelayerId\x1a\x16.google.protobuf.Empty\"\x00\x12D\n" +
@@ -1123,8 +1125,8 @@ var file_relayerset_proto_goTypes = []any{
 	(*PluginArgs)(nil),                  // 7: loop.relayerset.PluginArgs
 	(*NewPluginProviderRequest)(nil),    // 8: loop.relayerset.NewPluginProviderRequest
 	(*NewPluginProviderResponse)(nil),   // 9: loop.relayerset.NewPluginProviderResponse
-	(*NewEVMChainServiceRequest)(nil),   // 10: loop.relayerset.NewEVMChainServiceRequest
-	(*NewEVMChainServiceResponse)(nil),  // 11: loop.relayerset.NewEVMChainServiceResponse
+	(*NewEVMChainRequest)(nil),          // 10: loop.relayerset.NewEVMChainRequest
+	(*NewEVMChainResponse)(nil),         // 11: loop.relayerset.NewEVMChainResponse
 	(*NewContractReaderRequest)(nil),    // 12: loop.relayerset.NewContractReaderRequest
 	(*NewContractReaderResponse)(nil),   // 13: loop.relayerset.NewContractReaderResponse
 	(*NewContractWriterRequest)(nil),    // 14: loop.relayerset.NewContractWriterRequest
@@ -1145,7 +1147,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	0,  // 5: loop.relayerset.NewPluginProviderRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	5,  // 6: loop.relayerset.NewPluginProviderRequest.relayArgs:type_name -> loop.relayerset.RelayArgs
 	7,  // 7: loop.relayerset.NewPluginProviderRequest.pluginArgs:type_name -> loop.relayerset.PluginArgs
-	0,  // 8: loop.relayerset.NewEVMChainServiceRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 8: loop.relayerset.NewEVMChainRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 9: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 10: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 11: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
@@ -1153,7 +1155,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	1,  // 13: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
 	3,  // 14: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
 	8,  // 15: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
-	10, // 16: loop.relayerset.RelayerSet.NewEVMChainService:input_type -> loop.relayerset.NewEVMChainServiceRequest
+	10, // 16: loop.relayerset.RelayerSet.NewEVMChain:input_type -> loop.relayerset.NewEVMChainRequest
 	12, // 17: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
 	14, // 18: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
 	0,  // 19: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
@@ -1165,7 +1167,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	2,  // 25: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
 	4,  // 26: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
 	9,  // 27: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
-	11, // 28: loop.relayerset.RelayerSet.NewEVMChainService:output_type -> loop.relayerset.NewEVMChainServiceResponse
+	11, // 28: loop.relayerset.RelayerSet.NewEVMChain:output_type -> loop.relayerset.NewEVMChainResponse
 	13, // 29: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
 	15, // 30: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
 	21, // 31: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty

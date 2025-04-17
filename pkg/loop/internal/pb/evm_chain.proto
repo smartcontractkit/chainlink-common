@@ -17,8 +17,8 @@ message ReadContractReply {
   bytes result = 1;
 }
 
-// EVM chain service
-service EVMChainService {
+// EVM chain
+service EVMChain {
   rpc ReadContract (ReadContractRequest) returns (ReadContractReply);
 }
 

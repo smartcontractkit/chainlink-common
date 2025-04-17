@@ -262,6 +262,7 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	Relayer_NewEVMChain_FullMethodName       = "/loop.Relayer/NewEVMChain"
 	Relayer_NewContractWriter_FullMethodName = "/loop.Relayer/NewContractWriter"
 	Relayer_NewContractReader_FullMethodName = "/loop.Relayer/NewContractReader"
 	Relayer_NewConfigProvider_FullMethodName = "/loop.Relayer/NewConfigProvider"
@@ -277,6 +278,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RelayerClient interface {
+	NewEVMChain(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewEVMChainReply, error)
 	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterReply, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderReply, error)
 	NewConfigProvider(ctx context.Context, in *NewConfigProviderRequest, opts ...grpc.CallOption) (*NewConfigProviderReply, error)
@@ -294,6 +296,16 @@ type relayerClient struct {
 
 func NewRelayerClient(cc grpc.ClientConnInterface) RelayerClient {
 	return &relayerClient{cc}
+}
+
+func (c *relayerClient) NewEVMChain(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NewEVMChainReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NewEVMChainReply)
+	err := c.cc.Invoke(ctx, Relayer_NewEVMChain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *relayerClient) NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterReply, error) {
@@ -390,6 +402,7 @@ func (c *relayerClient) Replay(ctx context.Context, in *ReplayRequest, opts ...g
 // All implementations must embed UnimplementedRelayerServer
 // for forward compatibility.
 type RelayerServer interface {
+	NewEVMChain(context.Context, *emptypb.Empty) (*NewEVMChainReply, error)
 	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterReply, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderReply, error)
 	NewConfigProvider(context.Context, *NewConfigProviderRequest) (*NewConfigProviderReply, error)
@@ -409,6 +422,9 @@ type RelayerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRelayerServer struct{}
 
+func (UnimplementedRelayerServer) NewEVMChain(context.Context, *emptypb.Empty) (*NewEVMChainReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewEVMChain not implemented")
+}
 func (UnimplementedRelayerServer) NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
 }
@@ -455,6 +471,24 @@ func RegisterRelayerServer(s grpc.ServiceRegistrar, srv RelayerServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Relayer_ServiceDesc, srv)
+}
+
+func _Relayer_NewEVMChain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerServer).NewEVMChain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Relayer_NewEVMChain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerServer).NewEVMChain(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Relayer_NewContractWriter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -626,6 +660,10 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.Relayer",
 	HandlerType: (*RelayerServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "NewEVMChain",
+			Handler:    _Relayer_NewEVMChain_Handler,
+		},
 		{
 			MethodName: "NewContractWriter",
 			Handler:    _Relayer_NewContractWriter_Handler,

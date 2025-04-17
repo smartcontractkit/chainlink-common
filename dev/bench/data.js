@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744911576895,
+  "lastUpdate": 1744915299342,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11928,6 +11928,48 @@ window.BENCHMARK_DATA = {
             "value": 28219,
             "unit": "ns/op",
             "extra": "42632 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "96362174+chainchad@users.noreply.github.com",
+            "name": "chainchad",
+            "username": "chainchad"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ca460a403430c7039d6fe49fe70e71a316b1ef4",
+          "message": "Use multi-line string to clean up help/usage for loopinstall (#1138)",
+          "timestamp": "2025-04-17T14:40:25-04:00",
+          "tree_id": "a025790ace1f1b9171901b4b85607b180a64562f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5ca460a403430c7039d6fe49fe70e71a316b1ef4"
+        },
+        "date": 1744915298435,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 384.2,
+            "unit": "ns/op",
+            "extra": "3247485 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.6,
+            "unit": "ns/op",
+            "extra": "2829307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28159,
+            "unit": "ns/op",
+            "extra": "42668 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744915299342,
+  "lastUpdate": 1744916273562,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11970,6 +11970,48 @@ window.BENCHMARK_DATA = {
             "value": 28159,
             "unit": "ns/op",
             "extra": "42668 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "160c6083ac30480287cd3edfb7c61108a784691c",
+          "message": "[CAPPL-732] Detect NoDAG WASM via specific import (#1143)",
+          "timestamp": "2025-04-17T11:56:46-07:00",
+          "tree_id": "98eba6e50c09eb03c28723cc9927a9e2ed475b33",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/160c6083ac30480287cd3edfb7c61108a784691c"
+        },
+        "date": 1744916272797,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.2,
+            "unit": "ns/op",
+            "extra": "3325017 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.9,
+            "unit": "ns/op",
+            "extra": "2898274 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28135,
+            "unit": "ns/op",
+            "extra": "42646 times\n4 procs"
           }
         ]
       }

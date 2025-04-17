@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744910827206,
+  "lastUpdate": 1744911576895,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11886,6 +11886,48 @@ window.BENCHMARK_DATA = {
             "value": 28329,
             "unit": "ns/op",
             "extra": "42465 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d4ab451cef3168aab40053168537883c46bcb405",
+          "message": "beholder: config options for chip-ingress (#1123)\n\n* beholder: config options for chip-ingress\n\n- add CHIP-Ingess config options\n- make CL_CHIP_INGRESS_ENABLED env var optional\n\n* Remove ChipIngressEnabled config option\n\n---------\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-04-17T13:38:23-04:00",
+          "tree_id": "ce3b556d28ee11f4c7d9727b636b4a0e2b74b6eb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d4ab451cef3168aab40053168537883c46bcb405"
+        },
+        "date": 1744911575690,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.9,
+            "unit": "ns/op",
+            "extra": "2951289 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.3,
+            "unit": "ns/op",
+            "extra": "2898458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28219,
+            "unit": "ns/op",
+            "extra": "42632 times\n4 procs"
           }
         ]
       }

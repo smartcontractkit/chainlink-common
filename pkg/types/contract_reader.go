@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"iter"
+	"math/big"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -122,6 +123,11 @@ type Head struct {
 	Hash   []byte
 	// Timestamp is in Unix time
 	Timestamp uint64
+}
+
+type TokenBalance struct {
+	Balance  *big.Int
+	Decimals uint32
 }
 
 type Sequence struct {

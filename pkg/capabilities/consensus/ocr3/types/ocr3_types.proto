@@ -66,3 +66,16 @@ message Outcome {
   map<string, AggregationOutcome> outcomes = 1;
   repeated Report current_reports = 2;
 }
+
+
+message Metadata {
+  uint32 version = 1;
+  string execution_id = 2;
+  uint32 timestamp = 3;
+  uint32 donid = 4;
+  uint32 don_config_version = 5;
+  string workflow_id = 6;
+  string workflow_name = 7;
+  string workflow_owner = 8;
+  string report_id = 9;
+}

@@ -34,6 +34,13 @@ type ClientCapability interface {
 	RegisterSubmitTransaction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterSubmitTransaction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest /* TODO  config evm.WriteReportRequest*/) (*evm.TxID, error)
+	RegisterWriteReport(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+	UnregisterWriteReport(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+
+	RegisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.LogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
+	UnregisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.LogTriggerRequest) error
+
 	RegisterOnFinalityViolation(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (<-chan capabilities.TriggerAndId[*crosschain.BlockRange], error)
 	UnregisterOnFinalityViolation(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) error
 	Start(ctx context.Context) error
@@ -105,6 +112,9 @@ var _ capabilities.TriggerCapability = (*clientCapability)(nil)
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
+	case "LogTrigger":
+		input := &evm.LogTriggerRequest{}
+		return capabilities.RegisterTrigger(ctx, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
 		return capabilities.RegisterTrigger(ctx, "evm@1.0.0", request, input, c.ClientCapability.RegisterOnFinalityViolation)
@@ -116,6 +126,13 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
+	case "LogTrigger":
+		input := &evm.LogTriggerRequest{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Request, input)
+		if err != nil {
+			return err
+		}
+		return c.ClientCapability.UnregisterLogTrigger(ctx, request.Metadata, input)
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
 		_, err := capabilities.FromValueOrAny(request.Config, request.Request, input)
@@ -159,6 +176,10 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.SubmitTransactionRequest{}
 		// TODO config
 		return capabilities.Execute(ctx, request, input, c.ClientCapability.SubmitTransaction)
+	case "WriteReport":
+		input := &evm.WriteReportRequest{}
+		// TODO config
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.WriteReport)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

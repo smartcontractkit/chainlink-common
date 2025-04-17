@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744897750513,
+  "lastUpdate": 1744908482660,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -11802,6 +11802,48 @@ window.BENCHMARK_DATA = {
             "value": 28167,
             "unit": "ns/op",
             "extra": "41802 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "albertpun8@gmail.com",
+            "name": "AP12",
+            "username": "albert597"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "95ab818ed750a0dfd1206032c891754f127a5290",
+          "message": "Rename codeowner team from realtime->data-tooling (#1141)\n\n* change codeowner\n\n* realtime->data-tooling\n\n* fix typo\n\n* in-place",
+          "timestamp": "2025-04-17T12:45:51-04:00",
+          "tree_id": "a15976c8783a8e326510f8b9642a3f1c67b903a6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/95ab818ed750a0dfd1206032c891754f127a5290"
+        },
+        "date": 1744908481925,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3257150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.3,
+            "unit": "ns/op",
+            "extra": "2947413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28193,
+            "unit": "ns/op",
+            "extra": "42607 times\n4 procs"
           }
         ]
       }

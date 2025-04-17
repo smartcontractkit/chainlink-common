@@ -3,6 +3,7 @@ package {{.GoPackageName}}mock
 import (
     "context"
     "fmt"
+    "testing"
 
     "google.golang.org/protobuf/types/known/anypb"
 
@@ -32,6 +33,14 @@ var _ = testutils.Registry{}
 {{ $service := . }}
 {{ $hasTriggers := false }}
 {{ $hasActions := false }}
+
+func New{{.GoName}}Capability(t testing.TB) (*{{.GoName}}Capability, error) {
+    c := &{{.GoName}}Capability{}
+    registry := testutils.GetRegistry(t)
+    err := registry.RegisterCapability(c)
+    return c, err
+}
+
 type {{.GoName}}Capability struct {
     // TODO teardown with unrgister if register is needed, or allow setup and teardown
     {{- range .Methods}}

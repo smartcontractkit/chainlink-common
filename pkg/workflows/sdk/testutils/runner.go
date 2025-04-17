@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"testing"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -65,21 +66,21 @@ type NodeRunner interface {
 	TestRunner
 }
 
-func NewDonRunner(ctx context.Context, config []byte, registry *Registry) (DonRunner, error) {
-	return newRunner[sdk.DonRuntime](ctx, config, registry, &runtime[sdk.DonRuntime]{})
+func NewDonRunner(tb testing.TB, ctx context.Context, config []byte) (DonRunner, error) {
+	return newRunner[sdk.DonRuntime](tb, ctx, config, &runtime[sdk.DonRuntime]{})
 }
 
-func NewNodeRunner(ctx context.Context, config []byte, registry *Registry) (NodeRunner, error) {
-	return newRunner[sdk.NodeRuntime](ctx, config, registry, &runtime[sdk.NodeRuntime]{})
+func NewNodeRunner(tb testing.TB, ctx context.Context, config []byte) (NodeRunner, error) {
+	return newRunner[sdk.NodeRuntime](tb, ctx, config, &runtime[sdk.NodeRuntime]{})
 }
 
-func newRunner[T any](ctx context.Context, config []byte, registry *Registry, t T) (*runner[T], error) {
+func newRunner[T any](tb testing.TB, ctx context.Context, config []byte, t T) (*runner[T], error) {
 	r := &runner[T]{
 		config:      config,
 		ctx:         ctx,
 		workflowId:  uuid.NewString(),
 		executionId: uuid.NewString(),
-		registry:    registry,
+		registry:    GetRegistry(tb),
 		runtime:     t,
 		writer:      &testWriter{},
 	}

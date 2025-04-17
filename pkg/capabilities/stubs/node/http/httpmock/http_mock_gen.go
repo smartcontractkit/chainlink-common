@@ -5,6 +5,7 @@ package httpmock
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -19,6 +20,13 @@ import (
 // avoid unused imports
 var _ = capabilities.CapabilityInfo{}
 var _ = testutils.Registry{}
+
+func NewClientCapability(t testing.TB) (*ClientCapability, error) {
+	c := &ClientCapability{}
+	registry := testutils.GetRegistry(t)
+	err := registry.RegisterCapability(c)
+	return c, err
+}
 
 type ClientCapability struct {
 	// TODO teardown with unrgister if register is needed, or allow setup and teardown

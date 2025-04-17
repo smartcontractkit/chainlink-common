@@ -5,6 +5,7 @@ package basicactionmock
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -19,6 +20,13 @@ import (
 // avoid unused imports
 var _ = capabilities.CapabilityInfo{}
 var _ = testutils.Registry{}
+
+func NewBasicActionCapability(t testing.TB) (*BasicActionCapability, error) {
+	c := &BasicActionCapability{}
+	registry := testutils.GetRegistry(t)
+	err := registry.RegisterCapability(c)
+	return c, err
+}
 
 type BasicActionCapability struct {
 	// TODO teardown with unrgister if register is needed, or allow setup and teardown

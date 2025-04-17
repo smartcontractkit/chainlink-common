@@ -23,20 +23,18 @@ import (
 
 func TestRunner_TriggerFires(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	anyResult := "ok"
@@ -57,29 +55,24 @@ func TestRunner_TriggerFires(t *testing.T) {
 
 func TestRunner_TriggerRegistrationCanBeVerifiedWithoutTriggering(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig1 := &basictrigger.Config{Name: "a", Number: 1}
 	anyConfig2 := &actionandtrigger.Config{Name: "b"}
 
-	trigger1 := &basictriggermock.BasicCapability{
-		Trigger: func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig1, input))
-			return &basictrigger.Outputs{CoolOutput: "1"}, nil
-		},
+	trigger1, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger1.Trigger = func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig1, input))
+		return &basictrigger.Outputs{CoolOutput: "1"}, nil
 	}
 
-	trigger2 := &actionandtriggermock.BasicCapability{
-		Trigger: func(_ context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
-			assert.True(t, proto.Equal(anyConfig2, input))
-			return nil, nil
-		},
+	trigger2, err := actionandtriggermock.NewBasicCapability(t)
+	trigger2.Trigger = func(_ context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
+		assert.True(t, proto.Equal(anyConfig2, input))
+		return nil, nil
 	}
 
-	require.NoError(t, reg.RegisterCapability(trigger1))
-	require.NoError(t, reg.RegisterCapability(trigger2))
-
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	called := false
@@ -109,20 +102,18 @@ func TestRunner_TriggerRegistrationCanBeVerifiedWithoutTriggering(t *testing.T) 
 
 func TestRunner_MissingTriggersAreNotRequired(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyConfig2 := &actionandtrigger.Config{Name: "b"}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	anyResult := "ok"
@@ -149,29 +140,25 @@ func TestRunner_MissingTriggersAreNotRequired(t *testing.T) {
 
 func TestRunner_FiringTwoTriggersReturnsAnError(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig1 := &basictrigger.Config{Name: "a", Number: 1}
 	anyConfig2 := &actionandtrigger.Config{Name: "b"}
 
-	trigger1 := &basictriggermock.BasicCapability{
-		Trigger: func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig1, input))
-			return &basictrigger.Outputs{CoolOutput: "1"}, nil
-		},
+	trigger1, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger1.Trigger = func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig1, input))
+		return &basictrigger.Outputs{CoolOutput: "1"}, nil
 	}
 
-	trigger2 := &actionandtriggermock.BasicCapability{
-		Trigger: func(_ context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
-			assert.True(t, proto.Equal(anyConfig2, input))
-			return &actionandtrigger.TriggerEvent{CoolOutput: "abcd"}, nil
-		},
+	trigger2, err := actionandtriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger2.Trigger = func(_ context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
+		assert.True(t, proto.Equal(anyConfig2, input))
+		return &actionandtrigger.TriggerEvent{CoolOutput: "abcd"}, nil
 	}
 
-	require.NoError(t, reg.RegisterCapability(trigger1))
-	require.NoError(t, reg.RegisterCapability(trigger2))
-
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	called := false
@@ -202,20 +189,18 @@ func TestRunner_FiringTwoTriggersReturnsAnError(t *testing.T) {
 
 func TestRunner_StrictTriggers_FailsIfTriggerIsNotRegistered(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyConfig2 := &actionandtrigger.Config{Name: "b"}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 	runner.SetStrictTriggers(true)
 
@@ -244,20 +229,18 @@ func TestRunner_StrictTriggers_FailsIfTriggerIsNotRegistered(t *testing.T) {
 
 func TestRunner_CanStartInNodeMode(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &nodetrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &nodetrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &nodetriggermock.NodeEventCapability{
-		Trigger: func(_ context.Context, config *nodetrigger.Config) (*nodetrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
+	trigger, err := nodetriggermock.NewNodeEventCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *nodetrigger.Config) (*nodetrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewNodeRunner(ctx, nil, reg)
+	runner, err := testutils.NewNodeRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	anyResult := "ok"
@@ -278,19 +261,17 @@ func TestRunner_CanStartInNodeMode(t *testing.T) {
 
 func TestRunner_Logs(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	runner.SetDefaultLogger()
@@ -329,33 +310,27 @@ func TestRunner_Logs(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, actual)
-
 }
 
 func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyError := errors.New("some error")
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			return nil, anyError
-		},
-	}
-	require.NoError(t, reg.RegisterCapability(trigger))
-
-	trigger2 := &actionandtriggermock.BasicCapability{
-		Trigger: func(ctx context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
-			assert.Fail(t, "workflow should halt if a trigger has an error")
-			return nil, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return nil, anyError
 	}
 
-	require.NoError(t, reg.RegisterCapability(trigger2))
+	trigger2, err := actionandtriggermock.NewBasicCapability(t)
+	trigger2.Trigger = func(ctx context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error) {
+		assert.Fail(t, "workflow should halt if a trigger has an error")
+		return nil, nil
+	}
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	sdk.SubscribeToDonTrigger(

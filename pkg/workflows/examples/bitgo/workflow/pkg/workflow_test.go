@@ -65,71 +65,65 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	cfgBytes, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	registry := &testutils.Registry{}
-
 	// New pattern, hide registry in a map from testingT to registry.
-	cronMock := &cronmock.CronCapability{
-		Trigger: func(ctx context.Context, input *cron.Config) (*cron.CronTrigger, error) {
-			assert.Equal(t, config.Schedule, input.Schedule)
-			triggerTime := testTime.Truncate(24 * time.Hour).Add(time.Hour * 24).Unix()
-			return &cron.CronTrigger{ScheduledExecutionTime: triggerTime}, nil
-		},
+	cronMock, err := cronmock.NewCronCapability(t)
+	require.NoError(t, err)
+	cronMock.Trigger = func(ctx context.Context, input *cron.Config) (*cron.CronTrigger, error) {
+		assert.Equal(t, config.Schedule, input.Schedule)
+		triggerTime := testTime.Truncate(24 * time.Hour).Add(time.Hour * 24).Unix()
+		return &cron.CronTrigger{ScheduledExecutionTime: triggerTime}, nil
 	}
 
-	require.NoError(t, registry.RegisterCapability(cronMock))
-
-	httpMock := &httpmock.ClientCapability{
-		Fetch: func(ctx context.Context, input *http.HttpFetchRequest) (*http.HttpFetchResponse, error) {
-			assert.Equal(t, http.HttpMethod_GET, input.Method)
-			assert.Equal(t, config.Url, input.Url)
-			assert.Empty(t, input.Body)
-			return &http.HttpFetchResponse{Body: payload}, nil
-		},
+	httpMock, err := httpmock.NewClientCapability(t)
+	require.NoError(t, err)
+	httpMock.Fetch = func(ctx context.Context, input *http.HttpFetchRequest) (*http.HttpFetchResponse, error) {
+		assert.Equal(t, http.HttpMethod_GET, input.Method)
+		assert.Equal(t, config.Url, input.Url)
+		assert.Empty(t, input.Body)
+		return &http.HttpFetchResponse{Body: payload}, nil
 	}
-	require.NoError(t, registry.RegisterCapability(httpMock))
 
 	numEvmTokens := new(big.Int).Mul(big.NewInt(103), big.NewInt(1e16))
 	totalTokens := numEvmTokens
-	evmMock := &evmmock.ClientCapability{
-		ReadMethod: func(ctx context.Context, input *evm.ReadMethodRequest) (*crosschain.ByteArray, error) {
-			assert.Equal(t, config.EvmTokenAddress, input.Address)
-			assert.Equal(t, evm.ConfidenceLevel_FINALITY, input.ConfidenceLevel)
-			erc20, err := abi.JSON(strings.NewReader(pkg.Erc20Abi))
-			require.NoError(t, err)
+	evmMock, err := evmmock.NewClientCapability(t)
+	require.NoError(t, err)
+	evmMock.ReadMethod = func(ctx context.Context, input *evm.ReadMethodRequest) (*crosschain.ByteArray, error) {
+		assert.Equal(t, config.EvmTokenAddress, input.Address)
+		assert.Equal(t, evm.ConfidenceLevel_FINALITY, input.ConfidenceLevel)
+		erc20, err := abi.JSON(strings.NewReader(pkg.Erc20Abi))
+		require.NoError(t, err)
 
-			method := erc20.Methods[pkg.TotalSupplyMethod]
-			assert.Equal(t, method.ID, input.Calldata)
+		method := erc20.Methods[pkg.TotalSupplyMethod]
+		assert.Equal(t, method.ID, input.Calldata)
 
-			response, err := erc20.Methods[pkg.TotalSupplyMethod].Outputs.Pack(numEvmTokens)
-			require.NoError(t, err)
-			return &crosschain.ByteArray{Value: response}, nil
-		},
-		SubmitTransaction: func(ctx context.Context, input *evm.SubmitTransactionRequest) (*evm.TxID, error) {
-			assert.Equal(t, config.EvmPorAddress, input.ToAddress)
-			reserveManager, err := abi.JSON(strings.NewReader(pkg.ReserveManagerAbi))
-			require.NoError(t, err)
-			method := reserveManager.Methods[pkg.UpdateReservesMethod]
-			callId := input.Calldata[0:len(method.ID)]
-			assert.Equal(t, method.ID, callId)
-
-			argData := input.Calldata[len(method.ID):]
-			args := map[string]any{}
-			assert.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
-
-			assert.Len(t, args, 2)
-			reserve, err := decimal.NewFromString(totalReserve)
-			require.NoError(t, err)
-			reserve = reserve.Mul(decimal.New(10, 18))
-			assert.Equal(t, reserve.BigInt(), args["totalReserve"])
-			assert.Equal(t, totalTokens, args["totalMinted"])
-
-			return &evm.TxID{Value: "fake transaction"}, nil
-		},
+		response, err := erc20.Methods[pkg.TotalSupplyMethod].Outputs.Pack(numEvmTokens)
+		require.NoError(t, err)
+		return &crosschain.ByteArray{Value: response}, nil
 	}
-	require.NoError(t, registry.RegisterCapability(evmMock))
+	evmMock.SubmitTransaction = func(ctx context.Context, input *evm.SubmitTransactionRequest) (*evm.TxID, error) {
+		assert.Equal(t, config.EvmPorAddress, input.ToAddress)
+		reserveManager, err := abi.JSON(strings.NewReader(pkg.ReserveManagerAbi))
+		require.NoError(t, err)
+		method := reserveManager.Methods[pkg.UpdateReservesMethod]
+		callId := input.Calldata[0:len(method.ID)]
+		assert.Equal(t, method.ID, callId)
+
+		argData := input.Calldata[len(method.ID):]
+		args := map[string]any{}
+		assert.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
+
+		assert.Len(t, args, 2)
+		reserve, err := decimal.NewFromString(totalReserve)
+		require.NoError(t, err)
+		reserve = reserve.Mul(decimal.New(10, 18))
+		assert.Equal(t, reserve.BigInt(), args["totalReserve"])
+		assert.Equal(t, totalTokens, args["totalMinted"])
+
+		return &evm.TxID{Value: "fake transaction"}, nil
+	}
 
 	ctx := context.Background()
-	runner, err := testutils.NewDonRunner(ctx, cfgBytes, registry)
+	runner, err := testutils.NewDonRunner(t, ctx, cfgBytes)
 	require.NoError(t, err)
 
 	pkg.Workflow(runner)

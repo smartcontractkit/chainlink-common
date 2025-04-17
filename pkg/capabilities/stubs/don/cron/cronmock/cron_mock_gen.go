@@ -5,6 +5,7 @@ package cronmock
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -19,6 +20,13 @@ import (
 // avoid unused imports
 var _ = capabilities.CapabilityInfo{}
 var _ = testutils.Registry{}
+
+func NewCronCapability(t testing.TB) (*CronCapability, error) {
+	c := &CronCapability{}
+	registry := testutils.GetRegistry(t)
+	err := registry.RegisterCapability(c)
+	return c, err
+}
 
 type CronCapability struct {
 	// TODO teardown with unrgister if register is needed, or allow setup and teardown

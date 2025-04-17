@@ -25,38 +25,33 @@ import (
 
 func TestRuntime_CallCapabilityIsAsync(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
 	ch := make(chan struct{}, 1)
 	anyResult1 := "ok1"
-	action1 := &basicactionmock.BasicActionCapability{
-		PerformAction: func(_ context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
-			<-ch
-			return &basicaction.Outputs{AdaptedThing: anyResult1}, nil
-		},
+	action1, err := basicactionmock.NewBasicActionCapability(t)
+	require.NoError(t, err)
+	action1.PerformAction = func(_ context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
+		<-ch
+		return &basicaction.Outputs{AdaptedThing: anyResult1}, nil
 	}
-	require.NoError(t, reg.RegisterCapability(action1))
 
 	anyResult2 := "ok2"
-	action2 := &actionandtriggermock.BasicCapability{
-		Action: func(ctx context.Context, input *actionandtrigger.Input) (*actionandtrigger.Output, error) {
-			return &actionandtrigger.Output{Welcome: anyResult2}, nil
-		},
+	action2, err := actionandtriggermock.NewBasicCapability(t)
+	action2.Action = func(ctx context.Context, input *actionandtrigger.Input) (*actionandtrigger.Output, error) {
+		return &actionandtrigger.Output{Welcome: anyResult2}, nil
 	}
-	require.NoError(t, reg.RegisterCapability(action2))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	sdk.SubscribeToDonTrigger(
@@ -85,29 +80,25 @@ func TestRuntime_CallCapabilityIsAsync(t *testing.T) {
 
 func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
-	}
-	require.NoError(t, reg.RegisterCapability(trigger))
-
-	nodeCapability := &nodeactionmock.BasicActionCapability{
-		PerformAction: func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
-			assert.Fail(t, "node capability should not be called")
-			return nil, fmt.Errorf("should not be called")
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
 
-	require.NoError(t, reg.RegisterCapability(nodeCapability))
+	nodeCapability, err := nodeactionmock.NewBasicActionCapability(t)
+	require.NoError(t, err)
+	nodeCapability.PerformAction = func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
+		assert.Fail(t, "node capability should not be called")
+		return nil, fmt.Errorf("should not be called")
+	}
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	sdk.SubscribeToDonTrigger(
@@ -130,29 +121,25 @@ func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
 
 func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
-	}
-	require.NoError(t, reg.RegisterCapability(trigger))
-
-	capability := &basicactionmock.BasicActionCapability{
-		PerformAction: func(_ context.Context, _ *basicaction.Inputs) (*basicaction.Outputs, error) {
-			assert.Fail(t, "should not be called")
-			return nil, errors.New("should not be called")
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
 
-	require.NoError(t, reg.RegisterCapability(capability))
+	capability, err := basicactionmock.NewBasicActionCapability(t)
+	require.NoError(t, err)
+	capability.PerformAction = func(_ context.Context, _ *basicaction.Inputs) (*basicaction.Outputs, error) {
+		assert.Fail(t, "should not be called")
+		return nil, errors.New("should not be called")
+	}
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	sdk.SubscribeToDonTrigger(
@@ -175,18 +162,16 @@ func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
 
 func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			return &basictrigger.Outputs{CoolOutput: "cool"}, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return &basictrigger.Outputs{CoolOutput: "cool"}, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	sdk.SubscribeToDonTrigger(
@@ -213,29 +198,25 @@ func TestRuntime_NumericalConsensusShouldReturnErrorIfInputIsntNumerical(t *test
 
 func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
+	require.NoError(t, err)
 
 	anyValue := int32(100)
-	nodeCapability := &nodeactionmock.BasicActionCapability{
-		PerformAction: func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
-			return &nodeaction.NodeOutputs{OutputThing: anyValue}, nil
-		},
+	nodeCapability, err := nodeactionmock.NewBasicActionCapability(t)
+	require.NoError(t, err)
+	nodeCapability.PerformAction = func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
+		return &nodeaction.NodeOutputs{OutputThing: anyValue}, nil
 	}
 
-	require.NoError(t, reg.RegisterCapability(nodeCapability))
-
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	sdk.SubscribeToDonTrigger(
@@ -265,20 +246,18 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 
 func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	anyValue := int32(100)
@@ -311,20 +290,18 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 
 func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 	ctx := context.Background()
-	reg := &testutils.Registry{}
 
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger := &basictriggermock.BasicCapability{
-		Trigger: func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-			assert.True(t, proto.Equal(anyConfig, config))
-			return anyTrigger, nil
-		},
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
 	}
-	require.NoError(t, reg.RegisterCapability(trigger))
 
-	runner, err := testutils.NewDonRunner(ctx, nil, reg)
+	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
 	anyErr := errors.New("no consensus")
@@ -345,5 +322,4 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 
 	_, _, err = runner.Result()
 	require.Equal(t, err, anyErr)
-
 }

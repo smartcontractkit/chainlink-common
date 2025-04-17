@@ -2,15 +2,21 @@ package testutils
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
 var testRegistries = map[testing.TB]*Registry{}
 
+var registryLock sync.Mutex
+
 func GetRegistry(t testing.TB) *Registry {
+	registryLock.Lock()
+	defer registryLock.Unlock()
 	if r, ok := testRegistries[t]; ok {
 		return r
 	}
+
 	r := &Registry{}
 	testRegistries[t] = r
 	t.Cleanup(func() {

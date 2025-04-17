@@ -2,6 +2,7 @@ dir: "{{ .InterfaceDir }}/mocks"
 mockname: "{{ .InterfaceName }}"
 outpkg: mocks
 filename: "{{ .InterfaceName | snakecase }}.go"
+fail-on-missing: true
 packages:
   github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams:
     interfaces:
@@ -11,18 +12,6 @@ packages:
       Relayer:
         config:
           dir: "{{ .InterfaceDir }}/../../mocks"
-  github.com/smartcontractkit/chainlink-common/pkg/monitoring:
-    config:
-      dir: "{{ .InterfaceDir }}"
-      filename: "{{ .InterfaceName | snakecase }}_mock.go"
-      inpackage: true
-      mockname: "{{ .InterfaceName }}Mock"
-    interfaces:
-      Metrics:
-      Source:
-      SourceFactory:
-      Exporter:
-      ExporterFactory:
   github.com/smartcontractkit/chainlink-common/pkg/types/ccip:
     interfaces:
       OffRampReader:

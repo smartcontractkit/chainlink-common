@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains"
+	evm_chain "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset/inprocessprovider"
@@ -175,7 +175,7 @@ func (s *Server) NewEVMChain(ctx context.Context, req *relayerset.NewEVMChainReq
 	// Start gRPC service for the EVMChain above
 	const name = "EVMChainsInRelayerSet"
 	id, _, err := s.broker.ServeNew(name, func(s *grpc.Server) {
-		chains.RegisterEVMChain(s, cc)
+		evm_chain.RegisterEVMChain(s, cc)
 	}, net.Resource{Closer: cc, Name: name})
 	if err != nil {
 		return nil, err

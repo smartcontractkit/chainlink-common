@@ -7,7 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains"
+	evm_chain "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -47,7 +47,7 @@ func (r *relayerClient) NewEVMChain(_ context.Context) (types.EVMChain, error) {
 		return EVMChainID, nil, nil
 	})
 
-	return chains.NewClient(r.relayerSetClient.BrokerExt.WithName("EVMChainInRelayerSet"), cc), nil
+	return evm_chain.NewClient(r.relayerSetClient.BrokerExt.WithName("EVMChainInRelayerSet"), cc), nil
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

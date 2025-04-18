@@ -21,105 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Example
-type ReadContractRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Example
-	Method        string `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
-	EncodedParams []byte `protobuf:"bytes,2,opt,name=encoded_params,json=encodedParams,proto3" json:"encoded_params,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadContractRequest) Reset() {
-	*x = ReadContractRequest{}
-	mi := &file_evm_chain_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadContractRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadContractRequest) ProtoMessage() {}
-
-func (x *ReadContractRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_chain_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadContractRequest.ProtoReflect.Descriptor instead.
-func (*ReadContractRequest) Descriptor() ([]byte, []int) {
-	return file_evm_chain_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *ReadContractRequest) GetMethod() string {
-	if x != nil {
-		return x.Method
-	}
-	return ""
-}
-
-func (x *ReadContractRequest) GetEncodedParams() []byte {
-	if x != nil {
-		return x.EncodedParams
-	}
-	return nil
-}
-
-// Example
-type ReadContractReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Result        []byte                 `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadContractReply) Reset() {
-	*x = ReadContractReply{}
-	mi := &file_evm_chain_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadContractReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadContractReply) ProtoMessage() {}
-
-func (x *ReadContractReply) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_chain_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadContractReply.ProtoReflect.Descriptor instead.
-func (*ReadContractReply) Descriptor() ([]byte, []int) {
-	return file_evm_chain_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *ReadContractReply) GetResult() []byte {
-	if x != nil {
-		return x.Result
-	}
-	return nil
-}
-
 // GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
 type GetTransactionFeeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -130,7 +31,7 @@ type GetTransactionFeeRequest struct {
 
 func (x *GetTransactionFeeRequest) Reset() {
 	*x = GetTransactionFeeRequest{}
-	mi := &file_evm_chain_proto_msgTypes[2]
+	mi := &file_evm_chain_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -142,7 +43,7 @@ func (x *GetTransactionFeeRequest) String() string {
 func (*GetTransactionFeeRequest) ProtoMessage() {}
 
 func (x *GetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_chain_proto_msgTypes[2]
+	mi := &file_evm_chain_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -155,7 +56,7 @@ func (x *GetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionFeeRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionFeeRequest) Descriptor() ([]byte, []int) {
-	return file_evm_chain_proto_rawDescGZIP(), []int{2}
+	return file_evm_chain_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetTransactionFeeRequest) GetTransactionId() string {
@@ -175,7 +76,7 @@ type GetTransactionFeeReply struct {
 
 func (x *GetTransactionFeeReply) Reset() {
 	*x = GetTransactionFeeReply{}
-	mi := &file_evm_chain_proto_msgTypes[3]
+	mi := &file_evm_chain_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -187,7 +88,7 @@ func (x *GetTransactionFeeReply) String() string {
 func (*GetTransactionFeeReply) ProtoMessage() {}
 
 func (x *GetTransactionFeeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_chain_proto_msgTypes[3]
+	mi := &file_evm_chain_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -200,7 +101,7 @@ func (x *GetTransactionFeeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionFeeReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionFeeReply) Descriptor() ([]byte, []int) {
-	return file_evm_chain_proto_rawDescGZIP(), []int{3}
+	return file_evm_chain_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetTransactionFeeReply) GetTransationFee() *BigInt {
@@ -214,12 +115,7 @@ var File_evm_chain_proto protoreflect.FileDescriptor
 
 const file_evm_chain_proto_rawDesc = "" +
 	"\n" +
-	"\x0fevm_chain.proto\x12\x04loop\x1a\x15contract_writer.proto\x1a\rrelayer.proto\"T\n" +
-	"\x13ReadContractRequest\x12\x16\n" +
-	"\x06method\x18\x01 \x01(\tR\x06method\x12%\n" +
-	"\x0eencoded_params\x18\x02 \x01(\fR\rencodedParams\"+\n" +
-	"\x11ReadContractReply\x12\x16\n" +
-	"\x06result\x18\x01 \x01(\fR\x06result\"A\n" +
+	"\x0fevm_chain.proto\x12\x04loop\x1a\x15contract_writer.proto\x1a\rrelayer.proto\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"M\n" +
 	"\x16GetTransactionFeeReply\x123\n" +
@@ -239,18 +135,16 @@ func file_evm_chain_proto_rawDescGZIP() []byte {
 	return file_evm_chain_proto_rawDescData
 }
 
-var file_evm_chain_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_evm_chain_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_evm_chain_proto_goTypes = []any{
-	(*ReadContractRequest)(nil),      // 0: loop.ReadContractRequest
-	(*ReadContractReply)(nil),        // 1: loop.ReadContractReply
-	(*GetTransactionFeeRequest)(nil), // 2: loop.GetTransactionFeeRequest
-	(*GetTransactionFeeReply)(nil),   // 3: loop.GetTransactionFeeReply
-	(*BigInt)(nil),                   // 4: loop.BigInt
+	(*GetTransactionFeeRequest)(nil), // 0: loop.GetTransactionFeeRequest
+	(*GetTransactionFeeReply)(nil),   // 1: loop.GetTransactionFeeReply
+	(*BigInt)(nil),                   // 2: loop.BigInt
 }
 var file_evm_chain_proto_depIdxs = []int32{
-	4, // 0: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
-	2, // 1: loop.EVMChain.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
-	3, // 2: loop.EVMChain.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
+	2, // 0: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
+	0, // 1: loop.EVMChain.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
+	1, // 2: loop.EVMChain.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -271,7 +165,7 @@ func file_evm_chain_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_evm_chain_proto_rawDesc), len(file_evm_chain_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

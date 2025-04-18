@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.relayerset;
 
 import "google/protobuf/empty.proto";
+import "contract_reader.proto";
 
 message RelayerId {
   string network = 1;
@@ -64,7 +65,7 @@ message NewContractReaderRequest {
 }
 
 message NewContractReaderResponse {
-  uint32 contractReaderId = 1;
+  string contractReaderId = 1;
 }
 
 message NewContractWriterRequest {
@@ -107,7 +108,57 @@ service RelayerSet {
   rpc RelayerHealthReport(RelayerId) returns (RelayerHealthReportResponse) {}
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
   rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
+
+  rpc ContractReaderGetLatestValue (ContractReaderGetLatestValueRequest) returns (GetLatestValueReply) {}
+  rpc ContractReaderGetLatestValueWithHeadData (ContractReaderGetLatestValueRequest) returns (GetLatestValueWithHeadDataReply) {}
+  rpc ContractReaderBatchGetLatestValues (ContractReaderBatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
+  rpc ContractReaderQueryKey(ContractReaderQueryKeyRequest) returns (QueryKeyReply) {}
+  rpc ContractReaderQueryKeys(ContractReaderQueryKeysRequest) returns (QueryKeysReply) {}
+  rpc ContractReaderBind(ContractReaderBindRequest) returns (google.protobuf.Empty) {}
+  rpc ContractReaderUnbind(ContractReaderUnbindRequest) returns (google.protobuf.Empty) {}
+  rpc ContractReaderStart(ContractReaderStartRequest) returns (google.protobuf.Empty) {}
+  rpc ContractReaderClose(ContractReaderCloseRequest) returns (google.protobuf.Empty) {}
 }
+
+message ContractReaderGetLatestValueRequest {
+  string contractReaderId = 1;
+  GetLatestValueRequest request = 2;
+}
+
+message ContractReaderBatchGetLatestValuesRequest {
+  string contractReaderId = 1;
+  BatchGetLatestValuesRequest request = 2;
+}
+
+message ContractReaderQueryKeyRequest {
+  string contractReaderId = 1;
+  QueryKeyRequest request = 2;
+}
+
+message ContractReaderQueryKeysRequest {
+  string contractReaderId = 1;
+  QueryKeysRequest request = 2;
+}
+
+message ContractReaderBindRequest {
+  string contractReaderId = 1;
+  BindRequest request = 2;
+}
+
+message ContractReaderUnbindRequest {
+  string contractReaderId = 1;
+  UnbindRequest request = 2;
+}
+
+message ContractReaderStartRequest {
+  string contractReaderId = 1;
+}
+
+message ContractReaderCloseRequest {
+  string contractReaderId = 1;
+}
+
+
 
 
 

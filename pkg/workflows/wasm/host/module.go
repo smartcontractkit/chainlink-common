@@ -110,7 +110,27 @@ type ModuleConfig struct {
 	Determinism *DeterminismConfig
 }
 
-type Module struct {
+type ModuleBase interface {
+	Start()
+	Close()
+	IsLegacyDAG() bool
+}
+
+type ModuleV1 interface {
+	ModuleBase
+
+	// V1/Legacy API - request either the Workflow Spec or Custom-Compute execution
+	Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error)
+}
+
+type ModuleV2 interface {
+	ModuleBase
+
+	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
+	Execute(ctx context.Context, request *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error)
+}
+
+type module struct {
 	engine  *wasmtime.Engine
 	module  *wasmtime.Module
 	linker  *wasmtime.Linker
@@ -126,6 +146,8 @@ type Module struct {
 	isLegacyDAG bool
 }
 
+var _ ModuleV1 = (*module)(nil)
+
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
 // "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -140,7 +162,7 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -291,7 +313,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
 	}
 
-	m := &Module{
+	m := &module{
 		engine:  engine,
 		module:  mod,
 		linker:  linker,
@@ -309,7 +331,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	return m, nil
 }
 
-func (m *Module) Start() {
+func (m *module) Start() {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
@@ -326,7 +348,7 @@ func (m *Module) Start() {
 	}()
 }
 
-func (m *Module) Close() {
+func (m *module) Close() {
 	close(m.stopCh)
 	m.wg.Wait()
 
@@ -336,11 +358,11 @@ func (m *Module) Close() {
 	m.wconfig.Close()
 }
 
-func (m *Module) IsLegacyDAG() bool {
+func (m *module) IsLegacyDAG() bool {
 	return m.isLegacyDAG
 }
 
-func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
+func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Response, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
 	defer cancel()
 
@@ -442,6 +464,10 @@ func (m *Module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	default:
 		return nil, err
 	}
+}
+
+func (m *module) Execute(ctx context.Context, request *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error) {
+	return nil, errors.New("not implemented")
 }
 
 func containsCode(err error, code int) bool {

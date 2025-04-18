@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744916273562,
+  "lastUpdate": 1744997142888,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12012,6 +12012,48 @@ window.BENCHMARK_DATA = {
             "value": 28135,
             "unit": "ns/op",
             "extra": "42646 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6b24a042d134e83a45dc1b248b1ed4f91297d696",
+          "message": "[CAPPL-733] Make WASM Module mockable (#1147)",
+          "timestamp": "2025-04-18T10:24:23-07:00",
+          "tree_id": "fcf23221c263a5ae0f1b79ab020b584fa6654ec3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6b24a042d134e83a45dc1b248b1ed4f91297d696"
+        },
+        "date": 1744997141570,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.7,
+            "unit": "ns/op",
+            "extra": "3345322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 428.7,
+            "unit": "ns/op",
+            "extra": "2920250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28190,
+            "unit": "ns/op",
+            "extra": "42691 times\n4 procs"
           }
         ]
       }

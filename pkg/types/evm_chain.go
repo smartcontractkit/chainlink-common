@@ -5,6 +5,5 @@ import (
 )
 
 type TransactionFee struct {
-	TransactionFee    *big.Int
-	TransactionStatus TransactionStatus
+	TransactionFee *big.Int
 }

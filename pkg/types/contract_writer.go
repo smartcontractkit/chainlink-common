@@ -38,7 +38,7 @@ type TxMeta struct {
 }
 
 // TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.
-type TransactionStatus int32
+type TransactionStatus int
 
 const (
 	Unknown TransactionStatus = iota

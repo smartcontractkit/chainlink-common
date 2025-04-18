@@ -21,7 +21,6 @@ message ReadContractReply {
 
 // EVM chain
 service EVMChain {
-  rpc ReadContract (ReadContractRequest) returns (ReadContractReply);
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
 }
 
@@ -33,7 +32,6 @@ message GetTransactionFeeRequest {
 
 // GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
 message GetTransactionFeeReply {
-    TransactionStatus transaction_status = 1;
     BigInt transation_fee = 2; // transaction fee is the cost of transaction execution in native currency
 }
 

@@ -2,7 +2,6 @@ package evm
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/grpc"
 
@@ -81,21 +80,6 @@ func RegisterEVMChain(s *grpc.Server, EVMChain types.EVMChain) {
 	pb.RegisterEVMChainServer(s, NewServer(EVMChain))
 }
 
-// ReadContract calls the EVM method, passing encodedParams directly.
-func (c *Client) ReadContract(ctx context.Context, method string, encodedParams []byte) ([]byte, error) {
-	req := &pb.ReadContractRequest{
-		Method:        method,
-		EncodedParams: encodedParams,
-	}
-
-	resp, err := c.grpc.ReadContract(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Result, nil
-}
-
 func (c *Client) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
 	reply, err := c.grpc.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
 	if err != nil {
@@ -103,18 +87,8 @@ func (c *Client) GetTransactionFee(ctx context.Context, transactionID string) (*
 	}
 
 	return &types.TransactionFee{
-		TransactionFee:    reply.TransationFee.Int(),
-		TransactionStatus: types.TransactionStatus(reply.TransactionStatus),
+		TransactionFee: reply.TransationFee.Int(),
 	}, nil
-}
-
-// ReadContract handles the EVM RPC call by passing the raw bytes directly.
-func (s *Server) ReadContract(ctx context.Context, req *pb.ReadContractRequest) (*pb.ReadContractReply, error) {
-	result, err := s.impl.ReadContract(ctx, req.Method, req.EncodedParams)
-	if err != nil {
-		return nil, fmt.Errorf("ReadContract: %w", err)
-	}
-	return &pb.ReadContractReply{Result: result}, nil
 }
 
 func (s *Server) GetTransactionFee(ctx context.Context, req *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
@@ -124,7 +98,6 @@ func (s *Server) GetTransactionFee(ctx context.Context, req *pb.GetTransactionFe
 	}
 
 	return &pb.GetTransactionFeeReply{
-		TransationFee:     pb.NewBigIntFromInt(reply.TransactionFee),
-		TransactionStatus: pb.TransactionStatus(reply.TransactionStatus),
+		TransationFee: pb.NewBigIntFromInt(reply.TransactionFee),
 	}, nil
 }

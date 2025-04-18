@@ -167,11 +167,10 @@ func (x *GetTransactionFeeRequest) GetTransactionId() string {
 
 // GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
 type GetTransactionFeeReply struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	TransactionStatus TransactionStatus      `protobuf:"varint,1,opt,name=transaction_status,json=transactionStatus,proto3,enum=loop.TransactionStatus" json:"transaction_status,omitempty"`
-	TransationFee     *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"` // transaction fee is the cost of transaction execution in native currency
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TransationFee *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"` // transaction fee is the cost of transaction execution in native currency
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetTransactionFeeReply) Reset() {
@@ -204,13 +203,6 @@ func (*GetTransactionFeeReply) Descriptor() ([]byte, []int) {
 	return file_evm_chain_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetTransactionFeeReply) GetTransactionStatus() TransactionStatus {
-	if x != nil {
-		return x.TransactionStatus
-	}
-	return TransactionStatus_TRANSACTION_STATUS_UNKNOWN
-}
-
 func (x *GetTransactionFeeReply) GetTransationFee() *BigInt {
 	if x != nil {
 		return x.TransationFee
@@ -229,12 +221,10 @@ const file_evm_chain_proto_rawDesc = "" +
 	"\x11ReadContractReply\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\fR\x06result\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
-	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"\x95\x01\n" +
-	"\x16GetTransactionFeeReply\x12F\n" +
-	"\x12transaction_status\x18\x01 \x01(\x0e2\x17.loop.TransactionStatusR\x11transactionStatus\x123\n" +
-	"\x0etransation_fee\x18\x02 \x01(\v2\f.loop.BigIntR\rtransationFee2\xa3\x01\n" +
-	"\bEVMChain\x12B\n" +
-	"\fReadContract\x12\x19.loop.ReadContractRequest\x1a\x17.loop.ReadContractReply\x12S\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"M\n" +
+	"\x16GetTransactionFeeReply\x123\n" +
+	"\x0etransation_fee\x18\x02 \x01(\v2\f.loop.BigIntR\rtransationFee2_\n" +
+	"\bEVMChain\x12S\n" +
 	"\x11GetTransactionFee\x12\x1e.loop.GetTransactionFeeRequest\x1a\x1c.loop.GetTransactionFeeReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
@@ -255,21 +245,17 @@ var file_evm_chain_proto_goTypes = []any{
 	(*ReadContractReply)(nil),        // 1: loop.ReadContractReply
 	(*GetTransactionFeeRequest)(nil), // 2: loop.GetTransactionFeeRequest
 	(*GetTransactionFeeReply)(nil),   // 3: loop.GetTransactionFeeReply
-	(TransactionStatus)(0),           // 4: loop.TransactionStatus
-	(*BigInt)(nil),                   // 5: loop.BigInt
+	(*BigInt)(nil),                   // 4: loop.BigInt
 }
 var file_evm_chain_proto_depIdxs = []int32{
-	4, // 0: loop.GetTransactionFeeReply.transaction_status:type_name -> loop.TransactionStatus
-	5, // 1: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
-	0, // 2: loop.EVMChain.ReadContract:input_type -> loop.ReadContractRequest
-	2, // 3: loop.EVMChain.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
-	1, // 4: loop.EVMChain.ReadContract:output_type -> loop.ReadContractReply
-	3, // 5: loop.EVMChain.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 0: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
+	2, // 1: loop.EVMChain.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
+	3, // 2: loop.EVMChain.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_evm_chain_proto_init() }

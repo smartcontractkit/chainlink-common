@@ -30,6 +30,7 @@ type RelayArgs struct {
 type Relayer interface {
 	services.Service
 	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (types.PluginProvider, error)
+	NewEVMChain(context.Context) (types.EVMChain, error)
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
 	LatestHead(context.Context) (types.Head, error)

@@ -7,6 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
+	evm_chain "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -34,6 +35,19 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs core.RelayA
 	})
 
 	return relayer.WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.relayerSetClient.BrokerExt)
+}
+
+func (r *relayerClient) NewEVMChain(_ context.Context) (types.EVMChain, error) {
+	cc := r.relayerSetClient.NewClientConn("EVMChain", func(ctx context.Context) (uint32, net.Resources, error) {
+		EVMChainID, err := r.relayerSetClient.NewEVMChain(ctx, r.relayerID)
+		if err != nil {
+			return 0, nil, fmt.Errorf("error getting NewEVMChain from relayerSetServer: %w", err)
+		}
+
+		return EVMChainID, nil, nil
+	})
+
+	return evm_chain.NewClient(r.relayerSetClient.BrokerExt.WithName("EVMChainInRelayerSet"), cc), nil
 }
 
 func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

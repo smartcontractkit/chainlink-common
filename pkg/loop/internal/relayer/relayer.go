@@ -417,7 +417,7 @@ func (r *relayerServer) NewEVMChain(ctx context.Context, _ *emptypb.Empty) (*pb.
 
 	const name = "EVMChain"
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		chains.RegisterEVMChain(s, cc)
+		evm_chain.RegisterEVMChain(s, cc)
 	}, net.Resource{Closer: cc, Name: name})
 	if err != nil {
 		return nil, err

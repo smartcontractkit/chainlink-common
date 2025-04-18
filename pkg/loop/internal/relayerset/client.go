@@ -146,7 +146,7 @@ func (k *Client) NewEVMChain(ctx context.Context, relayID types.RelayID) (uint32
 	}
 	resp, err := k.relayerSetClient.NewEVMChain(ctx, req)
 	if err != nil {
-		return 0, fmt.Errorf("error getting new aptos chain service: %w", err)
+		return 0, fmt.Errorf("error getting new evm chain service: %w", err)
 	}
 	return resp.EVMChainID, nil
 }

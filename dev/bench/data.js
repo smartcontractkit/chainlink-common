@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744997142888,
+  "lastUpdate": 1745266823270,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12054,6 +12054,48 @@ window.BENCHMARK_DATA = {
             "value": 28190,
             "unit": "ns/op",
             "extra": "42691 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "888b361327e8e196f5d2bc63164b8eb857178dcc",
+          "message": "Add GettransactionFee to EVM chain service (#1142)\n\n* Add EVM chain\n\n* add GetTransactionFee to EVM chain\n\n\n---------\n\nCo-authored-by: ilija <pavlovicilija42@gmail.com>",
+          "timestamp": "2025-04-21T16:19:00-04:00",
+          "tree_id": "b0ded8a66277b8e744378c8325d62f9b422c7a75",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/888b361327e8e196f5d2bc63164b8eb857178dcc"
+        },
+        "date": 1745266821953,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.1,
+            "unit": "ns/op",
+            "extra": "3370342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.6,
+            "unit": "ns/op",
+            "extra": "2921358 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28120,
+            "unit": "ns/op",
+            "extra": "42651 times\n4 procs"
           }
         ]
       }

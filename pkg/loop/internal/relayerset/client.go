@@ -140,6 +140,17 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 	return resp.PluginProviderId, nil
 }
 
+func (k *Client) NewEVMChain(ctx context.Context, relayID types.RelayID) (uint32, error) {
+	req := &relayerset.NewEVMChainRequest{
+		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+	}
+	resp, err := k.relayerSetClient.NewEVMChain(ctx, req)
+	if err != nil {
+		return 0, fmt.Errorf("error getting new evm chain service: %w", err)
+	}
+	return resp.EVMChainID, nil
+}
+
 func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (uint32, error) {
 	req := &relayerset.NewContractReaderRequest{
 		RelayerId:            &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},

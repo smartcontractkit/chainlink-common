@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type RelayID struct {
@@ -78,6 +80,13 @@ type NodeStatus struct {
 	State   string
 }
 
+type EVMChain interface {
+	services.Service
+
+	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
+	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
+}
+
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
@@ -98,6 +107,8 @@ type ChainService interface {
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
+
+	NewEVMChain(ctx context.Context) (EVMChain, error)
 
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

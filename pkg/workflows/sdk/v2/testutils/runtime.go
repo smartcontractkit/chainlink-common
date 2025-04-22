@@ -35,7 +35,7 @@ func (r *runtime[T]) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*
 	})
 }
 
-func (r *runtime[T]) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *pb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
+func (r *runtime[T]) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
 	r.callErr = sdk.DonModeCallInNodeMode()
 	nrt := r.nodeRunner().runtime
 	result := fn(nrt)

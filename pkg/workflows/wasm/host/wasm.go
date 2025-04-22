@@ -16,7 +16,7 @@ import (
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
-func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) ([]*wasmpb.TriggerSubscriptionRequest, error) {
+func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*wasmpb.TriggerSubscriptionRequest, error) {
 	m, err := NewModule(modCfg, binary, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
@@ -41,27 +41,23 @@ func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 			return nil, err
 		}
 
-		/* TODO Why does this fail when the hack around below works........?
-		var unwrapped []*wasmpb.TriggerSubscriptionRequest
-		if err = v.UnwrapTo(&unwrapped); err != nil {
-			// And obviously here
+		unwrapped := &wasmpb.TriggerSubscriptionRequest{}
+		/* TODO this should work...?
+		if err = v.UnwrapTo(unwrapped); err != nil {
 			return nil, err
 		}
 		*/
+
+		// TODO remove hack
 		tmp, err := v.Unwrap()
 		if err != nil {
 			return nil, err
 		}
-
-		ia := tmp.([]any)
-		unwrapped := make([]*wasmpb.TriggerSubscriptionRequest, len(ia))
-		for i, v := range ia {
-			item := v.(map[string]any)
-			if err = mapstructure.Decode(item, &unwrapped[i]); err != nil {
-				return nil, err
-			}
+		if err = mapstructure.Decode(tmp, unwrapped); err != nil {
+			return nil, err
 		}
-		// End of TODO this shouldn't be needed
+
+		// End of hack
 
 		return unwrapped, nil
 	case *wasmpb.ExecutionResult_Error:
@@ -107,14 +103,14 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 }
 
 func wrapTriggersToWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*legacySdk.WorkflowSpec, error) {
-	triggers, err := GetTriggersSpec(ctx, modCfg, binary, config)
+	subscriptionRequest, err := GetTriggersSpec(ctx, modCfg, binary, config)
 	if err != nil {
 		return nil, err
 	}
 
-	spec := &legacySdk.WorkflowSpec{Triggers: make([]legacySdk.StepDefinition, len(triggers))}
+	spec := &legacySdk.WorkflowSpec{Triggers: make([]legacySdk.StepDefinition, len(subscriptionRequest.Subscriptions))}
 
-	for i, trigger := range triggers {
+	for i, trigger := range subscriptionRequest.Subscriptions {
 		spec.Triggers[i] = legacySdk.StepDefinition{
 			ID:             trigger.Id,
 			Ref:            fmt.Sprintf("trigger%d", i),

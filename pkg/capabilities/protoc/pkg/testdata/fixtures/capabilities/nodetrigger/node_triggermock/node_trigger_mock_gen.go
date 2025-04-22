@@ -40,7 +40,7 @@ func (cap *NodeEventCapability) Invoke(ctx context.Context, request *pb.Capabili
 	return capResp
 }
 
-func (cap *NodeEventCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error) {
+func (cap *NodeEventCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
 	trigger := &pb.Trigger{}
 	switch request.Method {
 	case "Trigger":

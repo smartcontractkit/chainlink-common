@@ -38,14 +38,16 @@ func TestRunner_TriggerFires(t *testing.T) {
 	require.NoError(t, err)
 
 	anyResult := "ok"
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-			assert.True(t, proto.Equal(anyTrigger, input))
-			return anyResult, nil
-		},
-	)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					assert.True(t, proto.Equal(anyTrigger, input))
+					return anyResult, nil
+				},
+			)},
+	})
 
 	ran, result, err := runner.Result()
 	require.NoError(t, err)
@@ -76,23 +78,24 @@ func TestRunner_TriggerRegistrationCanBeVerifiedWithoutTriggering(t *testing.T) 
 	require.NoError(t, err)
 
 	called := false
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig1),
-		func(rt sdk.DonRuntime, in *basictrigger.Outputs) (any, error) {
-			called = true
-			return nil, nil
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig1),
+				func(rt sdk.DonRuntime, in *basictrigger.Outputs) (any, error) {
+					called = true
+					return nil, nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(anyConfig2),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
+					assert.Fail(t, "trigger returned nil and shouldn't fire")
+					return nil, nil
+				},
+			),
 		},
-	)
-
-	sdk.SubscribeToDonTrigger(
-		runner,
-		actionandtrigger.Basic{}.Trigger(anyConfig2),
-		func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
-			assert.Fail(t, "trigger returned nil and shouldn't fire")
-			return nil, nil
-		},
-	)
+	})
 
 	ran, _, err := runner.Result()
 	require.NoError(t, err)
@@ -117,22 +120,23 @@ func TestRunner_MissingTriggersAreNotRequired(t *testing.T) {
 	require.NoError(t, err)
 
 	anyResult := "ok"
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-			return anyResult, nil
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					return anyResult, nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(anyConfig2),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
+					assert.Fail(t, "This trigger shouldn't fire")
+					return nil, nil
+				},
+			),
 		},
-	)
-
-	sdk.SubscribeToDonTrigger(
-		runner,
-		actionandtrigger.Basic{}.Trigger(anyConfig2),
-		func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
-			assert.Fail(t, "This trigger shouldn't fire")
-			return nil, nil
-		},
-	)
+	})
 
 	_, _, err = runner.Result()
 	require.NoError(t, err)
@@ -162,23 +166,24 @@ func TestRunner_FiringTwoTriggersReturnsAnError(t *testing.T) {
 	require.NoError(t, err)
 
 	called := false
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig1),
-		func(rt sdk.DonRuntime, in *basictrigger.Outputs) (any, error) {
-			called = true
-			return nil, nil
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig1),
+				func(rt sdk.DonRuntime, in *basictrigger.Outputs) (any, error) {
+					called = true
+					return nil, nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(anyConfig2),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
+					assert.Fail(t, "second trigger shouldn't fire")
+					return nil, nil
+				},
+			),
 		},
-	)
-
-	sdk.SubscribeToDonTrigger(
-		runner,
-		actionandtrigger.Basic{}.Trigger(anyConfig2),
-		func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
-			assert.Fail(t, "second trigger shouldn't fire")
-			return nil, nil
-		},
-	)
+	})
 
 	ran, _, err := runner.Result()
 	require.True(t, errors.Is(err, testutils.TooManyTriggers{}))
@@ -205,22 +210,23 @@ func TestRunner_StrictTriggers_FailsIfTriggerIsNotRegistered(t *testing.T) {
 	runner.SetStrictTriggers(true)
 
 	anyResult := "ok"
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-			return anyResult, nil
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					return anyResult, nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(anyConfig2),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
+					assert.Fail(t, "This trigger shouldn't fire")
+					return nil, nil
+				},
+			),
 		},
-	)
-
-	sdk.SubscribeToDonTrigger(
-		runner,
-		actionandtrigger.Basic{}.Trigger(anyConfig2),
-		func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
-			assert.Fail(t, "This trigger shouldn't fire")
-			return nil, nil
-		},
-	)
+	})
 
 	_, _, err = runner.Result()
 	missing := &actionandtriggermock.BasicCapability{}
@@ -244,14 +250,16 @@ func TestRunner_CanStartInNodeMode(t *testing.T) {
 	require.NoError(t, err)
 
 	anyResult := "ok"
-	sdk.SubscribeToNodeTrigger(
-		runner,
-		nodetrigger.NodeEvent{}.Trigger(anyConfig),
-		func(rt sdk.NodeRuntime, input *nodetrigger.Outputs) (string, error) {
-			assert.True(t, proto.Equal(anyTrigger, input))
-			return anyResult, nil
-		},
-	)
+	runner.Run(&sdk.WorkflowArgs[sdk.NodeRuntime]{
+		Handlers: []sdk.Handler[sdk.NodeRuntime]{
+			sdk.NewNodeHandler(
+				nodetrigger.NodeEvent{}.Trigger(anyConfig),
+				func(rt sdk.NodeRuntime, input *nodetrigger.Outputs) (string, error) {
+					assert.True(t, proto.Equal(anyTrigger, input))
+					return anyResult, nil
+				},
+			)},
+	})
 
 	ran, result, err := runner.Result()
 	require.NoError(t, err)
@@ -277,16 +285,18 @@ func TestRunner_Logs(t *testing.T) {
 	runner.SetDefaultLogger()
 
 	anyResult := "ok"
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-			logger := slog.Default()
-			logger.Info(anyResult)
-			logger.Warn(anyResult + "2")
-			return anyResult, nil
-		},
-	)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					logger := slog.Default()
+					logger.Info(anyResult)
+					logger.Warn(anyResult + "2")
+					return anyResult, nil
+				},
+			)},
+	})
 
 	_, _, err = runner.Result()
 	require.NoError(t, err)
@@ -333,22 +343,23 @@ func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
 	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-			assert.Fail(t, "This trigger shouldn't fire as there is already an error")
-			return "", nil
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					assert.Fail(t, "This trigger shouldn't fire as there is already an error")
+					return "", nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(&actionandtrigger.Config{Name: "b"}),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (string, error) {
+					assert.Fail(t, "This trigger shouldn't fire")
+					return "", nil
+				}),
 		},
-	)
-
-	sdk.SubscribeToDonTrigger(
-		runner,
-		actionandtrigger.Basic{}.Trigger(&actionandtrigger.Config{Name: "b"}),
-		func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (string, error) {
-			assert.Fail(t, "This trigger shouldn't fire")
-			return "", nil
-		})
+	})
 
 	_, _, err = runner.Result()
 	assert.Equal(t, anyError, err)

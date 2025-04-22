@@ -54,23 +54,25 @@ func TestRuntime_CallCapabilityIsAsync(t *testing.T) {
 	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
-			workflowAction1 := &basicaction.BasicAction{}
-			call1 := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+					workflowAction1 := &basicaction.BasicAction{}
+					call1 := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
 
-			workflowAction2 := &actionandtrigger.Basic{}
-			call2 := workflowAction2.Action(rt, &actionandtrigger.Input{Name: "input"})
-			result2, err := call2.Await()
-			require.NoError(t, err)
-			ch <- struct{}{}
-			result1, err := call1.Await()
-			require.NoError(t, err)
-			return result1.AdaptedThing + result2.Welcome, nil
+					workflowAction2 := &actionandtrigger.Basic{}
+					call2 := workflowAction2.Action(rt, &actionandtrigger.Input{Name: "input"})
+					result2, err := call2.Await()
+					require.NoError(t, err)
+					ch <- struct{}{}
+					result1, err := call1.Await()
+					require.NoError(t, err)
+					return result1.AdaptedThing + result2.Welcome, nil
+				}),
 		},
-	)
+	})
 
 	ran, result, err := runner.Result()
 	require.NoError(t, err)
@@ -101,19 +103,21 @@ func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
 	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
-			var nrt sdk.NodeRuntime
-			sdk.RunInNodeModeWithBuiltInConsensus(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-				nrt = nodeRuntime
-				return 0, err
-			}, pb.SimpleConsensusType_MEDIAN)
-			na := nodeaction.BasicAction{}
-			return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
-		},
-	)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
+					var nrt sdk.NodeRuntime
+					sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+						nrt = nodeRuntime
+						return 0, err
+					}, pb.SimpleConsensusType_MEDIAN)
+					na := nodeaction.BasicAction{}
+					return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
+				},
+			)},
+	})
 
 	_, _, err = runner.Result()
 	assert.Equal(t, sdk.NodeModeCallInDonMode(), err)
@@ -142,19 +146,21 @@ func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
 	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-			consensus := sdk.RunInNodeModeWithBuiltInConsensus(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-				action := basicaction.BasicAction{}
-				_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
-				return 0, err
-			}, pb.SimpleConsensusType_MEDIAN)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+					consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+						action := basicaction.BasicAction{}
+						_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
+						return 0, err
+					}, pb.SimpleConsensusType_MEDIAN)
 
-			return consensus.Await()
-		},
-	)
+					return consensus.Await()
+				},
+			)},
+	})
 
 	_, _, err = runner.Result()
 	assert.Equal(t, sdk.DonModeCallInNodeMode(), err)
@@ -174,16 +180,18 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
-			workflowAction1 := &basicaction.BasicAction{}
-			call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
-			_, err := call.Await()
-			return "", err
-		},
-	)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+					workflowAction1 := &basicaction.BasicAction{}
+					call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
+					_, err := call.Await()
+					return "", err
+				},
+			)},
+	})
 
 	_, _, err = runner.Result()
 	notRegistered := basicactionmock.BasicActionCapability{}
@@ -219,24 +227,26 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 	runner, err := testutils.NewDonRunner(t, ctx, nil)
 	require.NoError(t, err)
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-			consensus := sdk.RunInNodeModeWithBuiltInConsensus(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-				action := &nodeaction.BasicAction{}
-				resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
-				require.NoError(t, err)
-				return resp.OutputThing, nil
-				// TODO should test to make sure median and median of fields are correct, maybe it's just always median though
-			}, pb.SimpleConsensusType_MEDIAN)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+					consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+						action := &nodeaction.BasicAction{}
+						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
+						require.NoError(t, err)
+						return resp.OutputThing, nil
+						// TODO should test to make sure median and median of fields are correct, maybe it's just always median though
+					}, pb.SimpleConsensusType_MEDIAN)
 
-			consensusResult, err := consensus.Await()
-			require.NoError(t, err)
-			return consensusResult, nil
+					consensusResult, err := consensus.Await()
+					require.NoError(t, err)
+					return consensusResult, nil
 
-		},
-	)
+				},
+			)},
+	})
 
 	ran, result, err := runner.Result()
 	require.NoError(t, err)
@@ -261,26 +271,28 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 	require.NoError(t, err)
 
 	anyValue := int32(100)
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-			consensusType := &sdk.PrimitiveConsensusWithDefault[int32]{
-				SimpleConsensusType: pb.SimpleConsensusType_MEDIAN,
-				DefaultValue:        anyValue,
-			}
-			consensus := sdk.RunInNodeModeWithBuiltInConsensus(
-				rt,
-				func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-					return 0, errors.New("no consensus")
-				},
-				consensusType)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+					consensusType := &sdk.PrimitiveConsensusWithDefault[int32]{
+						SimpleConsensusType: pb.SimpleConsensusType_MEDIAN,
+						DefaultValue:        anyValue,
+					}
+					consensus := sdk.RunInNodeMode(
+						rt,
+						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+							return 0, errors.New("no consensus")
+						},
+						consensusType)
 
-			consensusResult, err := consensus.Await()
-			require.NoError(t, err)
-			return consensusResult, nil
-		},
-	)
+					consensusResult, err := consensus.Await()
+					require.NoError(t, err)
+					return consensusResult, nil
+				},
+			)},
+	})
 
 	ran, result, err := runner.Result()
 	require.NoError(t, err)
@@ -305,20 +317,22 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	anyErr := errors.New("no consensus")
-	sdk.SubscribeToDonTrigger(
-		runner,
-		basictrigger.Basic{}.Trigger(anyConfig),
-		func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-			consensus := sdk.RunInNodeModeWithBuiltInConsensus(
-				rt,
-				func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-					return 0, anyErr
-				},
-				pb.SimpleConsensusType_MEDIAN)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+					consensus := sdk.RunInNodeMode(
+						rt,
+						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+							return 0, anyErr
+						},
+						pb.SimpleConsensusType_MEDIAN)
 
-			return consensus.Await()
-		},
-	)
+					return consensus.Await()
+				},
+			)},
+	})
 
 	_, _, err = runner.Result()
 	require.Equal(t, err, anyErr)

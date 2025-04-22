@@ -94,7 +94,7 @@ func (cap *{{.GoName}}Capability) Invoke(ctx context.Context, request *pb.Capabi
     return capResp
 }
 
-func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error){
+func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error){
     {{- if $hasTriggers }}
     trigger := &pb.Trigger{}
     switch request.Method {

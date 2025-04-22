@@ -74,38 +74,6 @@ func (r *store[T]) delete(id string) {
 	delete(r.m, id)
 }
 
-type triggerStore struct {
-	triggers    []*wasmpb.TriggerSubscriptionRequest
-	triggerLock sync.Mutex
-}
-
-func (t *triggerStore) add(trigger *wasmpb.TriggerSubscriptionRequest) {
-	t.triggerLock.Lock()
-	defer t.triggerLock.Unlock()
-	t.triggers = append(t.triggers, trigger)
-}
-
-func (t *triggerStore) get() []*wasmpb.TriggerSubscriptionRequest {
-	t.triggerLock.Lock()
-	defer t.triggerLock.Unlock()
-	return t.triggers
-}
-
-func (t *triggerStore) subscribeToTrigger(caller *wasmtime.Caller, subscription, subscriptionLen int32) int32 {
-	triggerBytes, err := wasmRead(caller, subscription, subscriptionLen)
-	if err != nil {
-		return ErrnoFault
-	}
-
-	trigger := &wasmpb.TriggerSubscriptionRequest{}
-	if err = proto.Unmarshal(triggerBytes, trigger); err != nil {
-		return ErrnoFault
-	}
-
-	t.add(trigger)
-	return ErrnoSuccess
-}
-
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Second
@@ -152,7 +120,6 @@ type Module struct {
 
 	requestStore *store[*wasmdagpb.Response]
 	executeStore *store[*wasmpb.ExecutionResult]
-	triggers     *triggerStore
 
 	cfg *ModuleConfig
 
@@ -289,8 +256,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		}
 	}
 
-	triggers := &triggerStore{}
-
 	logger := modCfg.Logger
 	err = linker.FuncWrap(
 		"env",
@@ -305,7 +270,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		if err = linkLegacyDAG(linker, modCfg, requestStore); err != nil {
 			return nil, err
 		}
-	} else if err = linkNoDAG(linker, modCfg, execStore, triggers); err != nil {
+	} else if err = linkNoDAG(linker, modCfg, execStore); err != nil {
 		return nil, err
 	}
 
@@ -317,7 +282,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 		requestStore: requestStore,
 		executeStore: execStore,
-		triggers:     triggers,
 
 		cfg: modCfg,
 
@@ -328,7 +292,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	return m, nil
 }
 
-func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*wasmpb.ExecutionResult], triggerStore *triggerStore) error {
+func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*wasmpb.ExecutionResult]) error {
 	logger := modCfg.Logger
 	if err := linker.FuncWrap(
 		"env",
@@ -338,14 +302,6 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 		}),
 	); err != nil {
 		return fmt.Errorf("error wrapping sendResponse func: %w", err)
-	}
-
-	if err := linker.FuncWrap(
-		"env",
-		"subscribe_to_trigger",
-		triggerStore.subscribeToTrigger,
-	); err != nil {
-		return err
 	}
 
 	if err := linker.FuncWrap(
@@ -441,7 +397,7 @@ func (m *Module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest) (*wasm
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
-	return runWasm[*wasmpb.ExecuteRequest, *wasmpb.ExecutionResult](m, ctx, req, m.executeStore)
+	return runWasm[*wasmpb.ExecuteRequest, *wasmpb.ExecutionResult](ctx, m, req, m.executeStore)
 }
 
 // Run is deprecated, use execute instead
@@ -458,7 +414,7 @@ func (m *Module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		return m.wrapRunForNoDAG(ctx, request)
 	}
 
-	return runWasm[*wasmdagpb.Request, *wasmdagpb.Response](m, ctx, request, m.requestStore)
+	return runWasm[*wasmdagpb.Request, *wasmdagpb.Response](ctx, m, request, m.requestStore)
 }
 
 type idMessage interface {
@@ -466,8 +422,7 @@ type idMessage interface {
 	proto.Message
 }
 
-func runWasm[I idMessage, O proto.Message](
-	m *Module, ctx context.Context, request I, execStore *store[O]) (O, error) {
+func runWasm[I idMessage, O proto.Message](ctx context.Context, m *Module, request I, execStore *store[O]) (O, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
 	defer cancel()
 
@@ -535,15 +490,11 @@ func runWasm[I idMessage, O proto.Message](
 	_, err = start.Call(store)
 	switch {
 	case containsCode(err, wasm.CodeSuccess):
-		if err = m.wrapTriggersToResponse(reqId); err != nil {
-			return o, err
-		}
-
 		storedRequest, innerErr := execStore.get(reqId)
 		if innerErr != nil {
 			return o, innerErr
 		}
-
+		
 		if any(storedRequest.response) == nil {
 			return o, fmt.Errorf("could not find response for id %s", reqId)
 		}
@@ -609,26 +560,6 @@ func (m *Module) wrapRunForNoDAG(ctx context.Context, request *wasmdagpb.Request
 			},
 		},
 	}, nil
-}
-
-func (m *Module) wrapTriggersToResponse(reqId string) error {
-	triggers := m.triggers.get()
-	if len(triggers) == 0 {
-		return nil
-	}
-	result, err := values.Wrap(triggers)
-	if err != nil {
-		return err
-	}
-	execution, err := m.executeStore.get(reqId)
-	if err != nil {
-		return err
-	}
-
-	resultPb := values.Proto(result)
-	execution.response = &wasmpb.ExecutionResult{Id: reqId, Result: &wasmpb.ExecutionResult_Value{Value: resultPb}}
-
-	return nil
 }
 
 func containsCode(err error, code int) bool {

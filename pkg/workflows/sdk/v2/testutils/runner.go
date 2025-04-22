@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
@@ -112,46 +111,43 @@ func (r *runner[T]) nodeRunner() *runner[sdk.NodeRuntime] {
 func (r *runner[T]) SetStrictTriggers(strict bool) {
 	r.strictTriggers = strict
 }
-
-func (r *runner[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
-	if r.err != nil {
-		return
-	}
-
-	trigger, err := r.registry.GetCapability(id)
-	if err != nil {
-		if r.strictTriggers {
-			r.err = err
+func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
+	for _, handler := range args.Handlers {
+		trigger, err := r.registry.GetCapability(handler.Id())
+		if err != nil {
+			if r.strictTriggers {
+				r.err = err
+			}
+			return
 		}
-		return
-	}
 
-	request := &pb.TriggerSubscriptionRequest{
-		ExecId:  r.executionId,
-		Id:      uuid.NewString(),
-		Payload: triggerCfg,
-		Method:  method,
-	}
+		request := &pb.TriggerSubscription{
+			ExecId:  r.executionId,
+			Id:      uuid.NewString(),
+			Payload: handler.TriggerCfg(),
+			Method:  handler.Method(),
+		}
 
-	// TODO decide if this should be allowed to be async since it's for starting a workflow...
-	response, err := trigger.InvokeTrigger(r.ctx, request)
-	if err != nil {
-		r.err = err
-		return
-	}
+		// TODO decide if this should be allowed to be async since it's for starting a workflow...
+		response, err := trigger.InvokeTrigger(r.ctx, request)
+		if err != nil {
+			r.err = err
+			return
+		}
 
-	// trigger did not fire
-	if response == nil {
-		return
-	}
+		// trigger did not fire
+		if response == nil {
+			return
+		}
 
-	if r.ran {
-		r.err = TooManyTriggers{}
-		return
-	}
+		if r.ran {
+			r.err = TooManyTriggers{}
+			return
+		}
 
-	r.ran = true
-	r.result, r.err = handler(r.runtime, response.Payload)
+		r.ran = true
+		r.result, r.err = handler.Callback()(r.runtime, response.Payload)
+	}
 }
 
 func (r *runner[T]) Config() []byte {

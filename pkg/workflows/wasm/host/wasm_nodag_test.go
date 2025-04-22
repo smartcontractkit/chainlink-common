@@ -41,9 +41,9 @@ func Test_NoDag_Run(t *testing.T) {
 	triggers, err := GetTriggersSpec(ctx, mc, binary, []byte(""))
 	require.NoError(t, err)
 
-	require.Len(t, triggers, 1)
-	require.Equal(t, triggerID, triggers[0].Id)
-	configProto := triggers[0].Payload
+	require.Len(t, triggers.Subscriptions, 1)
+	require.Equal(t, triggerID, triggers.Subscriptions[0].Id)
+	configProto := triggers.Subscriptions[0].Payload
 	config := &basictrigger.Config{}
 	require.NoError(t, configProto.UnmarshalTo(config))
 	require.Equal(t, "name", config.Name)

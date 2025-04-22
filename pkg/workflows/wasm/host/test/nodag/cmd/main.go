@@ -12,10 +12,16 @@ import (
 func main() {
 	runner := wasm.NewDonRunner()
 	basic := &basictrigger.Basic{}
-	sdk.SubscribeToDonTrigger(runner, basic.Trigger(&basictrigger.Config{
-		Name:   "name",
-		Number: 100,
-	}), onTrigger)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basic.Trigger(&basictrigger.Config{
+					Name:   "name",
+					Number: 100,
+				}),
+				onTrigger),
+		},
+	})
 }
 
 func onTrigger(runtime sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {

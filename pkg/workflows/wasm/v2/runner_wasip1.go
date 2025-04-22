@@ -9,15 +9,11 @@ import (
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
-
-//go:wasmimport env subscribe_to_trigger
-func subscribeToTrigger(subscription unsafe.Pointer, subscriptionLen int32) int32
 
 //go:wasmimport env send_response
 func sendResponse(response unsafe.Pointer, responseLen int32) int32
@@ -52,24 +48,27 @@ var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 // TODO callbacks to setup a trigger...
 // TODO can't subscribe to a trigger more than once and differentiate the return value.
 
-func (d *runner[T]) SubscribeToTrigger(id, _ string, _ *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
-	// TODO multiple subscriptions the the same trigger
-	if id == d.trigger.Id {
-		response, err := handler(d.runtime, d.trigger.Payload)
-		execResponse := &pb.ExecutionResult{Id: d.id}
-		if err == nil {
-			wrapped, err := values.Wrap(response)
-			if err != nil {
-				execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
+func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
+	for _, handler := range args.Handlers {
+
+		// TODO multiple subscriptions the the same trigger
+		if handler.Id() == d.trigger.Id {
+			response, err := handler.Callback()(d.runtime, d.trigger.Payload)
+			execResponse := &pb.ExecutionResult{Id: d.id}
+			if err == nil {
+				wrapped, err := values.Wrap(response)
+				if err != nil {
+					execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
+				} else {
+					execResponse.Result = &pb.ExecutionResult_Value{Value: values.Proto(wrapped)}
+				}
 			} else {
-				execResponse.Result = &pb.ExecutionResult_Value{Value: values.Proto(wrapped)}
+				execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
 			}
-		} else {
-			execResponse.Result = &pb.ExecutionResult_Error{Error: err.Error()}
+			marshalled, _ := proto.Marshal(execResponse)
+			marshalledPtr, marshalledLen, _ := bufferToPointerLen(marshalled)
+			sendResponse(marshalledPtr, marshalledLen)
 		}
-		marshalled, _ := proto.Marshal(execResponse)
-		marshalledPtr, marshalledLen, _ := bufferToPointerLen(marshalled)
-		sendResponse(marshalledPtr, marshalledLen)
 	}
 }
 
@@ -89,20 +88,30 @@ type subscriber[T any] struct {
 var _ sdk.DonRunner = &subscriber[sdk.DonRuntime]{}
 var _ sdk.NodeRunner = &subscriber[sdk.NodeRuntime]{}
 
-func (d *subscriber[T]) SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, _ func(runtime T, triggerOutputs *anypb.Any) (any, error)) {
-	triggerSubscription := &pb.TriggerSubscriptionRequest{
-		ExecId:  d.id,
-		Id:      id,
-		Payload: triggerCfg,
-		Method:  method,
+func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
+	subscriptions := make([]*pb.TriggerSubscription, len(args.Handlers))
+	for i, handler := range args.Handlers {
+		subscriptions[i] = &pb.TriggerSubscription{
+			ExecId:  d.id,
+			Id:      handler.Id(),
+			Payload: handler.TriggerCfg(),
+			Method:  handler.Method(),
+		}
+	}
+	triggerSubscription := &pb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
+	value, _ := values.Wrap(triggerSubscription)
+
+	execResponse := &pb.ExecutionResult{
+		Id:     d.id,
+		Result: &pb.ExecutionResult_Value{Value: values.Proto(value)},
 	}
 
-	configBytes, _ := proto.Marshal(triggerSubscription)
+	configBytes, _ := proto.Marshal(execResponse)
 	configPtr, configLen, _ := bufferToPointerLen(configBytes)
 
-	result := subscribeToTrigger(configPtr, configLen)
+	result := sendResponse(configPtr, configLen)
 	if result < 0 {
-		panic(fmt.Sprintf("could not subscribe to trigger: %s", id))
+		panic(fmt.Sprintf("could not subscribe to triggers: %s", string(configBytes[:-result])))
 	}
 }
 
@@ -115,7 +124,7 @@ func (d *subscriber[T]) LogWriter() io.Writer {
 }
 
 type genericRunner[T any] interface {
-	SubscribeToTrigger(id, method string, triggerCfg *anypb.Any, handler func(runtime T, triggerOutputs *anypb.Any) (any, error))
+	Run(args *sdk.WorkflowArgs[T])
 	Config() []byte
 	LogWriter() io.Writer
 }

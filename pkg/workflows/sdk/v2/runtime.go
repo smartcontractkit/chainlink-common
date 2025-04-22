@@ -23,8 +23,8 @@ type NodeRuntime interface {
 type DonRuntime interface {
 	RuntimeBase
 
-	// RunInNodeModeWithBuiltInConsensus is meant to be used by the helper method RunInNodeModeWithBuiltInConsensus
-	RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest) Promise[values.Value]
+	// RunInNodeMode is meant to be used by the helper method RunInNodeMode
+	RunInNodeMode(fn func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest) Promise[values.Value]
 }
 
 type PrimitiveConsensusWithDefault[T any] struct {
@@ -36,19 +36,19 @@ type BuiltInConsensus[T any] interface {
 	pb.SimpleConsensusType | *PrimitiveConsensusWithDefault[T]
 }
 
-var nodeModeCallInDonMode = errors.New("cannot use NodeRuntime outside RunInNodeModeWithBuiltInConsensus")
+var nodeModeCallInDonMode = errors.New("cannot use NodeRuntime outside RunInNodeMode")
 
 func NodeModeCallInDonMode() error {
 	return nodeModeCallInDonMode
 }
 
-var donModeCallInNodeMode = errors.New("cannot use the DonRuntime inside RunInNodeModeWithBuiltInConsensus")
+var donModeCallInNodeMode = errors.New("cannot use the DonRuntime inside RunInNodeMode")
 
 func DonModeCallInNodeMode() error {
 	return donModeCallInNodeMode
 }
 
-func RunInNodeModeWithBuiltInConsensus[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), consensus C) Promise[T] {
+func RunInNodeMode[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), consensus C) Promise[T] {
 	observationFn := func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest {
 		var primitiveConsensus *pb.PrimitiveConsensus
 		var defaultValue values.Value
@@ -86,7 +86,7 @@ func RunInNodeModeWithBuiltInConsensus[T any, C BuiltInConsensus[T]](runtime Don
 		return consensusRequest
 	}
 
-	return Then(runtime.RunInNodeModeWithBuiltInConsensus(observationFn), func(v values.Value) (T, error) {
+	return Then(runtime.RunInNodeMode(observationFn), func(v values.Value) (T, error) {
 		// TODO this is wrong, but good enough for now...
 		var t T
 		err := v.UnwrapTo(&t)

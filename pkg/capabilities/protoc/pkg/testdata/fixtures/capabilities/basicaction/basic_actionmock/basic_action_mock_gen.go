@@ -65,7 +65,7 @@ func (cap *BasicActionCapability) Invoke(ctx context.Context, request *pb.Capabi
 	return capResp
 }
 
-func (cap *BasicActionCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error) {
+func (cap *BasicActionCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
 	return nil, fmt.Errorf("method %s not found", request.Method)
 }
 

@@ -97,7 +97,7 @@ type donRuntime struct {
 	runtimeBase
 }
 
-func (d *donRuntime) RunInNodeModeWithBuiltInConsensus(fn func(nodeRuntime sdk.NodeRuntime) *wpb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
+func (d *donRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *wpb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
 	// TODO verify DON runtime isn't used inside node mode :)
 	observation := fn(&nodeRuntime{})
 	wrapped, _ := anypb.New(observation)

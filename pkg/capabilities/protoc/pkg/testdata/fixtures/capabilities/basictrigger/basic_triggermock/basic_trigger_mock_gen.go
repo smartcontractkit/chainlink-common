@@ -40,7 +40,7 @@ func (cap *BasicCapability) Invoke(ctx context.Context, request *pb.CapabilityRe
 	return capResp
 }
 
-func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscriptionRequest) (*pb.Trigger, error) {
+func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
 	trigger := &pb.Trigger{}
 	switch request.Method {
 	case "Trigger":

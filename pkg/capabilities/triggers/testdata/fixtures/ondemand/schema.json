@@ -28,19 +28,6 @@
               "required": [
                 "Underlying"
               ]
-            },
-            "Value": {
-              "properties": {
-                "type_url": {
-                  "type": "string"
-                },
-                "value": {
-                  "type": "string",
-                  "contentEncoding": "base64"
-                }
-              },
-              "additionalProperties": false,
-              "type": "object"
             }
           },
           "additionalProperties": false,
@@ -48,8 +35,7 @@
           "required": [
             "TriggerType",
             "ID",
-            "Outputs",
-            "Value"
+            "Outputs"
           ]
         },
         "Err": true

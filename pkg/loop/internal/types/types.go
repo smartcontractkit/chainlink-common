@@ -46,8 +46,6 @@ type OCR3CapabilityProvider interface {
 type Relayer interface {
 	types.ChainService
 
-	NewEVMChain(ctx context.Context) (types.EVMChain, error)
-
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
@@ -58,6 +56,10 @@ type Relayer interface {
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewPluginProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.PluginProvider, error)
 	NewLLOProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.LLOProvider, error)
+}
+
+type EVMRelayer interface {
+	GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error)
 }
 
 // Keystore This interface contains all the keystore GRPC functionality, keystore.Keystore is meant to be exposed to consumers and the keystore.Management interface in exposed only to the core node

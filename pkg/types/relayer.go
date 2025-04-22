@@ -80,9 +80,9 @@ type NodeStatus struct {
 	State   string
 }
 
-type EVMChain interface {
+type EVMRelayer interface {
 	services.Service
-
+	Relayer
 	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
 	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
 }

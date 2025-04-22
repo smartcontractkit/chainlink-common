@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -134,13 +133,12 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		{
 			Name: ContractReaderQueryKeysReturnsDataTwoEventTypes,
 			Test: func(t T) {
-				ctx := tests.Context(t)
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 
 				bindings := tester.GetBindings(t)
 
-				require.NoError(t, cr.Bind(ctx, bindings))
+				require.NoError(t, cr.Bind(t.Context(), bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
 
 				expectedSequenceData := createMixedEventTypeSequence(t, tester, cw, boundContract)
@@ -160,7 +158,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 						SequenceDataType: &ds,
 					}
 
-					sequencesIter, err := cr.QueryKeys(ctx, []types.ContractKeyFilter{secondContractFilter, contractFilter}, query.LimitAndSort{})
+					sequencesIter, err := cr.QueryKeys(t.Context(), []types.ContractKeyFilter{secondContractFilter, contractFilter}, query.LimitAndSort{})
 					if err != nil {
 						return false
 					}
@@ -178,7 +176,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		{
 			Name: ContractReaderQueryKeysNotFound,
 			Test: func(t T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
 				bound := BindingsByName(bindings, AnyContractName)[0]
@@ -204,7 +202,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		{
 			Name: ContractReaderQueryKeysReturnsDataAsValuesDotValue,
 			Test: func(t T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
@@ -269,7 +267,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		{
 			Name: ContractReaderQueryKeysCanFilterWithValueComparator,
 			Test: func(t T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 
@@ -325,7 +323,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 		{
 			Name: ContractReaderQueryKeysCanLimitResultsWithCursor,
 			Test: func(t T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
@@ -463,7 +461,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				contracts := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				firstItem := CreateTestStruct(0, tester)
 
 				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
@@ -503,7 +501,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -524,7 +522,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -545,7 +543,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				contracts := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				firstItem := CreateTestStruct(0, tester)
 
 				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
@@ -574,7 +572,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
@@ -592,7 +590,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 
@@ -628,7 +626,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnySecondContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -644,7 +642,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -661,7 +659,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				testStruct := CreateTestStruct(0, tester)
 				testStruct.BigField = nil
 				testStruct.AccountStruct.Account = nil
@@ -687,7 +685,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -711,7 +709,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -743,7 +741,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -759,7 +757,7 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
@@ -820,7 +818,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 					},
 				}
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
@@ -851,7 +849,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 					},
 				}
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
@@ -878,7 +876,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				batchGetLatestValuesRequest[bound1] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnyContract}}
 				batchGetLatestValuesRequest[bound2] = []types.BatchRead{{ReadName: MethodReturningUint64, Params: nil, ReturnVal: &primitiveReturnValueAnySecondContract}}
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValuesRequest)
@@ -907,7 +905,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 
 				batchGetLatestValueRequest[bound] = []types.BatchRead{{ReadName: MethodReturningUint64Slice, Params: nil, ReturnVal: &sliceReturnValue}}
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -934,7 +932,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 
 				batchGetLatestValueRequest[bound] = []types.BatchRead{{ReadName: MethodReturningSeenStruct, Params: testStruct, ReturnVal: actual}}
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
 				require.NoError(t, err)
@@ -973,7 +971,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				}
 				batchContractWrite(t, tester, cw, bindings, batchCallEntry, mockRun)
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
@@ -1010,7 +1008,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 				}
 				batchContractWrite(t, tester, cw, bindings, batchCallEntry, mockRun)
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
@@ -1052,7 +1050,7 @@ func runContractReaderBatchGetLatestValuesInterfaceTests[T TestingT[T]](t T, tes
 					batchGetLatestValueRequest[bound2] = append(batchGetLatestValueRequest[bound2], types.BatchRead{ReadName: MethodTakingLatestParamsReturningTestStruct, Params: &LatestParams{I: 0}, ReturnVal: &TestStruct{}})
 				}
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				require.NoError(t, cr.Bind(ctx, bindings))
 
 				result, err := cr.BatchGetLatestValues(ctx, batchGetLatestValueRequest)
@@ -1086,7 +1084,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 			Test: func(t T) {
 				cr := tester.GetContractReader(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				bound := BindingsByName(bindings, AnyContractName)[0]
 
 				require.NoError(t, cr.Bind(ctx, bindings))
@@ -1103,7 +1101,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
@@ -1127,7 +1125,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				bound := BindingsByName(bindings, AnyContractName)[0]
@@ -1168,7 +1166,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]
@@ -1205,7 +1203,7 @@ func runQueryKeyInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterfa
 				cr := tester.GetContractReader(t)
 				cw := tester.GetContractWriter(t)
 				bindings := tester.GetBindings(t)
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				require.NoError(t, cr.Bind(ctx, bindings))
 				boundContract := BindingsByName(bindings, AnyContractName)[0]

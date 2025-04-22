@@ -25,11 +25,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
+
+const v2ImportPrefix = "version_v2"
 
 type RequestData[T proto.Message] struct {
 	fetchRequestsCounter int
@@ -82,6 +85,7 @@ var (
 	defaultMaxFetchRequests          = 5
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
+	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
 )
 
 type DeterminismConfig struct {
@@ -96,10 +100,11 @@ type ModuleConfig struct {
 	InitialFuel               uint64
 	Logger                    logger.Logger
 	IsUncompressed            bool
-	Fetch                     func(ctx context.Context, req *wasmdagpb.FetchRequest) (*wasmdagpb.FetchResponse, error)
+	Fetch                     func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
 	MaxFetchRequests          int
 	MaxCompressedBinarySize   uint64
 	MaxDecompressedBinarySize uint64
+	MaxResponseSizeBytes      uint64
 
 	// Labeler is used to emit messages from the module.
 	Labeler custmsg.MessageEmitter
@@ -112,7 +117,27 @@ type ModuleConfig struct {
 	AwaitCapabilities func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error)
 }
 
-type Module struct {
+type ModuleBase interface {
+	Start()
+	Close()
+	IsLegacyDAG() bool
+}
+
+type ModuleV1 interface {
+	ModuleBase
+
+	// V1/Legacy API - request either the Workflow Spec or Custom-Compute execution
+	Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error)
+}
+
+type ModuleV2 interface {
+	ModuleBase
+
+	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
+	Execute(ctx context.Context, request *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error)
+}
+
+type module struct {
 	engine  *wasmtime.Engine
 	module  *wasmtime.Module
 	linker  *wasmtime.Linker
@@ -129,6 +154,8 @@ type Module struct {
 	isLegacyDAG bool
 }
 
+var _ ModuleV1 = (*module)(nil)
+
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
 // "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -143,7 +170,7 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*Module, error) {
+func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -154,7 +181,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	}
 
 	if modCfg.Fetch == nil {
-		modCfg.Fetch = func(context.Context, *wasmdagpb.FetchRequest) (*wasmdagpb.FetchResponse, error) {
+		modCfg.Fetch = func(context.Context, *FetchRequest) (*FetchResponse, error) {
 			return nil, fmt.Errorf("fetch not implemented")
 		}
 	}
@@ -185,6 +212,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 	if modCfg.MaxDecompressedBinarySize == 0 {
 		modCfg.MaxDecompressedBinarySize = uint64(defaultMaxDecompressedBinarySize)
+	}
+
+	if modCfg.MaxResponseSizeBytes == 0 {
+		modCfg.MaxResponseSizeBytes = uint64(defaultMaxResponseSizeBytes)
 	}
 
 	// Take the max of the min and the configured max memory mbs.
@@ -239,21 +270,27 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error creating wasi linker: %w", err)
 	}
 
+	isLegacyDAG := true
+	for _, modImport := range mod.Imports() {
+		name := modImport.Name()
+		if modImport.Module() == "env" && name != nil && strings.HasPrefix(*name, v2ImportPrefix) {
+			isLegacyDAG = false
+			if err = linker.FuncWrap(
+				"env",
+				*name,
+				func(caller *wasmtime.Caller) {}); err != nil {
+				return nil, fmt.Errorf("error wrapping log func: %w", err)
+			}
+			break
+		}
+	}
+
 	requestStore := &store[*wasmdagpb.Response]{
 		m: map[string]*RequestData[*wasmdagpb.Response]{},
 	}
 
 	execStore := &store[*wasmpb.ExecutionResult]{
 		m: map[string]*RequestData[*wasmpb.ExecutionResult]{},
-	}
-
-	isLegacyDAG := false
-	for _, modImport := range mod.Imports() {
-		name := modImport.Name()
-		if modImport.Module() == "env" && name != nil && *name == "fetch" {
-			isLegacyDAG = true
-			break
-		}
 	}
 
 	logger := modCfg.Logger
@@ -274,7 +311,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, err
 	}
 
-	m := &Module{
+	m := &module{
 		engine:  engine,
 		module:  mod,
 		linker:  linker,
@@ -283,8 +320,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		requestStore: requestStore,
 		executeStore: execStore,
 
-		cfg: modCfg,
-
+		cfg:         modCfg,
 		stopCh:      make(chan struct{}),
 		isLegacyDAG: isLegacyDAG,
 	}
@@ -357,7 +393,7 @@ func linkLegacyDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, requestStore *
 	return nil
 }
 
-func (m *Module) Start() {
+func (m *module) Start() {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
@@ -374,7 +410,7 @@ func (m *Module) Start() {
 	}()
 }
 
-func (m *Module) Close() {
+func (m *module) Close() {
 	close(m.stopCh)
 	m.wg.Wait()
 
@@ -384,11 +420,11 @@ func (m *Module) Close() {
 	m.wconfig.Close()
 }
 
-func (m *Module) IsLegacyDag() bool {
+func (m *module) IsLegacyDAG() bool {
 	return m.isLegacyDAG
 }
 
-func (m *Module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error) {
+func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error) {
 	if m.isLegacyDAG {
 		return nil, errors.New("cannot execute a legacy dag workflow")
 	}
@@ -397,11 +433,15 @@ func (m *Module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest) (*wasm
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
-	return runWasm[*wasmpb.ExecuteRequest, *wasmpb.ExecutionResult](ctx, m, req, m.executeStore)
+	setMaxResponseSize := func(r *wasmpb.ExecuteRequest, maxSize uint64) {
+		r.MaxResponseSize = maxSize
+	}
+
+	return runWasm[*wasmpb.ExecuteRequest, *wasmpb.ExecutionResult](ctx, m, req, setMaxResponseSize, m.executeStore)
 }
 
 // Run is deprecated, use execute instead
-func (m *Module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error) {
+func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error) {
 	if request == nil {
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
@@ -414,7 +454,16 @@ func (m *Module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		return m.wrapRunForNoDAG(ctx, request)
 	}
 
-	return runWasm[*wasmdagpb.Request, *wasmdagpb.Response](ctx, m, request, m.requestStore)
+	setMaxResponseSize := func(r *wasmdagpb.Request, maxSize uint64) {
+		computeRequest := r.GetComputeRequest()
+		if computeRequest != nil {
+			computeRequest.RuntimeConfig = &wasmdagpb.RuntimeConfig{
+				MaxResponseSizeBytes: int64(m.cfg.MaxResponseSizeBytes),
+			}
+		}
+	}
+
+	return runWasm[*wasmdagpb.Request, *wasmdagpb.Response](ctx, m, request, setMaxResponseSize, m.requestStore)
 }
 
 type idMessage interface {
@@ -422,7 +471,12 @@ type idMessage interface {
 	proto.Message
 }
 
-func runWasm[I idMessage, O proto.Message](ctx context.Context, m *Module, request I, execStore *store[O]) (O, error) {
+func runWasm[I idMessage, O proto.Message](
+	ctx context.Context,
+	m *module,
+	request I,
+	setMaxResponseSize func(i I, maxSize uint64),
+	execStore *store[O]) (O, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
 	defer cancel()
 
@@ -443,6 +497,7 @@ func runWasm[I idMessage, O proto.Message](ctx context.Context, m *Module, reque
 
 	defer store.Close()
 
+	setMaxResponseSize(request, m.cfg.MaxResponseSizeBytes)
 	reqpb, err := proto.Marshal(request)
 	if err != nil {
 		return o, err
@@ -494,7 +549,7 @@ func runWasm[I idMessage, O proto.Message](ctx context.Context, m *Module, reque
 		if innerErr != nil {
 			return o, innerErr
 		}
-		
+
 		if any(storedRequest.response) == nil {
 			return o, fmt.Errorf("could not find response for id %s", reqId)
 		}
@@ -518,7 +573,7 @@ func runWasm[I idMessage, O proto.Message](ctx context.Context, m *Module, reque
 	}
 }
 
-func (m *Module) wrapRunForNoDAG(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error) {
+func (m *module) wrapRunForNoDAG(ctx context.Context, request *wasmdagpb.Request) (*wasmdagpb.Response, error) {
 	execRequest := &wasmpb.ExecuteRequest{Id: request.Id, Config: request.Config}
 	switch msg := request.Message.(type) {
 	case *wasmdagpb.Request_ComputeRequest:
@@ -600,6 +655,73 @@ func createSendResponseFn[T idMessage](
 	}
 }
 
+func toSdkReq(req *wasmdagpb.FetchRequest) *FetchRequest {
+	h := map[string]string{}
+	for k, v := range req.Headers.GetFields() {
+		h[k] = v.GetStringValue()
+	}
+
+	md := FetchRequestMetadata{}
+	if req.Metadata != nil {
+		md = FetchRequestMetadata{
+			WorkflowID:          req.Metadata.WorkflowId,
+			WorkflowName:        req.Metadata.WorkflowName,
+			WorkflowOwner:       req.Metadata.WorkflowOwner,
+			WorkflowExecutionID: req.Metadata.WorkflowExecutionId,
+			DecodedWorkflowName: req.Metadata.DecodedWorkflowName,
+		}
+	}
+	return &FetchRequest{
+		FetchRequest: dagsdk.FetchRequest{
+			URL:        req.Url,
+			Method:     req.Method,
+			Headers:    h,
+			Body:       req.Body,
+			TimeoutMs:  req.TimeoutMs,
+			MaxRetries: req.MaxRetries,
+		},
+		Metadata: md,
+	}
+}
+
+func fromSdkResp(resp *dagsdk.FetchResponse) (*wasmdagpb.FetchResponse, error) {
+	h := map[string]any{}
+	if resp.Headers != nil {
+		for k, v := range resp.Headers {
+			h[k] = v
+		}
+	}
+	m, err := values.WrapMap(h)
+	if err != nil {
+		return nil, err
+	}
+	return &wasmdagpb.FetchResponse{
+		ExecutionError: resp.ExecutionError,
+		ErrorMessage:   resp.ErrorMessage,
+		StatusCode:     resp.StatusCode,
+		Headers:        values.ProtoMap(m),
+		Body:           resp.Body,
+	}, nil
+
+}
+
+type FetchRequestMetadata struct {
+	WorkflowID          string
+	WorkflowName        string
+	WorkflowOwner       string
+	WorkflowExecutionID string
+	DecodedWorkflowName string
+}
+
+type FetchRequest struct {
+	dagsdk.FetchRequest
+	Metadata FetchRequestMetadata
+}
+
+// Use an alias here to allow extending the FetchResponse with additional
+// metadata in the future, as with the FetchRequest above.
+type FetchResponse = dagsdk.FetchResponse
+
 func createFetchFn(
 	logger logger.Logger,
 	reader unsafeReaderFunc,
@@ -663,13 +785,20 @@ func createFetchFn(
 		}
 		storedRequest.fetchRequestsCounter++
 
-		fetchResp, innerErr := modCfg.Fetch(storedRequest.ctx(), req)
+		fetchResp, innerErr := modCfg.Fetch(storedRequest.ctx(), toSdkReq(req))
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return writeErr(innerErr)
 		}
 
-		respBytes, innerErr := proto.Marshal(fetchResp)
+		protoResp, innerErr := fromSdkResp(fetchResp)
+		if innerErr != nil {
+			logger.Errorf("%s: %s", errFetchSfx, innerErr)
+			return writeErr(innerErr)
+		}
+
+		// convert struct to proto
+		respBytes, innerErr := proto.Marshal(protoResp)
 		if innerErr != nil {
 			logger.Errorf("%s: %s", errFetchSfx, innerErr)
 			return writeErr(innerErr)

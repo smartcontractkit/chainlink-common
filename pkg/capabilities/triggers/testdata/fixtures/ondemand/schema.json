@@ -41,6 +41,49 @@
               },
               "additionalProperties": false,
               "type": "object"
+            },
+            "OCREvent": {
+              "properties": {
+                "ConfigDigest": {
+                  "type": "string",
+                  "contentEncoding": "base64"
+                },
+                "SeqNr": {
+                  "type": "integer"
+                },
+                "Report": {
+                  "type": "string",
+                  "contentEncoding": "base64"
+                },
+                "Sigs": {
+                  "items": {
+                    "properties": {
+                      "Signature": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                      },
+                      "Signer": {
+                        "type": "integer"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "Signature",
+                      "Signer"
+                    ]
+                  },
+                  "type": "array"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "ConfigDigest",
+                "SeqNr",
+                "Report",
+                "Sigs"
+              ]
             }
           },
           "additionalProperties": false,
@@ -49,7 +92,8 @@
             "TriggerType",
             "ID",
             "Outputs",
-            "Value"
+            "Value",
+            "OCREvent"
           ]
         },
         "Err": true

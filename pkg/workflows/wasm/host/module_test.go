@@ -13,7 +13,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -51,7 +50,7 @@ func Test_createEmitFn(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctxKey := "key"
 		ctxValue := "test-value"
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		ctx = context.WithValue(ctx, ctxKey, "test-value")
 		store := &store[*wasmpb.Response]{
 			m:  make(map[string]*RequestData[*wasmpb.Response]),
@@ -164,7 +163,7 @@ func Test_createEmitFn(t *testing.T) {
 		}
 		reqId := "random-id"
 		store.add(reqId, &RequestData[*wasmpb.Response]{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: func() context.Context { return t.Context() },
 		})
 		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 			Error: &wasmpb.Error{
@@ -247,7 +246,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData[*wasmpb.Response]{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: func() context.Context { return t.Context() },
 		}
 
 		fetchFn := createFetchFn(
@@ -267,8 +266,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 				MaxFetchRequests: 5,
 			},
@@ -303,8 +302,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -339,8 +338,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -379,8 +378,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -398,7 +397,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData[*wasmpb.Response]{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: func() context.Context { return t.Context() },
 		}
 
 		fetchFn := createFetchFn(
@@ -424,7 +423,7 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 					return nil, assert.AnError
 				},
 				MaxFetchRequests: 1,
@@ -444,7 +443,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData[*wasmpb.Response]{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: func() context.Context { return t.Context() },
 		}
 
 		fetchFn := createFetchFn(
@@ -464,8 +463,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,
@@ -483,7 +482,7 @@ func TestCreateFetchFn(t *testing.T) {
 
 		// we add the request data to the store so that the fetch function can find it
 		store.m[testID] = &RequestData[*wasmpb.Response]{
-			ctx: func() context.Context { return tests.Context(t) },
+			ctx: func() context.Context { return t.Context() },
 		}
 
 		fetchFn := createFetchFn(
@@ -503,8 +502,8 @@ func TestCreateFetchFn(t *testing.T) {
 			}),
 			&ModuleConfig{
 				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-					return &wasmpb.FetchResponse{}, nil
+				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+					return &FetchResponse{}, nil
 				},
 			},
 			store,

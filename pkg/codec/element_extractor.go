@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -134,6 +135,12 @@ func expandMap(extractMap map[string]any, key string, _ *ElementExtractorLocatio
 	}
 
 	rItem := reflect.ValueOf(item)
+	// Must be one of these Kinds to check IsNil, this check is not same as item == nil check.
+	if slices.Contains([]reflect.Kind{reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice}, rItem.Kind()) && rItem.IsNil() {
+		extractMap[key] = reflect.MakeSlice(reflect.SliceOf(rItem.Type()), 0, 0).Interface()
+		return nil
+	}
+
 	slice := reflect.MakeSlice(reflect.SliceOf(rItem.Type()), 1, 1)
 	slice.Index(0).Set(rItem)
 	extractMap[key] = slice.Interface()

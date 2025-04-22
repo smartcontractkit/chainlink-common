@@ -18,14 +18,19 @@
           "type": "string",
           "enum": ["oneAtATime", "allAtOnce"],
           "description": "The schedule which must be the string 'oneAtATime'."
-        }
+        },
+	"cre_step_timeout": {
+          "type": "integer",
+          "description": "The step timeout which must be a number expressed in seconds"
+	}
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
         "address",
         "deltaStage",
-        "schedule"
+        "schedule",
+	"cre_step_timeout"
       ]
     },
     "inputs": {

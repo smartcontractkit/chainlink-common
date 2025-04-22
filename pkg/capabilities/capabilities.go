@@ -57,7 +57,18 @@ func (c CapabilityType) IsValid() error {
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
 	Value         *values.Map
+	Metadata      ResponseMetadata
 	ResponseValue *anypb.Any
+}
+
+type ResponseMetadata struct {
+	Metering []MeteringNodeDetail
+}
+
+type MeteringNodeDetail struct {
+	Peer2PeerID string
+	SpendUnit   string
+	SpendValue  string
 }
 
 type RequestMetadata struct {
@@ -89,28 +100,26 @@ type CapabilityRequest struct {
 	Method   string
 }
 
-type TriggerEvent struct {
-	// The ID of the trigger capability
-	TriggerType string
-	// The ID of the trigger event
-	ID string
-	// Trigger-specific payload
-	Outputs *values.Map
-	Value   *anypb.Any
-}
-
 type RegisterToWorkflowRequest struct {
 	Metadata RegistrationMetadata
-	Config   *values.Map
-	Value    *anypb.Any
-	Method   string
+	// Configuration for DAG workflows
+	Config *values.Map
+
+	// Configuration for no DAG workflows
+	Value *anypb.Any
+	// The method to call for no DAG workflows
+	Method string
 }
 
 type UnregisterFromWorkflowRequest struct {
 	Metadata RegistrationMetadata
-	Config   *values.Map
-	Value    *anypb.Any
-	Method   string
+	// Configuration for DAG workflows
+	Config *values.Map
+
+	// Configuration for no DAG workflows
+	Value *anypb.Any
+	// The method to call for no DAG workflows
+	Method string
 }
 
 // Executable is an interface for executing a capability.
@@ -140,14 +149,88 @@ type TriggerRegistrationRequest struct {
 	TriggerID string
 
 	Metadata RequestMetadata
-	Config   *values.Map
-	Request  *anypb.Any
-	Method   string
+
+	// Config for DAG workflows
+	Config *values.Map
+
+	// Request body for no DAG workflows
+	Request *anypb.Any
+	// The method to call for no DAG workflows
+	Method string
 }
 
 type TriggerResponse struct {
 	Event TriggerEvent
 	Err   error
+}
+
+type TriggerEvent struct {
+	// The ID of the trigger capability
+	TriggerType string
+	// The ID of the trigger event
+	ID string
+	// Trigger-specific payload for DAG workflows
+	Outputs *values.Map
+
+	// Trigger-specific payload for no DAG workflows
+	Value *anypb.Any
+
+	// Deprecated: use Outputs instead
+	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)
+	OCREvent *OCRTriggerEvent
+}
+
+type OCRTriggerEvent struct {
+	ConfigDigest []byte
+	SeqNr        uint64
+	Report       []byte // marshaled pb.OCRTriggerReport
+	Sigs         []OCRAttributedOnchainSignature
+}
+
+// DO NOT change this. it is in the encoding of [TriggerEvent].Outputs
+//
+// TODO: a more sophisticated way to handle this would be to have add this const
+// in the protobuf definition of the TriggerEvent struct.
+const ocrTriggerEventOutputKey = "OCRTriggerEvent"
+
+func (e *OCRTriggerEvent) topLevelKey() string {
+	return ocrTriggerEventOutputKey
+}
+
+// ToMap converts the OCRTriggerEvent to a map.
+// This is useful serialization purposes with the [TriggerEvent] struct.
+func (e *OCRTriggerEvent) ToMap() (*values.Map, error) {
+	x, err := values.Wrap(e)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wrap OCRTriggerEvent: %w", err)
+	}
+	return values.NewMap(map[string]any{
+		e.topLevelKey(): x,
+	})
+}
+
+// FromMap converts a map to an OCRTriggerEvent.
+// This is useful deserialization purposes with the [TriggerEvent] struct.
+func (e *OCRTriggerEvent) FromMap(m *values.Map) error {
+	if m == nil {
+		return fmt.Errorf("nil map")
+	}
+	val, ok := m.Underlying[e.topLevelKey()]
+	if !ok {
+		return fmt.Errorf("missing key: %s", e.topLevelKey())
+	}
+	var unwrapped OCRTriggerEvent
+	err := val.UnwrapTo(&unwrapped)
+	if err != nil {
+		return fmt.Errorf("failed to unwrap OCRTriggerEvent: %w", err)
+	}
+	*e = unwrapped
+	return nil
+}
+
+type OCRAttributedOnchainSignature struct {
+	Signature []byte
+	Signer    uint32 // oracle ID (0,1,...,N-1)
 }
 
 type TriggerExecutable interface {

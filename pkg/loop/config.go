@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 )
 
 const (
@@ -41,12 +43,14 @@ const (
 	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
 	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
 	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
+
+	envChipIngressEndpoint = "CL_CHIP_INGRESS_ENDPOINT"
 )
 
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	DatabaseURL                    *url.URL
+	DatabaseURL                    *config.SecretURL
 	DatabaseIdleInTxSessionTimeout time.Duration
 	DatabaseLockTimeout            time.Duration
 	DatabaseQueryTimeout           time.Duration
@@ -75,6 +79,8 @@ type EnvConfig struct {
 	TelemetryEmitterExportInterval     time.Duration
 	TelemetryEmitterExportMaxBatchSize int
 	TelemetryEmitterMaxQueueSize       int
+
+	ChipIngressEndpoint string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -84,7 +90,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	}
 
 	if e.DatabaseURL != nil { // optional
-		add(envDatabaseURL, e.DatabaseURL.String())
+		add(envDatabaseURL, e.DatabaseURL.URL().String())
 		add(envDatabaseIdleInTxSessionTimeout, e.DatabaseIdleInTxSessionTimeout.String())
 		add(envDatabaseLockTimeout, e.DatabaseLockTimeout.String())
 		add(envDatabaseQueryTimeout, e.DatabaseQueryTimeout.String())
@@ -122,17 +128,24 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
 	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
 	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
+
+	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
+
 	return
 }
 
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
 	var err error
-	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*url.URL, error) {
+	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*config.SecretURL, error) {
 		if s == "" { // DatabaseURL is optional
 			return nil, nil
 		}
-		return url.Parse(s)
+		u, err2 := url.Parse(s)
+		if err2 != nil {
+			return nil, err2
+		}
+		return (*config.SecretURL)(u), nil
 	})
 	if err != nil {
 		return err
@@ -221,7 +234,10 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
 		}
+		// Optional
+		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 	}
+
 	return nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -50,6 +51,7 @@ func TestEnvConfig_parse(t *testing.T) {
 		expectedTelemetryEmitterExportInterval     time.Duration
 		expectedTelemetryEmitterExportMaxBatchSize int
 		expectedTelemetryEmitterMaxQueueSize       int
+		expectedChipIngressEndpoint                string
 	}{
 		{
 			name: "All variables set correctly",
@@ -83,6 +85,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
+				envChipIngressEndpoint:                "http://chip-ingress.example.com",
 			},
 			expectError: false,
 
@@ -113,6 +116,7 @@ func TestEnvConfig_parse(t *testing.T) {
 			expectedTelemetryEmitterExportInterval:     2 * time.Second,
 			expectedTelemetryEmitterExportMaxBatchSize: 100,
 			expectedTelemetryEmitterMaxQueueSize:       1000,
+			expectedChipIngressEndpoint:                "http://chip-ingress.example.com",
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -155,8 +159,8 @@ func TestEnvConfig_parse(t *testing.T) {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				} else {
-					if config.DatabaseURL.String() != tc.expectedDatabaseURL {
-						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL)
+					if config.DatabaseURL.URL().String() != tc.expectedDatabaseURL {
+						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL.String())
 					}
 					if config.DatabaseIdleInTxSessionTimeout != tc.expectedDatabaseIdleInTxSessionTimeout {
 						t.Errorf("Expected Database idle in tx session timeout %s, got %s", tc.expectedDatabaseIdleInTxSessionTimeout, config.DatabaseIdleInTxSessionTimeout)
@@ -231,6 +235,9 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.TelemetryEmitterMaxQueueSize != tc.expectedTelemetryEmitterMaxQueueSize {
 						t.Errorf("Expected telemetryEmitterMaxQueueSize %d, got %d", tc.expectedTelemetryEmitterMaxQueueSize, config.TelemetryEmitterMaxQueueSize)
 					}
+					if config.ChipIngressEndpoint != tc.expectedChipIngressEndpoint {
+						t.Errorf("Expected ChipIngressEndpoint %s, got %s", tc.expectedChipIngressEndpoint, config.ChipIngressEndpoint)
+					}
 				}
 			}
 		})
@@ -263,7 +270,7 @@ func equalStringMaps(a, b map[string]string) bool {
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	envCfg := EnvConfig{
-		DatabaseURL:    &url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"},
+		DatabaseURL:    (*config.SecretURL)(&url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"}),
 		PrometheusPort: 9090,
 
 		TracingEnabled:         true,
@@ -285,6 +292,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 		TelemetryEmitterExportInterval:     2 * time.Second,
 		TelemetryEmitterExportMaxBatchSize: 100,
 		TelemetryEmitterMaxQueueSize:       1000,
+
+		ChipIngressEndpoint: "http://chip-ingress.example.com",
 	}
 	got := map[string]string{}
 	for _, kv := range envCfg.AsCmdEnv() {
@@ -316,6 +325,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
+
+	// Assert ChipIngress environment variables
+	assert.Equal(t, "http://chip-ingress.example.com", got[envChipIngressEndpoint])
 }
 
 func TestGetMap(t *testing.T) {

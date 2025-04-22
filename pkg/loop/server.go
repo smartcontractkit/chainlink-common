@@ -105,20 +105,21 @@ func (s *Server) start() error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
-
 		beholderCfg := beholder.Config{
-			InsecureConnection:        envCfg.TelemetryInsecureConnection,
-			CACertFile:                envCfg.TelemetryCACertFile,
-			OtelExporterGRPCEndpoint:  envCfg.TelemetryEndpoint,
-			ResourceAttributes:        append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
-			TraceSampleRatio:          envCfg.TelemetryTraceSampleRatio,
-			AuthHeaders:               envCfg.TelemetryAuthHeaders,
-			AuthPublicKeyHex:          envCfg.TelemetryAuthPubKeyHex,
-			EmitterBatchProcessor:     envCfg.TelemetryEmitterBatchProcessor,
-			EmitterExportTimeout:      envCfg.TelemetryEmitterExportTimeout,
-			EmitterExportInterval:     envCfg.TelemetryEmitterExportInterval,
-			EmitterExportMaxBatchSize: envCfg.TelemetryEmitterExportMaxBatchSize,
-			EmitterMaxQueueSize:       envCfg.TelemetryEmitterMaxQueueSize,
+			InsecureConnection:             envCfg.TelemetryInsecureConnection,
+			CACertFile:                     envCfg.TelemetryCACertFile,
+			OtelExporterGRPCEndpoint:       envCfg.TelemetryEndpoint,
+			ResourceAttributes:             append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
+			TraceSampleRatio:               envCfg.TelemetryTraceSampleRatio,
+			AuthHeaders:                    envCfg.TelemetryAuthHeaders,
+			AuthPublicKeyHex:               envCfg.TelemetryAuthPubKeyHex,
+			EmitterBatchProcessor:          envCfg.TelemetryEmitterBatchProcessor,
+			EmitterExportTimeout:           envCfg.TelemetryEmitterExportTimeout,
+			EmitterExportInterval:          envCfg.TelemetryEmitterExportInterval,
+			EmitterExportMaxBatchSize:      envCfg.TelemetryEmitterExportMaxBatchSize,
+			EmitterMaxQueueSize:            envCfg.TelemetryEmitterMaxQueueSize,
+			ChipIngressEmitterEnabled:      envCfg.ChipIngressEndpoint != "",
+			ChipIngressEmitterGRPCEndpoint: envCfg.ChipIngressEndpoint,
 		}
 
 		if tracingConfig.Enabled {
@@ -151,8 +152,8 @@ func (s *Server) start() error {
 	}
 
 	if envCfg.DatabaseURL != nil {
-		pg.SetApplicationName(envCfg.DatabaseURL, build.Program)
-		dbURL := envCfg.DatabaseURL.String()
+		pg.SetApplicationName(envCfg.DatabaseURL.URL(), build.Program)
+		dbURL := envCfg.DatabaseURL.URL().String()
 		var err error
 		s.db, err = pg.DBConfig{
 			IdleInTxSessionTimeout: envCfg.DatabaseIdleInTxSessionTimeout,
@@ -161,7 +162,7 @@ func (s *Server) start() error {
 			MaxIdleConns:           envCfg.DatabaseMaxIdleConns,
 		}.New(ctx, dbURL, pg.DriverPostgres)
 		if err != nil {
-			return fmt.Errorf("error connecting to DataBase at %s: %w", dbURL, err)
+			return fmt.Errorf("error connecting to DataBase: %w", err)
 		}
 		s.DataSource = sqlutil.WrapDataSource(s.db, s.Logger,
 			sqlutil.TimeoutHook(func() time.Duration { return envCfg.DatabaseQueryTimeout }),

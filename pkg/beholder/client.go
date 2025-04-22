@@ -3,7 +3,9 @@ package beholder
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -23,10 +25,6 @@ import (
 type Emitter interface {
 	// Sends message with bytes and attributes to OTel Collector
 	Emit(ctx context.Context, body []byte, attrKVs ...any) error
-}
-
-type messageEmitter struct {
-	messageLogger otellog.Logger
 }
 
 type Client struct {
@@ -64,20 +62,23 @@ func NewClient(cfg Config) (*Client, error) {
 			// note: context is unused internally
 			return otlploghttp.New(context.Background(), options...) //nolint
 		}
-		return newHTTPClient(cfg, factory)
+		return NewHTTPClient(cfg, factory)
 	}
 
 	factory := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
 		// note: context is unused internally
 		return otlploggrpc.New(context.Background(), options...) //nolint
 	}
-	return newGRPCClient(cfg, factory)
+
+	return NewGRPCClient(cfg, factory)
 }
 
 // Used for testing to override the default exporter
 type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, error)
 
-func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+// NewGRPCClient creates a GRPC based beholder Client. Use NewClient to create a client from a Config which will pick
+// the best client type from the Config.
+func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err
@@ -202,8 +203,45 @@ func newGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	)
 	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
-	emitter := messageEmitter{
-		messageLogger: messageLogger,
+	// Use the messageEmitter by default
+	// This will eventually be removed in favor of chip-ingress emitter
+	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
+	emitter := NewMessageEmitter(messageLogger)
+	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
+	// eventually we will remove the dual source emitter and just use chip ingress
+
+	if cfg.ChipIngressEmitterEnabled {
+
+		// Create a header provider that implements the chipingress.HeaderProvider interface
+
+		chipIngressOpts := []chipingress.Opt{
+			chipingress.WithTransportCredentials(creds),
+		}
+
+		// Only add headers if they exist
+		if len(cfg.AuthHeaders) > 0 {
+			headerProvider := NewStaticAuthHeaderProvider(cfg.AuthHeaders)
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithHeaderProvider(headerProvider))
+		}
+
+		chipIngressClient, err := chipingress.NewChipIngressClient(
+			cfg.ChipIngressEmitterGRPCEndpoint,
+			chipIngressOpts...,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
+		}
+
+		emitter, err = NewDualSourceEmitter(chipIngressEmitter, emitter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dual source emitter: %w", err)
+		}
 	}
 
 	onClose := func() (err error) {
@@ -292,25 +330,6 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 	return
-}
-
-// Emits logs the message, but does not wait for the message to be processed.
-// Open question: what are pros/cons for using use map[]any vs use otellog.KeyValue
-func (e messageEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	message := NewMessage(body, attrKVs...)
-	if err := message.Validate(); err != nil {
-		return err
-	}
-	e.messageLogger.Emit(ctx, message.OtelRecord())
-	return nil
-}
-
-func (e messageEmitter) EmitMessage(ctx context.Context, message Message) error {
-	if err := message.Validate(); err != nil {
-		return err
-	}
-	e.messageLogger.Emit(ctx, message.OtelRecord())
-	return nil
 }
 
 type shutdowner interface {

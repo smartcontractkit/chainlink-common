@@ -14,7 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -37,7 +36,7 @@ func Test_NoDag_Run(t *testing.T) {
 	triggerID := "basic-test-trigger@1.0.0"
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	triggers, err := GetTriggersSpec(ctx, mc, binary, []byte(""))
 	require.NoError(t, err)
 
@@ -93,7 +92,7 @@ func Test_NoDag_With_Legacy_Run(t *testing.T) {
 	triggerRef := "trigger0"
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	spec, err := GetWorkflowSpec(ctx, mc, binary, []byte(""))
 	require.NoError(t, err)
 

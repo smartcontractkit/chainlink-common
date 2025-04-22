@@ -7,8 +7,9 @@ package sdk;
 import "capabilities/pb/capabilities.proto";
 import "values/pb/values.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
 
-message RuntimeConfig { int64 maxFetchResponseSizeBytes = 1; }
+message RuntimeConfig { int64 maxResponseSizeBytes = 1; }
 
 message ComputeRequest {
   capabilities.CapabilityRequest request = 1;
@@ -23,7 +24,6 @@ message Request {
     ComputeRequest computeRequest = 3;
     google.protobuf.Empty specRequest = 4;
   }
-
   string triggerId = 5;
 }
 
@@ -78,6 +78,7 @@ message FetchRequest {
   uint32 timeoutMs = 5;
   string id = 6;
   FetchRequestMetadata metadata = 7;
+  uint32 maxRetries = 8;
 }
 
 message FetchResponse {
@@ -99,3 +100,33 @@ message EmitMessageRequest {
 message Error { string message = 1; }
 
 message EmitMessageResponse { Error error = 1; }
+
+// TODO: v2 structs to be moved to a different package
+message TriggerSubscriptionRequest {
+  string execId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
+  string method = 4;
+}
+
+message Trigger {
+  string id = 1;
+  google.protobuf.Any payload = 2;
+}
+
+message ExecuteRequest {
+  string id = 1;
+  bytes config = 2;
+  oneof request {
+    google.protobuf.Empty subscribe = 3;
+    Trigger trigger = 4;
+  }
+}
+
+message ExecutionResult {
+  string id = 1;
+  oneof result {
+    values.Value value = 2;
+    string error = 3;
+  }
+}

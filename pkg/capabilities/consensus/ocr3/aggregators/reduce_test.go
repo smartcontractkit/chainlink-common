@@ -567,6 +567,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 			fields              []aggregators.AggregationField
 			extraConfig         map[string]any
 			observationsFactory func() map[commontypes.OracleID][]values.Value
+			errString           string
 		}{
 			{
 				name:            "not enough observations",
@@ -581,6 +582,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				observationsFactory: func() map[commontypes.OracleID][]values.Value {
 					return map[commontypes.OracleID][]values.Value{}
 				},
+				errString: "not enough observations, have 0 want 3",
 			},
 			{
 				name: "invalid previous outcome not pb",
@@ -599,6 +601,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					require.NoError(t, err)
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
 				},
+				errString: "initializeCurrentState Unmarshal error:", // the proto package discourages full string error comparisons
 			},
 			{
 				name:            "not enough extracted values",
@@ -617,6 +620,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					mockValueEmpty := values.EmptyMap()
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValueEmpty}}
 				},
+				errString: "not enough observations provided Price, have 2 want 3",
 			},
 			{
 				name:            "reduce error median",
@@ -633,9 +637,10 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 					require.NoError(t, err)
 					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue}, 3: {mockValue}}
 				},
+				errString: "unable to reduce on method median, err: unable to convert type bool to decimal",
 			},
 			{
-				name:            "reduce error mode with mode quorum of ocr",
+				name:            "reduce error mode with mode quorum of: ocr",
 				previousOutcome: nil,
 				fields: []aggregators.AggregationField{
 					{
@@ -646,12 +651,35 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				},
 				extraConfig: map[string]any{},
 				observationsFactory: func() map[commontypes.OracleID][]values.Value {
-					mockValue, err := values.Wrap(true)
+					mockValue, err := values.Wrap(1)
 					require.NoError(t, err)
-					mockValue2, err := values.Wrap(true)
+					mockValue2, err := values.Wrap(2)
 					require.NoError(t, err)
-					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}}
+					mockValue3, err := values.Wrap(3)
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}, 3: {mockValue3}}
 				},
+				errString: "unable to reduce on method mode, err: mode quorum not reached. have: 1, want: 2",
+			},
+			{
+				name:            "reduce error mode with mode quorum of: all",
+				previousOutcome: nil,
+				fields: []aggregators.AggregationField{
+					{
+						Method:     "mode",
+						ModeQuorum: "all",
+						OutputKey:  "Price",
+					},
+				},
+				extraConfig: map[string]any{},
+				observationsFactory: func() map[commontypes.OracleID][]values.Value {
+					mockValue, err := values.Wrap(1)
+					require.NoError(t, err)
+					mockValue2, err := values.Wrap(2)
+					require.NoError(t, err)
+					return map[commontypes.OracleID][]values.Value{1: {mockValue}, 2: {mockValue2}, 3: {mockValue2}}
+				},
+				errString: "unable to reduce on method mode, err: mode quorum not reached. have: 2, want: 3",
 			},
 		}
 		for _, tt := range cases {
@@ -661,7 +689,7 @@ func TestReduceAggregator_Aggregate(t *testing.T) {
 				require.NoError(t, err)
 
 				_, err = agg.Aggregate(logger.Nop(), tt.previousOutcome, tt.observationsFactory(), 1)
-				require.Error(t, err)
+				require.ErrorContains(t, err, tt.errString)
 			})
 		}
 	})

@@ -22,7 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -30,13 +29,13 @@ func TestTransmitter(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
 	wowner := "foo-owner"
 	repID := []byte{0xf0, 0xe0}
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 
 	weid := uuid.New().String()
 
-	cp := newCapability(
+	cp := NewCapability(
 		s,
 		clockwork.NewFakeClock(),
 		10*time.Second,
@@ -119,13 +118,13 @@ func TestTransmitter(t *testing.T) {
 func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
 	wowner := "foo-owner"
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
 	s := requests.NewStore()
 
 	weid := uuid.New().String()
 
-	cp := newCapability(
+	cp := NewCapability(
 		s,
 		clockwork.NewFakeClock(),
 		10*time.Second,

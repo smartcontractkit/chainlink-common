@@ -3,8 +3,10 @@ package grafana
 import "github.com/smartcontractkit/chainlink-common/observability-lib/api"
 
 type DataSource struct {
+	ID   uint
 	Name string
 	UID  string
+	Type string
 }
 
 func NewDataSource(name, uid string) *DataSource {
@@ -25,5 +27,5 @@ func GetDataSourceFromGrafana(name string, grafanaURL string, grafanaToken strin
 		return nil, err
 	}
 
-	return &DataSource{Name: datasource.Name, UID: datasource.UID}, nil
+	return &DataSource{ID: datasource.ID, Name: datasource.Name, UID: datasource.UID, Type: datasource.Type}, nil
 }

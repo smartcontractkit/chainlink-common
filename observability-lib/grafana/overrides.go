@@ -129,6 +129,13 @@ func NewLinksProperty(options *LinksPropertyOptions) *Property {
 	}
 }
 
+func NewFilterableProperty(value bool) *Property {
+	return &Property{
+		ID:    "filterable",
+		Value: value,
+	}
+}
+
 func NewHiddenProperty(value bool) *Property {
 	return &Property{
 		ID:    "custom.hidden",
@@ -139,6 +146,13 @@ func NewHiddenProperty(value bool) *Property {
 func NewWidthProperty(value float64) *Property {
 	return &Property{
 		ID:    "custom.width",
+		Value: value,
+	}
+}
+
+func NewMinWidthProperty(value float64) *Property {
+	return &Property{
+		ID:    "custom.minWidth",
 		Value: value,
 	}
 }

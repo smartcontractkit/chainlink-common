@@ -4,7 +4,7 @@ package basic_test_trigger.v1;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/protoc/pkg/testdata/fixtures/capabilities/basictrigger";
 
-import "metadata.proto";
+import "cre_metadata.proto";
 
 message Config {
   string name = 1;

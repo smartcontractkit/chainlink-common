@@ -114,7 +114,7 @@ func (m *onChainHardCoder) TransformToOnChain(offChainValue any, itemType string
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil
@@ -137,13 +137,22 @@ func (m *onChainHardCoder) TransformToOffChain(onChainValue any, itemType string
 	copy(allHooks, m.hooks)
 	allHooks[len(m.hooks)] = hardCodeManyHook
 
+	// if there is only one field with unset name, then a primitive variable is being hardcoded
+	if len(m.fields) == 1 {
+		for k, v := range m.fields {
+			if k == "" {
+				return v, nil
+			}
+		}
+	}
+
 	modified, err := transformWithMaps(onChainValue, m.onToOffChainType, m.fields, hardCode, allHooks...)
 	if err != nil {
 		return nil, err
 	}
 
 	if itemType != "" {
-		return valueForPath(reflect.ValueOf(modified), itemType)
+		return ValueForPath(reflect.ValueOf(modified), itemType)
 	}
 
 	return modified, nil

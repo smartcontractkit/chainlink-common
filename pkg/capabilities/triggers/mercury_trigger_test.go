@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -63,7 +62,7 @@ const (
 func TestMercuryTrigger(t *testing.T) {
 	ts, err := NewMercuryTriggerService(100, "", "4.5.6", logger.Nop())
 	require.NoError(t, err)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	err = ts.Start(ctx)
 	require.NoError(t, err)
 	// use registerTriggerHelper to register a trigger
@@ -104,7 +103,7 @@ func TestMercuryTrigger(t *testing.T) {
 func TestMultipleMercuryTriggers(t *testing.T) {
 	ts, err := NewMercuryTriggerService(100, "", "4.5.6", logger.Nop())
 	require.NoError(t, err)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	err = ts.Start(ctx)
 	require.NoError(t, err)
 	callback1, cr1 := registerTrigger(
@@ -219,7 +218,7 @@ func TestMultipleMercuryTriggers(t *testing.T) {
 func TestMercuryTrigger_RegisterTriggerErrors(t *testing.T) {
 	ts, err := NewMercuryTriggerService(100, "", "4.5.6", logger.Nop())
 	require.NoError(t, err)
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	require.NoError(t, ts.Start(ctx))
 
 	cm := map[string]interface{}{
@@ -360,7 +359,7 @@ func TestMercuryTrigger_WrapReports(t *testing.T) {
 			ObservationTimestamp: 876543,
 		})
 	}
-	wrapped, err := wrapReports(reportList, "event_id", 1234, meta, triggerID)
+	wrapped, err := WrapReports(reportList, "event_id", 1234, meta, triggerID)
 	require.NoError(t, err)
 	require.NotNil(t, wrapped.Event)
 	require.Len(t, wrapped.Event.Outputs.Underlying["Payload"].(*values.List).Underlying, P)

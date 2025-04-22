@@ -11,12 +11,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evm_chain "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -197,6 +199,17 @@ func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerC
 	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
 }
 
+func (r *relayerClient) NewEVMChain(_ context.Context) (types.EVMChain, error) {
+	cc := r.NewClientConn("EVMChain", func(ctx context.Context) (uint32, net.Resources, error) {
+		reply, err := r.relayer.NewEVMChain(ctx, &emptypb.Empty{})
+		if err != nil {
+			return 0, nil, err
+		}
+		return reply.EVMChainID, nil, nil
+	})
+	return evm_chain.NewClient(r.WithName("EVMChainClient"), cc), nil
+}
+
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
 	cwc := r.NewClientConn("ContractWriter", func(ctx context.Context) (uint32, net.Resources, error) {
 		reply, err := r.relayer.NewContractWriter(ctx, &pb.NewContractWriterRequest{ContractWriterConfig: contractWriterConfig})
@@ -364,6 +377,19 @@ func (r *relayerClient) Transact(ctx context.Context, from, to string, amount *b
 	return err
 }
 
+func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	argsStruct, err := structpb.NewStruct(args)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.relayer.Replay(ctx, &pb.ReplayRequest{
+		FromBlock: fromBlock,
+		Args:      argsStruct,
+	})
+	return err
+}
+
 var _ pb.RelayerServer = (*relayerServer)(nil)
 
 // relayerServer exposes [Relayer] as a GRPC [pb.RelayerServer].
@@ -377,6 +403,27 @@ type relayerServer struct {
 
 func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
+}
+
+func (r *relayerServer) NewEVMChain(ctx context.Context, _ *emptypb.Empty) (*pb.NewEVMChainReply, error) {
+	cc, err := r.impl.NewEVMChain(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cc.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	const name = "EVMChain"
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		evm_chain.RegisterEVMChain(s, cc)
+	}, net.Resource{Closer: cc, Name: name})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.NewEVMChainReply{EVMChainID: id}, nil
 }
 
 func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {
@@ -720,6 +767,10 @@ func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNo
 
 func (r *relayerServer) Transact(ctx context.Context, request *pb.TransactionRequest) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, r.impl.Transact(ctx, request.From, request.To, request.Amount.Int(), request.BalanceCheck)
+}
+
+func (r *relayerServer) Replay(ctx context.Context, request *pb.ReplayRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, r.impl.Replay(ctx, request.FromBlock, request.Args.AsMap())
 }
 
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,

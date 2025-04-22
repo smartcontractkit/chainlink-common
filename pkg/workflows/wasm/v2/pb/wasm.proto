@@ -29,6 +29,7 @@ message ExecuteRequest {
     google.protobuf.Empty subscribe = 3;
     Trigger trigger = 4;
   }
+  uint64 max_response_size = 5;
 }
 
 message ExecutionResult {

@@ -25,7 +25,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func PluginMedian(t *testing.T, p core.PluginMedian) {
@@ -38,8 +37,8 @@ type PluginMedianTest struct {
 
 func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 	t.Run("PluginMedian", func(t *testing.T) {
-		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog)
+		ctx := t.Context()
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, GasPriceSubunitsDataSource, &errorlogtest.ErrorLog, nil)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -52,8 +51,8 @@ func (m PluginMedianTest) TestPluginMedian(t *testing.T, p core.PluginMedian) {
 
 	// when gasPriceSubunitsDataSource is meant to trigger a no-op
 	t.Run("PluginMedian (Zero GasPriceSubunitsDataSource)", func(t *testing.T) {
-		ctx := tests.Context(t)
-		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog)
+		ctx := t.Context()
+		factory, err := p.NewMedianFactory(ctx, m.MedianProvider, MedianContractID, DataSource, JuelsPerFeeCoinDataSource, &ZeroDataSource{}, &errorlogtest.ErrorLog, nil)
 		require.NoError(t, err)
 
 		ReportingPluginFactory(t, factory)
@@ -72,12 +71,12 @@ func ReportingPluginFactory(t *testing.T, factory types.ReportingPluginFactory) 
 		// that wraps the static implementation
 		var expectedReportingPlugin = reportingplugintest.ReportingPlugin
 
-		rp, gotRPI, err := factory.NewReportingPlugin(tests.Context(t), reportingPluginConfig)
+		rp, gotRPI, err := factory.NewReportingPlugin(t.Context(), reportingPluginConfig)
 		require.NoError(t, err)
 		assert.Equal(t, rpi, gotRPI)
 		t.Cleanup(func() { assert.NoError(t, rp.Close()) })
 		t.Run("ReportingPlugin", func(t *testing.T) {
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
 			expectedReportingPlugin.AssertEqual(ctx, t, rp)
 		})
@@ -116,7 +115,7 @@ func (s staticMedianFactoryServer) HealthReport() map[string]error {
 	return hp
 }
 
-func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog) (types.ReportingPluginFactory, error) {
+func (s staticMedianFactoryServer) NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoinDataSource, gasPriceSubunitsDataSource median.DataSource, errorLog core.ErrorLog, deviationFuncDefinition map[string]any) (types.ReportingPluginFactory, error) {
 	// the provider may be a grpc client, so we can't compare it directly
 	// but in all of these static tests, the implementation of the provider is expected
 	// to be the same static implementation, so we can compare the expected values

@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_staticPriceGetter_Evaluate(t *testing.T) {
@@ -45,21 +44,21 @@ func TestPriceGetterGRPC(t *testing.T) {
 func roundTripPriceGetterTests(t *testing.T, client cciptypes.PriceGetter) {
 	t.Run("FilterConfiguredTokens", func(t *testing.T) {
 		// test token is configured
-		configuredTokens, unconfiguredTokens, err := client.FilterConfiguredTokens(tests.Context(t), PriceGetter.config.Addresses)
+		configuredTokens, unconfiguredTokens, err := client.FilterConfiguredTokens(t.Context(), PriceGetter.config.Addresses)
 		require.NoError(t, err)
 		assert.Equal(t, PriceGetter.config.Addresses, configuredTokens)
 		assert.Equal(t, []cciptypes.Address{}, unconfiguredTokens)
 
 		var unconfTk cciptypes.Address = "JK"
 		unconfTks := []cciptypes.Address{unconfTk}
-		configuredTokens2, unconfiguredTokens2, err := client.FilterConfiguredTokens(tests.Context(t), unconfTks)
+		configuredTokens2, unconfiguredTokens2, err := client.FilterConfiguredTokens(t.Context(), unconfTks)
 		require.NoError(t, err)
 		assert.Equal(t, []cciptypes.Address{}, configuredTokens2)
 		assert.Equal(t, unconfTks, unconfiguredTokens2)
 	})
 	t.Run("TokenPricesUSD", func(t *testing.T) {
 		// test token prices
-		prices, err := client.TokenPricesUSD(tests.Context(t), PriceGetter.config.Addresses)
+		prices, err := client.TokenPricesUSD(t.Context(), PriceGetter.config.Addresses)
 		require.NoError(t, err)
 		assert.Equal(t, PriceGetter.config.Prices, prices)
 	})

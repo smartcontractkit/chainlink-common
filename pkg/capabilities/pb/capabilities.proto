@@ -5,8 +5,9 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 package capabilities;
 
 import "values/pb/values.proto";
-import "google/protobuf/empty.proto";
+import "metering/pb/meteringdetail.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 
 service BaseCapability {
   rpc Info (google.protobuf.Empty) returns (CapabilityInfoReply) {}
@@ -58,15 +59,17 @@ message TriggerRegistrationRequest {
 }
 
 message TriggerEvent {
+  reserved 5; // Previously used for v1.OCRTriggerEvent
   string triggerType = 1;
   string id = 2;
   values.Map outputs = 4;
-  google.protobuf.Any value = 5;
+  google.protobuf.Any value = 6;
 }
 
 message TriggerResponse {
   TriggerEvent event = 1;
   string error = 2;
+  google.protobuf.Any value = 3;
 }
 
 message TriggerResponseMessage {
@@ -84,7 +87,21 @@ service TriggerExecutable {
 message CapabilityResponse {
   values.Map value = 1;
   string error = 2;
-  google.protobuf.Any responseValue = 3;
+  ResponseMetadata metadata = 3;
+  google.protobuf.Any responseValue = 4;
+}
+
+message ResponseMetadata {
+  // MeteringReportNodeDetail is repeated here due to
+  // the identical response aggregation strategy at the Don2Don layer.
+  // We expect identical responses from capabilities, but not identical
+  // metering reports. Since we pass the CapabilityResponse through the
+  // protocol layer to the engine, this field needs to be repeated to
+  // eventually hold all the reports from each capability response node.
+  //
+  // If you are working with this in a capability, you should not emit
+  // more than one metering report per node.
+  repeated metering.MeteringReportNodeDetail metering = 1;
 }
 
 message RegistrationMetadata {

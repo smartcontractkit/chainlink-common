@@ -112,6 +112,9 @@ func TestMarshalUnmarshalResponse(t *testing.T) {
 	require.NoError(t, err)
 	resp := capabilities.CapabilityResponse{
 		Value: v,
+		Metadata: capabilities.ResponseMetadata{
+			Metering: []capabilities.MeteringNodeDetail{},
+		},
 	}
 	raw, err := pb.MarshalCapabilityResponse(resp)
 	require.NoError(t, err)
@@ -219,4 +222,29 @@ func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
 		},
 		Config: expectedMap,
 	}, req)
+}
+
+func TestTriggerResponseConverters(t *testing.T) {
+
+	resp := capabilities.TriggerResponse{
+		Event: capabilities.TriggerEvent{
+			TriggerType: "my_type",
+			ID:          "my_id",
+			Outputs: &values.Map{
+				Underlying: map[string]values.Value{
+					"output_key": &values.String{Underlying: "output_value"},
+				},
+			},
+		},
+	}
+
+	protoResp := pb.TriggerResponseToProto(resp)
+
+	require.Equal(t, "my_type", protoResp.Event.TriggerType)
+	require.Equal(t, "my_id", protoResp.Event.Id)
+	require.Equal(t, "output_value", protoResp.Event.Outputs.GetFields()["output_key"].GetStringValue())
+	convertedResp, err := pb.TriggerResponseFromProto(protoResp)
+	require.NoError(t, err)
+
+	require.Equal(t, resp, convertedResp)
 }

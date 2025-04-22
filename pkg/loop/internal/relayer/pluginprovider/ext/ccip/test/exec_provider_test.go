@@ -14,21 +14,19 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticExecProvider(t *testing.T) {
-	ctx := tests.Context(t)
 	t.Run("Self consistent Evaluate", func(t *testing.T) {
 		t.Parallel()
 		ep := ExecutionProvider(logger.Test(t))
 		// static test implementation is self consistent
-		assert.NoError(t, ep.Evaluate(ctx, ep))
+		assert.NoError(t, ep.Evaluate(t.Context(), ep))
 
 		// error when the test implementation evaluates something that differs from form itself
 		botched := ExecutionProvider(logger.Test(t))
 		botched.priceRegistryReader = staticPriceRegistryReader{}
-		err := ep.Evaluate(ctx, botched)
+		err := ep.Evaluate(t.Context(), botched)
 		require.Error(t, err)
 		var evalErr evaluationError
 		require.True(t, errors.As(err, &evalErr), "expected error to be an evaluationError")
@@ -37,7 +35,7 @@ func TestStaticExecProvider(t *testing.T) {
 	t.Run("Self consistent AssertEqual", func(t *testing.T) {
 		ep := ExecutionProvider(logger.Test(t))
 		// no parallel because the AssertEqual is parallel
-		ep.AssertEqual(ctx, t, ep)
+		ep.AssertEqual(t.Context(), t, ep)
 	})
 }
 
@@ -51,55 +49,55 @@ func TestExecProviderGRPC(t *testing.T) {
 
 func roundTripExecProviderTests(t *testing.T, client types.CCIPExecProvider) {
 	t.Run("CommitStore", func(t *testing.T) {
-		commitClient, err := client.NewCommitStoreReader(tests.Context(t), "ignored")
+		commitClient, err := client.NewCommitStoreReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripCommitStoreTests(t, commitClient)
 		require.NoError(t, commitClient.Close())
 	})
 
 	t.Run("OffRamp", func(t *testing.T) {
-		offRampClient, err := client.NewOffRampReader(tests.Context(t), "ignored")
+		offRampClient, err := client.NewOffRampReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripOffRampTests(t, offRampClient)
 		require.NoError(t, offRampClient.Close())
 	})
 
 	t.Run("OnRamp", func(t *testing.T) {
-		onRampClient, err := client.NewOnRampReader(tests.Context(t), "ignored", 0, 0)
+		onRampClient, err := client.NewOnRampReader(t.Context(), "ignored", 0, 0)
 		require.NoError(t, err)
 		roundTripOnRampTests(t, onRampClient)
 		require.NoError(t, onRampClient.Close())
 	})
 
 	t.Run("PriceRegistry", func(t *testing.T) {
-		priceRegistryClient, err := client.NewPriceRegistryReader(tests.Context(t), "ignored")
+		priceRegistryClient, err := client.NewPriceRegistryReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripPriceRegistryTests(t, priceRegistryClient)
 		require.NoError(t, priceRegistryClient.Close())
 	})
 
 	t.Run("TokenData", func(t *testing.T) {
-		tokenDataClient, err := client.NewTokenDataReader(tests.Context(t), "ignored")
+		tokenDataClient, err := client.NewTokenDataReader(t.Context(), "ignored")
 		require.NoError(t, err)
 		roundTripTokenDataTests(t, tokenDataClient)
 		require.NoError(t, tokenDataClient.Close())
 	})
 
 	t.Run("TokenPool", func(t *testing.T) {
-		tokenReaderClient, err := client.NewTokenPoolBatchedReader(tests.Context(t), "ignored", 0)
+		tokenReaderClient, err := client.NewTokenPoolBatchedReader(t.Context(), "ignored", 0)
 		require.NoError(t, err)
 		roundTripTokenPoolTests(t, tokenReaderClient)
 		require.NoError(t, tokenReaderClient.Close())
 	})
 
 	t.Run("SourceNativeToken", func(t *testing.T) {
-		token, err := client.SourceNativeToken(tests.Context(t), "ignored")
+		token, err := client.SourceNativeToken(t.Context(), "ignored")
 		require.NoError(t, err)
 		assert.Equal(t, ExecutionProvider(logger.Test(t)).sourceNativeTokenResponse, token)
 	})
 
 	t.Run("GetTransactionStatus", func(t *testing.T) {
-		status, err := client.GetTransactionStatus(tests.Context(t), "ignored")
+		status, err := client.GetTransactionStatus(t.Context(), "ignored")
 		require.NoError(t, err)
 		assert.Equal(t, ExecutionProvider(logger.Test(t)).transactionStatusResponse, status)
 	})

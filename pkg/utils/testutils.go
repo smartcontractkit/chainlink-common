@@ -10,9 +10,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-// Deprecated: use tests.Context
+// Deprecated: use [*testing.T.Context]
 func Context(t *testing.T) context.Context {
-	return tests.Context(t)
+	return t.Context()
 }
 
 // AssertJSONEqual is a helper function to assert that two JSON objects

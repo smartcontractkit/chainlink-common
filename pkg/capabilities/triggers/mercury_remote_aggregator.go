@@ -93,5 +93,5 @@ func (a *mercuryRemoteAggregator) Aggregate(triggerEventID string, responses [][
 		Signers:               a.allowedSigners,
 		MinRequiredSignatures: a.minRequiredSignatures,
 	}
-	return wrapReports(reportList, triggerEventID, latestGlobalTs, meta, a.capID)
+	return WrapReports(reportList, triggerEventID, latestGlobalTs, meta, a.capID)
 }

@@ -18,19 +18,24 @@ import (
 //go:wasmimport env send_response
 func sendResponse(response unsafe.Pointer, responseLen int32) int32
 
+//go:wasmimport env version_v2
+func versionV2()
+
 func NewDonRunner() sdk.DonRunner {
 	drt := &donRuntime{}
-	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{runtime: drt, setRuntime: func(id string, config []byte) {
+	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{runtime: drt, setRuntime: func(id string, config []byte, maxResponseSize uint64) {
 		drt.execId = id
 		drt.config = config
+		drt.maxResponseSize = maxResponseSize
 	}})
 }
 
 func NewNodeRunner() sdk.NodeRunner {
 	nrt := &nodeRuntime{}
-	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{runtime: nrt, setRuntime: func(id string, config []byte) {
+	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{runtime: nrt, setRuntime: func(id string, config []byte, maxResponseSize uint64) {
 		nrt.execId = id
 		nrt.config = config
+		nrt.maxResponseSize = maxResponseSize
 	}})
 }
 
@@ -38,17 +43,16 @@ type runner[T any] struct {
 	trigger    *pb.Trigger
 	id         string
 	runtime    T
-	setRuntime func(id string, config []byte)
+	setRuntime func(id string, config []byte, maxResponseSize uint64)
 	config     []byte
 }
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
 var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 
-// TODO callbacks to setup a trigger...
-// TODO can't subscribe to a trigger more than once and differentiate the return value.
-
 func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
+	// used to ensure that the export isn't optimized away
+	versionV2()
 	for _, handler := range args.Handlers {
 
 		// TODO multiple subscriptions the the same trigger
@@ -162,7 +166,7 @@ func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T]
 		run.trigger = req.Trigger
 		run.id = execRequest.Id
 		run.config = execRequest.Config
-		run.setRuntime(execRequest.Id, execRequest.Config)
+		run.setRuntime(execRequest.Id, execRequest.Config, execRequest.MaxResponseSize)
 		return run
 	}
 

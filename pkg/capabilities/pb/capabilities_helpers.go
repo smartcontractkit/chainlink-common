@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	meter "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
@@ -51,7 +52,6 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	if req.Config != nil {
 		config = req.Config
 	}
-
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
@@ -63,8 +63,8 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
 		},
-		Config:  values.ProtoMap(config),
 		Inputs:  values.ProtoMap(inputs),
+		Config:  values.ProtoMap(config),
 		Request: req.Request,
 		Method:  req.Method,
 		// TODO ConfigValue: req.ConfigValue,
@@ -72,8 +72,20 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 }
 
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
+	metering := make([]*meter.MeteringReportNodeDetail, len(resp.Metadata.Metering))
+	for idx, detail := range resp.Metadata.Metering {
+		metering[idx] = &meter.MeteringReportNodeDetail{
+			Peer_2PeerId: detail.Peer2PeerID,
+			SpendUnit:    detail.SpendUnit,
+			SpendValue:   detail.SpendValue,
+		}
+	}
+
 	return &CapabilityResponse{
-		Value:         values.ProtoMap(resp.Value),
+		Value: values.ProtoMap(resp.Value),
+		Metadata: &ResponseMetadata{
+			Metering: metering,
+		},
 		ResponseValue: resp.ResponseValue,
 	}
 }
@@ -128,8 +140,25 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		return capabilities.CapabilityResponse{}, err
 	}
 
+	var metering []capabilities.MeteringNodeDetail
+
+	if pr.Metadata != nil {
+		metering = make([]capabilities.MeteringNodeDetail, len(pr.Metadata.Metering))
+
+		for idx, detail := range pr.Metadata.Metering {
+			metering[idx] = capabilities.MeteringNodeDetail{
+				Peer2PeerID: detail.Peer_2PeerId,
+				SpendUnit:   detail.SpendUnit,
+				SpendValue:  detail.SpendValue,
+			}
+		}
+	}
+
 	resp := capabilities.CapabilityResponse{
-		Value:         val,
+		Value: val,
+		Metadata: capabilities.ResponseMetadata{
+			Metering: metering,
+		},
 		ResponseValue: pr.ResponseValue,
 	}
 
@@ -333,14 +362,15 @@ func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse 
 	if resp.Err != nil {
 		errs = resp.Err.Error()
 	}
+
 	return &TriggerResponse{
 		Error: errs,
 		Event: &TriggerEvent{
 			TriggerType: resp.Event.TriggerType,
 			Id:          resp.Event.ID,
 			Outputs:     values.ProtoMap(resp.Event.Outputs),
-			Value:       resp.Event.Value,
 		},
+		Value: resp.Event.Value,
 	}
 }
 

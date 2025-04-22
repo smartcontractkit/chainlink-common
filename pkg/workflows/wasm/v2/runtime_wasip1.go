@@ -15,8 +15,9 @@ import (
 )
 
 type runtimeBase struct {
-	execId string
-	config []byte
+	execId          string
+	config          []byte
+	maxResponseSize uint64
 }
 
 //go:wasmimport env call_capability
@@ -59,7 +60,7 @@ func (r *runtimeBase) CallCapability(request *wpb.CapabilityRequest) sdk.Promise
 		}
 
 		// TODO make this configurable?
-		response := make([]byte, 2048)
+		response := make([]byte, r.maxResponseSize)
 		responsePtr, responseLen, err := bufferToPointerLen(response)
 		if err != nil {
 			return nil, err

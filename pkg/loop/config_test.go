@@ -24,13 +24,18 @@ func TestEnvConfig_parse(t *testing.T) {
 		envVars     map[string]string
 		expectError bool
 
-		expectedDatabaseURL                    string
-		expectedDatabaseIdleInTxSessionTimeout time.Duration
-		expectedDatabaseLockTimeout            time.Duration
-		expectedDatabaseQueryTimeout           time.Duration
-		expectedDatabaseLogSQL                 bool
-		expectedDatabaseMaxOpenConns           int
-		expectedDatabaseMaxIdleConns           int
+		expectedAppID string
+
+		expectedDatabaseURL                          string
+		expectedDatabaseIdleInTxSessionTimeout       time.Duration
+		expectedDatabaseLockTimeout                  time.Duration
+		expectedDatabaseQueryTimeout                 time.Duration
+		expectedDatabaseListenerFallbackPollInterval time.Duration
+		expectedDatabaseLogSQL                       bool
+		expectedDatabaseMaxOpenConns                 int
+		expectedDatabaseMaxIdleConns                 int
+
+		expectedFeatureLogPoller bool
 
 		expectedPrometheusPort         int
 		expectedTracingEnabled         bool
@@ -56,15 +61,20 @@ func TestEnvConfig_parse(t *testing.T) {
 		{
 			name: "All variables set correctly",
 			envVars: map[string]string{
-				envDatabaseURL:                    "postgres://user:password@localhost:5432/db",
-				envDatabaseIdleInTxSessionTimeout: "42s",
-				envDatabaseLockTimeout:            "8m",
-				envDatabaseQueryTimeout:           "7s",
-				envDatabaseLogSQL:                 "true",
-				envDatabaseMaxOpenConns:           "9999",
-				envDatabaseMaxIdleConns:           "8080",
+				envAppID:                                "app-id",
+				envDatabaseURL:                          "postgres://user:password@localhost:5432/db",
+				envDatabaseIdleInTxSessionTimeout:       "42s",
+				envDatabaseLockTimeout:                  "8m",
+				envDatabaseQueryTimeout:                 "7s",
+				envDatabaseListenerFallbackPollInterval: "17s",
+				envDatabaseLogSQL:                       "true",
+				envDatabaseMaxOpenConns:                 "9999",
+				envDatabaseMaxIdleConns:                 "8080",
 
-				envPromPort:                 "8080",
+				envFeatureLogPoller: "true",
+
+				envPromPort: "8080",
+
 				envTracingEnabled:           "true",
 				envTracingCollectorTarget:   "some:target",
 				envTracingSamplingRatio:     "1.0",
@@ -85,19 +95,26 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
-				envChipIngressEndpoint:                "http://chip-ingress.example.com",
+
+				envChipIngressEndpoint: "http://chip-ingress.example.com",
 			},
 			expectError: false,
 
-			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
-			expectedDatabaseIdleInTxSessionTimeout: 42 * time.Second,
-			expectedDatabaseLockTimeout:            8 * time.Minute,
-			expectedDatabaseQueryTimeout:           7 * time.Second,
-			expectedDatabaseLogSQL:                 true,
-			expectedDatabaseMaxOpenConns:           9999,
-			expectedDatabaseMaxIdleConns:           8080,
+			expectedAppID: "app-id",
 
-			expectedPrometheusPort:         8080,
+			expectedDatabaseURL:                          "postgres://user:password@localhost:5432/db",
+			expectedDatabaseIdleInTxSessionTimeout:       42 * time.Second,
+			expectedDatabaseLockTimeout:                  8 * time.Minute,
+			expectedDatabaseQueryTimeout:                 7 * time.Second,
+			expectedDatabaseListenerFallbackPollInterval: 17 * time.Second,
+			expectedDatabaseLogSQL:                       true,
+			expectedDatabaseMaxOpenConns:                 9999,
+			expectedDatabaseMaxIdleConns:                 8080,
+
+			expectedFeatureLogPoller: true,
+
+			expectedPrometheusPort: 8080,
+
 			expectedTracingEnabled:         true,
 			expectedTracingCollectorTarget: "some:target",
 			expectedTracingSamplingRatio:   1.0,
@@ -116,7 +133,8 @@ func TestEnvConfig_parse(t *testing.T) {
 			expectedTelemetryEmitterExportInterval:     2 * time.Second,
 			expectedTelemetryEmitterExportMaxBatchSize: 100,
 			expectedTelemetryEmitterMaxQueueSize:       1000,
-			expectedChipIngressEndpoint:                "http://chip-ingress.example.com",
+
+			expectedChipIngressEndpoint: "http://chip-ingress.example.com",
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -159,6 +177,9 @@ func TestEnvConfig_parse(t *testing.T) {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				} else {
+					if config.AppID != tc.expectedAppID {
+						t.Errorf("Expected App ID %s, got %s", tc.expectedAppID, config.AppID)
+					}
 					if config.DatabaseURL.URL().String() != tc.expectedDatabaseURL {
 						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL.String())
 					}
@@ -171,6 +192,9 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.DatabaseQueryTimeout != tc.expectedDatabaseQueryTimeout {
 						t.Errorf("Expected Database query timeout %s, got %s", tc.expectedDatabaseQueryTimeout, config.DatabaseQueryTimeout)
 					}
+					if config.DatabaseListenerFallbackPollInterval != tc.expectedDatabaseListenerFallbackPollInterval {
+						t.Errorf("Expected Database listener fallback poll interval %s, got %s", tc.expectedDatabaseListenerFallbackPollInterval, config.DatabaseListenerFallbackPollInterval)
+					}
 					if config.DatabaseLogSQL != tc.expectedDatabaseLogSQL {
 						t.Errorf("Expected Database log sql %t, got %t", tc.expectedDatabaseLogSQL, config.DatabaseLogSQL)
 					}
@@ -180,7 +204,9 @@ func TestEnvConfig_parse(t *testing.T) {
 					if config.DatabaseMaxIdleConns != tc.expectedDatabaseMaxIdleConns {
 						t.Errorf("Expected Database max idle conns %d, got %d", tc.expectedDatabaseMaxIdleConns, config.DatabaseMaxIdleConns)
 					}
-
+					if config.FeatureLogPoller != tc.expectedFeatureLogPoller {
+						t.Errorf("Expected FeatureLogPoller %t, got %t", tc.expectedFeatureLogPoller, config.FeatureLogPoller)
+					}
 					if config.PrometheusPort != tc.expectedPrometheusPort {
 						t.Errorf("Expected Prometheus port %d, got %d", tc.expectedPrometheusPort, config.PrometheusPort)
 					}
@@ -270,7 +296,19 @@ func equalStringMaps(a, b map[string]string) bool {
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	envCfg := EnvConfig{
-		DatabaseURL:    (*config.SecretURL)(&url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"}),
+		AppID: "app-id",
+
+		DatabaseURL:                          (*config.SecretURL)(&url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"}),
+		DatabaseIdleInTxSessionTimeout:       time.Microsecond,
+		DatabaseLockTimeout:                  time.Second,
+		DatabaseQueryTimeout:                 time.Millisecond,
+		DatabaseListenerFallbackPollInterval: time.Minute,
+		DatabaseLogSQL:                       true,
+		DatabaseMaxOpenConns:                 99,
+		DatabaseMaxIdleConns:                 42,
+
+		FeatureLogPoller: true,
+
 		PrometheusPort: 9090,
 
 		TracingEnabled:         true,

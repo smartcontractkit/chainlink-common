@@ -77,6 +77,7 @@ func SetupTracing(config TracingConfig) error {
 		semconv.SchemaURL,
 		config.Attributes()...,
 	)
+	//TODO app id too?
 
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(traceExporter),

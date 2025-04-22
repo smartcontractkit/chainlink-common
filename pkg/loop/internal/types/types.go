@@ -11,7 +11,7 @@ import (
 
 type PluginRelayer interface {
 	services.Service
-	NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
+	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
 }
 
 type MedianProvider interface {

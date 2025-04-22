@@ -768,23 +768,6 @@ func (r *relayerServer) Replay(ctx context.Context, request *pb.ReplayRequest) (
 	return &emptypb.Empty{}, r.impl.Replay(ctx, request.FromBlock, request.Args.AsMap())
 }
 
-var errUnimplemented = errors.New("unimplemented")
-
-func (r *relayerServer) GetTransactionFee(ctx context.Context, req *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
-	impl, ok := r.impl.(types.EVMRelayer)
-	if !ok {
-		return nil, errUnimplemented
-	}
-	reply, err := impl.GetTransactionFee(ctx, req.TransactionId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.GetTransactionFeeReply{
-		TransationFee: pb.NewBigIntFromInt(reply.TransactionFee),
-	}, nil
-}
-
 // RegisterStandAloneMedianProvider register the servers needed for a median plugin provider,
 // this is a workaround to test the Node API on EVM until the EVM relayer is loopifyed.
 func RegisterStandAloneMedianProvider(s *grpc.Server, p types.MedianProvider) {

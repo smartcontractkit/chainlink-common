@@ -56,9 +56,12 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
-	Value         *values.Map
-	Metadata      ResponseMetadata
-	ResponseValue *anypb.Any
+	// Value is used for DAG workflows
+	Value    *values.Map
+	Metadata ResponseMetadata
+
+	// Payload is used for no DAG workflows
+	Payload *anypb.Any
 }
 
 type ResponseMetadata struct {
@@ -93,12 +96,22 @@ type RegistrationMetadata struct {
 
 // CapabilityRequest is a struct for the Execute request of a capability.
 type CapabilityRequest struct {
-	Metadata  RequestMetadata
-	Config    *values.Map
-	Inputs    *values.Map
-	Request   *anypb.Any
-	ConfigAny *anypb.Any
-	Method    string
+	Metadata RequestMetadata
+
+	// Config is used for DAG workflows
+	Config *values.Map
+
+	// Inputs is used for DAG workflows
+	Inputs *values.Map
+
+	// Payload is used for no DAG workflows
+	Payload *anypb.Any
+
+	// ConfigPayload is used for no DAG workflows
+	ConfigPayload *anypb.Any
+
+	// The method to call for no DAG workflows
+	Method string
 }
 
 type RegisterToWorkflowRequest struct {
@@ -143,7 +156,7 @@ type TriggerRegistrationRequest struct {
 	Config *values.Map
 
 	// Request body for no DAG workflows
-	Request *anypb.Any
+	Payload *anypb.Any
 	// The method to call for no DAG workflows
 	Method string
 }
@@ -162,7 +175,7 @@ type TriggerEvent struct {
 	Outputs *values.Map
 
 	// Trigger-specific payload for no DAG workflows
-	Value *anypb.Any
+	Payload *anypb.Any
 
 	// Deprecated: use Outputs instead
 	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)

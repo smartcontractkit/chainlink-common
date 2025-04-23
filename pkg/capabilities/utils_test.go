@@ -67,7 +67,7 @@ func TestUnwrapRequest(t *testing.T) {
 		ac, err := anypb.New(cfg)
 		require.NoError(t, err)
 
-		req := capabilities.CapabilityRequest{ConfigAny: a, Request: ac}
+		req := capabilities.CapabilityRequest{ConfigPayload: a, Payload: ac}
 		var input pb.TriggerEvent
 		var config pb.TriggerEvent
 		migrated, err := capabilities.UnwrapRequest(req, &config, &input)
@@ -103,7 +103,7 @@ func TestUnwrapResponse(t *testing.T) {
 		a, err := anypb.New(msg)
 		require.NoError(t, err)
 
-		resp := capabilities.CapabilityResponse{ResponseValue: a}
+		resp := capabilities.CapabilityResponse{Payload: a}
 		var out pb.TriggerEvent
 		migrated, err := capabilities.UnwrapResponse(resp, &out)
 		require.NoError(t, err)
@@ -131,7 +131,7 @@ func TestSetResponse(t *testing.T) {
 		resp := capabilities.CapabilityResponse{}
 		err := capabilities.SetResponse(&resp, true, msg)
 		require.NoError(t, err)
-		assert.NotNil(t, resp.ResponseValue)
+		assert.NotNil(t, resp.Payload)
 		assert.Nil(t, resp.Value)
 	})
 
@@ -141,7 +141,7 @@ func TestSetResponse(t *testing.T) {
 		err := capabilities.SetResponse(&resp, false, msg)
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Value)
-		assert.Nil(t, resp.ResponseValue)
+		assert.Nil(t, resp.Payload)
 	})
 }
 
@@ -151,13 +151,13 @@ func TestExecute(t *testing.T) {
 		a, err := anypb.New(msg)
 		require.NoError(t, err)
 
-		req := capabilities.CapabilityRequest{ConfigAny: a, Request: a}
+		req := capabilities.CapabilityRequest{ConfigPayload: a, Payload: a}
 
 		resp, err := capabilities.Execute(context.Background(), req, &pb.TriggerEvent{}, &pb.TriggerEvent{}, func(_ context.Context, _ capabilities.RequestMetadata, i, c *pb.TriggerEvent) (*pb.TriggerEvent, error) {
 			return &pb.TriggerEvent{Id: "out"}, nil
 		})
 		require.NoError(t, err)
-		assert.NotNil(t, resp.ResponseValue)
+		assert.NotNil(t, resp.Payload)
 		assert.Nil(t, resp.Value)
 	})
 
@@ -175,7 +175,7 @@ func TestExecute(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, resp.Value)
-		assert.Nil(t, resp.ResponseValue)
+		assert.Nil(t, resp.Payload)
 	})
 }
 
@@ -183,17 +183,11 @@ func TestRegisterTrigger(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := make(chan capabilities.TriggerAndId[*pb.TriggerEvent], 1)
-	ch <- capabilities.TriggerAndId[*pb.TriggerEvent]{
-		Trigger: &pb.TriggerEvent{Id: "id"},
-		Id:      "trigger-id",
-	}
-
 	a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
 	require.NoError(t, err)
 	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{WorkflowID: "workflow-id"},
-		Request:  a,
+		Payload:  a,
 	}
 
 	respCh, err := capabilities.RegisterTrigger[*pb.TriggerEvent, *pb.TriggerEvent](
@@ -202,6 +196,11 @@ func TestRegisterTrigger(t *testing.T) {
 		req,
 		&pb.TriggerEvent{},
 		func(_ context.Context, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+			ch := make(chan capabilities.TriggerAndId[*pb.TriggerEvent], 1)
+			ch <- capabilities.TriggerAndId[*pb.TriggerEvent]{
+				Trigger: &pb.TriggerEvent{Id: "id"},
+				Id:      "trigger-id",
+			}
 			assert.Equal(t, "workflow-id", m.WorkflowID)
 			assert.Equal(t, "reg", r.Id)
 			return ch, nil

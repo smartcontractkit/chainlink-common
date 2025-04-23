@@ -43,18 +43,28 @@ message RequestMetadata {
 
 message CapabilityRequest {
   RequestMetadata metadata = 1;
+  // Used for DAG SDK
   values.Map config = 2;
+  // Used for DAG SDK
   values.Map inputs = 3;
-  google.protobuf.Any request = 4;
-  google.protobuf.Any configAny = 5;
+
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  // Used for no DAG SDK
+  google.protobuf.Any configPayload = 5;
+  // Used for no DAG SDK
   string method = 6;
 }
 
 message TriggerRegistrationRequest {
   string triggerId = 1;
   RequestMetadata metadata = 2;
+  // Used for DAG SDK
   values.Map config = 3;
-  google.protobuf.Any request = 4;
+
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  // Used for no DAG SDK
   string method = 5;
 }
 
@@ -62,8 +72,12 @@ message TriggerEvent {
   reserved 5; // Previously used for v1.OCRTriggerEvent
   string triggerType = 1;
   string id = 2;
+
+  // Used for DAG SDK
   values.Map outputs = 4;
-  google.protobuf.Any value = 6;
+
+  // used for no DAG SDK
+  google.protobuf.Any payload = 6;
 }
 
 message TriggerResponse {
@@ -84,10 +98,12 @@ service TriggerExecutable {
 }
 
 message CapabilityResponse {
+  // Used for DAG SDK
   values.Map value = 1;
   string error = 2;
   ResponseMetadata metadata = 3;
-  google.protobuf.Any responseValue = 4;
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
 }
 
 message ResponseMetadata {

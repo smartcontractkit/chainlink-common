@@ -56,13 +56,13 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 		Metadata: &pb.RequestMetadata{
 			WorkflowId: "<workflow-id>",
 		},
-		Inputs:    values.ProtoMap(inputs),
-		Config:    values.ProtoMap(config),
-		ConfigAny: anyMsg,
+		Inputs:        values.ProtoMap(inputs),
+		Config:        values.ProtoMap(config),
+		ConfigPayload: anyMsg,
 	}
 	out, err := pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
-	require.True(t, proto.Equal(anyMsg, out.ConfigAny))
+	require.True(t, proto.Equal(anyMsg, out.ConfigPayload))
 
 	pr.Metadata.ReferenceId = anyReferenceID
 	out, err = pb.CapabilityRequestFromProto(&pr)
@@ -100,7 +100,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 		Inputs: &values.Map{Underlying: map[string]values.Value{
 			testInputsKey: &values.String{Underlying: testInputsValue},
 		}},
-		ConfigAny: &anypb.Any{
+		ConfigPayload: &anypb.Any{
 			TypeUrl: "example.com/type",
 			Value:   []byte("any-bytes"),
 		},
@@ -115,7 +115,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
 	require.EqualValues(t, req.Config, unmarshaled.Config)
 	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
-	require.True(t, proto.Equal(req.ConfigAny, unmarshaled.ConfigAny))
+	require.True(t, proto.Equal(req.ConfigPayload, unmarshaled.ConfigPayload))
 
 	req.Metadata.ReferenceID = anyReferenceID
 	raw, err = pb.MarshalCapabilityRequest(req)
@@ -127,7 +127,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
 	require.EqualValues(t, req.Config, unmarshaled.Config)
 	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
-	require.True(t, proto.Equal(req.ConfigAny, unmarshaled.ConfigAny))
+	require.True(t, proto.Equal(req.ConfigPayload, unmarshaled.ConfigPayload))
 }
 
 func TestTriggerResponseFromProto(t *testing.T) {

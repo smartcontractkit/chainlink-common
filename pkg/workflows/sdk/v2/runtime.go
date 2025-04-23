@@ -3,6 +3,7 @@ package sdk
 import (
 	"errors"
 	"io"
+	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -89,7 +90,17 @@ func RunInNodeMode[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nod
 
 	return Then(runtime.RunInNodeMode(observationFn), func(v values.Value) (T, error) {
 		var t T
-		err := v.UnwrapTo(&t)
+		var err error
+		typ := reflect.TypeOf(t)
+
+		// If T is a pointer type, we need to allocate the underlying type and pass its pointer to UnwrapTo
+		if typ.Kind() == reflect.Ptr {
+			elem := reflect.New(typ.Elem())
+			err = v.UnwrapTo(elem.Interface())
+			t = elem.Interface().(T)
+		} else {
+			err = v.UnwrapTo(&t)
+		}
 		return t, err
 	})
 }

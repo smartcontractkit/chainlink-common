@@ -399,11 +399,11 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 	return err
 }
 
-func (r *relayerClient) AsEVMRelayer() looptypes.EVMRelayer {
+func (r *relayerClient) AsEVMRelayer() (looptypes.EVMRelayer, error) {
 	return &evmRelayerClient{
 		r,
 		r.evmRelayer,
-	}
+	}, nil
 }
 
 var _ pb.EVMRelayerServer = (*evmRelayerServer)(nil)

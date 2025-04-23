@@ -42,7 +42,7 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 	return &rs
 }
 
-func (r *RelayerService) AsEVMRelayer() EVMRelayer {
+func (r *RelayerService) AsEVMRelayer() (EVMRelayer, error) {
 	return r.Service.AsEVMRelayer()
 }
 

@@ -105,7 +105,7 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
-	AsEVMRelayer() EVMRelayer
+	AsEVMRelayer() (EVMRelayer, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)

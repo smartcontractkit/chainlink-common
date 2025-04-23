@@ -86,11 +86,6 @@ message PluginArgs {
   bytes pluginConfig = 2;
 }
 
-// NewEVMChain has reply parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewEVMChain].
-message NewEVMChainReply {
-  uint32 EVMChainID = 1;
-}
-
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
 message NewContractWriterRequest {
     bytes contractWriterConfig = 1;

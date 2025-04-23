@@ -187,8 +187,8 @@ func (s staticRelayer) NewContractWriter(_ context.Context, _ []byte) (types.Con
 	return nil, errors.New("not implemented")
 }
 
-func (s staticRelayer) AsEVMRelayer() looptypes.EVMRelayer {
-	return nil
+func (s staticRelayer) AsEVMRelayer() (looptypes.EVMRelayer, error) {
+	return nil, nil
 }
 
 func (s staticRelayer) NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

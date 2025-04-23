@@ -125,7 +125,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
-		if evmRelayer, ok := r.(types.EVMRelayer); ok {
+		if evmRelayer, ok := r.(looptypes.EVMRelayer); ok {
 			pb.RegisterEVMRelayerServer(s, newEVMChainRelayerServer(evmRelayer, p.BrokerExt))
 		}
 	}, rRes, ksRes, crRes)
@@ -187,7 +187,6 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 }
 
 var _ looptypes.Relayer = (*relayerClient)(nil)
-var _ looptypes.EVMRelayer = (*relayerClient)(nil)
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
@@ -196,6 +195,23 @@ type relayerClient struct {
 
 	relayer    pb.RelayerClient
 	evmRelayer pb.EVMRelayerClient
+}
+
+type evmRelayerClient struct {
+	*relayerClient
+
+	relayer pb.EVMRelayerClient
+}
+
+func (e *evmRelayerClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	reply, err := e.relayer.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TransactionFee{
+		TransactionFee: reply.TransationFee.Int(),
+	}, nil
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
@@ -383,15 +399,11 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 	return err
 }
 
-func (r *relayerClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
-	reply, err := r.evmRelayer.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
-	if err != nil {
-		return nil, err
+func (r *relayerClient) AsEVMRelayer() looptypes.EVMRelayer {
+	return &evmRelayerClient{
+		r,
+		r.evmRelayer,
 	}
-
-	return &types.TransactionFee{
-		TransactionFee: reply.TransationFee.Int(),
-	}, nil
 }
 
 var _ pb.EVMRelayerServer = (*evmRelayerServer)(nil)

@@ -73,6 +73,10 @@ type relayer struct {
 
 func (r *relayer) Name() string { return r.lggr.Name() }
 
+func (r *relayer) AsEVMRelayer() loop.EVMRelayer {
+	return nil
+}
+
 func (r *relayer) Start(ctx context.Context) error {
 	var names []string
 	// Test database connection with dummy query

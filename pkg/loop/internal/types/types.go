@@ -46,6 +46,7 @@ type OCR3CapabilityProvider interface {
 type Relayer interface {
 	types.ChainService
 
+	AsEVMRelayer() EVMRelayer
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
@@ -59,6 +60,8 @@ type Relayer interface {
 }
 
 type EVMRelayer interface {
+	Relayer
+
 	GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error)
 }
 

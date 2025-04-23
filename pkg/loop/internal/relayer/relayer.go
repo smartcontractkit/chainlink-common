@@ -187,18 +187,20 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 }
 
 var _ looptypes.Relayer = (*relayerClient)(nil)
+var _ looptypes.EVMRelayer = (*relayerClient)(nil)
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
-	relayer pb.RelayerClient
+	relayer    pb.RelayerClient
+	evmRelayer pb.EVMRelayerClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), pb.NewEVMRelayerClient(conn)}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -379,6 +381,17 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 		Args:      argsStruct,
 	})
 	return err
+}
+
+func (r *relayerClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	reply, err := r.evmRelayer.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TransactionFee{
+		TransactionFee: reply.TransationFee.Int(),
+	}, nil
 }
 
 var _ pb.EVMRelayerServer = (*evmRelayerServer)(nil)

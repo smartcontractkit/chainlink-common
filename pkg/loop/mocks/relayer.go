@@ -26,7 +26,7 @@ func (_m *Relayer) EXPECT() *Relayer_Expecter {
 }
 
 // AsEVMRelayer provides a mock function with no fields
-func (_m *Relayer) AsEVMRelayer() internal.EVMRelayer {
+func (_m *Relayer) AsEVMRelayer() (internal.EVMRelayer, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -34,6 +34,10 @@ func (_m *Relayer) AsEVMRelayer() internal.EVMRelayer {
 	}
 
 	var r0 internal.EVMRelayer
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (internal.EVMRelayer, error)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() internal.EVMRelayer); ok {
 		r0 = rf()
 	} else {
@@ -42,7 +46,13 @@ func (_m *Relayer) AsEVMRelayer() internal.EVMRelayer {
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Relayer_AsEVMRelayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AsEVMRelayer'
@@ -62,12 +72,12 @@ func (_c *Relayer_AsEVMRelayer_Call) Run(run func()) *Relayer_AsEVMRelayer_Call 
 	return _c
 }
 
-func (_c *Relayer_AsEVMRelayer_Call) Return(_a0 internal.EVMRelayer) *Relayer_AsEVMRelayer_Call {
-	_c.Call.Return(_a0)
+func (_c *Relayer_AsEVMRelayer_Call) Return(_a0 internal.EVMRelayer, _a1 error) *Relayer_AsEVMRelayer_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Relayer_AsEVMRelayer_Call) RunAndReturn(run func() internal.EVMRelayer) *Relayer_AsEVMRelayer_Call {
+func (_c *Relayer_AsEVMRelayer_Call) RunAndReturn(run func() (internal.EVMRelayer, error)) *Relayer_AsEVMRelayer_Call {
 	_c.Call.Return(run)
 	return _c
 }

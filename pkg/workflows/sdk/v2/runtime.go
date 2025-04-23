@@ -72,17 +72,18 @@ func RunInNodeMode[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nod
 		}
 
 		result, err := fn(nodeRuntime)
-		if err == nil {
-			wrapped, err := values.Wrap(result)
-			if err != nil {
-				consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
-			} else {
-				consensusRequest.Observation = &pb.BuiltInConsensusRequest_Value{Value: values.Proto(wrapped)}
-			}
-		} else {
+		if err != nil {
 			consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
+			return consensusRequest
 		}
 
+		wrapped, err := values.Wrap(result)
+		if err != nil {
+			consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
+			return consensusRequest
+		}
+
+		consensusRequest.Observation = &pb.BuiltInConsensusRequest_Value{Value: values.Proto(wrapped)}
 		return consensusRequest
 	}
 

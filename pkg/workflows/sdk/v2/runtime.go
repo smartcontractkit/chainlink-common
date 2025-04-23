@@ -88,7 +88,6 @@ func RunInNodeMode[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nod
 	}
 
 	return Then(runtime.RunInNodeMode(observationFn), func(v values.Value) (T, error) {
-		// TODO this is wrong, but good enough for now...
 		var t T
 		err := v.UnwrapTo(&t)
 		return t, err

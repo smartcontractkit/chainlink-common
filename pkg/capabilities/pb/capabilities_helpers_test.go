@@ -129,3 +129,43 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
 	require.True(t, proto.Equal(req.ConfigAny, unmarshaled.ConfigAny))
 }
+
+func TestTriggerResponseFromProto(t *testing.T) {
+	t.Run("with event outputs", func(t *testing.T) {
+		outMap := &pb.TriggerEvent{
+			Id:          "id",
+			TriggerType: "type",
+			Outputs: values.ProtoMap(&values.Map{
+				Underlying: map[string]values.Value{
+					"a": &values.String{Underlying: "b"},
+				},
+			}),
+		}
+		protoResp := &pb.TriggerResponse{
+			Event: outMap,
+			Error: "",
+		}
+		resp, err := pb.TriggerResponseFromProto(protoResp)
+		require.NoError(t, err)
+		assert.Nil(t, resp.Err)
+		assert.Equal(t, "id", resp.Event.ID)
+		assert.Equal(t, "type", resp.Event.TriggerType)
+		assert.NotNil(t, resp.Event.Outputs)
+		assert.Equal(t, "b", resp.Event.Outputs.Underlying["a"].(*values.String).Underlying)
+	})
+
+	t.Run("with error only", func(t *testing.T) {
+		protoResp := &pb.TriggerResponse{
+			Error: "something went wrong",
+		}
+		resp, err := pb.TriggerResponseFromProto(protoResp)
+		require.NoError(t, err)
+		assert.NotNil(t, resp.Err)
+		assert.Equal(t, "something went wrong", resp.Err.Error())
+	})
+
+	t.Run("nil input", func(t *testing.T) {
+		_, err := pb.TriggerResponseFromProto(nil)
+		assert.ErrorContains(t, err, "could not unmarshal nil")
+	})
+}

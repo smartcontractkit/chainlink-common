@@ -361,8 +361,8 @@ func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse 
 			TriggerType: resp.Event.TriggerType,
 			Id:          resp.Event.ID,
 			Outputs:     values.ProtoMap(resp.Event.Outputs),
+			Value:       resp.Event.Value,
 		},
-		Value: resp.Event.Value,
 	}
 }
 

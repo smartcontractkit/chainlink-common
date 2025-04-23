@@ -29,6 +29,8 @@ type Keystore = core.Keystore
 
 type Relayer = looptypes.Relayer
 
+type EVMRelayer = looptypes.EVMRelayer
+
 type BrokerConfig = net.BrokerConfig
 
 var _ plugin.GRPCPlugin = (*GRPCPluginRelayer)(nil)

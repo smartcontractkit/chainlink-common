@@ -43,7 +43,6 @@ message SignReply {
 }
 
 service Relayer {
-  rpc NewEVMChain(google.protobuf.Empty) returns (NewEVMChainReply) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterReply) {}
   rpc NewContractReader (NewContractReaderRequest) returns (NewContractReaderReply) {}
   rpc NewConfigProvider (NewConfigProviderRequest) returns (NewConfigProviderReply) {}
@@ -55,6 +54,21 @@ service Relayer {
   rpc Transact (TransactionRequest) returns (google.protobuf.Empty) {}
   rpc Replay (ReplayRequest) returns (google.protobuf.Empty) {}
 }
+
+service EVMRelayer {
+  rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
+}
+
+// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
+message GetTransactionFeeRequest {
+    string transaction_id = 1; // idempotency key used when transaction was submitted
+}
+
+// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
+message GetTransactionFeeReply {
+    BigInt transation_fee = 2; // transaction fee is the cost of transaction execution in native currency
+}
+
 
 // RelayArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.RelayArgs].
 message RelayArgs {
@@ -70,11 +84,6 @@ message RelayArgs {
 message PluginArgs {
   string transmitterID = 1;
   bytes pluginConfig = 2;
-}
-
-// NewEVMChain has reply parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewEVMChain].
-message NewEVMChainReply {
-  uint32 EVMChainID = 1;
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].

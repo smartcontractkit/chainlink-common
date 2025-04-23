@@ -58,14 +58,6 @@ message NewPluginProviderResponse {
   uint32 plugin_provider_id = 1;
 }
 
-message NewEVMChainRequest {
-  RelayerId relayerId = 1;
-}
-
-message NewEVMChainResponse {
-  uint32 EVMChainID = 1;
-}
-
 message NewContractReaderRequest {
   RelayerId relayerId = 1;
   bytes contractReaderConfig = 2;
@@ -106,7 +98,6 @@ service RelayerSet {
   rpc Get(GetRelayerRequest) returns (GetRelayerResponse) {}
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
-  rpc NewEVMChain(NewEVMChainRequest) returns (NewEVMChainResponse) {}
   rpc NewContractReader(NewContractReaderRequest) returns (NewContractReaderResponse) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterResponse) {}
 

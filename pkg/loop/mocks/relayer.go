@@ -6,6 +6,7 @@ import (
 	context "context"
 	big "math/big"
 
+	internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	mock "github.com/stretchr/testify/mock"
 
 	types "github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -22,6 +23,63 @@ type Relayer_Expecter struct {
 
 func (_m *Relayer) EXPECT() *Relayer_Expecter {
 	return &Relayer_Expecter{mock: &_m.Mock}
+}
+
+// AsEVMRelayer provides a mock function with no fields
+func (_m *Relayer) AsEVMRelayer() (internal.EVMRelayer, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AsEVMRelayer")
+	}
+
+	var r0 internal.EVMRelayer
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (internal.EVMRelayer, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() internal.EVMRelayer); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.EVMRelayer)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_AsEVMRelayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AsEVMRelayer'
+type Relayer_AsEVMRelayer_Call struct {
+	*mock.Call
+}
+
+// AsEVMRelayer is a helper method to define mock.On call
+func (_e *Relayer_Expecter) AsEVMRelayer() *Relayer_AsEVMRelayer_Call {
+	return &Relayer_AsEVMRelayer_Call{Call: _e.mock.On("AsEVMRelayer")}
+}
+
+func (_c *Relayer_AsEVMRelayer_Call) Run(run func()) *Relayer_AsEVMRelayer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Relayer_AsEVMRelayer_Call) Return(_a0 internal.EVMRelayer, _a1 error) *Relayer_AsEVMRelayer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_AsEVMRelayer_Call) RunAndReturn(run func() (internal.EVMRelayer, error)) *Relayer_AsEVMRelayer_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Close provides a mock function with no fields
@@ -520,64 +578,6 @@ func (_c *Relayer_NewContractWriter_Call) Return(_a0 types.ContractWriter, _a1 e
 }
 
 func (_c *Relayer_NewContractWriter_Call) RunAndReturn(run func(context.Context, []byte) (types.ContractWriter, error)) *Relayer_NewContractWriter_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// NewEVMChain provides a mock function with given fields: ctx
-func (_m *Relayer) NewEVMChain(ctx context.Context) (types.EVMChain, error) {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for NewEVMChain")
-	}
-
-	var r0 types.EVMChain
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (types.EVMChain, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) types.EVMChain); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(types.EVMChain)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Relayer_NewEVMChain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewEVMChain'
-type Relayer_NewEVMChain_Call struct {
-	*mock.Call
-}
-
-// NewEVMChain is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Relayer_Expecter) NewEVMChain(ctx interface{}) *Relayer_NewEVMChain_Call {
-	return &Relayer_NewEVMChain_Call{Call: _e.mock.On("NewEVMChain", ctx)}
-}
-
-func (_c *Relayer_NewEVMChain_Call) Run(run func(ctx context.Context)) *Relayer_NewEVMChain_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *Relayer_NewEVMChain_Call) Return(_a0 types.EVMChain, _a1 error) *Relayer_NewEVMChain_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Relayer_NewEVMChain_Call) RunAndReturn(run func(context.Context) (types.EVMChain, error)) *Relayer_NewEVMChain_Call {
 	_c.Call.Return(run)
 	return _c
 }

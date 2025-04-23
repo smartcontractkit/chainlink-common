@@ -73,6 +73,10 @@ type relayer struct {
 
 func (r *relayer) Name() string { return r.lggr.Name() }
 
+func (r *relayer) AsEVMRelayer() (loop.EVMRelayer, error) {
+	return nil, nil
+}
+
 func (r *relayer) Start(ctx context.Context) error {
 	var names []string
 	// Test database connection with dummy query
@@ -108,10 +112,6 @@ func (r *relayer) Transact(ctx context.Context, from, to string, amount *big.Int
 
 func (r *relayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
 	return errors.New("unimplemented")
-}
-
-func (r *relayer) NewEVMChain(_ context.Context) (types.EVMChain, error) {
-	return nil, errors.New("unimplemented")
 }
 
 func (r *relayer) NewContractWriter(ctx context.Context, chainWriterConfig []byte) (types.ContractWriter, error) {

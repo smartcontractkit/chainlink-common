@@ -524,64 +524,6 @@ func (_c *Relayer_NewContractWriter_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
-// NewEVMChain provides a mock function with given fields: ctx
-func (_m *Relayer) NewEVMChain(ctx context.Context) (types.EVMChain, error) {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for NewEVMChain")
-	}
-
-	var r0 types.EVMChain
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (types.EVMChain, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) types.EVMChain); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(types.EVMChain)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Relayer_NewEVMChain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewEVMChain'
-type Relayer_NewEVMChain_Call struct {
-	*mock.Call
-}
-
-// NewEVMChain is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Relayer_Expecter) NewEVMChain(ctx interface{}) *Relayer_NewEVMChain_Call {
-	return &Relayer_NewEVMChain_Call{Call: _e.mock.On("NewEVMChain", ctx)}
-}
-
-func (_c *Relayer_NewEVMChain_Call) Run(run func(ctx context.Context)) *Relayer_NewEVMChain_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *Relayer_NewEVMChain_Call) Return(_a0 types.EVMChain, _a1 error) *Relayer_NewEVMChain_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Relayer_NewEVMChain_Call) RunAndReturn(run func(context.Context) (types.EVMChain, error)) *Relayer_NewEVMChain_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewLLOProvider provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Relayer) NewLLOProvider(_a0 context.Context, _a1 types.RelayArgs, _a2 types.PluginArgs) (types.LLOProvider, error) {
 	ret := _m.Called(_a0, _a1, _a2)

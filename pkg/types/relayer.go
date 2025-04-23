@@ -108,8 +108,6 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
-	NewEVMChain(ctx context.Context) (EVMChain, error)
-
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)

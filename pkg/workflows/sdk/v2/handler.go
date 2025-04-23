@@ -5,7 +5,9 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-// Handler what trigger to listen to and how to handle its invocations
+// Handler methods are meant to be used by the internals of the CRE.
+//
+//	The interface represents what trigger to listen to and how to handle its invocations
 type Handler[T any] interface {
 	Id() string
 	Method() string

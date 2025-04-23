@@ -63,8 +63,11 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
 		},
-		Inputs: values.ProtoMap(inputs),
-		Config: values.ProtoMap(config),
+		Inputs:    values.ProtoMap(inputs),
+		Config:    values.ProtoMap(config),
+		Request:   req.Request,
+		Method:    req.Method,
+		ConfigAny: req.ConfigAny,
 	}
 }
 
@@ -83,6 +86,7 @@ func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *Capability
 		Metadata: &ResponseMetadata{
 			Metering: metering,
 		},
+		ResponseValue: resp.ResponseValue,
 	}
 }
 
@@ -117,8 +121,11 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			ReferenceID:              md.ReferenceId,
 			DecodedWorkflowName:      md.DecodedWorkflowName,
 		},
-		Config: config,
-		Inputs: inputs,
+		Config:    config,
+		Inputs:    inputs,
+		Request:   pr.Request,
+		Method:    pr.Method,
+		ConfigAny: pr.ConfigAny,
 	}
 	return req, nil
 }
@@ -152,6 +159,7 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		Metadata: capabilities.ResponseMetadata{
 			Metering: metering,
 		},
+		ResponseValue: pr.ResponseValue,
 	}
 
 	return resp, err
@@ -303,7 +311,9 @@ func TriggerRegistrationRequestToProto(req capabilities.TriggerRegistrationReque
 			WorkflowDonId:            md.WorkflowDonID,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 		},
-		Config: values.ProtoMap(config),
+		Config:  values.ProtoMap(config),
+		Request: req.Request,
+		Method:  req.Method,
 	}
 }
 
@@ -333,7 +343,9 @@ func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capab
 			WorkflowDonID:            md.WorkflowDonId,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 		},
-		Config: config,
+		Config:  config,
+		Request: req.Request,
+		Method:  req.Method,
 	}, nil
 }
 
@@ -350,6 +362,7 @@ func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse 
 			Id:          resp.Event.ID,
 			Outputs:     values.ProtoMap(resp.Event.Outputs),
 		},
+		Value: resp.Event.Value,
 	}
 }
 
@@ -369,6 +382,7 @@ func TriggerResponseFromProto(resp *TriggerResponse) (capabilities.TriggerRespon
 			return capabilities.TriggerResponse{}, fmt.Errorf("could not unmarshal event payload: %w", err)
 		}
 		event.Outputs = outputs
+		event.Value = eventpb.Value
 	}
 
 	var err error

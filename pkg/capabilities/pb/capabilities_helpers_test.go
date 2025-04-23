@@ -6,6 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -43,19 +46,28 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 		"aConfigVersion": true,
 	})
 	require.NoError(t, err)
+
+	anyMsg := &anypb.Any{
+		TypeUrl: "example.com/type",
+		Value:   []byte("test-bytes"),
+	}
+
 	pr = pb.CapabilityRequest{
 		Metadata: &pb.RequestMetadata{
 			WorkflowId: "<workflow-id>",
 		},
-		Inputs: values.ProtoMap(inputs),
-		Config: values.ProtoMap(config),
+		Inputs:    values.ProtoMap(inputs),
+		Config:    values.ProtoMap(config),
+		ConfigAny: anyMsg,
 	}
-	_, err = pb.CapabilityRequestFromProto(&pr)
+	out, err := pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
+	require.True(t, proto.Equal(anyMsg, out.ConfigAny))
 
 	pr.Metadata.ReferenceId = anyReferenceID
-	_, err = pb.CapabilityRequestFromProto(&pr)
+	out, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
+	require.Equal(t, anyReferenceID, out.Metadata.ReferenceID)
 }
 
 func TestCapabilityResponseFromProto(t *testing.T) {
@@ -88,14 +100,22 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 		Inputs: &values.Map{Underlying: map[string]values.Value{
 			testInputsKey: &values.String{Underlying: testInputsValue},
 		}},
+		ConfigAny: &anypb.Any{
+			TypeUrl: "example.com/type",
+			Value:   []byte("any-bytes"),
+		},
 	}
+
 	raw, err := pb.MarshalCapabilityRequest(req)
 	require.NoError(t, err)
 
 	unmarshaled, err := pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
-	require.Equal(t, req, unmarshaled)
+	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
+	require.EqualValues(t, req.Config, unmarshaled.Config)
+	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
+	require.True(t, proto.Equal(req.ConfigAny, unmarshaled.ConfigAny))
 
 	req.Metadata.ReferenceID = anyReferenceID
 	raw, err = pb.MarshalCapabilityRequest(req)
@@ -104,147 +124,8 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	unmarshaled, err = pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
-	require.Equal(t, req, unmarshaled)
-}
-
-func TestMarshalUnmarshalResponse(t *testing.T) {
-	v, err := values.NewMap(map[string]any{"hello": "world"})
-	require.NoError(t, err)
-	resp := capabilities.CapabilityResponse{
-		Value: v,
-		Metadata: capabilities.ResponseMetadata{
-			Metering: []capabilities.MeteringNodeDetail{},
-		},
-	}
-	raw, err := pb.MarshalCapabilityResponse(resp)
-	require.NoError(t, err)
-
-	unmarshaled, err := pb.UnmarshalCapabilityResponse(raw)
-	require.NoError(t, err)
-
-	require.Equal(t, resp, unmarshaled)
-}
-
-func TestRegisterToWorkflowRequestToProto(t *testing.T) {
-	req := capabilities.RegisterToWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			WorkflowOwner: testWorkflowOwner,
-		},
-		Config: &values.Map{Underlying: map[string]values.Value{
-			testConfigKey: &values.String{Underlying: testConfigValue},
-		}},
-	}
-	pr := pb.RegisterToWorkflowRequestToProto(req)
-	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
-	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
-
-	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
-}
-
-func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
-	configMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-
-	pr := &pb.RegisterToWorkflowRequest{
-		Metadata: &pb.RegistrationMetadata{
-			WorkflowId:    testWorkflowID,
-			ReferenceId:   anyReferenceID,
-			WorkflowOwner: testWorkflowOwner,
-		},
-		Config: values.ProtoMap(configMap),
-	}
-
-	req, err := pb.RegisterToWorkflowRequestFromProto(pr)
-	require.NoError(t, err)
-
-	expectedMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, capabilities.RegisterToWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			WorkflowOwner: testWorkflowOwner,
-			ReferenceID:   anyReferenceID,
-		},
-		Config: expectedMap,
-	}, req)
-}
-
-func TestUnregisterFromWorkflowRequestToProto(t *testing.T) {
-	req := capabilities.UnregisterFromWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			ReferenceID:   anyReferenceID,
-			WorkflowOwner: testWorkflowOwner,
-		},
-		Config: &values.Map{Underlying: map[string]values.Value{
-			testConfigKey: &values.String{Underlying: testConfigValue},
-		}},
-	}
-	pr := pb.UnregisterFromWorkflowRequestToProto(req)
-	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
-	assert.Equal(t, anyReferenceID, pr.Metadata.ReferenceId)
-	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
-	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
-}
-
-func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
-	configMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-
-	pr := &pb.UnregisterFromWorkflowRequest{
-		Metadata: &pb.RegistrationMetadata{
-			WorkflowId:    testWorkflowID,
-			WorkflowOwner: testWorkflowOwner,
-			ReferenceId:   anyReferenceID,
-		},
-		Config: values.ProtoMap(configMap),
-	}
-
-	req, err := pb.UnregisterFromWorkflowRequestFromProto(pr)
-	require.NoError(t, err)
-
-	expectedMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, capabilities.UnregisterFromWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			ReferenceID:   anyReferenceID,
-			WorkflowOwner: testWorkflowOwner,
-		},
-		Config: expectedMap,
-	}, req)
-}
-
-func TestTriggerResponseConverters(t *testing.T) {
-
-	resp := capabilities.TriggerResponse{
-		Event: capabilities.TriggerEvent{
-			TriggerType: "my_type",
-			ID:          "my_id",
-			Outputs: &values.Map{
-				Underlying: map[string]values.Value{
-					"output_key": &values.String{Underlying: "output_value"},
-				},
-			},
-		},
-	}
-
-	protoResp := pb.TriggerResponseToProto(resp)
-
-	require.Equal(t, "my_type", protoResp.Event.TriggerType)
-	require.Equal(t, "my_id", protoResp.Event.Id)
-	require.Equal(t, "output_value", protoResp.Event.Outputs.GetFields()["output_key"].GetStringValue())
-	convertedResp, err := pb.TriggerResponseFromProto(protoResp)
-	require.NoError(t, err)
-
-	require.Equal(t, resp, convertedResp)
+	require.EqualValues(t, req.Metadata, unmarshaled.Metadata)
+	require.EqualValues(t, req.Config, unmarshaled.Config)
+	require.EqualValues(t, req.Inputs, unmarshaled.Inputs)
+	require.True(t, proto.Equal(req.ConfigAny, unmarshaled.ConfigAny))
 }

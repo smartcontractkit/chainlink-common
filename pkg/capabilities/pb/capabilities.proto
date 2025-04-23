@@ -6,6 +6,7 @@ package capabilities;
 
 import "values/pb/values.proto";
 import "metering/pb/meteringdetail.proto";
+import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 
 service BaseCapability {
@@ -44,12 +45,17 @@ message CapabilityRequest {
   RequestMetadata metadata = 1;
   values.Map config = 2;
   values.Map inputs = 3;
+  google.protobuf.Any request = 4;
+  google.protobuf.Any configAny = 5;
+  string method = 6;
 }
 
 message TriggerRegistrationRequest {
   string triggerId = 1;
   RequestMetadata metadata = 2;
   values.Map config = 3;
+  google.protobuf.Any request = 4;
+  string method = 5;
 }
 
 message TriggerEvent {
@@ -57,11 +63,13 @@ message TriggerEvent {
   string triggerType = 1;
   string id = 2;
   values.Map outputs = 4;
+  google.protobuf.Any value = 6;
 }
 
 message TriggerResponse {
   TriggerEvent event = 1;
   string error = 2;
+  google.protobuf.Any value = 3;
 }
 
 message TriggerResponseMessage {
@@ -80,6 +88,7 @@ message CapabilityResponse {
   values.Map value = 1;
   string error = 2;
   ResponseMetadata metadata = 3;
+  google.protobuf.Any responseValue = 4;
 }
 
 message ResponseMetadata {

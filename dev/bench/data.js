@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745266823270,
+  "lastUpdate": 1745434133372,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12096,6 +12096,48 @@ window.BENCHMARK_DATA = {
             "value": 28120,
             "unit": "ns/op",
             "extra": "42651 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8b59e5dd60e1d782cad97fc804afa6b0f67194dd",
+          "message": "add evm relayer service (#1150)\n\n* add evm relayer service\n\n* clenup\n\n* cleanup\n\n* clean NewEVM\n\n* add relayer client support for evm\n\n* add AsEVM client abstraction\n\n* add AsEVMRelayer call to the Relayer\n\n* change AsEVM signature\n\n* fix tests\n\n* make generate",
+          "timestamp": "2025-04-23T14:47:41-04:00",
+          "tree_id": "1b3f148699c6cf80292863ad1959794de30078b9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8b59e5dd60e1d782cad97fc804afa6b0f67194dd"
+        },
+        "date": 1745434132576,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.4,
+            "unit": "ns/op",
+            "extra": "3362138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.4,
+            "unit": "ns/op",
+            "extra": "2970597 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28095,
+            "unit": "ns/op",
+            "extra": "42616 times\n4 procs"
           }
         ]
       }

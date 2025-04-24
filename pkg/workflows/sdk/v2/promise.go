@@ -14,33 +14,19 @@ type CapabilityPromise interface {
 }
 
 func NewBasicPromise[T any](await func() (T, error)) Promise[T] {
-	return &basicPromise[T]{await: await}
+	return &basicPromise[T]{await: sync.OnceValues(await)}
 }
 
 func PromiseFromResult[T any](result T, err error) Promise[T] {
-	return &basicPromise[T]{resolved: result, err: err, isResolved: true}
+	return &basicPromise[T]{await: func() (T, error) { return result, err }}
 }
 
 type basicPromise[T any] struct {
-	sync.Mutex
-	resolved   T
-	err        error
-	isResolved bool
-	await      func() (T, error)
+	await func() (T, error)
 }
 
 func (t *basicPromise[T]) Await() (T, error) {
-	if t.isResolved {
-		return t.resolved, t.err
-	}
-
-	t.Lock()
-	defer t.Unlock()
-
-	t.resolved, t.err = t.await()
-	t.isResolved = true
-
-	return t.resolved, t.err
+	return t.await()
 }
 
 func (t *basicPromise[T]) promise() {}

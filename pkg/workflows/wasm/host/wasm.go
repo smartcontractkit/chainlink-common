@@ -9,13 +9,12 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func GetWorkflowSpec(ctx context.Context, lggr logger.Logger, modCfg *ModuleConfig, workflowID string, wasmStore WasmBinaryStore, config []byte) (*sdk.WorkflowSpec, error) {
-	m, err := NewModule(ctx, lggr, modCfg, workflowID, wasmStore, WithDeterminism())
+func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, wasmStore WasmBinaryStore, workflowID string, config []byte) (*sdk.WorkflowSpec, error) {
+	m, err := NewModule(ctx, modCfg, wasmStore, workflowID, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
 	}

@@ -172,7 +172,7 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, wasmStore WasmBinaryStore, opts ...func(*ModuleConfig)) (*module, error) {
+func NewModule(ctx context.Context, modCfg *ModuleConfig, wasmStore WasmBinaryStore, workflowID string, opts ...func(*ModuleConfig)) (*module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -253,13 +253,13 @@ func NewModule(modCfg *ModuleConfig, wasmStore WasmBinaryStore, opts ...func(*Mo
 		if err != nil {
 			// It's possible that an error occurred because the module was serialised with a different engine configuration or
 			// wasmtime version so the error is ignored and the code falls back to loading it from the wasm binary.
-			lggr.Debugw("error deserializing module, attempting to load from binary", "workflowID", workflowID, "error", err)
+			logger.Debugw("error deserializing module, attempting to load from binary", "workflowID", workflowID, "error", err)
 		}
 	}
 
 	// If the serialized module was not found or deserialization failed, load the module from the wasm binary.
 	if mod == nil {
-		mod, err = loadModuleFromWasmBinary(ctx, lggr, modCfg, workflowID, wasmStore, engine)
+		mod, err = loadModuleFromWasmBinary(ctx, logger, modCfg, workflowID, wasmStore, engine)
 		if err != nil {
 			return nil, fmt.Errorf("error loading module from wasm binary: %w", err)
 		}

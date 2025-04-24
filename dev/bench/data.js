@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745516008144,
+  "lastUpdate": 1745520237772,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12222,6 +12222,48 @@ window.BENCHMARK_DATA = {
             "value": 28184,
             "unit": "ns/op",
             "extra": "42645 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0aea2032763545bb54c8f42e95702ae5bad9aa76",
+          "message": "INFOPLAT-2216 Updates chipingress protos (#1154)",
+          "timestamp": "2025-04-24T14:42:37-04:00",
+          "tree_id": "0ebdece40ea229313811370a0eca5800239b7f73",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0aea2032763545bb54c8f42e95702ae5bad9aa76"
+        },
+        "date": 1745520236441,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.3,
+            "unit": "ns/op",
+            "extra": "3351832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.2,
+            "unit": "ns/op",
+            "extra": "2804316 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28673,
+            "unit": "ns/op",
+            "extra": "41804 times\n4 procs"
           }
         ]
       }

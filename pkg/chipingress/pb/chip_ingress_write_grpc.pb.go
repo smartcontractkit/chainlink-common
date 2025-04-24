@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: pkg/beholder/pb/chip_ingress_write.proto
+// source: pkg/chipingress/pb/chip_ingress_write.proto
 
 package pb
 
@@ -20,9 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChipIngress_Publish_FullMethodName      = "/pb.ChipIngress/Publish"
-	ChipIngress_PublishBatch_FullMethodName = "/pb.ChipIngress/PublishBatch"
-	ChipIngress_Ping_FullMethodName         = "/pb.ChipIngress/Ping"
+	ChipIngress_Publish_FullMethodName      = "/chipingress.pb.ChipIngress/Publish"
+	ChipIngress_PublishBatch_FullMethodName = "/chipingress.pb.ChipIngress/PublishBatch"
+	ChipIngress_Ping_FullMethodName         = "/chipingress.pb.ChipIngress/Ping"
 )
 
 // ChipIngressClient is the client API for ChipIngress service.
@@ -181,7 +181,7 @@ func _ChipIngress_Ping_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ChipIngress_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.ChipIngress",
+	ServiceName: "chipingress.pb.ChipIngress",
 	HandlerType: (*ChipIngressServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -198,5 +198,5 @@ var ChipIngress_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pkg/beholder/pb/chip_ingress_write.proto",
+	Metadata: "pkg/chipingress/pb/chip_ingress_write.proto",
 }

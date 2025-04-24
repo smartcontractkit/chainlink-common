@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745514703991,
+  "lastUpdate": 1745516008144,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12180,6 +12180,48 @@ window.BENCHMARK_DATA = {
             "value": 28189,
             "unit": "ns/op",
             "extra": "42770 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3df386365d0f58168b076dfc1cac1ec17f65f847",
+          "message": "extend beholder tester by providing functions for accessing messages (#1151)\n\n* extend beholder tester by providing functions for accessing messages\n\n* Update pkg/utils/tests/beholder.go\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>\n\n---------\n\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2025-04-24T13:32:17-04:00",
+          "tree_id": "3710aa3e22df39c8089ff46189f9c04c18fb4846",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3df386365d0f58168b076dfc1cac1ec17f65f847"
+        },
+        "date": 1745516007412,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 474.7,
+            "unit": "ns/op",
+            "extra": "2155159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.4,
+            "unit": "ns/op",
+            "extra": "2762706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28184,
+            "unit": "ns/op",
+            "extra": "42645 times\n4 procs"
           }
         ]
       }

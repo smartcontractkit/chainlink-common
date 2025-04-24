@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package basic_test_action.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction";
+
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+
+message Config {
+  string camel_case_in_schema_for_testing = 1;
+  int32 snake_case_in_schema_for_testing = 2;
+}
+
+message Inputs {
+  bool input_thing = 1;
+}
+
+message Outputs {
+  string adapted_thing = 1;
+}
+
+service BasicAction {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "basic-test-action@1.0.0"
+  };
+  rpc PerformAction (Inputs) returns (Outputs);
+}

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package cre.metadata;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb";
+
+import "workflows/sdk/v2/pb/sdk.proto";
+
+message CapabilityMetadata {
+  cre.sdk.v2.Mode mode = 1;
+  string capability_id = 2;
+}
+
+extend google.protobuf.ServiceOptions {
+  CapabilityMetadata capability = 50001;
+}

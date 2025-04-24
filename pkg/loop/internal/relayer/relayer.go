@@ -18,7 +18,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	evm_chain "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -126,6 +125,9 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
+		if evmRelayer, ok := r.(looptypes.EVMRelayer); ok {
+			pb.RegisterEVMRelayerServer(s, newEVMChainRelayerServer(evmRelayer, p.BrokerExt))
+		}
 	}, rRes, ksRes, crRes)
 	if err != nil {
 		return nil, err
@@ -191,23 +193,30 @@ type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
-	relayer pb.RelayerClient
+	relayer    pb.RelayerClient
+	evmRelayer pb.EVMRelayerClient
+}
+
+type evmRelayerClient struct {
+	*relayerClient
+
+	relayer pb.EVMRelayerClient
+}
+
+func (e *evmRelayerClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	reply, err := e.relayer.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TransactionFee{
+		TransactionFee: reply.TransationFee.Int(),
+	}, nil
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
-}
-
-func (r *relayerClient) NewEVMChain(_ context.Context) (types.EVMChain, error) {
-	cc := r.NewClientConn("EVMChain", func(ctx context.Context) (uint32, net.Resources, error) {
-		reply, err := r.relayer.NewEVMChain(ctx, &emptypb.Empty{})
-		if err != nil {
-			return 0, nil, err
-		}
-		return reply.EVMChainID, nil, nil
-	})
-	return evm_chain.NewClient(r.WithName("EVMChainClient"), cc), nil
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), pb.NewEVMRelayerClient(conn)}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -390,6 +399,38 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 	return err
 }
 
+func (r *relayerClient) AsEVMRelayer() (looptypes.EVMRelayer, error) {
+	return &evmRelayerClient{
+		r,
+		r.evmRelayer,
+	}, nil
+}
+
+var _ pb.EVMRelayerServer = (*evmRelayerServer)(nil)
+
+type evmRelayerServer struct {
+	pb.UnimplementedEVMRelayerServer
+
+	*net.BrokerExt
+
+	impl looptypes.EVMRelayer
+}
+
+func (e *evmRelayerServer) GetTransactionFee(ctx context.Context, request *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
+	reply, err := e.impl.GetTransactionFee(ctx, request.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetTransactionFeeReply{
+		TransationFee: pb.NewBigIntFromInt(reply.TransactionFee),
+	}, nil
+}
+
+func newEVMChainRelayerServer(impl looptypes.EVMRelayer, b *net.BrokerExt) *evmRelayerServer {
+	return &evmRelayerServer{impl: impl, BrokerExt: b.WithName("EVMRelayerServer")}
+}
+
 var _ pb.RelayerServer = (*relayerServer)(nil)
 
 // relayerServer exposes [Relayer] as a GRPC [pb.RelayerServer].
@@ -403,27 +444,6 @@ type relayerServer struct {
 
 func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerServer {
 	return &relayerServer{impl: impl, BrokerExt: b.WithName("ChainRelayerServer")}
-}
-
-func (r *relayerServer) NewEVMChain(ctx context.Context, _ *emptypb.Empty) (*pb.NewEVMChainReply, error) {
-	cc, err := r.impl.NewEVMChain(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = cc.Start(ctx); err != nil {
-		return nil, err
-	}
-
-	const name = "EVMChain"
-	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		evm_chain.RegisterEVMChain(s, cc)
-	}, net.Resource{Closer: cc, Name: name})
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.NewEVMChainReply{EVMChainID: id}, nil
 }
 
 func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {

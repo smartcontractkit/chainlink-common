@@ -103,11 +103,10 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 	}
 	triggerSubscription := &pb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
-	value, _ := values.Wrap(triggerSubscription)
 
 	execResponse := &pb.ExecutionResult{
 		Id:     d.id,
-		Result: &pb.ExecutionResult_Value{Value: values.Proto(value)},
+		Result: &pb.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: triggerSubscription},
 	}
 
 	configBytes, _ := proto.Marshal(execResponse)

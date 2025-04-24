@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package cre.sdk.v2;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb";
+
+import "google/protobuf/any.proto";
+import "values/pb/values.proto";
+
+message CapabilityRequest {
+  string executionId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
+  string method = 4;
+}
+
+message CapabilityResponse {
+  oneof response {
+    google.protobuf.Any payload = 1;
+    string error = 2;
+  }
+}
+
+enum SimpleConsensusType {
+  MEDIAN = 0;
+  MEDIAN_OF_FIELDS = 1;
+  IDENTICAL = 2;
+}
+
+message PrimitiveConsensus {
+  oneof consensus {
+    SimpleConsensusType simple = 1;
+  }
+}
+
+message BuiltInConsensusRequest {
+  PrimitiveConsensus primitiveConsensus = 1;
+  oneof observation {
+    values.Value value = 2;
+    string error = 3;
+  }
+  optional values.Value default_value = 4;
+}

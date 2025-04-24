@@ -207,7 +207,7 @@ func (x *TriggerRegistrationRequest) GetPayload() *anypb.Any {
 type TriggerEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TriggerType   string                 `protobuf:"bytes,1,opt,name=trigger_type,json=triggerType,proto3" json:"trigger_type,omitempty"`
-	TriggerId     string                 `protobuf:"bytes,2,opt,name=trigger_id,json=triggerId,proto3" json:"trigger_id,omitempty"`
+	EventId       string                 `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	Payload       *anypb.Any             `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -250,9 +250,9 @@ func (x *TriggerEvent) GetTriggerType() string {
 	return ""
 }
 
-func (x *TriggerEvent) GetTriggerId() string {
+func (x *TriggerEvent) GetEventId() string {
 	if x != nil {
-		return x.TriggerId
+		return x.EventId
 	}
 	return ""
 }
@@ -414,11 +414,10 @@ const file_capabilities_v2_pb_capabilities_v2_proto_rawDesc = "" +
 	"\x1aTriggerRegistrationRequest\x12'\n" +
 	"\x0fregistration_id\x18\x01 \x01(\tR\x0eregistrationId\x129\n" +
 	"\bmetadata\x18\x02 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12.\n" +
-	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\"\x80\x01\n" +
+	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\"|\n" +
 	"\fTriggerEvent\x12!\n" +
-	"\ftrigger_type\x18\x01 \x01(\tR\vtriggerType\x12\x1d\n" +
-	"\n" +
-	"trigger_id\x18\x02 \x01(\tR\ttriggerId\x12.\n" +
+	"\ftrigger_type\x18\x01 \x01(\tR\vtriggerType\x12\x19\n" +
+	"\bevent_id\x18\x02 \x01(\tR\aeventId\x12.\n" +
 	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\"\\\n" +
 	"\x0fTriggerResponse\x123\n" +
 	"\x05event\x18\x01 \x01(\v2\x1d.capabilities_v2.TriggerEventR\x05event\x12\x14\n" +

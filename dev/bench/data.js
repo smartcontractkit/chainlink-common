@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745434133372,
+  "lastUpdate": 1745514703991,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12138,6 +12138,48 @@ window.BENCHMARK_DATA = {
             "value": 28095,
             "unit": "ns/op",
             "extra": "42616 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c46e9e5a7aa07cf3754b06081c21ce3f042187b",
+          "message": "Create the interfaces for the CRE v2 (#1153)",
+          "timestamp": "2025-04-24T13:10:23-04:00",
+          "tree_id": "ba30766512cd7c671157e63aa318e3c218e32871",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9c46e9e5a7aa07cf3754b06081c21ce3f042187b"
+        },
+        "date": 1745514703231,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 384.1,
+            "unit": "ns/op",
+            "extra": "3346766 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.7,
+            "unit": "ns/op",
+            "extra": "2880108 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28189,
+            "unit": "ns/op",
+            "extra": "42770 times\n4 procs"
           }
         ]
       }

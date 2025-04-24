@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/pb";
+
+import "capabilities/pb/capabilities.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+
+package capabilities_v2;
+
+message CapabilityRequest {
+  capabilities.RequestMetadata metadata = 1;
+  google.protobuf.Any config_payload = 2;
+  google.protobuf.Any input_payload = 3;
+}
+
+message CapabilityResponse {
+  google.protobuf.Any output_payload = 1;
+  string error = 2;
+  capabilities.ResponseMetadata metadata = 3;
+}
+
+message TriggerRegistrationRequest {
+  string registration_id = 1;
+  capabilities.RequestMetadata metadata = 2;
+  google.protobuf.Any payload = 3;
+}
+
+message TriggerEvent {
+  string trigger_type = 1;
+  string trigger_id = 2;
+  google.protobuf.Any payload = 3;
+}
+
+message TriggerResponse {
+  TriggerEvent event = 1;
+  string error = 2;
+}
+
+message TriggerResponseMessage {
+  oneof message {
+    google.protobuf.Empty ack = 1;
+    TriggerResponse response = 2;
+  }
+}
+
+service Capability {
+  rpc Info (google.protobuf.Empty) returns (capabilities.CapabilityInfoReply) {}
+  rpc Execute(CapabilityRequest) returns (stream CapabilityResponse) {}
+  rpc RegisterTrigger (TriggerRegistrationRequest) returns (stream TriggerResponseMessage) {}
+  rpc UnregisterTrigger (TriggerRegistrationRequest) returns (google.protobuf.Empty) {}
+}

@@ -37,6 +37,7 @@ message ExecutionResult {
   oneof result {
     values.Value value = 2;
     string error = 3;
+    TriggerSubscriptionRequest triggerSubscriptions = 4;
   }
 }
 

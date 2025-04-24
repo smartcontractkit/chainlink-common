@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	legacySdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	legacywasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
@@ -35,31 +33,8 @@ func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 	}
 
 	switch r := execResult.Result.(type) {
-	case *wasmpb.ExecutionResult_Value:
-		v, err := values.FromProto(r.Value)
-		if err != nil {
-			return nil, err
-		}
-
-		unwrapped := &wasmpb.TriggerSubscriptionRequest{}
-		/* TODO this should work...?
-		if err = v.UnwrapTo(unwrapped); err != nil {
-			return nil, err
-		}
-		*/
-
-		// TODO remove hack
-		tmp, err := v.Unwrap()
-		if err != nil {
-			return nil, err
-		}
-		if err = mapstructure.Decode(tmp, unwrapped); err != nil {
-			return nil, err
-		}
-
-		// End of hack
-
-		return unwrapped, nil
+	case *wasmpb.ExecutionResult_TriggerSubscriptions:
+		return r.TriggerSubscriptions, nil
 	case *wasmpb.ExecutionResult_Error:
 		return nil, errors.New(r.Error)
 	default:

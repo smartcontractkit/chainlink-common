@@ -396,6 +396,7 @@ type ExecutionResult struct {
 	//
 	//	*ExecutionResult_Value
 	//	*ExecutionResult_Error
+	//	*ExecutionResult_TriggerSubscriptions
 	Result        isExecutionResult_Result `protobuf_oneof:"result"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -463,6 +464,15 @@ func (x *ExecutionResult) GetError() string {
 	return ""
 }
 
+func (x *ExecutionResult) GetTriggerSubscriptions() *TriggerSubscriptionRequest {
+	if x != nil {
+		if x, ok := x.Result.(*ExecutionResult_TriggerSubscriptions); ok {
+			return x.TriggerSubscriptions
+		}
+	}
+	return nil
+}
+
 type isExecutionResult_Result interface {
 	isExecutionResult_Result()
 }
@@ -475,9 +485,15 @@ type ExecutionResult_Error struct {
 	Error string `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
 }
 
+type ExecutionResult_TriggerSubscriptions struct {
+	TriggerSubscriptions *TriggerSubscriptionRequest `protobuf:"bytes,4,opt,name=triggerSubscriptions,proto3,oneof"`
+}
+
 func (*ExecutionResult_Value) isExecutionResult_Result() {}
 
 func (*ExecutionResult_Error) isExecutionResult_Result() {}
+
+func (*ExecutionResult_TriggerSubscriptions) isExecutionResult_Result() {}
 
 type CapabilityRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -954,11 +970,12 @@ const file_workflows_wasm_v2_pb_wasm_proto_rawDesc = "" +
 	"\tsubscribe\x18\x03 \x01(\v2\x16.google.protobuf.EmptyH\x00R\tsubscribe\x12$\n" +
 	"\atrigger\x18\x04 \x01(\v2\b.TriggerH\x00R\atrigger\x12*\n" +
 	"\x11max_response_size\x18\x05 \x01(\x04R\x0fmaxResponseSizeB\t\n" +
-	"\arequest\"j\n" +
+	"\arequest\"\xbd\x01\n" +
 	"\x0fExecutionResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x05value\x18\x02 \x01(\v2\r.values.ValueH\x00R\x05value\x12\x16\n" +
-	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
+	"\x05error\x18\x03 \x01(\tH\x00R\x05error\x12Q\n" +
+	"\x14triggerSubscriptions\x18\x04 \x01(\v2\x1b.TriggerSubscriptionRequestH\x00R\x14triggerSubscriptionsB\b\n" +
 	"\x06result\"\x8d\x01\n" +
 	"\x11CapabilityRequest\x12 \n" +
 	"\vexecutionId\x18\x01 \x01(\tR\vexecutionId\x12\x0e\n" +
@@ -1040,20 +1057,21 @@ var file_workflows_wasm_v2_pb_wasm_proto_depIdxs = []int32{
 	16, // 3: ExecuteRequest.subscribe:type_name -> google.protobuf.Empty
 	4,  // 4: ExecuteRequest.trigger:type_name -> Trigger
 	17, // 5: ExecutionResult.value:type_name -> values.Value
-	15, // 6: CapabilityRequest.payload:type_name -> google.protobuf.Any
-	15, // 7: CapabilityResponse.payload:type_name -> google.protobuf.Any
-	14, // 8: AwaitCapabilitiesResponse.responses:type_name -> AwaitCapabilitiesResponse.ResponsesEntry
-	0,  // 9: PrimitiveConsensus.simple:type_name -> SimpleConsensusType
-	11, // 10: BuiltInConsensusRequest.primitiveConsensus:type_name -> PrimitiveConsensus
-	17, // 11: BuiltInConsensusRequest.value:type_name -> values.Value
-	17, // 12: BuiltInConsensusRequest.default_value:type_name -> values.Value
-	1,  // 13: ChangeModeRequest.mode:type_name -> Mode
-	9,  // 14: AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> CapabilityResponse
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	3,  // 6: ExecutionResult.triggerSubscriptions:type_name -> TriggerSubscriptionRequest
+	15, // 7: CapabilityRequest.payload:type_name -> google.protobuf.Any
+	15, // 8: CapabilityResponse.payload:type_name -> google.protobuf.Any
+	14, // 9: AwaitCapabilitiesResponse.responses:type_name -> AwaitCapabilitiesResponse.ResponsesEntry
+	0,  // 10: PrimitiveConsensus.simple:type_name -> SimpleConsensusType
+	11, // 11: BuiltInConsensusRequest.primitiveConsensus:type_name -> PrimitiveConsensus
+	17, // 12: BuiltInConsensusRequest.value:type_name -> values.Value
+	17, // 13: BuiltInConsensusRequest.default_value:type_name -> values.Value
+	1,  // 14: ChangeModeRequest.mode:type_name -> Mode
+	9,  // 15: AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> CapabilityResponse
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_workflows_wasm_v2_pb_wasm_proto_init() }
@@ -1068,6 +1086,7 @@ func file_workflows_wasm_v2_pb_wasm_proto_init() {
 	file_workflows_wasm_v2_pb_wasm_proto_msgTypes[4].OneofWrappers = []any{
 		(*ExecutionResult_Value)(nil),
 		(*ExecutionResult_Error)(nil),
+		(*ExecutionResult_TriggerSubscriptions)(nil),
 	}
 	file_workflows_wasm_v2_pb_wasm_proto_msgTypes[7].OneofWrappers = []any{
 		(*CapabilityResponse_Payload)(nil),

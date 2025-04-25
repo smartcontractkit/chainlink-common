@@ -41,3 +41,8 @@ message BuiltInConsensusRequest {
   }
   optional values.Value default_value = 4;
 }
+
+enum Mode {
+  DON = 0;
+  Node = 1;
+}

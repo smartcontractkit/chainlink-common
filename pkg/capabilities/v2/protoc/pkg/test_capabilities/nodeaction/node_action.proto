@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package basic_test_node_action.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/nodeaction";
+
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+
+message NodeInputs {
+  bool input_thing = 1;
+}
+
+message NodeOutputs {
+  int32 output_thing = 1;
+}
+
+service BasicAction {
+  option (cre.metadata.capability) = {
+    mode: Node
+    capability_id: "basic-test-node-action@1.0.0"
+  };
+  rpc PerformAction (NodeInputs) returns (NodeOutputs);
+}

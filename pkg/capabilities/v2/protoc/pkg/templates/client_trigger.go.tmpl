@@ -1,0 +1,30 @@
+{{define "trigger_method"}}
+func (c {{.Service.GoName}}) {{.Method.GoName}}(config *{{name .InputType .GoPackageName}}) sdk.{{.Mode}}Trigger[*{{name .OutputType .GoPackageName}}] {
+    configAny, _ := anypb.New(config)
+    return &{{.Service.GoName | LowerFirst}}{{.Method.GoName}} {
+        config: configAny,
+    }
+}
+
+type {{.Service.GoName | LowerFirst}}{{.Method.GoName}} struct {
+    config *anypb.Any
+}
+
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Is{{.Mode}}Trigger() {}
+
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) NewT() *{{name .OutputType .GoPackageName}} {
+    return &{{name .OutputType .GoPackageName}}{}
+}
+
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Id() string {
+    return "{{.CapabilityId}}"
+}
+
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Method() string {
+    return "{{.Method.GoName}}"
+}
+
+func (t *{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) ConfigAsAny() *anypb.Any {
+    return t.config
+}
+{{end}}

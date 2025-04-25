@@ -223,7 +223,7 @@ const file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_
 	"\awelcome\x18\x01 \x01(\tR\awelcome2\xe2\x01\n" +
 	"\x05Basic\x12S\n" +
 	"\x06Action\x12#.basic_test_action_trigger.v1.Input\x1a$.basic_test_action_trigger.v1.Output\x12]\n" +
-	"\aTrigger\x12$.basic_test_action_trigger.v1.Config\x1a*.basic_test_action_trigger.v1.TriggerEvent0\x01\x1a%\x8a\xb5\x18!\x12\x1fbasic-test-action-trigger@1.0.0BpZngithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtriggerb\x06proto3"
+	"\aTrigger\x12$.basic_test_action_trigger.v1.Config\x1a*.basic_test_action_trigger.v1.TriggerEvent0\x01\x1a%\x82\xb5\x18!\x12\x1fbasic-test-action-trigger@1.0.0BpZngithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtriggerb\x06proto3"
 
 var (
 	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescOnce sync.Once

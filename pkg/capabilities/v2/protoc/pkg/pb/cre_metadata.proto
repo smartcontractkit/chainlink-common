@@ -14,5 +14,5 @@ message CapabilityMetadata {
 }
 
 extend google.protobuf.ServiceOptions {
-  CapabilityMetadata capability = 50001;
+  CapabilityMetadata capability = 50000; // 50000-99999 is the range for custom options.
 }

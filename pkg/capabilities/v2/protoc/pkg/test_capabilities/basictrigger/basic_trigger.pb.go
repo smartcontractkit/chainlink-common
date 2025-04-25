@@ -130,7 +130,7 @@ const file_capabilities_v2_protoc_pkg_test_capabilities_basictrigger_basic_trigg
 	"\vcool_output\x18\x01 \x01(\tR\n" +
 	"coolOutput2s\n" +
 	"\x05Basic\x12J\n" +
-	"\aTrigger\x12\x1d.basic_test_trigger.v1.Config\x1a\x1e.basic_test_trigger.v1.Outputs0\x01\x1a\x1e\x8a\xb5\x18\x1a\x12\x18basic-test-trigger@1.0.0BhZfgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/basictriggerb\x06proto3"
+	"\aTrigger\x12\x1d.basic_test_trigger.v1.Config\x1a\x1e.basic_test_trigger.v1.Outputs0\x01\x1a\x1e\x82\xb5\x18\x1a\x12\x18basic-test-trigger@1.0.0BhZfgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/basictriggerb\x06proto3"
 
 var (
 	file_capabilities_v2_protoc_pkg_test_capabilities_basictrigger_basic_trigger_proto_rawDescOnce sync.Once

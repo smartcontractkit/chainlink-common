@@ -6,11 +6,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 
-message Config {
-  string camel_case_in_schema_for_testing = 1;
-  int32 snake_case_in_schema_for_testing = 2;
-}
-
 message Inputs {
   bool input_thing = 1;
 }

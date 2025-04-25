@@ -9,8 +9,8 @@ import (
 )
 
 type Basic struct {
-	// TODO config types (optional)
-	// TODO capability interfaces.
+	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capaiblities
+	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
 }
 
 func (c Basic) Trigger(config *Config) sdk.DonTrigger[*Outputs] {

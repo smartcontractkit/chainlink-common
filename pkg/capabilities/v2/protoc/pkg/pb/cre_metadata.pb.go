@@ -79,17 +79,17 @@ var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes = []protoimpl
 	{
 		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
 		ExtensionType: (*CapabilityMetadata)(nil),
-		Field:         50001,
+		Field:         50000,
 		Name:          "cre.metadata.capability",
-		Tag:           "bytes,50001,opt,name=capability",
+		Tag:           "bytes,50000,opt,name=capability",
 		Filename:      "capabilities/v2/protoc/pkg/pb/cre_metadata.proto",
 	},
 }
 
 // Extension fields to descriptorpb.ServiceOptions.
 var (
-	// optional cre.metadata.CapabilityMetadata capability = 50001;
-	E_Capability = &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes[0]
+	// optional cre.metadata.CapabilityMetadata capability = 50000;
+	E_Capability = &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes[0] // 50000-99999 is the range for custom options.
 )
 
 var File_capabilities_v2_protoc_pkg_pb_cre_metadata_proto protoreflect.FileDescriptor
@@ -101,7 +101,7 @@ const file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc = "" +
 	"\x04mode\x18\x01 \x01(\x0e2\x10.cre.sdk.v2.ModeR\x04mode\x12#\n" +
 	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId:c\n" +
 	"\n" +
-	"capability\x12\x1f.google.protobuf.ServiceOptions\x18ц\x03 \x01(\v2 .cre.metadata.CapabilityMetadataR\n" +
+	"capability\x12\x1f.google.protobuf.ServiceOptions\x18І\x03 \x01(\v2 .cre.metadata.CapabilityMetadataR\n" +
 	"capabilityBPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pbb\x06proto3"
 
 var (

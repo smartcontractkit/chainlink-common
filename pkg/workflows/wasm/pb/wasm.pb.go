@@ -130,6 +130,7 @@ type Request struct {
 	//	*Request_ComputeRequest
 	//	*Request_SpecRequest
 	Message       isRequest_Message `protobuf_oneof:"message"`
+	TriggerId     string            `protobuf:"bytes,5,opt,name=triggerId,proto3" json:"triggerId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -201,6 +202,13 @@ func (x *Request) GetSpecRequest() *emptypb.Empty {
 		}
 	}
 	return nil
+}
+
+func (x *Request) GetTriggerId() string {
+	if x != nil {
+		return x.TriggerId
+	}
+	return ""
 }
 
 type isRequest_Message interface {
@@ -1361,12 +1369,13 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\x14maxResponseSizeBytes\x18\x01 \x01(\x03R\x14maxResponseSizeBytes\"\x85\x01\n" +
 	"\x0eComputeRequest\x129\n" +
 	"\arequest\x18\x01 \x01(\v2\x1f.capabilities.CapabilityRequestR\arequest\x128\n" +
-	"\rruntimeConfig\x18\x02 \x01(\v2\x12.sdk.RuntimeConfigR\rruntimeConfig\"\xb7\x01\n" +
+	"\rruntimeConfig\x18\x02 \x01(\v2\x12.sdk.RuntimeConfigR\rruntimeConfig\"\xd5\x01\n" +
 	"\aRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06config\x18\x02 \x01(\fR\x06config\x12=\n" +
 	"\x0ecomputeRequest\x18\x03 \x01(\v2\x13.sdk.ComputeRequestH\x00R\x0ecomputeRequest\x12:\n" +
-	"\vspecRequest\x18\x04 \x01(\v2\x16.google.protobuf.EmptyH\x00R\vspecRequestB\t\n" +
+	"\vspecRequest\x18\x04 \x01(\v2\x16.google.protobuf.EmptyH\x00R\vspecRequest\x12\x1c\n" +
+	"\ttriggerId\x18\x05 \x01(\tR\ttriggerIdB\t\n" +
 	"\amessage\"O\n" +
 	"\x0fComputeResponse\x12<\n" +
 	"\bresponse\x18\x01 \x01(\v2 .capabilities.CapabilityResponseR\bresponse\"Q\n" +

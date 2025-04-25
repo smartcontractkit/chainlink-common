@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745520237772,
+  "lastUpdate": 1745610741358,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12264,6 +12264,48 @@ window.BENCHMARK_DATA = {
             "value": 28673,
             "unit": "ns/op",
             "extra": "41804 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d9eabb4a45195fd1458459dd0e7a589215d1acc2",
+          "message": "Add a client generator for CRE SDK v2. (#1157)",
+          "timestamp": "2025-04-25T15:51:05-04:00",
+          "tree_id": "7c5e3b78705f2e680b4a5463452cbe1db2f89f3b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d9eabb4a45195fd1458459dd0e7a589215d1acc2"
+        },
+        "date": 1745610740640,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.8,
+            "unit": "ns/op",
+            "extra": "3326011 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405,
+            "unit": "ns/op",
+            "extra": "2980394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28530,
+            "unit": "ns/op",
+            "extra": "42075 times\n4 procs"
           }
         ]
       }

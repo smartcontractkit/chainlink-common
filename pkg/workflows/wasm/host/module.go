@@ -184,7 +184,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, wasmStore WasmBinarySt
 
 	if modCfg.Fetch == nil {
 		modCfg.Fetch = func(context.Context, *FetchRequest) (*FetchResponse, error) {
-			return nil, fmt.Errorf("fetch not implemented")
+			return nil, errors.New("fetch not implemented")
 		}
 	}
 
@@ -369,7 +369,6 @@ func loadModuleFromWasmBinary(ctx context.Context, lggr logger.Logger, modCfg *M
 }
 
 func newModuleFromBinary(wasmBinary []byte, modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Module, error) {
-
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
 		// this is to prevent decompression bombs
@@ -437,11 +436,11 @@ func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	defer cancel()
 
 	if request == nil {
-		return nil, fmt.Errorf("invalid request: can't be nil")
+		return nil, errors.New("invalid request: can't be nil")
 	}
 
 	if request.Id == "" {
-		return nil, fmt.Errorf("invalid request: can't be empty")
+		return nil, errors.New("invalid request: can't be empty")
 	}
 
 	// we add the request context to the store to make it available to the Fetch fn
@@ -519,9 +518,9 @@ func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 
 		return storedRequest.response, nil
 	case containsCode(err, wasm.CodeInvalidResponse):
-		return nil, fmt.Errorf("invariant violation: error marshaling response")
+		return nil, errors.New("invariant violation: error marshaling response")
 	case containsCode(err, wasm.CodeInvalidRequest):
-		return nil, fmt.Errorf("invariant violation: invalid request to runner")
+		return nil, errors.New("invariant violation: invalid request to runner")
 	case containsCode(err, wasm.CodeRunnerErr):
 		storedRequest, innerErr := m.requestStore.get(request.Id)
 		if innerErr != nil {
@@ -530,7 +529,7 @@ func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 
 		return nil, fmt.Errorf("error executing runner: %s: %w", storedRequest.response.ErrMsg, err)
 	case containsCode(err, wasm.CodeHostErr):
-		return nil, fmt.Errorf("invariant violation: host errored during sendResponse")
+		return nil, errors.New("invariant violation: host errored during sendResponse")
 	default:
 		return nil, err
 	}
@@ -622,7 +621,6 @@ func fromSdkResp(resp *sdk.FetchResponse) (*wasmpb.FetchResponse, error) {
 		Headers:        values.ProtoMap(m),
 		Body:           resp.Body,
 	}, nil
-
 }
 
 type FetchRequestMetadata struct {
@@ -792,7 +790,7 @@ func createEmitFn(
 
 		req, err := requestStore.get(reqID)
 		if err != nil {
-			logErr(fmt.Errorf("failed to get request from store: %s", err))
+			logErr(fmt.Errorf("failed to get request from store: %w", err))
 			return writeErr(err)
 		}
 

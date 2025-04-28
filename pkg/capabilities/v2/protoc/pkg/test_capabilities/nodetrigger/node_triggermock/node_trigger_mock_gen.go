@@ -26,8 +26,6 @@ func NewNodeEventCapability(t testing.TB) (*NodeEventCapability, error) {
 }
 
 type NodeEventCapability struct {
-	// TODO teardown with unrgister if register is needed, or allow setup and teardown
-
 	Trigger func(ctx context.Context, input *nodetrigger.Config) (*nodetrigger.Outputs, error)
 }
 

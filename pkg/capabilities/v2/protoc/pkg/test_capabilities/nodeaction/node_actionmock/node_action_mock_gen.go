@@ -26,9 +26,8 @@ func NewBasicActionCapability(t testing.TB) (*BasicActionCapability, error) {
 }
 
 type BasicActionCapability struct {
-	// TODO teardown with unrgister if register is needed, or allow setup and teardown
-	// TODO register if needed...
-	PerformAction func(ctx context.Context, input *nodeaction.NodeInputs /* TODO config? */) (*nodeaction.NodeOutputs, error)
+	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
+	PerformAction func(ctx context.Context, input *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error)
 }
 
 func (cap *BasicActionCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {

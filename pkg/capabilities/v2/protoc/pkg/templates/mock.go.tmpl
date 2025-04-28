@@ -40,15 +40,14 @@ func New{{.GoName}}Capability(t testing.TB) (*{{.GoName}}Capability, error) {
 }
 
 type {{.GoName}}Capability struct {
-    // TODO teardown with unrgister if register is needed, or allow setup and teardown
     {{- range .Methods}}
       {{- if isTrigger . }}
     {{ $hasTriggers = true }}
     {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
         {{- else }}
-    // TODO register if needed...
     {{- $hasActions = true }}
-    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}, /* TODO config? */) (*{{name .Output.GoIdent ""}}, error)
+    // TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
+    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
         {{- end }}
     {{- end }}
 }

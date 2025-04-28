@@ -26,8 +26,6 @@ func NewBasicCapability(t testing.TB) (*BasicCapability, error) {
 }
 
 type BasicCapability struct {
-	// TODO teardown with unrgister if register is needed, or allow setup and teardown
-
 	Trigger func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error)
 }
 

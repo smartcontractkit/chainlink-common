@@ -227,7 +227,6 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
 						require.NoError(t, err)
 						return resp.OutputThing, nil
-						// TODO should test to make sure median and median of fields are correct, maybe it's just always median though
 					}, pb.SimpleConsensusType_MEDIAN)
 
 					consensusResult, err := consensus.Await()

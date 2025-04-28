@@ -26,9 +26,8 @@ func NewBasicCapability(t testing.TB) (*BasicCapability, error) {
 }
 
 type BasicCapability struct {
-	// TODO teardown with unrgister if register is needed, or allow setup and teardown
-	// TODO register if needed...
-	Action func(ctx context.Context, input *actionandtrigger.Input /* TODO config? */) (*actionandtrigger.Output, error)
+	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
+	Action func(ctx context.Context, input *actionandtrigger.Input) (*actionandtrigger.Output, error)
 
 	Trigger func(ctx context.Context, input *actionandtrigger.Config) (*actionandtrigger.TriggerEvent, error)
 }

@@ -18,6 +18,7 @@ func TestRegisterCapability(t *testing.T) {
 	err := r.RegisterCapability(c)
 	assert.NoError(t, err)
 
+	c = &basictriggermock.BasicCapability{}
 	err = r.RegisterCapability(c)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "already registered")
@@ -45,5 +46,5 @@ func TestGetCapability(t *testing.T) {
 
 	notReal := "not" + c1.ID()
 	_, err = r.GetCapability(notReal)
-	require.Equal(t, err, testutils.NoCapability(notReal))
+	require.Error(t, err)
 }

@@ -20,9 +20,9 @@ func (r *runtime[T]) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*
 		return sdk.PromiseFromResult((*pb.CapabilityResponse)(nil), r.callErr)
 	}
 
-	capability, ok := r.runner.registry.capabilities[request.Id]
-	if !ok {
-		return sdk.PromiseFromResult((*pb.CapabilityResponse)(nil), NoCapability(request.Id))
+	capability, err := r.runner.registry.GetCapability(request.Id)
+	if err != nil {
+		return sdk.PromiseFromResult((*pb.CapabilityResponse)(nil), err)
 	}
 
 	response := make(chan *pb.CapabilityResponse, 1)

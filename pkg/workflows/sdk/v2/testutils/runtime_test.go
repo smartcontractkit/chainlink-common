@@ -186,10 +186,7 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 	})
 
 	_, _, err = runner.Result()
-	notRegistered := basicactionmock.BasicActionCapability{}
-	require.Equal(t, testutils.NoCapability(notRegistered.ID()), err)
-	assert.ErrorContains(t, err, "Capability not found")
-	assert.ErrorContains(t, err, notRegistered.ID())
+	require.Error(t, err)
 }
 
 func TestRuntime_NumericalConsensusShouldReturnErrorIfInputIsNotNumerical(t *testing.T) {

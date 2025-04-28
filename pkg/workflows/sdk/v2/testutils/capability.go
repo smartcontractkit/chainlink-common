@@ -11,19 +11,3 @@ type Capability interface {
 	InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error)
 	ID() string
 }
-
-type NoTriggerStub string
-
-func (n NoTriggerStub) Error() string {
-	return "Stub not implemented for trigger: " + string(n)
-}
-
-var _ error = NoTriggerStub("")
-
-type NoCapability string
-
-func (n NoCapability) Error() string {
-	return "Capability not found: " + string(n)
-}
-
-var _ error = NoCapability("")

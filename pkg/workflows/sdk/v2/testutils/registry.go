@@ -1,9 +1,10 @@
 package testutils
 
 import (
-	"fmt"
 	"sync"
 	"testing"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 )
 
 var testRegistries = map[testing.TB]*Registry{}
@@ -17,7 +18,7 @@ func GetRegistry(tb testing.TB) *Registry {
 		return r
 	}
 
-	r := &Registry{}
+	r := &Registry{tb: tb}
 	testRegistries[tb] = r
 	tb.Cleanup(func() {
 		delete(testRegistries, tb)
@@ -25,28 +26,26 @@ func GetRegistry(tb testing.TB) *Registry {
 	return r
 }
 
+// Registry is meant to be used with GetRegistry, do not use it directly.
 type Registry struct {
-	capabilities map[string]Capability
+	registry.Basic
+	tb testing.TB
 }
 
 func (r *Registry) RegisterCapability(c Capability) error {
-	if r.capabilities == nil {
-		r.capabilities = map[string]Capability{}
-	}
-
-	if _, ok := r.capabilities[c.ID()]; ok {
-		return fmt.Errorf("capability %s already registered", c.ID())
-	}
-
-	r.capabilities[c.ID()] = c
-	return nil
+	return r.Add(r.tb.Context(), &capabilityWrapper{Capability: c})
 }
 
 func (r *Registry) GetCapability(id string) (Capability, error) {
-	c, ok := r.capabilities[id]
-	if !ok {
-		return nil, NoCapability(id)
+	v1Capability, err := r.Get(r.tb.Context(), id)
+	if err != nil {
+		return nil, err
 	}
 
-	return c, nil
+	capability, ok := v1Capability.(Capability)
+	if ok {
+		return capability, nil
+	}
+
+	return &FakeWrapper{BaseCapability: v1Capability, tb: r.tb}, nil
 }

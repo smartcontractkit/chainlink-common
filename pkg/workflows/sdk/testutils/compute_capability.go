@@ -32,4 +32,4 @@ func (c *computeCapability) Execute(ctx context.Context, request capabilities.Ca
 	return c.callback(c.sdk, request)
 }
 
-var _ capabilities.ActionCapability = &computeCapability{}
+var _ capabilities.ExecutableCapability = &computeCapability{}

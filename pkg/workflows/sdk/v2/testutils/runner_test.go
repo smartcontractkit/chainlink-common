@@ -219,8 +219,7 @@ func TestRunner_StrictTriggers_FailsIfTriggerIsNotRegistered(t *testing.T) {
 	})
 
 	_, _, err = runner.Result()
-	missing := &actionandtriggermock.BasicCapability{}
-	assert.True(t, errors.Is(err, testutils.NoCapability(missing.ID())))
+	assert.Error(t, err)
 }
 
 func TestRunner_CanStartInNodeMode(t *testing.T) {

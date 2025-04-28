@@ -17,42 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type ActionCapabilityClient struct {
-	*executableClient
-	*baseCapabilityClient
-}
-
-func NewActionCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.ActionCapability {
-	return &ActionCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
-	}
-}
-
-type ConsensusCapabilityClient struct {
-	*executableClient
-	*baseCapabilityClient
-}
-
-func NewConsensusCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.ConsensusCapability {
-	return &ConsensusCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
-	}
-}
-
-type TargetCapabilityClient struct {
-	*executableClient
-	*baseCapabilityClient
-}
-
-func NewTargetCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TargetCapability {
-	return &TargetCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
-	}
-}
-
 type TriggerCapabilityClient struct {
 	*triggerExecutableClient
 	*baseCapabilityClient
@@ -79,6 +43,20 @@ func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientCo
 	return &ExecutableCapabilityClient{
 		executableClient:     newExecutableClient(brokerExt, conn),
 		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
+	}
+}
+
+type TriggerAndExecutableCapabilityClient struct {
+	*executableClient
+	*baseCapabilityClient
+	*triggerExecutableClient
+}
+
+func NewTriggerAndExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+	return &TriggerAndExecutableCapabilityClient{
+		executableClient:        newExecutableClient(brokerExt, conn),
+		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
+		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 	}
 }
 
@@ -179,6 +157,8 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		ct = capabilities.CapabilityTypeConsensus
 	case capabilitiespb.CapabilityTypeTarget:
 		ct = capabilities.CapabilityTypeTarget
+	case capabilitiespb.CapabilityTypeV2:
+		ct = capabilities.CapabilityTypeV2
 	case capabilitiespb.CapabilityTypeUnknown:
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}

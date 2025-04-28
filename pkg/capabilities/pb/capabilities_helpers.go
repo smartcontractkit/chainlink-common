@@ -17,6 +17,7 @@ const (
 	CapabilityTypeAction    = CapabilityType_CAPABILITY_TYPE_ACTION
 	CapabilityTypeConsensus = CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	CapabilityTypeTarget    = CapabilityType_CAPABILITY_TYPE_TARGET
+	CapabilityTypeV2        = CapabilityType_CAPABILITY_TYPE_V2
 )
 
 func MarshalCapabilityRequest(req capabilities.CapabilityRequest) ([]byte, error) {

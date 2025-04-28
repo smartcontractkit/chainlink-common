@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 type RelayID struct {
@@ -46,7 +49,7 @@ type PluginArgs struct {
 }
 
 // RelayArgs are the args required to create relayer.
-// The are common to all relayer implementations.
+// The are common to all xelayer implementations.
 type RelayArgs struct {
 	ExternalJobID      uuid.UUID
 	JobID              int32
@@ -78,10 +81,8 @@ type NodeStatus struct {
 	State   string
 }
 
-type EVMRelayer interface {
-	Relayer
-	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
-	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
+type TransactionFee struct {
+	TransactionFee *big.Int
 }
 
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
@@ -101,11 +102,34 @@ type ChainService interface {
 	Replay(ctx context.Context, fromBlock string, args map[string]any) error
 }
 
+type EVMService interface {
+	// -- ChainService
+	// Direct Calls
+	CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error)
+	GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery) ([]*evm.Log, error)
+	BalanceAt(ctx context.Context, account string, blockNumber *big.Int) (*big.Int, error)
+	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	TransactionByHash(ctx context.Context, hash string) (*evm.Transaction, error)
+	TransactionReceipt(ctx context.Context, txHash string) (*evm.Receipt, error)
+
+	// ChainService
+
+	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain's TXM
+	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
+	LatestAndFinalizedHead(ctx context.Context) (latest Head, finalized Head, err error)
+	QueryLogsFromCache(ctx context.Context, filterQuery []query.KeyFilter,
+		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	SubscribeLogTrigger(ctx context.Context, filterQuery evm.FilterQuery) (chan<- *evm.Log, error)
+	RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
 
-	AsEVMRelayer() (EVMRelayer, error)
+	EVM() (EVMService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)

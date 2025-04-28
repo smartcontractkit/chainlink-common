@@ -34,9 +34,13 @@ rm-builders:
 	rm -f ./pkg/workflows/wasm/host/test/cmd/testmodule.wasm
 
 .PHONY: generate
-generate: mockery install-protoc gomods
+generate: mockery install-protoc gomods cre-protoc
 	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files
+
+.PHONY: cre-protoc
+cre-protoc:
+	cd pkg/capabilities/v2/protoc && go build -o protoc-gen-cre .
 
 .PHONY: lint-workspace lint
 GOLANGCI_LINT_VERSION := 1.64.8

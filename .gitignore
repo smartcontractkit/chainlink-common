@@ -5,6 +5,7 @@
 *.so
 *.dylib
 .DS_Store
+pkg/capabilities/v2/protoc/protoc-gen-cre
 
 # Test binary, built with `go test -c`
 *.test

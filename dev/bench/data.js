@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745610741358,
+  "lastUpdate": 1745850728516,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12306,6 +12306,48 @@ window.BENCHMARK_DATA = {
             "value": 28530,
             "unit": "ns/op",
             "extra": "42075 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d1f468b98b68f8541456020011b8b61dd532dd74",
+          "message": "Add the ability to call capabilities with an any instead of a values.Value (#1152)",
+          "timestamp": "2025-04-28T10:30:40-04:00",
+          "tree_id": "6b7bb8693e97afd2fe1fce1cfcf8cf767d231e92",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d1f468b98b68f8541456020011b8b61dd532dd74"
+        },
+        "date": 1745850727144,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 386.8,
+            "unit": "ns/op",
+            "extra": "3224956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399,
+            "unit": "ns/op",
+            "extra": "2993388 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28541,
+            "unit": "ns/op",
+            "extra": "41952 times\n4 procs"
           }
         ]
       }

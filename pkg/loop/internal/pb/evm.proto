@@ -20,7 +20,6 @@ service EVM{
   rpc GetTransactionReceipt(GetReceiptRequest) returns (GetReceiptReply);
   rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
   rpc QueryLogsFromCache(QueryLogsFromCacheRequest) returns (QueryLogsFromCacheReply);
-  rpc SubscribeLogTrigger(SubscribeLogTriggerRequest) returns (stream LogTriggerReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
@@ -173,10 +172,4 @@ message QueryLogsFromCacheReply {
   repeated Log logs = 1;
 }
 
-message SubscribeLogTriggerRequest {
-  repeated Expression expression = 1;
-}
 
-message LogTriggerReply {
-  Log log = 1;
-}

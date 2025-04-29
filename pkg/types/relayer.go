@@ -115,7 +115,6 @@ type EVMService interface {
 	LatestAndFinalizedHead(ctx context.Context) (latest Head, finalized Head, err error)
 	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	SubscribeLogTrigger(ctx context.Context, filterQuery []query.Expression) (chan<- *evm.Log, error)
 	RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error
 	UnregisterLogTracking(ctx context.Context, filterName string) error
 	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)

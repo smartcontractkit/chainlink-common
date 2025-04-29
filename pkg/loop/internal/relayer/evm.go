@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -128,11 +127,6 @@ func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	//TODO BCFR-1328
 	return nil, errors.New("unimplemented")
-}
-
-func (e *evmClient) SubscribeLogTrigger(ctx context.Context, filterQuery []query.Expression) (chan<- *evm.Log, error) {
-	//TODO BCFR-1328
-	return nil, errors.New("unimplmented")
 }
 
 func (e *evmClient) RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error {
@@ -284,10 +278,6 @@ func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty
 
 func (e *evmServer) QueryLogsFromCache(context.Context, *pb.QueryLogsFromCacheRequest) (*pb.QueryLogsFromCacheReply, error) {
 	return nil, errors.New("method QueryLogsFromCache not implemented")
-}
-
-func (e *evmServer) SubscribeLogTrigger(*pb.SubscribeLogTriggerRequest, grpc.ServerStreamingServer[pb.LogTriggerReply]) error {
-	return errors.New("method SubscribeLogTrigger not implemented")
 }
 
 func (e *evmServer) RegisterLogTracking(ctx context.Context, req *pb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {

@@ -668,6 +668,108 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	EVMRelayer_GetTransactionFee_FullMethodName = "/loop.EVMRelayer/GetTransactionFee"
+)
+
+// EVMRelayerClient is the client API for EVMRelayer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type EVMRelayerClient interface {
+	GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error)
+}
+
+type eVMRelayerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewEVMRelayerClient(cc grpc.ClientConnInterface) EVMRelayerClient {
+	return &eVMRelayerClient{cc}
+}
+
+func (c *eVMRelayerClient) GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransactionFeeReply)
+	err := c.cc.Invoke(ctx, EVMRelayer_GetTransactionFee_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// EVMRelayerServer is the server API for EVMRelayer service.
+// All implementations must embed UnimplementedEVMRelayerServer
+// for forward compatibility.
+type EVMRelayerServer interface {
+	GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error)
+	mustEmbedUnimplementedEVMRelayerServer()
+}
+
+// UnimplementedEVMRelayerServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedEVMRelayerServer struct{}
+
+func (UnimplementedEVMRelayerServer) GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
+}
+func (UnimplementedEVMRelayerServer) mustEmbedUnimplementedEVMRelayerServer() {}
+func (UnimplementedEVMRelayerServer) testEmbeddedByValue()                    {}
+
+// UnsafeEVMRelayerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to EVMRelayerServer will
+// result in compilation errors.
+type UnsafeEVMRelayerServer interface {
+	mustEmbedUnimplementedEVMRelayerServer()
+}
+
+func RegisterEVMRelayerServer(s grpc.ServiceRegistrar, srv EVMRelayerServer) {
+	// If the following call pancis, it indicates UnimplementedEVMRelayerServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&EVMRelayer_ServiceDesc, srv)
+}
+
+func _EVMRelayer_GetTransactionFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMRelayerServer).GetTransactionFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVMRelayer_GetTransactionFee_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMRelayerServer).GetTransactionFee(ctx, req.(*GetTransactionFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// EVMRelayer_ServiceDesc is the grpc.ServiceDesc for EVMRelayer service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var EVMRelayer_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.EVMRelayer",
+	HandlerType: (*EVMRelayerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTransactionFee",
+			Handler:    _EVMRelayer_GetTransactionFee_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "relayer.proto",
+}
+
+const (
 	OffchainConfigDigester_ConfigDigest_FullMethodName       = "/loop.OffchainConfigDigester/ConfigDigest"
 	OffchainConfigDigester_ConfigDigestPrefix_FullMethodName = "/loop.OffchainConfigDigester/ConfigDigestPrefix"
 )

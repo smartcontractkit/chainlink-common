@@ -125,6 +125,9 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
+		if evmRelayer, ok := r.(looptypes.EVMRelayer); ok {
+			pb.RegisterEVMRelayerServer(s, newEVMChainRelayerServer(evmRelayer, p.BrokerExt))
+		}
 	}, rRes, ksRes, crRes)
 	if err != nil {
 		return nil, err
@@ -190,12 +193,30 @@ type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
-	relayer pb.RelayerClient
+	relayer    pb.RelayerClient
+	evmRelayer pb.EVMRelayerClient
+}
+
+type evmRelayerClient struct {
+	*relayerClient
+
+	relayer pb.EVMRelayerClient
+}
+
+func (e *evmRelayerClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	reply, err := e.relayer.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TransactionFee{
+		TransactionFee: reply.TransationFee.Int(),
+	}, nil
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), pb.NewEVMRelayerClient(conn)}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -376,6 +397,38 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 		Args:      argsStruct,
 	})
 	return err
+}
+
+func (r *relayerClient) AsEVMRelayer() (looptypes.EVMRelayer, error) {
+	return &evmRelayerClient{
+		r,
+		r.evmRelayer,
+	}, nil
+}
+
+var _ pb.EVMRelayerServer = (*evmRelayerServer)(nil)
+
+type evmRelayerServer struct {
+	pb.UnimplementedEVMRelayerServer
+
+	*net.BrokerExt
+
+	impl looptypes.EVMRelayer
+}
+
+func (e *evmRelayerServer) GetTransactionFee(ctx context.Context, request *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
+	reply, err := e.impl.GetTransactionFee(ctx, request.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetTransactionFeeReply{
+		TransationFee: pb.NewBigIntFromInt(reply.TransactionFee),
+	}, nil
+}
+
+func newEVMChainRelayerServer(impl looptypes.EVMRelayer, b *net.BrokerExt) *evmRelayerServer {
+	return &evmRelayerServer{impl: impl, BrokerExt: b.WithName("EVMRelayerServer")}
 }
 
 var _ pb.RelayerServer = (*relayerServer)(nil)

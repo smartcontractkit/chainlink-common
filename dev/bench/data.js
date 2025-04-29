@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745850728516,
+  "lastUpdate": 1745960094448,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12348,6 +12348,48 @@ window.BENCHMARK_DATA = {
             "value": 28541,
             "unit": "ns/op",
             "extra": "41952 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7ee5f91ed0658677a644cf9f67e3f265d1213dc1",
+          "message": "EVMRelayer -> EVMService, remove embedded Relayer from EVMService interface (#1163)",
+          "timestamp": "2025-04-29T16:53:37-04:00",
+          "tree_id": "974aa22f18a6d428c32c340cfa5abb4a1f806122",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7ee5f91ed0658677a644cf9f67e3f265d1213dc1"
+        },
+        "date": 1745960093565,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 371.6,
+            "unit": "ns/op",
+            "extra": "3184106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.9,
+            "unit": "ns/op",
+            "extra": "2885822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28597,
+            "unit": "ns/op",
+            "extra": "41365 times\n4 procs"
           }
         ]
       }

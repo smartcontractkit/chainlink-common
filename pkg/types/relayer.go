@@ -103,16 +103,12 @@ type ChainService interface {
 }
 
 type EVMService interface {
-	// -- ChainService
-	// Direct Calls
 	CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error)
 	GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account string, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	TransactionByHash(ctx context.Context, hash string) (*evm.Transaction, error)
 	TransactionReceipt(ctx context.Context, txHash string) (*evm.Receipt, error)
-
-	// ChainService
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain's TXM
 	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)

@@ -32,6 +32,16 @@ func (b BeholderTester) Len(t *testing.T, attrKVs ...any) int {
 	return len(found)
 }
 
+// Messages returns messages matching the provided keys and values.
+func (b BeholderTester) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
+	t.Helper()
+	
+	if attrKVs == nil {
+	    return b.emitter.msgs
+	}
+	
+	return b.msgsForKVs(t, attrKVs...)
+}
 func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
 

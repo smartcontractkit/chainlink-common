@@ -125,8 +125,8 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
-		if evmRelayer, ok := r.(types.EVMService); ok {
-			pb.RegisterEVMServer(s, newEVMServiceServer(evmRelayer, p.BrokerExt))
+		if evmService, ok := r.(types.EVMService); ok {
+			pb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
 		}
 	}, rRes, ksRes, crRes)
 	if err != nil {
@@ -185,8 +185,6 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 	}
 	return &pb.SignReply{SignedData: signed}, nil
 }
-
-var _ looptypes.Relayer = (*relayerClient)(nil)
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
@@ -383,7 +381,7 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 }
 
 func (r *relayerClient) EVM() (types.EVMService, error) {
-	return &evmRelayerClient{
+	return &evmClient{
 		r.evmClient,
 	}, nil
 }

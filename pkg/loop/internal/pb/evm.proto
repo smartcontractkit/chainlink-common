@@ -34,10 +34,6 @@ message CallMsg {
   bytes data = 3;
 }
 
-message FilterQuery {
-  //TODO
-}
-
 // represents evm-style log
 message Log {
   string address = 1; // common.Address represented as bytes
@@ -170,7 +166,7 @@ message UnregisterLogTrackingRequest {
 }
 
 message QueryLogsFromCacheRequest {
- FilterQuery query = 1;
+  repeated Expression expression = 1;
 }
 
 message QueryLogsFromCacheReply {
@@ -178,7 +174,7 @@ message QueryLogsFromCacheReply {
 }
 
 message SubscribeLogTriggerRequest {
-  FilterQuery query = 1;
+  repeated Expression expression = 1;
 }
 
 message LogTriggerReply {

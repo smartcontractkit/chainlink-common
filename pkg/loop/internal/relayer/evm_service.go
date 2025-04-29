@@ -114,14 +114,14 @@ func (e *evmRelayerClient) LatestAndFinalizedHead(ctx context.Context) (latest t
 	return protoToHead(reply.Latest), protoToHead(reply.Finalized), err
 
 }
-func (e *evmRelayerClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.KeyFilter,
+func (e *evmRelayerClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	//TODO
+	//TODO BCFR-1328
 	return nil, errors.New("unimplemented")
 }
 
-func (e *evmRelayerClient) SubscribeLogTrigger(ctx context.Context, filterQuery evm.FilterQuery) (chan<- *evm.Log, error) {
-	//TODO
+func (e *evmRelayerClient) SubscribeLogTrigger(ctx context.Context, filterQuery []query.Expression) (chan<- *evm.Log, error) {
+	//TODO BCFR-1328
 	return nil, errors.New("unimplmented")
 }
 

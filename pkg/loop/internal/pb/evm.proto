@@ -98,7 +98,7 @@ message LatestAndFinalizedHeadReply {
 
 message CallContractRequest {
   CallMsg call = 1;
-  Confidence confidenceLevel = 2; // confidenceLevel will be handled by evm loop to difine finalty
+  Confidence confidenceLevel = 2; // confidenceLevel will be handled by evm loop to define finalty
 }
 
 message CallContractReply {

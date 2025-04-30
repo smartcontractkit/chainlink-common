@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746020099329,
+  "lastUpdate": 1746037574933,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12474,6 +12474,48 @@ window.BENCHMARK_DATA = {
             "value": 28496,
             "unit": "ns/op",
             "extra": "41964 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6fc48210a06ee8398e7fa019630c89cb7f46fa54",
+          "message": "Update Module v2 protos (#1165)",
+          "timestamp": "2025-04-30T11:24:57-07:00",
+          "tree_id": "70617ca9d7f36388e78c43229998ee17fa956a3c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6fc48210a06ee8398e7fa019630c89cb7f46fa54"
+        },
+        "date": 1746037574160,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 390.5,
+            "unit": "ns/op",
+            "extra": "3326745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.6,
+            "unit": "ns/op",
+            "extra": "2904219 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28420,
+            "unit": "ns/op",
+            "extra": "42159 times\n4 procs"
           }
         ]
       }

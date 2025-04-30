@@ -6,7 +6,6 @@ import (
 	context "context"
 	big "math/big"
 
-	internal "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	mock "github.com/stretchr/testify/mock"
 
 	types "github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -23,63 +22,6 @@ type Relayer_Expecter struct {
 
 func (_m *Relayer) EXPECT() *Relayer_Expecter {
 	return &Relayer_Expecter{mock: &_m.Mock}
-}
-
-// AsEVMRelayer provides a mock function with no fields
-func (_m *Relayer) AsEVMRelayer() (internal.EVMRelayer, error) {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for AsEVMRelayer")
-	}
-
-	var r0 internal.EVMRelayer
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (internal.EVMRelayer, error)); ok {
-		return rf()
-	}
-	if rf, ok := ret.Get(0).(func() internal.EVMRelayer); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(internal.EVMRelayer)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Relayer_AsEVMRelayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AsEVMRelayer'
-type Relayer_AsEVMRelayer_Call struct {
-	*mock.Call
-}
-
-// AsEVMRelayer is a helper method to define mock.On call
-func (_e *Relayer_Expecter) AsEVMRelayer() *Relayer_AsEVMRelayer_Call {
-	return &Relayer_AsEVMRelayer_Call{Call: _e.mock.On("AsEVMRelayer")}
-}
-
-func (_c *Relayer_AsEVMRelayer_Call) Run(run func()) *Relayer_AsEVMRelayer_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Relayer_AsEVMRelayer_Call) Return(_a0 internal.EVMRelayer, _a1 error) *Relayer_AsEVMRelayer_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Relayer_AsEVMRelayer_Call) RunAndReturn(run func() (internal.EVMRelayer, error)) *Relayer_AsEVMRelayer_Call {
-	_c.Call.Return(run)
-	return _c
 }
 
 // Close provides a mock function with no fields
@@ -123,6 +65,63 @@ func (_c *Relayer_Close_Call) Return(_a0 error) *Relayer_Close_Call {
 }
 
 func (_c *Relayer_Close_Call) RunAndReturn(run func() error) *Relayer_Close_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EVM provides a mock function with no fields
+func (_m *Relayer) EVM() (types.EVMService, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for EVM")
+	}
+
+	var r0 types.EVMService
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (types.EVMService, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() types.EVMService); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.EVMService)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_EVM_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EVM'
+type Relayer_EVM_Call struct {
+	*mock.Call
+}
+
+// EVM is a helper method to define mock.On call
+func (_e *Relayer_Expecter) EVM() *Relayer_EVM_Call {
+	return &Relayer_EVM_Call{Call: _e.mock.On("EVM")}
+}
+
+func (_c *Relayer_EVM_Call) Run(run func()) *Relayer_EVM_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Relayer_EVM_Call) Return(_a0 types.EVMService, _a1 error) *Relayer_EVM_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_EVM_Call) RunAndReturn(run func() (types.EVMService, error)) *Relayer_EVM_Call {
 	_c.Call.Return(run)
 	return _c
 }

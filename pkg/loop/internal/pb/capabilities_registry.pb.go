@@ -26,10 +26,10 @@ const (
 type ExecuteAPIType int32
 
 const (
-	ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN             ExecuteAPIType = 0
-	ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER             ExecuteAPIType = 1
-	ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE             ExecuteAPIType = 2
-	ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER ExecuteAPIType = 3
+	ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN  ExecuteAPIType = 0
+	ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER  ExecuteAPIType = 1
+	ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE  ExecuteAPIType = 2
+	ExecuteAPIType_EXECUTE_API_TYPE_COMBINED ExecuteAPIType = 3
 )
 
 // Enum value maps for ExecuteAPIType.
@@ -38,13 +38,13 @@ var (
 		0: "EXECUTE_API_TYPE_UNKNOWN",
 		1: "EXECUTE_API_TYPE_TRIGGER",
 		2: "EXECUTE_API_TYPE_EXECUTE",
-		3: "EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER",
+		3: "EXECUTE_API_TYPE_COMBINED",
 	}
 	ExecuteAPIType_value = map[string]int32{
-		"EXECUTE_API_TYPE_UNKNOWN":             0,
-		"EXECUTE_API_TYPE_TRIGGER":             1,
-		"EXECUTE_API_TYPE_EXECUTE":             2,
-		"EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER": 3,
+		"EXECUTE_API_TYPE_UNKNOWN":  0,
+		"EXECUTE_API_TYPE_TRIGGER":  1,
+		"EXECUTE_API_TYPE_EXECUTE":  2,
+		"EXECUTE_API_TYPE_COMBINED": 3,
 	}
 )
 
@@ -809,12 +809,12 @@ const file_loop_internal_pb_capabilities_registry_proto_rawDesc = "" +
 	"\fcapabilityID\x18\x01 \x01(\tR\fcapabilityID\x12\x14\n" +
 	"\x05donID\x18\x02 \x01(\rR\x05donID\"_\n" +
 	"\x18ConfigForCapabilityReply\x12C\n" +
-	"\x11capability_config\x18\x01 \x01(\v2\x16.loop.CapabilityConfigR\x10capabilityConfig*\x94\x01\n" +
+	"\x11capability_config\x18\x01 \x01(\v2\x16.loop.CapabilityConfigR\x10capabilityConfig*\x89\x01\n" +
 	"\x0eExecuteAPIType\x12\x1c\n" +
 	"\x18EXECUTE_API_TYPE_UNKNOWN\x10\x00\x12\x1c\n" +
 	"\x18EXECUTE_API_TYPE_TRIGGER\x10\x01\x12\x1c\n" +
-	"\x18EXECUTE_API_TYPE_EXECUTE\x10\x02\x12(\n" +
-	"$EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER\x10\x032\x81\x04\n" +
+	"\x18EXECUTE_API_TYPE_EXECUTE\x10\x02\x12\x1d\n" +
+	"\x19EXECUTE_API_TYPE_COMBINED\x10\x032\x81\x04\n" +
 	"\x14CapabilitiesRegistry\x12;\n" +
 	"\tLocalNode\x12\x16.google.protobuf.Empty\x1a\x14.loop.LocalNodeReply\"\x00\x12Y\n" +
 	"\x13ConfigForCapability\x12 .loop.ConfigForCapabilityRequest\x1a\x1e.loop.ConfigForCapabilityReply\"\x00\x12)\n" +

@@ -15,23 +15,23 @@ var (
 	ErrCapabilityAlreadyExists = errors.New("capability already exists")
 )
 
-type Basic struct {
+type basic struct {
 	m    map[string]capabilities.BaseCapability
 	lggr logger.Logger
 	mu   sync.RWMutex
 }
 
-var _ core.BasicCapabilitiesRegistry = (*Basic)(nil)
+var _ core.CapabilitiesRegistryBase = (*basic)(nil)
 
-func NewBasic(lggr logger.Logger) *Basic {
-	return &Basic{
+func NewBase(lggr logger.Logger) core.CapabilitiesRegistryBase {
+	return &basic{
 		m:    map[string]capabilities.BaseCapability{},
-		lggr: logger.Named(lggr, "registries.Basic"),
+		lggr: logger.Named(lggr, "registries.basic"),
 	}
 }
 
 // Get gets a capability from the registry.
-func (r *Basic) Get(_ context.Context, id string) (capabilities.BaseCapability, error) {
+func (r *basic) Get(_ context.Context, id string) (capabilities.BaseCapability, error) {
 	r.lggr.Debugw("get capability", "id", id)
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -44,7 +44,7 @@ func (r *Basic) Get(_ context.Context, id string) (capabilities.BaseCapability, 
 }
 
 // GetTrigger gets a capability from the registry and tries to coerce it to the TriggerCapability interface.
-func (r *Basic) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
+func (r *basic) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	c, err := r.Get(ctx, id)
@@ -61,7 +61,7 @@ func (r *Basic) GetTrigger(ctx context.Context, id string) (capabilities.Trigger
 }
 
 // GetExecutable gets a capability from the registry and tries to coerce it to the ExecutableCapability interface.
-func (r *Basic) GetExecutable(ctx context.Context, id string) (capabilities.ExecutableCapability, error) {
+func (r *basic) GetExecutable(ctx context.Context, id string) (capabilities.ExecutableCapability, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	c, err := r.Get(ctx, id)
@@ -77,7 +77,7 @@ func (r *Basic) GetExecutable(ctx context.Context, id string) (capabilities.Exec
 	return ac, nil
 }
 
-func (r *Basic) List(_ context.Context) ([]capabilities.BaseCapability, error) {
+func (r *basic) List(_ context.Context) ([]capabilities.BaseCapability, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var cl []capabilities.BaseCapability
@@ -88,7 +88,7 @@ func (r *Basic) List(_ context.Context) ([]capabilities.BaseCapability, error) {
 	return cl, nil
 }
 
-func (r *Basic) Add(ctx context.Context, c capabilities.BaseCapability) error {
+func (r *basic) Add(ctx context.Context, c capabilities.BaseCapability) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	info, err := c.Info(ctx)
@@ -107,7 +107,7 @@ func (r *Basic) Add(ctx context.Context, c capabilities.BaseCapability) error {
 		if !ok {
 			return errors.New("action does not satisfy ExecutableCapability interface")
 		}
-	case capabilities.CapabilityTypeV2:
+	case capabilities.CapabilityTypeCombined:
 		_, ok := c.(capabilities.ExecutableAndTriggerCapability)
 		if !ok {
 			return errors.New("target capability does not satisfy ExecutableAndTriggerCapability interface")
@@ -127,7 +127,7 @@ func (r *Basic) Add(ctx context.Context, c capabilities.BaseCapability) error {
 	return nil
 }
 
-func (r *Basic) Remove(_ context.Context, id string) error {
+func (r *basic) Remove(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	_, ok := r.m[id]

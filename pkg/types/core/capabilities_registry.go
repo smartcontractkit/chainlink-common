@@ -9,10 +9,10 @@ import (
 type CapabilitiesRegistry interface {
 	LocalNode(ctx context.Context) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
-	BasicCapabilitiesRegistry
+	CapabilitiesRegistryBase
 }
 
-type BasicCapabilitiesRegistry interface {
+type CapabilitiesRegistryBase interface {
 	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
 	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
 	GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error)

@@ -46,14 +46,14 @@ func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientCo
 	}
 }
 
-type TriggerAndExecutableCapabilityClient struct {
+type CombinedCapabilityClient struct {
 	*executableClient
 	*baseCapabilityClient
 	*triggerExecutableClient
 }
 
 func NewTriggerAndExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
-	return &TriggerAndExecutableCapabilityClient{
+	return &CombinedCapabilityClient{
 		executableClient:        newExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
 		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
@@ -157,8 +157,8 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		ct = capabilities.CapabilityTypeConsensus
 	case capabilitiespb.CapabilityTypeTarget:
 		ct = capabilities.CapabilityTypeTarget
-	case capabilitiespb.CapabilityTypeV2:
-		ct = capabilities.CapabilityTypeV2
+	case capabilitiespb.CapabilityTypeCombined:
+		ct = capabilities.CapabilityTypeCombined
 	case capabilitiespb.CapabilityTypeUnknown:
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}

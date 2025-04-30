@@ -33,7 +33,7 @@ func (m *mockCapability) UnregisterFromWorkflow(_ context.Context, _ capabilitie
 }
 
 func TestRegistry(t *testing.T) {
-	r := registry.NewBasic(logger.Test(t))
+	r := registry.NewBase(logger.Test(t))
 	ctx := t.Context()
 
 	id := "capability-1@1.0.0"
@@ -60,7 +60,7 @@ func TestRegistry(t *testing.T) {
 }
 
 func TestRegistry_NoDuplicateIDs(t *testing.T) {
-	r := registry.NewBasic(logger.Test(t))
+	r := registry.NewBase(logger.Test(t))
 	ctx := t.Context()
 
 	id := "capability-1@1.0.0"
@@ -90,13 +90,13 @@ func TestRegistry_NoDuplicateIDs(t *testing.T) {
 func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 	tcs := []struct {
 		name          string
-		newCapability func(ctx context.Context, reg core.BasicCapabilitiesRegistry) (string, error)
-		getCapability func(ctx context.Context, reg core.BasicCapabilitiesRegistry, id string) error
+		newCapability func(ctx context.Context, reg core.CapabilitiesRegistryBase) (string, error)
+		getCapability func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error
 		errContains   string
 	}{
 		{
 			name: "action",
-			newCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry) (string, error) {
+			newCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase) (string, error) {
 				id := fmt.Sprintf("%s@%s", uuid.New().String(), "1.0.0")
 				ci, err := capabilities.NewCapabilityInfo(
 					id,
@@ -108,14 +108,14 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 				c := &mockCapability{CapabilityInfo: ci}
 				return id, reg.Add(ctx, c)
 			},
-			getCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry, id string) error {
+			getCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error {
 				_, err := reg.GetExecutable(ctx, id)
 				return err
 			},
 		},
 		{
 			name: "target",
-			newCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry) (string, error) {
+			newCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase) (string, error) {
 				id := fmt.Sprintf("%s@%s", uuid.New().String(), "1.0.0")
 				ci, err := capabilities.NewCapabilityInfo(
 					id,
@@ -127,27 +127,27 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 				c := &mockCapability{CapabilityInfo: ci}
 				return id, reg.Add(ctx, c)
 			},
-			getCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry, id string) error {
+			getCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error {
 				_, err := reg.GetExecutable(ctx, id)
 				return err
 			},
 		},
 		{
 			name: "trigger",
-			newCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry) (string, error) {
+			newCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase) (string, error) {
 				odt := triggers.NewOnDemand(logger.Test(t))
 				info, err := odt.Info(ctx)
 				require.NoError(t, err)
 				return info.ID, reg.Add(ctx, odt)
 			},
-			getCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry, id string) error {
+			getCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error {
 				_, err := reg.GetTrigger(ctx, id)
 				return err
 			},
 		},
 		{
 			name: "consensus",
-			newCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry) (string, error) {
+			newCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase) (string, error) {
 				id := fmt.Sprintf("%s@%s", uuid.New().String(), "1.0.0")
 				ci, err := capabilities.NewCapabilityInfo(
 					id,
@@ -159,7 +159,7 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 				c := &mockCapability{CapabilityInfo: ci}
 				return id, reg.Add(ctx, c)
 			},
-			getCapability: func(ctx context.Context, reg core.BasicCapabilitiesRegistry, id string) error {
+			getCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error {
 				_, err := reg.GetExecutable(ctx, id)
 				return err
 			},
@@ -167,7 +167,7 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	reg := registry.NewBasic(logger.Test(t))
+	reg := registry.NewBase(logger.Test(t))
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			id, err := tc.newCapability(ctx, reg)

@@ -359,7 +359,7 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb
 	}
 
 	switch info.CapabilityType {
-	case capabilities.CapabilityTypeTrigger, capabilities.CapabilityTypeV2:
+	case capabilities.CapabilityTypeTrigger, capabilities.CapabilityTypeCombined:
 	default:
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
@@ -388,7 +388,7 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 	}
 
 	switch info.CapabilityType {
-	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget, capabilities.CapabilityTypeV2:
+	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget, capabilities.CapabilityTypeCombined:
 	default:
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
@@ -485,7 +485,7 @@ func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.Ba
 			BrokerExt: b,
 			impl:      i,
 		})
-	case capabilities.CapabilityTypeV2:
+	case capabilities.CapabilityTypeCombined:
 		t, _ := impl.(capabilities.TriggerCapability)
 		capabilitiespb.RegisterTriggerExecutableServer(s, &triggerExecutableServer{
 			BrokerExt: b,
@@ -516,7 +516,7 @@ func getExecuteAPIType(c capabilities.CapabilityType) pb.ExecuteAPIType {
 		return pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER
 	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
 		return pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE
-	case capabilities.CapabilityTypeV2:
+	case capabilities.CapabilityTypeCombined:
 		return pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER
 	default:
 		return pb.ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN

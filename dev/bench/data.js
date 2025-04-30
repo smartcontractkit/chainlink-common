@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745960094448,
+  "lastUpdate": 1745985479275,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12390,6 +12390,48 @@ window.BENCHMARK_DATA = {
             "value": 28597,
             "unit": "ns/op",
             "extra": "41365 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f50555291980a4700f0c7de9402118ceafb37b98",
+          "message": "LICENSE updates (#1166)",
+          "timestamp": "2025-04-29T20:56:38-07:00",
+          "tree_id": "9b921b0503ae8830c320a3c2417e26496fa9ebc3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f50555291980a4700f0c7de9402118ceafb37b98"
+        },
+        "date": 1745985478507,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.9,
+            "unit": "ns/op",
+            "extra": "3132649 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.9,
+            "unit": "ns/op",
+            "extra": "2896617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28466,
+            "unit": "ns/op",
+            "extra": "42057 times\n4 procs"
           }
         ]
       }

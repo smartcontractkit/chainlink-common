@@ -8,9 +8,13 @@ import "relayer.proto";
 import "contract_reader.proto";
 import "contract_writer.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 
 service EVM{
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "mainnet-evm@1.0.0"
+  };
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
   rpc CallContract(CallContractRequest) returns (CallContractReply);
   rpc GetLogs(GetLogsRequest) returns (GetLogsReply);

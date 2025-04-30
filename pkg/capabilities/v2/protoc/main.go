@@ -13,24 +13,18 @@ import (
 
 func main() {
 	args := map[string]string{}
-	fmt.Println("111")
 	protogen.Options{ParamFunc: func(name, value string) error {
 		args[strings.ToLower(name)] = value
 		return nil
 	}}.Run(func(plugin *protogen.Plugin) error {
 		goLang := pkg.ServerLangaugeGo
-		fmt.Println("args ", args)
 		serverLanguage, err := parseArg(args, "server_language", func(value string) (pkg.ServerLanguage, error) {
 			serverLanguage := pkg.ServerLanguage(strings.ToLower(value))
 			return serverLanguage, serverLanguage.Validate()
 		}, &goLang)
 		if err != nil {
-
-			fmt.Println("faild here ", err)
 			return err
 		}
-
-		fmt.Println("hmm here ", plugin.Files)
 
 		for _, file := range plugin.Files {
 			if !file.Generate {

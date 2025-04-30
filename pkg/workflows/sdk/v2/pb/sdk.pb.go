@@ -72,6 +72,52 @@ func (SimpleConsensusType) EnumDescriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{0}
 }
 
+type Mode int32
+
+const (
+	Mode_DON  Mode = 0
+	Mode_Node Mode = 1
+)
+
+// Enum value maps for Mode.
+var (
+	Mode_name = map[int32]string{
+		0: "DON",
+		1: "Node",
+	}
+	Mode_value = map[string]int32{
+		"DON":  0,
+		"Node": 1,
+	}
+)
+
+func (x Mode) Enum() *Mode {
+	p := new(Mode)
+	*p = x
+	return p
+}
+
+func (x Mode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Mode) Descriptor() protoreflect.EnumDescriptor {
+	return file_workflows_sdk_v2_pb_sdk_proto_enumTypes[1].Descriptor()
+}
+
+func (Mode) Type() protoreflect.EnumType {
+	return &file_workflows_sdk_v2_pb_sdk_proto_enumTypes[1]
+}
+
+func (x Mode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Mode.Descriptor instead.
+func (Mode) EnumDescriptor() ([]byte, []int) {
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{1}
+}
+
 type CapabilityRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=executionId,proto3" json:"executionId,omitempty"`
@@ -416,7 +462,10 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\n" +
 	"\x06MEDIAN\x10\x00\x12\x14\n" +
 	"\x10MEDIAN_OF_FIELDS\x10\x01\x12\r\n" +
-	"\tIDENTICAL\x10\x02BFZDgithub.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pbb\x06proto3"
+	"\tIDENTICAL\x10\x02*\x19\n" +
+	"\x04Mode\x12\a\n" +
+	"\x03DON\x10\x00\x12\b\n" +
+	"\x04Node\x10\x01BFZDgithub.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pbb\x06proto3"
 
 var (
 	file_workflows_sdk_v2_pb_sdk_proto_rawDescOnce sync.Once
@@ -430,24 +479,25 @@ func file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP() []byte {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescData
 }
 
-var file_workflows_sdk_v2_pb_sdk_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_workflows_sdk_v2_pb_sdk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_workflows_sdk_v2_pb_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_workflows_sdk_v2_pb_sdk_proto_goTypes = []any{
 	(SimpleConsensusType)(0),        // 0: cre.sdk.v2.SimpleConsensusType
-	(*CapabilityRequest)(nil),       // 1: cre.sdk.v2.CapabilityRequest
-	(*CapabilityResponse)(nil),      // 2: cre.sdk.v2.CapabilityResponse
-	(*PrimitiveConsensus)(nil),      // 3: cre.sdk.v2.PrimitiveConsensus
-	(*BuiltInConsensusRequest)(nil), // 4: cre.sdk.v2.BuiltInConsensusRequest
-	(*anypb.Any)(nil),               // 5: google.protobuf.Any
-	(*pb.Value)(nil),                // 6: values.Value
+	(Mode)(0),                       // 1: cre.sdk.v2.Mode
+	(*CapabilityRequest)(nil),       // 2: cre.sdk.v2.CapabilityRequest
+	(*CapabilityResponse)(nil),      // 3: cre.sdk.v2.CapabilityResponse
+	(*PrimitiveConsensus)(nil),      // 4: cre.sdk.v2.PrimitiveConsensus
+	(*BuiltInConsensusRequest)(nil), // 5: cre.sdk.v2.BuiltInConsensusRequest
+	(*anypb.Any)(nil),               // 6: google.protobuf.Any
+	(*pb.Value)(nil),                // 7: values.Value
 }
 var file_workflows_sdk_v2_pb_sdk_proto_depIdxs = []int32{
-	5, // 0: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
-	5, // 1: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
+	6, // 0: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
+	6, // 1: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
 	0, // 2: cre.sdk.v2.PrimitiveConsensus.simple:type_name -> cre.sdk.v2.SimpleConsensusType
-	3, // 3: cre.sdk.v2.BuiltInConsensusRequest.primitiveConsensus:type_name -> cre.sdk.v2.PrimitiveConsensus
-	6, // 4: cre.sdk.v2.BuiltInConsensusRequest.value:type_name -> values.Value
-	6, // 5: cre.sdk.v2.BuiltInConsensusRequest.default_value:type_name -> values.Value
+	4, // 3: cre.sdk.v2.BuiltInConsensusRequest.primitiveConsensus:type_name -> cre.sdk.v2.PrimitiveConsensus
+	7, // 4: cre.sdk.v2.BuiltInConsensusRequest.value:type_name -> values.Value
+	7, // 5: cre.sdk.v2.BuiltInConsensusRequest.default_value:type_name -> values.Value
 	6, // [6:6] is the sub-list for method output_type
 	6, // [6:6] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
@@ -476,7 +526,7 @@ func file_workflows_sdk_v2_pb_sdk_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_workflows_sdk_v2_pb_sdk_proto_rawDesc), len(file_workflows_sdk_v2_pb_sdk_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,

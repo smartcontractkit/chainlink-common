@@ -73,7 +73,7 @@ type relayer struct {
 
 func (r *relayer) Name() string { return r.lggr.Name() }
 
-func (r *relayer) AsEVMRelayer() (loop.EVMRelayer, error) {
+func (r *relayer) EVM() (types.EVMService, error) {
 	return nil, nil
 }
 

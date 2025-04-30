@@ -49,7 +49,7 @@ type PluginArgs struct {
 }
 
 // RelayArgs are the args required to create relayer.
-// The are common to all xelayer implementations.
+// The are common to all relayer implementations.
 type RelayArgs struct {
 	ExternalJobID      uuid.UUID
 	JobID              int32

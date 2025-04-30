@@ -61,7 +61,6 @@ type Transaction struct {
 
 // matches evm-style receipt
 type Receipt struct {
-	PostState         []byte
 	Status            uint64
 	Logs              []*Log
 	TxHash            string

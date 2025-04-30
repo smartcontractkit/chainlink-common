@@ -120,6 +120,7 @@ type EVMService interface {
 type Relayer interface {
 	ChainService
 
+	// Returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

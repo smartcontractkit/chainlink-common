@@ -55,20 +55,6 @@ service Relayer {
   rpc Replay (ReplayRequest) returns (google.protobuf.Empty) {}
 }
 
-service EVM {
-  rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
-}
-
-// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
-message GetTransactionFeeRequest {
-    string transaction_id = 1; // idempotency key used when transaction was submitted
-}
-
-// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
-message GetTransactionFeeReply {
-    BigInt transation_fee = 2; // transaction fee is the cost of transaction execution in wei
-}
-
 
 // RelayArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.RelayArgs].
 message RelayArgs {

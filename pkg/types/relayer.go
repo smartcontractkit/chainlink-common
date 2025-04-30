@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 type RelayID struct {
@@ -78,11 +81,6 @@ type NodeStatus struct {
 	State   string
 }
 
-type EVMService interface {
-	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
-	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
-}
-
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
@@ -100,10 +98,29 @@ type ChainService interface {
 	Replay(ctx context.Context, fromBlock string, args map[string]any) error
 }
 
+type EVMService interface {
+	CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error)
+	GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery) ([]*evm.Log, error)
+	BalanceAt(ctx context.Context, account string, blockNumber *big.Int) (*big.Int, error)
+	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	TransactionByHash(ctx context.Context, hash string) (*evm.Transaction, error)
+	TransactionReceipt(ctx context.Context, txHash string) (*evm.Receipt, error)
+
+	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain's TXM
+	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
+	LatestAndFinalizedHead(ctx context.Context) (latest Head, finalized Head, err error)
+	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
+		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
 
+	// Returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

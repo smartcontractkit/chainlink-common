@@ -18,8 +18,8 @@ type Log struct {
 	Removed     bool
 }
 
-// EVMFilter Query matches evm-style filterQuery
-type EVMFilterQuery struct {
+// matches evm-style eth_getLogs filterQuery
+type FilterQuery struct {
 	BlockHash string
 	FromBlock *big.Int
 	ToBlock   *big.Int
@@ -29,7 +29,7 @@ type EVMFilterQuery struct {
 }
 
 // matches LP-filter
-type FilterQuery struct {
+type LPFilterQuery struct {
 	Name         string
 	Addresses    []string
 	EventSigs    []string

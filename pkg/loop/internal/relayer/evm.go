@@ -54,7 +54,7 @@ func (e *evmClient) CallContract(ctx context.Context, msg *evm.CallMsg, confiden
 	return reply.Data.GetAbi(), nil
 }
 
-func (e *evmClient) GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery) ([]*evm.Log, error) {
+func (e *evmClient) GetLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
 	reply, err := e.cl.GetLogs(ctx, &evmpb.GetLogsRequest{
 		FilterQuery: evmFilterToProto(filterQuery),
 	})
@@ -130,7 +130,7 @@ func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.
 	return nil, errors.New("unimplemented")
 }
 
-func (e *evmClient) RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error {
+func (e *evmClient) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
 	_, err := e.cl.RegisterLogTracking(ctx, &evmpb.RegisterLogTrackingRequest{Filter: lPfilterToProto(filter)})
 	return err
 }
@@ -420,7 +420,7 @@ func protoToCallMsg(p *evmpb.CallMsg) (*evm.CallMsg, error) {
 	}, nil
 }
 
-func lPfilterToProto(f evm.FilterQuery) *evmpb.LPFilter {
+func lPfilterToProto(f evm.LPFilterQuery) *evmpb.LPFilter {
 	return &evmpb.LPFilter{
 		Name:          f.Name,
 		RetentionTime: int64(f.Retention),
@@ -434,12 +434,12 @@ func lPfilterToProto(f evm.FilterQuery) *evmpb.LPFilter {
 	}
 }
 
-func protoToLpFilter(f *evmpb.LPFilter) (evm.FilterQuery, error) {
+func protoToLpFilter(f *evmpb.LPFilter) (evm.LPFilterQuery, error) {
 	if f == nil {
-		return evm.FilterQuery{}, errEmptyFilter
+		return evm.LPFilterQuery{}, errEmptyFilter
 	}
 
-	return evm.FilterQuery{
+	return evm.LPFilterQuery{
 		Name:         f.Name,
 		Retention:    time.Duration(f.RetentionTime),
 		Addresses:    protoToAddreses(f.Addresses),
@@ -454,11 +454,11 @@ func protoToLpFilter(f *evmpb.LPFilter) (evm.FilterQuery, error) {
 
 var errEmptyFilter = errors.New("filter cant be empty")
 
-func protoToEvmFilter(f *evmpb.FilterQuery) (evm.EVMFilterQuery, error) {
+func protoToEvmFilter(f *evmpb.FilterQuery) (evm.FilterQuery, error) {
 	if f == nil {
-		return evm.EVMFilterQuery{}, errEmptyFilter
+		return evm.FilterQuery{}, errEmptyFilter
 	}
-	return evm.EVMFilterQuery{
+	return evm.FilterQuery{
 		BlockHash: f.BlockHash.Hash,
 		FromBlock: f.FromBlock.Int(),
 		ToBlock:   f.ToBlock.Int(),
@@ -467,7 +467,7 @@ func protoToEvmFilter(f *evmpb.FilterQuery) (evm.EVMFilterQuery, error) {
 	}, nil
 }
 
-func evmFilterToProto(f evm.EVMFilterQuery) *evmpb.FilterQuery {
+func evmFilterToProto(f evm.FilterQuery) *evmpb.FilterQuery {
 	return &evmpb.FilterQuery{
 		BlockHash: toProtoHash(f.BlockHash),
 		FromBlock: pb.NewBigIntFromInt(f.FromBlock),

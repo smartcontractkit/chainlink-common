@@ -100,7 +100,7 @@ type ChainService interface {
 
 type EVMService interface {
 	CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error)
-	GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery) ([]*evm.Log, error)
+	GetLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account string, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	TransactionByHash(ctx context.Context, hash string) (*evm.Transaction, error)
@@ -111,7 +111,7 @@ type EVMService interface {
 	LatestAndFinalizedHead(ctx context.Context) (latest Head, finalized Head, err error)
 	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error
+	RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error
 	UnregisterLogTracking(ctx context.Context, filterName string) error
 	GetTransactionStatus(ctx context.Context, transactionID string) (TransactionStatus, error)
 }

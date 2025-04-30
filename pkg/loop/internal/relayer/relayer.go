@@ -18,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -126,7 +127,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 		if evmService, ok := r.(types.EVMService); ok {
-			pb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
+			evmpb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
 		}
 	}, rRes, ksRes, crRes)
 	if err != nil {
@@ -192,12 +193,12 @@ type relayerClient struct {
 	*goplugin.ServiceClient
 
 	relayer   pb.RelayerClient
-	evmClient pb.EVMClient
+	evmClient evmpb.EVMClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), pb.NewEVMClient(conn)}
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), evmpb.NewEVMClient(conn)}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {

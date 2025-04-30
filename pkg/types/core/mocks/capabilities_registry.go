@@ -188,23 +188,23 @@ func (_c *CapabilitiesRegistry_Get_Call) RunAndReturn(run func(context.Context, 
 }
 
 // GetAction provides a mock function with given fields: ctx, ID
-func (_m *CapabilitiesRegistry) GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error) {
+func (_m *CapabilitiesRegistry) GetAction(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
 	ret := _m.Called(ctx, ID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAction")
 	}
 
-	var r0 capabilities.ActionCapability
+	var r0 capabilities.ExecutableCapability
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ActionCapability, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ExecutableCapability, error)); ok {
 		return rf(ctx, ID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ActionCapability); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ExecutableCapability); ok {
 		r0 = rf(ctx, ID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(capabilities.ActionCapability)
+			r0 = ret.Get(0).(capabilities.ExecutableCapability)
 		}
 	}
 
@@ -236,34 +236,34 @@ func (_c *CapabilitiesRegistry_GetAction_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetAction_Call) Return(_a0 capabilities.ActionCapability, _a1 error) *CapabilitiesRegistry_GetAction_Call {
+func (_c *CapabilitiesRegistry_GetAction_Call) Return(_a0 capabilities.ExecutableCapability, _a1 error) *CapabilitiesRegistry_GetAction_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetAction_Call) RunAndReturn(run func(context.Context, string) (capabilities.ActionCapability, error)) *CapabilitiesRegistry_GetAction_Call {
+func (_c *CapabilitiesRegistry_GetAction_Call) RunAndReturn(run func(context.Context, string) (capabilities.ExecutableCapability, error)) *CapabilitiesRegistry_GetAction_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetConsensus provides a mock function with given fields: ctx, ID
-func (_m *CapabilitiesRegistry) GetConsensus(ctx context.Context, ID string) (capabilities.ConsensusCapability, error) {
+func (_m *CapabilitiesRegistry) GetConsensus(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
 	ret := _m.Called(ctx, ID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetConsensus")
 	}
 
-	var r0 capabilities.ConsensusCapability
+	var r0 capabilities.ExecutableCapability
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ConsensusCapability, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ExecutableCapability, error)); ok {
 		return rf(ctx, ID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ConsensusCapability); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ExecutableCapability); ok {
 		r0 = rf(ctx, ID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(capabilities.ConsensusCapability)
+			r0 = ret.Get(0).(capabilities.ExecutableCapability)
 		}
 	}
 
@@ -295,34 +295,34 @@ func (_c *CapabilitiesRegistry_GetConsensus_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetConsensus_Call) Return(_a0 capabilities.ConsensusCapability, _a1 error) *CapabilitiesRegistry_GetConsensus_Call {
+func (_c *CapabilitiesRegistry_GetConsensus_Call) Return(_a0 capabilities.ExecutableCapability, _a1 error) *CapabilitiesRegistry_GetConsensus_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetConsensus_Call) RunAndReturn(run func(context.Context, string) (capabilities.ConsensusCapability, error)) *CapabilitiesRegistry_GetConsensus_Call {
+func (_c *CapabilitiesRegistry_GetConsensus_Call) RunAndReturn(run func(context.Context, string) (capabilities.ExecutableCapability, error)) *CapabilitiesRegistry_GetConsensus_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTarget provides a mock function with given fields: ctx, ID
-func (_m *CapabilitiesRegistry) GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error) {
+func (_m *CapabilitiesRegistry) GetTarget(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
 	ret := _m.Called(ctx, ID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTarget")
 	}
 
-	var r0 capabilities.TargetCapability
+	var r0 capabilities.ExecutableCapability
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.TargetCapability, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ExecutableCapability, error)); ok {
 		return rf(ctx, ID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.TargetCapability); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ExecutableCapability); ok {
 		r0 = rf(ctx, ID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(capabilities.TargetCapability)
+			r0 = ret.Get(0).(capabilities.ExecutableCapability)
 		}
 	}
 
@@ -354,12 +354,12 @@ func (_c *CapabilitiesRegistry_GetTarget_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetTarget_Call) Return(_a0 capabilities.TargetCapability, _a1 error) *CapabilitiesRegistry_GetTarget_Call {
+func (_c *CapabilitiesRegistry_GetTarget_Call) Return(_a0 capabilities.ExecutableCapability, _a1 error) *CapabilitiesRegistry_GetTarget_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetTarget_Call) RunAndReturn(run func(context.Context, string) (capabilities.TargetCapability, error)) *CapabilitiesRegistry_GetTarget_Call {
+func (_c *CapabilitiesRegistry_GetTarget_Call) RunAndReturn(run func(context.Context, string) (capabilities.ExecutableCapability, error)) *CapabilitiesRegistry_GetTarget_Call {
 	_c.Call.Return(run)
 	return _c
 }

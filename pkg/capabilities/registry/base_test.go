@@ -33,7 +33,7 @@ func (m *mockCapability) UnregisterFromWorkflow(_ context.Context, _ capabilitie
 }
 
 func TestRegistry(t *testing.T) {
-	r := registry.NewBase(logger.Test(t))
+	r := registry.NewBaseRegistry(logger.Test(t))
 	ctx := t.Context()
 
 	id := "capability-1@1.0.0"
@@ -60,7 +60,7 @@ func TestRegistry(t *testing.T) {
 }
 
 func TestRegistry_NoDuplicateIDs(t *testing.T) {
-	r := registry.NewBase(logger.Test(t))
+	r := registry.NewBaseRegistry(logger.Test(t))
 	ctx := t.Context()
 
 	id := "capability-1@1.0.0"
@@ -167,7 +167,7 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	reg := registry.NewBase(logger.Test(t))
+	reg := registry.NewBaseRegistry(logger.Test(t))
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			id, err := tc.newCapability(ctx, reg)

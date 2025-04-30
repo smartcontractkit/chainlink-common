@@ -447,8 +447,8 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 		client = NewTriggerCapabilityClient(c.BrokerExt, conn)
 	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
 		client = NewExecutableCapabilityClient(c.BrokerExt, conn)
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER:
-		client = NewTriggerAndExecutableCapabilityClient(c.BrokerExt, conn)
+	case pb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED:
+		client = NewCombinedCapabilityClient(c.BrokerExt, conn)
 	default:
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
@@ -517,7 +517,7 @@ func getExecuteAPIType(c capabilities.CapabilityType) pb.ExecuteAPIType {
 	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
 		return pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE
 	case capabilities.CapabilityTypeCombined:
-		return pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE_AND_TRIGGER
+		return pb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED
 	default:
 		return pb.ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN
 	}

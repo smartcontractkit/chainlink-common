@@ -52,7 +52,7 @@ type CombinedCapabilityClient struct {
 	*triggerExecutableClient
 }
 
-func NewTriggerAndExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
 	return &CombinedCapabilityClient{
 		executableClient:        newExecutableClient(brokerExt, conn),
 		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),

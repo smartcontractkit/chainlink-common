@@ -39,7 +39,7 @@ const (
 	CapabilityTypeTarget    CapabilityType = "target"
 
 	// CapabilityTypeCombined allows capabilities to offer both trigger and executable types.
-	CapabilityTypeCombined CapabilityType = "v2"
+	CapabilityTypeCombined CapabilityType = "combined"
 )
 
 // IsValid checks if the capability type is valid.

@@ -339,7 +339,7 @@ func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
 			sdk.NewDonHandler(
 				actionandtrigger.Basic{}.Trigger(&actionandtrigger.Config{Name: "b"}),
 				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (string, error) {
-					assert.Fail(t, "This trigger shouldn'tb fire")
+					assert.Fail(t, "This trigger should not fire")
 					return "", nil
 				}),
 		},

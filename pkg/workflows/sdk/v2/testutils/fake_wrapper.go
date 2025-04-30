@@ -36,11 +36,8 @@ func (f *FakeWrapper) Invoke(ctx context.Context, request *pb.CapabilityRequest)
 	}
 
 	response, err := executable.Execute(ctx, capabilities.CapabilityRequest{
-		// TODO are there impacts of the unset fields?
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: request.ExecutionId,
-			// TODO does this have meaning anymore?
-			ReferenceID: "",
 		},
 		Payload: request.Payload,
 		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
@@ -63,11 +60,8 @@ func (f *FakeWrapper) InvokeTrigger(ctx context.Context, request *pb.TriggerSubs
 
 	register := capabilities.TriggerRegistrationRequest{
 		TriggerID: request.Id,
-		// TODO are there impacts of the unset fields?
 		Metadata: capabilities.RequestMetadata{
 			WorkflowExecutionID: request.ExecId,
-			// TODO, this PR reference ID
-			ReferenceID: "",
 		},
 		Payload: request.Payload,
 		Method:  request.Method,
@@ -78,7 +72,7 @@ func (f *FakeWrapper) InvokeTrigger(ctx context.Context, request *pb.TriggerSubs
 	}
 
 	response, ok := <-ch
-	
+
 	// Fake isn't returning a trigger to run
 	if !ok {
 		return nil, nil
@@ -89,7 +83,7 @@ func (f *FakeWrapper) InvokeTrigger(ctx context.Context, request *pb.TriggerSubs
 	}
 
 	return &pb.Trigger{
-		// TODO multiple of the same trigger registered
+		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-809 multiple of the same trigger registered
 		Id:      request.Id,
 		Payload: request.Payload,
 	}, nil

@@ -315,7 +315,7 @@ func (x *GetTransactionFeeRequest) GetTransactionId() string {
 // GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
 type GetTransactionFeeReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TransationFee *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"` // transaction fee is the cost of transaction execution in native currency
+	TransationFee *BigInt                `protobuf:"bytes,2,opt,name=transation_fee,json=transationFee,proto3" json:"transation_fee,omitempty"` // transaction fee is the cost of transaction execution in wei
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2766,9 +2766,8 @@ const file_relayer_proto_rawDesc = "" +
 	"\x0eGetChainStatus\x12\x1b.loop.GetChainStatusRequest\x1a\x19.loop.GetChainStatusReply\"\x00\x12P\n" +
 	"\x10ListNodeStatuses\x12\x1d.loop.ListNodeStatusesRequest\x1a\x1b.loop.ListNodeStatusesReply\"\x00\x12>\n" +
 	"\bTransact\x12\x18.loop.TransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x127\n" +
-	"\x06Replay\x12\x13.loop.ReplayRequest\x1a\x16.google.protobuf.Empty\"\x002a\n" +
-	"\n" +
-	"EVMRelayer\x12S\n" +
+	"\x06Replay\x12\x13.loop.ReplayRequest\x1a\x16.google.protobuf.Empty\"\x002Z\n" +
+	"\x03EVM\x12S\n" +
 	"\x11GetTransactionFee\x12\x1e.loop.GetTransactionFeeRequest\x1a\x1c.loop.GetTransactionFeeReply\"\x002\xb6\x01\n" +
 	"\x16OffchainConfigDigester\x12D\n" +
 	"\fConfigDigest\x12\x19.loop.ConfigDigestRequest\x1a\x17.loop.ConfigDigestReply\"\x00\x12V\n" +
@@ -2889,7 +2888,7 @@ var file_relayer_proto_depIdxs = []int32{
 	22, // 27: loop.Relayer.ListNodeStatuses:input_type -> loop.ListNodeStatusesRequest
 	26, // 28: loop.Relayer.Transact:input_type -> loop.TransactionRequest
 	25, // 29: loop.Relayer.Replay:input_type -> loop.ReplayRequest
-	5,  // 30: loop.EVMRelayer.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
+	5,  // 30: loop.EVM.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
 	28, // 31: loop.OffchainConfigDigester.ConfigDigest:input_type -> loop.ConfigDigestRequest
 	30, // 32: loop.OffchainConfigDigester.ConfigDigestPrefix:input_type -> loop.ConfigDigestPrefixRequest
 	32, // 33: loop.ContractConfigTracker.LatestConfigDetails:input_type -> loop.LatestConfigDetailsRequest
@@ -2914,7 +2913,7 @@ var file_relayer_proto_depIdxs = []int32{
 	23, // 52: loop.Relayer.ListNodeStatuses:output_type -> loop.ListNodeStatusesReply
 	55, // 53: loop.Relayer.Transact:output_type -> google.protobuf.Empty
 	55, // 54: loop.Relayer.Replay:output_type -> google.protobuf.Empty
-	6,  // 55: loop.EVMRelayer.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
+	6,  // 55: loop.EVM.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
 	29, // 56: loop.OffchainConfigDigester.ConfigDigest:output_type -> loop.ConfigDigestReply
 	31, // 57: loop.OffchainConfigDigester.ConfigDigestPrefix:output_type -> loop.ConfigDigestPrefixReply
 	33, // 58: loop.ContractConfigTracker.LatestConfigDetails:output_type -> loop.LatestConfigDetailsReply

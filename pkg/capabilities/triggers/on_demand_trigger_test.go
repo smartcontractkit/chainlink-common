@@ -93,12 +93,14 @@ func TestOnDemandTrigger_GenerateSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	var shouldUpdate = true
+	fixturePath := "./testdata/fixtures/ondemand/schema.json"
 	if shouldUpdate {
-		err = os.WriteFile("./testdata/fixtures/ondemand/schema.json", []byte(schema), 0600)
+		err = os.WriteFile(fixturePath, []byte(schema), 0600)
 		require.NoError(t, err)
+		defer os.Remove(fixturePath)
 	}
 
-	fixture, err := os.ReadFile("./testdata/fixtures/ondemand/schema.json")
+	fixture, err := os.ReadFile(fixturePath)
 	require.NoError(t, err)
 
 	utils.AssertJSONEqual(t, fixture, []byte(schema))

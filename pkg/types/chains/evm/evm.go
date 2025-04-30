@@ -11,7 +11,7 @@ type Log struct {
 	BlockHash   string
 	BlockNumber *big.Int
 	Topics      []string
-	EventSig    []byte
+	EventSig    string
 	Address     string
 	TxHash      string
 	Data        []byte

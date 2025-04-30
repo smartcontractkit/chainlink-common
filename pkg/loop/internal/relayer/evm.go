@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
@@ -19,11 +20,11 @@ import (
 var _ types.EVMService = (*evmClient)(nil)
 
 type evmClient struct {
-	cl pb.EVMClient
+	cl evmpb.EVMClient
 }
 
 func (e *evmClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
-	reply, err := e.cl.GetTransactionFee(ctx, &pb.GetTransactionFeeRequest{TransactionId: transactionID})
+	reply, err := e.cl.GetTransactionFee(ctx, &evmpb.GetTransactionFeeRequest{TransactionId: transactionID})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (e *evmClient) CallContract(ctx context.Context, msg *evm.CallMsg, confiden
 	if err != nil {
 		return nil, err
 	}
-	reply, err := e.cl.CallContract(ctx, &pb.CallContractRequest{
+	reply, err := e.cl.CallContract(ctx, &evmpb.CallContractRequest{
 		Call:            call,
 		ConfidenceLevel: conf,
 	})
@@ -50,11 +51,11 @@ func (e *evmClient) CallContract(ctx context.Context, msg *evm.CallMsg, confiden
 		return nil, err
 	}
 
-	return reply.Data, nil
+	return reply.Data.GetAbi(), nil
 }
 
 func (e *evmClient) GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery) ([]*evm.Log, error) {
-	reply, err := e.cl.GetLogs(ctx, &pb.GetLogsRequest{
+	reply, err := e.cl.GetLogs(ctx, &evmpb.GetLogsRequest{
 		FilterQuery: evmFilterToProto(filterQuery),
 	})
 
@@ -66,8 +67,8 @@ func (e *evmClient) GetLogs(ctx context.Context, filterQuery evm.EVMFilterQuery)
 }
 
 func (e *evmClient) BalanceAt(ctx context.Context, account string, blockNumber *big.Int) (*big.Int, error) {
-	reply, err := e.cl.BalanceAt(ctx, &pb.BalanceAtRequest{
-		Account:     account,
+	reply, err := e.cl.BalanceAt(ctx, &evmpb.BalanceAtRequest{
+		Account:     &evmpb.Address{Address: account},
 		BlockNumber: pb.NewBigIntFromInt(blockNumber),
 	})
 
@@ -84,7 +85,7 @@ func (e *evmClient) EstimateGas(ctx context.Context, msg *evm.CallMsg) (uint64, 
 		return 0, err
 	}
 
-	reply, err := e.cl.EstimateGas(ctx, &pb.EstimateGasRequest{
+	reply, err := e.cl.EstimateGas(ctx, &evmpb.EstimateGasRequest{
 		Msg: call,
 	})
 	if err != nil {
@@ -95,8 +96,8 @@ func (e *evmClient) EstimateGas(ctx context.Context, msg *evm.CallMsg) (uint64, 
 }
 
 func (e *evmClient) TransactionByHash(ctx context.Context, hash string) (*evm.Transaction, error) {
-	reply, err := e.cl.GetTransactionByHash(ctx, &pb.GetTransactionByHashRequest{
-		Hash: hash,
+	reply, err := e.cl.GetTransactionByHash(ctx, &evmpb.GetTransactionByHashRequest{
+		Hash: &evmpb.Hash{Hash: hash},
 	})
 	if err != nil {
 		return nil, err
@@ -106,7 +107,7 @@ func (e *evmClient) TransactionByHash(ctx context.Context, hash string) (*evm.Tr
 }
 
 func (e *evmClient) TransactionReceipt(ctx context.Context, txHash string) (*evm.Receipt, error) {
-	reply, err := e.cl.GetTransactionReceipt(ctx, &pb.GetReceiptRequest{Hash: txHash})
+	reply, err := e.cl.GetTransactionReceipt(ctx, &evmpb.GetReceiptRequest{Hash: &evmpb.Hash{Hash: txHash}})
 	if err != nil {
 		return nil, err
 	}
@@ -130,12 +131,12 @@ func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.
 }
 
 func (e *evmClient) RegisterLogTracking(ctx context.Context, filter evm.FilterQuery) error {
-	_, err := e.cl.RegisterLogTracking(ctx, &pb.RegisterLogTrackingRequest{Filter: lPfilterToProto(filter)})
+	_, err := e.cl.RegisterLogTracking(ctx, &evmpb.RegisterLogTrackingRequest{Filter: lPfilterToProto(filter)})
 	return err
 }
 
 func (e *evmClient) UnregisterLogTracking(ctx context.Context, filterName string) error {
-	_, err := e.cl.UnregisterLogTracking(ctx, &pb.UnregisterLogTrackingRequest{FilterName: filterName})
+	_, err := e.cl.UnregisterLogTracking(ctx, &evmpb.UnregisterLogTrackingRequest{FilterName: filterName})
 	return err
 }
 
@@ -148,10 +149,10 @@ func (e *evmClient) GetTransactionStatus(ctx context.Context, transactionID stri
 	return types.TransactionStatus(reply.TransactionStatus), nil
 }
 
-var _ pb.EVMServer = (*evmServer)(nil)
+var _ evmpb.EVMServer = (*evmServer)(nil)
 
 type evmServer struct {
-	pb.UnimplementedEVMServer
+	evmpb.UnimplementedEVMServer
 
 	*net.BrokerExt
 
@@ -162,18 +163,18 @@ func newEVMServer(impl types.EVMService, b *net.BrokerExt) *evmServer {
 	return &evmServer{impl: impl, BrokerExt: b.WithName("EVMServer")}
 }
 
-func (e *evmServer) GetTransactionFee(ctx context.Context, request *pb.GetTransactionFeeRequest) (*pb.GetTransactionFeeReply, error) {
+func (e *evmServer) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
 	reply, err := e.impl.GetTransactionFee(ctx, request.TransactionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetTransactionFeeReply{
+	return &evmpb.GetTransactionFeeReply{
 		TransationFee: pb.NewBigIntFromInt(reply.TransactionFee),
 	}, nil
 }
 
-func (e *evmServer) CallContract(ctx context.Context, req *pb.CallContractRequest) (*pb.CallContractReply, error) {
+func (e *evmServer) CallContract(ctx context.Context, req *evmpb.CallContractRequest) (*evmpb.CallContractReply, error) {
 	confidence, err := contractreader.ConfidenceFromProto(req.ConfidenceLevel)
 	if err != nil {
 		return nil, err
@@ -189,11 +190,11 @@ func (e *evmServer) CallContract(ctx context.Context, req *pb.CallContractReques
 		return nil, err
 	}
 
-	return &pb.CallContractReply{
-		Data: data,
+	return &evmpb.CallContractReply{
+		Data: &evmpb.ABIPayload{Abi: data},
 	}, nil
 }
-func (e *evmServer) GetLogs(ctx context.Context, req *pb.GetLogsRequest) (*pb.GetLogsReply, error) {
+func (e *evmServer) GetLogs(ctx context.Context, req *evmpb.GetLogsRequest) (*evmpb.GetLogsReply, error) {
 	f, err := protoToEvmFilter(req.FilterQuery)
 	if err != nil {
 		return nil, err
@@ -203,22 +204,22 @@ func (e *evmServer) GetLogs(ctx context.Context, req *pb.GetLogsRequest) (*pb.Ge
 		return nil, err
 	}
 
-	return &pb.GetLogsReply{
+	return &evmpb.GetLogsReply{
 		Logs: logsToProto(logs),
 	}, nil
 }
-func (e *evmServer) BalanceAt(ctx context.Context, req *pb.BalanceAtRequest) (*pb.BalanceAtReply, error) {
-	balance, err := e.impl.BalanceAt(ctx, req.Account, req.BlockNumber.Int())
+func (e *evmServer) BalanceAt(ctx context.Context, req *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
+	balance, err := e.impl.BalanceAt(ctx, req.Account.Address, req.BlockNumber.Int())
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.BalanceAtReply{
+	return &evmpb.BalanceAtReply{
 		Balance: pb.NewBigIntFromInt(balance),
 	}, nil
 }
 
-func (e *evmServer) EstimateGas(ctx context.Context, req *pb.EstimateGasRequest) (*pb.EstimateGasReply, error) {
+func (e *evmServer) EstimateGas(ctx context.Context, req *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
 	call, err := protoToCallMsg(req.Msg)
 	if err != nil {
 		return nil, err
@@ -229,13 +230,13 @@ func (e *evmServer) EstimateGas(ctx context.Context, req *pb.EstimateGasRequest)
 		return nil, err
 	}
 
-	return &pb.EstimateGasReply{
+	return &evmpb.EstimateGasReply{
 		Gas: gas,
 	}, nil
 }
 
-func (e *evmServer) GetTransactionByHash(ctx context.Context, req *pb.GetTransactionByHashRequest) (*pb.GetTransactionByHashReply, error) {
-	tx, err := e.impl.TransactionByHash(ctx, req.Hash)
+func (e *evmServer) GetTransactionByHash(ctx context.Context, req *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
+	tx, err := e.impl.TransactionByHash(ctx, req.Hash.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -244,13 +245,13 @@ func (e *evmServer) GetTransactionByHash(ctx context.Context, req *pb.GetTransac
 	if err != nil {
 		return nil, err
 	}
-	return &pb.GetTransactionByHashReply{
+	return &evmpb.GetTransactionByHashReply{
 		Transaction: pbtx,
 	}, nil
 }
 
-func (e *evmServer) GetTransactionReceipt(ctx context.Context, req *pb.GetReceiptRequest) (*pb.GetReceiptReply, error) {
-	rec, err := e.impl.TransactionReceipt(ctx, req.Hash)
+func (e *evmServer) GetTransactionReceipt(ctx context.Context, req *evmpb.GetReceiptRequest) (*evmpb.GetReceiptReply, error) {
+	rec, err := e.impl.TransactionReceipt(ctx, req.Hash.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -259,28 +260,28 @@ func (e *evmServer) GetTransactionReceipt(ctx context.Context, req *pb.GetReceip
 	if err != nil {
 		return nil, err
 	}
-	return &pb.GetReceiptReply{
+	return &evmpb.GetReceiptReply{
 		Receipt: pbrec,
 	}, nil
 }
 
-func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*pb.LatestAndFinalizedHeadReply, error) {
+func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*evmpb.LatestAndFinalizedHeadReply, error) {
 	latest, finalized, err := e.impl.LatestAndFinalizedHead(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.LatestAndFinalizedHeadReply{
+	return &evmpb.LatestAndFinalizedHeadReply{
 		Latest:    headToProto(latest),
 		Finalized: headToProto(finalized),
 	}, nil
 }
 
-func (e *evmServer) QueryLogsFromCache(context.Context, *pb.QueryLogsFromCacheRequest) (*pb.QueryLogsFromCacheReply, error) {
+func (e *evmServer) QueryLogsFromCache(context.Context, *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
 	return nil, errors.New("method QueryLogsFromCache not implemented")
 }
 
-func (e *evmServer) RegisterLogTracking(ctx context.Context, req *pb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
+func (e *evmServer) RegisterLogTracking(ctx context.Context, req *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	f, err := protoToLpFilter(req.Filter)
 	if err != nil {
 		return nil, err
@@ -289,7 +290,7 @@ func (e *evmServer) RegisterLogTracking(ctx context.Context, req *pb.RegisterLog
 	return nil, err
 }
 
-func (e *evmServer) UnregisterLogTracking(ctx context.Context, req *pb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
+func (e *evmServer) UnregisterLogTracking(ctx context.Context, req *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	err := e.impl.UnregisterLogTracking(ctx, req.FilterName)
 
 	return nil, err
@@ -328,37 +329,35 @@ func headToProto(h types.Head) *pb.Head {
 
 var errEmptyReceipt = errors.New("receipt is empty")
 
-func receiptToProto(r *evm.Receipt) (*pb.EVMReceipt, error) {
+func receiptToProto(r *evm.Receipt) (*evmpb.Receipt, error) {
 	if r == nil {
 		return nil, errEmptyReceipt
 	}
 
-	return &pb.EVMReceipt{
-		PostState:         r.PostState,
+	return &evmpb.Receipt{
 		Status:            r.Status,
 		Logs:              logsToProto(r.Logs),
-		TxHash:            r.TxHash,
-		ContractAddress:   r.ContractAddress,
+		TxHash:            toProtoHash(r.TxHash),
+		ContractAddress:   toProtoAddress(r.ContractAddress),
 		GasUsed:           r.GasUsed,
-		BlockHash:         r.BlockHash,
+		BlockHash:         toProtoHash(r.BlockHash),
 		BlockNumber:       pb.NewBigIntFromInt(r.BlockNumber),
 		TxIndex:           r.TransactionIndex,
 		EffectiveGasPrice: pb.NewBigIntFromInt(r.EffectiveGasPrice),
 	}, nil
 }
 
-func protoToReceipt(r *pb.EVMReceipt) (*evm.Receipt, error) {
+func protoToReceipt(r *evmpb.Receipt) (*evm.Receipt, error) {
 	if r == nil {
 		return nil, errEmptyReceipt
 	}
 	return &evm.Receipt{
-		PostState:         r.PostState,
 		Status:            r.Status,
 		Logs:              protoToLogs(r.Logs),
-		TxHash:            r.TxHash,
-		ContractAddress:   r.ContractAddress,
+		TxHash:            r.TxHash.Hash,
+		ContractAddress:   r.ContractAddress.Address,
 		GasUsed:           r.GasUsed,
-		BlockHash:         r.BlockHash,
+		BlockHash:         r.BlockHash.Hash,
 		BlockNumber:       r.BlockNumber.Int(),
 		TransactionIndex:  r.TxIndex,
 		EffectiveGasPrice: r.EffectiveGasPrice.Int(),
@@ -367,14 +366,14 @@ func protoToReceipt(r *pb.EVMReceipt) (*evm.Receipt, error) {
 
 var errEmptyTx = errors.New("transaction is empty")
 
-func transactionToProto(tx *evm.Transaction) (*pb.EVMTransaction, error) {
+func transactionToProto(tx *evm.Transaction) (*evmpb.Transaction, error) {
 	if tx == nil {
 		return nil, errEmptyTx
 	}
-	return &pb.EVMTransaction{
-		To:       tx.To,
-		Data:     tx.Data,
-		Hash:     tx.Hash,
+	return &evmpb.Transaction{
+		To:       toProtoAddress(tx.To),
+		Data:     toProtoABI(tx.Data),
+		Hash:     toProtoHash(tx.Hash),
 		Nonce:    tx.Nonce,
 		Gas:      tx.Gas,
 		GasPrice: pb.NewBigIntFromInt(tx.GasPrice),
@@ -382,14 +381,14 @@ func transactionToProto(tx *evm.Transaction) (*pb.EVMTransaction, error) {
 	}, nil
 }
 
-func protoToTransaction(tx *pb.EVMTransaction) (*evm.Transaction, error) {
+func protoToTransaction(tx *evmpb.Transaction) (*evm.Transaction, error) {
 	if tx == nil {
 		return nil, errEmptyTx
 	}
 	return &evm.Transaction{
-		To:       tx.To,
-		Data:     tx.Data,
-		Hash:     tx.Hash,
+		To:       tx.To.Address,
+		Data:     tx.Data.Abi,
+		Hash:     tx.Hash.Hash,
 		Nonce:    tx.Nonce,
 		Gas:      tx.Gas,
 		GasPrice: tx.GasPrice.Int(),
@@ -397,45 +396,45 @@ func protoToTransaction(tx *pb.EVMTransaction) (*evm.Transaction, error) {
 	}, nil
 }
 
-func callMsgToProto(m *evm.CallMsg) (*pb.CallMsg, error) {
+func callMsgToProto(m *evm.CallMsg) (*evmpb.CallMsg, error) {
 	if m == nil {
 		return nil, errEmptyMsg
 	}
 
-	return &pb.CallMsg{
-		From: m.From,
-		To:   m.To,
-		Data: m.Data,
+	return &evmpb.CallMsg{
+		From: toProtoAddress(m.From),
+		To:   toProtoAddress(m.To),
+		Data: toProtoABI(m.Data),
 	}, nil
 }
 
-func protoToCallMsg(p *pb.CallMsg) (*evm.CallMsg, error) {
+func protoToCallMsg(p *evmpb.CallMsg) (*evm.CallMsg, error) {
 	if p == nil {
 		return nil, errEmptyMsg
 	}
 
 	return &evm.CallMsg{
-		From: p.From,
-		Data: p.Data,
-		To:   p.To,
+		From: p.From.Address,
+		Data: p.Data.Abi,
+		To:   p.To.Address,
 	}, nil
 }
 
-func lPfilterToProto(f evm.FilterQuery) *pb.LPFilter {
-	return &pb.LPFilter{
+func lPfilterToProto(f evm.FilterQuery) *evmpb.LPFilter {
+	return &evmpb.LPFilter{
 		Name:          f.Name,
 		RetentionTime: int64(f.Retention),
-		Addresses:     f.Addresses,
-		EventSigs:     f.EventSigs,
-		Topic2:        f.Topic2,
-		Topic3:        f.Topic3,
-		Topic4:        f.Topic4,
+		Addresses:     toProtoAddresses(f.Addresses),
+		EventSigs:     toProtoHashes(f.EventSigs),
+		Topic2:        toProtoHashes(f.Topic2),
+		Topic3:        toProtoHashes(f.Topic3),
+		Topic4:        toProtoHashes(f.Topic4),
 		MaxLogsKept:   f.MaxLogsKept,
 		LogsPerBlock:  f.LogsPerBlock,
 	}
 }
 
-func protoToLpFilter(f *pb.LPFilter) (evm.FilterQuery, error) {
+func protoToLpFilter(f *evmpb.LPFilter) (evm.FilterQuery, error) {
 	if f == nil {
 		return evm.FilterQuery{}, errEmptyFilter
 	}
@@ -443,11 +442,11 @@ func protoToLpFilter(f *pb.LPFilter) (evm.FilterQuery, error) {
 	return evm.FilterQuery{
 		Name:         f.Name,
 		Retention:    time.Duration(f.RetentionTime),
-		Addresses:    f.Addresses,
-		EventSigs:    f.EventSigs,
-		Topic2:       f.Topic2,
-		Topic3:       f.Topic3,
-		Topic4:       f.Topic4,
+		Addresses:    protoToAddreses(f.Addresses),
+		EventSigs:    protoToHashes(f.EventSigs),
+		Topic2:       protoToHashes(f.Topic2),
+		Topic3:       protoToHashes(f.Topic3),
+		Topic4:       protoToHashes(f.Topic4),
 		MaxLogsKept:  f.MaxLogsKept,
 		LogsPerBlock: f.LogsPerBlock,
 	}, nil
@@ -455,30 +454,30 @@ func protoToLpFilter(f *pb.LPFilter) (evm.FilterQuery, error) {
 
 var errEmptyFilter = errors.New("filter cant be empty")
 
-func protoToEvmFilter(f *pb.EVMFilterQuery) (evm.EVMFilterQuery, error) {
+func protoToEvmFilter(f *evmpb.FilterQuery) (evm.EVMFilterQuery, error) {
 	if f == nil {
 		return evm.EVMFilterQuery{}, errEmptyFilter
 	}
 	return evm.EVMFilterQuery{
-		BlockHash: f.BlockHash,
+		BlockHash: f.BlockHash.Hash,
 		FromBlock: f.FromBlock.Int(),
 		ToBlock:   f.ToBlock.Int(),
-		Addresses: f.Addresses,
-		Topics:    f.Topics,
+		Addresses: protoToAddreses(f.Addresses),
+		Topics:    protoToHashes(f.Topics),
 	}, nil
 }
 
-func evmFilterToProto(f evm.EVMFilterQuery) *pb.EVMFilterQuery {
-	return &pb.EVMFilterQuery{
-		BlockHash: f.BlockHash,
+func evmFilterToProto(f evm.EVMFilterQuery) *evmpb.FilterQuery {
+	return &evmpb.FilterQuery{
+		BlockHash: toProtoHash(f.BlockHash),
 		FromBlock: pb.NewBigIntFromInt(f.FromBlock),
 		ToBlock:   pb.NewBigIntFromInt(f.ToBlock),
-		Addresses: f.Addresses,
-		Topics:    f.Topics,
+		Addresses: toProtoAddresses(f.Addresses),
+		Topics:    toProtoHashes(f.Topics),
 	}
 }
 
-func protoToLogs(logs []*pb.Log) []*evm.Log {
+func protoToLogs(logs []*evmpb.Log) []*evm.Log {
 	ret := make([]*evm.Log, 0, len(logs))
 	for _, l := range logs {
 		ret = append(ret, protoToLog(l))
@@ -487,8 +486,8 @@ func protoToLogs(logs []*pb.Log) []*evm.Log {
 	return ret
 }
 
-func logsToProto(logs []*evm.Log) []*pb.Log {
-	ret := make([]*pb.Log, 0, len(logs))
+func logsToProto(logs []*evm.Log) []*evmpb.Log {
+	ret := make([]*evmpb.Log, 0, len(logs))
 	for _, l := range logs {
 		ret = append(ret, logToProto(l))
 	}
@@ -496,30 +495,76 @@ func logsToProto(logs []*evm.Log) []*pb.Log {
 	return ret
 }
 
-func logToProto(l *evm.Log) *pb.Log {
-	return &pb.Log{
+func logToProto(l *evm.Log) *evmpb.Log {
+	return &evmpb.Log{
 		Index:       l.LogIndex,
-		BlockHash:   l.BlockHash,
+		BlockHash:   toProtoHash(l.BlockHash),
 		BlockNumber: pb.NewBigIntFromInt(l.BlockNumber),
-		Topics:      l.Topics,
-		EventSig:    l.EventSig,
-		Address:     l.Address,
-		TxHash:      l.TxHash,
-		Data:        l.Data,
+		Topics:      toProtoHashes(l.Topics),
+		EventSig:    toProtoHash(l.EventSig),
+		Address:     toProtoAddress(l.Address),
+		TxHash:      toProtoHash(l.TxHash),
+		Data:        toProtoABI(l.Data),
 		Removed:     l.Removed,
 	}
 }
 
-func protoToLog(l *pb.Log) *evm.Log {
+func protoToLog(l *evmpb.Log) *evm.Log {
 	return &evm.Log{
 		LogIndex:    l.Index,
-		BlockHash:   l.BlockHash,
+		BlockHash:   l.BlockHash.Hash,
 		BlockNumber: l.BlockNumber.Int(),
-		Topics:      l.Topics,
-		EventSig:    l.EventSig,
-		Address:     l.Address,
-		TxHash:      l.TxHash,
-		Data:        l.Data,
+		Topics:      protoToHashes(l.Topics),
+		EventSig:    l.EventSig.Hash,
+		Address:     l.Address.Address,
+		TxHash:      l.TxHash.Hash,
+		Data:        l.Data.Abi,
 		Removed:     l.Removed,
 	}
+}
+
+func toProtoHash(s string) *evmpb.Hash {
+	return &evmpb.Hash{Hash: s}
+}
+
+func toProtoHashes(ss []string) []*evmpb.Hash {
+	ret := make([]*evmpb.Hash, 0, len(ss))
+	for _, s := range ss {
+		ret = append(ret, toProtoHash(s))
+	}
+	return ret
+}
+
+func protoToHashes(hs []*evmpb.Hash) []string {
+	ret := make([]string, 0, len(hs))
+	for _, h := range hs {
+		ret = append(ret, h.Hash)
+	}
+
+	return ret
+}
+
+func toProtoAddress(s string) *evmpb.Address {
+	return &evmpb.Address{Address: s}
+}
+
+func toProtoAddresses(ss []string) []*evmpb.Address {
+	ret := make([]*evmpb.Address, 0, len(ss))
+	for _, s := range ss {
+		ret = append(ret, toProtoAddress(s))
+	}
+	return ret
+}
+
+func protoToAddreses(s []*evmpb.Address) []string {
+	ret := make([]string, 0, len(s))
+	for _, a := range s {
+		ret = append(ret, a.Address)
+	}
+
+	return ret
+}
+
+func toProtoABI(data []byte) *evmpb.ABIPayload {
+	return &evmpb.ABIPayload{Abi: data}
 }

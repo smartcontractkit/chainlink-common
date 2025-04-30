@@ -81,10 +81,6 @@ type NodeStatus struct {
 	State   string
 }
 
-type TransactionFee struct {
-	TransactionFee *big.Int
-}
-
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service

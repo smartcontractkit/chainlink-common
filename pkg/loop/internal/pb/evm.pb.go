@@ -650,7 +650,7 @@ func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
 type CallContractRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Call            *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
-	ConfidenceLevel Confidence             `protobuf:"varint,2,opt,name=confidenceLevel,proto3,enum=loop.Confidence" json:"confidenceLevel,omitempty"` // confidenceLevel will be handled by evm loop to difine finalty
+	ConfidenceLevel Confidence             `protobuf:"varint,2,opt,name=confidenceLevel,proto3,enum=loop.Confidence" json:"confidenceLevel,omitempty"` // confidenceLevel will be handled by evm loop to define finalty
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1457,94 +1457,6 @@ func (x *QueryLogsFromCacheReply) GetLogs() []*Log {
 	return nil
 }
 
-type SubscribeLogTriggerRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Expression    []*Expression          `protobuf:"bytes,1,rep,name=expression,proto3" json:"expression,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SubscribeLogTriggerRequest) Reset() {
-	*x = SubscribeLogTriggerRequest{}
-	mi := &file_evm_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SubscribeLogTriggerRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SubscribeLogTriggerRequest) ProtoMessage() {}
-
-func (x *SubscribeLogTriggerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SubscribeLogTriggerRequest.ProtoReflect.Descriptor instead.
-func (*SubscribeLogTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *SubscribeLogTriggerRequest) GetExpression() []*Expression {
-	if x != nil {
-		return x.Expression
-	}
-	return nil
-}
-
-type LogTriggerReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Log           *Log                   `protobuf:"bytes,1,opt,name=log,proto3" json:"log,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LogTriggerReply) Reset() {
-	*x = LogTriggerReply{}
-	mi := &file_evm_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LogTriggerReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LogTriggerReply) ProtoMessage() {}
-
-func (x *LogTriggerReply) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LogTriggerReply.ProtoReflect.Descriptor instead.
-func (*LogTriggerReply) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *LogTriggerReply) GetLog() *Log {
-	if x != nil {
-		return x.Log
-	}
-	return nil
-}
-
 var File_evm_proto protoreflect.FileDescriptor
 
 const file_evm_proto_rawDesc = "" +
@@ -1653,13 +1565,7 @@ const file_evm_proto_rawDesc = "" +
 	"expression\x18\x01 \x03(\v2\x10.loop.ExpressionR\n" +
 	"expression\"8\n" +
 	"\x17QueryLogsFromCacheReply\x12\x1d\n" +
-	"\x04logs\x18\x01 \x03(\v2\t.loop.LogR\x04logs\"N\n" +
-	"\x1aSubscribeLogTriggerRequest\x120\n" +
-	"\n" +
-	"expression\x18\x01 \x03(\v2\x10.loop.ExpressionR\n" +
-	"expression\".\n" +
-	"\x0fLogTriggerReply\x12\x1b\n" +
-	"\x03log\x18\x01 \x01(\v2\t.loop.LogR\x03log2\xf3\a\n" +
+	"\x04logs\x18\x01 \x03(\v2\t.loop.LogR\x04logs2\xa1\a\n" +
 	"\x03EVM\x12S\n" +
 	"\x11GetTransactionFee\x12\x1e.loop.GetTransactionFeeRequest\x1a\x1c.loop.GetTransactionFeeReply\"\x00\x12B\n" +
 	"\fCallContract\x12\x19.loop.CallContractRequest\x1a\x17.loop.CallContractReply\x123\n" +
@@ -1669,8 +1575,7 @@ const file_evm_proto_rawDesc = "" +
 	"\x14GetTransactionByHash\x12!.loop.GetTransactionByHashRequest\x1a\x1f.loop.GetTransactionByHashReply\x12G\n" +
 	"\x15GetTransactionReceipt\x12\x17.loop.GetReceiptRequest\x1a\x15.loop.GetReceiptReply\x12S\n" +
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a!.loop.LatestAndFinalizedHeadReply\x12T\n" +
-	"\x12QueryLogsFromCache\x12\x1f.loop.QueryLogsFromCacheRequest\x1a\x1d.loop.QueryLogsFromCacheReply\x12P\n" +
-	"\x13SubscribeLogTrigger\x12 .loop.SubscribeLogTriggerRequest\x1a\x15.loop.LogTriggerReply0\x01\x12O\n" +
+	"\x12QueryLogsFromCache\x12\x1f.loop.QueryLogsFromCacheRequest\x1a\x1d.loop.QueryLogsFromCacheReply\x12O\n" +
 	"\x13RegisterLogTracking\x12 .loop.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12S\n" +
 	"\x15UnregisterLogTracking\x12\".loop.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12Z\n" +
 	"\x14GetTransactionStatus\x12!.loop.GetTransactionStatusRequest\x1a\x1f.loop.GetTransactionStatusReplyBCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
@@ -1687,7 +1592,7 @@ func file_evm_proto_rawDescGZIP() []byte {
 	return file_evm_proto_rawDescData
 }
 
-var file_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_evm_proto_goTypes = []any{
 	(*CallMsg)(nil),                      // 0: loop.CallMsg
 	(*Log)(nil),                          // 1: loop.Log
@@ -1714,73 +1619,67 @@ var file_evm_proto_goTypes = []any{
 	(*UnregisterLogTrackingRequest)(nil), // 22: loop.UnregisterLogTrackingRequest
 	(*QueryLogsFromCacheRequest)(nil),    // 23: loop.QueryLogsFromCacheRequest
 	(*QueryLogsFromCacheReply)(nil),      // 24: loop.QueryLogsFromCacheReply
-	(*SubscribeLogTriggerRequest)(nil),   // 25: loop.SubscribeLogTriggerRequest
-	(*LogTriggerReply)(nil),              // 26: loop.LogTriggerReply
-	(*BigInt)(nil),                       // 27: loop.BigInt
-	(*Head)(nil),                         // 28: loop.Head
-	(Confidence)(0),                      // 29: loop.Confidence
-	(*Expression)(nil),                   // 30: loop.Expression
-	(*emptypb.Empty)(nil),                // 31: google.protobuf.Empty
-	(*GetTransactionStatusRequest)(nil),  // 32: loop.GetTransactionStatusRequest
-	(*GetTransactionStatusReply)(nil),    // 33: loop.GetTransactionStatusReply
+	(*BigInt)(nil),                       // 25: loop.BigInt
+	(*Head)(nil),                         // 26: loop.Head
+	(Confidence)(0),                      // 27: loop.Confidence
+	(*Expression)(nil),                   // 28: loop.Expression
+	(*emptypb.Empty)(nil),                // 29: google.protobuf.Empty
+	(*GetTransactionStatusRequest)(nil),  // 30: loop.GetTransactionStatusRequest
+	(*GetTransactionStatusReply)(nil),    // 31: loop.GetTransactionStatusReply
 }
 var file_evm_proto_depIdxs = []int32{
-	27, // 0: loop.Log.block_number:type_name -> loop.BigInt
-	27, // 1: loop.EVMFilterQuery.fromBlock:type_name -> loop.BigInt
-	27, // 2: loop.EVMFilterQuery.toBlock:type_name -> loop.BigInt
-	27, // 3: loop.EVMTransaction.value:type_name -> loop.BigInt
-	27, // 4: loop.EVMTransaction.gas_price:type_name -> loop.BigInt
+	25, // 0: loop.Log.block_number:type_name -> loop.BigInt
+	25, // 1: loop.EVMFilterQuery.fromBlock:type_name -> loop.BigInt
+	25, // 2: loop.EVMFilterQuery.toBlock:type_name -> loop.BigInt
+	25, // 3: loop.EVMTransaction.value:type_name -> loop.BigInt
+	25, // 4: loop.EVMTransaction.gas_price:type_name -> loop.BigInt
 	1,  // 5: loop.EVMReceipt.logs:type_name -> loop.Log
-	27, // 6: loop.EVMReceipt.effective_gas_price:type_name -> loop.BigInt
-	27, // 7: loop.EVMReceipt.block_number:type_name -> loop.BigInt
-	28, // 8: loop.LatestAndFinalizedHeadReply.latest:type_name -> loop.Head
-	28, // 9: loop.LatestAndFinalizedHeadReply.finalized:type_name -> loop.Head
+	25, // 6: loop.EVMReceipt.effective_gas_price:type_name -> loop.BigInt
+	25, // 7: loop.EVMReceipt.block_number:type_name -> loop.BigInt
+	26, // 8: loop.LatestAndFinalizedHeadReply.latest:type_name -> loop.Head
+	26, // 9: loop.LatestAndFinalizedHeadReply.finalized:type_name -> loop.Head
 	0,  // 10: loop.CallContractRequest.call:type_name -> loop.CallMsg
-	29, // 11: loop.CallContractRequest.confidenceLevel:type_name -> loop.Confidence
-	27, // 12: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
+	27, // 11: loop.CallContractRequest.confidenceLevel:type_name -> loop.Confidence
+	25, // 12: loop.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
 	2,  // 13: loop.GetLogsRequest.filter_query:type_name -> loop.EVMFilterQuery
 	1,  // 14: loop.GetLogsReply.logs:type_name -> loop.Log
-	27, // 15: loop.BalanceAtRequest.block_number:type_name -> loop.BigInt
-	27, // 16: loop.BalanceAtReply.balance:type_name -> loop.BigInt
+	25, // 15: loop.BalanceAtRequest.block_number:type_name -> loop.BigInt
+	25, // 16: loop.BalanceAtReply.balance:type_name -> loop.BigInt
 	0,  // 17: loop.EstimateGasRequest.msg:type_name -> loop.CallMsg
 	3,  // 18: loop.GetTransactionByHashReply.transaction:type_name -> loop.EVMTransaction
 	4,  // 19: loop.GetReceiptReply.receipt:type_name -> loop.EVMReceipt
 	5,  // 20: loop.RegisterLogTrackingRequest.filter:type_name -> loop.LPFilter
-	30, // 21: loop.QueryLogsFromCacheRequest.expression:type_name -> loop.Expression
+	28, // 21: loop.QueryLogsFromCacheRequest.expression:type_name -> loop.Expression
 	1,  // 22: loop.QueryLogsFromCacheReply.logs:type_name -> loop.Log
-	30, // 23: loop.SubscribeLogTriggerRequest.expression:type_name -> loop.Expression
-	1,  // 24: loop.LogTriggerReply.log:type_name -> loop.Log
-	9,  // 25: loop.EVM.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
-	7,  // 26: loop.EVM.CallContract:input_type -> loop.CallContractRequest
-	11, // 27: loop.EVM.GetLogs:input_type -> loop.GetLogsRequest
-	13, // 28: loop.EVM.BalanceAt:input_type -> loop.BalanceAtRequest
-	15, // 29: loop.EVM.EstimateGas:input_type -> loop.EstimateGasRequest
-	17, // 30: loop.EVM.GetTransactionByHash:input_type -> loop.GetTransactionByHashRequest
-	19, // 31: loop.EVM.GetTransactionReceipt:input_type -> loop.GetReceiptRequest
-	31, // 32: loop.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	23, // 33: loop.EVM.QueryLogsFromCache:input_type -> loop.QueryLogsFromCacheRequest
-	25, // 34: loop.EVM.SubscribeLogTrigger:input_type -> loop.SubscribeLogTriggerRequest
-	21, // 35: loop.EVM.RegisterLogTracking:input_type -> loop.RegisterLogTrackingRequest
-	22, // 36: loop.EVM.UnregisterLogTracking:input_type -> loop.UnregisterLogTrackingRequest
-	32, // 37: loop.EVM.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
-	10, // 38: loop.EVM.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
-	8,  // 39: loop.EVM.CallContract:output_type -> loop.CallContractReply
-	12, // 40: loop.EVM.GetLogs:output_type -> loop.GetLogsReply
-	14, // 41: loop.EVM.BalanceAt:output_type -> loop.BalanceAtReply
-	16, // 42: loop.EVM.EstimateGas:output_type -> loop.EstimateGasReply
-	18, // 43: loop.EVM.GetTransactionByHash:output_type -> loop.GetTransactionByHashReply
-	20, // 44: loop.EVM.GetTransactionReceipt:output_type -> loop.GetReceiptReply
-	6,  // 45: loop.EVM.LatestAndFinalizedHead:output_type -> loop.LatestAndFinalizedHeadReply
-	24, // 46: loop.EVM.QueryLogsFromCache:output_type -> loop.QueryLogsFromCacheReply
-	26, // 47: loop.EVM.SubscribeLogTrigger:output_type -> loop.LogTriggerReply
-	31, // 48: loop.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	31, // 49: loop.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	33, // 50: loop.EVM.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
-	38, // [38:51] is the sub-list for method output_type
-	25, // [25:38] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	9,  // 23: loop.EVM.GetTransactionFee:input_type -> loop.GetTransactionFeeRequest
+	7,  // 24: loop.EVM.CallContract:input_type -> loop.CallContractRequest
+	11, // 25: loop.EVM.GetLogs:input_type -> loop.GetLogsRequest
+	13, // 26: loop.EVM.BalanceAt:input_type -> loop.BalanceAtRequest
+	15, // 27: loop.EVM.EstimateGas:input_type -> loop.EstimateGasRequest
+	17, // 28: loop.EVM.GetTransactionByHash:input_type -> loop.GetTransactionByHashRequest
+	19, // 29: loop.EVM.GetTransactionReceipt:input_type -> loop.GetReceiptRequest
+	29, // 30: loop.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	23, // 31: loop.EVM.QueryLogsFromCache:input_type -> loop.QueryLogsFromCacheRequest
+	21, // 32: loop.EVM.RegisterLogTracking:input_type -> loop.RegisterLogTrackingRequest
+	22, // 33: loop.EVM.UnregisterLogTracking:input_type -> loop.UnregisterLogTrackingRequest
+	30, // 34: loop.EVM.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
+	10, // 35: loop.EVM.GetTransactionFee:output_type -> loop.GetTransactionFeeReply
+	8,  // 36: loop.EVM.CallContract:output_type -> loop.CallContractReply
+	12, // 37: loop.EVM.GetLogs:output_type -> loop.GetLogsReply
+	14, // 38: loop.EVM.BalanceAt:output_type -> loop.BalanceAtReply
+	16, // 39: loop.EVM.EstimateGas:output_type -> loop.EstimateGasReply
+	18, // 40: loop.EVM.GetTransactionByHash:output_type -> loop.GetTransactionByHashReply
+	20, // 41: loop.EVM.GetTransactionReceipt:output_type -> loop.GetReceiptReply
+	6,  // 42: loop.EVM.LatestAndFinalizedHead:output_type -> loop.LatestAndFinalizedHeadReply
+	24, // 43: loop.EVM.QueryLogsFromCache:output_type -> loop.QueryLogsFromCacheReply
+	29, // 44: loop.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	29, // 45: loop.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	31, // 46: loop.EVM.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
+	35, // [35:47] is the sub-list for method output_type
+	23, // [23:35] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_evm_proto_init() }
@@ -1797,7 +1696,7 @@ func file_evm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_evm_proto_rawDesc), len(file_evm_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

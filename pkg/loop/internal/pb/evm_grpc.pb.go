@@ -29,7 +29,6 @@ const (
 	EVM_GetTransactionReceipt_FullMethodName  = "/loop.EVM/GetTransactionReceipt"
 	EVM_LatestAndFinalizedHead_FullMethodName = "/loop.EVM/LatestAndFinalizedHead"
 	EVM_QueryLogsFromCache_FullMethodName     = "/loop.EVM/QueryLogsFromCache"
-	EVM_SubscribeLogTrigger_FullMethodName    = "/loop.EVM/SubscribeLogTrigger"
 	EVM_RegisterLogTracking_FullMethodName    = "/loop.EVM/RegisterLogTracking"
 	EVM_UnregisterLogTracking_FullMethodName  = "/loop.EVM/UnregisterLogTracking"
 	EVM_GetTransactionStatus_FullMethodName   = "/loop.EVM/GetTransactionStatus"
@@ -48,7 +47,6 @@ type EVMClient interface {
 	GetTransactionReceipt(ctx context.Context, in *GetReceiptRequest, opts ...grpc.CallOption) (*GetReceiptReply, error)
 	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error)
 	QueryLogsFromCache(ctx context.Context, in *QueryLogsFromCacheRequest, opts ...grpc.CallOption) (*QueryLogsFromCacheReply, error)
-	SubscribeLogTrigger(ctx context.Context, in *SubscribeLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogTriggerReply], error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
@@ -152,25 +150,6 @@ func (c *eVMClient) QueryLogsFromCache(ctx context.Context, in *QueryLogsFromCac
 	return out, nil
 }
 
-func (c *eVMClient) SubscribeLogTrigger(ctx context.Context, in *SubscribeLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogTriggerReply], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &EVM_ServiceDesc.Streams[0], EVM_SubscribeLogTrigger_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[SubscribeLogTriggerRequest, LogTriggerReply]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type EVM_SubscribeLogTriggerClient = grpc.ServerStreamingClient[LogTriggerReply]
-
 func (c *eVMClient) RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -214,7 +193,6 @@ type EVMServer interface {
 	GetTransactionReceipt(context.Context, *GetReceiptRequest) (*GetReceiptReply, error)
 	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error)
 	QueryLogsFromCache(context.Context, *QueryLogsFromCacheRequest) (*QueryLogsFromCacheReply, error)
-	SubscribeLogTrigger(*SubscribeLogTriggerRequest, grpc.ServerStreamingServer[LogTriggerReply]) error
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
@@ -254,9 +232,6 @@ func (UnimplementedEVMServer) LatestAndFinalizedHead(context.Context, *emptypb.E
 }
 func (UnimplementedEVMServer) QueryLogsFromCache(context.Context, *QueryLogsFromCacheRequest) (*QueryLogsFromCacheReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryLogsFromCache not implemented")
-}
-func (UnimplementedEVMServer) SubscribeLogTrigger(*SubscribeLogTriggerRequest, grpc.ServerStreamingServer[LogTriggerReply]) error {
-	return status.Errorf(codes.Unimplemented, "method SubscribeLogTrigger not implemented")
 }
 func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
@@ -450,17 +425,6 @@ func _EVM_QueryLogsFromCache_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVM_SubscribeLogTrigger_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(SubscribeLogTriggerRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(EVMServer).SubscribeLogTrigger(m, &grpc.GenericServerStream[SubscribeLogTriggerRequest, LogTriggerReply]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type EVM_SubscribeLogTriggerServer = grpc.ServerStreamingServer[LogTriggerReply]
-
 func _EVM_RegisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterLogTrackingRequest)
 	if err := dec(in); err != nil {
@@ -571,12 +535,6 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVM_GetTransactionStatus_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "SubscribeLogTrigger",
-			Handler:       _EVM_SubscribeLogTrigger_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "evm.proto",
 }

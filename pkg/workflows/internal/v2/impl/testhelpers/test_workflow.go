@@ -1,4 +1,4 @@
-package helpers
+package testhelpers
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"

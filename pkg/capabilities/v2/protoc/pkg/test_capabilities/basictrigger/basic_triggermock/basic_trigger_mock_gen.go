@@ -45,7 +45,7 @@ func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.Trigg
 		}
 
 		if cap.Trigger == nil {
-			return nil, testutils.NoTriggerStub("Trigger")
+			return nil, testutils.ErrNoTriggerStub("Trigger")
 		}
 
 		resp, err := cap.Trigger(ctx, input)

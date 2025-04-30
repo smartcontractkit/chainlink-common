@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/impl/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -346,4 +347,14 @@ func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
 
 	_, _, err = runner.Result()
 	assert.Equal(t, anyError, err)
+}
+
+func TestRunner_FullWorkflow(t *testing.T) {
+	testhelpers.SetupExpectedCalls(t)
+	runner := testutils.NewDonRunner(t, nil)
+	testhelpers.RunTestWorkflow(runner)
+	ran, result, err := runner.Result()
+	require.NoError(t, err)
+	assert.True(t, ran)
+	assert.Equal(t, testhelpers.TestWorkflowExpectedResult(), result)
 }

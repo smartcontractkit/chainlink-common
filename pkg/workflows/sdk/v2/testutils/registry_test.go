@@ -12,7 +12,7 @@ import (
 )
 
 func TestRegisterCapability(t *testing.T) {
-	r := &testutils.Registry{}
+	r := testutils.GetRegistry(t)
 	c := &basictriggermock.BasicCapability{}
 
 	err := r.RegisterCapability(c)
@@ -21,28 +21,28 @@ func TestRegisterCapability(t *testing.T) {
 	c = &basictriggermock.BasicCapability{}
 	err = r.RegisterCapability(c)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "already registered")
+	assert.Contains(t, err.Error(), "capability already exists:")
 }
 
 func TestGetCapability(t *testing.T) {
-	r := &testutils.Registry{}
+	r := testutils.GetRegistry(t)
 	c1 := &basictriggermock.BasicCapability{}
 	c2 := &basicactionmock.BasicActionCapability{}
 
 	err := r.RegisterCapability(c1)
 	require.NoError(t, err)
 
-	// register a second capability to make sure that the same capability isn'tb always returned
+	//  make sure that the same capability isn't always returned
 	err = r.RegisterCapability(c2)
 	require.NoError(t, err)
 
 	got, err := r.GetCapability(c1.ID())
 	require.NoError(t, err)
-	assert.Equal(t, c1, got)
+	assert.Equal(t, c1.ID(), got.ID())
 
 	got, err = r.GetCapability(c2.ID())
 	require.NoError(t, err)
-	assert.Equal(t, c2, got)
+	assert.Equal(t, c2.ID(), got.ID())
 
 	notReal := "not" + c1.ID()
 	_, err = r.GetCapability(notReal)

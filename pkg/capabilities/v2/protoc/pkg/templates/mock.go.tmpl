@@ -104,7 +104,7 @@ func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb
             }
 
             if cap.{{.GoName}} == nil {
-                return  nil, testutils.NoTriggerStub("{{.GoName}}")
+                return  nil, testutils.ErrNoTriggerStub("{{.GoName}}")
             }
 
             resp, err := cap.{{.GoName}}(ctx, input)

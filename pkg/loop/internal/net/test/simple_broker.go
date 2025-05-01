@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
+	"github.com/smartcontractkit/freeport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 

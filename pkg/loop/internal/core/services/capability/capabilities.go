@@ -352,7 +352,13 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+		var reportableError *capabilities.RemoteReportableError
+		if errors.As(err, &reportableError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
+		} else {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+		}
+
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
 	}
@@ -390,6 +396,11 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
+		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
+			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
+				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
+
+		}
 		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
 	}
 

@@ -17,42 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type ActionCapabilityClient struct {
-	*executableClient
-	*baseCapabilityClient
-}
-
-func NewActionCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.ActionCapability {
-	return &ActionCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
-	}
-}
-
-type ConsensusCapabilityClient struct {
-	*executableClient
-	*baseCapabilityClient
-}
-
-func NewConsensusCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.ConsensusCapability {
-	return &ConsensusCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
-	}
-}
-
-type TargetCapabilityClient struct {
-	*executableClient
-	*baseCapabilityClient
-}
-
-func NewTargetCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) capabilities.TargetCapability {
-	return &TargetCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
-	}
-}
-
 type TriggerCapabilityClient struct {
 	*triggerExecutableClient
 	*baseCapabilityClient
@@ -79,6 +43,20 @@ func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientCo
 	return &ExecutableCapabilityClient{
 		executableClient:     newExecutableClient(brokerExt, conn),
 		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
+	}
+}
+
+type CombinedCapabilityClient struct {
+	*executableClient
+	*baseCapabilityClient
+	*triggerExecutableClient
+}
+
+func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) ExecutableCapability {
+	return &CombinedCapabilityClient{
+		executableClient:        newExecutableClient(brokerExt, conn),
+		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
+		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
 	}
 }
 
@@ -181,6 +159,8 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		ct = capabilities.CapabilityTypeConsensus
 	case capabilitiespb.CapabilityTypeTarget:
 		ct = capabilities.CapabilityTypeTarget
+	case capabilitiespb.CapabilityTypeCombined:
+		ct = capabilities.CapabilityTypeCombined
 	case capabilitiespb.CapabilityTypeUnknown:
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}
@@ -374,7 +354,13 @@ func (c *executableServer) Execute(reqpb *capabilitiespb.CapabilityRequest, serv
 	var responseMessage *capabilitiespb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+		var reportableError *capabilities.RemoteReportableError
+		if errors.As(err, &reportableError) {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: capabilities.PrePendRemoteReportableErrorIdentifier(err.Error())}
+		} else {
+			responseMessage = &capabilitiespb.CapabilityResponse{Error: err.Error()}
+		}
+
 	} else {
 		responseMessage = pb.CapabilityResponseToProto(response)
 	}
@@ -412,6 +398,11 @@ func (c *executableClient) Execute(ctx context.Context, req capabilities.Capabil
 	}
 
 	if resp.Error != "" {
+		if capabilities.IsRemoteReportableErrorMessage(resp.Error) {
+			return capabilities.CapabilityResponse{}, capabilities.NewRemoteReportableError(
+				errors.New(capabilities.RemoveRemoteReportableErrorIdentifier(resp.Error)))
+
+		}
 		return capabilities.CapabilityResponse{}, errors.New(resp.Error)
 	}
 

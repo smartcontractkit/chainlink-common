@@ -33,7 +33,7 @@ const (
 	CapabilityType_CAPABILITY_TYPE_ACTION    CapabilityType = 2
 	CapabilityType_CAPABILITY_TYPE_CONSENSUS CapabilityType = 3
 	CapabilityType_CAPABILITY_TYPE_TARGET    CapabilityType = 4
-	CapabilityType_CAPABILITY_TYPE_V2        CapabilityType = 5
+	CapabilityType_CAPABILITY_TYPE_COMBINED  CapabilityType = 5
 )
 
 // Enum value maps for CapabilityType.
@@ -44,7 +44,7 @@ var (
 		2: "CAPABILITY_TYPE_ACTION",
 		3: "CAPABILITY_TYPE_CONSENSUS",
 		4: "CAPABILITY_TYPE_TARGET",
-		5: "CAPABILITY_TYPE_V2",
+		5: "CAPABILITY_TYPE_COMBINED",
 	}
 	CapabilityType_value = map[string]int32{
 		"CAPABILITY_TYPE_UNKNOWN":   0,
@@ -52,7 +52,7 @@ var (
 		"CAPABILITY_TYPE_ACTION":    2,
 		"CAPABILITY_TYPE_CONSENSUS": 3,
 		"CAPABILITY_TYPE_TARGET":    4,
-		"CAPABILITY_TYPE_V2":        5,
+		"CAPABILITY_TYPE_COMBINED":  5,
 	}
 )
 
@@ -1137,14 +1137,14 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x0erelayer_set_id\x18\a \x01(\rR\frelayerSetId\x12*\n" +
 	"\x11oracle_factory_id\x18\b \x01(\rR\x0foracleFactoryId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
-	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xb9\x01\n" +
+	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +
 	"\x17CAPABILITY_TYPE_UNKNOWN\x10\x00\x12\x1b\n" +
 	"\x17CAPABILITY_TYPE_TRIGGER\x10\x01\x12\x1a\n" +
 	"\x16CAPABILITY_TYPE_ACTION\x10\x02\x12\x1d\n" +
 	"\x19CAPABILITY_TYPE_CONSENSUS\x10\x03\x12\x1a\n" +
-	"\x16CAPABILITY_TYPE_TARGET\x10\x04\x12\x16\n" +
-	"\x12CAPABILITY_TYPE_V2\x10\x052U\n" +
+	"\x16CAPABILITY_TYPE_TARGET\x10\x04\x12\x1c\n" +
+	"\x18CAPABILITY_TYPE_COMBINED\x10\x052U\n" +
 	"\x0eBaseCapability\x12C\n" +
 	"\x04Info\x12\x16.google.protobuf.Empty\x1a!.capabilities.CapabilityInfoReply\"\x002\xd3\x01\n" +
 	"\x11TriggerExecutable\x12e\n" +

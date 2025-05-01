@@ -38,8 +38,8 @@ const (
 	CapabilityTypeConsensus CapabilityType = "consensus"
 	CapabilityTypeTarget    CapabilityType = "target"
 
-	// CapabilityTypeV2 allows capabilities to offer both trigger and executable types.
-	CapabilityTypeV2 CapabilityType = "v2"
+	// CapabilityTypeCombined allows capabilities to offer both trigger and executable types.
+	CapabilityTypeCombined CapabilityType = "combined"
 )
 
 // IsValid checks if the capability type is valid.
@@ -49,7 +49,7 @@ func (c CapabilityType) IsValid() error {
 		CapabilityTypeAction,
 		CapabilityTypeConsensus,
 		CapabilityTypeTarget,
-		CapabilityTypeV2:
+		CapabilityTypeCombined:
 		return nil
 	case CapabilityTypeUnknown:
 		return fmt.Errorf("invalid capability type: %s", c)

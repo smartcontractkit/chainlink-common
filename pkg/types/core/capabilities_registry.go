@@ -9,12 +9,13 @@ import (
 type CapabilitiesRegistry interface {
 	LocalNode(ctx context.Context) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
+	CapabilitiesRegistryBase
+}
 
-	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
+type CapabilitiesRegistryBase interface {
 	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
-	GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error)
-	GetConsensus(ctx context.Context, ID string) (capabilities.ConsensusCapability, error)
-	GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error)
+	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
+	GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error)
 	List(ctx context.Context) ([]capabilities.BaseCapability, error)
 	Add(ctx context.Context, c capabilities.BaseCapability) error
 	Remove(ctx context.Context, ID string) error

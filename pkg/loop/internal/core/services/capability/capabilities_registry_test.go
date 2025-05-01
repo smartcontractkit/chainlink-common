@@ -81,17 +81,7 @@ type mockTriggerCapability struct {
 	*mockTriggerExecutable
 }
 
-type mockActionCapability struct {
-	*mockBaseCapability
-	*mockExecutableCapability
-}
-
-type mockConsensusCapability struct {
-	*mockBaseCapability
-	*mockExecutableCapability
-}
-
-type mockTargetCapability struct {
+type mockNonTriggerCapability struct {
 	*mockBaseCapability
 	*mockExecutableCapability
 }
@@ -226,18 +216,6 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	}, actualNode.WorkflowDON)
 	require.Empty(t, actualNode.CapabilityDONs)
 
-	reg.On("GetAction", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetAction(t.Context(), "some-id")
-	require.ErrorContains(t, err, "capability not found")
-
-	reg.On("GetConsensus", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetConsensus(t.Context(), "some-id")
-	require.ErrorContains(t, err, "capability not found")
-
-	reg.On("GetTarget", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
-	_, err = rc.GetTarget(t.Context(), "some-id")
-	require.ErrorContains(t, err, "capability not found")
-
 	reg.On("GetTrigger", mock.Anything, "some-id").Return(nil, errors.New("capability not found"))
 	_, err = rc.GetTrigger(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
@@ -295,12 +273,12 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	}
 
 	actionCallbackChan := make(chan capabilities.CapabilityResponse, 10)
-	testAction := mockActionCapability{
+	testAction := mockNonTriggerCapability{
 		mockBaseCapability:       &mockBaseCapability{info: actionInfo},
 		mockExecutableCapability: &mockExecutableCapability{callback: actionCallbackChan},
 	}
-	reg.On("GetAction", mock.Anything, "action-1@2.0.0").Return(testAction, nil)
-	actionCap, err := rc.GetAction(t.Context(), "action-1@2.0.0")
+	reg.On("GetExecutable", mock.Anything, "action-1@2.0.0").Return(testAction, nil)
+	actionCap, err := rc.GetExecutable(t.Context(), "action-1@2.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, actionInfo, actionCap)
@@ -311,6 +289,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 			WorkflowID: "workflow-ID",
 		},
 	}
+
 	err = actionCap.RegisterToWorkflow(t.Context(), workflowRequest)
 	require.NoError(t, err)
 	require.Equal(t, workflowRequest.Metadata.WorkflowID, testAction.registeredWorkflowRequest.Metadata.WorkflowID)
@@ -329,12 +308,12 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		CapabilityType: capabilities.CapabilityTypeConsensus,
 		Description:    "consensus-1-description",
 	}
-	testConsensus := mockConsensusCapability{
+	testConsensus := mockNonTriggerCapability{
 		mockBaseCapability:       &mockBaseCapability{info: consensusInfo},
 		mockExecutableCapability: &mockExecutableCapability{},
 	}
-	reg.On("GetConsensus", mock.Anything, "consensus-1@3.0.0").Return(testConsensus, nil)
-	consensusCap, err := rc.GetConsensus(t.Context(), "consensus-1@3.0.0")
+	reg.On("GetExecutable", mock.Anything, "consensus-1@3.0.0").Return(testConsensus, nil)
+	consensusCap, err := rc.GetExecutable(t.Context(), "consensus-1@3.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, consensusInfo, consensusCap)
@@ -345,12 +324,12 @@ func TestCapabilitiesRegistry(t *testing.T) {
 		CapabilityType: capabilities.CapabilityTypeTarget,
 		Description:    "target-1-description",
 	}
-	testTarget := mockTargetCapability{
+	testTarget := mockNonTriggerCapability{
 		mockBaseCapability:       &mockBaseCapability{info: targetInfo},
 		mockExecutableCapability: &mockExecutableCapability{},
 	}
-	reg.On("GetTarget", mock.Anything, "target-1@1.0.0").Return(testTarget, nil)
-	targetCap, err := rc.GetTarget(t.Context(), "target-1@1.0.0")
+	reg.On("Get", mock.Anything, "target-1@1.0.0").Return(testTarget, nil)
+	targetCap, err := rc.Get(t.Context(), "target-1@1.0.0")
 	require.NoError(t, err)
 
 	testCapabilityInfo(t, targetInfo, targetCap)

@@ -8,6 +8,7 @@ package relayerset
 
 import (
 	context "context"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,17 +21,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RelayerSet_Get_FullMethodName                 = "/loop.relayerset.RelayerSet/Get"
-	RelayerSet_List_FullMethodName                = "/loop.relayerset.RelayerSet/List"
-	RelayerSet_NewPluginProvider_FullMethodName   = "/loop.relayerset.RelayerSet/NewPluginProvider"
-	RelayerSet_NewContractReader_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractReader"
-	RelayerSet_NewContractWriter_FullMethodName   = "/loop.relayerset.RelayerSet/NewContractWriter"
-	RelayerSet_StartRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/StartRelayer"
-	RelayerSet_CloseRelayer_FullMethodName        = "/loop.relayerset.RelayerSet/CloseRelayer"
-	RelayerSet_RelayerReady_FullMethodName        = "/loop.relayerset.RelayerSet/RelayerReady"
-	RelayerSet_RelayerHealthReport_FullMethodName = "/loop.relayerset.RelayerSet/RelayerHealthReport"
-	RelayerSet_RelayerName_FullMethodName         = "/loop.relayerset.RelayerSet/RelayerName"
-	RelayerSet_RelayerLatestHead_FullMethodName   = "/loop.relayerset.RelayerSet/RelayerLatestHead"
+	RelayerSet_Get_FullMethodName                                      = "/loop.relayerset.RelayerSet/Get"
+	RelayerSet_List_FullMethodName                                     = "/loop.relayerset.RelayerSet/List"
+	RelayerSet_NewPluginProvider_FullMethodName                        = "/loop.relayerset.RelayerSet/NewPluginProvider"
+	RelayerSet_NewContractReader_FullMethodName                        = "/loop.relayerset.RelayerSet/NewContractReader"
+	RelayerSet_NewContractWriter_FullMethodName                        = "/loop.relayerset.RelayerSet/NewContractWriter"
+	RelayerSet_StartRelayer_FullMethodName                             = "/loop.relayerset.RelayerSet/StartRelayer"
+	RelayerSet_CloseRelayer_FullMethodName                             = "/loop.relayerset.RelayerSet/CloseRelayer"
+	RelayerSet_RelayerReady_FullMethodName                             = "/loop.relayerset.RelayerSet/RelayerReady"
+	RelayerSet_RelayerHealthReport_FullMethodName                      = "/loop.relayerset.RelayerSet/RelayerHealthReport"
+	RelayerSet_RelayerName_FullMethodName                              = "/loop.relayerset.RelayerSet/RelayerName"
+	RelayerSet_RelayerLatestHead_FullMethodName                        = "/loop.relayerset.RelayerSet/RelayerLatestHead"
+	RelayerSet_ContractReaderGetLatestValue_FullMethodName             = "/loop.relayerset.RelayerSet/ContractReaderGetLatestValue"
+	RelayerSet_ContractReaderGetLatestValueWithHeadData_FullMethodName = "/loop.relayerset.RelayerSet/ContractReaderGetLatestValueWithHeadData"
+	RelayerSet_ContractReaderBatchGetLatestValues_FullMethodName       = "/loop.relayerset.RelayerSet/ContractReaderBatchGetLatestValues"
+	RelayerSet_ContractReaderQueryKey_FullMethodName                   = "/loop.relayerset.RelayerSet/ContractReaderQueryKey"
+	RelayerSet_ContractReaderQueryKeys_FullMethodName                  = "/loop.relayerset.RelayerSet/ContractReaderQueryKeys"
+	RelayerSet_ContractReaderBind_FullMethodName                       = "/loop.relayerset.RelayerSet/ContractReaderBind"
+	RelayerSet_ContractReaderUnbind_FullMethodName                     = "/loop.relayerset.RelayerSet/ContractReaderUnbind"
+	RelayerSet_ContractReaderStart_FullMethodName                      = "/loop.relayerset.RelayerSet/ContractReaderStart"
+	RelayerSet_ContractReaderClose_FullMethodName                      = "/loop.relayerset.RelayerSet/ContractReaderClose"
 )
 
 // RelayerSetClient is the client API for RelayerSet service.
@@ -48,6 +58,15 @@ type RelayerSetClient interface {
 	RelayerHealthReport(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerHealthReportResponse, error)
 	RelayerName(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerNameResponse, error)
 	RelayerLatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadResponse, error)
+	ContractReaderGetLatestValue(ctx context.Context, in *ContractReaderGetLatestValueRequest, opts ...grpc.CallOption) (*pb.GetLatestValueReply, error)
+	ContractReaderGetLatestValueWithHeadData(ctx context.Context, in *ContractReaderGetLatestValueRequest, opts ...grpc.CallOption) (*pb.GetLatestValueWithHeadDataReply, error)
+	ContractReaderBatchGetLatestValues(ctx context.Context, in *ContractReaderBatchGetLatestValuesRequest, opts ...grpc.CallOption) (*pb.BatchGetLatestValuesReply, error)
+	ContractReaderQueryKey(ctx context.Context, in *ContractReaderQueryKeyRequest, opts ...grpc.CallOption) (*pb.QueryKeyReply, error)
+	ContractReaderQueryKeys(ctx context.Context, in *ContractReaderQueryKeysRequest, opts ...grpc.CallOption) (*pb.QueryKeysReply, error)
+	ContractReaderBind(ctx context.Context, in *ContractReaderBindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ContractReaderUnbind(ctx context.Context, in *ContractReaderUnbindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ContractReaderStart(ctx context.Context, in *ContractReaderStartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ContractReaderClose(ctx context.Context, in *ContractReaderCloseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type relayerSetClient struct {
@@ -168,6 +187,96 @@ func (c *relayerSetClient) RelayerLatestHead(ctx context.Context, in *LatestHead
 	return out, nil
 }
 
+func (c *relayerSetClient) ContractReaderGetLatestValue(ctx context.Context, in *ContractReaderGetLatestValueRequest, opts ...grpc.CallOption) (*pb.GetLatestValueReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.GetLatestValueReply)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderGetLatestValue_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderGetLatestValueWithHeadData(ctx context.Context, in *ContractReaderGetLatestValueRequest, opts ...grpc.CallOption) (*pb.GetLatestValueWithHeadDataReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.GetLatestValueWithHeadDataReply)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderGetLatestValueWithHeadData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderBatchGetLatestValues(ctx context.Context, in *ContractReaderBatchGetLatestValuesRequest, opts ...grpc.CallOption) (*pb.BatchGetLatestValuesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.BatchGetLatestValuesReply)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderBatchGetLatestValues_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderQueryKey(ctx context.Context, in *ContractReaderQueryKeyRequest, opts ...grpc.CallOption) (*pb.QueryKeyReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.QueryKeyReply)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderQueryKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderQueryKeys(ctx context.Context, in *ContractReaderQueryKeysRequest, opts ...grpc.CallOption) (*pb.QueryKeysReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.QueryKeysReply)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderQueryKeys_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderBind(ctx context.Context, in *ContractReaderBindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderBind_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderUnbind(ctx context.Context, in *ContractReaderUnbindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderUnbind_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderStart(ctx context.Context, in *ContractReaderStartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderStart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) ContractReaderClose(ctx context.Context, in *ContractReaderCloseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderClose_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RelayerSetServer is the server API for RelayerSet service.
 // All implementations must embed UnimplementedRelayerSetServer
 // for forward compatibility.
@@ -183,6 +292,15 @@ type RelayerSetServer interface {
 	RelayerHealthReport(context.Context, *RelayerId) (*RelayerHealthReportResponse, error)
 	RelayerName(context.Context, *RelayerId) (*RelayerNameResponse, error)
 	RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error)
+	ContractReaderGetLatestValue(context.Context, *ContractReaderGetLatestValueRequest) (*pb.GetLatestValueReply, error)
+	ContractReaderGetLatestValueWithHeadData(context.Context, *ContractReaderGetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error)
+	ContractReaderBatchGetLatestValues(context.Context, *ContractReaderBatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error)
+	ContractReaderQueryKey(context.Context, *ContractReaderQueryKeyRequest) (*pb.QueryKeyReply, error)
+	ContractReaderQueryKeys(context.Context, *ContractReaderQueryKeysRequest) (*pb.QueryKeysReply, error)
+	ContractReaderBind(context.Context, *ContractReaderBindRequest) (*emptypb.Empty, error)
+	ContractReaderUnbind(context.Context, *ContractReaderUnbindRequest) (*emptypb.Empty, error)
+	ContractReaderStart(context.Context, *ContractReaderStartRequest) (*emptypb.Empty, error)
+	ContractReaderClose(context.Context, *ContractReaderCloseRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedRelayerSetServer()
 }
 
@@ -225,6 +343,33 @@ func (UnimplementedRelayerSetServer) RelayerName(context.Context, *RelayerId) (*
 }
 func (UnimplementedRelayerSetServer) RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RelayerLatestHead not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderGetLatestValue(context.Context, *ContractReaderGetLatestValueRequest) (*pb.GetLatestValueReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderGetLatestValue not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderGetLatestValueWithHeadData(context.Context, *ContractReaderGetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderGetLatestValueWithHeadData not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderBatchGetLatestValues(context.Context, *ContractReaderBatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderBatchGetLatestValues not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderQueryKey(context.Context, *ContractReaderQueryKeyRequest) (*pb.QueryKeyReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderQueryKey not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderQueryKeys(context.Context, *ContractReaderQueryKeysRequest) (*pb.QueryKeysReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderQueryKeys not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderBind(context.Context, *ContractReaderBindRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderBind not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderUnbind(context.Context, *ContractReaderUnbindRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderUnbind not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderStart(context.Context, *ContractReaderStartRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderStart not implemented")
+}
+func (UnimplementedRelayerSetServer) ContractReaderClose(context.Context, *ContractReaderCloseRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderClose not implemented")
 }
 func (UnimplementedRelayerSetServer) mustEmbedUnimplementedRelayerSetServer() {}
 func (UnimplementedRelayerSetServer) testEmbeddedByValue()                    {}
@@ -445,6 +590,168 @@ func _RelayerSet_RelayerLatestHead_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RelayerSet_ContractReaderGetLatestValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderGetLatestValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderGetLatestValue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderGetLatestValue_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderGetLatestValue(ctx, req.(*ContractReaderGetLatestValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderGetLatestValueWithHeadData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderGetLatestValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderGetLatestValueWithHeadData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderGetLatestValueWithHeadData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderGetLatestValueWithHeadData(ctx, req.(*ContractReaderGetLatestValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderBatchGetLatestValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderBatchGetLatestValuesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderBatchGetLatestValues(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderBatchGetLatestValues_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderBatchGetLatestValues(ctx, req.(*ContractReaderBatchGetLatestValuesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderQueryKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderQueryKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderQueryKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderQueryKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderQueryKey(ctx, req.(*ContractReaderQueryKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderQueryKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderQueryKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderQueryKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderQueryKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderQueryKeys(ctx, req.(*ContractReaderQueryKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderBind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderBindRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderBind(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderBind_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderBind(ctx, req.(*ContractReaderBindRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderUnbind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderUnbindRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderUnbind(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderUnbind_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderUnbind(ctx, req.(*ContractReaderUnbindRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderStart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderStartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderStart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderStart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderStart(ctx, req.(*ContractReaderStartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_ContractReaderClose_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContractReaderCloseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).ContractReaderClose(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_ContractReaderClose_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).ContractReaderClose(ctx, req.(*ContractReaderCloseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RelayerSet_ServiceDesc is the grpc.ServiceDesc for RelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -495,6 +802,42 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RelayerLatestHead",
 			Handler:    _RelayerSet_RelayerLatestHead_Handler,
+		},
+		{
+			MethodName: "ContractReaderGetLatestValue",
+			Handler:    _RelayerSet_ContractReaderGetLatestValue_Handler,
+		},
+		{
+			MethodName: "ContractReaderGetLatestValueWithHeadData",
+			Handler:    _RelayerSet_ContractReaderGetLatestValueWithHeadData_Handler,
+		},
+		{
+			MethodName: "ContractReaderBatchGetLatestValues",
+			Handler:    _RelayerSet_ContractReaderBatchGetLatestValues_Handler,
+		},
+		{
+			MethodName: "ContractReaderQueryKey",
+			Handler:    _RelayerSet_ContractReaderQueryKey_Handler,
+		},
+		{
+			MethodName: "ContractReaderQueryKeys",
+			Handler:    _RelayerSet_ContractReaderQueryKeys_Handler,
+		},
+		{
+			MethodName: "ContractReaderBind",
+			Handler:    _RelayerSet_ContractReaderBind_Handler,
+		},
+		{
+			MethodName: "ContractReaderUnbind",
+			Handler:    _RelayerSet_ContractReaderUnbind_Handler,
+		},
+		{
+			MethodName: "ContractReaderStart",
+			Handler:    _RelayerSet_ContractReaderStart_Handler,
+		},
+		{
+			MethodName: "ContractReaderClose",
+			Handler:    _RelayerSet_ContractReaderClose_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

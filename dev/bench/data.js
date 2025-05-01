@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746107062473,
+  "lastUpdate": 1746124447250,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12642,6 +12642,48 @@ window.BENCHMARK_DATA = {
             "value": 28323,
             "unit": "ns/op",
             "extra": "42627 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2e4acd82d330db8e5e5c634231c84adcbd826eeb",
+          "message": "Add mock generation to the capability code generator and test runners and runtimes for workflows (#1158)",
+          "timestamp": "2025-05-01T14:32:48-04:00",
+          "tree_id": "2f73acbcbf82ebc0aaf47dab48f44bd3d500e2f6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2e4acd82d330db8e5e5c634231c84adcbd826eeb"
+        },
+        "date": 1746124445757,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.8,
+            "unit": "ns/op",
+            "extra": "3318780 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.6,
+            "unit": "ns/op",
+            "extra": "2907932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28594,
+            "unit": "ns/op",
+            "extra": "42535 times\n4 procs"
           }
         ]
       }

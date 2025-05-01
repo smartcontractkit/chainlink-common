@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746037574933,
+  "lastUpdate": 1746066753929,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12516,6 +12516,48 @@ window.BENCHMARK_DATA = {
             "value": 28420,
             "unit": "ns/op",
             "extra": "42159 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "de4c1fed34c95ed1ad213a02c21acf0d36129485",
+          "message": "swap freeport library (#1169)",
+          "timestamp": "2025-04-30T20:30:15-06:00",
+          "tree_id": "590c47f4b23d143925e2368555511830b0f403ef",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/de4c1fed34c95ed1ad213a02c21acf0d36129485"
+        },
+        "date": 1746066752562,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.5,
+            "unit": "ns/op",
+            "extra": "3326248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.7,
+            "unit": "ns/op",
+            "extra": "2506116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28450,
+            "unit": "ns/op",
+            "extra": "42136 times\n4 procs"
           }
         ]
       }

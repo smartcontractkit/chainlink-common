@@ -6,6 +6,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 var testRegistries = map[testing.TB]*Registry{}
@@ -19,7 +20,7 @@ func GetRegistry(tb testing.TB) *Registry {
 		return r
 	}
 
-	r := &Registry{tb: tb, Basic: registry.NewBasic(logger.Test(tb))}
+	r := &Registry{tb: tb, CapabilitiesRegistryBase: registry.NewBaseRegistry(logger.Test(tb))}
 	testRegistries[tb] = r
 	tb.Cleanup(func() {
 		delete(testRegistries, tb)
@@ -29,7 +30,7 @@ func GetRegistry(tb testing.TB) *Registry {
 
 // Registry is meant to be used with GetRegistry, do not use it directly.
 type Registry struct {
-	*registry.Basic
+	core.CapabilitiesRegistryBase
 	tb testing.TB
 }
 

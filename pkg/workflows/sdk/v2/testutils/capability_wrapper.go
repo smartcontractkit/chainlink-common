@@ -80,5 +80,5 @@ func (c *capabilityWrapper) Execute(ctx context.Context, request capabilities.Ca
 
 func (c *capabilityWrapper) Info(_ context.Context) (capabilities.CapabilityInfo, error) {
 	return capabilities.NewCapabilityInfo(
-		c.ID(), capabilities.CapabilityTypeV2, fmt.Sprintf("Mock of capability %s", c.ID()))
+		c.ID(), capabilities.CapabilityTypeCombined, fmt.Sprintf("Mock of capability %s", c.ID()))
 }

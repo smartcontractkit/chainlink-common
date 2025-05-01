@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746096935793,
+  "lastUpdate": 1746107062473,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12600,6 +12600,48 @@ window.BENCHMARK_DATA = {
             "value": 28450,
             "unit": "ns/op",
             "extra": "42166 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "27c43a698294845e08b3b60d8315256b90834ac0",
+          "message": "Remove unused methods from capabilities regitry, split the interface in two. (#1162)",
+          "timestamp": "2025-05-01T09:43:04-04:00",
+          "tree_id": "831f4604b0fc873cff773a72727764c67db4441d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/27c43a698294845e08b3b60d8315256b90834ac0"
+        },
+        "date": 1746107061683,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369.3,
+            "unit": "ns/op",
+            "extra": "3348828 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.4,
+            "unit": "ns/op",
+            "extra": "2855426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28323,
+            "unit": "ns/op",
+            "extra": "42627 times\n4 procs"
           }
         ]
       }

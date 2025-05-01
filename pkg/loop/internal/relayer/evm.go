@@ -354,10 +354,10 @@ func protoToReceipt(r *evmpb.Receipt) (*evm.Receipt, error) {
 	return &evm.Receipt{
 		Status:            r.Status,
 		Logs:              protoToLogs(r.Logs),
-		TxHash:            r.TxHash.Hash,
-		ContractAddress:   r.ContractAddress.Address,
+		TxHash:            r.TxHash.GetHash(),
+		ContractAddress:   r.ContractAddress.GetAddress(),
 		GasUsed:           r.GasUsed,
-		BlockHash:         r.BlockHash.Hash,
+		BlockHash:         r.BlockHash.GetHash(),
 		BlockNumber:       r.BlockNumber.Int(),
 		TransactionIndex:  r.TxIndex,
 		EffectiveGasPrice: r.EffectiveGasPrice.Int(),
@@ -386,9 +386,9 @@ func protoToTransaction(tx *evmpb.Transaction) (*evm.Transaction, error) {
 		return nil, errEmptyTx
 	}
 	return &evm.Transaction{
-		To:       tx.To.Address,
-		Data:     tx.Data.Abi,
-		Hash:     tx.Hash.Hash,
+		To:       tx.To.GetAddress(),
+		Data:     tx.Data.GetAbi(),
+		Hash:     tx.Hash.GetHash(),
 		Nonce:    tx.Nonce,
 		Gas:      tx.Gas,
 		GasPrice: tx.GasPrice.Int(),
@@ -512,18 +512,21 @@ func logToProto(l *evm.Log) *evmpb.Log {
 func protoToLog(l *evmpb.Log) *evm.Log {
 	return &evm.Log{
 		LogIndex:    l.Index,
-		BlockHash:   l.BlockHash.Hash,
+		BlockHash:   l.BlockHash.GetHash(),
 		BlockNumber: l.BlockNumber.Int(),
 		Topics:      protoToHashes(l.Topics),
-		EventSig:    l.EventSig.Hash,
-		Address:     l.Address.Address,
-		TxHash:      l.TxHash.Hash,
-		Data:        l.Data.Abi,
+		EventSig:    l.EventSig.GetHash(),
+		Address:     l.Address.GetAddress(),
+		TxHash:      l.TxHash.GetHash(),
+		Data:        l.Data.GetAbi(),
 		Removed:     l.Removed,
 	}
 }
 
 func toProtoHash(s string) *evmpb.Hash {
+	if s == "" {
+		return nil
+	}
 	return &evmpb.Hash{Hash: s}
 }
 
@@ -545,6 +548,9 @@ func protoToHashes(hs []*evmpb.Hash) []string {
 }
 
 func toProtoAddress(s string) *evmpb.Address {
+	if s == "" {
+		return nil
+	}
 	return &evmpb.Address{Address: s}
 }
 

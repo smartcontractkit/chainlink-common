@@ -17,6 +17,16 @@ packages:
       OffRampReader:
         config:
           filename: offramp_reader_mock.go
+  github.com/smartcontractkit/chainlink-common/pkg/types:
+    interfaces:
+      EVMService:
+        config:
+          filename: evm_service_mock.go
+  github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm:
+    interfaces:
+      EVMClient:
+        config:
+          filename: evm_client_mock.go
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
       CapabilitiesRegistry:

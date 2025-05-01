@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package don.evm.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm";
+
+import "google/protobuf/empty.proto";
+import "crosschain.proto";
+import "metadata.proto";
+
+message TxID {
+  string value = 1;
+}
+
+message ReadMethodRequest {
+  string address = 1;
+  bytes calldata = 2;
+  ConfidenceLevel confidence_level = 3;
+}
+
+// Represents a request to query logs
+message QueryLogsRequest {
+  FilterQuery filter = 1;
+  ConfidenceLevel confidence_level = 2;
+}
+
+// Represents a request to submit a transaction
+message SubmitTransactionRequest {
+  string to_address = 1;
+  GasConfig gas_config = 2;
+  bytes calldata = 3; // Optional
+}
+
+service Client {
+  rpc GetTxResult (TxID) returns (don.crosschain.v1.TxResult);
+  rpc ReadMethod (ReadMethodRequest) returns (don.crosschain.v1.ByteArray);
+  rpc QueryLogs (QueryLogsRequest) returns (LogList);
+  rpc SubmitTransaction (SubmitTransactionRequest) returns (TxID);
+  rpc OnFinalityViolation (google.protobuf.Empty) returns (don.crosschain.v1.BlockRange) {
+    option (cre.metadata.callType) = Trigger;
+  };
+}
+
+// Placeholder messages for types defined elsewhere
+message GasConfig {
+  // Fill this in based on your domain model
+}
+
+message FilterQuery {
+  // Fill this in based on your domain model
+}
+
+message Log {
+  // Fill this in based on your domain model
+}
+
+message LogList {
+  repeated Log logs = 1;
+}
+
+enum ConfidenceLevel {
+  CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  FINALITY = 4;
+}

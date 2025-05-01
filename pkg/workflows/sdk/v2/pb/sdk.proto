@@ -46,3 +46,20 @@ enum Mode {
   DON = 0;
   Node = 1;
 }
+
+
+message TriggerSubscription {
+  string execId = 1;
+  string id = 2;
+  google.protobuf.Any payload = 3;
+  string method = 4;
+}
+
+message TriggerSubscriptionRequest {
+  repeated TriggerSubscription subscriptions = 1;
+}
+
+message Trigger {
+  string id = 1;
+  google.protobuf.Any payload = 2;
+}

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package basic_test_node_action.v1;
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/nodeaction";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction";
 
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 

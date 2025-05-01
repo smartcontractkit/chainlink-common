@@ -6,24 +6,32 @@ import (
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
-//go:embed templates/client.go.tmpl
+//go:embed templates/sdk.go.tmpl
 var goClientBaseTemplate string
 
-//go:embed templates/client_trigger.go.tmpl
+//go:embed templates/sdk_trigger.go.tmpl
 var goTriggerMethodTemplate string
 
-//go:embed templates/client_action.go.tmpl
+//go:embed templates/sdk_action.go.tmpl
 var goActionMethodTemplate string
+
+//go:embed templates/mock.go.tmpl
+var goMockTemplate string
 
 var clientTemplates = []templateGenerator{
 	{
-		Name:             "go_client",
+		Name:             "go_sdk",
 		Template:         goClientBaseTemplate,
-		FileNameTemplate: "{{.}}_client_gen.go",
+		FileNameTemplate: "{{.}}_sdk_gen.go",
 		Partials: map[string]string{
 			"trigger_method": goTriggerMethodTemplate,
 			"action_method":  goActionMethodTemplate,
 		},
+	},
+	{
+		Name:             "go_mock",
+		Template:         goMockTemplate,
+		FileNameTemplate: "{{ToLower .}}mock/{{.}}_mock_gen.go",
 	},
 }
 

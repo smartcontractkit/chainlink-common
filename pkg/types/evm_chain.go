@@ -5,5 +5,5 @@ import (
 )
 
 type TransactionFee struct {
-	TransactionFee *big.Int
+	TransactionFee *big.Int // Cost of transaction in wei
 }

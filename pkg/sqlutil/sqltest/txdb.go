@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -11,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
-	"go.uber.org/multierr"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
@@ -385,7 +385,7 @@ func (s stmt) Query(args []driver.Value) (driver.Rows, error) {
 	}
 	rows, err := s.st.Query(mapArgs(args)...)
 	defer func() {
-		err = multierr.Combine(err, rows.Close())
+		err = errors.Join(err, rows.Close())
 	}()
 	if err != nil {
 		return nil, err

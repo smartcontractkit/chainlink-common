@@ -113,7 +113,7 @@ func (m multiErrorList) Unwrap() []error {
 	return m
 }
 
-// Flatten calls `Unwrap() []error` on each error and subsequent returned error that implement the method, returning a fully flattend sequence.
+// Flatten calls `Unwrap() []error` on each error and subsequent returned error that implement the method, returning a fully flattened sequence.
 //
 //nolint:errorlint // error type checks will fail on wrapped errors. Disabled since we are not doing checks on error types.
 func Flatten(errs ...error) (flat []error) {

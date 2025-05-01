@@ -11,13 +11,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
-
-type connProvider interface {
-	ClientConn() grpc.ClientConnInterface
-}
 
 type Client struct {
 	*net.BrokerExt
@@ -39,11 +36,11 @@ func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, 
 		return nil, fmt.Errorf("error getting relayer: %w", err)
 	}
 
-	return newRelayerClient(k.log, k, relayID), nil
+	return newRelayer(k.log, k, relayID), nil
 }
 
 func (k *Client) List(ctx context.Context, relayIDs ...types.RelayID) (map[types.RelayID]core.Relayer, error) {
-	var ids []*relayerset.RelayerId
+	ids := make([]*relayerset.RelayerId, 0, len(relayIDs))
 	for _, id := range relayIDs {
 		ids = append(ids, &relayerset.RelayerId{ChainId: id.ChainID, Network: id.Network})
 	}
@@ -56,7 +53,7 @@ func (k *Client) List(ctx context.Context, relayIDs ...types.RelayID) (map[types
 	result := map[types.RelayID]core.Relayer{}
 	for _, id := range resp.Ids {
 		relayID := types.RelayID{ChainID: id.ChainId, Network: id.Network}
-		result[relayID] = newRelayerClient(k.log, k, relayID)
+		result[relayID] = newRelayer(k.log, k, relayID)
 	}
 
 	return result, nil
@@ -140,16 +137,27 @@ func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, r
 	return resp.PluginProviderId, nil
 }
 
-func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (uint32, error) {
+func (k *Client) NewContractReader(ctx context.Context, relayID types.RelayID, contractReaderConfig []byte) (types.ContractReader, error) {
 	req := &relayerset.NewContractReaderRequest{
 		RelayerId:            &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
 		ContractReaderConfig: contractReaderConfig,
 	}
 	resp, err := k.relayerSetClient.NewContractReader(ctx, req)
 	if err != nil {
-		return 0, fmt.Errorf("error getting new contract reader: %w", err)
+		return nil, fmt.Errorf("failed to create new contract reader: %w", err)
 	}
-	return resp.ContractReaderId, nil
+
+	serviceClient := &contractReaderServiceClient{
+		contractReaderID: resp.ContractReaderId,
+		client:           k,
+	}
+
+	reader := &contractReader{
+		contractReaderID: resp.ContractReaderId,
+		client:           k,
+	}
+
+	return contractreader.NewClient(serviceClient, reader), nil
 }
 
 func (k *Client) NewContractWriter(ctx context.Context, relayID types.RelayID, contractWriterConfig []byte) (uint32, error) {

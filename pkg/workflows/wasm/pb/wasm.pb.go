@@ -976,7 +976,7 @@ func (x *EmitMessageResponse) GetError() *Error {
 }
 
 // TODO: v2 structs to be moved to a different package
-type TriggerSubscriptionRequest struct {
+type TriggerSubscription struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecId        string                 `protobuf:"bytes,1,opt,name=execId,proto3" json:"execId,omitempty"`
 	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
@@ -986,9 +986,74 @@ type TriggerSubscriptionRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *TriggerSubscription) Reset() {
+	*x = TriggerSubscription{}
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TriggerSubscription) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TriggerSubscription) ProtoMessage() {}
+
+func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TriggerSubscription.ProtoReflect.Descriptor instead.
+func (*TriggerSubscription) Descriptor() ([]byte, []int) {
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *TriggerSubscription) GetExecId() string {
+	if x != nil {
+		return x.ExecId
+	}
+	return ""
+}
+
+func (x *TriggerSubscription) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TriggerSubscription) GetPayload() *anypb.Any {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *TriggerSubscription) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+type TriggerSubscriptionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Subscriptions []*TriggerSubscription `protobuf:"bytes,1,rep,name=subscriptions,proto3" json:"subscriptions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
 func (x *TriggerSubscriptionRequest) Reset() {
 	*x = TriggerSubscriptionRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[14]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1000,7 +1065,7 @@ func (x *TriggerSubscriptionRequest) String() string {
 func (*TriggerSubscriptionRequest) ProtoMessage() {}
 
 func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[14]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1013,35 +1078,14 @@ func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscriptionRequest.ProtoReflect.Descriptor instead.
 func (*TriggerSubscriptionRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{14}
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *TriggerSubscriptionRequest) GetExecId() string {
+func (x *TriggerSubscriptionRequest) GetSubscriptions() []*TriggerSubscription {
 	if x != nil {
-		return x.ExecId
-	}
-	return ""
-}
-
-func (x *TriggerSubscriptionRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *TriggerSubscriptionRequest) GetPayload() *anypb.Any {
-	if x != nil {
-		return x.Payload
+		return x.Subscriptions
 	}
 	return nil
-}
-
-func (x *TriggerSubscriptionRequest) GetMethod() string {
-	if x != nil {
-		return x.Method
-	}
-	return ""
 }
 
 type Trigger struct {
@@ -1054,7 +1098,7 @@ type Trigger struct {
 
 func (x *Trigger) Reset() {
 	*x = Trigger{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[15]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1066,7 +1110,7 @@ func (x *Trigger) String() string {
 func (*Trigger) ProtoMessage() {}
 
 func (x *Trigger) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[15]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1079,7 +1123,7 @@ func (x *Trigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trigger.ProtoReflect.Descriptor instead.
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{15}
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Trigger) GetId() string {
@@ -1104,14 +1148,15 @@ type ExecuteRequest struct {
 	//
 	//	*ExecuteRequest_Subscribe
 	//	*ExecuteRequest_Trigger
-	Request       isExecuteRequest_Request `protobuf_oneof:"request"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Request         isExecuteRequest_Request `protobuf_oneof:"request"`
+	MaxResponseSize uint64                   `protobuf:"varint,5,opt,name=max_response_size,json=maxResponseSize,proto3" json:"max_response_size,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ExecuteRequest) Reset() {
 	*x = ExecuteRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[16]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1123,7 +1168,7 @@ func (x *ExecuteRequest) String() string {
 func (*ExecuteRequest) ProtoMessage() {}
 
 func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[16]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1136,7 +1181,7 @@ func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{16}
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ExecuteRequest) GetId() string {
@@ -1178,6 +1223,13 @@ func (x *ExecuteRequest) GetTrigger() *Trigger {
 	return nil
 }
 
+func (x *ExecuteRequest) GetMaxResponseSize() uint64 {
+	if x != nil {
+		return x.MaxResponseSize
+	}
+	return 0
+}
+
 type isExecuteRequest_Request interface {
 	isExecuteRequest_Request()
 }
@@ -1199,8 +1251,9 @@ type ExecutionResult struct {
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Result:
 	//
-	//	*ExecutionResult_Value
+	//	*ExecutionResult_Payload
 	//	*ExecutionResult_Error
+	//	*ExecutionResult_TriggerSubscriptions
 	Result        isExecutionResult_Result `protobuf_oneof:"result"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1208,7 +1261,7 @@ type ExecutionResult struct {
 
 func (x *ExecutionResult) Reset() {
 	*x = ExecutionResult{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[17]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1220,7 +1273,7 @@ func (x *ExecutionResult) String() string {
 func (*ExecutionResult) ProtoMessage() {}
 
 func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[17]
+	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1233,7 +1286,7 @@ func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionResult.ProtoReflect.Descriptor instead.
 func (*ExecutionResult) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{17}
+	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ExecutionResult) GetId() string {
@@ -1250,10 +1303,10 @@ func (x *ExecutionResult) GetResult() isExecutionResult_Result {
 	return nil
 }
 
-func (x *ExecutionResult) GetValue() *pb1.Value {
+func (x *ExecutionResult) GetPayload() *anypb.Any {
 	if x != nil {
-		if x, ok := x.Result.(*ExecutionResult_Value); ok {
-			return x.Value
+		if x, ok := x.Result.(*ExecutionResult_Payload); ok {
+			return x.Payload
 		}
 	}
 	return nil
@@ -1268,21 +1321,36 @@ func (x *ExecutionResult) GetError() string {
 	return ""
 }
 
+func (x *ExecutionResult) GetTriggerSubscriptions() *TriggerSubscriptionRequest {
+	if x != nil {
+		if x, ok := x.Result.(*ExecutionResult_TriggerSubscriptions); ok {
+			return x.TriggerSubscriptions
+		}
+	}
+	return nil
+}
+
 type isExecutionResult_Result interface {
 	isExecutionResult_Result()
 }
 
-type ExecutionResult_Value struct {
-	Value *pb1.Value `protobuf:"bytes,2,opt,name=value,proto3,oneof"`
+type ExecutionResult_Payload struct {
+	Payload *anypb.Any `protobuf:"bytes,2,opt,name=payload,proto3,oneof"`
 }
 
 type ExecutionResult_Error struct {
 	Error string `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
 }
 
-func (*ExecutionResult_Value) isExecutionResult_Result() {}
+type ExecutionResult_TriggerSubscriptions struct {
+	TriggerSubscriptions *TriggerSubscriptionRequest `protobuf:"bytes,4,opt,name=triggerSubscriptions,proto3,oneof"`
+}
+
+func (*ExecutionResult_Payload) isExecutionResult_Result() {}
 
 func (*ExecutionResult_Error) isExecutionResult_Result() {}
+
+func (*ExecutionResult_TriggerSubscriptions) isExecutionResult_Result() {}
 
 var File_workflows_wasm_pb_wasm_proto protoreflect.FileDescriptor
 
@@ -1360,25 +1428,29 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"7\n" +
 	"\x13EmitMessageResponse\x12 \n" +
 	"\x05error\x18\x01 \x01(\v2\n" +
-	".sdk.ErrorR\x05error\"\x8c\x01\n" +
-	"\x1aTriggerSubscriptionRequest\x12\x16\n" +
+	".sdk.ErrorR\x05error\"\x85\x01\n" +
+	"\x13TriggerSubscription\x12\x16\n" +
 	"\x06execId\x18\x01 \x01(\tR\x06execId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12.\n" +
 	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12\x16\n" +
-	"\x06method\x18\x04 \x01(\tR\x06method\"I\n" +
+	"\x06method\x18\x04 \x01(\tR\x06method\"\\\n" +
+	"\x1aTriggerSubscriptionRequest\x12>\n" +
+	"\rsubscriptions\x18\x01 \x03(\v2\x18.sdk.TriggerSubscriptionR\rsubscriptions\"I\n" +
 	"\aTrigger\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
-	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\"\xa5\x01\n" +
+	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\"\xd1\x01\n" +
 	"\x0eExecuteRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06config\x18\x02 \x01(\fR\x06config\x126\n" +
 	"\tsubscribe\x18\x03 \x01(\v2\x16.google.protobuf.EmptyH\x00R\tsubscribe\x12(\n" +
-	"\atrigger\x18\x04 \x01(\v2\f.sdk.TriggerH\x00R\atriggerB\t\n" +
-	"\arequest\"j\n" +
+	"\atrigger\x18\x04 \x01(\v2\f.sdk.TriggerH\x00R\atrigger\x12*\n" +
+	"\x11max_response_size\x18\x05 \x01(\x04R\x0fmaxResponseSizeB\t\n" +
+	"\arequest\"\xcc\x01\n" +
 	"\x0fExecutionResult\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
-	"\x05value\x18\x02 \x01(\v2\r.values.ValueH\x00R\x05value\x12\x16\n" +
-	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x120\n" +
+	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyH\x00R\apayload\x12\x16\n" +
+	"\x05error\x18\x03 \x01(\tH\x00R\x05error\x12U\n" +
+	"\x14triggerSubscriptions\x18\x04 \x01(\v2\x1f.sdk.TriggerSubscriptionRequestH\x00R\x14triggerSubscriptionsB\b\n" +
 	"\x06resultBCZAgithub.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/pbb\x06proto3"
 
 var (
@@ -1393,7 +1465,7 @@ func file_workflows_wasm_pb_wasm_proto_rawDescGZIP() []byte {
 	return file_workflows_wasm_pb_wasm_proto_rawDescData
 }
 
-var file_workflows_wasm_pb_wasm_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_workflows_wasm_pb_wasm_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_workflows_wasm_pb_wasm_proto_goTypes = []any{
 	(*RuntimeConfig)(nil),              // 0: sdk.RuntimeConfig
 	(*ComputeRequest)(nil),             // 1: sdk.ComputeRequest
@@ -1409,47 +1481,49 @@ var file_workflows_wasm_pb_wasm_proto_goTypes = []any{
 	(*EmitMessageRequest)(nil),         // 11: sdk.EmitMessageRequest
 	(*Error)(nil),                      // 12: sdk.Error
 	(*EmitMessageResponse)(nil),        // 13: sdk.EmitMessageResponse
-	(*TriggerSubscriptionRequest)(nil), // 14: sdk.TriggerSubscriptionRequest
-	(*Trigger)(nil),                    // 15: sdk.Trigger
-	(*ExecuteRequest)(nil),             // 16: sdk.ExecuteRequest
-	(*ExecutionResult)(nil),            // 17: sdk.ExecutionResult
-	(*pb.CapabilityRequest)(nil),       // 18: capabilities.CapabilityRequest
-	(*emptypb.Empty)(nil),              // 19: google.protobuf.Empty
-	(*pb.CapabilityResponse)(nil),      // 20: capabilities.CapabilityResponse
-	(*pb1.Map)(nil),                    // 21: values.Map
-	(*anypb.Any)(nil),                  // 22: google.protobuf.Any
-	(*pb1.Value)(nil),                  // 23: values.Value
+	(*TriggerSubscription)(nil),        // 14: sdk.TriggerSubscription
+	(*TriggerSubscriptionRequest)(nil), // 15: sdk.TriggerSubscriptionRequest
+	(*Trigger)(nil),                    // 16: sdk.Trigger
+	(*ExecuteRequest)(nil),             // 17: sdk.ExecuteRequest
+	(*ExecutionResult)(nil),            // 18: sdk.ExecutionResult
+	(*pb.CapabilityRequest)(nil),       // 19: capabilities.CapabilityRequest
+	(*emptypb.Empty)(nil),              // 20: google.protobuf.Empty
+	(*pb.CapabilityResponse)(nil),      // 21: capabilities.CapabilityResponse
+	(*pb1.Map)(nil),                    // 22: values.Map
+	(*anypb.Any)(nil),                  // 23: google.protobuf.Any
 }
 var file_workflows_wasm_pb_wasm_proto_depIdxs = []int32{
-	18, // 0: sdk.ComputeRequest.request:type_name -> capabilities.CapabilityRequest
+	19, // 0: sdk.ComputeRequest.request:type_name -> capabilities.CapabilityRequest
 	0,  // 1: sdk.ComputeRequest.runtimeConfig:type_name -> sdk.RuntimeConfig
 	1,  // 2: sdk.Request.computeRequest:type_name -> sdk.ComputeRequest
-	19, // 3: sdk.Request.specRequest:type_name -> google.protobuf.Empty
-	20, // 4: sdk.ComputeResponse.response:type_name -> capabilities.CapabilityResponse
-	21, // 5: sdk.StepInputs.mapping:type_name -> values.Map
+	20, // 3: sdk.Request.specRequest:type_name -> google.protobuf.Empty
+	21, // 4: sdk.ComputeResponse.response:type_name -> capabilities.CapabilityResponse
+	22, // 5: sdk.StepInputs.mapping:type_name -> values.Map
 	4,  // 6: sdk.StepDefinition.inputs:type_name -> sdk.StepInputs
-	21, // 7: sdk.StepDefinition.config:type_name -> values.Map
+	22, // 7: sdk.StepDefinition.config:type_name -> values.Map
 	5,  // 8: sdk.WorkflowSpec.triggers:type_name -> sdk.StepDefinition
 	5,  // 9: sdk.WorkflowSpec.actions:type_name -> sdk.StepDefinition
 	5,  // 10: sdk.WorkflowSpec.consensus:type_name -> sdk.StepDefinition
 	5,  // 11: sdk.WorkflowSpec.targets:type_name -> sdk.StepDefinition
 	3,  // 12: sdk.Response.computeResponse:type_name -> sdk.ComputeResponse
 	6,  // 13: sdk.Response.specResponse:type_name -> sdk.WorkflowSpec
-	21, // 14: sdk.FetchRequest.headers:type_name -> values.Map
+	22, // 14: sdk.FetchRequest.headers:type_name -> values.Map
 	8,  // 15: sdk.FetchRequest.metadata:type_name -> sdk.FetchRequestMetadata
-	21, // 16: sdk.FetchResponse.headers:type_name -> values.Map
-	21, // 17: sdk.EmitMessageRequest.labels:type_name -> values.Map
+	22, // 16: sdk.FetchResponse.headers:type_name -> values.Map
+	22, // 17: sdk.EmitMessageRequest.labels:type_name -> values.Map
 	12, // 18: sdk.EmitMessageResponse.error:type_name -> sdk.Error
-	22, // 19: sdk.TriggerSubscriptionRequest.payload:type_name -> google.protobuf.Any
-	22, // 20: sdk.Trigger.payload:type_name -> google.protobuf.Any
-	19, // 21: sdk.ExecuteRequest.subscribe:type_name -> google.protobuf.Empty
-	15, // 22: sdk.ExecuteRequest.trigger:type_name -> sdk.Trigger
-	23, // 23: sdk.ExecutionResult.value:type_name -> values.Value
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	23, // 19: sdk.TriggerSubscription.payload:type_name -> google.protobuf.Any
+	14, // 20: sdk.TriggerSubscriptionRequest.subscriptions:type_name -> sdk.TriggerSubscription
+	23, // 21: sdk.Trigger.payload:type_name -> google.protobuf.Any
+	20, // 22: sdk.ExecuteRequest.subscribe:type_name -> google.protobuf.Empty
+	16, // 23: sdk.ExecuteRequest.trigger:type_name -> sdk.Trigger
+	23, // 24: sdk.ExecutionResult.payload:type_name -> google.protobuf.Any
+	15, // 25: sdk.ExecutionResult.triggerSubscriptions:type_name -> sdk.TriggerSubscriptionRequest
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_workflows_wasm_pb_wasm_proto_init() }
@@ -1465,13 +1539,14 @@ func file_workflows_wasm_pb_wasm_proto_init() {
 		(*Response_ComputeResponse)(nil),
 		(*Response_SpecResponse)(nil),
 	}
-	file_workflows_wasm_pb_wasm_proto_msgTypes[16].OneofWrappers = []any{
+	file_workflows_wasm_pb_wasm_proto_msgTypes[17].OneofWrappers = []any{
 		(*ExecuteRequest_Subscribe)(nil),
 		(*ExecuteRequest_Trigger)(nil),
 	}
-	file_workflows_wasm_pb_wasm_proto_msgTypes[17].OneofWrappers = []any{
-		(*ExecutionResult_Value)(nil),
+	file_workflows_wasm_pb_wasm_proto_msgTypes[18].OneofWrappers = []any{
+		(*ExecutionResult_Payload)(nil),
 		(*ExecutionResult_Error)(nil),
+		(*ExecutionResult_TriggerSubscriptions)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1479,7 +1554,7 @@ func file_workflows_wasm_pb_wasm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_workflows_wasm_pb_wasm_proto_rawDesc), len(file_workflows_wasm_pb_wasm_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

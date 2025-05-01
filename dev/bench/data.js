@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746124447250,
+  "lastUpdate": 1746125101775,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12684,6 +12684,48 @@ window.BENCHMARK_DATA = {
             "value": 28594,
             "unit": "ns/op",
             "extra": "42535 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c607f20507eeffeccde82069e8fc6bd796d5d2bc",
+          "message": "Use OnceValues in promise (#1159)",
+          "timestamp": "2025-05-01T14:43:48-04:00",
+          "tree_id": "6dca03a688d09eb9a008be1fb59c4ff8f4c0b0e8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c607f20507eeffeccde82069e8fc6bd796d5d2bc"
+        },
+        "date": 1746125100966,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.3,
+            "unit": "ns/op",
+            "extra": "3309991 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.5,
+            "unit": "ns/op",
+            "extra": "2929831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28248,
+            "unit": "ns/op",
+            "extra": "42714 times\n4 procs"
           }
         ]
       }

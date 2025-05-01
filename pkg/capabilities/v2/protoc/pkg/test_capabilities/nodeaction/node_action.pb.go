@@ -122,7 +122,7 @@ const file_capabilities_v2_protoc_pkg_test_capabilities_nodeaction_node_action_p
 	"\vNodeOutputs\x12!\n" +
 	"\foutput_thing\x18\x01 \x01(\x05R\voutputThing2\x93\x01\n" +
 	"\vBasicAction\x12^\n" +
-	"\rPerformAction\x12%.basic_test_node_action.v1.NodeInputs\x1a&.basic_test_node_action.v1.NodeOutputs\x1a$\x82\xb5\x18 \b\x01\x12\x1cbasic-test-node-action@1.0.0BfZdgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/nodeactionb\x06proto3"
+	"\rPerformAction\x12%.basic_test_node_action.v1.NodeInputs\x1a&.basic_test_node_action.v1.NodeOutputs\x1a$\x82\xb5\x18 \b\x01\x12\x1cbasic-test-node-action@1.0.0BjZhgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeactionb\x06proto3"
 
 var (
 	file_capabilities_v2_protoc_pkg_test_capabilities_nodeaction_node_action_proto_rawDescOnce sync.Once

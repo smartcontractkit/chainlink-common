@@ -22,6 +22,7 @@ packages:
       EVMService:
         config:
           filename: evm_service_mock.go
+      ContractReader:
   github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm:
     interfaces:
       EVMClient:

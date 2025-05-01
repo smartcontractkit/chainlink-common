@@ -165,7 +165,7 @@ func (r *Runner) MockTrigger(trigger capabilities.TriggerCapability) {
 	r.trigger = trigger
 }
 
-func (r *Runner) GetRegisteredMock(name string, step string) capabilities.ActionCapability {
+func (r *Runner) GetRegisteredMock(name string, step string) capabilities.ExecutableCapability {
 	fullName := getFullName(name, &step)
 	if c, ok := r.registry[fullName]; ok {
 		return c

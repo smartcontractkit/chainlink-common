@@ -459,7 +459,7 @@ func protoToEvmFilter(f *evmpb.FilterQuery) (evm.FilterQuery, error) {
 		return evm.FilterQuery{}, errEmptyFilter
 	}
 	return evm.FilterQuery{
-		BlockHash: f.BlockHash.Hash,
+		BlockHash: f.BlockHash.GetHash(),
 		FromBlock: f.FromBlock.Int(),
 		ToBlock:   f.ToBlock.Int(),
 		Addresses: protoToAddreses(f.Addresses),

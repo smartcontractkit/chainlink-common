@@ -385,7 +385,7 @@ func Test_Capabilities(t *testing.T) {
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
-		act := c.(capabilities.ActionCapability)
+		act := c.(capabilities.ExecutableCapability)
 
 		vmap, err := values.NewMap(map[string]any{"foo": "bar"})
 		require.NoError(t, err)
@@ -434,7 +434,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ma.callback <- expectedResp
 
-		resp, err := c.(capabilities.ActionCapability).Execute(
+		resp, err := c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
@@ -459,7 +459,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ma.responseError = errors.New("bang")
 
-		_, err = c.(capabilities.ActionCapability).Execute(
+		_, err = c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.Error(t, err)
@@ -509,7 +509,7 @@ func Test_Capabilities(t *testing.T) {
 		}
 
 		ma.callback <- capabilities.CapabilityResponse{}
-		_, err = c.(capabilities.ActionCapability).Execute(
+		_, err = c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
@@ -534,7 +534,7 @@ func Test_Capabilities(t *testing.T) {
 
 		assert.False(t, ma.executeCalled)
 
-		_, err = c.(capabilities.ActionCapability).Execute(
+		_, err = c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)

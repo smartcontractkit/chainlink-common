@@ -112,8 +112,8 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	case capabilities.CapabilityTypeTarget:
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_TARGET
-	case capabilities.CapabilityTypeV2:
-		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_V2
+	case capabilities.CapabilityTypeCombined:
+		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_COMBINED
 	case capabilities.CapabilityTypeUnknown:
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
 	default:

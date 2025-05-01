@@ -82,7 +82,7 @@ type nodeEventCapability struct {
 
 func (c *nodeEventCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("basic-test-node-trigger@1.0.0", capabilities.CapabilityTypeV2, c.NodeEventCapability.Description())
+	return capabilities.NewCapabilityInfo("basic-test-node-trigger@1.0.0", capabilities.CapabilityTypeCombined, c.NodeEventCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*nodeEventCapability)(nil)

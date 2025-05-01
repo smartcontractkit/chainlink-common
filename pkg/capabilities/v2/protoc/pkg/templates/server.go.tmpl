@@ -103,7 +103,7 @@ type {{.GoName|LowerFirst}}Capability struct {
 
 func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
     // Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("{{(CapabilityId $service)}}", capabilities.CapabilityTypeV2, c.{{.GoName}}Capability.Description())
+	return capabilities.NewCapabilityInfo("{{(CapabilityId $service)}}", capabilities.CapabilityTypeCombined, c.{{.GoName}}Capability.Description())
 }
 
 

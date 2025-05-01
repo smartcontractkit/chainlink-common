@@ -82,7 +82,7 @@ type basicCapability struct {
 
 func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("basic-test-trigger@1.0.0", capabilities.CapabilityTypeV2, c.BasicCapability.Description())
+	return capabilities.NewCapabilityInfo("basic-test-trigger@1.0.0", capabilities.CapabilityTypeCombined, c.BasicCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicCapability)(nil)

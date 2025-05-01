@@ -81,7 +81,7 @@ type basicActionCapability struct {
 
 func (c *basicActionCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("basic-test-action@1.0.0", capabilities.CapabilityTypeV2, c.BasicActionCapability.Description())
+	return capabilities.NewCapabilityInfo("basic-test-action@1.0.0", capabilities.CapabilityTypeCombined, c.BasicActionCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicActionCapability)(nil)

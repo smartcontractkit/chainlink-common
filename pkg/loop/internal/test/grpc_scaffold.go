@@ -6,7 +6,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
+	"github.com/smartcontractkit/freeport"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

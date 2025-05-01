@@ -6,6 +6,7 @@ package capabilities;
 
 import "values/pb/values.proto";
 import "metering/pb/meteringdetail.proto";
+import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 
 service BaseCapability {
@@ -18,6 +19,7 @@ enum CapabilityType {
   CAPABILITY_TYPE_ACTION = 2;
   CAPABILITY_TYPE_CONSENSUS = 3;
   CAPABILITY_TYPE_TARGET = 4;
+  CAPABILITY_TYPE_COMBINED = 5;
 }
 
 message CapabilityInfoReply {
@@ -42,21 +44,41 @@ message RequestMetadata {
 
 message CapabilityRequest {
   RequestMetadata metadata = 1;
+  // Used for DAG SDK
   values.Map config = 2;
+  // Used for DAG SDK
   values.Map inputs = 3;
+
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  // Used for no DAG SDK
+  google.protobuf.Any configPayload = 5;
+  // Used for no DAG SDK
+  string method = 6;
 }
 
 message TriggerRegistrationRequest {
   string triggerId = 1;
   RequestMetadata metadata = 2;
+  // Used for DAG SDK
   values.Map config = 3;
+
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  // Used for no DAG SDK
+  string method = 5;
 }
 
 message TriggerEvent {
   reserved 5; // Previously used for v1.OCRTriggerEvent
   string triggerType = 1;
   string id = 2;
+
+  // Used for DAG SDK
   values.Map outputs = 4;
+
+  // used for no DAG SDK
+  google.protobuf.Any payload = 6;
 }
 
 message TriggerResponse {
@@ -77,9 +99,12 @@ service TriggerExecutable {
 }
 
 message CapabilityResponse {
+  // Used for DAG SDK
   values.Map value = 1;
   string error = 2;
   ResponseMetadata metadata = 3;
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
 }
 
 message ResponseMetadata {

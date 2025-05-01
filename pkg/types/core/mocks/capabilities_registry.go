@@ -187,24 +187,24 @@ func (_c *CapabilitiesRegistry_Get_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
-// GetAction provides a mock function with given fields: ctx, ID
-func (_m *CapabilitiesRegistry) GetAction(ctx context.Context, ID string) (capabilities.ActionCapability, error) {
+// GetExecutable provides a mock function with given fields: ctx, ID
+func (_m *CapabilitiesRegistry) GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
 	ret := _m.Called(ctx, ID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAction")
+		panic("no return value specified for GetExecutable")
 	}
 
-	var r0 capabilities.ActionCapability
+	var r0 capabilities.ExecutableCapability
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ActionCapability, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ExecutableCapability, error)); ok {
 		return rf(ctx, ID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ActionCapability); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ExecutableCapability); ok {
 		r0 = rf(ctx, ID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(capabilities.ActionCapability)
+			r0 = ret.Get(0).(capabilities.ExecutableCapability)
 		}
 	}
 
@@ -217,149 +217,31 @@ func (_m *CapabilitiesRegistry) GetAction(ctx context.Context, ID string) (capab
 	return r0, r1
 }
 
-// CapabilitiesRegistry_GetAction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAction'
-type CapabilitiesRegistry_GetAction_Call struct {
+// CapabilitiesRegistry_GetExecutable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetExecutable'
+type CapabilitiesRegistry_GetExecutable_Call struct {
 	*mock.Call
 }
 
-// GetAction is a helper method to define mock.On call
+// GetExecutable is a helper method to define mock.On call
 //   - ctx context.Context
 //   - ID string
-func (_e *CapabilitiesRegistry_Expecter) GetAction(ctx interface{}, ID interface{}) *CapabilitiesRegistry_GetAction_Call {
-	return &CapabilitiesRegistry_GetAction_Call{Call: _e.mock.On("GetAction", ctx, ID)}
+func (_e *CapabilitiesRegistry_Expecter) GetExecutable(ctx interface{}, ID interface{}) *CapabilitiesRegistry_GetExecutable_Call {
+	return &CapabilitiesRegistry_GetExecutable_Call{Call: _e.mock.On("GetExecutable", ctx, ID)}
 }
 
-func (_c *CapabilitiesRegistry_GetAction_Call) Run(run func(ctx context.Context, ID string)) *CapabilitiesRegistry_GetAction_Call {
+func (_c *CapabilitiesRegistry_GetExecutable_Call) Run(run func(ctx context.Context, ID string)) *CapabilitiesRegistry_GetExecutable_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetAction_Call) Return(_a0 capabilities.ActionCapability, _a1 error) *CapabilitiesRegistry_GetAction_Call {
+func (_c *CapabilitiesRegistry_GetExecutable_Call) Return(_a0 capabilities.ExecutableCapability, _a1 error) *CapabilitiesRegistry_GetExecutable_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *CapabilitiesRegistry_GetAction_Call) RunAndReturn(run func(context.Context, string) (capabilities.ActionCapability, error)) *CapabilitiesRegistry_GetAction_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetConsensus provides a mock function with given fields: ctx, ID
-func (_m *CapabilitiesRegistry) GetConsensus(ctx context.Context, ID string) (capabilities.ConsensusCapability, error) {
-	ret := _m.Called(ctx, ID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetConsensus")
-	}
-
-	var r0 capabilities.ConsensusCapability
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.ConsensusCapability, error)); ok {
-		return rf(ctx, ID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.ConsensusCapability); ok {
-		r0 = rf(ctx, ID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(capabilities.ConsensusCapability)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, ID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CapabilitiesRegistry_GetConsensus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConsensus'
-type CapabilitiesRegistry_GetConsensus_Call struct {
-	*mock.Call
-}
-
-// GetConsensus is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ID string
-func (_e *CapabilitiesRegistry_Expecter) GetConsensus(ctx interface{}, ID interface{}) *CapabilitiesRegistry_GetConsensus_Call {
-	return &CapabilitiesRegistry_GetConsensus_Call{Call: _e.mock.On("GetConsensus", ctx, ID)}
-}
-
-func (_c *CapabilitiesRegistry_GetConsensus_Call) Run(run func(ctx context.Context, ID string)) *CapabilitiesRegistry_GetConsensus_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *CapabilitiesRegistry_GetConsensus_Call) Return(_a0 capabilities.ConsensusCapability, _a1 error) *CapabilitiesRegistry_GetConsensus_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *CapabilitiesRegistry_GetConsensus_Call) RunAndReturn(run func(context.Context, string) (capabilities.ConsensusCapability, error)) *CapabilitiesRegistry_GetConsensus_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetTarget provides a mock function with given fields: ctx, ID
-func (_m *CapabilitiesRegistry) GetTarget(ctx context.Context, ID string) (capabilities.TargetCapability, error) {
-	ret := _m.Called(ctx, ID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetTarget")
-	}
-
-	var r0 capabilities.TargetCapability
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (capabilities.TargetCapability, error)); ok {
-		return rf(ctx, ID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) capabilities.TargetCapability); ok {
-		r0 = rf(ctx, ID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(capabilities.TargetCapability)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, ID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CapabilitiesRegistry_GetTarget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTarget'
-type CapabilitiesRegistry_GetTarget_Call struct {
-	*mock.Call
-}
-
-// GetTarget is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ID string
-func (_e *CapabilitiesRegistry_Expecter) GetTarget(ctx interface{}, ID interface{}) *CapabilitiesRegistry_GetTarget_Call {
-	return &CapabilitiesRegistry_GetTarget_Call{Call: _e.mock.On("GetTarget", ctx, ID)}
-}
-
-func (_c *CapabilitiesRegistry_GetTarget_Call) Run(run func(ctx context.Context, ID string)) *CapabilitiesRegistry_GetTarget_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *CapabilitiesRegistry_GetTarget_Call) Return(_a0 capabilities.TargetCapability, _a1 error) *CapabilitiesRegistry_GetTarget_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *CapabilitiesRegistry_GetTarget_Call) RunAndReturn(run func(context.Context, string) (capabilities.TargetCapability, error)) *CapabilitiesRegistry_GetTarget_Call {
+func (_c *CapabilitiesRegistry_GetExecutable_Call) RunAndReturn(run func(context.Context, string) (capabilities.ExecutableCapability, error)) *CapabilitiesRegistry_GetExecutable_Call {
 	_c.Call.Return(run)
 	return _c
 }

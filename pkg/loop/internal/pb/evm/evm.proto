@@ -6,7 +6,6 @@ package loop.internal.pb.evm;
 
 import "relayer.proto";
 import "contract_reader.proto";
-import "contract_writer.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
@@ -53,10 +52,14 @@ message CallMsg {
   ABIPayload data = 3; // abi encoded payload 
 }
 
+message Topics {
+  repeated Hash topic = 1;
+}
+
 // represents evm-style log
 message Log {
   Address address = 1; // address of the contract emitted the log
-  repeated Hash  topics = 2; //   
+  repeated Hash  topics = 2; // indexed log fields 
   Hash tx_hash = 3; // hash of the transaction emmited the log 
   Hash block_hash = 4; // hash of the block containing the log
   ABIPayload data = 5; // encoded log Data
@@ -73,7 +76,7 @@ message FilterQuery {
   BigInt fromBlock = 2; // start block range
   BigInt toBlock = 3; // end block range
   repeated Address addresses = 4; // contract(s) to filter logs from
-  repeated Hash topics = 5;  // filter log by event signature and indexed args
+  repeated Topics topics = 5;  // filter log by event signature and indexed args
 }
 
 // represents evm-style transaction
@@ -119,6 +122,17 @@ message Head {
   BigInt block_number = 2;
   Hash hash = 3;
   Hash parent_hash = 4;
+}
+
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm/TransactionStatus].
+enum TransactionStatus {
+    TRANSACTION_STATUS_UNKNOWN = 0;
+    TRANSACTION_STATUS_PENDING = 1;
+    TRANSACTION_STATUS_UNCONFIRMED = 2;
+    TRANSACTION_STATUS_FINALIZED = 3;
+    TRANSACTION_STATUS_FAILED = 4;
+    TRANSACTION_STATUS_FATAL = 5;
 }
 
 // ----- Request/Reply Wrappers -----
@@ -203,3 +217,13 @@ message QueryLogsFromCacheReply {
   repeated Log logs = 1;
 }
 
+// GetTransactionStatusRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types/EVMService.GetTransactionStatus].
+message GetTransactionStatusRequest {
+    string transaction_id = 1;
+}
+
+
+// GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionStatus].
+message GetTransactionStatusReply {
+    TransactionStatus transaction_status = 1;
+}

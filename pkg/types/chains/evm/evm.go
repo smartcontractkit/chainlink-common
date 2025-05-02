@@ -6,11 +6,13 @@ import (
 )
 
 // represents evm-style address 40-character hexadecimal string prefixed by 0x making it 42 characters total
-// lower case, upper case or checksummed case (EIP-55) are allowed.
+// lower case, upper case or checksummed case (EIP-55) inputs are allowed.
+// output is checksummed case
 type Address = string
 
 // represents evm-style hash, 64-character hexadecimal string prefixed by 0x making it 66 characters total
-// case-insensetive
+// input is case-insensetive
+// output is lower case
 type Hash = string
 
 // represents solidity-spec abi encoded bytes
@@ -36,10 +38,23 @@ type FilterQuery struct {
 	ToBlock   *big.Int  // end block range
 	Addresses []Address // contract(s) to filter logs from
 
-	Topics []Hash // filter log by event sigs and indexed args
+	// The Topic list restricts matches to particular event topics. Each event has a list
+	// of topics. Topics matches a prefix of that list. An empty element slice matches any
+	// topic. Non-empty elements represent an alternative that matches any of the
+	// contained topics.
+	//
+	// Examples:
+	// {} or nil          matches any topic list
+	// {{A}}              matches topic A in first position
+	// {{}, {B}}          matches any topic in first position AND B in second position
+	// {{A}, {B}}         matches topic A in first position AND B in second position
+	// {{A, B}, {C, D}}   matches topic (A OR B) in first position AND (C OR D) in second position
+	Topics [][]Hash // filter log by event sigs and indexed args
 }
 
-// matches LP-filter
+// matches cache-filter
+// this filter defines what logs should be cached
+// cached logs can be retrieved with [types.EVMService.QueryLogsFromCache]
 type LPFilterQuery struct {
 	Name         string        // filter identifier, used to remove filter
 	Addresses    []Address     // list of addresses to include
@@ -90,3 +105,18 @@ type Head struct {
 	ParentHash Hash
 	Number     *big.Int
 }
+
+type TransactionFee struct {
+	TransactionFee *big.Int // Cost of transaction in wei
+}
+
+type TransactionStatus int
+
+const (
+	Unknown TransactionStatus = iota
+	Pending
+	Unconfirmed
+	Finalized
+	Failed
+	Fatal
+)

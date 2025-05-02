@@ -9,7 +9,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -171,7 +170,7 @@ func TestEVMClient_Getlogs(t *testing.T) {
 			FromBlock: fromBlock,
 			ToBlock:   toBlock,
 			Addresses: []string{address},
-			Topics:    []string{topic},
+			Topics:    [][]string{{topic, topic2}, {topic3}},
 		}
 
 		static.GetLogsFunc = func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
@@ -179,6 +178,9 @@ func TestEVMClient_Getlogs(t *testing.T) {
 			require.Equal(t, fromBlock, in.FilterQuery.FromBlock.Int())
 			require.Equal(t, toBlock, in.FilterQuery.ToBlock.Int())
 			require.Equal(t, blockHash, in.FilterQuery.BlockHash.Hash)
+			require.Equal(t, topic, in.FilterQuery.Topics[0].Topic[0].Hash)
+			require.Equal(t, topic2, in.FilterQuery.Topics[0].Topic[1].Hash)
+			require.Equal(t, topic3, in.FilterQuery.Topics[1].Topic[0].Hash)
 			return &evmpb.GetLogsReply{
 				Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: address}, Data: &evmpb.ABIPayload{Abi: respAbi}}},
 			}, nil
@@ -268,9 +270,9 @@ func (ss *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, 
 	return respAbi, nil
 }
 
-func (ss *staticEVMService) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+func (ss *staticEVMService) GetTransactionFee(ctx context.Context, transactionID string) (*evm.TransactionFee, error) {
 	require.Equal(ss.t, transactionID, txId)
-	return &types.TransactionFee{TransactionFee: res}, nil
+	return &evm.TransactionFee{TransactionFee: res}, nil
 }
 
 func (ss *staticEVMService) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
@@ -310,13 +312,13 @@ func (ss *staticEVMService) LatestAndFinalizedHead(ctx context.Context) (latest 
 }
 func (ss *staticEVMService) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	return nil, errors.New("unimplemented")
+	return nil, nil
 }
 func (ss *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return errors.New("unimplemented")
 }
-func (ss *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	return types.Unknown, errors.New("unimplemented")
+func (ss *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID string) (evm.TransactionStatus, error) {
+	return evm.Unknown, errors.New("unimplemented")
 }
 
 func TestEVMServer_CallContract(t *testing.T) {

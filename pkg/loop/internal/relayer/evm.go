@@ -23,13 +23,13 @@ type evmClient struct {
 	cl evmpb.EVMClient
 }
 
-func (e *evmClient) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+func (e *evmClient) GetTransactionFee(ctx context.Context, transactionID string) (*evm.TransactionFee, error) {
 	reply, err := e.cl.GetTransactionFee(ctx, &evmpb.GetTransactionFeeRequest{TransactionId: transactionID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.TransactionFee{
+	return &evm.TransactionFee{
 		TransactionFee: reply.TransationFee.Int(),
 	}, nil
 }
@@ -140,13 +140,13 @@ func (e *evmClient) UnregisterLogTracking(ctx context.Context, filterName string
 	return err
 }
 
-func (e *evmClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	reply, err := e.cl.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
+func (e *evmClient) GetTransactionStatus(ctx context.Context, transactionID string) (evm.TransactionStatus, error) {
+	reply, err := e.cl.GetTransactionStatus(ctx, &evmpb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
-		return types.Unknown, err
+		return evm.Unknown, err
 	}
 
-	return types.TransactionStatus(reply.TransactionStatus), nil
+	return evm.TransactionStatus(reply.TransactionStatus), nil
 }
 
 var _ evmpb.EVMServer = (*evmServer)(nil)
@@ -296,13 +296,13 @@ func (e *evmServer) UnregisterLogTracking(ctx context.Context, req *evmpb.Unregi
 	return nil, err
 }
 
-func (e *evmServer) GetTransactionStatus(ctx context.Context, req *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+func (e *evmServer) GetTransactionStatus(ctx context.Context, req *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
 	status, err := e.impl.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(status)}, nil
+	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(status)}, nil
 }
 
 var errEmptyMsg = errors.New("call msg can't be empty")
@@ -461,7 +461,7 @@ func protoToEvmFilter(f *evmpb.FilterQuery) (evm.FilterQuery, error) {
 		FromBlock: f.FromBlock.Int(),
 		ToBlock:   f.ToBlock.Int(),
 		Addresses: protoToAddreses(f.Addresses),
-		Topics:    protoToHashes(f.Topics),
+		Topics:    protoToTopics(f.Topics),
 	}, nil
 }
 
@@ -471,7 +471,7 @@ func evmFilterToProto(f evm.FilterQuery) *evmpb.FilterQuery {
 		FromBlock: pb.NewBigIntFromInt(f.FromBlock),
 		ToBlock:   pb.NewBigIntFromInt(f.ToBlock),
 		Addresses: toProtoAddresses(f.Addresses),
-		Topics:    toProtoHashes(f.Topics),
+		Topics:    toProtoTopics(f.Topics),
 	}
 }
 
@@ -528,11 +528,29 @@ func toProtoHash(s string) *evmpb.Hash {
 	return &evmpb.Hash{Hash: s}
 }
 
+func toProtoTopics(ss [][]string) []*evmpb.Topics {
+	ret := make([]*evmpb.Topics, 0, len(ss))
+	for _, s := range ss {
+		ret = append(ret, &evmpb.Topics{Topic: toProtoHashes(s)})
+	}
+
+	return ret
+}
+
 func toProtoHashes(ss []string) []*evmpb.Hash {
 	ret := make([]*evmpb.Hash, 0, len(ss))
 	for _, s := range ss {
 		ret = append(ret, toProtoHash(s))
 	}
+	return ret
+}
+
+func protoToTopics(topics []*evmpb.Topics) [][]string {
+	ret := make([][]string, 0, len(topics))
+	for _, topic := range topics {
+		ret = append(ret, protoToHashes(topic.Topic))
+	}
+
 	return ret
 }
 

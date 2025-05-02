@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746125101775,
+  "lastUpdate": 1746192599680,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12726,6 +12726,48 @@ window.BENCHMARK_DATA = {
             "value": 28248,
             "unit": "ns/op",
             "extra": "42714 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6ca21edb8fb498704d08c2df06ab7fdff503c2cf",
+          "message": "Add capability server helper generation (#1164)",
+          "timestamp": "2025-05-02T09:28:44-04:00",
+          "tree_id": "6023e34089ac7bea872c0db42180bdbeb8ff59d2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6ca21edb8fb498704d08c2df06ab7fdff503c2cf"
+        },
+        "date": 1746192598882,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.1,
+            "unit": "ns/op",
+            "extra": "3336601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.8,
+            "unit": "ns/op",
+            "extra": "2923539 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28143,
+            "unit": "ns/op",
+            "extra": "42603 times\n4 procs"
           }
         ]
       }

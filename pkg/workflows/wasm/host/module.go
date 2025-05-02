@@ -83,7 +83,7 @@ var (
 	defaultMaxFetchRequests          = 5
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
-	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
+	defaultMaxResponseSizeBytes      = sdk.DefaultMaxResponseSizeBytes
 )
 
 type DeterminismConfig struct {
@@ -112,7 +112,7 @@ type ModuleConfig struct {
 	Determinism *DeterminismConfig
 
 	CallCapability    func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error)
-	AwaitCapabilities func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error)
+	AwaitCapabilities func(ctx context.Context, req *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error)
 }
 
 type ModuleBase interface {
@@ -1069,7 +1069,7 @@ func createCallCapFn(
 func createAwaitCapsFn(
 	logger logger.Logger,
 	store *store[*wasmpb.ExecutionResult],
-	awaitCaps func(ctx context.Context, req *wasmpb.AwaitCapabilitiesRequest) (*wasmpb.AwaitCapabilitiesResponse, error),
+	awaitCaps func(ctx context.Context, req *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error),
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
@@ -1079,7 +1079,7 @@ func createAwaitCapsFn(
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
 
-		req := &wasmpb.AwaitCapabilitiesRequest{}
+		req := &sdkpb.AwaitCapabilitiesRequest{}
 		err = proto.Unmarshal(b, req)
 		if err != nil {
 			errStr := err.Error()
@@ -1110,7 +1110,7 @@ func createAwaitCapsFn(
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
-			errStr := "cannot write to wasm"
+			errStr := sdk.ResponseBufferToSmall
 			logger.Error(errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}

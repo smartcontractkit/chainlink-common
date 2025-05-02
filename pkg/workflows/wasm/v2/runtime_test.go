@@ -226,6 +226,7 @@ type mockConsensus struct {
 
 func (m *mockConsensus) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	assert.Equal(m.t, anyExecutionId, request.ExecutionId)
+	// TODO https: //smartcontract-it.atlassian.net/browse/CAPPL-816 use the generated consensus code
 	assert.Equal(m.t, "consensus@1.0.0", request.Id)
 	assert.Equal(m.t, "BuiltIn", request.Method)
 	consensus := &sdkpb.BuiltInConsensusRequest{}

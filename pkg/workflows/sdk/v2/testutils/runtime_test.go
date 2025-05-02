@@ -3,7 +3,7 @@ package testutils_test
 import (
 	"context"
 	"errors"
-	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -78,86 +78,37 @@ func TestRuntime_CallCapabilityIsAsync(t *testing.T) {
 	assert.Equal(t, anyResult1+anyResult2, result)
 }
 
-func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
-
+func TestRuntime_AwaitResponseTooLarge(t *testing.T) {
 	trigger, err := basictriggermock.NewBasicCapability(t)
 	require.NoError(t, err)
 	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
+		return &basictrigger.Outputs{CoolOutput: "cool"}, nil
 	}
 
-	nodeCapability, err := nodeactionmock.NewBasicActionCapability(t)
+	action, err := basicactionmock.NewBasicActionCapability(t)
 	require.NoError(t, err)
-	nodeCapability.PerformAction = func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
-		assert.Fail(t, "node capability should not be called")
-		return nil, fmt.Errorf("should not be called")
+	action.PerformAction = func(_ context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
+		return &basicaction.Outputs{AdaptedThing: strings.Repeat("a", 1000)}, nil
 	}
 
 	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
-
+	runner.SetMaxResponseSizeBytes(1)
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
-					var nrt sdk.NodeRuntime
-					sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-						nrt = nodeRuntime
-						return 0, err
-					}, pb.SimpleConsensusType_MEDIAN)
-					na := nodeaction.BasicAction{}
-					return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
+				basictrigger.Basic{}.Trigger(&basictrigger.Config{}),
+				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+					workflowAction1 := &basicaction.BasicAction{}
+					call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
+					_, err := call.Await()
+					return "", err
 				},
 			)},
 	})
 
 	_, _, err = runner.Result()
-	assert.Equal(t, sdk.NodeModeCallInDonMode(), err)
-}
-
-func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
-
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
-
-	capability, err := basicactionmock.NewBasicActionCapability(t)
-	require.NoError(t, err)
-	capability.PerformAction = func(_ context.Context, _ *basicaction.Inputs) (*basicaction.Outputs, error) {
-		assert.Fail(t, "should not be called")
-		return nil, errors.New("should not be called")
-	}
-
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
-
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-						action := basicaction.BasicAction{}
-						_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
-						return 0, err
-					}, pb.SimpleConsensusType_MEDIAN)
-
-					return consensus.Await()
-				},
-			)},
-	})
-
-	_, _, err = runner.Result()
-	assert.Equal(t, sdk.DonModeCallInNodeMode(), err)
+	require.Error(t, err)
+	assert.True(t, strings.Contains(err.Error(), sdk.ResponseBufferToSmall))
 }
 
 func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {

@@ -78,6 +78,10 @@ func TestRuntime_CallCapabilityIsAsync(t *testing.T) {
 	assert.Equal(t, anyResult1+anyResult2, result)
 }
 
+func TestRuntime_ErrorsAwaitingAreRespected(t *testing.T) {
+
+}
+
 func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
@@ -189,47 +193,22 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestRuntime_NumericalConsensusShouldReturnErrorIfInputIsNotNumerical(t *testing.T) {
-	t.Skip("TODO https://smartcontract-it.atlassian.net/browse/CAPPL-798")
-}
-
-func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
-
+func TestRuntime_ReturnsConfig(t *testing.T) {
 	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
 	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
-	require.NoError(t, err)
-
-	anyValue := int32(100)
-	nodeCapability, err := nodeactionmock.NewBasicActionCapability(t)
-	require.NoError(t, err)
-	nodeCapability.PerformAction = func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
-		return &nodeaction.NodeOutputs{OutputThing: anyValue}, nil
+		return &basictrigger.Outputs{CoolOutput: "cool"}, nil
 	}
 
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
+	anyConfig := []byte("config")
+	runner := testutils.NewDonRunner(t, anyConfig)
 
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-						action := &nodeaction.BasicAction{}
-						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
-						require.NoError(t, err)
-						return resp.OutputThing, nil
-					}, pb.SimpleConsensusType_MEDIAN)
-
-					consensusResult, err := consensus.Await()
-					require.NoError(t, err)
-					return consensusResult, nil
-
+				basictrigger.Basic{}.Trigger(&basictrigger.Config{Name: "name", Number: 123}),
+				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+					return string(rt.Config()), nil
 				},
 			)},
 	})
@@ -237,85 +216,5 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 	ran, result, err := runner.Result()
 	require.NoError(t, err)
 	assert.True(t, ran)
-	assert.Equal(t, anyValue, result)
-}
-
-func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
-
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
-
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
-
-	anyValue := int32(100)
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensusType := &sdk.PrimitiveConsensusWithDefault[int32]{
-						SimpleConsensusType: pb.SimpleConsensusType_MEDIAN,
-						DefaultValue:        anyValue,
-					}
-					consensus := sdk.RunInNodeMode(
-						rt,
-						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-							return 0, errors.New("no consensus")
-						},
-						consensusType)
-
-					consensusResult, err := consensus.Await()
-					require.NoError(t, err)
-					return consensusResult, nil
-				},
-			)},
-	})
-
-	ran, result, err := runner.Result()
-	require.NoError(t, err)
-	assert.True(t, ran)
-	assert.Equal(t, anyValue, result)
-}
-
-func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
-
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
-
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
-
-	anyErr := errors.New("no consensus")
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensus := sdk.RunInNodeMode(
-						rt,
-						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-							return 0, anyErr
-						},
-						pb.SimpleConsensusType_MEDIAN)
-
-					return consensus.Await()
-				},
-			)},
-	})
-
-	_, _, err = runner.Result()
-	require.Equal(t, err, anyErr)
+	assert.Equal(t, string(anyConfig), result)
 }

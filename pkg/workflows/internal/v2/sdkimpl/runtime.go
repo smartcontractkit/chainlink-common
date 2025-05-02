@@ -77,6 +77,7 @@ func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.Buil
 	d.modeErr = nil
 	wrapped, _ := anypb.New(observation)
 
+	// TODO https: //smartcontract-it.atlassian.net/browse/CAPPL-816 use the generated consensus code
 	capabilityRequest := &pb.CapabilityRequest{
 		ExecutionId: d.ExecId,
 		Id:          "consensus@1.0.0",

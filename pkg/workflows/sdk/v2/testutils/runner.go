@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -23,6 +24,7 @@ type runner[T any] struct {
 	strictTriggers bool
 	runtime        T
 	writer         *testWriter
+	base           *sdkimpl.RuntimeBase
 }
 
 func (r *runner[T]) Logs() []string {
@@ -48,6 +50,10 @@ type TestRunner interface {
 	// This allows workflows that use the logger to behave as-if they were a WASM.
 	SetDefaultLogger()
 
+	// SetMaxResponseSizeBytes sets the maximum response size for the runtime.
+	// Do not change unless you are working with a non-standard configuration.
+	SetMaxResponseSizeBytes(maxResponseSizebytes uint64)
+
 	Logs() []string
 }
 
@@ -62,14 +68,16 @@ type NodeRunner interface {
 }
 
 func NewDonRunner(tb testing.TB, config []byte) DonRunner {
-	return newRunner[sdk.DonRuntime](tb, config, &runtime[sdk.DonRuntime]{})
+	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(tb, config)}
+	return newRunner[sdk.DonRuntime](tb, config, drt, &drt.RuntimeBase)
 }
 
 func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
-	return newRunner[sdk.NodeRuntime](tb, config, &runtime[sdk.NodeRuntime]{})
+	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(tb, config)}
+	return newRunner[sdk.NodeRuntime](tb, config, nrt, &nrt.RuntimeBase)
 }
 
-func newRunner[T any](tb testing.TB, config []byte, t T) *runner[T] {
+func newRunner[T any](tb testing.TB, config []byte, t T, base *sdkimpl.RuntimeBase) *runner[T] {
 	r := &runner[T]{
 		tb:          tb,
 		config:      config,
@@ -78,35 +86,20 @@ func newRunner[T any](tb testing.TB, config []byte, t T) *runner[T] {
 		registry:    GetRegistry(tb),
 		runtime:     t,
 		writer:      &testWriter{},
+		base:        base,
 	}
-
-	tmp := any(r.runtime).(*runtime[T])
-	tmp.runner = r
 
 	return r
-}
-
-func (r *runner[T]) nodeRunner() *runner[sdk.NodeRuntime] {
-	rt := &runtime[sdk.NodeRuntime]{}
-	tmp := &runner[sdk.NodeRuntime]{
-		ran:            r.ran,
-		config:         r.config,
-		result:         r.result,
-		err:            r.err,
-		workflowId:     r.workflowId,
-		executionId:    r.executionId,
-		registry:       r.registry,
-		strictTriggers: r.strictTriggers,
-		runtime:        rt,
-		tb:             r.tb,
-	}
-	rt.runner = tmp
-	return tmp
 }
 
 func (r *runner[T]) SetStrictTriggers(strict bool) {
 	r.strictTriggers = strict
 }
+
+func (r *runner[T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
+	r.base.MaxResponseSize = maxResponseSizeBytes
+}
+
 func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for _, handler := range args.Handlers {
 		trigger, err := r.registry.GetCapability(handler.Id())

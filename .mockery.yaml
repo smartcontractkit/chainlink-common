@@ -4,6 +4,14 @@ outpkg: mocks
 filename: "{{ .InterfaceName | snakecase }}.go"
 fail-on-missing: true
 packages:
+  github.com/smartcontractkit/chainlink-common/pkg/capabilities:
+    interfaces:
+      BaseCapability: {}
+      TriggerCapability: {}
+      ExecutableCapability: {}
+      ExecutableAndTriggerCapability: {}
+      Executable: {}
+      TriggerExecutable: {}
   github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams:
     interfaces:
       ReportCodec:

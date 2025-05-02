@@ -115,10 +115,10 @@ func (e *evmClient) TransactionReceipt(ctx context.Context, txHash string) (*evm
 	return protoToReceipt(reply.Receipt)
 }
 
-func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest types.Head, finalized types.Head, err error) {
+func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error) {
 	reply, err := e.cl.LatestAndFinalizedHead(ctx, &emptypb.Empty{})
 	if err != nil {
-		return types.Head{}, types.Head{}, err
+		return evm.Head{}, evm.Head{}, err
 	}
 
 	return protoToHead(reply.Latest), protoToHead(reply.Finalized), err
@@ -305,25 +305,23 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, req *pb.GetTransac
 	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(status)}, nil
 }
 
-func newEVMServiceServer(impl types.EVMService, b *net.BrokerExt) *evmServer {
-	return &evmServer{impl: impl, BrokerExt: b.WithName("EVMServiceServer")}
-}
-
 var errEmptyMsg = errors.New("call msg can't be empty")
 
-func protoToHead(h *pb.Head) types.Head {
-	return types.Head{
-		Height:    h.Height,
-		Hash:      h.Hash,
-		Timestamp: h.Timestamp,
+func protoToHead(h *evmpb.Head) evm.Head {
+	return evm.Head{
+		Timestamp:  h.Timestamp,
+		Hash:       h.Hash.Hash,
+		ParentHash: h.ParentHash.Hash,
+		Number:     h.BlockNumber.Int(),
 	}
 }
 
-func headToProto(h types.Head) *pb.Head {
-	return &pb.Head{
-		Height:    h.Height,
-		Hash:      h.Hash,
-		Timestamp: h.Timestamp,
+func headToProto(h evm.Head) *evmpb.Head {
+	return &evmpb.Head{
+		Timestamp:   h.Timestamp,
+		BlockNumber: pb.NewBigIntFromInt(h.Number),
+		Hash:        toProtoHash(h.Hash),
+		ParentHash:  toProtoHash(h.ParentHash),
 	}
 }
 

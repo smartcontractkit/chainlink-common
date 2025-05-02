@@ -27,13 +27,15 @@ service EVM{
 
 // ----- Message Types -----
 // represents evm-style address 40-character hexadecimal string prefixed by 0x making it 42 characters total
-// lower case, upper case or checksummed case (EIP-55) are allowed.
+// lower case, upper case or checksummed case (EIP-55) inputs are allowed.
+// output is checksummed case
 message Address {
   string address = 1;
 }
 
 // represents evm-style hash, 64-character hexadecimal string prefixed by 0x making it 66 characters total
-// case-insensetive
+// input is case-insensetive
+// output is lower case
 message Hash {
   string hash = 1;
 }
@@ -110,6 +112,13 @@ message LPFilter {
   repeated Hash topic2 = 7; // list of possible values for topic2
   repeated Hash topic3 = 8; // list of possible values for topic3
   repeated Hash topic4 = 9; // list of possible values for topic4
+}
+
+message Head {
+  uint64 timestamp = 1; // unix timestamp
+  BigInt block_number = 2;
+  Hash hash = 3;
+  Hash parent_hash = 4;
 }
 
 // ----- Request/Reply Wrappers -----
@@ -193,5 +202,4 @@ message QueryLogsFromCacheRequest {
 message QueryLogsFromCacheReply {
   repeated Log logs = 1;
 }
-
 

@@ -2,157 +2,211 @@ package relayer
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
-	pbmocks "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+var (
+	txId         = "txid1"
+	res          = big.NewInt(12345)
+	balance      = big.NewInt(1222345)
+	abi          = []byte("data")
+	respAbi      = []byte("response")
+	address      = "0xabc"
+	address1     = "0xabca"
+	blockHash    = "somehash"
+	fromBlock    = big.NewInt(10)
+	blockNum     = big.NewInt(101)
+	toBlock      = big.NewInt(145)
+	topic        = "topic"
+	topic2       = "topic2"
+	topic3       = "topic3"
+	gas          = uint64(10)
+	txHash       = "0xaaa"
+	eventSigHash = "0x654"
+	filterName   = "f name 1"
+	maxLogKept   = uint64(10)
+	logsPerBlock = uint64(1)
+	retention    = time.Second
+)
+
+type staticEVMClient struct {
+	t *testing.T
+
+	GetLogsFunc func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error)
+}
+
+func (s *staticEVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
+	require.Equal(s.t, txId, in.TransactionId)
+
+	return &evmpb.GetTransactionFeeReply{
+		TransationFee: pb.NewBigIntFromInt(res),
+	}, nil
+}
+func (s *staticEVMClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
+	require.Equal(s.t, address, in.Call.To.Address)
+	require.Equal(s.t, string(abi), string(in.Call.Data.Abi))
+	require.Equal(s.t, in.ConfidenceLevel, pb.Confidence_Finalized)
+	return &evmpb.CallContractReply{
+		Data: &evmpb.ABIPayload{Abi: respAbi},
+	}, nil
+}
+
+func (s *staticEVMClient) GetLogs(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
+	return s.GetLogsFunc(ctx, in, opts...)
+}
+func (s *staticEVMClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
+	require.Equal(s.t, address, in.Account.Address)
+	require.Equal(s.t, 0, in.BlockNumber.Int().Cmp(blockNum))
+	return &evmpb.BalanceAtReply{
+		Balance: pb.NewBigIntFromInt(balance),
+	}, nil
+}
+func (s *staticEVMClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest, opts ...grpc.CallOption) (*evmpb.EstimateGasReply, error) {
+	require.Equal(s.t, address1, in.Msg.From.Address)
+	require.Equal(s.t, address, in.Msg.To.Address)
+	require.Equal(s.t, string(abi), string(in.Msg.Data.Abi))
+	return &evmpb.EstimateGasReply{Gas: gas}, nil
+}
+func (s *staticEVMClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionByHashReply, error) {
+
+	require.Equal(s.t, txHash, in.Hash.Hash)
+	return &evmpb.GetTransactionByHashReply{
+		Transaction: &evmpb.Transaction{
+			Hash: &evmpb.Hash{Hash: txHash},
+			Data: &evmpb.ABIPayload{Abi: respAbi},
+			To:   &evmpb.Address{Address: address},
+		},
+	}, nil
+}
+func (s *staticEVMClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetReceiptRequest, opts ...grpc.CallOption) (*evmpb.GetReceiptReply, error) {
+	require.Equal(s.t, txHash, in.Hash.Hash)
+	return &evmpb.GetReceiptReply{
+		Receipt: &evmpb.Receipt{TxHash: &evmpb.Hash{Hash: txHash}},
+	}, nil
+}
+func (s *staticEVMClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (s *staticEVMClient) QueryLogsFromCache(ctx context.Context, in *evmpb.QueryLogsFromCacheRequest, opts ...grpc.CallOption) (*evmpb.QueryLogsFromCacheReply, error) {
+	return nil, errors.New("unimplemented")
+}
+func (s *staticEVMClient) RegisterLogTracking(ctx context.Context, req *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	require.Equal(s.t, filterName, req.Filter.Name)
+	require.Equal(s.t, 1, len(req.Filter.Addresses))
+	require.Equal(s.t, address, req.Filter.Addresses[0].Address)
+	require.Equal(s.t, 1, len(req.Filter.EventSigs))
+	require.Equal(s.t, eventSigHash, req.Filter.EventSigs[0].Hash)
+	require.Equal(s.t, 1, len(req.Filter.Topic2))
+	require.Equal(s.t, topic, req.Filter.Topic2[0].Hash)
+	return nil, nil
+}
+
+func (s *staticEVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return nil, errors.New("unimplemented")
+}
+func (s *staticEVMClient) GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
+	return nil, errors.New("unimplemented")
+}
 
 func TestEVMClient_GetTransactionFee(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
-	res := big.NewInt(12345)
-	id := "tx1"
-	mockGRPC.On("GetTransactionFee", ctx, mock.MatchedBy(func(req *evmpb.GetTransactionFeeRequest) bool {
-		return req.TransactionId == id
-	})).Return(&evmpb.GetTransactionFeeReply{
-		TransationFee: pb.NewBigIntFromInt(res),
-	}, nil)
 
-	resp, err := client.GetTransactionFee(ctx, id)
+	resp, err := client.GetTransactionFee(ctx, txId)
 	require.NoError(t, err)
 	require.Equal(t, res, resp.TransactionFee)
 }
 
 func TestEVMClient_CallContract(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
 
-	t.Run("fields are matching", func(t *testing.T) {
-		expectedData := []byte("data")
-		mockGRPC.On("CallContract", ctx, mock.MatchedBy(func(req *evmpb.CallContractRequest) bool {
-			return req.Call.To.Address == "0xabc" && string(req.Call.Data.Abi) == string(expectedData) && req.ConfidenceLevel == pb.Confidence_Finalized
-		})).Return(&evmpb.CallContractReply{
-			Data: &evmpb.ABIPayload{Abi: []byte("result")},
-		}, nil)
-
-		msg := &evm.CallMsg{To: "0xabc", From: "0xdef", Data: expectedData}
-		resp, err := client.CallContract(ctx, msg, primitives.Finalized)
-		require.NoError(t, err)
-		require.Equal(t, []byte("result"), resp)
-	})
-
-	t.Run("from can be nil", func(t *testing.T) {
-		mockGRPC.On("CallContract", ctx, mock.MatchedBy(func(req *evmpb.CallContractRequest) bool {
-			return req.Call.From == nil
-		})).Return(&evmpb.CallContractReply{
-			Data: &evmpb.ABIPayload{Abi: []byte("result")},
-		}, nil)
-
-		msg := &evm.CallMsg{To: "123", From: "", Data: []byte{1, 2, 3}}
-		resp, err := client.CallContract(ctx, msg, primitives.Finalized)
-		require.NoError(t, err)
-		require.Equal(t, []byte("result"), resp)
-	})
+	msg := &evm.CallMsg{To: "0xabc", From: "0xdef", Data: abi}
+	resp, err := client.CallContract(ctx, msg, primitives.Finalized)
+	require.NoError(t, err)
+	require.Equal(t, respAbi, resp)
 }
 
 func TestEVMClient_Getlogs(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	static := &staticEVMClient{t: t}
+	client := &evmClient{cl: static}
 	ctx := context.Background()
-	addr := "0xabc"
-	data := []byte("abi")
 	t.Run("fields can be nil", func(t *testing.T) {
-		mockGRPC.On("GetLogs", ctx, mock.MatchedBy(func(req *evmpb.GetLogsRequest) bool {
-			return req.FilterQuery != nil &&
-				req.FilterQuery.BlockHash == nil &&
-				req.FilterQuery.FromBlock == nil &&
-				req.FilterQuery.ToBlock == nil
-		})).Return(&evmpb.GetLogsReply{
-			Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: addr}, Data: &evmpb.ABIPayload{Abi: data}}},
-		}, nil)
+		static.GetLogsFunc = func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
+			require.NotNil(t, in.FilterQuery)
+			require.Nil(t, in.FilterQuery.FromBlock)
+			require.Nil(t, in.FilterQuery.ToBlock)
+			require.Nil(t, in.FilterQuery.BlockHash)
+			return &evmpb.GetLogsReply{
+				Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: address}, Data: &evmpb.ABIPayload{Abi: respAbi}}},
+			}, nil
+		}
 
 		logs, err := client.GetLogs(ctx, evm.FilterQuery{})
 		require.NoError(t, err)
 		require.Len(t, logs, 1)
-		require.Equal(t, addr, logs[0].Address)
-		require.Equal(t, data, logs[0].Data)
+		require.Equal(t, address, logs[0].Address)
+		require.Equal(t, respAbi, logs[0].Data)
 	})
 	t.Run("full fields match", func(t *testing.T) {
 		fq := evm.FilterQuery{
-			BlockHash: "0xblock",
-			FromBlock: big.NewInt(100),
-			ToBlock:   big.NewInt(200),
-			Addresses: []string{"0xabc"},
-			Topics:    []string{"0xtopic1"},
+			BlockHash: blockHash,
+			FromBlock: fromBlock,
+			ToBlock:   toBlock,
+			Addresses: []string{address},
+			Topics:    []string{topic},
 		}
 
-		mockGRPC.On("GetLogs", ctx, mock.MatchedBy(func(req *evmpb.GetLogsRequest) bool {
-			return req.FilterQuery.BlockHash.Hash == fq.BlockHash &&
-				req.FilterQuery.FromBlock.Int().Cmp(fq.FromBlock) == 0 &&
-				req.FilterQuery.ToBlock.Int().Cmp(fq.ToBlock) == 0 &&
-				len(req.FilterQuery.Addresses) == 1 && req.FilterQuery.Addresses[0].Address == fq.Addresses[0] &&
-				len(req.FilterQuery.Topics) == 1 && req.FilterQuery.Topics[0].Hash == fq.Topics[0]
-		})).Return(&evmpb.GetLogsReply{
-			Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: "0xabc"}}},
-		}, nil)
+		static.GetLogsFunc = func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
+			require.NotNil(t, in.FilterQuery)
+			require.Equal(t, fromBlock, in.FilterQuery.FromBlock.Int())
+			require.Equal(t, toBlock, in.FilterQuery.ToBlock.Int())
+			require.Equal(t, blockHash, in.FilterQuery.BlockHash.Hash)
+			return &evmpb.GetLogsReply{
+				Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: address}, Data: &evmpb.ABIPayload{Abi: respAbi}}},
+			}, nil
+		}
 
 		logs, err := client.GetLogs(ctx, fq)
 		require.NoError(t, err)
 		require.Len(t, logs, 1)
-		require.Equal(t, "0xabc", logs[0].Address)
+		require.Equal(t, address, logs[0].Address)
 	})
 }
 
 func TestEVMClient_BalanceAt(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
 
-	addr := "0xabc"
-	bal := big.NewInt(123)
-	blockNum := big.NewInt(123)
-	mockGRPC.On("BalanceAt", ctx, mock.MatchedBy(func(req *evmpb.BalanceAtRequest) bool {
-		return req.Account.Address == addr && req.BlockNumber.Int().Cmp(blockNum) == 0
-	})).Return(&evmpb.BalanceAtReply{
-		Balance: pb.NewBigIntFromInt(bal),
-	}, nil)
-
-	resp, err := client.BalanceAt(ctx, addr, blockNum)
+	resp, err := client.BalanceAt(ctx, address, blockNum)
 	require.NoError(t, err)
-	require.Equal(t, bal, resp)
+	require.Equal(t, balance, resp)
 }
 
 func TestEVMClient_EstimateGas(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
 
-	from := "0xbbb"
-	to := "0xaaa"
-	data := []byte("foo")
-	gas := uint64(21000)
-	msg := &evm.CallMsg{To: to, From: from, Data: data}
-
-	mockGRPC.On("EstimateGas", ctx, mock.MatchedBy(func(req *evmpb.EstimateGasRequest) bool {
-		return req.Msg.To.Address == to && req.Msg.From.Address == from && string(req.Msg.Data.Abi) == string(data)
-	})).Return(&evmpb.EstimateGasReply{Gas: gas}, nil)
+	msg := &evm.CallMsg{To: address, From: address1, Data: abi}
 
 	resp, err := client.EstimateGas(ctx, msg)
 	require.NoError(t, err)
@@ -161,48 +215,35 @@ func TestEVMClient_EstimateGas(t *testing.T) {
 
 func TestEVMClient_TransactionByHash(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
-	hash := "0xx"
-	mockGRPC.On("GetTransactionByHash", ctx, mock.MatchedBy(func(req *evmpb.GetTransactionByHashRequest) bool {
-		return req.Hash.Hash == hash
-	})).Return(&evmpb.GetTransactionByHashReply{
-		Transaction: &evmpb.Transaction{Hash: &evmpb.Hash{Hash: hash}},
-	}, nil)
 
-	tx, err := client.TransactionByHash(ctx, hash)
+	tx, err := client.TransactionByHash(ctx, txHash)
 	require.NoError(t, err)
-	require.Equal(t, hash, tx.Hash)
+	require.Equal(t, txHash, tx.Hash)
+	require.Equal(t, address, tx.To)
+	require.Equal(t, string(respAbi), string(tx.Data))
 }
 
 func TestEVMClient_TransactionReceipt(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
-	hash := "0xhash"
-	mockGRPC.On("GetTransactionReceipt", ctx, mock.MatchedBy(func(req *evmpb.GetReceiptRequest) bool {
-		return req.Hash.Hash == hash
-	})).Return(&evmpb.GetReceiptReply{
-		Receipt: &evmpb.Receipt{TxHash: &evmpb.Hash{Hash: hash}},
-	}, nil)
 
-	r, err := client.TransactionReceipt(ctx, hash)
+	r, err := client.TransactionReceipt(ctx, txHash)
 	require.NoError(t, err)
-	require.Equal(t, hash, r.TxHash)
+	require.Equal(t, txHash, r.TxHash)
 }
 
 func TestEVMClient_RegisterLogTracking(t *testing.T) {
 	t.Parallel()
-	mockGRPC := pbmocks.NewEVMClient(t)
-	client := &evmClient{cl: mockGRPC}
+	client := &evmClient{cl: &staticEVMClient{t: t}}
 	ctx := context.Background()
 
-	name := "testFilter"
-	addresses := []string{"0xabc"}
-	eventSigs := []string{"0xevt"}
-	topic2 := []string{"0x02"}
+	name := filterName
+	addresses := []string{address}
+	eventSigs := []string{eventSigHash}
+	topic2 := []string{topic}
 	filter := evm.LPFilterQuery{
 		Name:      name,
 		Addresses: addresses,
@@ -210,76 +251,112 @@ func TestEVMClient_RegisterLogTracking(t *testing.T) {
 		Topic2:    topic2,
 	}
 
-	mockGRPC.On("RegisterLogTracking", ctx, mock.MatchedBy(func(req *evmpb.RegisterLogTrackingRequest) bool {
-		return req.Filter.Name == name &&
-			len(req.Filter.Addresses) == 1 && req.Filter.Addresses[0].Address == addresses[0] &&
-			len(req.Filter.EventSigs) == 1 && req.Filter.EventSigs[0].Hash == eventSigs[0] &&
-			len(req.Filter.Topic2) == 1 && req.Filter.Topic2[0].Hash == topic2[0]
-	})).Return(nil, nil)
-
 	err := client.RegisterLogTracking(ctx, filter)
 	require.NoError(t, err)
 }
 
+type staticEVMService struct {
+	t *testing.T
+}
+
+func (ss *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error) {
+	require.Equal(ss.t, address, msg.From)
+	require.Equal(ss.t, address1, msg.To)
+	require.Equal(ss.t, abi, msg.Data)
+	require.Equal(ss.t, primitives.Finalized, confidence)
+
+	return respAbi, nil
+}
+
+func (ss *staticEVMService) GetTransactionFee(ctx context.Context, transactionID string) (*types.TransactionFee, error) {
+	require.Equal(ss.t, transactionID, txId)
+	return &types.TransactionFee{TransactionFee: res}, nil
+}
+
+func (ss *staticEVMService) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
+	require.Equal(ss.t, address, account)
+	require.Equal(ss.t, blockNum, blockNumber)
+	return balance, nil
+}
+
+func (ss *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
+	require.Equal(ss.t, filterName, filter.Name)
+	require.Equal(ss.t, retention, filter.Retention)
+	require.Equal(ss.t, address, filter.Addresses[0])
+	require.Equal(ss.t, eventSigHash, filter.EventSigs[0])
+	require.Equal(ss.t, topic, filter.Topic2[0])
+	require.Equal(ss.t, topic2, filter.Topic3[0])
+	require.Equal(ss.t, topic3, filter.Topic4[0])
+	require.Equal(ss.t, maxLogKept, filter.MaxLogsKept)
+	require.Equal(ss.t, logsPerBlock, filter.LogsPerBlock)
+	return nil
+}
+
+func (ss *staticEVMService) GetLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
+	return nil, errors.New("unimplemented")
+}
+func (ss *staticEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
+	return 0, errors.New("unimplemented")
+}
+func (ss *staticEVMService) TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
+	return nil, errors.New("unimplemented")
+}
+func (ss *staticEVMService) TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error) {
+	return nil, errors.New("unimplemented")
+}
+func (ss *staticEVMService) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error) {
+	err = errors.New("unimplemented")
+	return
+}
+func (ss *staticEVMService) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
+	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+	return nil, errors.New("unimplemented")
+}
+func (ss *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
+	return errors.New("unimplemented")
+}
+func (ss *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	return types.Unknown, errors.New("unimplemented")
+}
+
 func TestEVMServer_CallContract(t *testing.T) {
 	t.Parallel()
-	mockImpl := mocks.NewEVMService(t)
-	server := evmServer{impl: mockImpl}
+	server := evmServer{impl: &staticEVMService{t: t}}
 	ctx := t.Context()
-	from := "0xabc"
-	to := "0xdef"
-	data := []byte("abcd")
-	confidence := primitives.Finalized
-
-	mockImpl.On("CallContract", ctx, mock.MatchedBy(func(m *evm.CallMsg) bool {
-		return m.From == from && m.To == to && string(m.Data) == string(data)
-	}), confidence).Return([]byte("response"), nil)
 
 	req := &evmpb.CallContractRequest{
 		Call: &evmpb.CallMsg{
-			From: &evmpb.Address{Address: from},
-			To:   &evmpb.Address{Address: to},
-			Data: &evmpb.ABIPayload{Abi: data},
+			From: &evmpb.Address{Address: address},
+			To:   &evmpb.Address{Address: address1},
+			Data: &evmpb.ABIPayload{Abi: abi},
 		},
 		ConfidenceLevel: 1,
 	}
 
 	resp, err := server.CallContract(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, []byte("response"), resp.Data.Abi)
+	require.Equal(t, respAbi, resp.Data.Abi)
 }
 
 func TestEVMServer_GetTransactionFee(t *testing.T) {
-	mockImpl := mocks.NewEVMService(t)
-	server := evmServer{impl: mockImpl}
+	t.Parallel()
+	server := evmServer{impl: &staticEVMService{t: t}}
 	ctx := context.Background()
 
-	txID := "tx123"
-	txFee := big.NewInt(9999)
-	mockImpl.On("GetTransactionFee", ctx, txID).Return(&types.TransactionFee{TransactionFee: txFee}, nil)
-
-	req := &evmpb.GetTransactionFeeRequest{TransactionId: txID}
+	req := &evmpb.GetTransactionFeeRequest{TransactionId: txId}
 	resp, err := server.GetTransactionFee(ctx, req)
 	require.NoError(t, err)
-	require.Equal(t, txFee, resp.TransationFee.Int())
+	require.Equal(t, res, resp.TransationFee.Int())
 }
 
 func TestEVMServer_BalanceAt(t *testing.T) {
-	mockImpl := mocks.NewEVMService(t)
-	server := evmServer{impl: mockImpl}
+	t.Parallel()
+	server := evmServer{impl: &staticEVMService{t: t}}
 	ctx := context.Background()
 
-	addr := "0xabc"
-	block := big.NewInt(12345)
-	balance := big.NewInt(5000)
-	mockImpl.On("BalanceAt", ctx, addr, mock.MatchedBy(func(bn *big.Int) bool {
-		return bn.Cmp(block) == 0 &&
-			addr == addr
-	})).Return(balance, nil)
-
 	req := &evmpb.BalanceAtRequest{
-		Account:     &evmpb.Address{Address: addr},
-		BlockNumber: pb.NewBigIntFromInt(block),
+		Account:     &evmpb.Address{Address: address},
+		BlockNumber: pb.NewBigIntFromInt(blockNum),
 	}
 	resp, err := server.BalanceAt(ctx, req)
 	require.NoError(t, err)
@@ -287,31 +364,21 @@ func TestEVMServer_BalanceAt(t *testing.T) {
 }
 
 func TestEVMServer_RegisterLogTracking(t *testing.T) {
-	mockImpl := mocks.NewEVMService(t)
-	server := evmServer{impl: mockImpl}
+	t.Parallel()
+	server := evmServer{impl: &staticEVMService{t: t}}
 	ctx := context.Background()
 
 	filter := evm.LPFilterQuery{
-		Name:         "filter-1",
-		Retention:    time.Second,
-		Addresses:    []string{"0xaaa"},
-		EventSigs:    []string{"0x111"},
-		Topic2:       []string{"0x222"},
-		Topic3:       []string{"0x333"},
-		Topic4:       []string{"0x444"},
-		MaxLogsKept:  100,
-		LogsPerBlock: 10,
+		Name:         filterName,
+		Retention:    retention,
+		Addresses:    []string{address},
+		EventSigs:    []string{eventSigHash},
+		Topic2:       []string{topic},
+		Topic3:       []string{topic2},
+		Topic4:       []string{topic3},
+		MaxLogsKept:  maxLogKept,
+		LogsPerBlock: logsPerBlock,
 	}
-	mockImpl.On("RegisterLogTracking", ctx, mock.MatchedBy(func(f evm.LPFilterQuery) bool {
-		return f.Name == filter.Name && f.Retention == filter.Retention &&
-			len(f.Addresses) == 1 && f.Addresses[0] == filter.Addresses[0] &&
-			len(f.EventSigs) == 1 && f.EventSigs[0] == filter.EventSigs[0] &&
-			len(f.Topic2) == 1 && f.Topic2[0] == filter.Topic2[0] &&
-			len(f.Topic3) == 1 && f.Topic3[0] == filter.Topic3[0] &&
-			len(f.Topic4) == 1 && f.Topic4[0] == filter.Topic4[0] &&
-			f.MaxLogsKept == filter.MaxLogsKept && f.LogsPerBlock == filter.LogsPerBlock
-	})).Return(nil)
-
 	req := &evmpb.RegisterLogTrackingRequest{
 		Filter: &evmpb.LPFilter{
 			Name:          filter.Name,

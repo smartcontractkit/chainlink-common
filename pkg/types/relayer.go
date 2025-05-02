@@ -101,14 +101,14 @@ type ChainService interface {
 type EVMService interface {
 	CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error)
 	GetLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	BalanceAt(ctx context.Context, account string, blockNumber *big.Int) (*big.Int, error)
+	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	TransactionByHash(ctx context.Context, hash string) (*evm.Transaction, error)
-	TransactionReceipt(ctx context.Context, txHash string) (*evm.Receipt, error)
+	TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain's TXM
 	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
-	LatestAndFinalizedHead(ctx context.Context) (latest Head, finalized Head, err error)
+	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
 	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 	RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error

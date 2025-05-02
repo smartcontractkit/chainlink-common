@@ -85,20 +85,8 @@ type Receipt struct {
 
 // matches simplified evm-style head
 type Head struct {
-	Timestamp  uint64 // time in nanoseconds
+	Timestamp  uint64 // time in seconds
 	Hash       Hash
 	ParentHash Hash
 	Number     *big.Int
 }
-
-// TransactionStatus are the status TXM  supports and that can be returned by Tx idempotency key.
-type TransactionStatus int
-
-const (
-	Unknown TransactionStatus = iota
-	Pending
-	Unconfirmed
-	Finalized
-	Failed
-	Fatal
-)

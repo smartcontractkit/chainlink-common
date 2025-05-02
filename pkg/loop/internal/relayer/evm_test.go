@@ -117,7 +117,7 @@ func (s *staticEVMClient) RegisterLogTracking(ctx context.Context, req *evmpb.Re
 func (s *staticEVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return nil, errors.New("unimplemented")
 }
-func (s *staticEVMClient) GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
+func (s *staticEVMClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
 	return nil, errors.New("unimplemented")
 }
 

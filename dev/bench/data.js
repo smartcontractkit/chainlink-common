@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746192599680,
+  "lastUpdate": 1746197172377,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12768,6 +12768,48 @@ window.BENCHMARK_DATA = {
             "value": 28143,
             "unit": "ns/op",
             "extra": "42603 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16602512+krehermann@users.noreply.github.com",
+            "name": "krehermann",
+            "username": "krehermann"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "77c113986529188653200de04f4abfeaf05e1acf",
+          "message": "make db cleanup best effort (#1171)",
+          "timestamp": "2025-05-02T08:45:00-06:00",
+          "tree_id": "cc0707f20edcd6fcd5b112ef6487d404c601f901",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/77c113986529188653200de04f4abfeaf05e1acf"
+        },
+        "date": 1746197171607,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.5,
+            "unit": "ns/op",
+            "extra": "3342297 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.2,
+            "unit": "ns/op",
+            "extra": "2797885 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28331,
+            "unit": "ns/op",
+            "extra": "42639 times\n4 procs"
           }
         ]
       }

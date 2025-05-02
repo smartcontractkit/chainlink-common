@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	basictriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger/basic_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ const anyExecutionId = "execId"
 var anyConfig = []byte("config")
 var anyMaxResponseSize = uint64(2048)
 
-var triggerId = (&basictriggermock.BasicCapability{}).ID()
+var triggerId uint64 = 0
 
 var subscribeRequest = &pb.ExecuteRequest{
 	Id:              anyExecutionId,
@@ -80,9 +79,6 @@ func TestRunner_Run(t *testing.T) {
 			},
 		})
 
-		response := &pb.ExecutionResult{}
-		require.NoError(t, proto.Unmarshal(sentResponse, response))
-
 		actual := &pb.ExecutionResult{}
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
 		assert.Equal(t, anyExecutionId, actual.Id)
@@ -93,9 +89,9 @@ func TestRunner_Run(t *testing.T) {
 			require.Len(t, subscriptions, 1)
 			subscription := subscriptions[0]
 			assert.Equal(t, anyExecutionId, subscription.ExecId)
-			assert.Equal(t, triggerId, subscription.Id)
-			assert.Equal(t, "Trigger", subscription.Method)
 			payload := &basictrigger.Config{}
+			assert.Equal(t, basictrigger.Basic{}.Trigger(payload).Id(), subscription.Id)
+			assert.Equal(t, "Trigger", subscription.Method)
 			require.NoError(t, subscription.Payload.UnmarshalTo(payload))
 			assert.True(t, proto.Equal(testhelpers.TestWorkflowTriggerConfig(), payload))
 		default:
@@ -119,6 +115,38 @@ func TestRunner_Run(t *testing.T) {
 			returnedValue, err := v.Unwrap()
 			require.NoError(t, err)
 			assert.Equal(t, testhelpers.TestWorkflowExpectedResult(), returnedValue)
+		default:
+			assert.Fail(t, "unexpected result type", result)
+		}
+	})
+
+	t.Run("makes callback with correct runner and multiple handlers", func(t *testing.T) {
+		secondTriggerReq := &pb.ExecuteRequest{
+			Id:              anyExecutionId,
+			Config:          anyConfig,
+			MaxResponseSize: anyMaxResponseSize,
+			Request: &pb.ExecuteRequest_Trigger{
+				Trigger: &pb.Trigger{
+					Id:      triggerId + 1,
+					Payload: mustAny(testhelpers.TestWorkflowTrigger()),
+				},
+			},
+		}
+		testhelpers.SetupExpectedCalls(t)
+		dr := getTestDonRunner(t, secondTriggerReq)
+		testhelpers.RunIdenticalTriggersWorkflow(dr)
+
+		actual := &pb.ExecutionResult{}
+		require.NoError(t, proto.Unmarshal(sentResponse, actual))
+		assert.Equal(t, anyExecutionId, actual.Id)
+
+		switch result := actual.Result.(type) {
+		case *pb.ExecutionResult_Value:
+			v, err := values.FromProto(result.Value)
+			require.NoError(t, err)
+			returnedValue, err := v.Unwrap()
+			require.NoError(t, err)
+			assert.Equal(t, testhelpers.TestWorkflowExpectedResult()+"true", returnedValue)
 		default:
 			assert.Fail(t, "unexpected result type", result)
 		}

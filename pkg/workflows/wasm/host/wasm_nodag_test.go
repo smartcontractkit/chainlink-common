@@ -33,7 +33,9 @@ func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 	mc := createNoDagMc(t)
 
-	triggerID := "basic-test-trigger@1.0.0"
+	wantTrigger := basictrigger.Basic{}
+	wantConfig := testhelpers.TestWorkflowTriggerConfig()
+	triggerID := uint64(0)
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
 	ctx := t.Context()
@@ -41,12 +43,13 @@ func Test_NoDag_Run(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, triggers.Subscriptions, 1)
-	require.Equal(t, triggerID, triggers.Subscriptions[0].Id)
+	require.Equal(t, wantTrigger.Trigger(wantConfig).Id(), triggers.Subscriptions[0].Id)
 	configProto := triggers.Subscriptions[0].Payload
+
 	config := &basictrigger.Config{}
 	require.NoError(t, configProto.UnmarshalTo(config))
-	require.Equal(t, "name", config.Name)
-	require.Equal(t, int32(100), config.Number)
+	require.Equal(t, wantConfig.Name, config.Name)
+	require.Equal(t, wantConfig.Number, config.Number)
 
 	m, err := NewModule(mc, binary)
 	require.NoError(t, err)

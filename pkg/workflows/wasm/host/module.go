@@ -3,8 +3,10 @@ package host
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -148,6 +150,14 @@ type module struct {
 
 var _ ModuleV1 = (*module)(nil)
 
+type WasmBinaryStore interface {
+	// GetSerialisedModulePath returns the path to the serialised module for the given workflowID.  If the module does not exist, exists
+	// will be false.
+	GetSerialisedModulePath(workflowID string) (path string, exists bool, err error)
+	StoreSerialisedModule(workflowID string, binaryID string, serialisedModule []byte) error
+	GetWasmBinary(ctx context.Context, workflowID string) ([]byte, error)
+}
+
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
 // "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -162,7 +172,7 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
-func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
+func NewModule(ctx context.Context, modCfg *ModuleConfig, wasmStore WasmBinaryStore, workflowID string, opts ...func(*ModuleConfig)) (*module, error) {
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -174,7 +184,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 
 	if modCfg.Fetch == nil {
 		modCfg.Fetch = func(context.Context, *FetchRequest) (*FetchResponse, error) {
-			return nil, fmt.Errorf("fetch not implemented")
+			return nil, errors.New("fetch not implemented")
 		}
 	}
 
@@ -231,32 +241,28 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	cfg.SetNativeUnwindInfo(false)
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
-	if !modCfg.IsUncompressed {
-		// validate the binary size before decompressing
-		// this is to prevent decompression bombs
-		if uint64(len(binary)) > modCfg.MaxCompressedBinarySize {
-			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
-		}
 
-		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(binary)), int64(modCfg.MaxDecompressedBinarySize+1))
-		decompedBinary, err := io.ReadAll(rdr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress binary: %w", err)
-		}
-
-		binary = decompedBinary
-	}
-
-	// Validate the decompressed binary size.
-	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
-	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
-	if uint64(len(binary)) > modCfg.MaxDecompressedBinarySize {
-		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", modCfg.MaxDecompressedBinarySize)
-	}
-
-	mod, err := wasmtime.NewModule(engine, binary)
+	var mod *wasmtime.Module
+	serialisedModulePath, exists, err := wasmStore.GetSerialisedModulePath(workflowID)
 	if err != nil {
-		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
+		return nil, fmt.Errorf("error getting serialised module: %w", err)
+	}
+
+	if exists {
+		mod, err = wasmtime.NewModuleDeserializeFile(engine, serialisedModulePath)
+		if err != nil {
+			// It's possible that an error occurred because the module was serialised with a different engine configuration or
+			// wasmtime version so the error is ignored and the code falls back to loading it from the wasm binary.
+			logger.Debugw("error deserializing module, attempting to load from binary", "workflowID", workflowID, "error", err)
+		}
+	}
+
+	// If the serialized module was not found or deserialization failed, load the module from the wasm binary.
+	if mod == nil {
+		mod, err = loadModuleFromWasmBinary(ctx, logger, modCfg, workflowID, wasmStore, engine)
+		if err != nil {
+			return nil, fmt.Errorf("error loading module from wasm binary: %w", err)
+		}
 	}
 
 	linker, err := newWasiLinker(modCfg, engine)
@@ -331,6 +337,69 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	return m, nil
 }
 
+func loadModuleFromWasmBinary(ctx context.Context, lggr logger.Logger, modCfg *ModuleConfig, workflowID string, wasmStore WasmBinaryStore, engine *wasmtime.Engine) (*wasmtime.Module, error) {
+	// Loading from the module binary is relatively very slow (~100 times slower than deserialization) so log the
+	// time here to make it obvious when this is happening as it will impact workflow startup time.
+	wasmBinary, err := wasmStore.GetWasmBinary(ctx, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting workflow binary: %w", err)
+	}
+
+	hash := sha256.Sum256(wasmBinary)
+	binaryID := hex.EncodeToString(hash[:])
+
+	lggr.Infow("loading module from binary", "workflowID", workflowID)
+	mod, err := newModuleFromBinary(wasmBinary, modCfg, engine)
+	if err != nil {
+		return nil, fmt.Errorf("error creating new module from wasm binary: %w", err)
+	}
+	lggr.Infow("finished loading module from binary", "workflowID", workflowID)
+
+	// Store the serialised module for future use.
+	serialisedMod, err := mod.Serialize()
+	if err != nil {
+		return nil, fmt.Errorf("error serialising module: %w", err)
+	}
+
+	err = wasmStore.StoreSerialisedModule(workflowID, binaryID, serialisedMod)
+	if err != nil {
+		return nil, fmt.Errorf("error storing serialised module: %w", err)
+	}
+	return mod, nil
+}
+
+func newModuleFromBinary(wasmBinary []byte, modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Module, error) {
+	if !modCfg.IsUncompressed {
+		// validate the binary size before decompressing
+		// this is to prevent decompression bombs
+		if uint64(len(wasmBinary)) > modCfg.MaxCompressedBinarySize {
+			return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size of %d bytes", modCfg.MaxCompressedBinarySize)
+		}
+
+		rdr := io.LimitReader(brotli.NewReader(bytes.NewBuffer(wasmBinary)), int64(modCfg.MaxDecompressedBinarySize+1))
+		decompedBinary, err := io.ReadAll(rdr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress binary: %w", err)
+		}
+
+		wasmBinary = decompedBinary
+	}
+
+	// Validate the decompressed binary size.
+	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
+	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
+	if uint64(len(wasmBinary)) > modCfg.MaxDecompressedBinarySize {
+		return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size of %d bytes", modCfg.MaxDecompressedBinarySize)
+	}
+
+	mod, err := wasmtime.NewModule(engine, wasmBinary)
+	if err != nil {
+		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
+	}
+
+	return mod, nil
+}
+
 func (m *module) Start() {
 	m.wg.Add(1)
 	go func() {
@@ -367,11 +436,11 @@ func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 	defer cancel()
 
 	if request == nil {
-		return nil, fmt.Errorf("invalid request: can't be nil")
+		return nil, errors.New("invalid request: can't be nil")
 	}
 
 	if request.Id == "" {
-		return nil, fmt.Errorf("invalid request: can't be empty")
+		return nil, errors.New("invalid request: can't be empty")
 	}
 
 	// we add the request context to the store to make it available to the Fetch fn
@@ -449,9 +518,9 @@ func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 
 		return storedRequest.response, nil
 	case containsCode(err, wasm.CodeInvalidResponse):
-		return nil, fmt.Errorf("invariant violation: error marshaling response")
+		return nil, errors.New("invariant violation: error marshaling response")
 	case containsCode(err, wasm.CodeInvalidRequest):
-		return nil, fmt.Errorf("invariant violation: invalid request to runner")
+		return nil, errors.New("invariant violation: invalid request to runner")
 	case containsCode(err, wasm.CodeRunnerErr):
 		storedRequest, innerErr := m.requestStore.get(request.Id)
 		if innerErr != nil {
@@ -460,7 +529,7 @@ func (m *module) Run(ctx context.Context, request *wasmpb.Request) (*wasmpb.Resp
 
 		return nil, fmt.Errorf("error executing runner: %s: %w", storedRequest.response.ErrMsg, err)
 	case containsCode(err, wasm.CodeHostErr):
-		return nil, fmt.Errorf("invariant violation: host errored during sendResponse")
+		return nil, errors.New("invariant violation: host errored during sendResponse")
 	default:
 		return nil, err
 	}
@@ -552,7 +621,6 @@ func fromSdkResp(resp *sdk.FetchResponse) (*wasmpb.FetchResponse, error) {
 		Headers:        values.ProtoMap(m),
 		Body:           resp.Body,
 	}, nil
-
 }
 
 type FetchRequestMetadata struct {
@@ -722,7 +790,7 @@ func createEmitFn(
 
 		req, err := requestStore.get(reqID)
 		if err != nil {
-			logErr(fmt.Errorf("failed to get request from store: %s", err))
+			logErr(fmt.Errorf("failed to get request from store: %w", err))
 			return writeErr(err)
 		}
 

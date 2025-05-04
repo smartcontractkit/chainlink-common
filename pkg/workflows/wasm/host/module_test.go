@@ -599,7 +599,7 @@ func Test_writeUInt32(t *testing.T) {
 		n := writeUInt32(memory, 0, 42)
 		wantBuf := make([]byte, 4)
 		binary.LittleEndian.PutUint32(wantBuf, 42)
-		assert.Equal(t, n, int64(4))
+		assert.Equal(t, int64(4), n)
 		assert.Equal(t, wantBuf, memory)
 	})
 }

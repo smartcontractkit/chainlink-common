@@ -7,11 +7,11 @@
 package evmpb
 
 import (
+	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -1859,7 +1859,7 @@ var File_evm_proto protoreflect.FileDescriptor
 
 const file_evm_proto_rawDesc = "" +
 	"\n" +
-	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
+	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"#\n" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +
@@ -1984,7 +1984,8 @@ const file_evm_proto_rawDesc = "" +
 	"\x1eTRANSACTION_STATUS_UNCONFIRMED\x10\x02\x12 \n" +
 	"\x1cTRANSACTION_STATUS_FINALIZED\x10\x03\x12\x1d\n" +
 	"\x19TRANSACTION_STATUS_FAILED\x10\x04\x12\x1c\n" +
-	"\x18TRANSACTION_STATUS_FATAL\x10\x052\xf1\t\n" +
+	"\x18TRANSACTION_STATUS_FATAL\x10\x052\x8a\n" +
+	"\n" +
 	"\x03EVM\x12s\n" +
 	"\x11GetTransactionFee\x12..loop.internal.pb.evm.GetTransactionFeeRequest\x1a,.loop.internal.pb.evm.GetTransactionFeeReply\"\x00\x12b\n" +
 	"\fCallContract\x12).loop.internal.pb.evm.CallContractRequest\x1a'.loop.internal.pb.evm.CallContractReply\x12S\n" +
@@ -1997,7 +1998,7 @@ const file_evm_proto_rawDesc = "" +
 	"\x12QueryLogsFromCache\x12/.loop.internal.pb.evm.QueryLogsFromCacheRequest\x1a-.loop.internal.pb.evm.QueryLogsFromCacheReply\x12_\n" +
 	"\x13RegisterLogTracking\x120.loop.internal.pb.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12c\n" +
 	"\x15UnregisterLogTracking\x122.loop.internal.pb.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12z\n" +
-	"\x14GetTransactionStatus\x121.loop.internal.pb.evm.GetTransactionStatusRequest\x1a/.loop.internal.pb.evm.GetTransactionStatusReplyBMZKgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpbb\x06proto3"
+	"\x14GetTransactionStatus\x121.loop.internal.pb.evm.GetTransactionStatusRequest\x1a/.loop.internal.pb.evm.GetTransactionStatusReply\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BMZKgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpbb\x06proto3"
 
 var (
 	file_evm_proto_rawDescOnce sync.Once

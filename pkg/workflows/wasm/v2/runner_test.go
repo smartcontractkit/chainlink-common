@@ -7,6 +7,7 @@ import (
 	basictriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger/basic_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -37,7 +38,7 @@ var anyExecuteRequest = &pb.ExecuteRequest{
 	Config:          anyConfig,
 	MaxResponseSize: anyMaxResponseSize,
 	Request: &pb.ExecuteRequest_Trigger{
-		Trigger: &pb.Trigger{
+		Trigger: &sdkpb.Trigger{
 			Id:      triggerId,
 			Payload: mustAny(testhelpers.TestWorkflowTrigger()),
 		},

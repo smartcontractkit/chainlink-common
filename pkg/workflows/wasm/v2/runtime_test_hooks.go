@@ -85,19 +85,15 @@ func awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, respo
 		}
 
 		copy(unsafe.Slice((*byte)(responseBuffer), maxResponseLen), awaitResponse)
-		return int64(-len(awaitResponse))
-	}
+		responseLen := int64(len(awaitResponse))
+		if err != nil {
+			responseLen = -responseLen
+		}
 
-	if maxResponseLen < 0 {
-		return 0
+		return responseLen
 	}
 
 	response := unsafe.Slice((*byte)(responseBuffer), maxResponseLen)
-
-	if registry == nil {
-		msg := "test hook has not bee initialized"
-		readHostMessage(response, msg, true)
-	}
 
 	awaitRequestBuff := unsafe.Slice((*byte)(awaitRequest), awaitRequestLen)
 	requestpb := &sdkpb.AwaitCapabilitiesRequest{}
@@ -108,11 +104,7 @@ func awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, respo
 
 	responsepb := &sdkpb.AwaitCapabilitiesResponse{Responses: map[string]*sdkpb.CapabilityResponse{}}
 	for _, id := range requestpb.Ids {
-		promise, ok := outstandingCalls[id]
-		if !ok {
-			msg := "cannot find capability " + id
-			return readHostMessage(response, msg, true)
-		}
+		promise, _ := outstandingCalls[id]
 		result, err := promise.Await()
 		if err != nil {
 			result = &sdkpb.CapabilityResponse{

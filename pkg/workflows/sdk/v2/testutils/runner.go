@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
@@ -135,6 +136,12 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 
 		r.ran = true
 		r.result, r.err = handler.Callback()(r.runtime, response.Payload)
+		_, err = values.Wrap(r.result)
+		if err != nil {
+			r.result = nil
+			r.err = err
+			return
+		}
 	}
 }
 

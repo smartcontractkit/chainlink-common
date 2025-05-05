@@ -10,14 +10,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func newRuntime(execId string, configBytes []byte) sdkimpl.RuntimeBase {
+func newRuntime() sdkimpl.RuntimeBase {
 	return sdkimpl.RuntimeBase{
-		ExecId:          execId,
-		ConfigBytes:     configBytes,
-		MaxResponseSize: sdk.DefaultMaxResponseSizeBytes,
-		Call:            callCapabilityWasmWrapper,
-		Await:           awaitCapabilitiesWasmWrapper,
-		Writer:          &writer{},
+		Call:   callCapabilityWasmWrapper,
+		Await:  awaitCapabilitiesWasmWrapper,
+		Writer: &writer{},
 	}
 }
 

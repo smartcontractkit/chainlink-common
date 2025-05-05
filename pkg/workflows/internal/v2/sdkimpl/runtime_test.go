@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"testing"
 
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	actionandtriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger/action_and_triggermock"
@@ -23,174 +26,217 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
-func TestRuntime_CallCapabilityIsAsync(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
+var anyTrigger = &basictrigger.Outputs{CoolOutput: "cool"}
+var anyConfig = &basictrigger.Config{Name: "name", Number: 123}
 
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
+func TestRuntime_CallCapability(t *testing.T) {
+	t.Run("runs async", func(t *testing.T) {
+		ch := make(chan struct{}, 1)
+		anyResult1 := "ok1"
+		action1, err := basicactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
+		action1.PerformAction = func(_ context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
+			<-ch
+			return &basicaction.Outputs{AdaptedThing: anyResult1}, nil
+		}
 
-	ch := make(chan struct{}, 1)
-	anyResult1 := "ok1"
-	action1, err := basicactionmock.NewBasicActionCapability(t)
-	require.NoError(t, err)
-	action1.PerformAction = func(_ context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
-		<-ch
-		return &basicaction.Outputs{AdaptedThing: anyResult1}, nil
-	}
+		anyResult2 := "ok2"
+		action2, err := actionandtriggermock.NewBasicCapability(t)
+		action2.Action = func(ctx context.Context, input *actionandtrigger.Input) (*actionandtrigger.Output, error) {
+			return &actionandtrigger.Output{Welcome: anyResult2}, nil
+		}
 
-	anyResult2 := "ok2"
-	action2, err := actionandtriggermock.NewBasicCapability(t)
-	action2.Action = func(ctx context.Context, input *actionandtrigger.Input) (*actionandtrigger.Output, error) {
-		return &actionandtrigger.Output{Welcome: anyResult2}, nil
-	}
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+			workflowAction1 := &basicaction.BasicAction{}
+			call1 := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
 
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
+			workflowAction2 := &actionandtrigger.Basic{}
+			call2 := workflowAction2.Action(rt, &actionandtrigger.Input{Name: "input"})
+			result2, err := call2.Await()
+			require.NoError(t, err)
+			ch <- struct{}{}
+			result1, err := call1.Await()
+			require.NoError(t, err)
+			return result1.AdaptedThing + result2.Welcome, nil
+		}
 
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
-					workflowAction1 := &basicaction.BasicAction{}
-					call1 := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
-
-					workflowAction2 := &actionandtrigger.Basic{}
-					call2 := workflowAction2.Action(rt, &actionandtrigger.Input{Name: "input"})
-					result2, err := call2.Await()
-					require.NoError(t, err)
-					ch <- struct{}{}
-					result1, err := call1.Await()
-					require.NoError(t, err)
-					return result1.AdaptedThing + result2.Welcome, nil
-				}),
-		},
+		ran, result, err := testRuntime(t, test)
+		require.NoError(t, err)
+		assert.True(t, ran)
+		assert.Equal(t, anyResult1+anyResult2, result)
 	})
 
-	ran, result, err := runner.Result()
-	require.NoError(t, err)
-	assert.True(t, ran)
-	assert.Equal(t, anyResult1+anyResult2, result)
-}
-
-func TestRuntime_ErrorsAwaitingAreRespected(t *testing.T) {
-
-}
-
-func TestRuntime_NodeRuntimeUseInDonModeFails(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
-
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
-
-	nodeCapability, err := nodeactionmock.NewBasicActionCapability(t)
-	require.NoError(t, err)
-	nodeCapability.PerformAction = func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
-		assert.Fail(t, "node capability should not be called")
-		return nil, fmt.Errorf("should not be called")
-	}
-
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
-
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
-					var nrt sdk.NodeRuntime
-					sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-						nrt = nodeRuntime
-						return 0, err
-					}, pb.SimpleConsensusType_MEDIAN)
-					na := nodeaction.BasicAction{}
-					return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
-				},
-			)},
+	t.Run("call capability errors", func(t *testing.T) {
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+			workflowAction1 := &basicaction.BasicAction{}
+			call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
+			_, err := call.Await()
+			return "", err
+		}
+		_, _, err := testRuntime(t, test)
+		assert.Error(t, err)
 	})
 
-	_, _, err = runner.Result()
-	assert.Equal(t, sdk.NodeModeCallInDonMode(), err)
-}
+	t.Run("capability errors", func(t *testing.T) {
+		action, err := basicactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
 
-func TestRuntime_DonRuntimeUseInNodeModeFails(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
+		expectedErr := errors.New("error")
+		action.PerformAction = func(ctx context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
+			return nil, expectedErr
+		}
 
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		assert.True(t, proto.Equal(anyConfig, config))
-		return anyTrigger, nil
-	}
+		capability := &basicaction.BasicAction{}
 
-	capability, err := basicactionmock.NewBasicActionCapability(t)
-	require.NoError(t, err)
-	capability.PerformAction = func(_ context.Context, _ *basicaction.Inputs) (*basicaction.Outputs, error) {
-		assert.Fail(t, "should not be called")
-		return nil, errors.New("should not be called")
-	}
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
+			return "", err
+		}
 
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
-
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
-						action := basicaction.BasicAction{}
-						_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
-						return 0, err
-					}, pb.SimpleConsensusType_MEDIAN)
-
-					return consensus.Await()
-				},
-			)},
+		_, _, err = testRuntime(t, test)
+		assert.Equal(t, expectedErr, err)
 	})
 
-	_, _, err = runner.Result()
-	assert.Equal(t, sdk.DonModeCallInNodeMode(), err)
-}
+	t.Run("await errors", func(t *testing.T) {
+		action, err := basicactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
+		expectedErr := errors.New("error")
 
-func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+		action.PerformAction = func(ctx context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
+			return &basicaction.Outputs{AdaptedThing: "ok"}, nil
+		}
 
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		return &basictrigger.Outputs{CoolOutput: "cool"}, nil
-	}
+		capability := &basicaction.BasicAction{}
 
-	runner := testutils.NewDonRunner(t, nil)
-	require.NoError(t, err)
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+			drt := rt.(*sdkimpl.DonRuntime)
+			drt.Await = func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
+				return nil, expectedErr
+			}
+			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
+			return "", err
+		}
 
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
-					workflowAction1 := &basicaction.BasicAction{}
-					call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
-					_, err := call.Await()
-					return "", err
-				},
-			)},
+		_, _, err = testRuntime(t, test)
+		assert.Equal(t, expectedErr, err)
 	})
 
-	_, _, err = runner.Result()
-	require.Error(t, err)
+	t.Run("await missing response", func(t *testing.T) {
+		action, err := basicactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
+
+		action.PerformAction = func(ctx context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
+			return &basicaction.Outputs{AdaptedThing: "ok"}, nil
+		}
+
+		capability := &basicaction.BasicAction{}
+
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+			drt := rt.(*sdkimpl.DonRuntime)
+			drt.Await = func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
+				return &pb.AwaitCapabilitiesResponse{Responses: map[string]*pb.CapabilityResponse{}}, nil
+			}
+			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
+			return "", err
+		}
+
+		_, _, err = testRuntime(t, test)
+		assert.Error(t, err)
+	})
+}
+
+func TestDonRuntime_RunInNodeMode(t *testing.T) {
+	t.Run("Successful consensus", func(t *testing.T) {
+		nodeMock, err := nodeactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
+		anyObservation := int32(10)
+		anyMedian := int64(11)
+		nodeMock.PerformAction = func(ctx context.Context, input *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
+			return &nodeaction.NodeOutputs{OutputThing: anyObservation}, nil
+		}
+		reg := testutils.GetRegistry(t)
+		require.NoError(t, reg.RegisterCapability(&mockConsensus{
+			t:           t,
+			observation: int64(anyObservation),
+			resp:        anyMedian,
+		}))
+
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (int64, error) {
+			result, err := sdk.RunInNodeMode(rt, func(runtime sdk.NodeRuntime) (int64, error) {
+				capability := &nodeaction.BasicAction{}
+				value, err := capability.PerformAction(runtime, &nodeaction.NodeInputs{InputThing: true}).Await()
+				require.NoError(t, err)
+				return int64(value.OutputThing), nil
+			}, pb.SimpleConsensusType_MEDIAN).Await()
+			return result, err
+		}
+
+		ran, result, err := testRuntime(t, test)
+		require.NoError(t, err)
+		assert.True(t, ran)
+		assert.Equal(t, anyMedian, result)
+	})
+
+	t.Run("Failed consensus", func(t *testing.T) {
+		anyError := errors.New("error")
+		reg := testutils.GetRegistry(t)
+		require.NoError(t, reg.RegisterCapability(&mockConsensus{
+			t:   t,
+			err: anyError,
+		}))
+
+		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (int64, error) {
+			return sdk.RunInNodeMode(rt, func(runtime sdk.NodeRuntime) (int64, error) {
+				return int64(0), anyError
+			}, pb.SimpleConsensusType_MEDIAN).Await()
+		}
+
+		_, _, err := testRuntime(t, test)
+		require.ErrorContains(t, err, anyError.Error())
+	})
+
+	t.Run("Node runtime in Don mode fails", func(t *testing.T) {
+		nodeCapability, err := nodeactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
+		nodeCapability.PerformAction = func(_ context.Context, _ *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
+			assert.Fail(t, "node capability should not be called")
+			return nil, fmt.Errorf("should not be called")
+		}
+
+		test := func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
+			var nrt sdk.NodeRuntime
+			sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+				nrt = nodeRuntime
+				return 0, err
+			}, pb.SimpleConsensusType_MEDIAN)
+			na := nodeaction.BasicAction{}
+			return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
+		}
+
+		_, _, err = testRuntime(t, test)
+		assert.Equal(t, sdk.NodeModeCallInDonMode(), err)
+	})
+
+	t.Run("Don runtime in Node mode fails", func(t *testing.T) {
+		capability, err := basicactionmock.NewBasicActionCapability(t)
+		require.NoError(t, err)
+		capability.PerformAction = func(_ context.Context, _ *basicaction.Inputs) (*basicaction.Outputs, error) {
+			assert.Fail(t, "should not be called")
+			return nil, errors.New("should not be called")
+		}
+
+		test := func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+			consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+				action := basicaction.BasicAction{}
+				_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
+				return 0, err
+			}, pb.SimpleConsensusType_MEDIAN)
+
+			return consensus.Await()
+		}
+		_, _, err = testRuntime(t, test)
+		assert.Equal(t, sdk.DonModeCallInNodeMode(), err)
+	})
 }
 
 func TestRuntime_ReturnsConfig(t *testing.T) {
@@ -217,4 +263,70 @@ func TestRuntime_ReturnsConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ran)
 	assert.Equal(t, string(anyConfig), result)
+}
+
+func testRuntime[T any](t *testing.T, testFn func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (T, error)) (bool, any, error) {
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
+	}
+
+	runner := testutils.NewDonRunner(t, nil)
+	require.NoError(t, err)
+
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(basictrigger.Basic{}.Trigger(anyConfig), testFn),
+		},
+	})
+
+	return runner.Result()
+}
+
+type mockConsensus struct {
+	t           *testing.T
+	observation int64
+	err         error
+	resp        int64
+}
+
+func (m *mockConsensus) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
+	// TODO https: //smartcontract-it.atlassian.net/browse/CAPPL-816 use the generated consensus code
+	assert.Equal(m.t, "consensus@1.0.0", request.Id)
+	assert.Equal(m.t, "BuiltIn", request.Method)
+	consensus := &pb.BuiltInConsensusRequest{}
+	require.NoError(m.t, proto.Unmarshal(request.Payload.Value, consensus))
+	switch ct := consensus.PrimitiveConsensus.Consensus.(type) {
+	case *pb.PrimitiveConsensus_Simple:
+		assert.Equal(m.t, pb.SimpleConsensusType_MEDIAN, ct.Simple)
+	default:
+		assert.Fail(m.t, "unexpected consensus type")
+	}
+
+	resp := &pb.CapabilityResponse{}
+	if m.err == nil {
+		o, ok := consensus.Observation.(*pb.BuiltInConsensusRequest_Value)
+		require.True(m.t, ok)
+		assert.Equal(m.t, m.observation, o.Value.GetInt64Value())
+		consensusResp := &valuespb.Value{Value: &valuespb.Value_Int64Value{Int64Value: m.resp}}
+		a, err := anypb.New(consensusResp)
+		require.NoError(m.t, err)
+
+		resp.Response = &pb.CapabilityResponse_Payload{Payload: a}
+	} else {
+		assert.Equal(m.t, m.err.Error(), consensus.Observation.(*pb.BuiltInConsensusRequest_Error).Error)
+		resp.Response = &pb.CapabilityResponse_Error{Error: m.err.Error()}
+	}
+
+	return resp
+}
+
+func (m *mockConsensus) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
+	return nil, errors.New("not a trigger")
+}
+
+func (m *mockConsensus) ID() string {
+	return "consensus@1.0.0"
 }

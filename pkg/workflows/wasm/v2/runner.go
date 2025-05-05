@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -18,20 +19,20 @@ import (
 var args = os.Args
 
 func newDonRunner() sdk.DonRunner {
-	drt := &donRuntime{}
+	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime()}
 	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{runtime: drt, setRuntime: func(id string, config []byte, maxResponseSize uint64) {
-		drt.execId = id
-		drt.config = config
-		drt.maxResponseSize = maxResponseSize
+		drt.ExecId = id
+		drt.ConfigBytes = config
+		drt.MaxResponseSize = maxResponseSize
 	}})
 }
 
 func newNodeRunner() sdk.NodeRunner {
-	nrt := &nodeRuntime{}
+	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime()}
 	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{runtime: nrt, setRuntime: func(id string, config []byte, maxResponseSize uint64) {
-		nrt.execId = id
-		nrt.config = config
-		nrt.maxResponseSize = maxResponseSize
+		nrt.ExecId = id
+		nrt.ConfigBytes = config
+		nrt.MaxResponseSize = maxResponseSize
 	}})
 }
 

@@ -50,6 +50,8 @@ func callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64 {
 	callId := uuid.New()
 	respCh := make(chan *sdkpb.CapabilityResponse, 1)
 	go func() {
+		lock.Lock()
+		defer lock.Unlock()
 		// Test ended before the capability was called
 		tmp := testTb
 		if tmp == nil {

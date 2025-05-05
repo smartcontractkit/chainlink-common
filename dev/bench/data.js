@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746197172377,
+  "lastUpdate": 1746460645588,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12810,6 +12810,48 @@ window.BENCHMARK_DATA = {
             "value": 28331,
             "unit": "ns/op",
             "extra": "42639 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16602512+krehermann@users.noreply.github.com",
+            "name": "krehermann",
+            "username": "krehermann"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb65e4bb4e3612b83e8442135225f2d6a2cad337",
+          "message": "migrate port allocator (#1176)",
+          "timestamp": "2025-05-05T09:55:57-06:00",
+          "tree_id": "e5f372bbba00d2cb6fb139a92ac40069d69c1f2c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cb65e4bb4e3612b83e8442135225f2d6a2cad337"
+        },
+        "date": 1746460644057,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.3,
+            "unit": "ns/op",
+            "extra": "3335547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.4,
+            "unit": "ns/op",
+            "extra": "2671864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28150,
+            "unit": "ns/op",
+            "extra": "42614 times\n4 procs"
           }
         ]
       }

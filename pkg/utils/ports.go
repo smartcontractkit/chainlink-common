@@ -1,22 +1,12 @@
 package utils
 
 import (
-	"crypto/rand"
-	"fmt"
-	"math/big"
 	"net"
 	"strconv"
 	"testing"
+
+	"github.com/smartcontractkit/freeport"
 )
-
-func GetRandomPort() string {
-	r, err := rand.Int(rand.Reader, big.NewInt(65535-1023))
-	if err != nil {
-		panic(fmt.Errorf("unexpected error generating random port: %w", err))
-	}
-
-	return strconv.Itoa(int(r.Int64() + 1024))
-}
 
 func IsPortOpen(t *testing.T, port string) bool {
 	l, err := net.Listen("tcp", ":"+port)
@@ -28,16 +18,7 @@ func IsPortOpen(t *testing.T, port string) bool {
 	return true
 }
 
+// Deprecated: use https://github.com/smartcontractkit/freeport GetOne
 func MustRandomPort(t *testing.T) string {
-	for i := 0; i < 5; i++ {
-		port := GetRandomPort()
-
-		// check port if port is open
-		if IsPortOpen(t, port) {
-			t.Log("found open port: " + port)
-			return port
-		}
-	}
-
-	panic("unable to find open port")
+	return strconv.Itoa(freeport.GetOne(t))
 }

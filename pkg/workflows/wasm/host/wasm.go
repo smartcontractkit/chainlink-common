@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	legacySdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -44,7 +45,7 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 	return legacywasmpb.ProtoToWorkflowSpec(sr)
 }
 
-func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*wasmpb.TriggerSubscriptionRequest, error) {
+func GetTriggersSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
 	m, err := NewModule(modCfg, binary, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)

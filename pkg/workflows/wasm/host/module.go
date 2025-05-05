@@ -19,6 +19,7 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	cappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -133,6 +134,13 @@ type ModuleV2 interface {
 
 	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
 	Execute(ctx context.Context, request *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error)
+	SetCapabilityExecutor(handler CapabilityExecutor) error
+}
+
+// Implemented by the Engine
+type CapabilityExecutor interface {
+	// blocking call to the Engine
+	CallCapability(ctx context.Context, request *cappb.CapabilityRequest) (*cappb.CapabilityResponse, error)
 }
 
 type module struct {
@@ -569,6 +577,10 @@ func runWasm[I idMessage, O proto.Message](
 	default:
 		return o, err
 	}
+}
+
+func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
+	return errors.New("not implemented")
 }
 
 func containsCode(err error, code int) bool {

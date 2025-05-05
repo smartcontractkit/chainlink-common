@@ -3,6 +3,7 @@
 package wasm
 
 import (
+	"sync"
 	"testing"
 	"unsafe"
 
@@ -13,18 +14,23 @@ import (
 
 // initRunnerAndRuntimeForTest is NOT thread safe and expects a single test to be running when testing the runner.
 func initRunnerAndRuntimeForTest(t testing.TB, execId string) {
+	lock.Lock()
+	defer lock.Unlock()
 	registry = testutils.GetRegistry(t)
 	outstandingCalls = map[string]sdk.Promise[*sdkpb.CapabilityResponse]{}
 	testTb = t
 	executionId = execId
 	callCapabilityErr = false
 	t.Cleanup(func() {
+		lock.Lock()
+		defer lock.Unlock()
 		testTb = nil
 		executionId = ""
 		outstandingCalls = nil
 	})
 }
 
+var lock sync.Mutex
 var testTb testing.TB
 var registry *testutils.Registry
 var outstandingCalls map[string]sdk.Promise[*sdkpb.CapabilityResponse]

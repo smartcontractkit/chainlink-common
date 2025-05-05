@@ -3,7 +3,6 @@
 package wasm
 
 import (
-	"sync"
 	"testing"
 	"unsafe"
 
@@ -16,8 +15,6 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-var lock sync.Mutex
-
 var awaitResponseOverride func() ([]byte, error)
 var callCapabilityErr bool
 
@@ -26,6 +23,8 @@ func overrideCapabilityResponseForTest(t *testing.T, awaitResponse func() ([]byt
 	defer lock.Unlock()
 	awaitResponseOverride = awaitResponse
 	t.Cleanup(func() {
+		lock.Lock()
+		defer lock.Unlock()
 		awaitResponseOverride = nil
 	})
 }

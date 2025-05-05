@@ -37,6 +37,10 @@ type ClientCapability struct {
 	QueryLogs func(ctx context.Context, input *evm.QueryLogsRequest) (*evm.LogList, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	SubmitTransaction func(ctx context.Context, input *evm.SubmitTransactionRequest) (*evm.TxID, error)
+	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
+	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.TxID, error)
+
+	LogTrigger func(ctx context.Context, input *evm.LogTriggerRequest) (*evm.Log, error)
 
 	OnFinalityViolation func(ctx context.Context, input *emptypb.Empty) (*crosschain.BlockRange, error)
 }
@@ -132,6 +136,28 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *pb.CapabilityR
 				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
+	case "WriteReport":
+		input := &evm.WriteReportRequest{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			break
+		}
+
+		if cap.WriteReport == nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for WriteReport"}
+			break
+		}
+		resp, err := cap.WriteReport(ctx, input)
+		if err != nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+		} else {
+			payload, err := anypb.New(resp)
+			if err == nil {
+				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+			} else {
+				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			}
+		}
 	default:
 		capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
 	}
@@ -141,6 +167,31 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *pb.CapabilityR
 func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
 	trigger := &pb.Trigger{}
 	switch request.Method {
+	case "LogTrigger":
+		input := &evm.LogTriggerRequest{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			return nil, err
+		}
+
+		if cap.LogTrigger == nil {
+			return nil, testutils.ErrNoTriggerStub("LogTrigger")
+		}
+
+		resp, err := cap.LogTrigger(ctx, input)
+		if err != nil {
+			return nil, err
+		} else {
+			if resp == nil {
+				return nil, nil
+			}
+
+			payload, err := anypb.New(resp)
+			if err != nil {
+				return nil, err
+			}
+			trigger.Payload = payload
+			trigger.Id = "mock"
+		}
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {

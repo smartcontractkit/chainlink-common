@@ -236,7 +236,6 @@ func (x *QueryLogsRequest) GetConfidenceLevel() ConfidenceLevel {
 	return ConfidenceLevel_CONFIDENCE_LEVEL_UNSPECIFIED
 }
 
-// Represents a request to submit a transaction
 type SubmitTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ToAddress     string                 `protobuf:"bytes,1,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
@@ -297,27 +296,30 @@ func (x *SubmitTransactionRequest) GetCalldata() []byte {
 	return nil
 }
 
-// Placeholder messages for types defined elsewhere
-type GasConfig struct {
+type SignedReport struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Report        []byte                 `protobuf:"bytes,1,opt,name=report,proto3" json:"report,omitempty"`
+	Context       []byte                 `protobuf:"bytes,2,opt,name=context,proto3" json:"context,omitempty"`
+	Signatures    [][]byte               `protobuf:"bytes,3,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	Id            []byte                 `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GasConfig) Reset() {
-	*x = GasConfig{}
+func (x *SignedReport) Reset() {
+	*x = SignedReport{}
 	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GasConfig) String() string {
+func (x *SignedReport) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GasConfig) ProtoMessage() {}
+func (*SignedReport) ProtoMessage() {}
 
-func (x *GasConfig) ProtoReflect() protoreflect.Message {
+func (x *SignedReport) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -329,31 +331,62 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
-func (*GasConfig) Descriptor() ([]byte, []int) {
+// Deprecated: Use SignedReport.ProtoReflect.Descriptor instead.
+func (*SignedReport) Descriptor() ([]byte, []int) {
 	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{4}
 }
 
-type FilterQuery struct {
+func (x *SignedReport) GetReport() []byte {
+	if x != nil {
+		return x.Report
+	}
+	return nil
+}
+
+func (x *SignedReport) GetContext() []byte {
+	if x != nil {
+		return x.Context
+	}
+	return nil
+}
+
+func (x *SignedReport) GetSignatures() [][]byte {
+	if x != nil {
+		return x.Signatures
+	}
+	return nil
+}
+
+func (x *SignedReport) GetId() []byte {
+	if x != nil {
+		return x.Id
+	}
+	return nil
+}
+
+// Represents a request to submit a transaction
+type WriteReportRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	GasConfig     *GasConfig             `protobuf:"bytes,1,opt,name=gas_config,json=gasConfig,proto3" json:"gas_config,omitempty"`
+	Report        *SignedReport          `protobuf:"bytes,2,opt,name=report,proto3" json:"report,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FilterQuery) Reset() {
-	*x = FilterQuery{}
+func (x *WriteReportRequest) Reset() {
+	*x = WriteReportRequest{}
 	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FilterQuery) String() string {
+func (x *WriteReportRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FilterQuery) ProtoMessage() {}
+func (*WriteReportRequest) ProtoMessage() {}
 
-func (x *FilterQuery) ProtoReflect() protoreflect.Message {
+func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -365,13 +398,36 @@ func (x *FilterQuery) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FilterQuery.ProtoReflect.Descriptor instead.
-func (*FilterQuery) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
+func (*WriteReportRequest) Descriptor() ([]byte, []int) {
 	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *WriteReportRequest) GetGasConfig() *GasConfig {
+	if x != nil {
+		return x.GasConfig
+	}
+	return nil
+}
+
+func (x *WriteReportRequest) GetReport() *SignedReport {
+	if x != nil {
+		return x.Report
+	}
+	return nil
 }
 
 type Log struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Address       string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                             // common.Address represented as bytes
+	Topics        [][]byte               `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`                               // []common.Hash represented as repeated bytes
+	Data          []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`                                   // []byte represented as bytes
+	BlockNumber   uint64                 `protobuf:"varint,4,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"` // uint64
+	TxHash        string                 `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`                 // common.Hash represented as string
+	TxIndex       uint32                 `protobuf:"varint,6,opt,name=tx_index,json=txIndex,proto3" json:"tx_index,omitempty"`             // uint represented as uint32
+	BlockHash     string                 `protobuf:"bytes,7,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`        // common.Hash represented as string
+	Index         uint32                 `protobuf:"varint,8,opt,name=index,proto3" json:"index,omitempty"`                                // uint represented as uint32
+	Removed       bool                   `protobuf:"varint,9,opt,name=removed,proto3" json:"removed,omitempty"`                            // bool
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -406,6 +462,410 @@ func (*Log) Descriptor() ([]byte, []int) {
 	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{6}
 }
 
+func (x *Log) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *Log) GetTopics() [][]byte {
+	if x != nil {
+		return x.Topics
+	}
+	return nil
+}
+
+func (x *Log) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *Log) GetBlockNumber() uint64 {
+	if x != nil {
+		return x.BlockNumber
+	}
+	return 0
+}
+
+func (x *Log) GetTxHash() string {
+	if x != nil {
+		return x.TxHash
+	}
+	return ""
+}
+
+func (x *Log) GetTxIndex() uint32 {
+	if x != nil {
+		return x.TxIndex
+	}
+	return 0
+}
+
+func (x *Log) GetBlockHash() string {
+	if x != nil {
+		return x.BlockHash
+	}
+	return ""
+}
+
+func (x *Log) GetIndex() uint32 {
+	if x != nil {
+		return x.Index
+	}
+	return 0
+}
+
+func (x *Log) GetRemoved() bool {
+	if x != nil {
+		return x.Removed
+	}
+	return false
+}
+
+type FilterQuery struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to FromBlock:
+	//
+	//	*FilterQuery_FromBlockNumber
+	//	*FilterQuery_FromBlockTag
+	FromBlock isFilterQuery_FromBlock `protobuf_oneof:"from_block"`
+	// Types that are valid to be assigned to ToBlock:
+	//
+	//	*FilterQuery_ToBlockNumber
+	//	*FilterQuery_ToBlockTag
+	ToBlock       isFilterQuery_ToBlock `protobuf_oneof:"to_block"`
+	Address       []string              `protobuf:"bytes,5,rep,name=address,proto3" json:"address,omitempty"`
+	Topics        []string              `protobuf:"bytes,6,rep,name=topics,proto3" json:"topics,omitempty"`
+	BlockHash     string                `protobuf:"bytes,7,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FilterQuery) Reset() {
+	*x = FilterQuery{}
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FilterQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FilterQuery) ProtoMessage() {}
+
+func (x *FilterQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FilterQuery.ProtoReflect.Descriptor instead.
+func (*FilterQuery) Descriptor() ([]byte, []int) {
+	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FilterQuery) GetFromBlock() isFilterQuery_FromBlock {
+	if x != nil {
+		return x.FromBlock
+	}
+	return nil
+}
+
+func (x *FilterQuery) GetFromBlockNumber() uint64 {
+	if x != nil {
+		if x, ok := x.FromBlock.(*FilterQuery_FromBlockNumber); ok {
+			return x.FromBlockNumber
+		}
+	}
+	return 0
+}
+
+func (x *FilterQuery) GetFromBlockTag() string {
+	if x != nil {
+		if x, ok := x.FromBlock.(*FilterQuery_FromBlockTag); ok {
+			return x.FromBlockTag
+		}
+	}
+	return ""
+}
+
+func (x *FilterQuery) GetToBlock() isFilterQuery_ToBlock {
+	if x != nil {
+		return x.ToBlock
+	}
+	return nil
+}
+
+func (x *FilterQuery) GetToBlockNumber() uint64 {
+	if x != nil {
+		if x, ok := x.ToBlock.(*FilterQuery_ToBlockNumber); ok {
+			return x.ToBlockNumber
+		}
+	}
+	return 0
+}
+
+func (x *FilterQuery) GetToBlockTag() string {
+	if x != nil {
+		if x, ok := x.ToBlock.(*FilterQuery_ToBlockTag); ok {
+			return x.ToBlockTag
+		}
+	}
+	return ""
+}
+
+func (x *FilterQuery) GetAddress() []string {
+	if x != nil {
+		return x.Address
+	}
+	return nil
+}
+
+func (x *FilterQuery) GetTopics() []string {
+	if x != nil {
+		return x.Topics
+	}
+	return nil
+}
+
+func (x *FilterQuery) GetBlockHash() string {
+	if x != nil {
+		return x.BlockHash
+	}
+	return ""
+}
+
+type isFilterQuery_FromBlock interface {
+	isFilterQuery_FromBlock()
+}
+
+type FilterQuery_FromBlockNumber struct {
+	FromBlockNumber uint64 `protobuf:"varint,1,opt,name=from_block_number,json=fromBlockNumber,proto3,oneof"`
+}
+
+type FilterQuery_FromBlockTag struct {
+	FromBlockTag string `protobuf:"bytes,2,opt,name=from_block_tag,json=fromBlockTag,proto3,oneof"` // e.g., "latest"
+}
+
+func (*FilterQuery_FromBlockNumber) isFilterQuery_FromBlock() {}
+
+func (*FilterQuery_FromBlockTag) isFilterQuery_FromBlock() {}
+
+type isFilterQuery_ToBlock interface {
+	isFilterQuery_ToBlock()
+}
+
+type FilterQuery_ToBlockNumber struct {
+	ToBlockNumber uint64 `protobuf:"varint,3,opt,name=to_block_number,json=toBlockNumber,proto3,oneof"`
+}
+
+type FilterQuery_ToBlockTag struct {
+	ToBlockTag string `protobuf:"bytes,4,opt,name=to_block_tag,json=toBlockTag,proto3,oneof"` // e.g., "latest"
+}
+
+func (*FilterQuery_ToBlockNumber) isFilterQuery_ToBlock() {}
+
+func (*FilterQuery_ToBlockTag) isFilterQuery_ToBlock() {}
+
+type LogTriggerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FilterQuery   *FilterQuery           `protobuf:"bytes,1,opt,name=filterQuery,proto3" json:"filterQuery,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogTriggerRequest) Reset() {
+	*x = LogTriggerRequest{}
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogTriggerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogTriggerRequest) ProtoMessage() {}
+
+func (x *LogTriggerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogTriggerRequest.ProtoReflect.Descriptor instead.
+func (*LogTriggerRequest) Descriptor() ([]byte, []int) {
+	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *LogTriggerRequest) GetFilterQuery() *FilterQuery {
+	if x != nil {
+		return x.FilterQuery
+	}
+	return nil
+}
+
+type EvmReport struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	WorkflowExecutionId      string                 `protobuf:"bytes,1,opt,name=workflowExecutionId,proto3" json:"workflowExecutionId,omitempty"`
+	WorkflowId               string                 `protobuf:"bytes,2,opt,name=workflowId,proto3" json:"workflowId,omitempty"`
+	WorkflowOwner            string                 `protobuf:"bytes,3,opt,name=workflowOwner,proto3" json:"workflowOwner,omitempty"`
+	WorkflowName             string                 `protobuf:"bytes,4,opt,name=workflowName,proto3" json:"workflowName,omitempty"`
+	ReportId                 string                 `protobuf:"bytes,6,opt,name=reportId,proto3" json:"reportId,omitempty"`
+	WorkflowDonId            uint32                 `protobuf:"varint,7,opt,name=workflowDonId,proto3" json:"workflowDonId,omitempty"`
+	WorkflowDonConfigVersion uint32                 `protobuf:"varint,8,opt,name=workflowDonConfigVersion,proto3" json:"workflowDonConfigVersion,omitempty"`
+	KeyId                    string                 `protobuf:"bytes,9,opt,name=keyId,proto3" json:"keyId,omitempty"`
+	Calldata                 []byte                 `protobuf:"bytes,10,opt,name=calldata,proto3" json:"calldata,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *EvmReport) Reset() {
+	*x = EvmReport{}
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EvmReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EvmReport) ProtoMessage() {}
+
+func (x *EvmReport) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EvmReport.ProtoReflect.Descriptor instead.
+func (*EvmReport) Descriptor() ([]byte, []int) {
+	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *EvmReport) GetWorkflowExecutionId() string {
+	if x != nil {
+		return x.WorkflowExecutionId
+	}
+	return ""
+}
+
+func (x *EvmReport) GetWorkflowId() string {
+	if x != nil {
+		return x.WorkflowId
+	}
+	return ""
+}
+
+func (x *EvmReport) GetWorkflowOwner() string {
+	if x != nil {
+		return x.WorkflowOwner
+	}
+	return ""
+}
+
+func (x *EvmReport) GetWorkflowName() string {
+	if x != nil {
+		return x.WorkflowName
+	}
+	return ""
+}
+
+func (x *EvmReport) GetReportId() string {
+	if x != nil {
+		return x.ReportId
+	}
+	return ""
+}
+
+func (x *EvmReport) GetWorkflowDonId() uint32 {
+	if x != nil {
+		return x.WorkflowDonId
+	}
+	return 0
+}
+
+func (x *EvmReport) GetWorkflowDonConfigVersion() uint32 {
+	if x != nil {
+		return x.WorkflowDonConfigVersion
+	}
+	return 0
+}
+
+func (x *EvmReport) GetKeyId() string {
+	if x != nil {
+		return x.KeyId
+	}
+	return ""
+}
+
+func (x *EvmReport) GetCalldata() []byte {
+	if x != nil {
+		return x.Calldata
+	}
+	return nil
+}
+
+// Placeholder messages for types defined elsewhere
+type GasConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GasConfig) Reset() {
+	*x = GasConfig{}
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GasConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GasConfig) ProtoMessage() {}
+
+func (x *GasConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
+func (*GasConfig) Descriptor() ([]byte, []int) {
+	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{10}
+}
+
 type LogList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Logs          []*Log                 `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
@@ -415,7 +875,7 @@ type LogList struct {
 
 func (x *LogList) Reset() {
 	*x = LogList{}
-	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[7]
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -427,7 +887,7 @@ func (x *LogList) String() string {
 func (*LogList) ProtoMessage() {}
 
 func (x *LogList) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[7]
+	mi := &file_capabilities_stubs_don_evm_evm_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -440,7 +900,7 @@ func (x *LogList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogList.ProtoReflect.Descriptor instead.
 func (*LogList) Descriptor() ([]byte, []int) {
-	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{7}
+	return file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *LogList) GetLogs() []*Log {
@@ -470,10 +930,59 @@ const file_capabilities_stubs_don_evm_evm_proto_rawDesc = "" +
 	"to_address\x18\x01 \x01(\tR\ttoAddress\x124\n" +
 	"\n" +
 	"gas_config\x18\x02 \x01(\v2\x15.don.evm.v1.GasConfigR\tgasConfig\x12\x1a\n" +
-	"\bcalldata\x18\x03 \x01(\fR\bcalldata\"\v\n" +
-	"\tGasConfig\"\r\n" +
-	"\vFilterQuery\"\x05\n" +
-	"\x03Log\".\n" +
+	"\bcalldata\x18\x03 \x01(\fR\bcalldata\"p\n" +
+	"\fSignedReport\x12\x16\n" +
+	"\x06report\x18\x01 \x01(\fR\x06report\x12\x18\n" +
+	"\acontext\x18\x02 \x01(\fR\acontext\x12\x1e\n" +
+	"\n" +
+	"signatures\x18\x03 \x03(\fR\n" +
+	"signatures\x12\x0e\n" +
+	"\x02id\x18\x04 \x01(\fR\x02id\"|\n" +
+	"\x12WriteReportRequest\x124\n" +
+	"\n" +
+	"gas_config\x18\x01 \x01(\v2\x15.don.evm.v1.GasConfigR\tgasConfig\x120\n" +
+	"\x06report\x18\x02 \x01(\v2\x18.don.evm.v1.SignedReportR\x06report\"\xf1\x01\n" +
+	"\x03Log\x12\x18\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x16\n" +
+	"\x06topics\x18\x02 \x03(\fR\x06topics\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x12!\n" +
+	"\fblock_number\x18\x04 \x01(\x04R\vblockNumber\x12\x17\n" +
+	"\atx_hash\x18\x05 \x01(\tR\x06txHash\x12\x19\n" +
+	"\btx_index\x18\x06 \x01(\rR\atxIndex\x12\x1d\n" +
+	"\n" +
+	"block_hash\x18\a \x01(\tR\tblockHash\x12\x14\n" +
+	"\x05index\x18\b \x01(\rR\x05index\x12\x18\n" +
+	"\aremoved\x18\t \x01(\bR\aremoved\"\x9c\x02\n" +
+	"\vFilterQuery\x12,\n" +
+	"\x11from_block_number\x18\x01 \x01(\x04H\x00R\x0ffromBlockNumber\x12&\n" +
+	"\x0efrom_block_tag\x18\x02 \x01(\tH\x00R\ffromBlockTag\x12(\n" +
+	"\x0fto_block_number\x18\x03 \x01(\x04H\x01R\rtoBlockNumber\x12\"\n" +
+	"\fto_block_tag\x18\x04 \x01(\tH\x01R\n" +
+	"toBlockTag\x12\x18\n" +
+	"\aaddress\x18\x05 \x03(\tR\aaddress\x12\x16\n" +
+	"\x06topics\x18\x06 \x03(\tR\x06topics\x12\x1d\n" +
+	"\n" +
+	"block_hash\x18\a \x01(\tR\tblockHashB\f\n" +
+	"\n" +
+	"from_blockB\n" +
+	"\n" +
+	"\bto_block\"N\n" +
+	"\x11LogTriggerRequest\x129\n" +
+	"\vfilterQuery\x18\x01 \x01(\v2\x17.don.evm.v1.FilterQueryR\vfilterQuery\"\xdd\x02\n" +
+	"\tEvmReport\x120\n" +
+	"\x13workflowExecutionId\x18\x01 \x01(\tR\x13workflowExecutionId\x12\x1e\n" +
+	"\n" +
+	"workflowId\x18\x02 \x01(\tR\n" +
+	"workflowId\x12$\n" +
+	"\rworkflowOwner\x18\x03 \x01(\tR\rworkflowOwner\x12\"\n" +
+	"\fworkflowName\x18\x04 \x01(\tR\fworkflowName\x12\x1a\n" +
+	"\breportId\x18\x06 \x01(\tR\breportId\x12$\n" +
+	"\rworkflowDonId\x18\a \x01(\rR\rworkflowDonId\x12:\n" +
+	"\x18workflowDonConfigVersion\x18\b \x01(\rR\x18workflowDonConfigVersion\x12\x14\n" +
+	"\x05keyId\x18\t \x01(\tR\x05keyId\x12\x1a\n" +
+	"\bcalldata\x18\n" +
+	" \x01(\fR\bcalldataJ\x04\b\x05\x10\x06\"\v\n" +
+	"\tGasConfig\".\n" +
 	"\aLogList\x12#\n" +
 	"\x04logs\x18\x01 \x03(\v2\x0f.don.evm.v1.LogR\x04logs*`\n" +
 	"\x0fConfidenceLevel\x12 \n" +
@@ -482,13 +991,16 @@ const file_capabilities_stubs_don_evm_evm_proto_rawDesc = "" +
 	"\n" +
 	"\x06MEDIUM\x10\x02\x12\b\n" +
 	"\x04HIGH\x10\x03\x12\f\n" +
-	"\bFINALITY\x10\x042\xff\x02\n" +
+	"\bFINALITY\x10\x042\x80\x04\n" +
 	"\x06Client\x12<\n" +
 	"\vGetTxResult\x12\x10.don.evm.v1.TxID\x1a\x1b.don.crosschain.v1.TxResult\x12I\n" +
 	"\n" +
 	"ReadMethod\x12\x1d.don.evm.v1.ReadMethodRequest\x1a\x1c.don.crosschain.v1.ByteArray\x12>\n" +
 	"\tQueryLogs\x12\x1c.don.evm.v1.QueryLogsRequest\x1a\x13.don.evm.v1.LogList\x12K\n" +
-	"\x11SubmitTransaction\x12$.don.evm.v1.SubmitTransactionRequest\x1a\x10.don.evm.v1.TxID\x12N\n" +
+	"\x11SubmitTransaction\x12$.don.evm.v1.SubmitTransactionRequest\x1a\x10.don.evm.v1.TxID\x12?\n" +
+	"\vWriteReport\x12\x1e.don.evm.v1.WriteReportRequest\x1a\x10.don.evm.v1.TxID\x12>\n" +
+	"\n" +
+	"LogTrigger\x12\x1d.don.evm.v1.LogTriggerRequest\x1a\x0f.don.evm.v1.Log0\x01\x12N\n" +
 	"\x13OnFinalityViolation\x12\x16.google.protobuf.Empty\x1a\x1d.don.crosschain.v1.BlockRange0\x01\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0BMZKgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evmb\x06proto3"
 
 var (
@@ -504,43 +1016,54 @@ func file_capabilities_stubs_don_evm_evm_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_stubs_don_evm_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_stubs_don_evm_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_capabilities_stubs_don_evm_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_capabilities_stubs_don_evm_evm_proto_goTypes = []any{
 	(ConfidenceLevel)(0),             // 0: don.evm.v1.ConfidenceLevel
 	(*TxID)(nil),                     // 1: don.evm.v1.TxID
 	(*ReadMethodRequest)(nil),        // 2: don.evm.v1.ReadMethodRequest
 	(*QueryLogsRequest)(nil),         // 3: don.evm.v1.QueryLogsRequest
 	(*SubmitTransactionRequest)(nil), // 4: don.evm.v1.SubmitTransactionRequest
-	(*GasConfig)(nil),                // 5: don.evm.v1.GasConfig
-	(*FilterQuery)(nil),              // 6: don.evm.v1.FilterQuery
+	(*SignedReport)(nil),             // 5: don.evm.v1.SignedReport
+	(*WriteReportRequest)(nil),       // 6: don.evm.v1.WriteReportRequest
 	(*Log)(nil),                      // 7: don.evm.v1.Log
-	(*LogList)(nil),                  // 8: don.evm.v1.LogList
-	(*emptypb.Empty)(nil),            // 9: google.protobuf.Empty
-	(*crosschain.TxResult)(nil),      // 10: don.crosschain.v1.TxResult
-	(*crosschain.ByteArray)(nil),     // 11: don.crosschain.v1.ByteArray
-	(*crosschain.BlockRange)(nil),    // 12: don.crosschain.v1.BlockRange
+	(*FilterQuery)(nil),              // 8: don.evm.v1.FilterQuery
+	(*LogTriggerRequest)(nil),        // 9: don.evm.v1.LogTriggerRequest
+	(*EvmReport)(nil),                // 10: don.evm.v1.EvmReport
+	(*GasConfig)(nil),                // 11: don.evm.v1.GasConfig
+	(*LogList)(nil),                  // 12: don.evm.v1.LogList
+	(*emptypb.Empty)(nil),            // 13: google.protobuf.Empty
+	(*crosschain.TxResult)(nil),      // 14: don.crosschain.v1.TxResult
+	(*crosschain.ByteArray)(nil),     // 15: don.crosschain.v1.ByteArray
+	(*crosschain.BlockRange)(nil),    // 16: don.crosschain.v1.BlockRange
 }
 var file_capabilities_stubs_don_evm_evm_proto_depIdxs = []int32{
 	0,  // 0: don.evm.v1.ReadMethodRequest.confidence_level:type_name -> don.evm.v1.ConfidenceLevel
-	6,  // 1: don.evm.v1.QueryLogsRequest.filter:type_name -> don.evm.v1.FilterQuery
+	8,  // 1: don.evm.v1.QueryLogsRequest.filter:type_name -> don.evm.v1.FilterQuery
 	0,  // 2: don.evm.v1.QueryLogsRequest.confidence_level:type_name -> don.evm.v1.ConfidenceLevel
-	5,  // 3: don.evm.v1.SubmitTransactionRequest.gas_config:type_name -> don.evm.v1.GasConfig
-	7,  // 4: don.evm.v1.LogList.logs:type_name -> don.evm.v1.Log
-	1,  // 5: don.evm.v1.Client.GetTxResult:input_type -> don.evm.v1.TxID
-	2,  // 6: don.evm.v1.Client.ReadMethod:input_type -> don.evm.v1.ReadMethodRequest
-	3,  // 7: don.evm.v1.Client.QueryLogs:input_type -> don.evm.v1.QueryLogsRequest
-	4,  // 8: don.evm.v1.Client.SubmitTransaction:input_type -> don.evm.v1.SubmitTransactionRequest
-	9,  // 9: don.evm.v1.Client.OnFinalityViolation:input_type -> google.protobuf.Empty
-	10, // 10: don.evm.v1.Client.GetTxResult:output_type -> don.crosschain.v1.TxResult
-	11, // 11: don.evm.v1.Client.ReadMethod:output_type -> don.crosschain.v1.ByteArray
-	8,  // 12: don.evm.v1.Client.QueryLogs:output_type -> don.evm.v1.LogList
-	1,  // 13: don.evm.v1.Client.SubmitTransaction:output_type -> don.evm.v1.TxID
-	12, // 14: don.evm.v1.Client.OnFinalityViolation:output_type -> don.crosschain.v1.BlockRange
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	11, // 3: don.evm.v1.SubmitTransactionRequest.gas_config:type_name -> don.evm.v1.GasConfig
+	11, // 4: don.evm.v1.WriteReportRequest.gas_config:type_name -> don.evm.v1.GasConfig
+	5,  // 5: don.evm.v1.WriteReportRequest.report:type_name -> don.evm.v1.SignedReport
+	8,  // 6: don.evm.v1.LogTriggerRequest.filterQuery:type_name -> don.evm.v1.FilterQuery
+	7,  // 7: don.evm.v1.LogList.logs:type_name -> don.evm.v1.Log
+	1,  // 8: don.evm.v1.Client.GetTxResult:input_type -> don.evm.v1.TxID
+	2,  // 9: don.evm.v1.Client.ReadMethod:input_type -> don.evm.v1.ReadMethodRequest
+	3,  // 10: don.evm.v1.Client.QueryLogs:input_type -> don.evm.v1.QueryLogsRequest
+	4,  // 11: don.evm.v1.Client.SubmitTransaction:input_type -> don.evm.v1.SubmitTransactionRequest
+	6,  // 12: don.evm.v1.Client.WriteReport:input_type -> don.evm.v1.WriteReportRequest
+	9,  // 13: don.evm.v1.Client.LogTrigger:input_type -> don.evm.v1.LogTriggerRequest
+	13, // 14: don.evm.v1.Client.OnFinalityViolation:input_type -> google.protobuf.Empty
+	14, // 15: don.evm.v1.Client.GetTxResult:output_type -> don.crosschain.v1.TxResult
+	15, // 16: don.evm.v1.Client.ReadMethod:output_type -> don.crosschain.v1.ByteArray
+	12, // 17: don.evm.v1.Client.QueryLogs:output_type -> don.evm.v1.LogList
+	1,  // 18: don.evm.v1.Client.SubmitTransaction:output_type -> don.evm.v1.TxID
+	1,  // 19: don.evm.v1.Client.WriteReport:output_type -> don.evm.v1.TxID
+	7,  // 20: don.evm.v1.Client.LogTrigger:output_type -> don.evm.v1.Log
+	16, // 21: don.evm.v1.Client.OnFinalityViolation:output_type -> don.crosschain.v1.BlockRange
+	15, // [15:22] is the sub-list for method output_type
+	8,  // [8:15] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_stubs_don_evm_evm_proto_init() }
@@ -548,13 +1071,19 @@ func file_capabilities_stubs_don_evm_evm_proto_init() {
 	if File_capabilities_stubs_don_evm_evm_proto != nil {
 		return
 	}
+	file_capabilities_stubs_don_evm_evm_proto_msgTypes[7].OneofWrappers = []any{
+		(*FilterQuery_FromBlockNumber)(nil),
+		(*FilterQuery_FromBlockTag)(nil),
+		(*FilterQuery_ToBlockNumber)(nil),
+		(*FilterQuery_ToBlockTag)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_stubs_don_evm_evm_proto_rawDesc), len(file_capabilities_stubs_don_evm_evm_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -29,6 +29,11 @@ type ClientCapability interface {
 
 	SubmitTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.SubmitTransactionRequest) (*evm.TxID, error)
 
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.TxID, error)
+
+	RegisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.LogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
+	UnregisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.LogTriggerRequest) error
+
 	RegisterOnFinalityViolation(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (<-chan capabilities.TriggerAndId[*crosschain.BlockRange], error)
 	UnregisterOnFinalityViolation(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) error
 	Start(ctx context.Context) error
@@ -98,6 +103,9 @@ var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
+	case "LogTrigger":
+		input := &evm.LogTriggerRequest{}
+		return capabilities.RegisterTrigger(ctx, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
 		return capabilities.RegisterTrigger(ctx, "evm@1.0.0", request, input, c.ClientCapability.RegisterOnFinalityViolation)
@@ -108,6 +116,13 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
+	case "LogTrigger":
+		input := &evm.LogTriggerRequest{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+		if err != nil {
+			return err
+		}
+		return c.ClientCapability.UnregisterLogTrigger(ctx, request.Metadata, input)
 	case "OnFinalityViolation":
 		input := &emptypb.Empty{}
 		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
@@ -157,6 +172,13 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.SubmitTransactionRequest, _ *emptypb.Empty) (*evm.TxID, error) {
 			return c.ClientCapability.SubmitTransaction(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "WriteReport":
+		input := &evm.WriteReportRequest{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.TxID, error) {
+			return c.ClientCapability.WriteReport(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

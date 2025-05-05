@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -119,7 +120,8 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		response, err := trigger.InvokeTrigger(r.tb.Context(), request)
-		if err != nil {
+		var e ErrNoTriggerStub
+		if err != nil && !errors.As(err, &e) {
 			r.err = err
 			return
 		}

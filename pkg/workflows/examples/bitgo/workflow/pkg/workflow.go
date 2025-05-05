@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
@@ -42,6 +43,8 @@ type Config struct {
 	Url             string
 }
 
+const TransferEvent = "Transfer"
+
 func Workflow(runner sdk.DonRunner) {
 	logger := slog.Default()
 	config := &Config{}
@@ -50,17 +53,46 @@ func Workflow(runner sdk.DonRunner) {
 		return
 	}
 
+	var evmClient = evm.Client{}
+
+	erc20, _ := abi.JSON(strings.NewReader(Erc20Abi))
+	transferEvent := erc20.Events[TransferEvent]
+	zeroAddr := common.Address{}
+	zeroAddressTopic := zeroAddr.Bytes()
+
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewEmptyDonHandler(
 				cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
 				onCronTrigger,
 			),
+			sdk.NewEmptyDonHandler(
+				evmClient.LogTrigger(&evm.LogTriggerRequest{
+					FilterQuery: &evm.FilterQuery{
+						Address: []string{config.EvmTokenAddress},
+						Topics:  []string{transferEvent.ID.String(), string(zeroAddressTopic)},
+					},
+				}),
+				onLogTrigger,
+			),
 		},
 	})
 }
 
 func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
+	return onTrigger(runtime, trigger.ScheduledExecutionTime)
+}
+
+func onLogTrigger(runtime sdk.DonRuntime, payload *evm.Log) error {
+	logTime, err := getLogTime(payload)
+	if err != nil {
+		return err
+	}
+
+	return onTrigger(runtime, logTime.UnixMilli())
+}
+
+func onTrigger(runtime sdk.DonRuntime, scheduledExecution int64) error {
 	logger := slog.Default()
 	config := &Config{}
 	if err := json.Unmarshal(runtime.Config(), config); err != nil {
@@ -77,7 +109,7 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 		return err
 	}
 
-	if reserveInfo.LastUpdated.Before(time.Unix(trigger.ScheduledExecutionTime, 0).Add(-time.Hour * 24)) {
+	if reserveInfo.LastUpdated.Before(time.Unix(scheduledExecution, 0).Add(-time.Hour * 24)) {
 		logger.Warn("reserve time is too old", "time", reserveInfo.LastUpdated)
 		return errors.New("reserved time is too old")
 	}
@@ -225,8 +257,12 @@ func verifySignature(porResponse *PorResponse, publicKey string) error {
 	digest := hasher.Sum(nil)
 
 	// Verify
-	if err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, digest, rawSig); err != nil {
+	if err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, digest, rawSig); err != nil {
 		return fmt.Errorf("signature verification failed: %w", err)
 	}
 	return nil
+}
+
+func getLogTime(log *evm.Log) (time.Time, error) {
+	panic("// TODO how do you get the time?")
 }

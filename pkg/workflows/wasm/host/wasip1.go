@@ -22,6 +22,7 @@ func newWasiLinker(modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Lin
 	linker.AllowShadowing(true)
 
 	err := linker.DefineWasi()
+
 	if err != nil {
 		return nil, err
 	}

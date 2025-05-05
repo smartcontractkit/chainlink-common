@@ -24,6 +24,7 @@ message Request {
     ComputeRequest computeRequest = 3;
     google.protobuf.Empty specRequest = 4;
   }
+  string triggerId = 5;
 }
 
 message ComputeResponse { capabilities.CapabilityResponse response = 1; }

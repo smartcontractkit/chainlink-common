@@ -9,7 +9,7 @@ import (
 )
 
 type NodeEvent struct {
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capaiblities
+	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
 }
 

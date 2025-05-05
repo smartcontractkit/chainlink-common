@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -86,7 +87,19 @@ func CreateOrReplace(t testing.TB, u url.URL, dbName string, template string) ur
 		t.Fatalf("unable to create postgres test database with name '%s': %v", dbName, err)
 	}
 	u.Path = fmt.Sprintf("/%s", dbName)
-	t.Cleanup(func() { assert.NoError(t, drop(u)) })
+	// simple best effort; some tests seem to hold a db connection and race with this drop
+	t.Cleanup(func() {
+		var err error
+		attempts := 10
+		for i := 0; i < attempts; i++ {
+			err = drop(u)
+			if err == nil {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Logf("unable to drop postgres test database with name '%s': %v", dbName, err)
+	})
 	return u
 }
 

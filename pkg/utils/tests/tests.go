@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -77,5 +78,7 @@ func SkipShort(tb testing.TB, why string) {
 }
 
 func SkipFlakey(t *testing.T, ticketURL string) {
-	t.Skip("Flakey", ticketURL)
+	if _, ok := os.LookupEnv("CL_RUN_FLAKEY"); !ok {
+		t.Skip("Flakey", ticketURL)
+	}
 }

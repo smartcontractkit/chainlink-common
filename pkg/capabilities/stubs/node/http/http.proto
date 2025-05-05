@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package node.http.v1;
 
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http";
 
 enum HttpMethod {
@@ -26,5 +28,9 @@ message HttpFetchResponse {
 }
 
 service Client {
+  option (cre.metadata.capability) = {
+    mode: Node
+    capability_id: "http@1.0.0"
+  };
   rpc Fetch(HttpFetchRequest) returns (HttpFetchResponse);
 }

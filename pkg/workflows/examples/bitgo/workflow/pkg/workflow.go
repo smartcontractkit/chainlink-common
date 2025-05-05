@@ -21,8 +21,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 //go:embed solc/bin/IERC20.abi
@@ -50,49 +50,54 @@ func Workflow(runner sdk.DonRunner) {
 		return
 	}
 
-	sdk.SubscribeToDonTrigger(
-		runner,
-		cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
-		func(runtime sdk.DonRuntime, trigger *cron.CronTrigger) (struct{}, error) {
-			return onCronTrigger(runtime, trigger, config)
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewEmptyDonHandler(
+				cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
+				onCronTrigger,
+			),
 		},
-	)
+	})
 }
 
-func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Config) (struct{}, error) {
+func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 	logger := slog.Default()
+	config := &Config{}
+	if err := json.Unmarshal(runtime.Config(), config); err != nil {
+		logger.Error("error unmarshalling config", "err", err)
+	}
 
-	reserveInfo, err := sdk.RunInNodeModeWithBuiltInConsensus(
+	reserveInfo, err := sdk.RunInNodeMode(
 		runtime,
-		func(nodeRuntime sdk.NodeRuntime) (*ReserveInfo, error) {
-			return fetchPor(nodeRuntime, config)
-		},
+		fetchPor,
 		pb.SimpleConsensusType_MEDIAN_OF_FIELDS).
 		Await()
 
 	if err != nil {
-		return struct{}{}, err
+		return err
 	}
 
 	if reserveInfo.LastUpdated.Before(time.Unix(trigger.ScheduledExecutionTime, 0).Add(-time.Hour * 24)) {
-		return struct{}{}, errors.New("reserved time is too old")
+		logger.Warn("reserve time is too old", "time", reserveInfo.LastUpdated)
+		return errors.New("reserved time is too old")
 	}
+
 	totalSupply := big.NewInt(0)
 
 	erc20, err := abi.JSON(strings.NewReader(Erc20Abi))
 	if err != nil {
-		return struct{}{}, err
+		return err
 	}
 
 	reserveManager, err := abi.JSON(strings.NewReader(ReserveManagerAbi))
 	if err != nil {
-		return struct{}{}, err
+		return err
 	}
 	evmClient := &evm.Client{}
 
 	supplyPayload, err := erc20.Pack(TotalSupplyMethod)
 	if err != nil {
-		return struct{}{}, err
+		return err
 	}
 
 	evmPromise := evmClient.ReadMethod(runtime, &evm.ReadMethodRequest{
@@ -104,22 +109,29 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 
 	evmRead, err := evmPromise.Await()
 	if err != nil {
-		// TODO add logging
-		return struct{}{}, err
+		// TODO specify which EVM
+		logger.Error("Could not read from evm", "err", err.Error())
+		return err
 	}
 
 	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, evmRead.Value)
 	if err != nil {
-		return struct{}{}, err
+		// TODO specify which EVM
+		logger.Error("Could not unpack evm", "err", err.Error())
+		return err
 	}
 
 	if len(evmSupplyResponse) != 1 {
-		return struct{}{}, errors.New("unexpected number of results")
+		err = errors.New("unexpected number of results")
+		logger.Error("Could not unpack evm", "err", err)
+		return err
 	}
 
 	evmSupply, ok := evmSupplyResponse[0].(*big.Int)
 	if !ok {
-		return struct{}{}, errors.New("unexpected type")
+		err = errors.New("unexpected type returned")
+		logger.Error("unexpected return type", "type", fmt.Sprintf("%T", evmSupplyResponse[0]))
+		return err
 	}
 
 	totalSupply = totalSupply.Add(totalSupply, evmSupply)
@@ -128,7 +140,8 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 	totalReserveScaled := reserveInfo.TotalReserve.Mul(decimal.NewFromUint64(10e18)).BigInt()
 	evmSupplyCallData, err := reserveManager.Pack(UpdateReservesMethod, totalSupply, totalReserveScaled)
 	if err != nil {
-		return struct{}{}, err
+		logger.Error("Could not pack evm reserve call", "err", err.Error())
+		return err
 	}
 
 	evmTx := evmClient.SubmitTransaction(runtime, &evm.SubmitTransactionRequest{
@@ -141,18 +154,19 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger, config *Co
 	if err == nil {
 		logger.Debug("Submitted transaction", "txId", txId)
 	} else {
+		logger.Error("failed to submit transaction", "err", err)
 		writeErrors = append(writeErrors, err)
 	}
 
-	if len(writeErrors) > 0 {
-		logger.Error("failed to submit transaction", "err", writeErrors)
-		return struct{}{}, errors.Join(writeErrors...)
-	}
-
-	return struct{}{}, nil
+	return errors.Join(writeErrors...)
 }
 
-func fetchPor(runtime sdk.NodeRuntime, config *Config) (*ReserveInfo, error) {
+func fetchPor(runtime sdk.NodeRuntime) (*ReserveInfo, error) {
+	config := &Config{}
+	if err := json.Unmarshal(runtime.Config(), config); err != nil {
+		return nil, fmt.Errorf("error unmarshalling config: %w", err)
+	}
+
 	request := &http.HttpFetchRequest{Url: config.Url}
 	client := &http.Client{}
 	response, err := client.Fetch(runtime, request).Await()

@@ -30,7 +30,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http/httpmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
 const (
@@ -122,9 +122,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 		return &evm.TxID{Value: "fake transaction"}, nil
 	}
 
-	ctx := context.Background()
-	runner, err := testutils.NewDonRunner(t, ctx, cfgBytes)
-	require.NoError(t, err)
+	runner := testutils.NewDonRunner(t, cfgBytes)
 
 	pkg.Workflow(runner)
 

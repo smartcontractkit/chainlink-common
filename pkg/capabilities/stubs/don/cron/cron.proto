@@ -14,10 +14,10 @@ message CronTrigger {
   int64 scheduled_execution_time = 1;
 }
 
-option (cre.metadata.capability) = {
-  mode: DON
-  capability_id: "cron@1.0.0"
-};
 service Cron {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "cron@1.0.0"
+  };
   rpc Trigger(Config) returns (stream CronTrigger);
 }

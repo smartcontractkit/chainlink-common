@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	EVM_GetTransactionFee_FullMethodName      = "/loop.internal.pb.evm.EVM/GetTransactionFee"
 	EVM_CallContract_FullMethodName           = "/loop.internal.pb.evm.EVM/CallContract"
-	EVM_GetLogs_FullMethodName                = "/loop.internal.pb.evm.EVM/GetLogs"
+	EVM_FilterLogs_FullMethodName             = "/loop.internal.pb.evm.EVM/FilterLogs"
 	EVM_BalanceAt_FullMethodName              = "/loop.internal.pb.evm.EVM/BalanceAt"
 	EVM_EstimateGas_FullMethodName            = "/loop.internal.pb.evm.EVM/EstimateGas"
 	EVM_GetTransactionByHash_FullMethodName   = "/loop.internal.pb.evm.EVM/GetTransactionByHash"
@@ -40,7 +40,7 @@ const (
 type EVMClient interface {
 	GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*GetTransactionFeeReply, error)
 	CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*CallContractReply, error)
-	GetLogs(ctx context.Context, in *GetLogsRequest, opts ...grpc.CallOption) (*GetLogsReply, error)
+	FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*FilterLogsReply, error)
 	BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*BalanceAtReply, error)
 	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*EstimateGasReply, error)
 	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*GetTransactionByHashReply, error)
@@ -80,10 +80,10 @@ func (c *eVMClient) CallContract(ctx context.Context, in *CallContractRequest, o
 	return out, nil
 }
 
-func (c *eVMClient) GetLogs(ctx context.Context, in *GetLogsRequest, opts ...grpc.CallOption) (*GetLogsReply, error) {
+func (c *eVMClient) FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*FilterLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetLogsReply)
-	err := c.cc.Invoke(ctx, EVM_GetLogs_FullMethodName, in, out, cOpts...)
+	out := new(FilterLogsReply)
+	err := c.cc.Invoke(ctx, EVM_FilterLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (c *eVMClient) GetTransactionStatus(ctx context.Context, in *GetTransaction
 type EVMServer interface {
 	GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*GetTransactionFeeReply, error)
 	CallContract(context.Context, *CallContractRequest) (*CallContractReply, error)
-	GetLogs(context.Context, *GetLogsRequest) (*GetLogsReply, error)
+	FilterLogs(context.Context, *FilterLogsRequest) (*FilterLogsReply, error)
 	BalanceAt(context.Context, *BalanceAtRequest) (*BalanceAtReply, error)
 	EstimateGas(context.Context, *EstimateGasRequest) (*EstimateGasReply, error)
 	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*GetTransactionByHashReply, error)
@@ -212,8 +212,8 @@ func (UnimplementedEVMServer) GetTransactionFee(context.Context, *GetTransaction
 func (UnimplementedEVMServer) CallContract(context.Context, *CallContractRequest) (*CallContractReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallContract not implemented")
 }
-func (UnimplementedEVMServer) GetLogs(context.Context, *GetLogsRequest) (*GetLogsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLogs not implemented")
+func (UnimplementedEVMServer) FilterLogs(context.Context, *FilterLogsRequest) (*FilterLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FilterLogs not implemented")
 }
 func (UnimplementedEVMServer) BalanceAt(context.Context, *BalanceAtRequest) (*BalanceAtReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BalanceAt not implemented")
@@ -299,20 +299,20 @@ func _EVM_CallContract_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVM_GetLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLogsRequest)
+func _EVM_FilterLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FilterLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMServer).GetLogs(ctx, in)
+		return srv.(EVMServer).FilterLogs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVM_GetLogs_FullMethodName,
+		FullMethod: EVM_FilterLogs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMServer).GetLogs(ctx, req.(*GetLogsRequest))
+		return srv.(EVMServer).FilterLogs(ctx, req.(*FilterLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -495,8 +495,8 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVM_CallContract_Handler,
 		},
 		{
-			MethodName: "GetLogs",
-			Handler:    _EVM_GetLogs_Handler,
+			MethodName: "FilterLogs",
+			Handler:    _EVM_FilterLogs_Handler,
 		},
 		{
 			MethodName: "BalanceAt",

@@ -58,8 +58,8 @@ func (e *evmClient) CallContract(ctx context.Context, msg *evm.CallMsg, confiden
 	return reply.Data.GetAbi(), nil
 }
 
-func (e *evmClient) GetLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
-	reply, err := e.cl.GetLogs(ctx, &evmpb.GetLogsRequest{
+func (e *evmClient) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
+	reply, err := e.cl.FilterLogs(ctx, &evmpb.FilterLogsRequest{
 		FilterQuery: evmFilterToProto(filterQuery),
 	})
 
@@ -168,13 +168,13 @@ func (e *evmClient) UnregisterLogTracking(ctx context.Context, filterName string
 	return err
 }
 
-func (e *evmClient) GetTransactionStatus(ctx context.Context, transactionID string) (evm.TransactionStatus, error) {
+func (e *evmClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
 	reply, err := e.cl.GetTransactionStatus(ctx, &evmpb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
-		return evm.Unknown, err
+		return types.Unknown, err
 	}
 
-	return evm.TransactionStatus(reply.TransactionStatus), nil
+	return types.TransactionStatus(reply.TransactionStatus), nil
 }
 
 var _ evmpb.EVMServer = (*evmServer)(nil)
@@ -222,17 +222,17 @@ func (e *evmServer) CallContract(ctx context.Context, req *evmpb.CallContractReq
 		Data: &evmpb.ABIPayload{Abi: data},
 	}, nil
 }
-func (e *evmServer) GetLogs(ctx context.Context, req *evmpb.GetLogsRequest) (*evmpb.GetLogsReply, error) {
+func (e *evmServer) FilterLogs(ctx context.Context, req *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
 	f, err := protoToEvmFilter(req.FilterQuery)
 	if err != nil {
 		return nil, err
 	}
-	logs, err := e.impl.GetLogs(ctx, f)
+	logs, err := e.impl.FilterLogs(ctx, f)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.GetLogsReply{
+	return &evmpb.FilterLogsReply{
 		Logs: logsToProto(logs),
 	}, nil
 }

@@ -1849,27 +1849,27 @@ func (x *GetTransactionFeeReply) GetTransationFee() *pb.BigInt {
 	return nil
 }
 
-type GetLogsRequest struct {
+type FilterLogsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FilterQuery   *FilterQuery           `protobuf:"bytes,1,opt,name=filter_query,json=filterQuery,proto3" json:"filter_query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetLogsRequest) Reset() {
-	*x = GetLogsRequest{}
+func (x *FilterLogsRequest) Reset() {
+	*x = FilterLogsRequest{}
 	mi := &file_evm_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetLogsRequest) String() string {
+func (x *FilterLogsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetLogsRequest) ProtoMessage() {}
+func (*FilterLogsRequest) ProtoMessage() {}
 
-func (x *GetLogsRequest) ProtoReflect() protoreflect.Message {
+func (x *FilterLogsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1881,39 +1881,39 @@ func (x *GetLogsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetLogsRequest.ProtoReflect.Descriptor instead.
-func (*GetLogsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use FilterLogsRequest.ProtoReflect.Descriptor instead.
+func (*FilterLogsRequest) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *GetLogsRequest) GetFilterQuery() *FilterQuery {
+func (x *FilterLogsRequest) GetFilterQuery() *FilterQuery {
 	if x != nil {
 		return x.FilterQuery
 	}
 	return nil
 }
 
-type GetLogsReply struct {
+type FilterLogsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Logs          []*Log                 `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetLogsReply) Reset() {
-	*x = GetLogsReply{}
+func (x *FilterLogsReply) Reset() {
+	*x = FilterLogsReply{}
 	mi := &file_evm_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetLogsReply) String() string {
+func (x *FilterLogsReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetLogsReply) ProtoMessage() {}
+func (*FilterLogsReply) ProtoMessage() {}
 
-func (x *GetLogsReply) ProtoReflect() protoreflect.Message {
+func (x *FilterLogsReply) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1925,12 +1925,12 @@ func (x *GetLogsReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetLogsReply.ProtoReflect.Descriptor instead.
-func (*GetLogsReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use FilterLogsReply.ProtoReflect.Descriptor instead.
+func (*FilterLogsReply) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *GetLogsReply) GetLogs() []*Log {
+func (x *FilterLogsReply) GetLogs() []*Log {
 	if x != nil {
 		return x.Logs
 	}
@@ -2583,7 +2583,7 @@ var File_evm_proto protoreflect.FileDescriptor
 
 const file_evm_proto_rawDesc = "" +
 	"\n" +
-	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
+	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x15contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +
@@ -2703,10 +2703,10 @@ const file_evm_proto_rawDesc = "" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"M\n" +
 	"\x16GetTransactionFeeReply\x123\n" +
-	"\x0etransation_fee\x18\x01 \x01(\v2\f.loop.BigIntR\rtransationFee\"V\n" +
-	"\x0eGetLogsRequest\x12D\n" +
-	"\ffilter_query\x18\x01 \x01(\v2!.loop.internal.pb.evm.FilterQueryR\vfilterQuery\"=\n" +
-	"\fGetLogsReply\x12-\n" +
+	"\x0etransation_fee\x18\x01 \x01(\v2\f.loop.BigIntR\rtransationFee\"Y\n" +
+	"\x11FilterLogsRequest\x12D\n" +
+	"\ffilter_query\x18\x01 \x01(\v2!.loop.internal.pb.evm.FilterQueryR\vfilterQuery\"@\n" +
+	"\x0fFilterLogsReply\x12-\n" +
 	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs\"|\n" +
 	"\x10BalanceAtRequest\x127\n" +
 	"\aaccount\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\aaccount\x12/\n" +
@@ -2751,11 +2751,12 @@ const file_evm_proto_rawDesc = "" +
 	"\x18TRANSACTION_STATUS_FATAL\x10\x05*\"\n" +
 	"\x0fBooleanOperator\x12\a\n" +
 	"\x03AND\x10\x00\x12\x06\n" +
-	"\x02OR\x10\x012\xf1\t\n" +
+	"\x02OR\x10\x012\xfa\t\n" +
 	"\x03EVM\x12s\n" +
 	"\x11GetTransactionFee\x12..loop.internal.pb.evm.GetTransactionFeeRequest\x1a,.loop.internal.pb.evm.GetTransactionFeeReply\"\x00\x12b\n" +
-	"\fCallContract\x12).loop.internal.pb.evm.CallContractRequest\x1a'.loop.internal.pb.evm.CallContractReply\x12S\n" +
-	"\aGetLogs\x12$.loop.internal.pb.evm.GetLogsRequest\x1a\".loop.internal.pb.evm.GetLogsReply\x12Y\n" +
+	"\fCallContract\x12).loop.internal.pb.evm.CallContractRequest\x1a'.loop.internal.pb.evm.CallContractReply\x12\\\n" +
+	"\n" +
+	"FilterLogs\x12'.loop.internal.pb.evm.FilterLogsRequest\x1a%.loop.internal.pb.evm.FilterLogsReply\x12Y\n" +
 	"\tBalanceAt\x12&.loop.internal.pb.evm.BalanceAtRequest\x1a$.loop.internal.pb.evm.BalanceAtReply\x12_\n" +
 	"\vEstimateGas\x12(.loop.internal.pb.evm.EstimateGasRequest\x1a&.loop.internal.pb.evm.EstimateGasReply\x12z\n" +
 	"\x14GetTransactionByHash\x121.loop.internal.pb.evm.GetTransactionByHashRequest\x1a/.loop.internal.pb.evm.GetTransactionByHashReply\x12g\n" +
@@ -2810,8 +2811,8 @@ var file_evm_proto_goTypes = []any{
 	(*CallContractReply)(nil),            // 26: loop.internal.pb.evm.CallContractReply
 	(*GetTransactionFeeRequest)(nil),     // 27: loop.internal.pb.evm.GetTransactionFeeRequest
 	(*GetTransactionFeeReply)(nil),       // 28: loop.internal.pb.evm.GetTransactionFeeReply
-	(*GetLogsRequest)(nil),               // 29: loop.internal.pb.evm.GetLogsRequest
-	(*GetLogsReply)(nil),                 // 30: loop.internal.pb.evm.GetLogsReply
+	(*FilterLogsRequest)(nil),            // 29: loop.internal.pb.evm.FilterLogsRequest
+	(*FilterLogsReply)(nil),              // 30: loop.internal.pb.evm.FilterLogsReply
 	(*BalanceAtRequest)(nil),             // 31: loop.internal.pb.evm.BalanceAtRequest
 	(*BalanceAtReply)(nil),               // 32: loop.internal.pb.evm.BalanceAtReply
 	(*EstimateGasRequest)(nil),           // 33: loop.internal.pb.evm.EstimateGasRequest
@@ -2893,8 +2894,8 @@ var file_evm_proto_depIdxs = []int32{
 	48, // 56: loop.internal.pb.evm.CallContractRequest.confidence_level:type_name -> loop.Confidence
 	4,  // 57: loop.internal.pb.evm.CallContractReply.data:type_name -> loop.internal.pb.evm.ABIPayload
 	45, // 58: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
-	8,  // 59: loop.internal.pb.evm.GetLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
-	7,  // 60: loop.internal.pb.evm.GetLogsReply.logs:type_name -> loop.internal.pb.evm.Log
+	8,  // 59: loop.internal.pb.evm.FilterLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
+	7,  // 60: loop.internal.pb.evm.FilterLogsReply.logs:type_name -> loop.internal.pb.evm.Log
 	2,  // 61: loop.internal.pb.evm.BalanceAtRequest.account:type_name -> loop.internal.pb.evm.Address
 	45, // 62: loop.internal.pb.evm.BalanceAtRequest.block_number:type_name -> loop.BigInt
 	45, // 63: loop.internal.pb.evm.BalanceAtReply.balance:type_name -> loop.BigInt
@@ -2911,7 +2912,7 @@ var file_evm_proto_depIdxs = []int32{
 	0,  // 74: loop.internal.pb.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.internal.pb.evm.TransactionStatus
 	27, // 75: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
 	25, // 76: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
-	29, // 77: loop.internal.pb.evm.EVM.GetLogs:input_type -> loop.internal.pb.evm.GetLogsRequest
+	29, // 77: loop.internal.pb.evm.EVM.FilterLogs:input_type -> loop.internal.pb.evm.FilterLogsRequest
 	31, // 78: loop.internal.pb.evm.EVM.BalanceAt:input_type -> loop.internal.pb.evm.BalanceAtRequest
 	33, // 79: loop.internal.pb.evm.EVM.EstimateGas:input_type -> loop.internal.pb.evm.EstimateGasRequest
 	35, // 80: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
@@ -2923,7 +2924,7 @@ var file_evm_proto_depIdxs = []int32{
 	43, // 86: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.internal.pb.evm.GetTransactionStatusRequest
 	28, // 87: loop.internal.pb.evm.EVM.GetTransactionFee:output_type -> loop.internal.pb.evm.GetTransactionFeeReply
 	26, // 88: loop.internal.pb.evm.EVM.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
-	30, // 89: loop.internal.pb.evm.EVM.GetLogs:output_type -> loop.internal.pb.evm.GetLogsReply
+	30, // 89: loop.internal.pb.evm.EVM.FilterLogs:output_type -> loop.internal.pb.evm.FilterLogsReply
 	32, // 90: loop.internal.pb.evm.EVM.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
 	34, // 91: loop.internal.pb.evm.EVM.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
 	36, // 92: loop.internal.pb.evm.EVM.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply

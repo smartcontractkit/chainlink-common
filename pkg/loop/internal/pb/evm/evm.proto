@@ -6,13 +6,14 @@ package loop.internal.pb.evm;
 
 import "relayer.proto";
 import "contract_reader.proto";
+import "contract_writer.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
   rpc CallContract(CallContractRequest) returns (CallContractReply);
-  rpc GetLogs(GetLogsRequest) returns (GetLogsReply);
+  rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
   rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
   rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
@@ -226,11 +227,11 @@ message GetTransactionFeeReply {
   BigInt transation_fee = 1; // transaction fee is the cost of transaction execution in Wei
 }
 
-message GetLogsRequest {
+message FilterLogsRequest {
   FilterQuery filter_query = 1;
 }
 
-message GetLogsReply {
+message FilterLogsReply {
   repeated Log logs = 1;
 }
 

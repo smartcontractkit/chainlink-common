@@ -109,14 +109,3 @@ type Head struct {
 type TransactionFee struct {
 	TransactionFee *big.Int // Cost of transaction in wei
 }
-
-type TransactionStatus int
-
-const (
-	Unknown TransactionStatus = iota
-	Pending
-	Unconfirmed
-	Finalized
-	Failed
-	Fatal
-)

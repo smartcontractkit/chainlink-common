@@ -124,6 +124,8 @@ message Head {
   Hash parent_hash = 4;
 }
 
+message EVMPrimitive{}
+
 // TransactionStatus is an enum for the status of a transaction.
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm/TransactionStatus].
 enum TransactionStatus {

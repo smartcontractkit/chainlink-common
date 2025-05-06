@@ -1933,6 +1933,108 @@ func (x *TxHash) GetTxHash() string {
 	return ""
 }
 
+type EVMPrimitive struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMPrimitive) Reset() {
+	*x = EVMPrimitive{}
+	mi := &file_contract_reader_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMPrimitive) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMPrimitive) ProtoMessage() {}
+
+func (x *EVMPrimitive) ProtoReflect() protoreflect.Message {
+	mi := &file_contract_reader_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMPrimitive.ProtoReflect.Descriptor instead.
+func (*EVMPrimitive) Descriptor() ([]byte, []int) {
+	return file_contract_reader_proto_rawDescGZIP(), []int{30}
+}
+
+type ChainPrimitive struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to ChainPrimitive:
+	//
+	//	*ChainPrimitive_Evm
+	ChainPrimitive isChainPrimitive_ChainPrimitive `protobuf_oneof:"chain_primitive"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ChainPrimitive) Reset() {
+	*x = ChainPrimitive{}
+	mi := &file_contract_reader_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChainPrimitive) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChainPrimitive) ProtoMessage() {}
+
+func (x *ChainPrimitive) ProtoReflect() protoreflect.Message {
+	mi := &file_contract_reader_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChainPrimitive.ProtoReflect.Descriptor instead.
+func (*ChainPrimitive) Descriptor() ([]byte, []int) {
+	return file_contract_reader_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ChainPrimitive) GetChainPrimitive() isChainPrimitive_ChainPrimitive {
+	if x != nil {
+		return x.ChainPrimitive
+	}
+	return nil
+}
+
+func (x *ChainPrimitive) GetEvm() *EVMPrimitive {
+	if x != nil {
+		if x, ok := x.ChainPrimitive.(*ChainPrimitive_Evm); ok {
+			return x.Evm
+		}
+	}
+	return nil
+}
+
+type isChainPrimitive_ChainPrimitive interface {
+	isChainPrimitive_ChainPrimitive()
+}
+
+type ChainPrimitive_Evm struct {
+	Evm *EVMPrimitive `protobuf:"bytes,1,opt,name=evm,proto3,oneof"`
+}
+
+func (*ChainPrimitive_Evm) isChainPrimitive_ChainPrimitive() {}
+
 // Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
 type Primitive struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1943,6 +2045,7 @@ type Primitive struct {
 	//	*Primitive_Confidence
 	//	*Primitive_Timestamp
 	//	*Primitive_TxHash
+	//	*Primitive_ChainPrimitive
 	Primitive     isPrimitive_Primitive `protobuf_oneof:"primitive"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1950,7 +2053,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_contract_reader_proto_msgTypes[30]
+	mi := &file_contract_reader_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1962,7 +2065,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[30]
+	mi := &file_contract_reader_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1975,7 +2078,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{30}
+	return file_contract_reader_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -2030,6 +2133,15 @@ func (x *Primitive) GetTxHash() *TxHash {
 	return nil
 }
 
+func (x *Primitive) GetChainPrimitive() *ChainPrimitive {
+	if x != nil {
+		if x, ok := x.Primitive.(*Primitive_ChainPrimitive); ok {
+			return x.ChainPrimitive
+		}
+	}
+	return nil
+}
+
 type isPrimitive_Primitive interface {
 	isPrimitive_Primitive()
 }
@@ -2054,6 +2166,10 @@ type Primitive_TxHash struct {
 	TxHash *TxHash `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3,oneof"`
 }
 
+type Primitive_ChainPrimitive struct {
+	ChainPrimitive *ChainPrimitive `protobuf:"bytes,6,opt,name=chain_primitive,json=chainPrimitive,proto3,oneof"`
+}
+
 func (*Primitive_Comparator) isPrimitive_Primitive() {}
 
 func (*Primitive_Block) isPrimitive_Primitive() {}
@@ -2063,6 +2179,8 @@ func (*Primitive_Confidence) isPrimitive_Primitive() {}
 func (*Primitive_Timestamp) isPrimitive_Primitive() {}
 
 func (*Primitive_TxHash) isPrimitive_Primitive() {}
+
+func (*Primitive_ChainPrimitive) isPrimitive_Primitive() {}
 
 // Limit defines a structure for limiting the results of a query, including optional cursor-based pagination.
 type Limit struct {
@@ -2076,7 +2194,7 @@ type Limit struct {
 
 func (x *Limit) Reset() {
 	*x = Limit{}
-	mi := &file_contract_reader_proto_msgTypes[31]
+	mi := &file_contract_reader_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2088,7 +2206,7 @@ func (x *Limit) String() string {
 func (*Limit) ProtoMessage() {}
 
 func (x *Limit) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[31]
+	mi := &file_contract_reader_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2101,7 +2219,7 @@ func (x *Limit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Limit.ProtoReflect.Descriptor instead.
 func (*Limit) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{31}
+	return file_contract_reader_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *Limit) GetCursor() string {
@@ -2135,7 +2253,7 @@ type SortBy struct {
 
 func (x *SortBy) Reset() {
 	*x = SortBy{}
-	mi := &file_contract_reader_proto_msgTypes[32]
+	mi := &file_contract_reader_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2147,7 +2265,7 @@ func (x *SortBy) String() string {
 func (*SortBy) ProtoMessage() {}
 
 func (x *SortBy) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[32]
+	mi := &file_contract_reader_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2160,7 +2278,7 @@ func (x *SortBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBy.ProtoReflect.Descriptor instead.
 func (*SortBy) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{32}
+	return file_contract_reader_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *SortBy) GetSortType() SortType {
@@ -2188,7 +2306,7 @@ type LimitAndSort struct {
 
 func (x *LimitAndSort) Reset() {
 	*x = LimitAndSort{}
-	mi := &file_contract_reader_proto_msgTypes[33]
+	mi := &file_contract_reader_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2200,7 +2318,7 @@ func (x *LimitAndSort) String() string {
 func (*LimitAndSort) ProtoMessage() {}
 
 func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[33]
+	mi := &file_contract_reader_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2213,7 +2331,7 @@ func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LimitAndSort.ProtoReflect.Descriptor instead.
 func (*LimitAndSort) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{33}
+	return file_contract_reader_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *LimitAndSort) GetSortBy() []*SortBy {
@@ -2339,7 +2457,11 @@ const file_contract_reader_proto_rawDesc = "" +
 	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x124\n" +
 	"\boperator\x18\x02 \x01(\x0e2\x18.loop.ComparisonOperatorR\boperator\"!\n" +
 	"\x06TxHash\x12\x17\n" +
-	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"\xff\x01\n" +
+	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"\x0e\n" +
+	"\fEVMPrimitive\"K\n" +
+	"\x0eChainPrimitive\x12&\n" +
+	"\x03evm\x18\x01 \x01(\v2\x12.loop.EVMPrimitiveH\x00R\x03evmB\x11\n" +
+	"\x0fchain_primitive\"\xc0\x02\n" +
 	"\tPrimitive\x122\n" +
 	"\n" +
 	"comparator\x18\x01 \x01(\v2\x10.loop.ComparatorH\x00R\n" +
@@ -2349,7 +2471,8 @@ const file_contract_reader_proto_rawDesc = "" +
 	"confidence\x18\x03 \x01(\x0e2\x10.loop.ConfidenceH\x00R\n" +
 	"confidence\x12/\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x0f.loop.TimestampH\x00R\ttimestamp\x12'\n" +
-	"\atx_hash\x18\x05 \x01(\v2\f.loop.TxHashH\x00R\x06txHashB\v\n" +
+	"\atx_hash\x18\x05 \x01(\v2\f.loop.TxHashH\x00R\x06txHash\x12?\n" +
+	"\x0fchain_primitive\x18\x06 \x01(\v2\x14.loop.ChainPrimitiveH\x00R\x0echainPrimitiveB\v\n" +
 	"\tprimitive\"\x8d\x01\n" +
 	"\x05Limit\x12\x1b\n" +
 	"\x06cursor\x18\x01 \x01(\tH\x00R\x06cursor\x88\x01\x01\x128\n" +
@@ -2410,7 +2533,7 @@ func file_contract_reader_proto_rawDescGZIP() []byte {
 }
 
 var file_contract_reader_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_contract_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_contract_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_contract_reader_proto_goTypes = []any{
 	(ComparisonOperator)(0),                 // 0: loop.ComparisonOperator
 	(BooleanOperator)(0),                    // 1: loop.BooleanOperator
@@ -2448,84 +2571,88 @@ var file_contract_reader_proto_goTypes = []any{
 	(*Block)(nil),                           // 33: loop.Block
 	(*Timestamp)(nil),                       // 34: loop.Timestamp
 	(*TxHash)(nil),                          // 35: loop.TxHash
-	(*Primitive)(nil),                       // 36: loop.Primitive
-	(*Limit)(nil),                           // 37: loop.Limit
-	(*SortBy)(nil),                          // 38: loop.SortBy
-	(*LimitAndSort)(nil),                    // 39: loop.LimitAndSort
-	(*VersionedBytes)(nil),                  // 40: loop.VersionedBytes
-	(*emptypb.Empty)(nil),                   // 41: google.protobuf.Empty
+	(*EVMPrimitive)(nil),                    // 36: loop.EVMPrimitive
+	(*ChainPrimitive)(nil),                  // 37: loop.ChainPrimitive
+	(*Primitive)(nil),                       // 38: loop.Primitive
+	(*Limit)(nil),                           // 39: loop.Limit
+	(*SortBy)(nil),                          // 40: loop.SortBy
+	(*LimitAndSort)(nil),                    // 41: loop.LimitAndSort
+	(*VersionedBytes)(nil),                  // 42: loop.VersionedBytes
+	(*emptypb.Empty)(nil),                   // 43: google.protobuf.Empty
 }
 var file_contract_reader_proto_depIdxs = []int32{
 	2,  // 0: loop.GetLatestValueRequest.confidence:type_name -> loop.Confidence
-	40, // 1: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
+	42, // 1: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
 	18, // 2: loop.BatchGetLatestValuesRequest.requests:type_name -> loop.ContractBatch
 	25, // 3: loop.QueryKeyRequest.contract:type_name -> loop.BoundContract
 	26, // 4: loop.QueryKeyRequest.filter:type_name -> loop.QueryKeyFilter
-	39, // 5: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	41, // 5: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.LimitAndSort
 	10, // 6: loop.QueryKeysRequest.filters:type_name -> loop.ContractKeyFilter
-	39, // 7: loop.QueryKeysRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	41, // 7: loop.QueryKeysRequest.limit_and_sort:type_name -> loop.LimitAndSort
 	25, // 8: loop.ContractKeyFilter.contract:type_name -> loop.BoundContract
 	26, // 9: loop.ContractKeyFilter.filter:type_name -> loop.QueryKeyFilter
 	25, // 10: loop.BindRequest.bindings:type_name -> loop.BoundContract
 	25, // 11: loop.UnbindRequest.bindings:type_name -> loop.BoundContract
-	40, // 12: loop.GetLatestValueReply.ret_val:type_name -> loop.VersionedBytes
-	40, // 13: loop.GetLatestValueWithHeadDataReply.ret_val:type_name -> loop.VersionedBytes
+	42, // 12: loop.GetLatestValueReply.ret_val:type_name -> loop.VersionedBytes
+	42, // 13: loop.GetLatestValueWithHeadDataReply.ret_val:type_name -> loop.VersionedBytes
 	22, // 14: loop.GetLatestValueWithHeadDataReply.head_data:type_name -> loop.Head
 	20, // 15: loop.BatchGetLatestValuesReply.results:type_name -> loop.ContractBatchResult
 	23, // 16: loop.QueryKeyReply.sequences:type_name -> loop.Sequence
 	24, // 17: loop.QueryKeysReply.sequences:type_name -> loop.SequenceWithKey
 	25, // 18: loop.ContractBatch.contract:type_name -> loop.BoundContract
 	19, // 19: loop.ContractBatch.reads:type_name -> loop.BatchRead
-	40, // 20: loop.BatchRead.params:type_name -> loop.VersionedBytes
-	40, // 21: loop.BatchRead.return_val:type_name -> loop.VersionedBytes
+	42, // 20: loop.BatchRead.params:type_name -> loop.VersionedBytes
+	42, // 21: loop.BatchRead.return_val:type_name -> loop.VersionedBytes
 	25, // 22: loop.ContractBatchResult.contract:type_name -> loop.BoundContract
 	21, // 23: loop.ContractBatchResult.results:type_name -> loop.BatchReadResult
-	40, // 24: loop.BatchReadResult.return_val:type_name -> loop.VersionedBytes
+	42, // 24: loop.BatchReadResult.return_val:type_name -> loop.VersionedBytes
 	22, // 25: loop.Sequence.head:type_name -> loop.Head
-	40, // 26: loop.Sequence.data:type_name -> loop.VersionedBytes
+	42, // 26: loop.Sequence.data:type_name -> loop.VersionedBytes
 	22, // 27: loop.SequenceWithKey.head:type_name -> loop.Head
-	40, // 28: loop.SequenceWithKey.data:type_name -> loop.VersionedBytes
+	42, // 28: loop.SequenceWithKey.data:type_name -> loop.VersionedBytes
 	27, // 29: loop.QueryKeyFilter.expression:type_name -> loop.Expression
-	36, // 30: loop.Expression.primitive:type_name -> loop.Primitive
+	38, // 30: loop.Expression.primitive:type_name -> loop.Primitive
 	28, // 31: loop.Expression.boolean_expression:type_name -> loop.BooleanExpression
 	1,  // 32: loop.BooleanExpression.boolean_operator:type_name -> loop.BooleanOperator
 	27, // 33: loop.BooleanExpression.expression:type_name -> loop.Expression
 	27, // 34: loop.And.expr:type_name -> loop.Expression
 	27, // 35: loop.Or.expr:type_name -> loop.Expression
-	40, // 36: loop.ValueComparator.value:type_name -> loop.VersionedBytes
+	42, // 36: loop.ValueComparator.value:type_name -> loop.VersionedBytes
 	0,  // 37: loop.ValueComparator.operator:type_name -> loop.ComparisonOperator
 	31, // 38: loop.Comparator.value_comparators:type_name -> loop.ValueComparator
 	0,  // 39: loop.Block.operator:type_name -> loop.ComparisonOperator
 	0,  // 40: loop.Timestamp.operator:type_name -> loop.ComparisonOperator
-	32, // 41: loop.Primitive.comparator:type_name -> loop.Comparator
-	33, // 42: loop.Primitive.block:type_name -> loop.Block
-	2,  // 43: loop.Primitive.confidence:type_name -> loop.Confidence
-	34, // 44: loop.Primitive.timestamp:type_name -> loop.Timestamp
-	35, // 45: loop.Primitive.tx_hash:type_name -> loop.TxHash
-	3,  // 46: loop.Limit.direction:type_name -> loop.CursorDirection
-	5,  // 47: loop.SortBy.sort_type:type_name -> loop.SortType
-	4,  // 48: loop.SortBy.direction:type_name -> loop.SortDirection
-	38, // 49: loop.LimitAndSort.sort_by:type_name -> loop.SortBy
-	37, // 50: loop.LimitAndSort.limit:type_name -> loop.Limit
-	6,  // 51: loop.ContractReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
-	6,  // 52: loop.ContractReader.GetLatestValueWithHeadData:input_type -> loop.GetLatestValueRequest
-	7,  // 53: loop.ContractReader.BatchGetLatestValues:input_type -> loop.BatchGetLatestValuesRequest
-	8,  // 54: loop.ContractReader.QueryKey:input_type -> loop.QueryKeyRequest
-	9,  // 55: loop.ContractReader.QueryKeys:input_type -> loop.QueryKeysRequest
-	11, // 56: loop.ContractReader.Bind:input_type -> loop.BindRequest
-	12, // 57: loop.ContractReader.Unbind:input_type -> loop.UnbindRequest
-	13, // 58: loop.ContractReader.GetLatestValue:output_type -> loop.GetLatestValueReply
-	14, // 59: loop.ContractReader.GetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
-	15, // 60: loop.ContractReader.BatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
-	16, // 61: loop.ContractReader.QueryKey:output_type -> loop.QueryKeyReply
-	17, // 62: loop.ContractReader.QueryKeys:output_type -> loop.QueryKeysReply
-	41, // 63: loop.ContractReader.Bind:output_type -> google.protobuf.Empty
-	41, // 64: loop.ContractReader.Unbind:output_type -> google.protobuf.Empty
-	58, // [58:65] is the sub-list for method output_type
-	51, // [51:58] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	36, // 41: loop.ChainPrimitive.evm:type_name -> loop.EVMPrimitive
+	32, // 42: loop.Primitive.comparator:type_name -> loop.Comparator
+	33, // 43: loop.Primitive.block:type_name -> loop.Block
+	2,  // 44: loop.Primitive.confidence:type_name -> loop.Confidence
+	34, // 45: loop.Primitive.timestamp:type_name -> loop.Timestamp
+	35, // 46: loop.Primitive.tx_hash:type_name -> loop.TxHash
+	37, // 47: loop.Primitive.chain_primitive:type_name -> loop.ChainPrimitive
+	3,  // 48: loop.Limit.direction:type_name -> loop.CursorDirection
+	5,  // 49: loop.SortBy.sort_type:type_name -> loop.SortType
+	4,  // 50: loop.SortBy.direction:type_name -> loop.SortDirection
+	40, // 51: loop.LimitAndSort.sort_by:type_name -> loop.SortBy
+	39, // 52: loop.LimitAndSort.limit:type_name -> loop.Limit
+	6,  // 53: loop.ContractReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
+	6,  // 54: loop.ContractReader.GetLatestValueWithHeadData:input_type -> loop.GetLatestValueRequest
+	7,  // 55: loop.ContractReader.BatchGetLatestValues:input_type -> loop.BatchGetLatestValuesRequest
+	8,  // 56: loop.ContractReader.QueryKey:input_type -> loop.QueryKeyRequest
+	9,  // 57: loop.ContractReader.QueryKeys:input_type -> loop.QueryKeysRequest
+	11, // 58: loop.ContractReader.Bind:input_type -> loop.BindRequest
+	12, // 59: loop.ContractReader.Unbind:input_type -> loop.UnbindRequest
+	13, // 60: loop.ContractReader.GetLatestValue:output_type -> loop.GetLatestValueReply
+	14, // 61: loop.ContractReader.GetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
+	15, // 62: loop.ContractReader.BatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
+	16, // 63: loop.ContractReader.QueryKey:output_type -> loop.QueryKeyReply
+	17, // 64: loop.ContractReader.QueryKeys:output_type -> loop.QueryKeysReply
+	43, // 65: loop.ContractReader.Bind:output_type -> google.protobuf.Empty
+	43, // 66: loop.ContractReader.Unbind:output_type -> google.protobuf.Empty
+	60, // [60:67] is the sub-list for method output_type
+	53, // [53:60] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_contract_reader_proto_init() }
@@ -2538,21 +2665,25 @@ func file_contract_reader_proto_init() {
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),
 	}
-	file_contract_reader_proto_msgTypes[30].OneofWrappers = []any{
+	file_contract_reader_proto_msgTypes[31].OneofWrappers = []any{
+		(*ChainPrimitive_Evm)(nil),
+	}
+	file_contract_reader_proto_msgTypes[32].OneofWrappers = []any{
 		(*Primitive_Comparator)(nil),
 		(*Primitive_Block)(nil),
 		(*Primitive_Confidence)(nil),
 		(*Primitive_Timestamp)(nil),
 		(*Primitive_TxHash)(nil),
+		(*Primitive_ChainPrimitive)(nil),
 	}
-	file_contract_reader_proto_msgTypes[31].OneofWrappers = []any{}
+	file_contract_reader_proto_msgTypes[33].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contract_reader_proto_rawDesc), len(file_contract_reader_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   34,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

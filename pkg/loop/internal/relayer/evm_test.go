@@ -103,10 +103,6 @@ func (s *staticEVMClient) LatestAndFinalizedHead(ctx context.Context, in *emptyp
 	return nil, errors.New("unimplemented")
 }
 
-var (
-	fixtureQueryExpression = generateFixtureQuery()
-)
-
 func (s *staticEVMClient) QueryLogsFromCache(ctx context.Context, in *evmpb.QueryLogsFromCacheRequest, opts ...grpc.CallOption) (*evmpb.QueryLogsFromCacheReply, error) {
 	return nil, errors.New("unimplemented")
 }

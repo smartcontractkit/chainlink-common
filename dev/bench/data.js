@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746460645588,
+  "lastUpdate": 1746554689791,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12852,6 +12852,48 @@ window.BENCHMARK_DATA = {
             "value": 28150,
             "unit": "ns/op",
             "extra": "42614 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "995623c69ddc8825e6c55c29c3ae5f0c8053f98d",
+          "message": "Add WASI runner and runtime for the CRE v2 SDK (#1175)",
+          "timestamp": "2025-05-06T14:03:33-04:00",
+          "tree_id": "2d75b8e38130eb742908e5d41d312c0605f9fd6e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/995623c69ddc8825e6c55c29c3ae5f0c8053f98d"
+        },
+        "date": 1746554688754,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.3,
+            "unit": "ns/op",
+            "extra": "3362811 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.1,
+            "unit": "ns/op",
+            "extra": "2861689 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28153,
+            "unit": "ns/op",
+            "extra": "42628 times\n4 procs"
           }
         ]
       }

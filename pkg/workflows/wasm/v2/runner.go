@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
+	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"google.golang.org/protobuf/proto"
@@ -16,27 +16,42 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
-var args = os.Args
-
-func newDonRunner() sdk.DonRunner {
-	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime()}
-	return getRunner(&subscriber[sdk.DonRuntime]{}, &runner[sdk.DonRuntime]{runtime: drt, setRuntime: func(id string, config []byte, maxResponseSize uint64) {
-		drt.ExecId = id
-		drt.ConfigBytes = config
-		drt.MaxResponseSize = maxResponseSize
-	}})
+type runnerInternals interface {
+	args() []string
+	sendResponse(response unsafe.Pointer, responseLen int32) int32
+	versionV2()
 }
 
-func newNodeRunner() sdk.NodeRunner {
-	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime()}
-	return getRunner(&subscriber[sdk.NodeRuntime]{}, &runner[sdk.NodeRuntime]{runtime: nrt, setRuntime: func(id string, config []byte, maxResponseSize uint64) {
-		nrt.ExecId = id
-		nrt.ConfigBytes = config
-		nrt.MaxResponseSize = maxResponseSize
-	}})
+func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.DonRunner {
+	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(runtimeInternals)}
+	return getRunner(
+		&subscriber[sdk.DonRuntime]{runnerInternals: runnerInternals},
+		&runner[sdk.DonRuntime]{
+			runtime:         drt,
+			runnerInternals: runnerInternals,
+			setRuntime: func(id string, config []byte, maxResponseSize uint64) {
+				drt.ExecId = id
+				drt.ConfigBytes = config
+				drt.MaxResponseSize = maxResponseSize
+			}})
+}
+
+func newNodeRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.NodeRunner {
+	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(runtimeInternals)}
+	return getRunner(
+		&subscriber[sdk.NodeRuntime]{runnerInternals: runnerInternals},
+		&runner[sdk.NodeRuntime]{
+			runnerInternals: runnerInternals,
+			runtime:         nrt,
+			setRuntime: func(id string, config []byte, maxResponseSize uint64) {
+				nrt.ExecId = id
+				nrt.ConfigBytes = config
+				nrt.MaxResponseSize = maxResponseSize
+			}})
 }
 
 type runner[T any] struct {
+	runnerInternals
 	trigger    *sdkpb.Trigger
 	id         string
 	runtime    T
@@ -49,7 +64,7 @@ var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 
 func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	// used to ensure that the export isn't optimized away
-	versionV2()
+	d.versionV2()
 	for _, handler := range args.Handlers {
 		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-809 multiple of the same trigger registered
 		// The ID field could be changed to trigger-# and we can use the index or similar.
@@ -68,7 +83,7 @@ func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 			}
 			marshalled, _ := proto.Marshal(execResponse)
 			marshalledPtr, marshalledLen, _ := bufferToPointerLen(marshalled)
-			sendResponse(marshalledPtr, marshalledLen)
+			d.sendResponse(marshalledPtr, marshalledLen)
 		}
 	}
 }
@@ -82,6 +97,7 @@ func (d *runner[T]) LogWriter() io.Writer {
 }
 
 type subscriber[T any] struct {
+	runnerInternals
 	id     string
 	config []byte
 }
@@ -109,7 +125,7 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 	configBytes, _ := proto.Marshal(execResponse)
 	configPtr, configLen, _ := bufferToPointerLen(configBytes)
 
-	result := sendResponse(configPtr, configLen)
+	result := d.sendResponse(configPtr, configLen)
 	if result < 0 {
 		panic(fmt.Sprintf("could not subscribe to triggers: %s", string(configBytes[:-result])))
 	}
@@ -131,6 +147,8 @@ type genericRunner[T any] interface {
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
 	slog.SetDefault(slog.New(slog.NewTextHandler(&writer{}, nil)))
+
+	args := run.args()
 
 	// We expect exactly 2 args, i.e. `wasm <blob>`,
 	// where <blob> is a base64 encoded protobuf message.

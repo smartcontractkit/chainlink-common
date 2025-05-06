@@ -23,7 +23,7 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 			return anyOutput, nil
 		}
 
-		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t)}
+		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t, false, nil)}
 		capability := &basicaction.BasicAction{}
 		response, err := capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
 		require.NoError(t, err)
@@ -34,8 +34,7 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 		_, err := basicactionmock.NewBasicActionCapability(t)
 		require.NoError(t, err)
 
-		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t)}
-		callCapabilityErr = true
+		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t, true, nil)}
 
 		capability := &basicaction.BasicAction{}
 		_, err = capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
@@ -49,9 +48,9 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 			return &basicaction.Outputs{AdaptedThing: "foo"}, nil
 		}
 
-		overrideCapabilityResponseForTest(t, func() ([]byte, error) { return []byte("invalid"), nil })
+		override := func() ([]byte, error) { return []byte("invalid"), nil }
 
-		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t)}
+		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t, false, override)}
 		capability := &basicaction.BasicAction{}
 		_, err = capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
 
@@ -66,9 +65,9 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 		}
 
 		anyErr := errors.New("not this time")
-		overrideCapabilityResponseForTest(t, func() ([]byte, error) { return nil, anyErr })
+		override := func() ([]byte, error) { return nil, anyErr }
 
-		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t)}
+		runtime := &sdkimpl.DonRuntime{RuntimeBase: newTestRuntime(t, false, override)}
 		capability := &basicaction.BasicAction{}
 		_, err = capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
 
@@ -77,13 +76,16 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 }
 
 func TestRuntimeBase_LogWriter(t *testing.T) {
-	runtime := newTestRuntime(t)
+	runtime := newTestRuntime(t, false, nil)
 	assert.IsType(t, &writer{}, runtime.LogWriter())
 }
 
-func newTestRuntime(t *testing.T) sdkimpl.RuntimeBase {
-	initRunnerAndRuntimeForTest(t, anyExecutionId)
-	runtime := newRuntime()
+func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride func() ([]byte, error)) sdkimpl.RuntimeBase {
+	internals := testRuntimeInternals(t)
+	internals.executionId = anyExecutionId
+	internals.callCapabilityErr = callCapabilityErr
+	internals.awaitResponseOverride = awaitResponseOverride
+	runtime := newRuntime(internals)
 	runtime.ExecId = anyExecutionId
 	runtime.ConfigBytes = anyConfig
 	runtime.MaxResponseSize = sdk.DefaultMaxResponseSizeBytes

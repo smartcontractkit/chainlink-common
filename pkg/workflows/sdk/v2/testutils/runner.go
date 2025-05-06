@@ -103,7 +103,7 @@ func (r *runner[T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
 
 func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for _, handler := range args.Handlers {
-		trigger, err := r.registry.GetCapability(handler.Id())
+		trigger, err := r.registry.GetCapability(handler.Name())
 		if err != nil {
 			if r.strictTriggers {
 				r.err = err

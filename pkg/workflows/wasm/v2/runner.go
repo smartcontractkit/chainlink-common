@@ -52,7 +52,7 @@ func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	versionV2()
 	for _, handler := range args.Handlers {
 		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-809 multiple of the same trigger registered
-		// The ID field could be changed to tirger-# and we can use the index or similar.
+		// The ID field could be changed to trigger-# and we can use the index or similar.
 		if handler.Id() == d.trigger.Id {
 			response, err := handler.Callback()(d.runtime, d.trigger.Payload)
 			execResponse := &pb.ExecutionResult{Id: d.id}

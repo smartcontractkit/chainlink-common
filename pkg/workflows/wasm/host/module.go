@@ -1110,7 +1110,7 @@ func createAwaitCapsFn(
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
-			errStr := sdk.ResponseBufferToSmall
+			errStr := sdk.ResponseBufferTooSmall
 			logger.Error(errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}

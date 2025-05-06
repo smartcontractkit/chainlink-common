@@ -49,7 +49,7 @@ func Test_NoDag_Run(t *testing.T) {
 	require.NoError(t, err)
 	m.Start()
 
-	// When a TriggerEvent occurs, Engine calls Run() with that Event.
+	// When a TriggerEvent occurs, Engine calls Execute with that Event.
 	trigger := &basictrigger.Outputs{CoolOutput: "Hi"}
 	wrapped, err := anypb.New(trigger)
 	require.NoError(t, err)

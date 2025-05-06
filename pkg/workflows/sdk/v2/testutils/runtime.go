@@ -83,7 +83,7 @@ func createAwaitCapabilities(tb testing.TB) sdkimpl.AwaitCapabilitiesFn {
 
 		bytes, _ := proto.Marshal(response)
 		if len(bytes) > int(maxResponseSize) {
-			return nil, errors.New(sdk.ResponseBufferToSmall)
+			return nil, errors.New(sdk.ResponseBufferTooSmall)
 		}
 
 		return response, errors.Join(errs...)

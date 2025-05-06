@@ -67,6 +67,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 	})
 
 	t.Run("call capability errors", func(t *testing.T) {
+		// The capability is not registered, so the call will fail.
 		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
 			workflowAction1 := &basicaction.BasicAction{}
 			call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
@@ -77,7 +78,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("capability errors", func(t *testing.T) {
+	t.Run("capability errors are returned to the caller", func(t *testing.T) {
 		action, err := basicactionmock.NewBasicActionCapability(t)
 		require.NoError(t, err)
 

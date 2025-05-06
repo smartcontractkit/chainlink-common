@@ -211,15 +211,6 @@ message TxHash{
   string tx_hash = 1;
 }
 
-message EVMPrimitive {
-}
-
-message ChainPrimitive {
-  oneof chain_primitive {
-    EVMPrimitive evm = 1;
-  }
-}
-
 // Primitive defines the basic building blocks for filter conditions based around fundamental blockchain concepts.
 message Primitive {
   oneof primitive {
@@ -228,7 +219,6 @@ message Primitive {
     Confidence confidence = 3;
     Timestamp timestamp = 4;
     TxHash tx_hash = 5;
-    ChainPrimitive chain_primitive = 6;
   }
 }
 

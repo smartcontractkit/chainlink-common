@@ -124,8 +124,6 @@ message Head {
   Hash parent_hash = 4;
 }
 
-message EVMPrimitive{}
-
 // TransactionStatus is an enum for the status of a transaction.
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm/TransactionStatus].
 enum TransactionStatus {
@@ -136,6 +134,72 @@ enum TransactionStatus {
     TRANSACTION_STATUS_FAILED = 4;
     TRANSACTION_STATUS_FATAL = 5;
 }
+
+
+message Expression {
+  oneof evaluator {
+    EXTPrimitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+enum BooleanOperator {
+  AND = 0;
+  OR = 1;
+}
+
+message BooleanExpression {
+  BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
+}
+
+message And {
+  repeated Expression expr = 1;
+}
+
+message Or {
+  repeated Expression expr = 1;
+}
+
+message EXTPrimitive {
+  oneof primitive{
+	Primitive general_primitive = 1;
+	EVMPrimitive evm_primitive = 2;
+  }
+}
+
+message HashValueComparator {
+  repeated Hash values = 1;
+  ComparisonOperator operator = 2;
+}
+
+message AddressFilter {
+  Address address = 1;
+}
+
+message EventSigFilter {
+  Hash eventSig = 1;
+}
+
+message EventByWordFilter {
+  uint32 word_index = 1;
+  repeated HashValueComparator  hashed_value_comparers = 2;
+}
+
+message EventByTopicFilter {
+  uint64 topic = 1;
+  repeated HashValueComparator hashed_value_comparers = 2;
+}
+
+message EVMPrimitive {
+  oneof primitive {
+    AddressFilter address = 1;
+    EventSigFilter event_sig = 2;
+    EventByWordFilter event_by_word = 3;
+    EventByTopicFilter event_by_topic = 4;
+  }
+}
+
 
 // ----- Request/Reply Wrappers -----
 message LatestAndFinalizedHeadReply {
@@ -231,3 +295,5 @@ message GetTransactionStatusRequest {
 message GetTransactionStatusReply {
     TransactionStatus transaction_status = 1;
 }
+
+

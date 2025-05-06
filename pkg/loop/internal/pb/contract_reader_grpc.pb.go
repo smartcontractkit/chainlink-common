@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: contract_reader.proto
+// source: loop/internal/pb/contract_reader.proto
 
 package pb
 
@@ -32,6 +32,8 @@ const (
 // ContractReaderClient is the client API for ContractReader service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Service Definition
 type ContractReaderClient interface {
 	GetLatestValue(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueReply, error)
 	GetLatestValueWithHeadData(ctx context.Context, in *GetLatestValueRequest, opts ...grpc.CallOption) (*GetLatestValueWithHeadDataReply, error)
@@ -123,6 +125,8 @@ func (c *contractReaderClient) Unbind(ctx context.Context, in *UnbindRequest, op
 // ContractReaderServer is the server API for ContractReader service.
 // All implementations must embed UnimplementedContractReaderServer
 // for forward compatibility.
+//
+// Service Definition
 type ContractReaderServer interface {
 	GetLatestValue(context.Context, *GetLatestValueRequest) (*GetLatestValueReply, error)
 	GetLatestValueWithHeadData(context.Context, *GetLatestValueRequest) (*GetLatestValueWithHeadDataReply, error)
@@ -346,5 +350,5 @@ var ContractReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "contract_reader.proto",
+	Metadata: "loop/internal/pb/contract_reader.proto",
 }

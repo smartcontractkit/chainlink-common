@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/pb";
+
+package loop.pb;
+
+message VersionedBytes {
+  uint32 version = 1;
+  bytes data = 2;
+}
+
+// BigInt represents a [big.Int].
+message BigInt {
+  bool negative = 1;
+  bytes value = 2;
+}

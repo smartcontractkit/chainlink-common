@@ -6,7 +6,7 @@ package loop;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-import "relayer.proto";
+import "loop/pb/types.proto";
 
 service PluginMedian {
   rpc NewMedianFactory (NewMedianFactoryRequest) returns (NewMedianFactoryReply) {}
@@ -47,10 +47,10 @@ service ReportCodec {
 // ParsedAttributedObservation represents [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ParsedAttributedObservation].
 message ParsedAttributedObservation {
   uint32 timestamp = 1;
-  BigInt value = 2;
-  BigInt julesPerFeeCoin = 3;
+  pb.BigInt value = 2;
+  pb.BigInt julesPerFeeCoin = 3;
   uint32  observer = 4; // uint8
-  BigInt gasPriceSubunits = 5;
+  pb.BigInt gasPriceSubunits = 5;
 }
 
 // BuildReportRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.BuildReport].
@@ -70,7 +70,7 @@ message MedianFromReportRequest {
 
 // MedianFromReportReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.MedianFromReport].
 message MedianFromReportReply {
-  BigInt median = 1;
+  pb.BigInt median = 1;
 }
 
 // MaxReportLengthRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.MaxReportLength].
@@ -95,7 +95,7 @@ message LatestTransmissionDetailsReply {
   bytes configDigest = 1; // [32]byte
   uint32 epoch = 2;
   uint32 round = 3; // uint8
-  BigInt latestAnswer = 4;
+  pb.BigInt latestAnswer = 4;
   google.protobuf.Timestamp latestTimestamp = 5;
 }
 
@@ -118,8 +118,8 @@ service OnchainConfigCodec {
 
 // OnchainConfig represents [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.OnchainConfig].
 message OnchainConfig {
-  BigInt min = 1;
-  BigInt max = 2;
+  pb.BigInt min = 1;
+  pb.BigInt max = 2;
 }
 
 // EncodeRequest has arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.OnchainConfigCodec.Encode].

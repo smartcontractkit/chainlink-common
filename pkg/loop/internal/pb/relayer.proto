@@ -6,7 +6,8 @@ package loop;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
-import "contract_reader.proto";
+import "loop/internal/pb/contract_reader.proto";
+import "loop/pb/types.proto";
 
 service PluginRelayer {
   rpc NewRelayer (NewRelayerRequest) returns (NewRelayerReply) {}
@@ -165,7 +166,7 @@ message ReplayRequest {
 message TransactionRequest {
   string from = 1;
   string to = 2;
-  BigInt amount = 3;
+  pb.BigInt amount = 3;
   bool balanceCheck = 4;
 }
 
@@ -300,19 +301,13 @@ message HealthReportReply {
   map<string, string> healthReport = 1;
 }
 
-// BigInt represents a [big.Int].
-message BigInt {
-  bool negative = 1;
-  bytes value = 2;
-}
-
 // Keys, Signatures, Messages to sign
 
 message StarknetSignature {
-  BigInt x = 1;
-  BigInt y = 2;
+  pb.BigInt x = 1;
+  pb.BigInt y = 2;
 }
 
 message StarknetMessageHash {
-  BigInt hash = 1;
+  pb.BigInt hash = 1;
 }

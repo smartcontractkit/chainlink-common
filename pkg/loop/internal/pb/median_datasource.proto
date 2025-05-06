@@ -4,7 +4,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
+import "loop/pb/types.proto";
 
 service DataSource {
     rpc Observe (ObserveRequest) returns (ObserveReply) {}
@@ -17,6 +18,6 @@ service DataSource {
   
   // ObserveReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.DataSource.Observe].
   message ObserveReply {
-    BigInt value = 1;
+    pb.BigInt value = 1;
   }
   

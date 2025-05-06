@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/pb/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"

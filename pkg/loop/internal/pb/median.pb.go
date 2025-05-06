@@ -2,11 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: median.proto
+// source: loop/internal/pb/median.proto
 
 package pb
 
 import (
+	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -39,7 +40,7 @@ type NewMedianFactoryRequest struct {
 
 func (x *NewMedianFactoryRequest) Reset() {
 	*x = NewMedianFactoryRequest{}
-	mi := &file_median_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +52,7 @@ func (x *NewMedianFactoryRequest) String() string {
 func (*NewMedianFactoryRequest) ProtoMessage() {}
 
 func (x *NewMedianFactoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +65,7 @@ func (x *NewMedianFactoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMedianFactoryRequest.ProtoReflect.Descriptor instead.
 func (*NewMedianFactoryRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NewMedianFactoryRequest) GetMedianProviderID() uint32 {
@@ -126,7 +127,7 @@ type NewMedianFactoryReply struct {
 
 func (x *NewMedianFactoryReply) Reset() {
 	*x = NewMedianFactoryReply{}
-	mi := &file_median_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +139,7 @@ func (x *NewMedianFactoryReply) String() string {
 func (*NewMedianFactoryReply) ProtoMessage() {}
 
 func (x *NewMedianFactoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +152,7 @@ func (x *NewMedianFactoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMedianFactoryReply.ProtoReflect.Descriptor instead.
 func (*NewMedianFactoryReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NewMedianFactoryReply) GetReportingPluginFactoryID() uint32 {
@@ -171,7 +172,7 @@ type SaveErrorRequest struct {
 
 func (x *SaveErrorRequest) Reset() {
 	*x = SaveErrorRequest{}
-	mi := &file_median_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -183,7 +184,7 @@ func (x *SaveErrorRequest) String() string {
 func (*SaveErrorRequest) ProtoMessage() {}
 
 func (x *SaveErrorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -196,7 +197,7 @@ func (x *SaveErrorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveErrorRequest.ProtoReflect.Descriptor instead.
 func (*SaveErrorRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SaveErrorRequest) GetMessage() string {
@@ -210,17 +211,17 @@ func (x *SaveErrorRequest) GetMessage() string {
 type ParsedAttributedObservation struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp        uint32                 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Value            *BigInt                `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	JulesPerFeeCoin  *BigInt                `protobuf:"bytes,3,opt,name=julesPerFeeCoin,proto3" json:"julesPerFeeCoin,omitempty"`
+	Value            *pb.BigInt             `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	JulesPerFeeCoin  *pb.BigInt             `protobuf:"bytes,3,opt,name=julesPerFeeCoin,proto3" json:"julesPerFeeCoin,omitempty"`
 	Observer         uint32                 `protobuf:"varint,4,opt,name=observer,proto3" json:"observer,omitempty"` // uint8
-	GasPriceSubunits *BigInt                `protobuf:"bytes,5,opt,name=gasPriceSubunits,proto3" json:"gasPriceSubunits,omitempty"`
+	GasPriceSubunits *pb.BigInt             `protobuf:"bytes,5,opt,name=gasPriceSubunits,proto3" json:"gasPriceSubunits,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ParsedAttributedObservation) Reset() {
 	*x = ParsedAttributedObservation{}
-	mi := &file_median_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +233,7 @@ func (x *ParsedAttributedObservation) String() string {
 func (*ParsedAttributedObservation) ProtoMessage() {}
 
 func (x *ParsedAttributedObservation) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +246,7 @@ func (x *ParsedAttributedObservation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParsedAttributedObservation.ProtoReflect.Descriptor instead.
 func (*ParsedAttributedObservation) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ParsedAttributedObservation) GetTimestamp() uint32 {
@@ -255,14 +256,14 @@ func (x *ParsedAttributedObservation) GetTimestamp() uint32 {
 	return 0
 }
 
-func (x *ParsedAttributedObservation) GetValue() *BigInt {
+func (x *ParsedAttributedObservation) GetValue() *pb.BigInt {
 	if x != nil {
 		return x.Value
 	}
 	return nil
 }
 
-func (x *ParsedAttributedObservation) GetJulesPerFeeCoin() *BigInt {
+func (x *ParsedAttributedObservation) GetJulesPerFeeCoin() *pb.BigInt {
 	if x != nil {
 		return x.JulesPerFeeCoin
 	}
@@ -276,7 +277,7 @@ func (x *ParsedAttributedObservation) GetObserver() uint32 {
 	return 0
 }
 
-func (x *ParsedAttributedObservation) GetGasPriceSubunits() *BigInt {
+func (x *ParsedAttributedObservation) GetGasPriceSubunits() *pb.BigInt {
 	if x != nil {
 		return x.GasPriceSubunits
 	}
@@ -293,7 +294,7 @@ type BuildReportRequest struct {
 
 func (x *BuildReportRequest) Reset() {
 	*x = BuildReportRequest{}
-	mi := &file_median_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -305,7 +306,7 @@ func (x *BuildReportRequest) String() string {
 func (*BuildReportRequest) ProtoMessage() {}
 
 func (x *BuildReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -318,7 +319,7 @@ func (x *BuildReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildReportRequest.ProtoReflect.Descriptor instead.
 func (*BuildReportRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BuildReportRequest) GetObservations() []*ParsedAttributedObservation {
@@ -338,7 +339,7 @@ type BuildReportReply struct {
 
 func (x *BuildReportReply) Reset() {
 	*x = BuildReportReply{}
-	mi := &file_median_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +351,7 @@ func (x *BuildReportReply) String() string {
 func (*BuildReportReply) ProtoMessage() {}
 
 func (x *BuildReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +364,7 @@ func (x *BuildReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildReportReply.ProtoReflect.Descriptor instead.
 func (*BuildReportReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BuildReportReply) GetReport() []byte {
@@ -383,7 +384,7 @@ type MedianFromReportRequest struct {
 
 func (x *MedianFromReportRequest) Reset() {
 	*x = MedianFromReportRequest{}
-	mi := &file_median_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +396,7 @@ func (x *MedianFromReportRequest) String() string {
 func (*MedianFromReportRequest) ProtoMessage() {}
 
 func (x *MedianFromReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +409,7 @@ func (x *MedianFromReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MedianFromReportRequest.ProtoReflect.Descriptor instead.
 func (*MedianFromReportRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MedianFromReportRequest) GetReport() []byte {
@@ -421,14 +422,14 @@ func (x *MedianFromReportRequest) GetReport() []byte {
 // MedianFromReportReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.ReportCodec.MedianFromReport].
 type MedianFromReportReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Median        *BigInt                `protobuf:"bytes,1,opt,name=median,proto3" json:"median,omitempty"`
+	Median        *pb.BigInt             `protobuf:"bytes,1,opt,name=median,proto3" json:"median,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MedianFromReportReply) Reset() {
 	*x = MedianFromReportReply{}
-	mi := &file_median_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -440,7 +441,7 @@ func (x *MedianFromReportReply) String() string {
 func (*MedianFromReportReply) ProtoMessage() {}
 
 func (x *MedianFromReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -453,10 +454,10 @@ func (x *MedianFromReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MedianFromReportReply.ProtoReflect.Descriptor instead.
 func (*MedianFromReportReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *MedianFromReportReply) GetMedian() *BigInt {
+func (x *MedianFromReportReply) GetMedian() *pb.BigInt {
 	if x != nil {
 		return x.Median
 	}
@@ -473,7 +474,7 @@ type MaxReportLengthRequest struct {
 
 func (x *MaxReportLengthRequest) Reset() {
 	*x = MaxReportLengthRequest{}
-	mi := &file_median_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -485,7 +486,7 @@ func (x *MaxReportLengthRequest) String() string {
 func (*MaxReportLengthRequest) ProtoMessage() {}
 
 func (x *MaxReportLengthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -498,7 +499,7 @@ func (x *MaxReportLengthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MaxReportLengthRequest.ProtoReflect.Descriptor instead.
 func (*MaxReportLengthRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MaxReportLengthRequest) GetN() int64 {
@@ -518,7 +519,7 @@ type MaxReportLengthReply struct {
 
 func (x *MaxReportLengthReply) Reset() {
 	*x = MaxReportLengthReply{}
-	mi := &file_median_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -530,7 +531,7 @@ func (x *MaxReportLengthReply) String() string {
 func (*MaxReportLengthReply) ProtoMessage() {}
 
 func (x *MaxReportLengthReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -543,7 +544,7 @@ func (x *MaxReportLengthReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MaxReportLengthReply.ProtoReflect.Descriptor instead.
 func (*MaxReportLengthReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MaxReportLengthReply) GetMax() int64 {
@@ -561,7 +562,7 @@ type LatestTransmissionDetailsRequest struct {
 
 func (x *LatestTransmissionDetailsRequest) Reset() {
 	*x = LatestTransmissionDetailsRequest{}
-	mi := &file_median_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -573,7 +574,7 @@ func (x *LatestTransmissionDetailsRequest) String() string {
 func (*LatestTransmissionDetailsRequest) ProtoMessage() {}
 
 func (x *LatestTransmissionDetailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -586,7 +587,7 @@ func (x *LatestTransmissionDetailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestTransmissionDetailsRequest.ProtoReflect.Descriptor instead.
 func (*LatestTransmissionDetailsRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{10}
 }
 
 // LatestTransmissionDetailsReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.MedianContract.LatestTransmissionDetails].
@@ -595,7 +596,7 @@ type LatestTransmissionDetailsReply struct {
 	ConfigDigest    []byte                 `protobuf:"bytes,1,opt,name=configDigest,proto3" json:"configDigest,omitempty"` // [32]byte
 	Epoch           uint32                 `protobuf:"varint,2,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	Round           uint32                 `protobuf:"varint,3,opt,name=round,proto3" json:"round,omitempty"` // uint8
-	LatestAnswer    *BigInt                `protobuf:"bytes,4,opt,name=latestAnswer,proto3" json:"latestAnswer,omitempty"`
+	LatestAnswer    *pb.BigInt             `protobuf:"bytes,4,opt,name=latestAnswer,proto3" json:"latestAnswer,omitempty"`
 	LatestTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=latestTimestamp,proto3" json:"latestTimestamp,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -603,7 +604,7 @@ type LatestTransmissionDetailsReply struct {
 
 func (x *LatestTransmissionDetailsReply) Reset() {
 	*x = LatestTransmissionDetailsReply{}
-	mi := &file_median_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -615,7 +616,7 @@ func (x *LatestTransmissionDetailsReply) String() string {
 func (*LatestTransmissionDetailsReply) ProtoMessage() {}
 
 func (x *LatestTransmissionDetailsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -628,7 +629,7 @@ func (x *LatestTransmissionDetailsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestTransmissionDetailsReply.ProtoReflect.Descriptor instead.
 func (*LatestTransmissionDetailsReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *LatestTransmissionDetailsReply) GetConfigDigest() []byte {
@@ -652,7 +653,7 @@ func (x *LatestTransmissionDetailsReply) GetRound() uint32 {
 	return 0
 }
 
-func (x *LatestTransmissionDetailsReply) GetLatestAnswer() *BigInt {
+func (x *LatestTransmissionDetailsReply) GetLatestAnswer() *pb.BigInt {
 	if x != nil {
 		return x.LatestAnswer
 	}
@@ -676,7 +677,7 @@ type LatestRoundRequestedRequest struct {
 
 func (x *LatestRoundRequestedRequest) Reset() {
 	*x = LatestRoundRequestedRequest{}
-	mi := &file_median_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +689,7 @@ func (x *LatestRoundRequestedRequest) String() string {
 func (*LatestRoundRequestedRequest) ProtoMessage() {}
 
 func (x *LatestRoundRequestedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +702,7 @@ func (x *LatestRoundRequestedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestRoundRequestedRequest.ProtoReflect.Descriptor instead.
 func (*LatestRoundRequestedRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *LatestRoundRequestedRequest) GetLookback() int64 {
@@ -723,7 +724,7 @@ type LatestRoundRequestedReply struct {
 
 func (x *LatestRoundRequestedReply) Reset() {
 	*x = LatestRoundRequestedReply{}
-	mi := &file_median_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -735,7 +736,7 @@ func (x *LatestRoundRequestedReply) String() string {
 func (*LatestRoundRequestedReply) ProtoMessage() {}
 
 func (x *LatestRoundRequestedReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -748,7 +749,7 @@ func (x *LatestRoundRequestedReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestRoundRequestedReply.ProtoReflect.Descriptor instead.
 func (*LatestRoundRequestedReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *LatestRoundRequestedReply) GetConfigDigest() []byte {
@@ -775,15 +776,15 @@ func (x *LatestRoundRequestedReply) GetRound() uint32 {
 // OnchainConfig represents [github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median.OnchainConfig].
 type OnchainConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Min           *BigInt                `protobuf:"bytes,1,opt,name=min,proto3" json:"min,omitempty"`
-	Max           *BigInt                `protobuf:"bytes,2,opt,name=max,proto3" json:"max,omitempty"`
+	Min           *pb.BigInt             `protobuf:"bytes,1,opt,name=min,proto3" json:"min,omitempty"`
+	Max           *pb.BigInt             `protobuf:"bytes,2,opt,name=max,proto3" json:"max,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OnchainConfig) Reset() {
 	*x = OnchainConfig{}
-	mi := &file_median_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -795,7 +796,7 @@ func (x *OnchainConfig) String() string {
 func (*OnchainConfig) ProtoMessage() {}
 
 func (x *OnchainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -808,17 +809,17 @@ func (x *OnchainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnchainConfig.ProtoReflect.Descriptor instead.
 func (*OnchainConfig) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *OnchainConfig) GetMin() *BigInt {
+func (x *OnchainConfig) GetMin() *pb.BigInt {
 	if x != nil {
 		return x.Min
 	}
 	return nil
 }
 
-func (x *OnchainConfig) GetMax() *BigInt {
+func (x *OnchainConfig) GetMax() *pb.BigInt {
 	if x != nil {
 		return x.Max
 	}
@@ -835,7 +836,7 @@ type EncodeRequest struct {
 
 func (x *EncodeRequest) Reset() {
 	*x = EncodeRequest{}
-	mi := &file_median_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -847,7 +848,7 @@ func (x *EncodeRequest) String() string {
 func (*EncodeRequest) ProtoMessage() {}
 
 func (x *EncodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -860,7 +861,7 @@ func (x *EncodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncodeRequest.ProtoReflect.Descriptor instead.
 func (*EncodeRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *EncodeRequest) GetOnchainConfig() *OnchainConfig {
@@ -880,7 +881,7 @@ type EncodeReply struct {
 
 func (x *EncodeReply) Reset() {
 	*x = EncodeReply{}
-	mi := &file_median_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -892,7 +893,7 @@ func (x *EncodeReply) String() string {
 func (*EncodeReply) ProtoMessage() {}
 
 func (x *EncodeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -905,7 +906,7 @@ func (x *EncodeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncodeReply.ProtoReflect.Descriptor instead.
 func (*EncodeReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *EncodeReply) GetEncoded() []byte {
@@ -925,7 +926,7 @@ type DecodeRequest struct {
 
 func (x *DecodeRequest) Reset() {
 	*x = DecodeRequest{}
-	mi := &file_median_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -937,7 +938,7 @@ func (x *DecodeRequest) String() string {
 func (*DecodeRequest) ProtoMessage() {}
 
 func (x *DecodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -950,7 +951,7 @@ func (x *DecodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecodeRequest.ProtoReflect.Descriptor instead.
 func (*DecodeRequest) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *DecodeRequest) GetEncoded() []byte {
@@ -970,7 +971,7 @@ type DecodeReply struct {
 
 func (x *DecodeReply) Reset() {
 	*x = DecodeReply{}
-	mi := &file_median_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -982,7 +983,7 @@ func (x *DecodeReply) String() string {
 func (*DecodeReply) ProtoMessage() {}
 
 func (x *DecodeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_median_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -995,7 +996,7 @@ func (x *DecodeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecodeReply.ProtoReflect.Descriptor instead.
 func (*DecodeReply) Descriptor() ([]byte, []int) {
-	return file_median_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_median_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *DecodeReply) GetOnchainConfig() *OnchainConfig {
@@ -1005,11 +1006,11 @@ func (x *DecodeReply) GetOnchainConfig() *OnchainConfig {
 	return nil
 }
 
-var File_median_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_median_proto protoreflect.FileDescriptor
 
-const file_median_proto_rawDesc = "" +
+const file_loop_internal_pb_median_proto_rawDesc = "" +
 	"\n" +
-	"\fmedian.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rrelayer.proto\"\x8a\x03\n" +
+	"\x1dloop/internal/pb/median.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13loop/pb/types.proto\"\x8a\x03\n" +
 	"\x17NewMedianFactoryRequest\x12*\n" +
 	"\x10medianProviderID\x18\x01 \x01(\rR\x10medianProviderID\x12\x1e\n" +
 	"\n" +
@@ -1026,41 +1027,41 @@ const file_median_proto_rawDesc = "" +
 	"\x15NewMedianFactoryReply\x12:\n" +
 	"\x18reportingPluginFactoryID\x18\x01 \x01(\rR\x18reportingPluginFactoryID\",\n" +
 	"\x10SaveErrorRequest\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\xed\x01\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xf6\x01\n" +
 	"\x1bParsedAttributedObservation\x12\x1c\n" +
-	"\ttimestamp\x18\x01 \x01(\rR\ttimestamp\x12\"\n" +
-	"\x05value\x18\x02 \x01(\v2\f.loop.BigIntR\x05value\x126\n" +
-	"\x0fjulesPerFeeCoin\x18\x03 \x01(\v2\f.loop.BigIntR\x0fjulesPerFeeCoin\x12\x1a\n" +
-	"\bobserver\x18\x04 \x01(\rR\bobserver\x128\n" +
-	"\x10gasPriceSubunits\x18\x05 \x01(\v2\f.loop.BigIntR\x10gasPriceSubunits\"[\n" +
+	"\ttimestamp\x18\x01 \x01(\rR\ttimestamp\x12%\n" +
+	"\x05value\x18\x02 \x01(\v2\x0f.loop.pb.BigIntR\x05value\x129\n" +
+	"\x0fjulesPerFeeCoin\x18\x03 \x01(\v2\x0f.loop.pb.BigIntR\x0fjulesPerFeeCoin\x12\x1a\n" +
+	"\bobserver\x18\x04 \x01(\rR\bobserver\x12;\n" +
+	"\x10gasPriceSubunits\x18\x05 \x01(\v2\x0f.loop.pb.BigIntR\x10gasPriceSubunits\"[\n" +
 	"\x12BuildReportRequest\x12E\n" +
 	"\fobservations\x18\x01 \x03(\v2!.loop.ParsedAttributedObservationR\fobservations\"*\n" +
 	"\x10BuildReportReply\x12\x16\n" +
 	"\x06report\x18\x01 \x01(\fR\x06report\"1\n" +
 	"\x17MedianFromReportRequest\x12\x16\n" +
-	"\x06report\x18\x01 \x01(\fR\x06report\"=\n" +
-	"\x15MedianFromReportReply\x12$\n" +
-	"\x06median\x18\x01 \x01(\v2\f.loop.BigIntR\x06median\"&\n" +
+	"\x06report\x18\x01 \x01(\fR\x06report\"@\n" +
+	"\x15MedianFromReportReply\x12'\n" +
+	"\x06median\x18\x01 \x01(\v2\x0f.loop.pb.BigIntR\x06median\"&\n" +
 	"\x16MaxReportLengthRequest\x12\f\n" +
 	"\x01n\x18\x01 \x01(\x03R\x01n\"(\n" +
 	"\x14MaxReportLengthReply\x12\x10\n" +
 	"\x03max\x18\x01 \x01(\x03R\x03max\"\"\n" +
-	" LatestTransmissionDetailsRequest\"\xe8\x01\n" +
+	" LatestTransmissionDetailsRequest\"\xeb\x01\n" +
 	"\x1eLatestTransmissionDetailsReply\x12\"\n" +
 	"\fconfigDigest\x18\x01 \x01(\fR\fconfigDigest\x12\x14\n" +
 	"\x05epoch\x18\x02 \x01(\rR\x05epoch\x12\x14\n" +
-	"\x05round\x18\x03 \x01(\rR\x05round\x120\n" +
-	"\flatestAnswer\x18\x04 \x01(\v2\f.loop.BigIntR\flatestAnswer\x12D\n" +
+	"\x05round\x18\x03 \x01(\rR\x05round\x123\n" +
+	"\flatestAnswer\x18\x04 \x01(\v2\x0f.loop.pb.BigIntR\flatestAnswer\x12D\n" +
 	"\x0flatestTimestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x0flatestTimestamp\"9\n" +
 	"\x1bLatestRoundRequestedRequest\x12\x1a\n" +
 	"\blookback\x18\x01 \x01(\x03R\blookback\"k\n" +
 	"\x19LatestRoundRequestedReply\x12\"\n" +
 	"\fconfigDigest\x18\x01 \x01(\fR\fconfigDigest\x12\x14\n" +
 	"\x05epoch\x18\x02 \x01(\rR\x05epoch\x12\x14\n" +
-	"\x05round\x18\x03 \x01(\rR\x05round\"O\n" +
-	"\rOnchainConfig\x12\x1e\n" +
-	"\x03min\x18\x01 \x01(\v2\f.loop.BigIntR\x03min\x12\x1e\n" +
-	"\x03max\x18\x02 \x01(\v2\f.loop.BigIntR\x03max\"J\n" +
+	"\x05round\x18\x03 \x01(\rR\x05round\"U\n" +
+	"\rOnchainConfig\x12!\n" +
+	"\x03min\x18\x01 \x01(\v2\x0f.loop.pb.BigIntR\x03min\x12!\n" +
+	"\x03max\x18\x02 \x01(\v2\x0f.loop.pb.BigIntR\x03max\"J\n" +
 	"\rEncodeRequest\x129\n" +
 	"\ronchainConfig\x18\x01 \x01(\v2\x13.loop.OnchainConfigR\ronchainConfig\"'\n" +
 	"\vEncodeReply\x12\x18\n" +
@@ -1085,19 +1086,19 @@ const file_median_proto_rawDesc = "" +
 	"\x06Decode\x12\x13.loop.DecodeRequest\x1a\x11.loop.DecodeReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_median_proto_rawDescOnce sync.Once
-	file_median_proto_rawDescData []byte
+	file_loop_internal_pb_median_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_median_proto_rawDescData []byte
 )
 
-func file_median_proto_rawDescGZIP() []byte {
-	file_median_proto_rawDescOnce.Do(func() {
-		file_median_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_median_proto_rawDesc), len(file_median_proto_rawDesc)))
+func file_loop_internal_pb_median_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_median_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_median_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_median_proto_rawDesc), len(file_loop_internal_pb_median_proto_rawDesc)))
 	})
-	return file_median_proto_rawDescData
+	return file_loop_internal_pb_median_proto_rawDescData
 }
 
-var file_median_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
-var file_median_proto_goTypes = []any{
+var file_loop_internal_pb_median_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_loop_internal_pb_median_proto_goTypes = []any{
 	(*NewMedianFactoryRequest)(nil),          // 0: loop.NewMedianFactoryRequest
 	(*NewMedianFactoryReply)(nil),            // 1: loop.NewMedianFactoryReply
 	(*SaveErrorRequest)(nil),                 // 2: loop.SaveErrorRequest
@@ -1117,20 +1118,20 @@ var file_median_proto_goTypes = []any{
 	(*EncodeReply)(nil),                      // 16: loop.EncodeReply
 	(*DecodeRequest)(nil),                    // 17: loop.DecodeRequest
 	(*DecodeReply)(nil),                      // 18: loop.DecodeReply
-	(*BigInt)(nil),                           // 19: loop.BigInt
+	(*pb.BigInt)(nil),                        // 19: loop.pb.BigInt
 	(*timestamppb.Timestamp)(nil),            // 20: google.protobuf.Timestamp
 	(*emptypb.Empty)(nil),                    // 21: google.protobuf.Empty
 }
-var file_median_proto_depIdxs = []int32{
-	19, // 0: loop.ParsedAttributedObservation.value:type_name -> loop.BigInt
-	19, // 1: loop.ParsedAttributedObservation.julesPerFeeCoin:type_name -> loop.BigInt
-	19, // 2: loop.ParsedAttributedObservation.gasPriceSubunits:type_name -> loop.BigInt
+var file_loop_internal_pb_median_proto_depIdxs = []int32{
+	19, // 0: loop.ParsedAttributedObservation.value:type_name -> loop.pb.BigInt
+	19, // 1: loop.ParsedAttributedObservation.julesPerFeeCoin:type_name -> loop.pb.BigInt
+	19, // 2: loop.ParsedAttributedObservation.gasPriceSubunits:type_name -> loop.pb.BigInt
 	3,  // 3: loop.BuildReportRequest.observations:type_name -> loop.ParsedAttributedObservation
-	19, // 4: loop.MedianFromReportReply.median:type_name -> loop.BigInt
-	19, // 5: loop.LatestTransmissionDetailsReply.latestAnswer:type_name -> loop.BigInt
+	19, // 4: loop.MedianFromReportReply.median:type_name -> loop.pb.BigInt
+	19, // 5: loop.LatestTransmissionDetailsReply.latestAnswer:type_name -> loop.pb.BigInt
 	20, // 6: loop.LatestTransmissionDetailsReply.latestTimestamp:type_name -> google.protobuf.Timestamp
-	19, // 7: loop.OnchainConfig.min:type_name -> loop.BigInt
-	19, // 8: loop.OnchainConfig.max:type_name -> loop.BigInt
+	19, // 7: loop.OnchainConfig.min:type_name -> loop.pb.BigInt
+	19, // 8: loop.OnchainConfig.max:type_name -> loop.pb.BigInt
 	14, // 9: loop.EncodeRequest.onchainConfig:type_name -> loop.OnchainConfig
 	14, // 10: loop.DecodeReply.onchainConfig:type_name -> loop.OnchainConfig
 	0,  // 11: loop.PluginMedian.NewMedianFactory:input_type -> loop.NewMedianFactoryRequest
@@ -1158,28 +1159,27 @@ var file_median_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_median_proto_init() }
-func file_median_proto_init() {
-	if File_median_proto != nil {
+func init() { file_loop_internal_pb_median_proto_init() }
+func file_loop_internal_pb_median_proto_init() {
+	if File_loop_internal_pb_median_proto != nil {
 		return
 	}
-	file_relayer_proto_init()
-	file_median_proto_msgTypes[0].OneofWrappers = []any{}
+	file_loop_internal_pb_median_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_median_proto_rawDesc), len(file_median_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_median_proto_rawDesc), len(file_loop_internal_pb_median_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   5,
 		},
-		GoTypes:           file_median_proto_goTypes,
-		DependencyIndexes: file_median_proto_depIdxs,
-		MessageInfos:      file_median_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_median_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_median_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_median_proto_msgTypes,
 	}.Build()
-	File_median_proto = out.File
-	file_median_proto_goTypes = nil
-	file_median_proto_depIdxs = nil
+	File_loop_internal_pb_median_proto = out.File
+	file_loop_internal_pb_median_proto_goTypes = nil
+	file_loop_internal_pb_median_proto_depIdxs = nil
 }

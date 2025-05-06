@@ -1,13 +1,14 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/pb/evm;evmpb";
 
-package loop.internal.pb.evm;
+package loop.pb.evm;
 
 import "relayer.proto";
 import "contract_reader.proto";
 import "google/protobuf/empty.proto";
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto"
+import "loop/pb/types.proto";
 
 service EVM{
   option (cre.metadata.capability) = {
@@ -47,7 +48,6 @@ message Hash {
 message ABIPayload {
   bytes abi = 1;
 }
-
 
 // represents simplified evm-style CallMsg
 message CallMsg {
@@ -230,4 +230,10 @@ message GetTransactionStatusRequest {
 // GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionStatus].
 message GetTransactionStatusReply {
     TransactionStatus transaction_status = 1;
+}
+
+// BigInt represents a [big.Int].
+message BigInt {
+  bool negative = 1;
+  bytes value = 2;
 }

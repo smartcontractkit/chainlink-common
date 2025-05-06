@@ -4,19 +4,16 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
+import "loop/pb/types.proto";
+
 service Codec {
   rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);
   rpc GetDecoding(GetDecodingRequest) returns (GetDecodingResponse);
   rpc GetMaxSize(GetMaxSizeRequest) returns (GetMaxSizeResponse);
 }
 
-message VersionedBytes {
-  uint32 version = 1;
-  bytes data = 2;
-}
-
 message GetEncodingRequest {
-  VersionedBytes params = 1;
+  pb.VersionedBytes params = 1;
   string itemType = 2;
 }
 
@@ -31,7 +28,7 @@ message GetDecodingRequest {
 }
 
 message GetDecodingResponse {
-  VersionedBytes retVal = 1;
+  pb.VersionedBytes retVal = 1;
 }
 
 message GetMaxSizeRequest {

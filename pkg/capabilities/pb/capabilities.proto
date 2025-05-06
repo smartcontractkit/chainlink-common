@@ -55,6 +55,7 @@ message CapabilityRequest {
   google.protobuf.Any configPayload = 5;
   // Used for no DAG SDK
   string method = 6;
+  string capabilityId = 7;
 }
 
 message TriggerRegistrationRequest {

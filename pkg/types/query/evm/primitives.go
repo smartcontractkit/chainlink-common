@@ -92,4 +92,3 @@ func (et *EventByTopic) Accept(visitor primitives.Visitor) {
 		v.VisitEventTopicsByValueFilter(et)
 	}
 }
-

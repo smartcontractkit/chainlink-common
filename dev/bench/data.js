@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746557517632,
+  "lastUpdate": 1746559952761,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12936,6 +12936,48 @@ window.BENCHMARK_DATA = {
             "value": 29408,
             "unit": "ns/op",
             "extra": "41990 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "817c93bdec09b1171f8feba834f1e785f0ba9759",
+          "message": "Add mismatched package naming handling to protoc template generator (#1173)\n\n* Add mismatched package naming handling to protoc template generator\n\n* Add a test capability that tests sdk gen when dir and package names are mismatched\n\n* run generate",
+          "timestamp": "2025-05-06T21:31:11+02:00",
+          "tree_id": "932b70d9bd2a8d6d4db092f5d4cf070a39afd6ad",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/817c93bdec09b1171f8feba834f1e785f0ba9759"
+        },
+        "date": 1746559951813,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.5,
+            "unit": "ns/op",
+            "extra": "3337258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 421.1,
+            "unit": "ns/op",
+            "extra": "2908875 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28432,
+            "unit": "ns/op",
+            "extra": "42144 times\n4 procs"
           }
         ]
       }

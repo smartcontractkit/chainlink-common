@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -44,7 +45,7 @@ var (
 type staticEVMClient struct {
 	t *testing.T
 
-	GetLogsFunc func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error)
+	FilterLogsFunc func(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error)
 }
 
 func (s *staticEVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
@@ -63,8 +64,8 @@ func (s *staticEVMClient) CallContract(ctx context.Context, in *evmpb.CallContra
 	}, nil
 }
 
-func (s *staticEVMClient) GetLogs(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
-	return s.GetLogsFunc(ctx, in, opts...)
+func (s *staticEVMClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
+	return s.FilterLogsFunc(ctx, in, opts...)
 }
 func (s *staticEVMClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
 	require.Equal(s.t, address, in.Account.Address)
@@ -117,7 +118,7 @@ func (s *staticEVMClient) RegisterLogTracking(ctx context.Context, req *evmpb.Re
 func (s *staticEVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return nil, errors.New("unimplemented")
 }
-func (s *staticEVMClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
+func (s *staticEVMClient) GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
 	return nil, errors.New("unimplemented")
 }
 
@@ -148,17 +149,17 @@ func TestEVMClient_Getlogs(t *testing.T) {
 	client := &evmClient{cl: static}
 	ctx := context.Background()
 	t.Run("fields can be nil", func(t *testing.T) {
-		static.GetLogsFunc = func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
+		static.FilterLogsFunc = func(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
 			require.NotNil(t, in.FilterQuery)
 			require.Nil(t, in.FilterQuery.FromBlock)
 			require.Nil(t, in.FilterQuery.ToBlock)
 			require.Nil(t, in.FilterQuery.BlockHash)
-			return &evmpb.GetLogsReply{
+			return &evmpb.FilterLogsReply{
 				Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: address}, Data: &evmpb.ABIPayload{Abi: respAbi}}},
 			}, nil
 		}
 
-		logs, err := client.GetLogs(ctx, evm.FilterQuery{})
+		logs, err := client.FilterLogs(ctx, evm.FilterQuery{})
 		require.NoError(t, err)
 		require.Len(t, logs, 1)
 		require.Equal(t, address, logs[0].Address)
@@ -173,7 +174,7 @@ func TestEVMClient_Getlogs(t *testing.T) {
 			Topics:    [][]string{{topic, topic2}, {topic3}},
 		}
 
-		static.GetLogsFunc = func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error) {
+		static.FilterLogsFunc = func(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
 			require.NotNil(t, in.FilterQuery)
 			require.Equal(t, fromBlock, in.FilterQuery.FromBlock.Int())
 			require.Equal(t, toBlock, in.FilterQuery.ToBlock.Int())
@@ -181,12 +182,12 @@ func TestEVMClient_Getlogs(t *testing.T) {
 			require.Equal(t, topic, in.FilterQuery.Topics[0].Topic[0].Hash)
 			require.Equal(t, topic2, in.FilterQuery.Topics[0].Topic[1].Hash)
 			require.Equal(t, topic3, in.FilterQuery.Topics[1].Topic[0].Hash)
-			return &evmpb.GetLogsReply{
+			return &evmpb.FilterLogsReply{
 				Logs: []*evmpb.Log{{Address: &evmpb.Address{Address: address}, Data: &evmpb.ABIPayload{Abi: respAbi}}},
 			}, nil
 		}
 
-		logs, err := client.GetLogs(ctx, fq)
+		logs, err := client.FilterLogs(ctx, fq)
 		require.NoError(t, err)
 		require.Len(t, logs, 1)
 		require.Equal(t, address, logs[0].Address)
@@ -294,7 +295,7 @@ func (ss *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.
 	return nil
 }
 
-func (ss *staticEVMService) GetLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
+func (ss *staticEVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
 	return nil, errors.New("unimplemented")
 }
 func (ss *staticEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
@@ -317,8 +318,8 @@ func (ss *staticEVMService) QueryLogsFromCache(ctx context.Context, filterQuery 
 func (ss *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return errors.New("unimplemented")
 }
-func (ss *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID string) (evm.TransactionStatus, error) {
-	return evm.Unknown, errors.New("unimplemented")
+func (ss *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
+	return types.Unknown, errors.New("unimplemented")
 }
 
 func TestEVMServer_CallContract(t *testing.T) {

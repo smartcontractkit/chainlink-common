@@ -6,13 +6,14 @@ package loop.internal.pb.evm;
 
 import "relayer.proto";
 import "contract_reader.proto";
+import "contract_writer.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
   rpc CallContract(CallContractRequest) returns (CallContractReply);
-  rpc GetLogs(GetLogsRequest) returns (GetLogsReply);
+  rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
   rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
   rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
@@ -124,17 +125,6 @@ message Head {
   Hash parent_hash = 4;
 }
 
-// TransactionStatus is an enum for the status of a transaction.
-// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm/TransactionStatus].
-enum TransactionStatus {
-    TRANSACTION_STATUS_UNKNOWN = 0;
-    TRANSACTION_STATUS_PENDING = 1;
-    TRANSACTION_STATUS_UNCONFIRMED = 2;
-    TRANSACTION_STATUS_FINALIZED = 3;
-    TRANSACTION_STATUS_FAILED = 4;
-    TRANSACTION_STATUS_FATAL = 5;
-}
-
 // ----- Request/Reply Wrappers -----
 message LatestAndFinalizedHeadReply {
   Head latest = 1;
@@ -160,11 +150,11 @@ message GetTransactionFeeReply {
   BigInt transation_fee = 1; // transaction fee is the cost of transaction execution in Wei
 }
 
-message GetLogsRequest {
+message FilterLogsRequest {
   FilterQuery filter_query = 1;
 }
 
-message GetLogsReply {
+message FilterLogsReply {
   repeated Log logs = 1;
 }
 
@@ -217,13 +207,3 @@ message QueryLogsFromCacheReply {
   repeated Log logs = 1;
 }
 
-// GetTransactionStatusRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types/EVMService.GetTransactionStatus].
-message GetTransactionStatusRequest {
-    string transaction_id = 1;
-}
-
-
-// GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionStatus].
-message GetTransactionStatusReply {
-    TransactionStatus transaction_status = 1;
-}

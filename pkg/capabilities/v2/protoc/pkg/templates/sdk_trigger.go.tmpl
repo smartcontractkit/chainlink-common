@@ -3,11 +3,13 @@ func (c {{.Service.GoName}}) {{.Method.GoName}}(config *{{name .InputType .GoPac
     configAny, _ := anypb.New(config)
     return &{{.Service.GoName | LowerFirst}}{{.Method.GoName}} {
         config: configAny,
+        id: c.ID,
     }
 }
 
 type {{.Service.GoName | LowerFirst}}{{.Method.GoName}} struct {
     config *anypb.Any
+    id uint64
 }
 
 func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Is{{.Mode}}Trigger() {}
@@ -16,8 +18,12 @@ func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) NewT() *{{name .Outpu
     return &{{name .OutputType .GoPackageName}}{}
 }
 
-func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Id() string {
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Name() string {
     return "{{.CapabilityId}}"
+}
+
+func (t *{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Id() uint64 {
+    return t.id
 }
 
 func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Method() string {

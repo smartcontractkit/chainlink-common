@@ -13,7 +13,7 @@ import (
 
 type Basic struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
+	ID uint64
 }
 
 func (c *Basic) Action(runtime sdk.DonRuntime, input *Input) sdk.Promise[*Output] {
@@ -43,11 +43,13 @@ func (c Basic) Trigger(config *Config) sdk.DonTrigger[*TriggerEvent] {
 	configAny, _ := anypb.New(config)
 	return &basicTrigger{
 		config: configAny,
+		id:     c.ID,
 	}
 }
 
 type basicTrigger struct {
 	config *anypb.Any
+	id     uint64
 }
 
 func (*basicTrigger) IsDonTrigger() {}
@@ -56,8 +58,12 @@ func (*basicTrigger) NewT() *TriggerEvent {
 	return &TriggerEvent{}
 }
 
-func (*basicTrigger) Id() string {
+func (*basicTrigger) Name() string {
 	return "basic-test-action-trigger@1.0.0"
+}
+
+func (t *basicTrigger) Id() uint64 {
+	return t.id
 }
 
 func (*basicTrigger) Method() string {

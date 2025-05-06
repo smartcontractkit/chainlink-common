@@ -10,7 +10,8 @@ import (
 // Methods are meant to be used by the DonRunner or NodeRunner.
 type Trigger[T proto.Message] interface {
 	NewT() T
-	Id() string
+	Name() string
+	Id() uint64
 	ConfigAsAny() *anypb.Any
 	Method() string
 }

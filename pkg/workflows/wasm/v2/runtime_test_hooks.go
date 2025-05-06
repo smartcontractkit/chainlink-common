@@ -90,7 +90,7 @@ func (r *runtimeInternalsTestHook) awaitCapabilities(awaitRequest unsafe.Pointer
 
 	responsepb := &sdkpb.AwaitCapabilitiesResponse{Responses: map[string]*sdkpb.CapabilityResponse{}}
 	for _, id := range requestpb.Ids {
-		promise, _ := r.outstandingCalls[id]
+		promise := r.outstandingCalls[id]
 		result, err := promise.Await()
 		if err != nil {
 			result = &sdkpb.CapabilityResponse{

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	basictriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger/basic_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -21,29 +20,31 @@ import (
 
 const anyExecutionId = "execId"
 
-var anyConfig = []byte("config")
-var anyMaxResponseSize = uint64(2048)
+var (
+	anyConfig          = []byte("config")
+	anyMaxResponseSize = uint64(2048)
 
-var triggerId = (&basictriggermock.BasicCapability{}).ID()
+	triggerId = uint64(0)
 
-var subscribeRequest = &pb.ExecuteRequest{
-	Id:              anyExecutionId,
-	Config:          anyConfig,
-	MaxResponseSize: anyMaxResponseSize,
-	Request:         &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
-}
+	subscribeRequest = &pb.ExecuteRequest{
+		Id:              anyExecutionId,
+		Config:          anyConfig,
+		MaxResponseSize: anyMaxResponseSize,
+		Request:         &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
+	}
 
-var anyExecuteRequest = &pb.ExecuteRequest{
-	Id:              anyExecutionId,
-	Config:          anyConfig,
-	MaxResponseSize: anyMaxResponseSize,
-	Request: &pb.ExecuteRequest_Trigger{
-		Trigger: &sdkpb.Trigger{
-			Id:      triggerId,
-			Payload: mustAny(testhelpers.TestWorkflowTrigger()),
+	anyExecuteRequest = &pb.ExecuteRequest{
+		Id:              anyExecutionId,
+		Config:          anyConfig,
+		MaxResponseSize: anyMaxResponseSize,
+		Request: &pb.ExecuteRequest_Trigger{
+			Trigger: &sdkpb.Trigger{
+				Id:      triggerId,
+				Payload: mustAny(testhelpers.TestWorkflowTrigger()),
+			},
 		},
-	},
-}
+	}
+)
 
 func TestRunner_Config(t *testing.T) {
 	dr := getTestDonRunner(t, anyExecuteRequest)
@@ -131,7 +132,7 @@ func TestRunner_Run(t *testing.T) {
 			MaxResponseSize: anyMaxResponseSize,
 			Request: &pb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
-					Id:      triggerId,
+					Id:      triggerId + 1,
 					Payload: mustAny(testhelpers.TestWorkflowTrigger()),
 				},
 			},

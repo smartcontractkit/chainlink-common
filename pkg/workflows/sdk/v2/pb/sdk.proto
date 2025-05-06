@@ -63,3 +63,12 @@ message Trigger {
   string id = 1;
   google.protobuf.Any payload = 2;
 }
+
+message AwaitCapabilitiesRequest {
+  string execId = 1;
+  repeated string ids = 2;
+}
+
+message AwaitCapabilitiesResponse {
+  map<string, cre.sdk.v2.CapabilityResponse> responses = 1;
+}

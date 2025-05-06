@@ -31,9 +31,14 @@ const anyNoDagExecId = "executionId"
 
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
-	mc := createNoDagMc(t)
-	triggerID := "basic-test-trigger@1.0.0"
-	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
+
+	var (
+		mc           = createNoDagMc(t)
+		triggerIndex = int(0)
+		triggerID    = uint64(triggerIndex)
+		triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Id()
+		binary       = createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
+	)
 
 	m, err := NewModule(mc, binary)
 	require.NoError(t, err)
@@ -47,7 +52,10 @@ func Test_NoDag_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Len(t, triggers.Subscriptions, 1)
-		require.Equal(t, triggerID, triggers.Subscriptions[0].Id)
+		require.Equal(t,
+			triggerName,
+			triggers.Subscriptions[triggerIndex].Id,
+		)
 		configProto := triggers.Subscriptions[0].Payload
 		config := &basictrigger.Config{}
 		require.NoError(t, configProto.UnmarshalTo(config))

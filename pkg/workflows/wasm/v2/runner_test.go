@@ -24,7 +24,9 @@ var (
 	anyConfig          = []byte("config")
 	anyMaxResponseSize = uint64(2048)
 
-	triggerId = uint64(0)
+	triggerIndex = int(0)
+	triggerId    = uint64(triggerIndex)
+	triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Id()
 
 	subscribeRequest = &pb.ExecuteRequest{
 		Id:              anyExecutionId,
@@ -91,9 +93,9 @@ func TestRunner_Run(t *testing.T) {
 		case *pb.ExecutionResult_TriggerSubscriptions:
 			subscriptions := result.TriggerSubscriptions.Subscriptions
 			require.Len(t, subscriptions, 1)
-			subscription := subscriptions[0]
+			subscription := subscriptions[triggerIndex]
 			assert.Equal(t, anyExecutionId, subscription.ExecId)
-			assert.Equal(t, triggerId, subscription.Id)
+			assert.Equal(t, triggerName, subscription.Id)
 			assert.Equal(t, "Trigger", subscription.Method)
 			payload := &basictrigger.Config{}
 			require.NoError(t, subscription.Payload.UnmarshalTo(payload))

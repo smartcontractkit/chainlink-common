@@ -65,8 +65,8 @@ var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	// used to ensure that the export isn't optimized away
 	d.versionV2()
-	for _, handler := range args.Handlers {
-		if handler.Id() == d.trigger.Id {
+	for idx, handler := range args.Handlers {
+		if uint64(idx) == d.trigger.Id {
 			response, err := handler.Callback()(d.runtime, d.trigger.Payload)
 			execResponse := &pb.ExecutionResult{Id: d.id}
 			if err == nil {

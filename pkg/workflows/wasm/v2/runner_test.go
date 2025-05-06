@@ -24,9 +24,9 @@ var (
 	anyConfig          = []byte("config")
 	anyMaxResponseSize = uint64(2048)
 
-	triggerIndex = int(0)
-	triggerId    = uint64(triggerIndex)
-	triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Id()
+	defaultBasicTrigger = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{})
+	triggerIndex        = int(0)
+	triggerName         = defaultBasicTrigger.Name()
 
 	subscribeRequest = &pb.ExecuteRequest{
 		Id:              anyExecutionId,
@@ -41,7 +41,7 @@ var (
 		MaxResponseSize: anyMaxResponseSize,
 		Request: &pb.ExecuteRequest_Trigger{
 			Trigger: &sdkpb.Trigger{
-				Id:      triggerId,
+				Id:      uint64(triggerIndex),
 				Payload: mustAny(testhelpers.TestWorkflowTrigger()),
 			},
 		},
@@ -134,7 +134,7 @@ func TestRunner_Run(t *testing.T) {
 			MaxResponseSize: anyMaxResponseSize,
 			Request: &pb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
-					Id:      triggerId + 1,
+					Id:      uint64(triggerIndex + 1),
 					Payload: mustAny(testhelpers.TestWorkflowTrigger()),
 				},
 			},

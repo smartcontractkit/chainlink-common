@@ -23,8 +23,10 @@ import (
 )
 
 const (
-	nodagBinaryLocation = "test/nodag/cmd/testmodule.wasm"
-	nodagBinaryCmd      = "test/nodag/cmd"
+	nodagBinaryLocation             = "test/nodag/singlehandler/cmd/testmodule.wasm"
+	nodagMultiTriggerBinaryLocation = "test/nodag/multihandler/cmd/testmodule.wasm"
+	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
+	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
 )
 
 const anyNoDagExecId = "executionId"
@@ -35,8 +37,7 @@ func Test_NoDag_Run(t *testing.T) {
 	var (
 		mc           = createNoDagMc(t)
 		triggerIndex = int(0)
-		triggerID    = uint64(triggerIndex)
-		triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Id()
+		triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Name()
 		binary       = createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 	)
 
@@ -75,7 +76,7 @@ func Test_NoDag_Run(t *testing.T) {
 			Id: anyNoDagExecId,
 			Request: &wasmpb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
-					Id:      triggerID,
+					Id:      uint64(triggerIndex),
 					Payload: wrapped,
 				},
 			},
@@ -92,6 +93,89 @@ func Test_NoDag_Run(t *testing.T) {
 			unwrapped, err := value.Unwrap()
 			require.NoError(t, err)
 			require.Equal(t, "Hiresponse-1response-2", unwrapped)
+		default:
+			t.Fatalf("unexpected response type %T", output)
+		}
+	})
+}
+
+func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mc           = createNoDagMc(t)
+		triggerIndex = int(0)
+		triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Name()
+		binary       = createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
+	)
+
+	m, err := NewModule(mc, binary)
+	require.NoError(t, err)
+
+	m.Start()
+	defer m.Close()
+
+	t.Run("Subscribe to triggers", func(t *testing.T) {
+		ctx := t.Context()
+		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		require.NoError(t, err)
+
+		expectedConfigs := []*basictrigger.Config{
+			{
+				Name:   "name",
+				Number: 100,
+			},
+			{
+				Name:   "second-trigger",
+				Number: 200,
+			},
+		}
+
+		require.Len(t, triggers.Subscriptions, 2)
+
+		// expect same name for all subscriptions/triggers
+		for idx := range len(triggers.Subscriptions) {
+			require.Equal(t,
+				triggerName,
+				triggers.Subscriptions[idx].Id,
+			)
+			configProto := triggers.Subscriptions[idx].Payload
+			config := &basictrigger.Config{}
+			require.NoError(t, configProto.UnmarshalTo(config))
+			require.Equal(t, expectedConfigs[idx].Name, config.Name)
+			require.Equal(t, expectedConfigs[idx].Number, config.Number)
+		}
+	})
+
+	t.Run("Execute trigger", func(t *testing.T) {
+		ctx := t.Context()
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: "Hi"}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		// Trigger second handler
+		req := &wasmpb.ExecuteRequest{
+			Id: anyNoDagExecId,
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(triggerIndex + 1),
+					Payload: wrapped,
+				},
+			},
+		}
+		response, err := m.Execute(ctx, req)
+		require.NoError(t, err)
+
+		require.Equal(t, anyNoDagExecId, response.Id)
+		switch output := response.Result.(type) {
+		case *wasmpb.ExecutionResult_Value:
+			valuePb := output.Value
+			value, err := values.FromProto(valuePb)
+			require.NoError(t, err)
+			unwrapped, err := value.Unwrap()
+			require.NoError(t, err)
+			require.Equal(t, "Hiresponse-1response-2"+"true", unwrapped)
 		default:
 			t.Fatalf("unexpected response type %T", output)
 		}

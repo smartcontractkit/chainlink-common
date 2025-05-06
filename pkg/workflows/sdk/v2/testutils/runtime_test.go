@@ -52,7 +52,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		_, _, err = runner.Result()
 		require.Error(t, err)
-		assert.True(t, strings.Contains(err.Error(), sdk.ResponseBufferToSmall))
+		assert.True(t, strings.Contains(err.Error(), sdk.ResponseBufferTooSmall))
 	})
 }
 

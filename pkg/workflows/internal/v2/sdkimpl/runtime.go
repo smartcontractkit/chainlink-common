@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type CallCapabilityFn func(request *pb.CapabilityRequest) ([]byte, error)
+type CallCapabilityFn func(request *pb.CapabilityRequest) (id []byte, err error)
 type AwaitCapabilitiesFn func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error)
 
 type RuntimeBase struct {

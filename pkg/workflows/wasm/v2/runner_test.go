@@ -123,6 +123,39 @@ func TestRunner_Run(t *testing.T) {
 			assert.Fail(t, "unexpected result type", result)
 		}
 	})
+
+	t.Run("makes callback with correct runner and multiple handlers", func(t *testing.T) {
+		secondTriggerReq := &pb.ExecuteRequest{
+			Id:              anyExecutionId,
+			Config:          anyConfig,
+			MaxResponseSize: anyMaxResponseSize,
+			Request: &pb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      triggerId,
+					Payload: mustAny(testhelpers.TestWorkflowTrigger()),
+				},
+			},
+		}
+		testhelpers.SetupExpectedCalls(t)
+		dr := getTestDonRunner(t, secondTriggerReq)
+		testhelpers.RunIdenticalTriggersWorkflow(dr)
+
+		actual := &pb.ExecutionResult{}
+		sentResponse := dr.(*runner[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
+		require.NoError(t, proto.Unmarshal(sentResponse, actual))
+		assert.Equal(t, anyExecutionId, actual.Id)
+
+		switch result := actual.Result.(type) {
+		case *pb.ExecutionResult_Value:
+			v, err := values.FromProto(result.Value)
+			require.NoError(t, err)
+			returnedValue, err := v.Unwrap()
+			require.NoError(t, err)
+			assert.Equal(t, testhelpers.TestWorkflowExpectedResult()+"true", returnedValue)
+		default:
+			assert.Fail(t, "unexpected result type", result)
+		}
+	})
 }
 
 func getTestDonRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.DonRunner {

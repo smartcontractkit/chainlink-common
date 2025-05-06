@@ -169,7 +169,7 @@ func (e *evmClient) UnregisterLogTracking(ctx context.Context, filterName string
 }
 
 func (e *evmClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	reply, err := e.cl.GetTransactionStatus(ctx, &evmpb.GetTransactionStatusRequest{TransactionId: transactionID})
+	reply, err := e.cl.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
 		return types.Unknown, err
 	}
@@ -343,13 +343,13 @@ func (e *evmServer) UnregisterLogTracking(ctx context.Context, req *evmpb.Unregi
 	return nil, err
 }
 
-func (e *evmServer) GetTransactionStatus(ctx context.Context, req *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
+func (e *evmServer) GetTransactionStatus(ctx context.Context, req *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
 	status, err := e.impl.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(status)}, nil
+	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(status)}, nil
 }
 
 var errEmptyMsg = errors.New("call msg can't be empty")

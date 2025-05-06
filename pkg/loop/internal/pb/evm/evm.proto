@@ -125,6 +125,73 @@ message Head {
   Hash parent_hash = 4;
 }
 
+
+
+message Expression {
+  oneof evaluator {
+    EXTPrimitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+enum BooleanOperator {
+  AND = 0;
+  OR = 1;
+}
+
+message BooleanExpression {
+  BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
+}
+
+message And {
+  repeated Expression expr = 1;
+}
+
+message Or {
+  repeated Expression expr = 1;
+}
+
+message EXTPrimitive {
+  oneof primitive{
+	Primitive general_primitive = 1;
+	EVMPrimitive evm_primitive = 2;
+  }
+}
+
+message HashValueComparator {
+  repeated Hash values = 1;
+  ComparisonOperator operator = 2;
+}
+
+message AddressFilter {
+  Address address = 1;
+}
+
+message EventSigFilter {
+  Hash eventSig = 1;
+}
+
+message EventByWordFilter {
+  uint32 word_index = 1;
+  repeated HashValueComparator  hashed_value_comparers = 2;
+}
+
+message EventByTopicFilter {
+  uint64 topic = 1;
+  repeated HashValueComparator hashed_value_comparers = 2;
+}
+
+message EVMPrimitive {
+  oneof primitive {
+    AddressFilter address = 1;
+    EventSigFilter event_sig = 2;
+    EventByWordFilter event_by_word = 3;
+    EventByTopicFilter event_by_topic = 4;
+  }
+}
+
+
 // ----- Request/Reply Wrappers -----
 message LatestAndFinalizedHeadReply {
   Head latest = 1;
@@ -133,7 +200,7 @@ message LatestAndFinalizedHeadReply {
 
 message CallContractRequest {
   CallMsg call = 1;
-  Confidence confidenceLevel = 2; // confidenceLevel will be handled by evm loop to define finalty
+  Confidence confidence_level = 2; // confidenceLevel will be handled by evm loop to define finalty
 }
 
 message CallContractReply {
@@ -201,9 +268,12 @@ message UnregisterLogTrackingRequest {
 
 message QueryLogsFromCacheRequest {
   repeated Expression expression = 1;
+  LimitAndSort limit_and_sort = 2;
+  Confidence confidence_level = 3;
 }
 
 message QueryLogsFromCacheReply {
   repeated Log logs = 1;
 }
+
 

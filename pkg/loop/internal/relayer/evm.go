@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -13,7 +14,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -126,8 +130,32 @@ func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head
 }
 func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	//TODO BCFR-1328
-	return nil, errors.New("unimplemented")
+	query, err := expressionsToProto(filterQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	sort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := contractreader.ConfidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := e.cl.QueryLogsFromCache(ctx, &evmpb.QueryLogsFromCacheRequest{
+		Expression:      query,
+		LimitAndSort:    sort,
+		ConfidenceLevel: conf,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return protoToLogs(reply.Logs), nil
 }
 
 func (e *evmClient) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
@@ -277,8 +305,27 @@ func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty
 	}, nil
 }
 
-func (e *evmServer) QueryLogsFromCache(context.Context, *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
-	return nil, errors.New("method QueryLogsFromCache not implemented")
+func (e *evmServer) QueryLogsFromCache(ctx context.Context, req *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
+	exprs, err := protoToExpressions(req.Expression)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := contractreader.ConfidenceFromProto(req.ConfidenceLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	limitAndSort, err := contractreader.ConvertLimitAndSortFromProto(req.LimitAndSort)
+
+	logs, err := e.impl.QueryLogsFromCache(ctx, exprs, limitAndSort, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.QueryLogsFromCacheReply{
+		Logs: logsToProto(logs),
+	}, nil
 }
 
 func (e *evmServer) RegisterLogTracking(ctx context.Context, req *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -589,4 +636,226 @@ func protoToAddreses(s []*evmpb.Address) []string {
 
 func toProtoABI(data []byte) *evmpb.ABIPayload {
 	return &evmpb.ABIPayload{Abi: data}
+}
+
+func hashedValueComparersToProto(cs []evmprimitives.HashedValueComparator) []*evmpb.HashValueComparator {
+	ret := make([]*evmpb.HashValueComparator, 0, len(cs))
+	for _, c := range cs {
+		ret = append(ret, &evmpb.HashValueComparator{
+			Operator: pb.ComparisonOperator(c.Operator),
+			Values:   toProtoHashes(c.Values),
+		})
+	}
+
+	return ret
+}
+
+func protoToHashedValueComparers(hvc []*evmpb.HashValueComparator) []evmprimitives.HashedValueComparator {
+	ret := make([]evmprimitives.HashedValueComparator, 0, len(hvc))
+	for _, c := range hvc {
+		ret = append(ret, evmprimitives.HashedValueComparator{
+			Values:   protoToHashes(c.Values),
+			Operator: primitives.ComparisonOperator(c.Operator),
+		})
+	}
+
+	return ret
+}
+
+func expressionsToProto(expressions []query.Expression) ([]*evmpb.Expression, error) {
+	query := make([]*evmpb.Expression, 0, len(expressions))
+	for idx, expr := range expressions {
+		exprpb, err := expressionToProto(expr)
+		if err != nil {
+			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+		}
+		query = append(query, exprpb)
+	}
+
+	return query, nil
+}
+
+func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
+	pbExpression := &evmpb.Expression{}
+	if expression.IsPrimitive() {
+		p := &pb.Primitive{}
+		ep := &evmpb.EVMPrimitive{}
+		switch primitive := expression.Primitive.(type) {
+		case *primitives.Comparator:
+			return nil, errors.New("comparator primitive is not supported for EVMService")
+		case *primitives.Block:
+			p.Primitive = &pb.Primitive_Block{
+				Block: &pb.Block{
+					BlockNumber: primitive.Block,
+					Operator:    pb.ComparisonOperator(primitive.Operator),
+				}}
+
+			putGeneralPrimitive(pbExpression, p)
+		case *primitives.Confidence:
+			pbConfidence, err := contractreader.ConfidenceToProto(primitive.ConfidenceLevel)
+			if err != nil {
+				return nil, err
+			}
+
+			p.Primitive = &pb.Primitive_Confidence{
+				Confidence: pbConfidence,
+			}
+
+			putGeneralPrimitive(pbExpression, p)
+		case *primitives.Timestamp:
+			p.Primitive = &pb.Primitive_Timestamp{
+				Timestamp: &pb.Timestamp{
+					Timestamp: primitive.Timestamp,
+					Operator:  pb.ComparisonOperator(primitive.Operator),
+				}}
+
+			putGeneralPrimitive(pbExpression, p)
+		case *primitives.TxHash:
+			p.Primitive = &pb.Primitive_TxHash{
+				TxHash: &pb.TxHash{
+					TxHash: primitive.TxHash,
+				}}
+
+			putGeneralPrimitive(pbExpression, p)
+		case *evmprimitives.AddressFilter:
+			ep.Primitive = &evmpb.EVMPrimitive_Address{Address: &evmpb.AddressFilter{
+				Address: &evmpb.Address{Address: primitive.Address},
+			}}
+
+			putEVMPrimitive(pbExpression, ep)
+		case *evmprimitives.EventByTopic:
+			ep.Primitive = &evmpb.EVMPrimitive_EventByTopic{
+				EventByTopic: &evmpb.EventByTopicFilter{
+					Topic:                primitive.Topic,
+					HashedValueComparers: hashedValueComparersToProto(primitive.HashedValueComprarers),
+				},
+			}
+
+			putEVMPrimitive(pbExpression, ep)
+		case *evmprimitives.EventByWord:
+			ep.Primitive = &evmpb.EVMPrimitive_EventByWord{
+				EventByWord: &evmpb.EventByWordFilter{
+					WordIndex:            uint32(primitive.WordIndex),
+					HashedValueComparers: hashedValueComparersToProto(primitive.HashedValueComparers),
+				},
+			}
+
+			putEVMPrimitive(pbExpression, ep)
+		case *evmprimitives.EventSig:
+			ep.Primitive = &evmpb.EVMPrimitive_EventSig{
+				EventSig: &evmpb.EventSigFilter{
+					EventSig: &evmpb.Hash{Hash: primitive.EventSig},
+				},
+			}
+
+			putEVMPrimitive(pbExpression, ep)
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+		}
+		return pbExpression, nil
+	}
+
+	pbExpression.Evaluator = &evmpb.Expression_BooleanExpression{BooleanExpression: &evmpb.BooleanExpression{}}
+	var expressions []*evmpb.Expression
+	for _, expr := range expression.BoolExpression.Expressions {
+		pbExpr, err := expressionToProto(expr)
+		if err != nil {
+			return nil, err
+		}
+		expressions = append(expressions, pbExpr)
+	}
+	pbExpression.Evaluator = &evmpb.Expression_BooleanExpression{
+		BooleanExpression: &evmpb.BooleanExpression{
+			BooleanOperator: evmpb.BooleanOperator(expression.BoolExpression.BoolOperator),
+			Expression:      expressions,
+		}}
+
+	return pbExpression, nil
+}
+
+func protoToExpressions(expressions []*evmpb.Expression) ([]query.Expression, error) {
+	exprs := make([]query.Expression, 0, len(expressions))
+	for idx, exprpb := range expressions {
+		expr, err := protoToExpression(exprpb)
+		if err != nil {
+			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+		}
+
+		exprs = append(exprs, expr)
+	}
+
+	return exprs, nil
+}
+
+func protoToExpression(pbExpression *evmpb.Expression) (query.Expression, error) {
+	switch pbEvaluatedExpr := pbExpression.Evaluator.(type) {
+	case *evmpb.Expression_BooleanExpression:
+		var expressions []query.Expression
+		for _, expression := range pbEvaluatedExpr.BooleanExpression.Expression {
+			convertedExpression, err := protoToExpression(expression)
+			if err != nil {
+				return query.Expression{}, err
+			}
+			expressions = append(expressions, convertedExpression)
+		}
+		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == evmpb.BooleanOperator_AND {
+			return query.And(expressions...), nil
+		}
+		return query.Or(expressions...), nil
+	case *evmpb.Expression_Primitive:
+		switch primitive := pbEvaluatedExpr.Primitive.GetPrimitive().(type) {
+		case *evmpb.EXTPrimitive_GeneralPrimitive:
+			return protoToGeneralExpr(primitive.GeneralPrimitive)
+		case *evmpb.EXTPrimitive_EvmPrimitive:
+			return protoToEVMExpr(primitive.EvmPrimitive)
+		}
+	default:
+		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
+	}
+	return query.Expression{}, nil
+}
+
+func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error) {
+	switch primitive := pbEvaluatedExpr.GetPrimitive().(type) {
+	case *pb.Primitive_Comparator:
+		return query.Expression{}, errors.New("comparator primitive is not supported for EVMService")
+	case *pb.Primitive_Confidence:
+		confidence, err := contractreader.ConfidenceFromProto(primitive.Confidence)
+		return query.Confidence(confidence), err
+	case *pb.Primitive_Block:
+		return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
+	case *pb.Primitive_TxHash:
+		return query.TxHash(primitive.TxHash.TxHash), nil
+	case *pb.Primitive_Timestamp:
+		return query.Timestamp(primitive.Timestamp.Timestamp, primitives.ComparisonOperator(primitive.Timestamp.Operator)), nil
+	default:
+		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+	}
+}
+
+func protoToEVMExpr(pbEvaluatedExpr *evmpb.EVMPrimitive) (query.Expression, error) {
+	switch primitive := pbEvaluatedExpr.GetPrimitive().(type) {
+	case *evmpb.EVMPrimitive_Address:
+		return evmprimitives.NewAddressFilter(primitive.Address.GetAddress().GetAddress()), nil
+	case *evmpb.EVMPrimitive_EventSig:
+		return evmprimitives.NewEventSigFilter(primitive.EventSig.GetEventSig().GetHash()), nil
+	case *evmpb.EVMPrimitive_EventByTopic:
+		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(),
+				protoToHashedValueComparers(primitive.EventByTopic.GetHashedValueComparers())),
+			nil
+	case *evmpb.EVMPrimitive_EventByWord:
+		return evmprimitives.NewEventByWordFilter(int(primitive.EventByWord.GetWordIndex()),
+				protoToHashedValueComparers(primitive.EventByWord.GetHashedValueComparers())),
+			nil
+	default:
+		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+	}
+}
+
+func putGeneralPrimitive(exp *evmpb.Expression, p *pb.Primitive) {
+	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.EXTPrimitive{Primitive: &evmpb.EXTPrimitive_GeneralPrimitive{GeneralPrimitive: p}}}
+}
+
+func putEVMPrimitive(exp *evmpb.Expression, p *evmpb.EVMPrimitive) {
+	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.EXTPrimitive{Primitive: &evmpb.EXTPrimitive_EvmPrimitive{EvmPrimitive: p}}}
 }

@@ -5,6 +5,7 @@ package mocks
 import (
 	context "context"
 
+	host "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host"
 	mock "github.com/stretchr/testify/mock"
 
 	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
@@ -155,6 +156,52 @@ func (_c *ModuleV2_IsLegacyDAG_Call) Return(_a0 bool) *ModuleV2_IsLegacyDAG_Call
 }
 
 func (_c *ModuleV2_IsLegacyDAG_Call) RunAndReturn(run func() bool) *ModuleV2_IsLegacyDAG_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetCapabilityExecutor provides a mock function with given fields: handler
+func (_m *ModuleV2) SetCapabilityExecutor(handler host.CapabilityExecutor) error {
+	ret := _m.Called(handler)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetCapabilityExecutor")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(host.CapabilityExecutor) error); ok {
+		r0 = rf(handler)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ModuleV2_SetCapabilityExecutor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetCapabilityExecutor'
+type ModuleV2_SetCapabilityExecutor_Call struct {
+	*mock.Call
+}
+
+// SetCapabilityExecutor is a helper method to define mock.On call
+//   - handler host.CapabilityExecutor
+func (_e *ModuleV2_Expecter) SetCapabilityExecutor(handler interface{}) *ModuleV2_SetCapabilityExecutor_Call {
+	return &ModuleV2_SetCapabilityExecutor_Call{Call: _e.mock.On("SetCapabilityExecutor", handler)}
+}
+
+func (_c *ModuleV2_SetCapabilityExecutor_Call) Run(run func(handler host.CapabilityExecutor)) *ModuleV2_SetCapabilityExecutor_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(host.CapabilityExecutor))
+	})
+	return _c
+}
+
+func (_c *ModuleV2_SetCapabilityExecutor_Call) Return(_a0 error) *ModuleV2_SetCapabilityExecutor_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ModuleV2_SetCapabilityExecutor_Call) RunAndReturn(run func(host.CapabilityExecutor) error) *ModuleV2_SetCapabilityExecutor_Call {
 	_c.Call.Return(run)
 	return _c
 }

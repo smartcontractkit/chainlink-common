@@ -104,6 +104,8 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			TypeUrl: "example.com/type",
 			Value:   []byte("any-bytes"),
 		},
+		Method:       "call-it",
+		CapabilityId: "test-capability-id",
 	}
 
 	raw, err := pb.MarshalCapabilityRequest(req)

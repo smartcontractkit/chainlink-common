@@ -272,6 +272,7 @@ type CapabilityRequest struct {
 	ConfigPayload *anypb.Any `protobuf:"bytes,5,opt,name=configPayload,proto3" json:"configPayload,omitempty"`
 	// Used for no DAG SDK
 	Method        string `protobuf:"bytes,6,opt,name=method,proto3" json:"method,omitempty"`
+	CapabilityId  string `protobuf:"bytes,7,opt,name=capabilityId,proto3" json:"capabilityId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -344,6 +345,13 @@ func (x *CapabilityRequest) GetConfigPayload() *anypb.Any {
 func (x *CapabilityRequest) GetMethod() string {
 	if x != nil {
 		return x.Method
+	}
+	return ""
+}
+
+func (x *CapabilityRequest) GetCapabilityId() string {
+	if x != nil {
+		return x.CapabilityId
 	}
 	return ""
 }
@@ -1082,14 +1090,15 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x0fworkflow_don_id\x18\x06 \x01(\rR\rworkflowDonId\x12=\n" +
 	"\x1bworkflow_don_config_version\x18\a \x01(\rR\x18workflowDonConfigVersion\x12!\n" +
 	"\freference_id\x18\b \x01(\tR\vreferenceId\x122\n" +
-	"\x15decoded_workflow_name\x18\t \x01(\tR\x13decodedWorkflowNameJ\x04\b\x05\x10\x06\"\x9c\x02\n" +
+	"\x15decoded_workflow_name\x18\t \x01(\tR\x13decodedWorkflowNameJ\x04\b\x05\x10\x06\"\xc0\x02\n" +
 	"\x11CapabilityRequest\x129\n" +
 	"\bmetadata\x18\x01 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12#\n" +
 	"\x06config\x18\x02 \x01(\v2\v.values.MapR\x06config\x12#\n" +
 	"\x06inputs\x18\x03 \x01(\v2\v.values.MapR\x06inputs\x12.\n" +
 	"\apayload\x18\x04 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12:\n" +
 	"\rconfigPayload\x18\x05 \x01(\v2\x14.google.protobuf.AnyR\rconfigPayload\x12\x16\n" +
-	"\x06method\x18\x06 \x01(\tR\x06method\"\xe2\x01\n" +
+	"\x06method\x18\x06 \x01(\tR\x06method\x12\"\n" +
+	"\fcapabilityId\x18\a \x01(\tR\fcapabilityId\"\xe2\x01\n" +
 	"\x1aTriggerRegistrationRequest\x12\x1c\n" +
 	"\ttriggerId\x18\x01 \x01(\tR\ttriggerId\x129\n" +
 	"\bmetadata\x18\x02 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12#\n" +

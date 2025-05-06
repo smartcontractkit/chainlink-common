@@ -3,13 +3,16 @@ package host
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
 
+	"github.com/google/uuid"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -29,56 +32,62 @@ const anyNoDagExecId = "executionId"
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 	mc := createNoDagMc(t)
-
 	triggerID := "basic-test-trigger@1.0.0"
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
-	ctx := t.Context()
-	triggers, err := GetTriggersSpec(ctx, mc, binary, []byte(""))
-	require.NoError(t, err)
-
-	require.Len(t, triggers.Subscriptions, 1)
-	require.Equal(t, triggerID, triggers.Subscriptions[0].Id)
-	configProto := triggers.Subscriptions[0].Payload
-	config := &basictrigger.Config{}
-	require.NoError(t, configProto.UnmarshalTo(config))
-	require.Equal(t, "name", config.Name)
-	require.Equal(t, int32(100), config.Number)
-
 	m, err := NewModule(mc, binary)
 	require.NoError(t, err)
+
 	m.Start()
+	defer m.Close()
 
-	// When a TriggerEvent occurs, Engine calls Execute with that Event.
-	trigger := &basictrigger.Outputs{CoolOutput: "Hi"}
-	wrapped, err := anypb.New(trigger)
-	require.NoError(t, err)
+	t.Run("Subscribe to triggers", func(t *testing.T) {
+		ctx := t.Context()
+		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		require.NoError(t, err)
 
-	// TODO test config
-	req := &wasmpb.ExecuteRequest{
-		Id: anyNoDagExecId,
-		Request: &wasmpb.ExecuteRequest_Trigger{
-			Trigger: &sdkpb.Trigger{
-				Id:      triggerID,
-				Payload: wrapped,
+		require.Len(t, triggers.Subscriptions, 1)
+		require.Equal(t, triggerID, triggers.Subscriptions[0].Id)
+		configProto := triggers.Subscriptions[0].Payload
+		config := &basictrigger.Config{}
+		require.NoError(t, configProto.UnmarshalTo(config))
+		require.Equal(t, "name", config.Name)
+		require.Equal(t, int32(100), config.Number)
+	})
+
+	t.Run("Execute trigger", func(t *testing.T) {
+		ctx := t.Context()
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: "Hi"}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		// TODO test config
+		req := &wasmpb.ExecuteRequest{
+			Id: anyNoDagExecId,
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      triggerID,
+					Payload: wrapped,
+				},
 			},
-		},
-	}
-	response, err := m.Execute(ctx, req)
-	require.NoError(t, err)
+		}
+		response, err := m.Execute(ctx, req)
+		require.NoError(t, err)
 
-	require.Equal(t, anyNoDagExecId, response.Id)
-	switch output := response.Result.(type) {
-	case *wasmpb.ExecutionResult_Value:
-		valuePb := output.Value
-		value, err := values.FromProto(valuePb)
-		require.NoError(t, err)
-		unwrapped, err := value.Unwrap()
-		require.NoError(t, err)
-		require.Equal(t, "Hiresponse-1response-2", unwrapped)
-	default:
-		t.Fatalf("unexpected response type %T", output)
-	}
+		require.Equal(t, anyNoDagExecId, response.Id)
+		switch output := response.Result.(type) {
+		case *wasmpb.ExecutionResult_Value:
+			valuePb := output.Value
+			value, err := values.FromProto(valuePb)
+			require.NoError(t, err)
+			unwrapped, err := value.Unwrap()
+			require.NoError(t, err)
+			require.Equal(t, "Hiresponse-1response-2", unwrapped)
+		default:
+			t.Fatalf("unexpected response type %T", output)
+		}
+	})
 }
 
 func createNoDagMc(t *testing.T) *ModuleConfig {
@@ -137,4 +146,25 @@ func createNoDagMc(t *testing.T) *ModuleConfig {
 		},
 	}
 	return mc
+}
+
+func getTriggersSpec(ctx context.Context, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
+	execResult, err := m.Execute(ctx, &wasmpb.ExecuteRequest{
+		Id:      uuid.New().String(),
+		Config:  config,
+		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	switch r := execResult.Result.(type) {
+	case *wasmpb.ExecutionResult_TriggerSubscriptions:
+		return r.TriggerSubscriptions, nil
+	case *wasmpb.ExecutionResult_Error:
+		return nil, errors.New(r.Error)
+	default:
+		return nil, errors.New("unexpected response from WASM binary: got nil spec response")
+	}
 }

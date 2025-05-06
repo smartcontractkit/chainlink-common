@@ -81,10 +81,8 @@ func TestRunner_Run(t *testing.T) {
 			},
 		})
 
-		response := &pb.ExecutionResult{}
-		require.NoError(t, proto.Unmarshal(sentResponse, response))
-
 		actual := &pb.ExecutionResult{}
+		sentResponse := dr.(*subscriber[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
 		assert.Equal(t, anyExecutionId, actual.Id)
 
@@ -110,6 +108,7 @@ func TestRunner_Run(t *testing.T) {
 		testhelpers.RunTestWorkflow(dr)
 
 		actual := &pb.ExecutionResult{}
+		sentResponse := dr.(*runner[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
 		assert.Equal(t, anyExecutionId, actual.Id)
 
@@ -127,21 +126,31 @@ func TestRunner_Run(t *testing.T) {
 }
 
 func getTestDonRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.DonRunner {
-	initTestRunner(tb, request)
-	return newDonRunner()
+	return newDonRunner(testRunnerInternals(tb, request), testRuntimeInternals(tb))
 }
 
 func getTestNodeRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.NodeRunner {
-	initTestRunner(tb, request)
-	return newNodeRunner()
+	return newNodeRunner(testRunnerInternals(tb, request), testRuntimeInternals(tb))
 }
 
-func initTestRunner(tb testing.TB, request *pb.ExecuteRequest) {
-	initRunnerAndRuntimeForTest(tb, anyExecutionId)
+func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInternalsTestHook {
 	serialzied, err := proto.Marshal(request)
 	require.NoError(tb, err)
 	encoded := base64.StdEncoding.EncodeToString(serialzied)
-	args = []string{"wasm", encoded}
+
+	return &runnerInternalsTestHook{
+		testTb:    tb,
+		execId:    anyExecutionId,
+		arguments: []string{"wasm", encoded},
+	}
+}
+
+func testRuntimeInternals(tb testing.TB) *runtimeInternalsTestHook {
+	return &runtimeInternalsTestHook{
+		testTb:           tb,
+		executionId:      anyExecutionId,
+		outstandingCalls: map[string]sdk.Promise[*sdkpb.CapabilityResponse]{},
+	}
 }
 
 func mustAny(msg proto.Message) *anypb.Any {

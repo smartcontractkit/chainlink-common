@@ -130,13 +130,9 @@ func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head
 }
 func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	query := make([]*evmpb.Expression, 0, len(filterQuery))
-	for idx, expr := range filterQuery {
-		exprpb, err := expressionToProto(expr)
-		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
-		}
-		query = append(query, exprpb)
+	query, err := expressionsToProto(filterQuery)
+	if err != nil {
+		return nil, err
 	}
 
 	sort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
@@ -310,14 +306,9 @@ func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty
 }
 
 func (e *evmServer) QueryLogsFromCache(ctx context.Context, req *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
-	exprs := make([]query.Expression, 0, len(req.Expression))
-	for idx, exprpb := range req.Expression {
-		expr, err := protoToExpression(exprpb)
-		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
-		}
-
-		exprs = append(exprs, expr)
+	exprs, err := protoToExpressions(req.Expression)
+	if err != nil {
+		return nil, err
 	}
 
 	conf, err := contractreader.ConfidenceFromProto(req.ConfidenceLevel)
@@ -671,6 +662,19 @@ func protoToHashedValueComparers(hvc []*evmpb.HashValueComparator) []evmprimitiv
 	return ret
 }
 
+func expressionsToProto(expressions []query.Expression) ([]*evmpb.Expression, error) {
+	query := make([]*evmpb.Expression, 0, len(expressions))
+	for idx, expr := range expressions {
+		exprpb, err := expressionToProto(expr)
+		if err != nil {
+			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+		}
+		query = append(query, exprpb)
+	}
+
+	return query, nil
+}
+
 func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 	pbExpression := &evmpb.Expression{}
 	if expression.IsPrimitive() {
@@ -767,6 +771,20 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 		}}
 
 	return pbExpression, nil
+}
+
+func protoToExpressions(expressions []*evmpb.Expression) ([]query.Expression, error) {
+	exprs := make([]query.Expression, 0, len(expressions))
+	for idx, exprpb := range expressions {
+		expr, err := protoToExpression(exprpb)
+		if err != nil {
+			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+		}
+
+		exprs = append(exprs, expr)
+	}
+
+	return exprs, nil
 }
 
 func protoToExpression(pbExpression *evmpb.Expression) (query.Expression, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"reflect"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -44,7 +46,8 @@ var (
 type staticEVMClient struct {
 	t *testing.T
 
-	GetLogsFunc func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error)
+	GetLogsFunc         func(ctx context.Context, in *evmpb.GetLogsRequest, opts ...grpc.CallOption) (*evmpb.GetLogsReply, error)
+	ExpectedExpressions []*evmpb.Expression
 }
 
 func (s *staticEVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
@@ -99,6 +102,10 @@ func (s *staticEVMClient) GetTransactionReceipt(ctx context.Context, in *evmpb.G
 func (s *staticEVMClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
 	return nil, errors.New("unimplemented")
 }
+
+var (
+	fixtureQueryExpression = generateFixtureQuery()
+)
 
 func (s *staticEVMClient) QueryLogsFromCache(ctx context.Context, in *evmpb.QueryLogsFromCacheRequest, opts ...grpc.CallOption) (*evmpb.QueryLogsFromCacheReply, error) {
 	return nil, errors.New("unimplemented")
@@ -396,4 +403,62 @@ func TestEVMServer_RegisterLogTracking(t *testing.T) {
 	}
 	_, err := server.RegisterLogTracking(ctx, req)
 	require.NoError(t, err)
+}
+
+func Test_ConvertExpressions(t *testing.T) {
+	t.Parallel()
+
+	expressions := generateFixtureQuery()
+	expressionsPB, err := expressionsToProto(expressions)
+	require.NoError(t, err)
+	got, err := protoToExpressions(expressionsPB)
+	require.NoError(t, err)
+
+	res := reflect.DeepEqual(expressions, got)
+	require.True(t, res)
+}
+
+func generateFixtureQuery() []query.Expression {
+	exprs := make([]query.Expression, 0)
+
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
+
+	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
+	values := []string{"0x44231", "0x53453"}
+	for _, op := range operatorValues {
+		primitiveExpressions = append(primitiveExpressions, query.Block("123", op))
+		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewAddressFilter("0x123"))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventSigFilter("0x321"))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventByWordFilter(10, []evmprimitives.HashedValueComparator{{
+			Values:   values,
+			Operator: op,
+		}}))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventByTopicFilter(10, []evmprimitives.HashedValueComparator{{
+			Values:   values,
+			Operator: op,
+		}}))
+	}
+
+	for _, conf := range confirmationsValues {
+		primitiveExpressions = append(primitiveExpressions, query.Confidence(conf))
+	}
+	exprs = append(exprs, primitiveExpressions...)
+
+	andOverPrimitivesBoolExpr := query.And(primitiveExpressions...)
+	orOverPrimitivesBoolExpr := query.Or(primitiveExpressions...)
+
+	nestedBoolExpr := query.And(
+		query.TxHash("txHash"),
+		andOverPrimitivesBoolExpr,
+		orOverPrimitivesBoolExpr,
+		query.TxHash("txHash"),
+	)
+
+	exprs = append(exprs, nestedBoolExpr)
+	exprs = append(exprs, andOverPrimitivesBoolExpr)
+	exprs = append(exprs, orOverPrimitivesBoolExpr)
+
+	return exprs
 }

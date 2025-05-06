@@ -133,6 +133,15 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)
 			}
 		},
+		"ConfigType": func(s *protogen.Service) (string, error) {
+			md, err := getCapabilityMetadata(s)
+			if err != nil {
+				return "", err
+			}
+			_ = md
+
+			return "emptypb.Empty", nil
+		},
 	})
 
 	// Register partials

@@ -174,7 +174,7 @@ func MockTarget[I any](id string, fn func(I) error) *TargetMock[I] {
 	}
 }
 
-var _ capabilities.TargetCapability = &TargetMock[any]{}
+var _ capabilities.ExecutableCapability = &TargetMock[any]{}
 
 func (t *TargetMock[I]) GetAllWrites() TargetResults[I] {
 	targetResults := TargetResults[I]{}

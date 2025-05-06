@@ -6,14 +6,13 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	legacySdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	legacywasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
-func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*sdk.WorkflowSpec, error) {
+func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, config []byte) (*legacySdk.WorkflowSpec, error) {
 	m, err := NewModule(modCfg, binary, WithDeterminism())
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate module: %w", err)
@@ -22,10 +21,10 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 	m.Start()
 
 	rid := uuid.New().String()
-	req := &wasmpb.Request{
+	req := &legacywasmpb.Request{
 		Id:     rid,
 		Config: config,
-		Message: &wasmpb.Request_SpecRequest{
+		Message: &legacywasmpb.Request_SpecRequest{
 			SpecRequest: &emptypb.Empty{},
 		},
 	}
@@ -41,5 +40,5 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 
 	m.Close()
 
-	return wasmpb.ProtoToWorkflowSpec(sr)
+	return legacywasmpb.ProtoToWorkflowSpec(sr)
 }

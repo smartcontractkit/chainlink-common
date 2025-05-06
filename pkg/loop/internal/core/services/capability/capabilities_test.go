@@ -385,7 +385,7 @@ func Test_Capabilities(t *testing.T) {
 		c, _, _, err := newCapabilityPlugin(t, ma)
 		require.NoError(t, err)
 
-		act := c.(capabilities.ActionCapability)
+		act := c.(capabilities.ExecutableCapability)
 
 		vmap, err := values.NewMap(map[string]any{"foo": "bar"})
 		require.NoError(t, err)
@@ -434,7 +434,7 @@ func Test_Capabilities(t *testing.T) {
 
 		ma.callback <- expectedResp
 
-		resp, err := c.(capabilities.ActionCapability).Execute(
+		resp, err := c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
@@ -459,11 +459,38 @@ func Test_Capabilities(t *testing.T) {
 
 		ma.responseError = errors.New("bang")
 
+		_, err = c.(capabilities.ExecutableCapability).Execute(
+			t.Context(),
+			expectedRequest)
+		require.Error(t, err)
+		assert.Equal(t, "bang", err.Error())
+	})
+
+	t.Run("fetching an action capability, and executing it with reportable error", func(t *testing.T) {
+		ma := mustMockExecutable(t, capabilities.CapabilityTypeAction)
+		c, _, _, err := newCapabilityPlugin(t, ma)
+		require.NoError(t, err)
+
+		cmap, err := values.NewMap(map[string]any{"foo": "bar"})
+		require.NoError(t, err)
+
+		imap, err := values.NewMap(map[string]any{"bar": "baz"})
+		require.NoError(t, err)
+		expectedRequest := capabilities.CapabilityRequest{
+			Config: cmap,
+			Inputs: imap,
+		}
+
+		ma.responseError = capabilities.NewRemoteReportableError(errors.New("bang"))
+
 		_, err = c.(capabilities.ActionCapability).Execute(
 			t.Context(),
 			expectedRequest)
-		require.NotNil(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "bang", err.Error())
+
+		var reportableError *capabilities.RemoteReportableError
+		assert.ErrorAs(t, err, &reportableError)
 	})
 
 	t.Run("fetching an action capability, and closing it", func(t *testing.T) {
@@ -482,7 +509,7 @@ func Test_Capabilities(t *testing.T) {
 		}
 
 		ma.callback <- capabilities.CapabilityResponse{}
-		_, err = c.(capabilities.ActionCapability).Execute(
+		_, err = c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)
@@ -507,7 +534,7 @@ func Test_Capabilities(t *testing.T) {
 
 		assert.False(t, ma.executeCalled)
 
-		_, err = c.(capabilities.ActionCapability).Execute(
+		_, err = c.(capabilities.ExecutableCapability).Execute(
 			t.Context(),
 			expectedRequest)
 		require.NoError(t, err)

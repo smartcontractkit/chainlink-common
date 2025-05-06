@@ -3,9 +3,11 @@ package relayer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/gogo/status"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
@@ -14,6 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -126,8 +129,36 @@ func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head
 }
 func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	//TODO BCFR-1328
-	return nil, errors.New("unimplemented")
+	query := make([]*pb.Expression, 0, len(filterQuery))
+	for idx, expr := range filterQuery {
+		exprpb, err := expressionToProto(expr)
+		if err != nil {
+			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+		}
+		query = append(query, exprpb)
+	}
+
+	sort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := contractreader.ConfidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := e.cl.QueryLogsFromCache(ctx, &evmpb.QueryLogsFromCacheRequest{
+		Expression:      query,
+		LimitAndSort:    sort,
+		ConfidenceLevel: conf,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return protoToLogs(reply.Logs), nil
 }
 
 func (e *evmClient) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
@@ -277,8 +308,32 @@ func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty
 	}, nil
 }
 
-func (e *evmServer) QueryLogsFromCache(context.Context, *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
-	return nil, errors.New("method QueryLogsFromCache not implemented")
+func (e *evmServer) QueryLogsFromCache(ctx context.Context, req *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
+	exprs := make([]query.Expression, 0, len(req.Expression))
+	for idx, exprpb := range req.Expression {
+		expr, err := protoToExpression(exprpb)
+		if err != nil {
+			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+		}
+
+		exprs = append(exprs, expr)
+	}
+
+	conf, err := contractreader.ConfidenceFromProto(req.ConfidenceLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	limitAndSort, err := contractreader.ConvertLimitAndSortFromProto(req.LimitAndSort)
+
+	logs, err := e.impl.QueryLogsFromCache(ctx, exprs, limitAndSort, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.QueryLogsFromCacheReply{
+		Logs: logsToProto(logs),
+	}, nil
 }
 
 func (e *evmServer) RegisterLogTracking(ctx context.Context, req *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -589,4 +644,66 @@ func protoToAddreses(s []*evmpb.Address) []string {
 
 func toProtoABI(data []byte) *evmpb.ABIPayload {
 	return &evmpb.ABIPayload{Abi: data}
+}
+
+func expressionToProto(expression query.Expression) (*pb.Expression, error) {
+	pbExpression := &pb.Expression{}
+	if expression.IsPrimitive() {
+		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
+		switch primitive := expression.Primitive.(type) {
+		case *primitives.Comparator:
+			return nil, errors.New("comparator primitive is not supported for EVMService")
+		case *primitives.Block:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Block{
+				Block: &pb.Block{
+					BlockNumber: primitive.Block,
+					Operator:    pb.ComparisonOperator(primitive.Operator),
+				}}
+		case *primitives.Confidence:
+			pbConfidence, err := contractreader.ConfidenceToProto(primitive.ConfidenceLevel)
+			if err != nil {
+				return nil, err
+			}
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confidence{
+				Confidence: pbConfidence,
+			}
+		case *primitives.Timestamp:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
+				Timestamp: &pb.Timestamp{
+					Timestamp: primitive.Timestamp,
+					Operator:  pb.ComparisonOperator(primitive.Operator),
+				}}
+		case *primitives.TxHash:
+			pbExpression.GetPrimitive().Primitive = &pb.Primitive_TxHash{
+				TxHash: &pb.TxHash{
+					TxHash: primitive.TxHash,
+				}}
+		// TODO add evm specific cases
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+		}
+		return pbExpression, nil
+	}
+
+	pbExpression.Evaluator = &pb.Expression_BooleanExpression{BooleanExpression: &pb.BooleanExpression{}}
+	var expressions []*pb.Expression
+	for _, expr := range expression.BoolExpression.Expressions {
+		pbExpr, err := expressionToProto(expr)
+		if err != nil {
+			return nil, err
+		}
+		expressions = append(expressions, pbExpr)
+	}
+	pbExpression.Evaluator = &pb.Expression_BooleanExpression{
+		BooleanExpression: &pb.BooleanExpression{
+			BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
+			Expression:      expressions,
+		}}
+
+	return pbExpression, nil
+}
+
+func protoToExpression(expr *pb.Expression) (query.Expression, error) {
+	//TODO
+	return query.Expression{}, nil
 }

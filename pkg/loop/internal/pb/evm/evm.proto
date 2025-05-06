@@ -145,7 +145,7 @@ message LatestAndFinalizedHeadReply {
 
 message CallContractRequest {
   CallMsg call = 1;
-  Confidence confidenceLevel = 2; // confidenceLevel will be handled by evm loop to define finalty
+  Confidence confidence_level = 2; // confidenceLevel will be handled by evm loop to define finalty
 }
 
 message CallContractReply {
@@ -213,6 +213,8 @@ message UnregisterLogTrackingRequest {
 
 message QueryLogsFromCacheRequest {
   repeated Expression expression = 1;
+  LimitAndSort limit_and_sort = 2;
+  Confidence confidence_level = 3;
 }
 
 message QueryLogsFromCacheReply {

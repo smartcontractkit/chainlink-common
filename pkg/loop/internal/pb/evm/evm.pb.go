@@ -994,7 +994,7 @@ func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
 type CallContractRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Call            *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
-	ConfidenceLevel pb.Confidence          `protobuf:"varint,2,opt,name=confidenceLevel,proto3,enum=loop.Confidence" json:"confidenceLevel,omitempty"` // confidenceLevel will be handled by evm loop to define finalty
+	ConfidenceLevel pb.Confidence          `protobuf:"varint,2,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.Confidence" json:"confidence_level,omitempty"` // confidenceLevel will be handled by evm loop to define finalty
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1714,10 +1714,12 @@ func (x *UnregisterLogTrackingRequest) GetFilterName() string {
 }
 
 type QueryLogsFromCacheRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Expression    []*pb.Expression       `protobuf:"bytes,1,rep,name=expression,proto3" json:"expression,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Expression      []*pb.Expression       `protobuf:"bytes,1,rep,name=expression,proto3" json:"expression,omitempty"`
+	LimitAndSort    *pb.LimitAndSort       `protobuf:"bytes,2,opt,name=limit_and_sort,json=limitAndSort,proto3" json:"limit_and_sort,omitempty"`
+	ConfidenceLevel pb.Confidence          `protobuf:"varint,3,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.Confidence" json:"confidence_level,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *QueryLogsFromCacheRequest) Reset() {
@@ -1755,6 +1757,20 @@ func (x *QueryLogsFromCacheRequest) GetExpression() []*pb.Expression {
 		return x.Expression
 	}
 	return nil
+}
+
+func (x *QueryLogsFromCacheRequest) GetLimitAndSort() *pb.LimitAndSort {
+	if x != nil {
+		return x.LimitAndSort
+	}
+	return nil
+}
+
+func (x *QueryLogsFromCacheRequest) GetConfidenceLevel() pb.Confidence {
+	if x != nil {
+		return x.ConfidenceLevel
+	}
+	return pb.Confidence(0)
 }
 
 type QueryLogsFromCacheReply struct {
@@ -1969,10 +1985,10 @@ const file_evm_proto_rawDesc = "" +
 	"\fEVMPrimitive\"\x8b\x01\n" +
 	"\x1bLatestAndFinalizedHeadReply\x122\n" +
 	"\x06latest\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\x06latest\x128\n" +
-	"\tfinalized\x18\x02 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\tfinalized\"\x84\x01\n" +
+	"\tfinalized\x18\x02 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\tfinalized\"\x85\x01\n" +
 	"\x13CallContractRequest\x121\n" +
-	"\x04call\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x04call\x12:\n" +
-	"\x0fconfidenceLevel\x18\x02 \x01(\x0e2\x10.loop.ConfidenceR\x0fconfidenceLevel\"I\n" +
+	"\x04call\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x04call\x12;\n" +
+	"\x10confidence_level\x18\x02 \x01(\x0e2\x10.loop.ConfidenceR\x0fconfidenceLevel\"I\n" +
 	"\x11CallContractReply\x124\n" +
 	"\x04data\x18\x01 \x01(\v2 .loop.internal.pb.evm.ABIPayloadR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
@@ -2004,11 +2020,13 @@ const file_evm_proto_rawDesc = "" +
 	"\x06filter\x18\x01 \x01(\v2\x1e.loop.internal.pb.evm.LPFilterR\x06filter\"?\n" +
 	"\x1cUnregisterLogTrackingRequest\x12\x1f\n" +
 	"\vfilter_name\x18\x01 \x01(\tR\n" +
-	"filterName\"M\n" +
+	"filterName\"\xc4\x01\n" +
 	"\x19QueryLogsFromCacheRequest\x120\n" +
 	"\n" +
 	"expression\x18\x01 \x03(\v2\x10.loop.ExpressionR\n" +
-	"expression\"H\n" +
+	"expression\x128\n" +
+	"\x0elimit_and_sort\x18\x02 \x01(\v2\x12.loop.LimitAndSortR\flimitAndSort\x12;\n" +
+	"\x10confidence_level\x18\x03 \x01(\x0e2\x10.loop.ConfidenceR\x0fconfidenceLevel\"H\n" +
 	"\x17QueryLogsFromCacheReply\x12-\n" +
 	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs\"D\n" +
 	"\x1bGetTransactionStatusRequest\x12%\n" +
@@ -2088,7 +2106,8 @@ var file_evm_proto_goTypes = []any{
 	(*pb.BigInt)(nil),                    // 34: loop.BigInt
 	(pb.Confidence)(0),                   // 35: loop.Confidence
 	(*pb.Expression)(nil),                // 36: loop.Expression
-	(*emptypb.Empty)(nil),                // 37: google.protobuf.Empty
+	(*pb.LimitAndSort)(nil),              // 37: loop.LimitAndSort
+	(*emptypb.Empty)(nil),                // 38: google.protobuf.Empty
 }
 var file_evm_proto_depIdxs = []int32{
 	1,  // 0: loop.internal.pb.evm.CallMsg.from:type_name -> loop.internal.pb.evm.Address
@@ -2129,7 +2148,7 @@ var file_evm_proto_depIdxs = []int32{
 	11, // 35: loop.internal.pb.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.internal.pb.evm.Head
 	11, // 36: loop.internal.pb.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.internal.pb.evm.Head
 	4,  // 37: loop.internal.pb.evm.CallContractRequest.call:type_name -> loop.internal.pb.evm.CallMsg
-	35, // 38: loop.internal.pb.evm.CallContractRequest.confidenceLevel:type_name -> loop.Confidence
+	35, // 38: loop.internal.pb.evm.CallContractRequest.confidence_level:type_name -> loop.Confidence
 	3,  // 39: loop.internal.pb.evm.CallContractReply.data:type_name -> loop.internal.pb.evm.ABIPayload
 	34, // 40: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
 	7,  // 41: loop.internal.pb.evm.GetLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
@@ -2144,37 +2163,39 @@ var file_evm_proto_depIdxs = []int32{
 	9,  // 50: loop.internal.pb.evm.GetReceiptReply.receipt:type_name -> loop.internal.pb.evm.Receipt
 	10, // 51: loop.internal.pb.evm.RegisterLogTrackingRequest.filter:type_name -> loop.internal.pb.evm.LPFilter
 	36, // 52: loop.internal.pb.evm.QueryLogsFromCacheRequest.expression:type_name -> loop.Expression
-	6,  // 53: loop.internal.pb.evm.QueryLogsFromCacheReply.logs:type_name -> loop.internal.pb.evm.Log
-	0,  // 54: loop.internal.pb.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.internal.pb.evm.TransactionStatus
-	16, // 55: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
-	14, // 56: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
-	18, // 57: loop.internal.pb.evm.EVM.GetLogs:input_type -> loop.internal.pb.evm.GetLogsRequest
-	20, // 58: loop.internal.pb.evm.EVM.BalanceAt:input_type -> loop.internal.pb.evm.BalanceAtRequest
-	22, // 59: loop.internal.pb.evm.EVM.EstimateGas:input_type -> loop.internal.pb.evm.EstimateGasRequest
-	24, // 60: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
-	26, // 61: loop.internal.pb.evm.EVM.GetTransactionReceipt:input_type -> loop.internal.pb.evm.GetReceiptRequest
-	37, // 62: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	30, // 63: loop.internal.pb.evm.EVM.QueryLogsFromCache:input_type -> loop.internal.pb.evm.QueryLogsFromCacheRequest
-	28, // 64: loop.internal.pb.evm.EVM.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
-	29, // 65: loop.internal.pb.evm.EVM.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
-	32, // 66: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.internal.pb.evm.GetTransactionStatusRequest
-	17, // 67: loop.internal.pb.evm.EVM.GetTransactionFee:output_type -> loop.internal.pb.evm.GetTransactionFeeReply
-	15, // 68: loop.internal.pb.evm.EVM.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
-	19, // 69: loop.internal.pb.evm.EVM.GetLogs:output_type -> loop.internal.pb.evm.GetLogsReply
-	21, // 70: loop.internal.pb.evm.EVM.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
-	23, // 71: loop.internal.pb.evm.EVM.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
-	25, // 72: loop.internal.pb.evm.EVM.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
-	27, // 73: loop.internal.pb.evm.EVM.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
-	13, // 74: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	31, // 75: loop.internal.pb.evm.EVM.QueryLogsFromCache:output_type -> loop.internal.pb.evm.QueryLogsFromCacheReply
-	37, // 76: loop.internal.pb.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	37, // 77: loop.internal.pb.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	33, // 78: loop.internal.pb.evm.EVM.GetTransactionStatus:output_type -> loop.internal.pb.evm.GetTransactionStatusReply
-	67, // [67:79] is the sub-list for method output_type
-	55, // [55:67] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	37, // 53: loop.internal.pb.evm.QueryLogsFromCacheRequest.limit_and_sort:type_name -> loop.LimitAndSort
+	35, // 54: loop.internal.pb.evm.QueryLogsFromCacheRequest.confidence_level:type_name -> loop.Confidence
+	6,  // 55: loop.internal.pb.evm.QueryLogsFromCacheReply.logs:type_name -> loop.internal.pb.evm.Log
+	0,  // 56: loop.internal.pb.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.internal.pb.evm.TransactionStatus
+	16, // 57: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
+	14, // 58: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
+	18, // 59: loop.internal.pb.evm.EVM.GetLogs:input_type -> loop.internal.pb.evm.GetLogsRequest
+	20, // 60: loop.internal.pb.evm.EVM.BalanceAt:input_type -> loop.internal.pb.evm.BalanceAtRequest
+	22, // 61: loop.internal.pb.evm.EVM.EstimateGas:input_type -> loop.internal.pb.evm.EstimateGasRequest
+	24, // 62: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
+	26, // 63: loop.internal.pb.evm.EVM.GetTransactionReceipt:input_type -> loop.internal.pb.evm.GetReceiptRequest
+	38, // 64: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	30, // 65: loop.internal.pb.evm.EVM.QueryLogsFromCache:input_type -> loop.internal.pb.evm.QueryLogsFromCacheRequest
+	28, // 66: loop.internal.pb.evm.EVM.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
+	29, // 67: loop.internal.pb.evm.EVM.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
+	32, // 68: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.internal.pb.evm.GetTransactionStatusRequest
+	17, // 69: loop.internal.pb.evm.EVM.GetTransactionFee:output_type -> loop.internal.pb.evm.GetTransactionFeeReply
+	15, // 70: loop.internal.pb.evm.EVM.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
+	19, // 71: loop.internal.pb.evm.EVM.GetLogs:output_type -> loop.internal.pb.evm.GetLogsReply
+	21, // 72: loop.internal.pb.evm.EVM.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
+	23, // 73: loop.internal.pb.evm.EVM.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
+	25, // 74: loop.internal.pb.evm.EVM.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
+	27, // 75: loop.internal.pb.evm.EVM.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
+	13, // 76: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
+	31, // 77: loop.internal.pb.evm.EVM.QueryLogsFromCache:output_type -> loop.internal.pb.evm.QueryLogsFromCacheReply
+	38, // 78: loop.internal.pb.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	38, // 79: loop.internal.pb.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	33, // 80: loop.internal.pb.evm.EVM.GetTransactionStatus:output_type -> loop.internal.pb.evm.GetTransactionStatusReply
+	69, // [69:81] is the sub-list for method output_type
+	57, // [57:69] is the sub-list for method input_type
+	57, // [57:57] is the sub-list for extension type_name
+	57, // [57:57] is the sub-list for extension extendee
+	0,  // [0:57] is the sub-list for field type_name
 }
 
 func init() { file_evm_proto_init() }

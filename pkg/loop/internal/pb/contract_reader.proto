@@ -212,7 +212,6 @@ message TxHash{
 }
 
 message EVMPrimitive {
- // list them here
 }
 
 message ChainPrimitive {

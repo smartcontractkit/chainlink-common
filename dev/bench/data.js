@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746554689791,
+  "lastUpdate": 1746557517632,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12894,6 +12894,48 @@ window.BENCHMARK_DATA = {
             "value": 28153,
             "unit": "ns/op",
             "extra": "42628 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ea88ef40551195df6a51def2690dfefd26fb58b3",
+          "message": "CapabilityExecutor interface for Module/Host (#1177)\n\n* CapabilityExecutor interface for Module/Host\n\n* Include Capability ID field in CapabilityRequest",
+          "timestamp": "2025-05-06T11:50:33-07:00",
+          "tree_id": "8fe36b74c22814d70863d5cc605dfdb2aba93530",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ea88ef40551195df6a51def2690dfefd26fb58b3"
+        },
+        "date": 1746557516269,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.5,
+            "unit": "ns/op",
+            "extra": "2988212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415,
+            "unit": "ns/op",
+            "extra": "2893310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29408,
+            "unit": "ns/op",
+            "extra": "41990 times\n4 procs"
           }
         ]
       }

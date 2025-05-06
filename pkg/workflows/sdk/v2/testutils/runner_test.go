@@ -54,6 +54,37 @@ func TestRunner_TriggerFires(t *testing.T) {
 	assert.Equal(t, anyResult, result)
 }
 
+func TestRunner_HasErrorsWhenReturnCannotMarshal(t *testing.T) {
+	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
+	type bad struct {
+		C chan int
+	}
+
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		assert.True(t, proto.Equal(anyConfig, config))
+		return anyTrigger, nil
+	}
+
+	runner := testutils.NewDonRunner(t, nil)
+	require.NoError(t, err)
+
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (*bad, error) {
+					return &bad{C: make(chan int, 1)}, nil
+				},
+			)},
+	})
+
+	_, _, err = runner.Result()
+	require.ErrorContains(t, err, "could not wrap")
+}
+
 func TestRunner_TriggerRegistrationCanBeVerifiedWithoutTriggering(t *testing.T) {
 	anyConfig1 := &basictrigger.Config{Name: "a", Number: 1}
 	anyConfig2 := &actionandtrigger.Config{Name: "b"}

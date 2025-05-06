@@ -115,7 +115,8 @@ type CapabilityRequest struct {
 	ConfigPayload *anypb.Any
 
 	// The method to call for no DAG workflows
-	Method string
+	Method       string
+	CapabilityId string
 }
 
 type RegisterToWorkflowRequest struct {

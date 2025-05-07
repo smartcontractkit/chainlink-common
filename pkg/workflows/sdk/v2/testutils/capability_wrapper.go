@@ -10,13 +10,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type capabilityWrapper struct {
+type CapabilityWrapper struct {
 	Capability
 }
 
-var _ capabilities.ExecutableAndTriggerCapability = (*capabilityWrapper)(nil)
+var _ capabilities.ExecutableAndTriggerCapability = (*CapabilityWrapper)(nil)
 
-func (c *capabilityWrapper) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+func (c *CapabilityWrapper) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	ch := make(chan capabilities.TriggerResponse, 1)
 	trigger, err := c.InvokeTrigger(ctx, &pb.TriggerSubscription{
 		ExecId:  request.Metadata.WorkflowExecutionID,
@@ -42,19 +42,19 @@ func (c *capabilityWrapper) RegisterTrigger(ctx context.Context, request capabil
 	return ch, nil
 }
 
-func (c *capabilityWrapper) UnregisterTrigger(_ context.Context, _ capabilities.TriggerRegistrationRequest) error {
+func (c *CapabilityWrapper) UnregisterTrigger(_ context.Context, _ capabilities.TriggerRegistrationRequest) error {
 	return nil
 }
 
-func (c *capabilityWrapper) RegisterToWorkflow(_ context.Context, _ capabilities.RegisterToWorkflowRequest) error {
+func (c *CapabilityWrapper) RegisterToWorkflow(_ context.Context, _ capabilities.RegisterToWorkflowRequest) error {
 	return nil
 }
 
-func (c *capabilityWrapper) UnregisterFromWorkflow(_ context.Context, _ capabilities.UnregisterFromWorkflowRequest) error {
+func (c *CapabilityWrapper) UnregisterFromWorkflow(_ context.Context, _ capabilities.UnregisterFromWorkflowRequest) error {
 	return nil
 }
 
-func (c *capabilityWrapper) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+func (c *CapabilityWrapper) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	v1Request := capabilitesbp.CapabilityRequestToProto(request)
 	v2Request := &pb.CapabilityRequest{
 		ExecutionId: v1Request.Metadata.WorkflowExecutionId,
@@ -76,7 +76,7 @@ func (c *capabilityWrapper) Execute(ctx context.Context, request capabilities.Ca
 	}
 }
 
-func (c *capabilityWrapper) Info(_ context.Context) (capabilities.CapabilityInfo, error) {
+func (c *CapabilityWrapper) Info(_ context.Context) (capabilities.CapabilityInfo, error) {
 	return capabilities.NewCapabilityInfo(
 		c.ID(), capabilities.CapabilityTypeCombined, fmt.Sprintf("Mock of capability %s", c.ID()))
 }

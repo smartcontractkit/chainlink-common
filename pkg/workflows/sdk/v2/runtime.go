@@ -28,13 +28,15 @@ type DonRuntime interface {
 	RunInNodeMode(fn func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest) Promise[values.Value]
 }
 
+type SimpleConsensusType = pb.SimpleConsensusType
+
 type PrimitiveConsensusWithDefault[T any] struct {
-	pb.SimpleConsensusType
+	SimpleConsensusType
 	DefaultValue T
 }
 
 type BuiltInConsensus[T any] interface {
-	pb.SimpleConsensusType | *PrimitiveConsensusWithDefault[T]
+	SimpleConsensusType | *PrimitiveConsensusWithDefault[T]
 }
 
 var nodeModeCallInDonMode = errors.New("cannot use NodeRuntime outside RunInNodeMode")

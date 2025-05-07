@@ -16,3 +16,11 @@ message CapabilityMetadata {
 extend google.protobuf.ServiceOptions {
   CapabilityMetadata capability = 50000; // 50000-99999 is the range for custom options.
 }
+
+message CapabilityMethodMetadata {
+  bool map_to_untyped_api = 1;
+}
+
+extend google.protobuf.MethodOptions {
+  CapabilityMethodMetadata method = 50001; // 50000-99999 is the range for custom options.
+}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746638580767,
+  "lastUpdate": 1746644822869,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13062,6 +13062,48 @@ window.BENCHMARK_DATA = {
             "value": 28192,
             "unit": "ns/op",
             "extra": "42619 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db395570d649b1c19bc63153fb83524fa8afe3f7",
+          "message": "refactor: exposes CapabilityWrapper (#1183)",
+          "timestamp": "2025-05-07T15:06:01-04:00",
+          "tree_id": "8cef86622881170d5776a0025995f57b34a3ad30",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/db395570d649b1c19bc63153fb83524fa8afe3f7"
+        },
+        "date": 1746644822073,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.3,
+            "unit": "ns/op",
+            "extra": "3354832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.9,
+            "unit": "ns/op",
+            "extra": "2874721 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28125,
+            "unit": "ns/op",
+            "extra": "42460 times\n4 procs"
           }
         ]
       }

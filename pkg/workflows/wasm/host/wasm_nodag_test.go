@@ -115,7 +115,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	m.Start()
 	defer m.Close()
 
-	t.Run("Subscribe to triggers", func(t *testing.T) {
+	t.Run("Subscribe to triggers with identical capability IDs", func(t *testing.T) {
 		ctx := t.Context()
 		triggers, err := getTriggersSpec(ctx, m, []byte(""))
 		require.NoError(t, err)

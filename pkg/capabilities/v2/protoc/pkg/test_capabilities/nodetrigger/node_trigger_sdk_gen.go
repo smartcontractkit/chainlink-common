@@ -10,20 +10,17 @@ import (
 
 type NodeEvent struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
-	ID uint64
 }
 
 func (c NodeEvent) Trigger(config *Config) sdk.NodeTrigger[*Outputs] {
 	configAny, _ := anypb.New(config)
 	return &nodeEventTrigger{
 		config: configAny,
-		id:     c.ID,
 	}
 }
 
 type nodeEventTrigger struct {
 	config *anypb.Any
-	id     uint64
 }
 
 func (*nodeEventTrigger) IsNodeTrigger() {}
@@ -32,12 +29,8 @@ func (*nodeEventTrigger) NewT() *Outputs {
 	return &Outputs{}
 }
 
-func (*nodeEventTrigger) Name() string {
+func (*nodeEventTrigger) CapabilityID() string {
 	return "basic-test-node-trigger@1.0.0"
-}
-
-func (t *nodeEventTrigger) Id() uint64 {
-	return t.id
 }
 
 func (*nodeEventTrigger) Method() string {

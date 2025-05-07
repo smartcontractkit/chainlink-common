@@ -108,7 +108,7 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for i, handler := range args.Handlers {
 		subscriptions[i] = &sdkpb.TriggerSubscription{
 			ExecId:  d.id,
-			Id:      handler.Name(),
+			Id:      handler.CapabilityID(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),
 		}

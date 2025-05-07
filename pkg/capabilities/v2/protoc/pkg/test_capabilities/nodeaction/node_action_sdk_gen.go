@@ -13,7 +13,6 @@ import (
 
 type BasicAction struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
-	ID uint64
 }
 
 func (c *BasicAction) PerformAction(runtime sdk.NodeRuntime, input *NodeInputs) sdk.Promise[*NodeOutputs] {

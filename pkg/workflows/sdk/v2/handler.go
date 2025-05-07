@@ -9,8 +9,7 @@ import (
 //
 //	The interface represents what trigger to listen to and how to handle its invocations
 type Handler[T any] interface {
-	Id() uint64
-	Name() string
+	CapabilityID() string
 	Method() string
 	TriggerCfg() *anypb.Any
 	Callback() func(runtime T, payload *anypb.Any) (any, error)

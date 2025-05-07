@@ -37,7 +37,7 @@ func Test_NoDag_Run(t *testing.T) {
 	var (
 		mc           = createNoDagMc(t)
 		triggerIndex = int(0)
-		triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Name()
+		capID        = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
 		binary       = createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 	)
 
@@ -54,7 +54,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 		require.Len(t, triggers.Subscriptions, 1)
 		require.Equal(t,
-			triggerName,
+			capID,
 			triggers.Subscriptions[triggerIndex].Id,
 		)
 		configProto := triggers.Subscriptions[0].Payload
@@ -105,7 +105,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	var (
 		mc           = createNoDagMc(t)
 		triggerIndex = int(0)
-		triggerName  = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).Name()
+		capID        = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
 		binary       = createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
 	)
 
@@ -136,7 +136,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		// expect same name for all subscriptions/triggers
 		for idx := range len(triggers.Subscriptions) {
 			require.Equal(t,
-				triggerName,
+				capID,
 				triggers.Subscriptions[idx].Id,
 			)
 			configProto := triggers.Subscriptions[idx].Payload

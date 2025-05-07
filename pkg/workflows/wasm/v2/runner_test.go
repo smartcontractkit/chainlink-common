@@ -26,7 +26,7 @@ var (
 
 	defaultBasicTrigger = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{})
 	triggerIndex        = int(0)
-	triggerName         = defaultBasicTrigger.Name()
+	capID               = defaultBasicTrigger.CapabilityID()
 
 	subscribeRequest = &pb.ExecuteRequest{
 		Id:              anyExecutionId,
@@ -95,7 +95,7 @@ func TestRunner_Run(t *testing.T) {
 			require.Len(t, subscriptions, 1)
 			subscription := subscriptions[triggerIndex]
 			assert.Equal(t, anyExecutionId, subscription.ExecId)
-			assert.Equal(t, triggerName, subscription.Id)
+			assert.Equal(t, capID, subscription.Id)
 			assert.Equal(t, "Trigger", subscription.Method)
 			payload := &basictrigger.Config{}
 			require.NoError(t, subscription.Payload.UnmarshalTo(payload))

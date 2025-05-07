@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746559952761,
+  "lastUpdate": 1746635658997,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -12978,6 +12978,48 @@ window.BENCHMARK_DATA = {
             "value": 28432,
             "unit": "ns/op",
             "extra": "42144 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d41b1d1357132f850e249e900ba4fb34c0c8786d",
+          "message": "Register multiple triggers (#1180)\n\n* chore: adds failing test\n\n* refactor: adds a multi trigger workflow test fix\n\n* test clean up\n\n* refactor: pass an ID to generated triggers\n\n* use a handler name vs Id\n\n* chore: test nodag with mock host\n\n* refactor: removes ID and renames Name\n\n* Update pkg/workflows/wasm/host/wasm_nodag_test.go\n\n* chore: clean up nits",
+          "timestamp": "2025-05-07T12:32:07-04:00",
+          "tree_id": "8123513828756d8e3bc8c9ca1f6b263fe56e101b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d41b1d1357132f850e249e900ba4fb34c0c8786d"
+        },
+        "date": 1746635658147,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.3,
+            "unit": "ns/op",
+            "extra": "3351610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402,
+            "unit": "ns/op",
+            "extra": "2984715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28135,
+            "unit": "ns/op",
+            "extra": "42648 times\n4 procs"
           }
         ]
       }

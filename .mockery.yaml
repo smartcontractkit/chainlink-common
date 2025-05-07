@@ -17,6 +17,9 @@ packages:
       OffRampReader:
         config:
           filename: offramp_reader_mock.go
+  github.com/smartcontractkit/chainlink-common/pkg/types:
+    interfaces:
+      ContractReader:
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
       CapabilitiesRegistry:
@@ -30,3 +33,7 @@ packages:
   github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb:
     interfaces:
       ChipIngressClient: {}
+  github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host:
+    interfaces:
+      ModuleV1: {}
+      ModuleV2: {}

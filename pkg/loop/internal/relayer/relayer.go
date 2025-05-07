@@ -125,6 +125,9 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	id, _, err := p.ServeNew(name, func(s *grpc.Server) {
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
+		if evmService, ok := r.(types.EVMService); ok {
+			pb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
+		}
 	}, rRes, ksRes, crRes)
 	if err != nil {
 		return nil, err
@@ -183,19 +186,18 @@ func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb
 	return &pb.SignReply{SignedData: signed}, nil
 }
 
-var _ looptypes.Relayer = (*relayerClient)(nil)
-
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
 type relayerClient struct {
 	*net.BrokerExt
 	*goplugin.ServiceClient
 
-	relayer pb.RelayerClient
+	relayer   pb.RelayerClient
+	evmClient pb.EVMClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn)}
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), pb.NewEVMClient(conn)}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -218,7 +220,8 @@ func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfi
 		return reply.ContractReaderID, nil, nil
 	})
 
-	return contractreader.NewClient(r.WithName("ContractReaderClient"), cc), nil
+	return contractreader.NewClient(goplugin.NewServiceClient(r.WithName("ContractReaderClient"), cc),
+		pb.NewContractReaderClient(cc)), nil
 }
 
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {
@@ -376,6 +379,12 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 		Args:      argsStruct,
 	})
 	return err
+}
+
+func (r *relayerClient) EVM() (types.EVMService, error) {
+	return &evmClient{
+		r.evmClient,
+	}, nil
 }
 
 var _ pb.RelayerServer = (*relayerServer)(nil)

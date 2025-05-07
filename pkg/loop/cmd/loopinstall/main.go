@@ -92,42 +92,47 @@ func main() {
 
 // printHelp prints usage and help information
 func printHelp() {
-	fmt.Println("Chainlink Plugin Installer")
-	fmt.Println("\nA tool for installing Chainlink plugins from YAML configuration files.")
-	fmt.Println("\nUsage:")
-	fmt.Println("  loopinstall [options] <plugin-config-file> [<plugin-config-file>...]")
-	fmt.Println("\nOptions:")
-	fmt.Println("  -h, --help                Show this help message")
-	fmt.Println("  -v, --verbose             Enable verbose output")
-	fmt.Println("  -c, --concurrency <num>   Set maximum number of concurrent installations (default: 5)")
-	fmt.Println("  -s, --sequential          Install plugins sequentially (no concurrency)")
-	fmt.Println("  -o, --output-installation-artifacts <file>  Path for installation artifacts JSON file")
-	fmt.Println("                             (optional, no installation artifacts written if not specified)")
-	fmt.Println("\nExamples:")
-	fmt.Println("  # Install plugins from the default configuration")
-	fmt.Println("  loopinstall plugins.default.yaml")
-	fmt.Println("")
-	fmt.Println("  # Install plugins with custom installation artifacts filename")
-	fmt.Println("  loopinstall -o ./installation-artifacts.json plugins.default.yaml")
-	fmt.Println("")
-	fmt.Println("  # Install plugins sequentially")
-	fmt.Println("  loopinstall -s plugins.default.yaml")
-	fmt.Println("")
-	fmt.Println("  # Install plugins with environment variable overrides")
-	fmt.Println("  CL_PLUGIN_GOFLAGS=\"-ldflags='-s'\" loopinstall plugins.default.yaml")
-	fmt.Println("")
-	fmt.Println("Environment Variables:")
-	fmt.Println("  CL_PLUGIN_GOFLAGS  Override the goflags option from the configuration")
-	fmt.Println("")
-	fmt.Println("Plugin Configuration Format:")
-	fmt.Println("  defaults:")
-	fmt.Println("    goflags: \"\"     # Default Go build flags")
-	fmt.Println("")
-	fmt.Println("  plugins:")
-	fmt.Println("    plugin-type:")
-	fmt.Println("      - moduleURI: \"github.com/example/module\"")
-	fmt.Println("        gitRef: \"v1.0.0\"")
-	fmt.Println("        installPath: \"./cmd/example\"")
-	fmt.Println("        libs: [\"/path/to/libs/*.so\"]  # Optional library paths (can include glob patterns)")
-	fmt.Println("        # enabled: false  # Optional, defaults to true if omitted")
+	fmt.Print(`Chainlink Plugin Installer
+
+A tool for installing Chainlink plugins from YAML configuration files.
+
+Usage:
+  loopinstall [options] <plugin-config-file> [<plugin-config-file>...]
+
+Options:
+  -h, --help                Show this help message
+  -v, --verbose             Enable verbose output
+  -c, --concurrency <num>   Set maximum number of concurrent installations (default: 5)
+  -s, --sequential          Install plugins sequentially (no concurrency)
+  -o, --output-installation-artifacts <file>  Path for installation artifacts JSON file
+                             (optional, no installation artifacts written if not specified)
+
+Examples:
+  # Install plugins from the default configuration
+  loopinstall plugins.default.yaml
+
+  # Install plugins with custom installation artifacts filename
+  loopinstall -o ./installation-artifacts.json plugins.default.yaml
+
+  # Install plugins sequentially
+  loopinstall -s plugins.default.yaml
+
+  # Install plugins with environment variable overrides
+  CL_PLUGIN_GOFLAGS="-ldflags='-s'" loopinstall plugins.default.yaml
+
+Environment Variables:
+  CL_PLUGIN_GOFLAGS  Override the goflags option from the configuration
+
+Plugin Configuration Format:
+  defaults:
+    goflags: ""     # Default Go build flags
+
+  plugins:
+    plugin-type:
+      - moduleURI: "github.com/example/module"
+        gitRef: "v1.0.0"
+        installPath: "./cmd/example"
+        libs: ["/path/to/libs/*.so"]  # Optional library paths (can include glob patterns)
+        # enabled: false  # Optional, defaults to true if omitted
+`)
 }

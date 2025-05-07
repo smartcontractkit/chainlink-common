@@ -78,6 +78,11 @@ type NodeStatus struct {
 	State   string
 }
 
+type EVMService interface {
+	// GetTransactionFee retrieves the fee of a transaction in the underlying chain's TXM
+	GetTransactionFee(ctx context.Context, transactionID string) (*TransactionFee, error)
+}
+
 // ChainService is a sub-interface that encapsulates the explicit interactions with a chain, rather than through a provider.
 type ChainService interface {
 	Service
@@ -99,6 +104,7 @@ type ChainService interface {
 type Relayer interface {
 	ChainService
 
+	EVM() (EVMService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)

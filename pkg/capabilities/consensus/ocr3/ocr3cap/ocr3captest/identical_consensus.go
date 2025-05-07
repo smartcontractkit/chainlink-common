@@ -56,7 +56,7 @@ type IdenticalConsensusMock[T any] struct {
 	*testutils.Mock[ConsensusInput[T], ocr3cap.SignedReport]
 }
 
-var _ capabilities.ConsensusCapability = &IdenticalConsensusMock[struct{}]{}
+var _ capabilities.ExecutableCapability = &IdenticalConsensusMock[struct{}]{}
 
 func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepResults[ConsensusInput[T], T] {
 	step := c.GetStep(ref)

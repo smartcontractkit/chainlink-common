@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -10,8 +11,10 @@ import (
 	otellognoop "go.opentelemetry.io/otel/log/noop"
 	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
 
 const (
@@ -32,6 +35,16 @@ func (b BeholderTester) Len(t *testing.T, attrKVs ...any) int {
 	return len(found)
 }
 
+// Messages returns messages matching the provided keys and values.
+func (b BeholderTester) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
+	t.Helper()
+	
+	if attrKVs == nil {
+	    return b.emitter.msgs
+	}
+	
+	return b.msgsForKVs(t, attrKVs...)
+}
 func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
 
@@ -61,6 +74,43 @@ func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Mess
 	}
 
 	return found
+}
+
+func (b BeholderTester) BaseMessagesForLabels(t *testing.T, labels map[string]string) ([]*pb.BaseMessage, error) {
+	t.Helper()
+
+	b.emitter.mu.RLock()
+	defer b.emitter.mu.RUnlock()
+
+	var found []*pb.BaseMessage
+
+messageLoop:
+	for _, eMsg := range b.emitter.msgs {
+		dataSchema, ok := eMsg.Attrs["beholder_entity"].(string)
+		if !ok {
+			continue
+		}
+
+		if dataSchema != "BaseMessage" {
+			continue
+		}
+
+		payload := pb.BaseMessage{}
+		err := proto.Unmarshal(eMsg.Body, &payload)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling base message: %v", err)
+		}
+
+		for k, v := range labels {
+			if payload.Labels[k] != v {
+				continue messageLoop
+			}
+		}
+
+		found = append(found, &payload)
+	}
+
+	return found, nil
 }
 
 // Beholder sets the global beholder client as a message collector and returns a tester that provides helper assertion

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -36,6 +37,9 @@ const (
 	CapabilityTypeAction    CapabilityType = "action"
 	CapabilityTypeConsensus CapabilityType = "consensus"
 	CapabilityTypeTarget    CapabilityType = "target"
+
+	// CapabilityTypeCombined allows capabilities to offer both trigger and executable types.
+	CapabilityTypeCombined CapabilityType = "combined"
 )
 
 // IsValid checks if the capability type is valid.
@@ -44,7 +48,8 @@ func (c CapabilityType) IsValid() error {
 	case CapabilityTypeTrigger,
 		CapabilityTypeAction,
 		CapabilityTypeConsensus,
-		CapabilityTypeTarget:
+		CapabilityTypeTarget,
+		CapabilityTypeCombined:
 		return nil
 	case CapabilityTypeUnknown:
 		return fmt.Errorf("invalid capability type: %s", c)
@@ -55,8 +60,12 @@ func (c CapabilityType) IsValid() error {
 
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
+	// Value is used for DAG workflows
 	Value    *values.Map
 	Metadata ResponseMetadata
+
+	// Payload is used for no DAG workflows
+	Payload *anypb.Any
 }
 
 type ResponseMetadata struct {
@@ -92,8 +101,22 @@ type RegistrationMetadata struct {
 // CapabilityRequest is a struct for the Execute request of a capability.
 type CapabilityRequest struct {
 	Metadata RequestMetadata
-	Config   *values.Map
-	Inputs   *values.Map
+
+	// Config is used for DAG workflows
+	Config *values.Map
+
+	// Inputs is used for DAG workflows
+	Inputs *values.Map
+
+	// Payload is used for no DAG workflows
+	Payload *anypb.Any
+
+	// ConfigPayload is used for no DAG workflows
+	ConfigPayload *anypb.Any
+
+	// The method to call for no DAG workflows
+	Method       string
+	CapabilityId string
 }
 
 type RegisterToWorkflowRequest struct {
@@ -133,7 +156,14 @@ type TriggerRegistrationRequest struct {
 	TriggerID string
 
 	Metadata RequestMetadata
-	Config   *values.Map
+
+	// Config for DAG workflows
+	Config *values.Map
+
+	// Request body for no DAG workflows
+	Payload *anypb.Any
+	// The method to call for no DAG workflows
+	Method string
 }
 
 type TriggerResponse struct {
@@ -146,8 +176,12 @@ type TriggerEvent struct {
 	TriggerType string
 	// The ID of the trigger event
 	ID string
-	// Trigger-specific payload
+	// Trigger-specific payload for DAG workflows
 	Outputs *values.Map
+
+	// Trigger-specific payload for no DAG workflows
+	Payload *anypb.Any
+
 	// Deprecated: use Outputs instead
 	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)
 	OCREvent *OCRTriggerEvent
@@ -224,18 +258,17 @@ type ExecutableCapability interface {
 	Executable
 }
 
-// ActionCapability interface needs to be implemented by all action capabilities.
-type ActionCapability interface {
-	ExecutableCapability
-}
+// Deprecated: use ExecutableCapability instead.
+type ActionCapability = ExecutableCapability
 
-// ConsensusCapability interface needs to be implemented by all consensus capabilities.
-type ConsensusCapability interface {
-	ExecutableCapability
-}
+// Deprecated: use ExecutableCapability instead.
+type ConsensusCapability = ExecutableCapability
 
-// TargetsCapability interface needs to be implemented by all target capabilities.
-type TargetCapability interface {
+// Deprecated: use ExecutableCapability instead.
+type TargetCapability = ExecutableCapability
+
+type ExecutableAndTriggerCapability interface {
+	TriggerCapability
 	ExecutableCapability
 }
 

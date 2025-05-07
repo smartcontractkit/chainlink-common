@@ -92,3 +92,24 @@ func NewStandardCapabilitiesService(lggr logger.Logger, grpcOpts GRPCOpts, cmd f
 	rs.Init(PluginStandardCapabilitiesName, &StandardCapabilitiesLoop{Logger: lggr, BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &rs
 }
+
+func Serve[T StandardCapabilities](serviceName string, createPluginServer func(logger.Logger) T) {
+	s := MustNewStartedServer(serviceName)
+	defer s.Stop()
+
+	s.Logger.Infof("Starting %s", serviceName)
+
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+
+	plugin.Serve(&plugin.ServeConfig{
+		HandshakeConfig: StandardCapabilitiesHandshakeConfig(),
+		Plugins: map[string]plugin.Plugin{
+			PluginStandardCapabilitiesName: &StandardCapabilitiesLoop{
+				PluginServer: createPluginServer(s.Logger),
+				BrokerConfig: BrokerConfig{Logger: s.Logger, StopCh: stopCh, GRPCOpts: s.GRPCOpts},
+			},
+		},
+		GRPCServer: s.GRPCOpts.NewServer,
+	})
+}

@@ -61,7 +61,7 @@ type capability struct {
 }
 
 var _ CapabilityIface = (*capability)(nil)
-var _ capabilities.ConsensusCapability = (*capability)(nil)
+var _ capabilities.ExecutableCapability = (*capability)(nil)
 
 func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {

@@ -45,19 +45,28 @@ const (
 
 const DefaultEncodingVersion = CBOREncodingVersion
 
+type serviceClient interface {
+	ClientConn() grpc.ClientConnInterface
+	Close() error
+	HealthReport() map[string]error
+	Name() string
+	Ready() error
+	Start(ctx context.Context) error
+}
+
 type ClientOpt func(*Client)
 
 type Client struct {
 	types.UnimplementedContractReader
-	serviceClient *goplugin.ServiceClient
+	serviceClient serviceClient
 	grpc          pb.ContractReaderClient
 	encodeWith    EncodingVersion
 }
 
-func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
+func NewClient(serviceClient serviceClient, grpc pb.ContractReaderClient, opts ...ClientOpt) *Client {
 	client := &Client{
-		serviceClient: goplugin.NewServiceClient(b, cc),
-		grpc:          pb.NewContractReaderClient(cc),
+		serviceClient: serviceClient,
+		grpc:          grpc,
 		encodeWith:    DefaultEncodingVersion,
 	}
 

@@ -24,7 +24,12 @@ type templateGenerator struct {
 }
 
 func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
-	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args)
+	importToPkg := make(map[protogen.GoImportPath]protogen.GoPackageName)
+	for _, f := range plugin.Files {
+		importToPkg[f.GoImportPath] = f.GoPackageName
+	}
+
+	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg)
 	if err != nil {
 		return err
 	}
@@ -34,13 +39,13 @@ func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 	return nil
 }
 
-func (t *templateGenerator) Generate(baseFile, args any) (string, string, error) {
-	fileName, err := runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials)
+func (t *templateGenerator) Generate(baseFile, args any, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, string, error) {
+	fileName, err := runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials, importToPkg)
 	if err != nil {
 		return "", "", err
 	}
 
-	file, err := runTemplate(t.Name, t.Template, args, t.Partials)
+	file, err := runTemplate(t.Name, t.Template, args, t.Partials, importToPkg)
 	if err != nil {
 		return fileName, "", err
 	}
@@ -57,7 +62,7 @@ func (t *templateGenerator) Generate(baseFile, args any) (string, string, error)
 	return fileName, prettyFile, err
 }
 
-func runTemplate(name, tmplText string, args any, partials map[string]string) (string, error) {
+func runTemplate(name, tmplText string, args any, partials map[string]string, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, error) {
 	buf := &bytes.Buffer{}
 	imports := map[string]bool{}
 	templ := template.New(name).Funcs(template.FuncMap{
@@ -85,11 +90,18 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 			return m, nil
 		},
 		"isTrigger": func(m *protogen.Method) bool { return m.Desc.IsStreamingServer() },
-		"addImport": func(name protogen.GoImportPath, ignore string) string {
-			if ignore != name.String() {
-				imports[name.String()] = true
+		"addImport": func(importPath protogen.GoImportPath, ignore string) string {
+			importName := importPath.String()
+			if ignore == importName {
+				return ""
 			}
 
+			// add package name alias if path is mismatched with the package name
+			if !isDirNamePackageName(importPath, importToPkg) {
+				importName = fmt.Sprintf("%s %s", importToPkg[importPath], importName)
+			}
+
+			imports[importName] = true
 			return ""
 		},
 		"allimports": func() []string {
@@ -105,10 +117,14 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 				return ident.GoName
 			}
 
-			// remove quotes
-			importPath = importPath[1 : len(importPath)-1]
-			parts := strings.Split(importPath, "/")
-			return fmt.Sprintf("%s.%s", parts[len(parts)-1], ident.GoName)
+			packageName := path.Base(strings.Trim(importPath, `"`))
+
+			// use package name alias if package is mismatched with the package name
+			if !isDirNamePackageName(ident.GoImportPath, importToPkg) {
+				packageName = string(importToPkg[ident.GoImportPath])
+			}
+
+			return fmt.Sprintf("%s.%s", packageName, ident.GoName)
 		},
 		"CapabilityId": func(s *protogen.Service) (string, error) {
 			// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
@@ -133,6 +149,15 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)
 			}
 		},
+		"ConfigType": func(s *protogen.Service) (string, error) {
+			md, err := getCapabilityMetadata(s)
+			if err != nil {
+				return "", err
+			}
+			_ = md
+
+			return "emptypb.Empty", nil
+		},
 	})
 
 	// Register partials
@@ -153,6 +178,12 @@ func runTemplate(name, tmplText string, args any, partials map[string]string) (s
 
 	err = templ.Execute(buf, args)
 	return buf.String(), err
+}
+
+func isDirNamePackageName(importPath protogen.GoImportPath, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) bool {
+	packageName := importToPkg[importPath]
+	dirName := path.Base(strings.Trim(importPath.String(), `"`))
+	return dirName == string(packageName)
 }
 
 func getCapabilityMetadata(service *protogen.Service) (*pb.CapabilityMetadata, error) {

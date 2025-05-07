@@ -17,6 +17,7 @@ const (
 	CapabilityTypeAction    = CapabilityType_CAPABILITY_TYPE_ACTION
 	CapabilityTypeConsensus = CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	CapabilityTypeTarget    = CapabilityType_CAPABILITY_TYPE_TARGET
+	CapabilityTypeCombined  = CapabilityType_CAPABILITY_TYPE_COMBINED
 )
 
 func MarshalCapabilityRequest(req capabilities.CapabilityRequest) ([]byte, error) {
@@ -67,6 +68,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 		Config:        values.ProtoMap(config),
 		Payload:       req.Payload,
 		Method:        req.Method,
+		CapabilityId:  req.CapabilityId,
 		ConfigPayload: req.ConfigPayload,
 	}
 }
@@ -125,6 +127,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		Inputs:        inputs,
 		Payload:       pr.Payload,
 		Method:        pr.Method,
+		CapabilityId:  pr.CapabilityId,
 		ConfigPayload: pr.ConfigPayload,
 	}
 	return req, nil

@@ -37,6 +37,9 @@ const (
 	CapabilityTypeAction    CapabilityType = "action"
 	CapabilityTypeConsensus CapabilityType = "consensus"
 	CapabilityTypeTarget    CapabilityType = "target"
+
+	// CapabilityTypeCombined allows capabilities to offer both trigger and executable types.
+	CapabilityTypeCombined CapabilityType = "combined"
 )
 
 // IsValid checks if the capability type is valid.
@@ -45,7 +48,8 @@ func (c CapabilityType) IsValid() error {
 	case CapabilityTypeTrigger,
 		CapabilityTypeAction,
 		CapabilityTypeConsensus,
-		CapabilityTypeTarget:
+		CapabilityTypeTarget,
+		CapabilityTypeCombined:
 		return nil
 	case CapabilityTypeUnknown:
 		return fmt.Errorf("invalid capability type: %s", c)
@@ -111,7 +115,8 @@ type CapabilityRequest struct {
 	ConfigPayload *anypb.Any
 
 	// The method to call for no DAG workflows
-	Method string
+	Method       string
+	CapabilityId string
 }
 
 type RegisterToWorkflowRequest struct {
@@ -253,18 +258,17 @@ type ExecutableCapability interface {
 	Executable
 }
 
-// ActionCapability interface needs to be implemented by all action capabilities.
-type ActionCapability interface {
-	ExecutableCapability
-}
+// Deprecated: use ExecutableCapability instead.
+type ActionCapability = ExecutableCapability
 
-// ConsensusCapability interface needs to be implemented by all consensus capabilities.
-type ConsensusCapability interface {
-	ExecutableCapability
-}
+// Deprecated: use ExecutableCapability instead.
+type ConsensusCapability = ExecutableCapability
 
-// TargetsCapability interface needs to be implemented by all target capabilities.
-type TargetCapability interface {
+// Deprecated: use ExecutableCapability instead.
+type TargetCapability = ExecutableCapability
+
+type ExecutableAndTriggerCapability interface {
+	TriggerCapability
 	ExecutableCapability
 }
 

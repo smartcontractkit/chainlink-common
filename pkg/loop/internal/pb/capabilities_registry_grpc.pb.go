@@ -24,9 +24,7 @@ const (
 	CapabilitiesRegistry_ConfigForCapability_FullMethodName = "/loop.CapabilitiesRegistry/ConfigForCapability"
 	CapabilitiesRegistry_Get_FullMethodName                 = "/loop.CapabilitiesRegistry/Get"
 	CapabilitiesRegistry_GetTrigger_FullMethodName          = "/loop.CapabilitiesRegistry/GetTrigger"
-	CapabilitiesRegistry_GetAction_FullMethodName           = "/loop.CapabilitiesRegistry/GetAction"
-	CapabilitiesRegistry_GetConsensus_FullMethodName        = "/loop.CapabilitiesRegistry/GetConsensus"
-	CapabilitiesRegistry_GetTarget_FullMethodName           = "/loop.CapabilitiesRegistry/GetTarget"
+	CapabilitiesRegistry_GetExecutable_FullMethodName       = "/loop.CapabilitiesRegistry/GetExecutable"
 	CapabilitiesRegistry_List_FullMethodName                = "/loop.CapabilitiesRegistry/List"
 	CapabilitiesRegistry_Add_FullMethodName                 = "/loop.CapabilitiesRegistry/Add"
 	CapabilitiesRegistry_Remove_FullMethodName              = "/loop.CapabilitiesRegistry/Remove"
@@ -40,9 +38,7 @@ type CapabilitiesRegistryClient interface {
 	ConfigForCapability(ctx context.Context, in *ConfigForCapabilityRequest, opts ...grpc.CallOption) (*ConfigForCapabilityReply, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetReply, error)
 	GetTrigger(ctx context.Context, in *GetTriggerRequest, opts ...grpc.CallOption) (*GetTriggerReply, error)
-	GetAction(ctx context.Context, in *GetActionRequest, opts ...grpc.CallOption) (*GetActionReply, error)
-	GetConsensus(ctx context.Context, in *GetConsensusRequest, opts ...grpc.CallOption) (*GetConsensusReply, error)
-	GetTarget(ctx context.Context, in *GetTargetRequest, opts ...grpc.CallOption) (*GetTargetReply, error)
+	GetExecutable(ctx context.Context, in *GetExecutableRequest, opts ...grpc.CallOption) (*GetExecutableReply, error)
 	List(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListReply, error)
 	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Remove(ctx context.Context, in *RemoveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -96,30 +92,10 @@ func (c *capabilitiesRegistryClient) GetTrigger(ctx context.Context, in *GetTrig
 	return out, nil
 }
 
-func (c *capabilitiesRegistryClient) GetAction(ctx context.Context, in *GetActionRequest, opts ...grpc.CallOption) (*GetActionReply, error) {
+func (c *capabilitiesRegistryClient) GetExecutable(ctx context.Context, in *GetExecutableRequest, opts ...grpc.CallOption) (*GetExecutableReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetActionReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetAction_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) GetConsensus(ctx context.Context, in *GetConsensusRequest, opts ...grpc.CallOption) (*GetConsensusReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetConsensusReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetConsensus_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *capabilitiesRegistryClient) GetTarget(ctx context.Context, in *GetTargetRequest, opts ...grpc.CallOption) (*GetTargetReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTargetReply)
-	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetTarget_FullMethodName, in, out, cOpts...)
+	out := new(GetExecutableReply)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_GetExecutable_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +140,7 @@ type CapabilitiesRegistryServer interface {
 	ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error)
 	Get(context.Context, *GetRequest) (*GetReply, error)
 	GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error)
-	GetAction(context.Context, *GetActionRequest) (*GetActionReply, error)
-	GetConsensus(context.Context, *GetConsensusRequest) (*GetConsensusReply, error)
-	GetTarget(context.Context, *GetTargetRequest) (*GetTargetReply, error)
+	GetExecutable(context.Context, *GetExecutableRequest) (*GetExecutableReply, error)
 	List(context.Context, *emptypb.Empty) (*ListReply, error)
 	Add(context.Context, *AddRequest) (*emptypb.Empty, error)
 	Remove(context.Context, *RemoveRequest) (*emptypb.Empty, error)
@@ -192,14 +166,8 @@ func (UnimplementedCapabilitiesRegistryServer) Get(context.Context, *GetRequest)
 func (UnimplementedCapabilitiesRegistryServer) GetTrigger(context.Context, *GetTriggerRequest) (*GetTriggerReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrigger not implemented")
 }
-func (UnimplementedCapabilitiesRegistryServer) GetAction(context.Context, *GetActionRequest) (*GetActionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAction not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) GetConsensus(context.Context, *GetConsensusRequest) (*GetConsensusReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetConsensus not implemented")
-}
-func (UnimplementedCapabilitiesRegistryServer) GetTarget(context.Context, *GetTargetRequest) (*GetTargetReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTarget not implemented")
+func (UnimplementedCapabilitiesRegistryServer) GetExecutable(context.Context, *GetExecutableRequest) (*GetExecutableReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExecutable not implemented")
 }
 func (UnimplementedCapabilitiesRegistryServer) List(context.Context, *emptypb.Empty) (*ListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
@@ -303,56 +271,20 @@ func _CapabilitiesRegistry_GetTrigger_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CapabilitiesRegistry_GetAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetActionRequest)
+func _CapabilitiesRegistry_GetExecutable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExecutableRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetAction(ctx, in)
+		return srv.(CapabilitiesRegistryServer).GetExecutable(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetAction_FullMethodName,
+		FullMethod: CapabilitiesRegistry_GetExecutable_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetAction(ctx, req.(*GetActionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_GetConsensus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetConsensusRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetConsensus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetConsensus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetConsensus(ctx, req.(*GetConsensusRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CapabilitiesRegistry_GetTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTargetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CapabilitiesRegistryServer).GetTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CapabilitiesRegistry_GetTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CapabilitiesRegistryServer).GetTarget(ctx, req.(*GetTargetRequest))
+		return srv.(CapabilitiesRegistryServer).GetExecutable(ctx, req.(*GetExecutableRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -435,16 +367,8 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CapabilitiesRegistry_GetTrigger_Handler,
 		},
 		{
-			MethodName: "GetAction",
-			Handler:    _CapabilitiesRegistry_GetAction_Handler,
-		},
-		{
-			MethodName: "GetConsensus",
-			Handler:    _CapabilitiesRegistry_GetConsensus_Handler,
-		},
-		{
-			MethodName: "GetTarget",
-			Handler:    _CapabilitiesRegistry_GetTarget_Handler,
+			MethodName: "GetExecutable",
+			Handler:    _CapabilitiesRegistry_GetExecutable_Handler,
 		},
 		{
 			MethodName: "List",

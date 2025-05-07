@@ -220,7 +220,8 @@ func (r *relayerClient) NewContractReader(_ context.Context, contractReaderConfi
 		return reply.ContractReaderID, nil, nil
 	})
 
-	return contractreader.NewClient(r.WithName("ContractReaderClient"), cc), nil
+	return contractreader.NewClient(goplugin.NewServiceClient(r.WithName("ContractReaderClient"), cc),
+		pb.NewContractReaderClient(cc)), nil
 }
 
 func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.RelayArgs) (types.ConfigProvider, error) {

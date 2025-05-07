@@ -83,8 +83,6 @@ func (f *FakeWrapper) InvokeTrigger(ctx context.Context, request *pb.TriggerSubs
 	}
 
 	return &pb.Trigger{
-		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-791 multiple of the same trigger registered
-		Id:      request.Id,
 		Payload: request.Payload,
 	}, nil
 }

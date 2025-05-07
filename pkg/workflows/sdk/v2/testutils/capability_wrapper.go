@@ -33,9 +33,7 @@ func (c *capabilityWrapper) RegisterTrigger(ctx context.Context, request capabil
 	} else {
 		response.Event = capabilities.TriggerEvent{
 			TriggerType: request.TriggerID,
-			// Something is wrong here
-			ID:      trigger.Id,
-			Payload: trigger.Payload,
+			Payload:     trigger.Payload,
 		}
 	}
 

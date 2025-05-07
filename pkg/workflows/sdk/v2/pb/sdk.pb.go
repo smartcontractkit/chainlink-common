@@ -546,7 +546,7 @@ func (x *TriggerSubscriptionRequest) GetSubscriptions() []*TriggerSubscription {
 
 type Trigger struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Payload       *anypb.Any             `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -582,11 +582,11 @@ func (*Trigger) Descriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *Trigger) GetId() string {
+func (x *Trigger) GetId() uint64 {
 	if x != nil {
 		return x.Id
 	}
-	return ""
+	return 0
 }
 
 func (x *Trigger) GetPayload() *anypb.Any {
@@ -726,7 +726,7 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\x1aTriggerSubscriptionRequest\x12E\n" +
 	"\rsubscriptions\x18\x01 \x03(\v2\x1f.cre.sdk.v2.TriggerSubscriptionR\rsubscriptions\"I\n" +
 	"\aTrigger\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12.\n" +
 	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\"D\n" +
 	"\x18AwaitCapabilitiesRequest\x12\x16\n" +
 	"\x06execId\x18\x01 \x01(\tR\x06execId\x12\x10\n" +

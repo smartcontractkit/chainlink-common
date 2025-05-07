@@ -60,7 +60,7 @@ message TriggerSubscriptionRequest {
 }
 
 message Trigger {
-  string id = 1;
+  uint64 id = 1;
   google.protobuf.Any payload = 2;
 }
 

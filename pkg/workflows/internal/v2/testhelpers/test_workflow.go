@@ -17,6 +17,31 @@ func RunTestWorkflow(runner sdk.DonRunner) {
 	})
 }
 
+func RunIdenticalTriggersWorkflow(runner sdk.DonRunner) {
+	basic := &basictrigger.Basic{}
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basic.Trigger(TestWorkflowTriggerConfig()),
+				onTrigger,
+			),
+			sdk.NewDonHandler(
+				basic.Trigger(&basictrigger.Config{
+					Name:   "second-trigger",
+					Number: 200,
+				}),
+				func(rt sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {
+					res, err := onTrigger(rt, outputs)
+					if err != nil {
+						return "", err
+					}
+					return res + "true", nil
+				},
+			),
+		},
+	})
+}
+
 func onTrigger(runtime sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {
 	action := basicaction.BasicAction{ /* TODO config */ }
 	first := action.PerformAction(runtime, &basicaction.Inputs{InputThing: false})

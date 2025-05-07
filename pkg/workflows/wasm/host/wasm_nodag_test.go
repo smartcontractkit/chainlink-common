@@ -23,16 +23,20 @@ import (
 )
 
 const (
-	nodagBinaryLocation = "test/nodag/cmd/testmodule.wasm"
-	nodagBinaryCmd      = "test/nodag/cmd"
+	nodagBinaryLocation             = "test/nodag/singlehandler/cmd/testmodule.wasm"
+	nodagMultiTriggerBinaryLocation = "test/nodag/multihandler/cmd/testmodule.wasm"
+	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
+	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
 )
 
 const anyNoDagExecId = "executionId"
 
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
+
 	mc := createNoDagMc(t)
-	triggerID := "basic-test-trigger@1.0.0"
+	triggerIndex := int(0)
+	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
 	m, err := NewModule(mc, binary)
@@ -47,7 +51,10 @@ func Test_NoDag_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Len(t, triggers.Subscriptions, 1)
-		require.Equal(t, triggerID, triggers.Subscriptions[0].Id)
+		require.Equal(t,
+			capID,
+			triggers.Subscriptions[triggerIndex].Id,
+		)
 		configProto := triggers.Subscriptions[0].Payload
 		config := &basictrigger.Config{}
 		require.NoError(t, configProto.UnmarshalTo(config))
@@ -63,6 +70,88 @@ func Test_NoDag_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		// TODO test config
+		req := &wasmpb.ExecuteRequest{
+			Id: anyNoDagExecId,
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(triggerIndex),
+					Payload: wrapped,
+				},
+			},
+		}
+		response, err := m.Execute(ctx, req)
+		require.NoError(t, err)
+
+		require.Equal(t, anyNoDagExecId, response.Id)
+		switch output := response.Result.(type) {
+		case *wasmpb.ExecutionResult_Value:
+			valuePb := output.Value
+			value, err := values.FromProto(valuePb)
+			require.NoError(t, err)
+			unwrapped, err := value.Unwrap()
+			require.NoError(t, err)
+			require.Equal(t, "Hiresponse-1response-2", unwrapped)
+		default:
+			t.Fatalf("unexpected response type %T", output)
+		}
+	})
+}
+
+func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
+	t.Parallel()
+
+	mc := createNoDagMc(t)
+	triggerIndex := int(0)
+	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
+	binary := createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
+
+	m, err := NewModule(mc, binary)
+	require.NoError(t, err)
+
+	m.Start()
+	defer m.Close()
+
+	t.Run("Subscribe to triggers with identical capability IDs", func(t *testing.T) {
+		ctx := t.Context()
+		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		require.NoError(t, err)
+
+		expectedConfigs := []*basictrigger.Config{
+			{
+				Name:   "name",
+				Number: 100,
+			},
+			{
+				Name:   "second-trigger",
+				Number: 200,
+			},
+		}
+
+		// Assert on subscriptions
+		require.Len(t, triggers.Subscriptions, 2)
+		for idx := range len(triggers.Subscriptions) {
+			// expect same capability ID for all triggers
+			require.Equal(t,
+				capID,
+				triggers.Subscriptions[idx].Id,
+			)
+			configProto := triggers.Subscriptions[idx].Payload
+			config := &basictrigger.Config{}
+			require.NoError(t, configProto.UnmarshalTo(config))
+			require.Equal(t, expectedConfigs[idx].Name, config.Name)
+			require.Equal(t, expectedConfigs[idx].Number, config.Number)
+		}
+	})
+
+	t.Run("Execute trigger", func(t *testing.T) {
+		ctx := t.Context()
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: "Hi"}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		// Trigger second handler
+		triggerID := uint64(triggerIndex + 1)
 		req := &wasmpb.ExecuteRequest{
 			Id: anyNoDagExecId,
 			Request: &wasmpb.ExecuteRequest_Trigger{
@@ -83,7 +172,7 @@ func Test_NoDag_Run(t *testing.T) {
 			require.NoError(t, err)
 			unwrapped, err := value.Unwrap()
 			require.NoError(t, err)
-			require.Equal(t, "Hiresponse-1response-2", unwrapped)
+			require.Equal(t, "Hiresponse-1response-2"+"true", unwrapped)
 		default:
 			t.Fatalf("unexpected response type %T", output)
 		}

@@ -14,4 +14,5 @@ type AutomationProvider interface {
 	LogEventProvider() automation.LogEventProvider
 	LogRecoverer() automation.LogRecoverer
 	UpkeepProvider() automation.ConditionalUpkeepProvider
+	TxStatusStore() automation.TxStatusStore
 }

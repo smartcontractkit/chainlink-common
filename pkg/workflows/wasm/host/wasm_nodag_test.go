@@ -34,12 +34,10 @@ const anyNoDagExecId = "executionId"
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 
-	var (
-		mc           = createNoDagMc(t)
-		triggerIndex = int(0)
-		capID        = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
-		binary       = createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
-	)
+	mc := createNoDagMc(t)
+	triggerIndex := int(0)
+	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
+	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
 	m, err := NewModule(mc, binary)
 	require.NoError(t, err)
@@ -102,12 +100,10 @@ func Test_NoDag_Run(t *testing.T) {
 func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	t.Parallel()
 
-	var (
-		mc           = createNoDagMc(t)
-		triggerIndex = int(0)
-		capID        = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
-		binary       = createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
-	)
+	mc := createNoDagMc(t)
+	triggerIndex := int(0)
+	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
+	binary := createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
 
 	m, err := NewModule(mc, binary)
 	require.NoError(t, err)
@@ -131,10 +127,10 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 			},
 		}
 
+		// Assert on subscriptions
 		require.Len(t, triggers.Subscriptions, 2)
-
-		// expect same name for all subscriptions/triggers
 		for idx := range len(triggers.Subscriptions) {
+			// expect same capability ID for all triggers
 			require.Equal(t,
 				capID,
 				triggers.Subscriptions[idx].Id,
@@ -155,11 +151,12 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		// Trigger second handler
+		triggerID := uint64(triggerIndex + 1)
 		req := &wasmpb.ExecuteRequest{
 			Id: anyNoDagExecId,
 			Request: &wasmpb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
-					Id:      uint64(triggerIndex + 1),
+					Id:      triggerID,
 					Payload: wrapped,
 				},
 			},

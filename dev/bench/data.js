@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746635658997,
+  "lastUpdate": 1746638580767,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13020,6 +13020,48 @@ window.BENCHMARK_DATA = {
             "value": 28135,
             "unit": "ns/op",
             "extra": "42648 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "976f49f01c90e6bb6644c206fd7614291dff0037",
+          "message": "Alias simple consensus type from pb package in the SDK. This allows workflow authors to not need to import the pb package directly (#1182)\n\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>",
+          "timestamp": "2025-05-07T13:21:57-04:00",
+          "tree_id": "2ad99f32c3b93295d491e95dac33787b4b5c0649",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/976f49f01c90e6bb6644c206fd7614291dff0037"
+        },
+        "date": 1746638579745,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.4,
+            "unit": "ns/op",
+            "extra": "3271292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 421.6,
+            "unit": "ns/op",
+            "extra": "2622261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28192,
+            "unit": "ns/op",
+            "extra": "42619 times\n4 procs"
           }
         ]
       }

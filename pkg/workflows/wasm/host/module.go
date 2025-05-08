@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,12 +39,12 @@ type RequestData[T proto.Message] struct {
 	ctx                  func() context.Context
 }
 
-type store[T proto.Message] struct {
-	m  map[string]*RequestData[T]
+type store[T any] struct {
+	m  map[string]T
 	mu sync.RWMutex
 }
 
-func (r *store[T]) add(id string, req *RequestData[T]) error {
+func (r *store[T]) add(id string, req T) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -58,13 +57,14 @@ func (r *store[T]) add(id string, req *RequestData[T]) error {
 	return nil
 }
 
-func (r *store[T]) get(id string) (*RequestData[T], error) {
+func (r *store[T]) get(id string) (T, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	_, found := r.m[id]
 	if !found {
-		return nil, fmt.Errorf("could not find request data for id %s", id)
+		var t T
+		return t, fmt.Errorf("could not find request data for id %s", id)
 	}
 
 	return r.m[id], nil
@@ -150,9 +150,9 @@ type module struct {
 	linker  *wasmtime.Linker
 	wconfig *wasmtime.Config
 
-	requestStore    *store[*wasmdagpb.Response]
-	executeStore    *store[*wasmpb.ExecutionResult]
-	capabilityStore *store[*sdkpb.CapabilityResponse]
+	requestStore        *store[*RequestData[*wasmdagpb.Response]]
+	executeStore        *store[*RequestData[*wasmpb.ExecutionResult]]
+	capabilityCallStore *store[<-chan *sdkpb.CapabilityResponse]
 
 	cfg *ModuleConfig
 
@@ -293,16 +293,16 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		}
 	}
 
-	requestStore := &store[*wasmdagpb.Response]{
+	requestStore := &store[*RequestData[*wasmdagpb.Response]]{
 		m: map[string]*RequestData[*wasmdagpb.Response]{},
 	}
 
-	execStore := &store[*wasmpb.ExecutionResult]{
+	execStore := &store[*RequestData[*wasmpb.ExecutionResult]]{
 		m: map[string]*RequestData[*wasmpb.ExecutionResult]{},
 	}
 
-	capStore := &store[*sdkpb.CapabilityResponse]{
-		m: map[string]*RequestData[*sdkpb.CapabilityResponse]{},
+	capStore := &store[<-chan *sdkpb.CapabilityResponse]{
+		m: map[string]<-chan *sdkpb.CapabilityResponse{},
 	}
 
 	logger := modCfg.Logger
@@ -329,9 +329,9 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		linker:  linker,
 		wconfig: cfg,
 
-		requestStore:    requestStore,
-		executeStore:    execStore,
-		capabilityStore: capStore,
+		requestStore:        requestStore,
+		executeStore:        execStore,
+		capabilityCallStore: capStore,
 
 		cfg:         modCfg,
 		stopCh:      make(chan struct{}),
@@ -341,7 +341,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	return m, nil
 }
 
-func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*wasmpb.ExecutionResult]) error {
+func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*RequestData[*wasmpb.ExecutionResult]]) error {
 	logger := modCfg.Logger
 	if err := linker.FuncWrap(
 		"env",
@@ -355,6 +355,14 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 
 	if err := linker.FuncWrap(
 		"env",
+		"call_capability",
+		createCallCapFn(logger, execStore, modCfg.CallCapability),
+	); err != nil {
+		return fmt.Errorf("error wrapping callcap func: %w", err)
+	}
+
+	if err := linker.FuncWrap(
+		"env",
 		"await_capabilities",
 		createAwaitCapsFn(logger, execStore, modCfg.AwaitCapabilities),
 	); err != nil {
@@ -364,7 +372,7 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 	return nil
 }
 
-func linkLegacyDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, requestStore *store[*wasmdagpb.Response]) error {
+func linkLegacyDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, requestStore *store[*RequestData[*wasmdagpb.Response]]) error {
 	logger := modCfg.Logger
 	err := linker.FuncWrap(
 		"env",
@@ -481,7 +489,7 @@ func runWasm[I idMessage, O proto.Message](
 	m *module,
 	request I,
 	setMaxResponseSize func(i I, maxSize uint64),
-	execStore *store[O]) (O, error) {
+	execStore *store[*RequestData[O]]) (O, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, *m.cfg.Timeout)
 	defer cancel()
 
@@ -579,7 +587,12 @@ func runWasm[I idMessage, O proto.Message](
 }
 
 func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
-	callCapAsync := toCallCapAsync(m.capabilityStore, handler)
+	callCapAsync := m.cfg.CallCapability
+	if handler != nil {
+		callCapAsync = toCallCapAsync(m.capabilityCallStore, handler)
+	}
+
+	// shadow any existing implementation with the one passed by the call
 	if err := m.linker.FuncWrap(
 		"env",
 		"call_capability",
@@ -587,19 +600,21 @@ func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
 	); err != nil {
 		return fmt.Errorf("error wrapping callcap func: %w", err)
 	}
-	return errors.New("not implemented")
+
+	return nil
 }
 
 func toCallCapAsync(
-	capStore *store[*sdkpb.CapabilityResponse],
+	capStore *store[<-chan *sdkpb.CapabilityResponse],
 	handler CapabilityExecutor,
 ) func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
-	return func(ctx context.Context, req *sdkpb.CapabilityRequest) ([36]byte, error) {
-		callId := uuid.New()
-		idBuffer := make([]byte, sdk.IdLen)
-		copy(idBuffer, callId.String())
+	return func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
+		callId := uuid.NewString()
+		var idBuffer [sdk.IdLen]byte
+		copy(idBuffer[:], []byte(callId))
 
 		go func() {
+			ch := make(chan *sdkpb.CapabilityResponse, 1)
 			resp, err := handler.CallCapability(ctx, req)
 			if err != nil {
 				resp = &sdkpb.CapabilityResponse{
@@ -609,13 +624,11 @@ func toCallCapAsync(
 				}
 			}
 			// TODO: Delete id on await
-			capStore.add(
-				hex.EncodeToString(idBuffer[:]),
-				&RequestData[*sdkpb.CapabilityResponse]{response: resp},
-			)
+			ch <- resp
+			capStore.add(callId, ch)
 		}()
 
-		return [36]byte(idBuffer), nil
+		return idBuffer, nil
 	}
 }
 
@@ -630,7 +643,7 @@ func containsCode(err error, code int) bool {
 // send a response back to the host.
 func createSendResponseFn[T idMessage](
 	logger logger.Logger,
-	requestStore *store[T],
+	requestStore *store[*RequestData[T]],
 	newT func() T) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
@@ -730,7 +743,7 @@ func createFetchFn(
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
 	modCfg *ModuleConfig,
-	requestStore *store[*wasmdagpb.Response],
+	requestStore *store[*RequestData[*wasmdagpb.Response]],
 ) func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
 		const errFetchSfx = "error calling fetch"
@@ -822,7 +835,7 @@ func createFetchFn(
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
-	requestStore *store[*wasmdagpb.Response],
+	requestStore *store[*RequestData[*wasmdagpb.Response]],
 	e custmsg.MessageEmitter,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
@@ -1071,7 +1084,7 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 
 func createCallCapFn(
 	logger logger.Logger,
-	store *store[*wasmpb.ExecutionResult],
+	store *store[*RequestData[*wasmpb.ExecutionResult]],
 	callCapAsync func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error)) func(caller *wasmtime.Caller, ptr int32, ptrlen int32, idPtr int32) int64 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32, idPtr int32) int64 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
@@ -1116,7 +1129,7 @@ func createCallCapFn(
 
 func createAwaitCapsFn(
 	logger logger.Logger,
-	store *store[*wasmpb.ExecutionResult],
+	store *store[*RequestData[*wasmpb.ExecutionResult]],
 	awaitCaps func(ctx context.Context, req *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error),
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {

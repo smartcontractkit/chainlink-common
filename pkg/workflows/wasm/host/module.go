@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,9 +18,9 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
-	cappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -140,7 +141,7 @@ type ModuleV2 interface {
 // Implemented by the Engine
 type CapabilityExecutor interface {
 	// blocking call to the Engine
-	CallCapability(ctx context.Context, request *cappb.CapabilityRequest) (*cappb.CapabilityResponse, error)
+	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
 }
 
 type module struct {
@@ -149,8 +150,9 @@ type module struct {
 	linker  *wasmtime.Linker
 	wconfig *wasmtime.Config
 
-	requestStore *store[*wasmdagpb.Response]
-	executeStore *store[*wasmpb.ExecutionResult]
+	requestStore    *store[*wasmdagpb.Response]
+	executeStore    *store[*wasmpb.ExecutionResult]
+	capabilityStore *store[*sdkpb.CapabilityResponse]
 
 	cfg *ModuleConfig
 
@@ -299,6 +301,10 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		m: map[string]*RequestData[*wasmpb.ExecutionResult]{},
 	}
 
+	capStore := &store[*sdkpb.CapabilityResponse]{
+		m: map[string]*RequestData[*sdkpb.CapabilityResponse]{},
+	}
+
 	logger := modCfg.Logger
 	err = linker.FuncWrap(
 		"env",
@@ -323,8 +329,9 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		linker:  linker,
 		wconfig: cfg,
 
-		requestStore: requestStore,
-		executeStore: execStore,
+		requestStore:    requestStore,
+		executeStore:    execStore,
+		capabilityStore: capStore,
 
 		cfg:         modCfg,
 		stopCh:      make(chan struct{}),
@@ -344,14 +351,6 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 		}),
 	); err != nil {
 		return fmt.Errorf("error wrapping sendResponse func: %w", err)
-	}
-
-	if err := linker.FuncWrap(
-		"env",
-		"call_capability",
-		createCallCapFn(logger, execStore, modCfg.CallCapability),
-	); err != nil {
-		return fmt.Errorf("error wrapping callcap func: %w", err)
 	}
 
 	if err := linker.FuncWrap(
@@ -580,7 +579,44 @@ func runWasm[I idMessage, O proto.Message](
 }
 
 func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
+	callCapAsync := toCallCapAsync(m.capabilityStore, handler)
+	if err := m.linker.FuncWrap(
+		"env",
+		"call_capability",
+		createCallCapFn(m.cfg.Logger, m.executeStore, callCapAsync),
+	); err != nil {
+		return fmt.Errorf("error wrapping callcap func: %w", err)
+	}
 	return errors.New("not implemented")
+}
+
+func toCallCapAsync(
+	capStore *store[*sdkpb.CapabilityResponse],
+	handler CapabilityExecutor,
+) func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
+	return func(ctx context.Context, req *sdkpb.CapabilityRequest) ([36]byte, error) {
+		callId := uuid.New()
+		idBuffer := make([]byte, sdk.IdLen)
+		copy(idBuffer, callId.String())
+
+		go func() {
+			resp, err := handler.CallCapability(ctx, req)
+			if err != nil {
+				resp = &sdkpb.CapabilityResponse{
+					Response: &sdkpb.CapabilityResponse_Error{
+						Error: err.Error(),
+					},
+				}
+			}
+			// TODO: Delete id on await
+			capStore.add(
+				hex.EncodeToString(idBuffer[:]),
+				&RequestData[*sdkpb.CapabilityResponse]{response: resp},
+			)
+		}()
+
+		return [36]byte(idBuffer), nil
+	}
 }
 
 func containsCode(err error, code int) bool {

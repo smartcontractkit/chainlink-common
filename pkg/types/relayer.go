@@ -122,7 +122,7 @@ type EVMService interface {
 	// noop guaranteed when filterName doesn't exist
 	UnregisterLogTracking(ctx context.Context, filterName string) error
 
-	// QueryTrackedLogs retrieves logs from the  log cache based on the provided
+	// QueryTrackedLogs retrieves logs from the  log storage based on the provided
 	// query expression, sorting, and confidence level. It only returns logs that were
 	// collected through previously registered log filters.
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,

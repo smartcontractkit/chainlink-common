@@ -280,7 +280,7 @@ type staticEVMService struct {
 	staticTransactionByHash      func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	staticTransactionReceipt     func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 	staticGetTransactionFee      func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
-	staticQueryLogsFromCache     func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	staticQueryTrackedLogs       func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 	staticLatestAndFinalizedHead func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
 	staticRegisterLogTracking    func(ctx context.Context, filter evm.LPFilterQuery) error
 	staticUnregisterLogTracking  func(ctx context.Context, filterName string) error
@@ -315,8 +315,8 @@ func (s *staticEVMService) GetTransactionFee(ctx context.Context, transactionID 
 	return s.staticGetTransactionFee(ctx, transactionID)
 }
 
-func (s *staticEVMService) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	return s.staticQueryLogsFromCache(ctx, filterQuery, limitAndSort, confidenceLevel)
+func (s *staticEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+	return s.staticQueryTrackedLogs(ctx, filterQuery, limitAndSort, confidenceLevel)
 }
 
 func (s *staticEVMService) LatestAndFinalizedHead(ctx context.Context) (evm.Head, evm.Head, error) {

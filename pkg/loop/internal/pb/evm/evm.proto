@@ -19,7 +19,7 @@ service EVM{
   rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
   rpc GetTransactionReceipt(GetReceiptRequest) returns (GetReceiptReply);
   rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
-  rpc QueryLogsFromCache(QueryLogsFromCacheRequest) returns (QueryLogsFromCacheReply);
+  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
@@ -197,11 +197,11 @@ message UnregisterLogTrackingRequest {
   string filter_name = 1;
 }
 
-message QueryLogsFromCacheRequest {
+message QueryTrackedLogsRequest {
   repeated Expression expression = 1;
 }
 
-message QueryLogsFromCacheReply {
+message QueryTrackedLogsReply {
   repeated Log logs = 1;
 }
 

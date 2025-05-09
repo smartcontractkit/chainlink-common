@@ -122,10 +122,10 @@ type EVMService interface {
 	// noop guaranteed when filterName doesn't exist
 	UnregisterLogTracking(ctx context.Context, filterName string) error
 
-	// QueryLogsFromCache retrieves logs from the  log cache based on the provided
+	// QueryTrackedLogs retrieves logs from the  log cache based on the provided
 	// query expression, sorting, and confidence level. It only returns logs that were
 	// collected through previously registered log filters.
-	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
+	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
 	// LatestAndFinalizedHead returns Latest and Finalized Heads of the underling chain

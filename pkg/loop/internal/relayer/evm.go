@@ -121,7 +121,7 @@ func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head
 	return protoToHead(reply.Latest), protoToHead(reply.Finalized), err
 
 }
-func (e *evmClient) QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
+func (e *evmClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	//TODO BCFR-1328
 	return nil, errors.New("unimplemented")
@@ -269,8 +269,8 @@ func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty
 	}, nil
 }
 
-func (e *evmServer) QueryLogsFromCache(context.Context, *evmpb.QueryLogsFromCacheRequest) (*evmpb.QueryLogsFromCacheReply, error) {
-	return nil, errors.New("method QueryLogsFromCache not implemented")
+func (e *evmServer) QueryTrackedLogs(context.Context, *evmpb.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error) {
+	return nil, errors.New("method QueryTrackedLogs not implemented")
 }
 
 func (e *evmServer) RegisterLogTracking(ctx context.Context, req *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {

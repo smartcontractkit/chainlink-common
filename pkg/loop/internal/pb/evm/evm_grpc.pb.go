@@ -29,7 +29,7 @@ const (
 	EVM_GetTransactionByHash_FullMethodName   = "/loop.internal.pb.evm.EVM/GetTransactionByHash"
 	EVM_GetTransactionReceipt_FullMethodName  = "/loop.internal.pb.evm.EVM/GetTransactionReceipt"
 	EVM_LatestAndFinalizedHead_FullMethodName = "/loop.internal.pb.evm.EVM/LatestAndFinalizedHead"
-	EVM_QueryLogsFromCache_FullMethodName     = "/loop.internal.pb.evm.EVM/QueryLogsFromCache"
+	EVM_QueryTrackedLogs_FullMethodName       = "/loop.internal.pb.evm.EVM/QueryTrackedLogs"
 	EVM_RegisterLogTracking_FullMethodName    = "/loop.internal.pb.evm.EVM/RegisterLogTracking"
 	EVM_UnregisterLogTracking_FullMethodName  = "/loop.internal.pb.evm.EVM/UnregisterLogTracking"
 	EVM_GetTransactionStatus_FullMethodName   = "/loop.internal.pb.evm.EVM/GetTransactionStatus"
@@ -47,7 +47,7 @@ type EVMClient interface {
 	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*GetTransactionByHashReply, error)
 	GetTransactionReceipt(ctx context.Context, in *GetReceiptRequest, opts ...grpc.CallOption) (*GetReceiptReply, error)
 	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error)
-	QueryLogsFromCache(ctx context.Context, in *QueryLogsFromCacheRequest, opts ...grpc.CallOption) (*QueryLogsFromCacheReply, error)
+	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error)
@@ -141,10 +141,10 @@ func (c *eVMClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empt
 	return out, nil
 }
 
-func (c *eVMClient) QueryLogsFromCache(ctx context.Context, in *QueryLogsFromCacheRequest, opts ...grpc.CallOption) (*QueryLogsFromCacheReply, error) {
+func (c *eVMClient) QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryLogsFromCacheReply)
-	err := c.cc.Invoke(ctx, EVM_QueryLogsFromCache_FullMethodName, in, out, cOpts...)
+	out := new(QueryTrackedLogsReply)
+	err := c.cc.Invoke(ctx, EVM_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ type EVMServer interface {
 	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*GetTransactionByHashReply, error)
 	GetTransactionReceipt(context.Context, *GetReceiptRequest) (*GetReceiptReply, error)
 	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error)
-	QueryLogsFromCache(context.Context, *QueryLogsFromCacheRequest) (*QueryLogsFromCacheReply, error)
+	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error)
@@ -231,8 +231,8 @@ func (UnimplementedEVMServer) GetTransactionReceipt(context.Context, *GetReceipt
 func (UnimplementedEVMServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestAndFinalizedHead not implemented")
 }
-func (UnimplementedEVMServer) QueryLogsFromCache(context.Context, *QueryLogsFromCacheRequest) (*QueryLogsFromCacheReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryLogsFromCache not implemented")
+func (UnimplementedEVMServer) QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
 func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
@@ -408,20 +408,20 @@ func _EVM_LatestAndFinalizedHead_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVM_QueryLogsFromCache_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryLogsFromCacheRequest)
+func _EVM_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTrackedLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMServer).QueryLogsFromCache(ctx, in)
+		return srv.(EVMServer).QueryTrackedLogs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVM_QueryLogsFromCache_FullMethodName,
+		FullMethod: EVM_QueryTrackedLogs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMServer).QueryLogsFromCache(ctx, req.(*QueryLogsFromCacheRequest))
+		return srv.(EVMServer).QueryTrackedLogs(ctx, req.(*QueryTrackedLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -520,8 +520,8 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVM_LatestAndFinalizedHead_Handler,
 		},
 		{
-			MethodName: "QueryLogsFromCache",
-			Handler:    _EVM_QueryLogsFromCache_Handler,
+			MethodName: "QueryTrackedLogs",
+			Handler:    _EVM_QueryTrackedLogs_Handler,
 		},
 		{
 			MethodName: "RegisterLogTracking",

@@ -1615,27 +1615,27 @@ func (x *UnregisterLogTrackingRequest) GetFilterName() string {
 	return ""
 }
 
-type QueryLogsFromCacheRequest struct {
+type QueryTrackedLogsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Expression    []*pb.Expression       `protobuf:"bytes,1,rep,name=expression,proto3" json:"expression,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *QueryLogsFromCacheRequest) Reset() {
-	*x = QueryLogsFromCacheRequest{}
+func (x *QueryTrackedLogsRequest) Reset() {
+	*x = QueryTrackedLogsRequest{}
 	mi := &file_evm_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *QueryLogsFromCacheRequest) String() string {
+func (x *QueryTrackedLogsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryLogsFromCacheRequest) ProtoMessage() {}
+func (*QueryTrackedLogsRequest) ProtoMessage() {}
 
-func (x *QueryLogsFromCacheRequest) ProtoReflect() protoreflect.Message {
+func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1647,39 +1647,39 @@ func (x *QueryLogsFromCacheRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryLogsFromCacheRequest.ProtoReflect.Descriptor instead.
-func (*QueryLogsFromCacheRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryTrackedLogsRequest.ProtoReflect.Descriptor instead.
+func (*QueryTrackedLogsRequest) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *QueryLogsFromCacheRequest) GetExpression() []*pb.Expression {
+func (x *QueryTrackedLogsRequest) GetExpression() []*pb.Expression {
 	if x != nil {
 		return x.Expression
 	}
 	return nil
 }
 
-type QueryLogsFromCacheReply struct {
+type QueryTrackedLogsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Logs          []*Log                 `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *QueryLogsFromCacheReply) Reset() {
-	*x = QueryLogsFromCacheReply{}
+func (x *QueryTrackedLogsReply) Reset() {
+	*x = QueryTrackedLogsReply{}
 	mi := &file_evm_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *QueryLogsFromCacheReply) String() string {
+func (x *QueryTrackedLogsReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryLogsFromCacheReply) ProtoMessage() {}
+func (*QueryTrackedLogsReply) ProtoMessage() {}
 
-func (x *QueryLogsFromCacheReply) ProtoReflect() protoreflect.Message {
+func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1691,12 +1691,12 @@ func (x *QueryLogsFromCacheReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryLogsFromCacheReply.ProtoReflect.Descriptor instead.
-func (*QueryLogsFromCacheReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryTrackedLogsReply.ProtoReflect.Descriptor instead.
+func (*QueryTrackedLogsReply) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *QueryLogsFromCacheReply) GetLogs() []*Log {
+func (x *QueryTrackedLogsReply) GetLogs() []*Log {
 	if x != nil {
 		return x.Logs
 	}
@@ -1815,13 +1815,13 @@ const file_evm_proto_rawDesc = "" +
 	"\x06filter\x18\x01 \x01(\v2\x1e.loop.internal.pb.evm.LPFilterR\x06filter\"?\n" +
 	"\x1cUnregisterLogTrackingRequest\x12\x1f\n" +
 	"\vfilter_name\x18\x01 \x01(\tR\n" +
-	"filterName\"M\n" +
-	"\x19QueryLogsFromCacheRequest\x120\n" +
+	"filterName\"K\n" +
+	"\x17QueryTrackedLogsRequest\x120\n" +
 	"\n" +
 	"expression\x18\x01 \x03(\v2\x10.loop.ExpressionR\n" +
-	"expression\"H\n" +
-	"\x17QueryLogsFromCacheReply\x12-\n" +
-	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs2\xda\t\n" +
+	"expression\"F\n" +
+	"\x15QueryTrackedLogsReply\x12-\n" +
+	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs2\xd4\t\n" +
 	"\x03EVM\x12s\n" +
 	"\x11GetTransactionFee\x12..loop.internal.pb.evm.GetTransactionFeeRequest\x1a,.loop.internal.pb.evm.GetTransactionFeeReply\"\x00\x12b\n" +
 	"\fCallContract\x12).loop.internal.pb.evm.CallContractRequest\x1a'.loop.internal.pb.evm.CallContractReply\x12\\\n" +
@@ -1831,8 +1831,8 @@ const file_evm_proto_rawDesc = "" +
 	"\vEstimateGas\x12(.loop.internal.pb.evm.EstimateGasRequest\x1a&.loop.internal.pb.evm.EstimateGasReply\x12z\n" +
 	"\x14GetTransactionByHash\x121.loop.internal.pb.evm.GetTransactionByHashRequest\x1a/.loop.internal.pb.evm.GetTransactionByHashReply\x12g\n" +
 	"\x15GetTransactionReceipt\x12'.loop.internal.pb.evm.GetReceiptRequest\x1a%.loop.internal.pb.evm.GetReceiptReply\x12c\n" +
-	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a1.loop.internal.pb.evm.LatestAndFinalizedHeadReply\x12t\n" +
-	"\x12QueryLogsFromCache\x12/.loop.internal.pb.evm.QueryLogsFromCacheRequest\x1a-.loop.internal.pb.evm.QueryLogsFromCacheReply\x12_\n" +
+	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a1.loop.internal.pb.evm.LatestAndFinalizedHeadReply\x12n\n" +
+	"\x10QueryTrackedLogs\x12-.loop.internal.pb.evm.QueryTrackedLogsRequest\x1a+.loop.internal.pb.evm.QueryTrackedLogsReply\x12_\n" +
 	"\x13RegisterLogTracking\x120.loop.internal.pb.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12c\n" +
 	"\x15UnregisterLogTracking\x122.loop.internal.pb.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12Z\n" +
 	"\x14GetTransactionStatus\x12!.loop.GetTransactionStatusRequest\x1a\x1f.loop.GetTransactionStatusReplyBMZKgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpbb\x06proto3"
@@ -1879,8 +1879,8 @@ var file_evm_proto_goTypes = []any{
 	(*GetReceiptReply)(nil),                // 25: loop.internal.pb.evm.GetReceiptReply
 	(*RegisterLogTrackingRequest)(nil),     // 26: loop.internal.pb.evm.RegisterLogTrackingRequest
 	(*UnregisterLogTrackingRequest)(nil),   // 27: loop.internal.pb.evm.UnregisterLogTrackingRequest
-	(*QueryLogsFromCacheRequest)(nil),      // 28: loop.internal.pb.evm.QueryLogsFromCacheRequest
-	(*QueryLogsFromCacheReply)(nil),        // 29: loop.internal.pb.evm.QueryLogsFromCacheReply
+	(*QueryTrackedLogsRequest)(nil),        // 28: loop.internal.pb.evm.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),          // 29: loop.internal.pb.evm.QueryTrackedLogsReply
 	(*pb.BigInt)(nil),                      // 30: loop.BigInt
 	(*pb.Expression)(nil),                  // 31: loop.Expression
 	(*emptypb.Empty)(nil),                  // 32: google.protobuf.Empty
@@ -1940,8 +1940,8 @@ var file_evm_proto_depIdxs = []int32{
 	1,  // 49: loop.internal.pb.evm.GetReceiptRequest.hash:type_name -> loop.internal.pb.evm.Hash
 	8,  // 50: loop.internal.pb.evm.GetReceiptReply.receipt:type_name -> loop.internal.pb.evm.Receipt
 	9,  // 51: loop.internal.pb.evm.RegisterLogTrackingRequest.filter:type_name -> loop.internal.pb.evm.LPFilter
-	31, // 52: loop.internal.pb.evm.QueryLogsFromCacheRequest.expression:type_name -> loop.Expression
-	5,  // 53: loop.internal.pb.evm.QueryLogsFromCacheReply.logs:type_name -> loop.internal.pb.evm.Log
+	31, // 52: loop.internal.pb.evm.QueryTrackedLogsRequest.expression:type_name -> loop.Expression
+	5,  // 53: loop.internal.pb.evm.QueryTrackedLogsReply.logs:type_name -> loop.internal.pb.evm.Log
 	14, // 54: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
 	12, // 55: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
 	16, // 56: loop.internal.pb.evm.EVM.FilterLogs:input_type -> loop.internal.pb.evm.FilterLogsRequest
@@ -1950,7 +1950,7 @@ var file_evm_proto_depIdxs = []int32{
 	22, // 59: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
 	24, // 60: loop.internal.pb.evm.EVM.GetTransactionReceipt:input_type -> loop.internal.pb.evm.GetReceiptRequest
 	32, // 61: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	28, // 62: loop.internal.pb.evm.EVM.QueryLogsFromCache:input_type -> loop.internal.pb.evm.QueryLogsFromCacheRequest
+	28, // 62: loop.internal.pb.evm.EVM.QueryTrackedLogs:input_type -> loop.internal.pb.evm.QueryTrackedLogsRequest
 	26, // 63: loop.internal.pb.evm.EVM.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
 	27, // 64: loop.internal.pb.evm.EVM.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
 	33, // 65: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
@@ -1962,7 +1962,7 @@ var file_evm_proto_depIdxs = []int32{
 	23, // 71: loop.internal.pb.evm.EVM.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
 	25, // 72: loop.internal.pb.evm.EVM.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
 	11, // 73: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	29, // 74: loop.internal.pb.evm.EVM.QueryLogsFromCache:output_type -> loop.internal.pb.evm.QueryLogsFromCacheReply
+	29, // 74: loop.internal.pb.evm.EVM.QueryTrackedLogs:output_type -> loop.internal.pb.evm.QueryTrackedLogsReply
 	32, // 75: loop.internal.pb.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
 	32, // 76: loop.internal.pb.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	34, // 77: loop.internal.pb.evm.EVM.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply

@@ -5,15 +5,18 @@ import (
 	"time"
 )
 
+const AddressLength = 20
+const HashLength = 32
+
 // represents evm-style address 40-character hexadecimal string prefixed by 0x making it 42 characters total
 // lower case, upper case or checksummed case (EIP-55) inputs are allowed.
 // output is checksummed case
-type Address = string
+type Address = [AddressLength]byte
 
 // represents evm-style hash, 64-character hexadecimal string prefixed by 0x making it 66 characters total
 // input is case-insensetive
 // output is lower case
-type Hash = string
+type Hash = [HashLength]byte
 
 // represents solidity-spec abi encoded bytes
 type ABIPayload = []byte

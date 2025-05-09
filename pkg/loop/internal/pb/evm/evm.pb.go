@@ -30,7 +30,7 @@ const (
 // output is checksummed case
 type Address struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Address       string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Address       []byte                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -65,11 +65,11 @@ func (*Address) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Address) GetAddress() string {
+func (x *Address) GetAddress() []byte {
 	if x != nil {
 		return x.Address
 	}
-	return ""
+	return nil
 }
 
 // represents evm-style hash, 64-character hexadecimal string prefixed by 0x making it 66 characters total
@@ -77,7 +77,7 @@ func (x *Address) GetAddress() string {
 // output is lower case
 type Hash struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hash          string                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -112,11 +112,11 @@ func (*Hash) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Hash) GetHash() string {
+func (x *Hash) GetHash() []byte {
 	if x != nil {
 		return x.Hash
 	}
-	return ""
+	return nil
 }
 
 // represents solidity-spec abi encoded bytes
@@ -896,11 +896,11 @@ func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
 }
 
 type CallContractRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Call            *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
-	ConfidenceLevel pb.Confidence          `protobuf:"varint,2,opt,name=confidenceLevel,proto3,enum=loop.Confidence" json:"confidenceLevel,omitempty"` // confidenceLevel will be handled by evm loop to define finalty
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Call          *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
+	BlockNumber   *pb.BigInt             `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CallContractRequest) Reset() {
@@ -940,11 +940,11 @@ func (x *CallContractRequest) GetCall() *CallMsg {
 	return nil
 }
 
-func (x *CallContractRequest) GetConfidenceLevel() pb.Confidence {
+func (x *CallContractRequest) GetBlockNumber() *pb.BigInt {
 	if x != nil {
-		return x.ConfidenceLevel
+		return x.BlockNumber
 	}
-	return pb.Confidence(0)
+	return nil
 }
 
 type CallContractReply struct {
@@ -1711,9 +1711,9 @@ const file_evm_proto_rawDesc = "" +
 	"\n" +
 	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x15contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
 	"\aAddress\x12\x18\n" +
-	"\aaddress\x18\x01 \x01(\tR\aaddress\"\x1a\n" +
+	"\aaddress\x18\x01 \x01(\fR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +
-	"\x04hash\x18\x01 \x01(\tR\x04hash\"\x1e\n" +
+	"\x04hash\x18\x01 \x01(\fR\x04hash\"\x1e\n" +
 	"\n" +
 	"ABIPayload\x12\x10\n" +
 	"\x03abi\x18\x01 \x01(\fR\x03abi\"\xa1\x01\n" +
@@ -1782,10 +1782,10 @@ const file_evm_proto_rawDesc = "" +
 	"parentHash\"\x8b\x01\n" +
 	"\x1bLatestAndFinalizedHeadReply\x122\n" +
 	"\x06latest\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\x06latest\x128\n" +
-	"\tfinalized\x18\x02 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\tfinalized\"\x84\x01\n" +
+	"\tfinalized\x18\x02 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\tfinalized\"y\n" +
 	"\x13CallContractRequest\x121\n" +
-	"\x04call\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x04call\x12:\n" +
-	"\x0fconfidenceLevel\x18\x02 \x01(\x0e2\x10.loop.ConfidenceR\x0fconfidenceLevel\"I\n" +
+	"\x04call\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x04call\x12/\n" +
+	"\fblock_number\x18\x02 \x01(\v2\f.loop.BigIntR\vblockNumber\"I\n" +
 	"\x11CallContractReply\x124\n" +
 	"\x04data\x18\x01 \x01(\v2 .loop.internal.pb.evm.ABIPayloadR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
@@ -1884,11 +1884,10 @@ var file_evm_proto_goTypes = []any{
 	(*QueryLogsFromCacheRequest)(nil),      // 28: loop.internal.pb.evm.QueryLogsFromCacheRequest
 	(*QueryLogsFromCacheReply)(nil),        // 29: loop.internal.pb.evm.QueryLogsFromCacheReply
 	(*pb.BigInt)(nil),                      // 30: loop.BigInt
-	(pb.Confidence)(0),                     // 31: loop.Confidence
-	(*pb.Expression)(nil),                  // 32: loop.Expression
-	(*emptypb.Empty)(nil),                  // 33: google.protobuf.Empty
-	(*pb.GetTransactionStatusRequest)(nil), // 34: loop.GetTransactionStatusRequest
-	(*pb.GetTransactionStatusReply)(nil),   // 35: loop.GetTransactionStatusReply
+	(*pb.Expression)(nil),                  // 31: loop.Expression
+	(*emptypb.Empty)(nil),                  // 32: google.protobuf.Empty
+	(*pb.GetTransactionStatusRequest)(nil), // 33: loop.GetTransactionStatusRequest
+	(*pb.GetTransactionStatusReply)(nil),   // 34: loop.GetTransactionStatusReply
 }
 var file_evm_proto_depIdxs = []int32{
 	0,  // 0: loop.internal.pb.evm.CallMsg.from:type_name -> loop.internal.pb.evm.Address
@@ -1929,7 +1928,7 @@ var file_evm_proto_depIdxs = []int32{
 	10, // 35: loop.internal.pb.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.internal.pb.evm.Head
 	10, // 36: loop.internal.pb.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.internal.pb.evm.Head
 	3,  // 37: loop.internal.pb.evm.CallContractRequest.call:type_name -> loop.internal.pb.evm.CallMsg
-	31, // 38: loop.internal.pb.evm.CallContractRequest.confidenceLevel:type_name -> loop.Confidence
+	30, // 38: loop.internal.pb.evm.CallContractRequest.block_number:type_name -> loop.BigInt
 	2,  // 39: loop.internal.pb.evm.CallContractReply.data:type_name -> loop.internal.pb.evm.ABIPayload
 	30, // 40: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
 	6,  // 41: loop.internal.pb.evm.FilterLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
@@ -1943,7 +1942,7 @@ var file_evm_proto_depIdxs = []int32{
 	1,  // 49: loop.internal.pb.evm.GetReceiptRequest.hash:type_name -> loop.internal.pb.evm.Hash
 	8,  // 50: loop.internal.pb.evm.GetReceiptReply.receipt:type_name -> loop.internal.pb.evm.Receipt
 	9,  // 51: loop.internal.pb.evm.RegisterLogTrackingRequest.filter:type_name -> loop.internal.pb.evm.LPFilter
-	32, // 52: loop.internal.pb.evm.QueryLogsFromCacheRequest.expression:type_name -> loop.Expression
+	31, // 52: loop.internal.pb.evm.QueryLogsFromCacheRequest.expression:type_name -> loop.Expression
 	5,  // 53: loop.internal.pb.evm.QueryLogsFromCacheReply.logs:type_name -> loop.internal.pb.evm.Log
 	14, // 54: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
 	12, // 55: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
@@ -1952,11 +1951,11 @@ var file_evm_proto_depIdxs = []int32{
 	20, // 58: loop.internal.pb.evm.EVM.EstimateGas:input_type -> loop.internal.pb.evm.EstimateGasRequest
 	22, // 59: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
 	24, // 60: loop.internal.pb.evm.EVM.GetTransactionReceipt:input_type -> loop.internal.pb.evm.GetReceiptRequest
-	33, // 61: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	32, // 61: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
 	28, // 62: loop.internal.pb.evm.EVM.QueryLogsFromCache:input_type -> loop.internal.pb.evm.QueryLogsFromCacheRequest
 	26, // 63: loop.internal.pb.evm.EVM.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
 	27, // 64: loop.internal.pb.evm.EVM.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
-	34, // 65: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
+	33, // 65: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
 	15, // 66: loop.internal.pb.evm.EVM.GetTransactionFee:output_type -> loop.internal.pb.evm.GetTransactionFeeReply
 	13, // 67: loop.internal.pb.evm.EVM.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
 	17, // 68: loop.internal.pb.evm.EVM.FilterLogs:output_type -> loop.internal.pb.evm.FilterLogsReply
@@ -1966,9 +1965,9 @@ var file_evm_proto_depIdxs = []int32{
 	25, // 72: loop.internal.pb.evm.EVM.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
 	11, // 73: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
 	29, // 74: loop.internal.pb.evm.EVM.QueryLogsFromCache:output_type -> loop.internal.pb.evm.QueryLogsFromCacheReply
-	33, // 75: loop.internal.pb.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	33, // 76: loop.internal.pb.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	35, // 77: loop.internal.pb.evm.EVM.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
+	32, // 75: loop.internal.pb.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	32, // 76: loop.internal.pb.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	34, // 77: loop.internal.pb.evm.EVM.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
 	66, // [66:78] is the sub-list for method output_type
 	54, // [54:66] is the sub-list for method input_type
 	54, // [54:54] is the sub-list for extension type_name

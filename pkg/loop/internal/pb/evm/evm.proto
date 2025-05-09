@@ -30,14 +30,14 @@ service EVM{
 // lower case, upper case or checksummed case (EIP-55) inputs are allowed.
 // output is checksummed case
 message Address {
-  string address = 1;
+  bytes address = 1;
 }
 
 // represents evm-style hash, 64-character hexadecimal string prefixed by 0x making it 66 characters total
 // input is case-insensetive
 // output is lower case
 message Hash {
-  string hash = 1;
+  bytes hash = 1;
 }
 
 // represents solidity-spec abi encoded bytes
@@ -133,7 +133,7 @@ message LatestAndFinalizedHeadReply {
 
 message CallContractRequest {
   CallMsg call = 1;
-  Confidence confidenceLevel = 2; // confidenceLevel will be handled by evm loop to define finalty
+  BigInt block_number = 2;
 }
 
 message CallContractReply {

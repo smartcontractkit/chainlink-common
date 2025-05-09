@@ -98,20 +98,25 @@ type ChainService interface {
 	Replay(ctx context.Context, fromBlock string, args map[string]any) error
 }
 
-type EVMService interface {
-	CallContract(ctx context.Context, msg *evm.CallMsg, confidence primitives.ConfidenceLevel) ([]byte, error)
+type EVMClient interface {
+	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
+}
+
+type EVMService interface {
+	Client() EVMClient
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain's TXM
 	// If transaction is not finalized returns error
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+
+	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
 	RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error
 	UnregisterLogTracking(ctx context.Context, filterName string) error
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)

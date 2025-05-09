@@ -24,18 +24,18 @@ var (
 	balance      = big.NewInt(1222345)
 	abi          = []byte("data")
 	respAbi      = []byte("response")
-	address      = "0xabc"
-	address1     = "0xabca"
-	blockHash    = "somehash"
+	address      = evm.Address([]byte("0xabc"))
+	address1     = evm.Address([]byte("0xabca"))
+	blockHash    = evm.Hash([]byte("somehash"))
 	fromBlock    = big.NewInt(10)
 	blockNum     = big.NewInt(101)
 	toBlock      = big.NewInt(145)
-	topic        = "topic"
-	topic2       = "topic2"
-	topic3       = "topic3"
+	topic        = evm.Hash([]byte("topic"))
+	topic2       = evm.Hash([]byte("topic2"))
+	topic3       = evm.Hash([]byte("topic3"))
 	gas          = uint64(10)
-	txHash       = "0xaaa"
-	eventSigHash = "0x654"
+	txHash       = evm.Hash([]byte("0xaaa"))
+	eventSigHash = evm.Hash([]byte("0x654"))
 	filterName   = "f name 1"
 	maxLogKept   = uint64(10)
 	logsPerBlock = uint64(1)
@@ -58,7 +58,7 @@ func (s *staticEVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTr
 func (s *staticEVMClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
 	require.Equal(s.t, address, in.Call.To.Address)
 	require.Equal(s.t, string(abi), string(in.Call.Data.Abi))
-	require.Equal(s.t, in.ConfidenceLevel, pb.Confidence_Finalized)
+	require.Equal(s.t, in.BlockNumber.Int(), blockNum)
 	return &evmpb.CallContractReply{
 		Data: &evmpb.ABIPayload{Abi: respAbi},
 	}, nil

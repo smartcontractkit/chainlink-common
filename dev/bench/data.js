@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746644822869,
+  "lastUpdate": 1746806094242,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13104,6 +13104,48 @@ window.BENCHMARK_DATA = {
             "value": 28125,
             "unit": "ns/op",
             "extra": "42460 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b5a5170a351e63d2b6aeea39e912ffc19f60c50",
+          "message": "BCFR-1330 (#1161)\n\nExtend EVMService with evm functionalities\n\n---------\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2025-05-09T11:53:41-04:00",
+          "tree_id": "44eaae9aa79014e9501bf93dfe6e39dfeda2e4ba",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2b5a5170a351e63d2b6aeea39e912ffc19f60c50"
+        },
+        "date": 1746806093423,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.7,
+            "unit": "ns/op",
+            "extra": "3360282 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.3,
+            "unit": "ns/op",
+            "extra": "2929070 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28123,
+            "unit": "ns/op",
+            "extra": "42686 times\n4 procs"
           }
         ]
       }

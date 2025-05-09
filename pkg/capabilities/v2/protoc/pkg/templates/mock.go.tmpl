@@ -120,7 +120,6 @@ func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb
                     return nil, err
                 }
                 trigger.Payload = payload
-                trigger.Id = "mock"
             }
                 {{- end }}
             {{- end }}

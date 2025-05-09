@@ -36,6 +36,7 @@ func callCapabilityWasmWrapper(internals runtimeInternals) func(request *sdkpb.C
 			return nil, err
 		}
 
+		// TODO (CAPPL-846): callCapability should also have a response pointer and response pointer buffer
 		result := internals.callCapability(marshalledPtr, marshalledLen, unsafe.Pointer(&id[0]))
 		if result < 0 {
 			return nil, errors.New("cannot find capability " + request.Id)

@@ -37,3 +37,9 @@ packages:
     interfaces:
       ModuleV1: {}
       ModuleV2: {}
+      CapabilityExecutor:
+        config:
+          inpackage: true
+          filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+          mockname: "Mock{{.InterfaceName}}"
+          dir: "{{.InterfaceDir}}"

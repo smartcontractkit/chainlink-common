@@ -1,14 +1,9 @@
 package sdk
 
-import "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-
-// MaxSpendDefinition represents the maximum amount of credits that can be spent
-// on a workflow or step. Users can specify multiple limits for different credit types
-// (e.g. "CRE_CAP", "CRE_GAS"). Each limit consists of a credit type and maximum value.
-type MaxSpendDefinition struct {
-	Credit string
-	Value  int64
-}
+import (
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	v2 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
+)
 
 type StepInputs struct {
 	OutputRef string
@@ -25,7 +20,7 @@ type StepDefinition struct {
 	Config map[string]any
 
 	CapabilityType capabilities.CapabilityType
-	MaxSpends     []MaxSpendDefinition // Optional max spend limits for this step
+	MaxSpends      []v2.SpendLimits // Optional max spend limits for this step
 }
 
 type WorkflowSpec struct {
@@ -35,7 +30,7 @@ type WorkflowSpec struct {
 	Actions   []StepDefinition
 	Consensus []StepDefinition
 	Targets   []StepDefinition
-	MaxSpends []MaxSpendDefinition // Optional max spend limits for the entire workflow
+	MaxSpends []v2.SpendLimits // Optional max spend limits for the entire workflow
 }
 
 func (w *WorkflowSpec) Steps() []StepDefinition {

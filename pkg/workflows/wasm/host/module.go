@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -65,7 +64,7 @@ func (r *store[T]) get(id string) (T, error) {
 	_, found := r.m[id]
 	if !found {
 		var t T
-		return t, fmt.Errorf("could not find request data for id %s", hex.EncodeToString([]byte(id)))
+		return t, fmt.Errorf("could not find request data for id %s", id)
 	}
 
 	return r.m[id], nil
@@ -621,14 +620,15 @@ func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
 // retrieval on await.
 func (m *module) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
 	callId := uuid.NewString()
-	var idBuffer [sdk.IdLen]byte
-	copy(idBuffer[:], []byte(callId))
 
-	go func() {
+	go func(id string) {
 		ch := make(chan *sdkpb.CapabilityResponse, 1)
+		m.capabilityCallStore.add(id, ch)
+
 		m.handlerLock.RLock()
 		resp, err := m.handler.CallCapability(ctx, req)
 		m.handlerLock.RUnlock()
+
 		if err != nil {
 			resp = &sdkpb.CapabilityResponse{
 				Response: &sdkpb.CapabilityResponse_Error{
@@ -641,10 +641,10 @@ func (m *module) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest)
 		case <-ctx.Done():
 		case ch <- resp:
 		}
+	}(callId)
 
-		m.capabilityCallStore.add(callId, ch)
-	}()
-
+	var idBuffer [sdk.IdLen]byte
+	copy(idBuffer[:], []byte(callId))
 	return idBuffer, nil
 }
 
@@ -654,7 +654,7 @@ func (m *module) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCapabili
 	for _, callId := range acr.Ids {
 		ch, err := m.capabilityCallStore.get(callId)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get call from store %w", err)
+			return nil, fmt.Errorf("failed to get call from store : %w", err)
 		}
 
 		select {

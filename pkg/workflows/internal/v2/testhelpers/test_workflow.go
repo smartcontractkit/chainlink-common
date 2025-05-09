@@ -45,7 +45,6 @@ func RunIdenticalTriggersWorkflow(runner sdk.DonRunner) {
 func onTrigger(runtime sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {
 	action := basicaction.BasicAction{ /* TODO config */ }
 	first := action.PerformAction(runtime, &basicaction.Inputs{InputThing: false})
-	runtime.LogWriter().Write([]byte("about to await first call"))
 	firstResult, err := first.Await()
 	if err != nil {
 		return "", err

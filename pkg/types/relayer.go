@@ -110,15 +110,31 @@ type EVMClient interface {
 type EVMService interface {
 	Client() EVMClient
 
-	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain's TXM
-	// If transaction is not finalized returns error
-	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
+	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
+	// based on the provided filter parameters. Once registered, matching logs will be collected
+	// over time and stored in a cache for future querying.
+	// noop guaranteed when filter.Name exists
+	RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error
+
+	// UnregisterLogTracking removes a previously registered log filter by its name.
+	// After removal, logs matching this filter will no longer be collected or cached.
+	// noop guaranteed when filterName doesn't exist
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+
+	// QueryLogsFromCache retrieves logs from the  log cache based on the provided
+	// query expression, sorting, and confidence level. It only returns logs that were
+	// collected through previously registered log filters.
 	QueryLogsFromCache(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
+	// LatestAndFinalizedHead returns Latest and Finalized Heads of the underling chain
 	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
-	RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error
-	UnregisterLogTracking(ctx context.Context, filterName string) error
+
+	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
+	// If transaction is not finalized returns error
+	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
+
+	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
 }
 

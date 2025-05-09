@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -64,7 +65,7 @@ func (r *store[T]) get(id string) (T, error) {
 	_, found := r.m[id]
 	if !found {
 		var t T
-		return t, fmt.Errorf("could not find request data for id %s", id)
+		return t, fmt.Errorf("could not find request data for id %s", hex.EncodeToString([]byte(id)))
 	}
 
 	return r.m[id], nil
@@ -112,9 +113,6 @@ type ModuleConfig struct {
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
-
-	CallCapability    func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error)
-	AwaitCapabilities func(ctx context.Context, req *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error)
 }
 
 type ModuleBase interface {
@@ -138,9 +136,9 @@ type ModuleV2 interface {
 	SetCapabilityExecutor(handler CapabilityExecutor) error
 }
 
-// Implemented by the Engine
+// Implemented by the Workflow Engine
 type CapabilityExecutor interface {
-	// blocking call to the Engine
+	// blocking call to the Workflow Engine
 	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
 }
 
@@ -150,11 +148,18 @@ type module struct {
 	linker  *wasmtime.Linker
 	wconfig *wasmtime.Config
 
-	requestStore        *store[*RequestData[*wasmdagpb.Response]]
-	executeStore        *store[*RequestData[*wasmpb.ExecutionResult]]
+	requestStore *store[*RequestData[*wasmdagpb.Response]]
+	executeStore *store[*RequestData[*wasmpb.ExecutionResult]]
+
+	// capabilityCallStore maps capability execution responses returned by the
+	// workflow engine to a unique identifier
 	capabilityCallStore *store[<-chan *sdkpb.CapabilityResponse]
 
 	cfg *ModuleConfig
+
+	// handler holds the workflow engine implementations for executing a capability
+	handlerLock sync.RWMutex
+	handler     CapabilityExecutor
 
 	wg     sync.WaitGroup
 	stopCh chan struct{}
@@ -315,14 +320,6 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
-	if isLegacyDAG {
-		if err = linkLegacyDAG(linker, modCfg, requestStore); err != nil {
-			return nil, err
-		}
-	} else if err = linkNoDAG(linker, modCfg, execStore); err != nil {
-		return nil, err
-	}
-
 	m := &module{
 		engine:  engine,
 		module:  mod,
@@ -338,11 +335,19 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 		isLegacyDAG: isLegacyDAG,
 	}
 
+	if isLegacyDAG {
+		if err = linkLegacyDAG(linker, modCfg, requestStore); err != nil {
+			return nil, err
+		}
+	} else if err = linkNoDAG(linker, m, execStore); err != nil {
+		return nil, err
+	}
+
 	return m, nil
 }
 
-func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*RequestData[*wasmpb.ExecutionResult]]) error {
-	logger := modCfg.Logger
+func linkNoDAG(linker *wasmtime.Linker, m *module, execStore *store[*RequestData[*wasmpb.ExecutionResult]]) error {
+	logger := m.cfg.Logger
 	if err := linker.FuncWrap(
 		"env",
 		"send_response",
@@ -356,7 +361,7 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 	if err := linker.FuncWrap(
 		"env",
 		"call_capability",
-		createCallCapFn(logger, execStore, modCfg.CallCapability),
+		createCallCapFn(logger, execStore, m.callCapAsync),
 	); err != nil {
 		return fmt.Errorf("error wrapping callcap func: %w", err)
 	}
@@ -364,7 +369,7 @@ func linkNoDAG(linker *wasmtime.Linker, modCfg *ModuleConfig, execStore *store[*
 	if err := linker.FuncWrap(
 		"env",
 		"await_capabilities",
-		createAwaitCapsFn(logger, execStore, modCfg.AwaitCapabilities),
+		createAwaitCapsFn(logger, execStore, m.awaitCapabilities),
 	); err != nil {
 		return fmt.Errorf("error wrapping awaitcaps func: %w", err)
 	}
@@ -446,11 +451,23 @@ func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest) (*wasm
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
+	switch req.GetRequest().(type) {
+	// cannot execute a trigger without the handler set
+	case *wasmpb.ExecuteRequest_Trigger:
+		m.handlerLock.RLock()
+		defer m.handlerLock.RUnlock()
+		if m.handler == nil {
+			return nil, fmt.Errorf("invalid handler (%T): call capability handler is not set", m.handler)
+		}
+	default:
+		// continue
+	}
+
 	setMaxResponseSize := func(r *wasmpb.ExecuteRequest, maxSize uint64) {
 		r.MaxResponseSize = maxSize
 	}
 
-	return runWasm[*wasmpb.ExecuteRequest, *wasmpb.ExecutionResult](ctx, m, req, setMaxResponseSize, m.executeStore)
+	return runWasm(ctx, m, req, setMaxResponseSize, m.executeStore)
 }
 
 // Run is deprecated, use execute instead
@@ -476,7 +493,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		}
 	}
 
-	return runWasm[*wasmdagpb.Request, *wasmdagpb.Response](ctx, m, request, setMaxResponseSize, m.requestStore)
+	return runWasm(ctx, m, request, setMaxResponseSize, m.requestStore)
 }
 
 type idMessage interface {
@@ -587,49 +604,72 @@ func runWasm[I idMessage, O proto.Message](
 }
 
 func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
-	callCapAsync := m.cfg.CallCapability
-	if handler != nil {
-		callCapAsync = toCallCapAsync(m.capabilityCallStore, handler)
+	m.handlerLock.Lock()
+	defer m.handlerLock.Unlock()
+
+	if handler == nil {
+		return fmt.Errorf("invalid handler (%T): cannot set nil call capability handler", handler)
 	}
 
-	// shadow any existing implementation with the one passed by the call
-	if err := m.linker.FuncWrap(
-		"env",
-		"call_capability",
-		createCallCapFn(m.cfg.Logger, m.executeStore, callCapAsync),
-	); err != nil {
-		return fmt.Errorf("error wrapping callcap func: %w", err)
-	}
+	m.handler = handler
 
 	return nil
 }
 
-func toCallCapAsync(
-	capStore *store[<-chan *sdkpb.CapabilityResponse],
-	handler CapabilityExecutor,
-) func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
-	return func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
-		callId := uuid.NewString()
-		var idBuffer [sdk.IdLen]byte
-		copy(idBuffer[:], []byte(callId))
+// callCapAsync async calls a capability by placing execution results onto a
+// channel and storing each channel with a unique identifier for future
+// retrieval on await.
+func (m *module) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
+	callId := uuid.NewString()
+	var idBuffer [sdk.IdLen]byte
+	copy(idBuffer[:], []byte(callId))
 
-		go func() {
-			ch := make(chan *sdkpb.CapabilityResponse, 1)
-			resp, err := handler.CallCapability(ctx, req)
-			if err != nil {
-				resp = &sdkpb.CapabilityResponse{
-					Response: &sdkpb.CapabilityResponse_Error{
-						Error: err.Error(),
-					},
-				}
+	go func() {
+		ch := make(chan *sdkpb.CapabilityResponse, 1)
+		m.handlerLock.RLock()
+		resp, err := m.handler.CallCapability(ctx, req)
+		m.handlerLock.RUnlock()
+		if err != nil {
+			resp = &sdkpb.CapabilityResponse{
+				Response: &sdkpb.CapabilityResponse_Error{
+					Error: err.Error(),
+				},
 			}
-			// TODO: Delete id on await
-			ch <- resp
-			capStore.add(callId, ch)
-		}()
+		}
 
-		return idBuffer, nil
+		select {
+		case <-ctx.Done():
+		case ch <- resp:
+		}
+
+		m.capabilityCallStore.add(callId, ch)
+	}()
+
+	return idBuffer, nil
+}
+
+func (m *module) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error) {
+	responses := make(map[string]*sdkpb.CapabilityResponse, len(acr.Ids))
+
+	for _, callId := range acr.Ids {
+		ch, err := m.capabilityCallStore.get(callId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get call from store %w", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("failed to wait for capability response %s : %w", callId, ctx.Err())
+		case resp := <-ch:
+			responses[callId] = resp
+		}
+
+		m.capabilityCallStore.delete(callId)
 	}
+
+	return &sdkpb.AwaitCapabilitiesResponse{
+		Responses: responses,
+	}, nil
 }
 
 func containsCode(err error, code int) bool {
@@ -1113,7 +1153,8 @@ func createCallCapFn(
 		if err != nil {
 			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
+			// TODO (CAPPL-846): write error to the response buffer, not the request buffer
+			return -1
 		}
 
 		writeLen := wasmWrite(caller, id[:], idPtr, sdk.IdLen)

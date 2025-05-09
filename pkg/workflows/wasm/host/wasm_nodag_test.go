@@ -4,8 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
-	"fmt"
-	"sync"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,7 +18,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
@@ -32,64 +30,136 @@ const (
 
 const anyNoDagExecId = "executionId"
 
+var wordList = []string{"Hello, ", "world", "!"}
+
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 
-	mc := createNoDagMc(t)
-	triggerIndex := int(0)
-	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
-	m, err := NewModule(mc, binary)
-	require.NoError(t, err)
-
-	m.Start()
-	defer m.Close()
-
-	t.Run("Subscribe to triggers", func(t *testing.T) {
-		ctx := t.Context()
-		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+	t.Run("NOK fails with unset CapabilityExecutor for trigger", func(t *testing.T) {
+		mc := defaultNoDAGModCfg(t)
+		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
 
-		require.Len(t, triggers.Subscriptions, 1)
-		require.Equal(t,
-			capID,
-			triggers.Subscriptions[triggerIndex].Id,
-		)
-		configProto := triggers.Subscriptions[0].Payload
-		config := &basictrigger.Config{}
-		require.NoError(t, configProto.UnmarshalTo(config))
-		require.Equal(t, "name", config.Name)
-		require.Equal(t, int32(100), config.Number)
+		m.Start()
+		defer m.Close()
+
+		ctx := t.Context()
+		req := &wasmpb.ExecuteRequest{
+			Request: &wasmpb.ExecuteRequest_Trigger{},
+		}
+
+		_, err = m.Execute(ctx, req)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "invalid handler")
 	})
 
-	t.Run("Execute trigger", func(t *testing.T) {
-		executeTrigger(t, m, 0)
+	t.Run("OK can subscribe without setting CapabilityExecutor", func(t *testing.T) {
+		mc := defaultNoDAGModCfg(t)
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
+
+		m.Start()
+		defer m.Close()
+
+		ctx := t.Context()
+
+		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		require.NoError(t, err)
+		require.Equal(t, len(triggers.Subscriptions), 1)
 	})
 
-	t.Run("Execute trigger with SetCapabilityExecutor", func(t *testing.T) {
-		// call with nil to use default implementation from module config
-		require.NoError(t, m.SetCapabilityExecutor(nil))
+	t.Run("OK executes happy path with two awaits", func(t *testing.T) {
+		ctx := t.Context()
+		wantResponse := strings.Join(wordList, "")
+		mc := &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		}
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
 
-		executeTrigger(t, m, 0)
+		m.Start()
+		defer m.Close()
+
+		mockCapExecutor := NewMockCapabilityExecutor(t)
+
+		// wrap some common payload
+		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
+			action := &basicaction.Outputs{AdaptedThing: wordList[i]}
+			anyAction, err := anypb.New(action)
+			require.NoError(t, err)
+
+			return &sdkpb.CapabilityResponse{
+				Response: &sdkpb.CapabilityResponse_Payload{
+					Payload: anyAction,
+				}}
+		}
+
+		for i := 1; i < len(wordList); i++ {
+			wantCapResp := newWantedCapResponse(i)
+			mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).
+				Run(
+					func(ctx context.Context, request *sdkpb.CapabilityRequest) {
+						require.Equal(t, anyNoDagExecId, request.ExecutionId)
+						require.Equal(t, "basic-test-action@1.0.0", request.Id)
+					},
+				).
+				Return(wantCapResp, nil).
+				Once()
+		}
+
+		require.NoError(t, m.SetCapabilityExecutor(mockCapExecutor))
+
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		req := &wasmpb.ExecuteRequest{
+			Id: anyNoDagExecId,
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(0),
+					Payload: wrapped,
+				},
+			},
+		}
+
+		response, err := m.Execute(ctx, req)
+		require.NoError(t, err)
+		require.Equal(t, anyNoDagExecId, response.Id)
+
+		switch output := response.Result.(type) {
+		case *wasmpb.ExecutionResult_Value:
+			valuePb := output.Value
+			value, err := values.FromProto(valuePb)
+			require.NoError(t, err)
+			unwrapped, err := value.Unwrap()
+			require.NoError(t, err)
+			require.Equal(t, wantResponse, unwrapped)
+		default:
+			t.Fatalf("unexpected response type %T", output)
+		}
 	})
 }
 
 func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	t.Parallel()
 
-	mc := createNoDagMc(t)
+	mc := defaultNoDAGModCfg(t)
 	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
 	binary := createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
 
-	m, err := NewModule(mc, binary)
-	require.NoError(t, err)
-
-	m.Start()
-	defer m.Close()
-
-	t.Run("Subscribe to triggers with identical capability IDs", func(t *testing.T) {
+	t.Run("OK subscribe to triggers with identical capability IDs", func(t *testing.T) {
 		ctx := t.Context()
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
+
+		m.Start()
+		defer m.Close()
+
 		triggers, err := getTriggersSpec(ctx, m, []byte(""))
 		require.NoError(t, err)
 
@@ -120,55 +190,9 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		}
 	})
 
-	t.Run("Execute trigger", func(t *testing.T) {
-		executeTrigger(t, m, 1)
-	})
-}
-
-func Test_NoDag_SetCapabilityExecutor(t *testing.T) {
-	t.Parallel()
-
-	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
-
-	// call with nil to use default implementation from module config
-	t.Run("OK-call SetCapabilityExecutor with nil uses default implementation", func(t *testing.T) {
-		mc := createNoDagMc(t)
-		m, err := NewModule(mc, binary)
-		require.NoError(t, err)
-
-		m.Start()
-		defer m.Close()
-
-		require.NoError(t, m.SetCapabilityExecutor(nil))
-		executeTrigger(t, m, 0)
-	})
-
-	t.Run("OK-call to SetCapabilityExecutor overrides initial implementation", func(t *testing.T) {
-		numAwaits := 0
-		mc := &ModuleConfig{
-			Logger:         logger.Test(t),
-			IsUncompressed: true,
-			CallCapability: nil, // No hook is set on initial call, engine must set the callback hook
-			AwaitCapabilities: func(ctx context.Context, req *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error) {
-				require.Equal(t, anyNoDagExecId, req.ExecId)
-				require.Len(t, req.Ids, 1)
-
-				numAwaits++
-				resp := &basicaction.Outputs{AdaptedThing: fmt.Sprintf("response-%d", numAwaits)}
-				payload, err := anypb.New(resp)
-				require.NoError(t, err)
-
-				return &sdkpb.AwaitCapabilitiesResponse{
-					Responses: map[string]*sdkpb.CapabilityResponse{
-						req.Ids[0][:]: {
-							Response: &sdkpb.CapabilityResponse_Payload{
-								Payload: payload,
-							},
-						},
-					},
-				}, nil
-			},
-		}
+	t.Run("OK executes happy path with multiple triggers for same capability", func(t *testing.T) {
+		ctx := t.Context()
+		wantResponse := strings.Join(wordList, "") + "true"
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
 
@@ -177,112 +201,70 @@ func Test_NoDag_SetCapabilityExecutor(t *testing.T) {
 
 		mockCapExecutor := NewMockCapabilityExecutor(t)
 
-		// mock does nothing, the responses are set in the awaitCapabilities call
-		mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).Run(func(ctx context.Context, request *sdkpb.CapabilityRequest) {
-			require.Equal(t, anyNoDagExecId, request.ExecutionId)
-			require.Equal(t, "basic-test-action@1.0.0", request.Id)
-		}).Return(&sdkpb.CapabilityResponse{}, nil)
+		// wrap some common payload
+		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
+			action := &basicaction.Outputs{AdaptedThing: wordList[i]}
+			anyAction, err := anypb.New(action)
+			require.NoError(t, err)
+
+			return &sdkpb.CapabilityResponse{
+				Response: &sdkpb.CapabilityResponse_Payload{
+					Payload: anyAction,
+				}}
+		}
+
+		for i := 1; i < len(wordList); i++ {
+			wantCapResp := newWantedCapResponse(i)
+			mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).
+				Run(
+					func(ctx context.Context, request *sdkpb.CapabilityRequest) {
+						require.Equal(t, anyNoDagExecId, request.ExecutionId)
+						require.Equal(t, "basic-test-action@1.0.0", request.Id)
+					},
+				).
+				Return(wantCapResp, nil).
+				Once()
+		}
 
 		require.NoError(t, m.SetCapabilityExecutor(mockCapExecutor))
-		executeTrigger(t, m, 0)
 
-		// Require that two values were placed into the capCall store
-		require.True(t, len(m.capabilityCallStore.m) == 2)
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		req := &wasmpb.ExecuteRequest{
+			Id: anyNoDagExecId,
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(1),
+					Payload: wrapped,
+				},
+			},
+		}
+		response, err := m.Execute(ctx, req)
+		require.NoError(t, err)
+
+		require.Equal(t, anyNoDagExecId, response.Id)
+		switch output := response.Result.(type) {
+		case *wasmpb.ExecutionResult_Value:
+			valuePb := output.Value
+			value, err := values.FromProto(valuePb)
+			require.NoError(t, err)
+			unwrapped, err := value.Unwrap()
+			require.NoError(t, err)
+			require.Equal(t, wantResponse, unwrapped)
+		default:
+			t.Fatalf("unexpected response type %T", output)
+		}
 	})
 }
 
-func executeTrigger(t *testing.T, m *module, triggerIndex int) {
-	t.Helper()
-
-	ctx := t.Context()
-	// When a TriggerEvent occurs, Engine calls Execute with that Event.
-	trigger := &basictrigger.Outputs{CoolOutput: "Hi"}
-	wrapped, err := anypb.New(trigger)
-	require.NoError(t, err)
-
-	// TODO test config
-	req := &wasmpb.ExecuteRequest{
-		Id: anyNoDagExecId,
-		Request: &wasmpb.ExecuteRequest_Trigger{
-			Trigger: &sdkpb.Trigger{
-				Id:      uint64(triggerIndex),
-				Payload: wrapped,
-			},
-		},
-	}
-	response, err := m.Execute(ctx, req)
-	require.NoError(t, err)
-
-	require.Equal(t, anyNoDagExecId, response.Id)
-	switch output := response.Result.(type) {
-	case *wasmpb.ExecutionResult_Value:
-		valuePb := output.Value
-		value, err := values.FromProto(valuePb)
-		require.NoError(t, err)
-		unwrapped, err := value.Unwrap()
-		require.NoError(t, err)
-		require.Equal(t, "Hiresponse-1response-2", unwrapped)
-	default:
-		t.Fatalf("unexpected response type %T", output)
-	}
-}
-
-func createNoDagMc(t *testing.T) *ModuleConfig {
-	lock := sync.Mutex{}
-	numRequests := byte(0)
-	numAwaits := byte(0)
-
-	mc := &ModuleConfig{
+func defaultNoDAGModCfg(t *testing.T) *ModuleConfig {
+	return &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
-		CallCapability: func(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
-			require.Equal(t, anyNoDagExecId, req.ExecutionId)
-			require.Equal(t, "basic-test-action@1.0.0", req.Id)
-			inputs := basicaction.Inputs{}
-			err := req.Payload.UnmarshalTo(&inputs)
-			require.NoError(t, err)
-			lock.Lock()
-			defer lock.Unlock()
-
-			require.Equal(t, inputs.InputThing, numRequests != 0)
-			numRequests++
-
-			id := [sdk.IdLen]byte{}
-			b := byte(0)
-			if inputs.InputThing {
-				b = byte(1)
-			}
-			for i := 0; i < sdk.IdLen; i++ {
-				id[i] = 'a' + b
-			}
-
-			return id, nil
-		},
-		AwaitCapabilities: func(ctx context.Context, req *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error) {
-			require.Equal(t, anyNoDagExecId, req.ExecId)
-			require.Len(t, req.Ids, 1)
-			lock.Lock()
-			defer lock.Unlock()
-			for i := 0; i < sdk.IdLen; i++ {
-				require.Equal(t, 'a'+numAwaits, req.Ids[0][i])
-			}
-			numAwaits++
-			resp := &basicaction.Outputs{AdaptedThing: fmt.Sprintf("response-%d", numAwaits)}
-			payload, err := anypb.New(resp)
-			require.NoError(t, err)
-
-			return &sdkpb.AwaitCapabilitiesResponse{
-				Responses: map[string]*sdkpb.CapabilityResponse{
-					req.Ids[0][:]: {
-						Response: &sdkpb.CapabilityResponse_Payload{
-							Payload: payload,
-						},
-					},
-				},
-			}, nil
-		},
 	}
-	return mc
 }
 
 func getTriggersSpec(ctx context.Context, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {

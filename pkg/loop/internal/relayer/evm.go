@@ -22,10 +22,6 @@ type evmClient struct {
 	cl evmpb.EVMClient
 }
 
-func (e *evmClient) Client() types.EVMClient {
-	return e
-}
-
 func (e *evmClient) GetTransactionFee(ctx context.Context, transactionID string) (*evm.TransactionFee, error) {
 	reply, err := e.cl.GetTransactionFee(ctx, &evmpb.GetTransactionFeeRequest{TransactionId: transactionID})
 	if err != nil {
@@ -181,7 +177,7 @@ func (e *evmServer) CallContract(ctx context.Context, req *evmpb.CallContractReq
 		return nil, err
 	}
 
-	data, err := e.impl.Client().CallContract(ctx, call, req.BlockNumber.Int())
+	data, err := e.impl.CallContract(ctx, call, req.BlockNumber.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +191,7 @@ func (e *evmServer) FilterLogs(ctx context.Context, req *evmpb.FilterLogsRequest
 	if err != nil {
 		return nil, err
 	}
-	logs, err := e.impl.Client().FilterLogs(ctx, f)
+	logs, err := e.impl.FilterLogs(ctx, f)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +201,7 @@ func (e *evmServer) FilterLogs(ctx context.Context, req *evmpb.FilterLogsRequest
 	}, nil
 }
 func (e *evmServer) BalanceAt(ctx context.Context, req *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
-	balance, err := e.impl.Client().BalanceAt(ctx, protoToAddress(req.Account), req.BlockNumber.Int())
+	balance, err := e.impl.BalanceAt(ctx, protoToAddress(req.Account), req.BlockNumber.Int())
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +217,7 @@ func (e *evmServer) EstimateGas(ctx context.Context, req *evmpb.EstimateGasReque
 		return nil, err
 	}
 
-	gas, err := e.impl.Client().EstimateGas(ctx, call)
+	gas, err := e.impl.EstimateGas(ctx, call)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +228,7 @@ func (e *evmServer) EstimateGas(ctx context.Context, req *evmpb.EstimateGasReque
 }
 
 func (e *evmServer) GetTransactionByHash(ctx context.Context, req *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
-	tx, err := e.impl.Client().TransactionByHash(ctx, protoToHash(req.GetHash()))
+	tx, err := e.impl.TransactionByHash(ctx, protoToHash(req.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +243,7 @@ func (e *evmServer) GetTransactionByHash(ctx context.Context, req *evmpb.GetTran
 }
 
 func (e *evmServer) GetTransactionReceipt(ctx context.Context, req *evmpb.GetReceiptRequest) (*evmpb.GetReceiptReply, error) {
-	rec, err := e.impl.Client().TransactionReceipt(ctx, protoToHash(req.GetHash()))
+	rec, err := e.impl.TransactionReceipt(ctx, protoToHash(req.GetHash()))
 	if err != nil {
 		return nil, err
 	}

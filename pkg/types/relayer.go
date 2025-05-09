@@ -98,7 +98,8 @@ type ChainService interface {
 	Replay(ctx context.Context, fromBlock string, args map[string]any) error
 }
 
-type EVMClient interface {
+// GethClient is the subset of go-ethereum client methods implemented by EVMService.
+type GethClient interface {
 	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
@@ -108,7 +109,7 @@ type EVMClient interface {
 }
 
 type EVMService interface {
-	Client() EVMClient
+	GethClient
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected

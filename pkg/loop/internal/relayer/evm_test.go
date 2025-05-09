@@ -311,10 +311,6 @@ func (s *staticEVMService) TransactionReceipt(ctx context.Context, txHash evm.Ha
 	return s.staticTransactionReceipt(ctx, txHash)
 }
 
-func (s *staticEVMService) Client() types.EVMClient {
-	return s
-}
-
 func (s *staticEVMService) GetTransactionFee(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error) {
 	return s.staticGetTransactionFee(ctx, transactionID)
 }

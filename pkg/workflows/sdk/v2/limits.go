@@ -2,8 +2,8 @@ package sdk
 
 // Credit types that can be used for max spend limits
 const (
-	CreditTypeCRE   = "CRE_CREDITS" // Universal CRE Capability Credits
-	CreditTypeGas   = "CRE_GAS"     // Universal CRE Gas Credits
+	CreditTypeCRE = "CRE_CREDITS" // Universal CRE Capability Credits
+	CreditTypeGas = "CRE_GAS"     // Universal CRE Gas Credits
 )
 
 // SpendLimit represents a single spending limit for a specific credit type
@@ -63,13 +63,13 @@ func (m *SpendLimits) WithMaxSpendGas(value int64) *SpendLimits {
 }
 
 // GetLimit returns the limit for a specific credit type, if it exists
-func (m *SpendLimits) GetLimit(credit string) (SpendLimit, bool) {
+func (m *SpendLimits) GetLimit(credit string) (*SpendLimit, bool) {
 	for _, limit := range m.Limits {
 		if limit.Credit == credit {
-			return limit, true
+			return &limit, true
 		}
 	}
-	return SpendLimit{}, false
+	return nil, false
 }
 
 // NewSpendLimits creates a new SpendLimits instance
@@ -77,4 +77,4 @@ func NewSpendLimits() *SpendLimits {
 	return &SpendLimits{
 		Limits: make([]SpendLimit, 0),
 	}
-} 
+}

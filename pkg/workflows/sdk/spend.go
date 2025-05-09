@@ -34,17 +34,6 @@ func (m *MaxSpendLimits) WithMaxSpendGas(value int64) *MaxSpendLimits {
 }
 
 // GetLimit returns the limit for a specific credit type, if it exists
-func (m *MaxSpendLimits) GetLimit(credit string) (MaxSpendDefinition, bool) {
-	if limit, exists := m.limits.GetLimit(credit); exists {
-		return MaxSpendDefinition{
-			Credit: limit.Credit,
-			Value:  limit.Value,
-		}, true
-	}
-	return MaxSpendDefinition{}, false
-}
-
-// toV2 converts the v1 MaxSpendLimits to v2 SpendLimits
-func (m *MaxSpendLimits) toV2() *v2.SpendLimits {
-	return m.limits
+func (m *MaxSpendLimits) GetLimit(credit string) (*v2.SpendLimit, bool) {
+	return m.limits.GetLimit(credit)
 }

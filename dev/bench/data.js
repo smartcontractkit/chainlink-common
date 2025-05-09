@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746806094242,
+  "lastUpdate": 1746817989986,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13146,6 +13146,48 @@ window.BENCHMARK_DATA = {
             "value": 28123,
             "unit": "ns/op",
             "extra": "42686 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "47a2f78860af1240e0148f867ad71fbb64f03255",
+          "message": "Allow unstubed methods for non-strict triggers (#1178)",
+          "timestamp": "2025-05-09T15:11:54-04:00",
+          "tree_id": "bdb8f22c4e6b445722f4bc63249ef9b8375d2c11",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/47a2f78860af1240e0148f867ad71fbb64f03255"
+        },
+        "date": 1746817989212,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.8,
+            "unit": "ns/op",
+            "extra": "3346030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.7,
+            "unit": "ns/op",
+            "extra": "2721775 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28134,
+            "unit": "ns/op",
+            "extra": "42572 times\n4 procs"
           }
         ]
       }

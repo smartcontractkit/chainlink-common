@@ -10,7 +10,6 @@ import (
 
 type Basic struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
 }
 
 func (c Basic) Trigger(config *Config) sdk.DonTrigger[*Outputs] {
@@ -30,7 +29,7 @@ func (*basicTrigger) NewT() *Outputs {
 	return &Outputs{}
 }
 
-func (*basicTrigger) Id() string {
+func (*basicTrigger) CapabilityID() string {
 	return "basic-test-trigger@1.0.0"
 }
 

@@ -189,7 +189,7 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 		return err
 	}
 
-	pbConfidence, err := confidenceToProto(confidenceLevel)
+	pbConfidence, err := ConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func (c *Client) GetLatestValueWithHeadData(ctx context.Context, readIdentifier 
 		return nil, err
 	}
 
-	pbConfidence, err := confidenceToProto(confidenceLevel)
+	pbConfidence, err := ConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +426,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	confidenceLevel, err := ConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +464,7 @@ func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 
-	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	confidenceLevel, err := ConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -734,7 +734,7 @@ func convertExpressionToProto(expression query.Expression, encodeWith EncodingVe
 					Operator:    pb.ComparisonOperator(primitive.Operator),
 				}}
 		case *primitives.Confidence:
-			pbConfidence, err := confidenceToProto(primitive.ConfidenceLevel)
+			pbConfidence, err := ConfidenceToProto(primitive.ConfidenceLevel)
 			if err != nil {
 				return nil, err
 			}
@@ -776,7 +776,7 @@ func convertExpressionToProto(expression query.Expression, encodeWith EncodingVe
 	return pbExpression, nil
 }
 
-func confidenceToProto(confidenceLevel primitives.ConfidenceLevel) (pb.Confidence, error) {
+func ConfidenceToProto(confidenceLevel primitives.ConfidenceLevel) (pb.Confidence, error) {
 	switch confidenceLevel {
 	case primitives.Finalized:
 		return pb.Confidence_Finalized, nil
@@ -1016,7 +1016,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression, contract types.Boun
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confidence:
-			confidence, err := confidenceFromProto(primitive.Confidence)
+			confidence, err := ConfidenceFromProto(primitive.Confidence)
 			return query.Confidence(confidence), err
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
@@ -1032,7 +1032,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression, contract types.Boun
 	}
 }
 
-func confidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel, error) {
+func ConfidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel, error) {
 	switch pbConfidence {
 	case pb.Confidence_Finalized:
 		return primitives.Finalized, nil

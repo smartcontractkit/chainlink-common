@@ -11,6 +11,7 @@ import "workflows/sdk/v2/pb/sdk.proto";
 message CapabilityMetadata {
   cre.sdk.v2.Mode mode = 1;
   string capability_id = 2;
+  bool supports_legacy_trigger_api = 3;
 }
 
 extend google.protobuf.ServiceOptions {

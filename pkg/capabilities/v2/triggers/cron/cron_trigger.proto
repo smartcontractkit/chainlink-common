@@ -18,6 +18,8 @@ service Cron {
   option (cre.metadata.capability) = {
     mode: DON
     capability_id: "cron-trigger@1.0.0"
+    supports_legacy_trigger_api: true
   };
+
   rpc Trigger(Config) returns (stream Payload);
 }

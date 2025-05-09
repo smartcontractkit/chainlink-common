@@ -66,6 +66,50 @@ func (x *Config) GetSchedule() string {
 	return ""
 }
 
+type Config2 struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Schedule2     string                 `protobuf:"bytes,1,opt,name=schedule2,proto3" json:"schedule2,omitempty"` // Cron schedule string
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Config2) Reset() {
+	*x = Config2{}
+	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Config2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Config2) ProtoMessage() {}
+
+func (x *Config2) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Config2.ProtoReflect.Descriptor instead.
+func (*Config2) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Config2) GetSchedule2() string {
+	if x != nil {
+		return x.Schedule2
+	}
+	return ""
+}
+
 type Payload struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
 	ScheduledExecutionTime string                 `protobuf:"bytes,1,opt,name=scheduled_execution_time,json=scheduledExecutionTime,proto3" json:"scheduled_execution_time,omitempty"` // Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)
@@ -75,7 +119,7 @@ type Payload struct {
 
 func (x *Payload) Reset() {
 	*x = Payload{}
-	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +131,7 @@ func (x *Payload) String() string {
 func (*Payload) ProtoMessage() {}
 
 func (x *Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,12 +144,56 @@ func (x *Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Payload.ProtoReflect.Descriptor instead.
 func (*Payload) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Payload) GetScheduledExecutionTime() string {
 	if x != nil {
 		return x.ScheduledExecutionTime
+	}
+	return ""
+}
+
+type Payload2 struct {
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	ScheduledExecutionTime2 string                 `protobuf:"bytes,1,opt,name=scheduled_execution_time2,json=scheduledExecutionTime2,proto3" json:"scheduled_execution_time2,omitempty"` // Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *Payload2) Reset() {
+	*x = Payload2{}
+	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Payload2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Payload2) ProtoMessage() {}
+
+func (x *Payload2) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Payload2.ProtoReflect.Descriptor instead.
+func (*Payload2) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Payload2) GetScheduledExecutionTime2() string {
+	if x != nil {
+		return x.ScheduledExecutionTime2
 	}
 	return ""
 }
@@ -116,11 +204,15 @@ const file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDesc = "" +
 	"\n" +
 	"0capabilities/v2/triggers/cron/cron_trigger.proto\x12\x0fcron_trigger.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"$\n" +
 	"\x06Config\x12\x1a\n" +
-	"\bschedule\x18\x01 \x01(\tR\bschedule\"C\n" +
+	"\bschedule\x18\x01 \x01(\tR\bschedule\"'\n" +
+	"\aConfig2\x12\x1c\n" +
+	"\tschedule2\x18\x01 \x01(\tR\tschedule2\"C\n" +
 	"\aPayload\x128\n" +
-	"\x18scheduled_execution_time\x18\x01 \x01(\tR\x16scheduledExecutionTime2`\n" +
+	"\x18scheduled_execution_time\x18\x01 \x01(\tR\x16scheduledExecutionTime\"F\n" +
+	"\bPayload2\x12:\n" +
+	"\x19scheduled_execution_time2\x18\x01 \x01(\tR\x17scheduledExecutionTime22b\n" +
 	"\x04Cron\x12>\n" +
-	"\aTrigger\x12\x17.cron_trigger.v1.Config\x1a\x18.cron_trigger.v1.Payload0\x01\x1a\x18\x82\xb5\x18\x14\x12\x12cron-trigger@1.0.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cronb\x06proto3"
+	"\aTrigger\x12\x17.cron_trigger.v1.Config\x1a\x18.cron_trigger.v1.Payload0\x01\x1a\x1a\x82\xb5\x18\x16\x12\x12cron-trigger@1.0.0\x18\x01BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cronb\x06proto3"
 
 var (
 	file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescOnce sync.Once
@@ -134,14 +226,16 @@ func file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP() []byte 
 	return file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescData
 }
 
-var file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_capabilities_v2_triggers_cron_cron_trigger_proto_goTypes = []any{
-	(*Config)(nil),  // 0: cron_trigger.v1.Config
-	(*Payload)(nil), // 1: cron_trigger.v1.Payload
+	(*Config)(nil),   // 0: cron_trigger.v1.Config
+	(*Config2)(nil),  // 1: cron_trigger.v1.Config2
+	(*Payload)(nil),  // 2: cron_trigger.v1.Payload
+	(*Payload2)(nil), // 3: cron_trigger.v1.Payload2
 }
 var file_capabilities_v2_triggers_cron_cron_trigger_proto_depIdxs = []int32{
 	0, // 0: cron_trigger.v1.Cron.Trigger:input_type -> cron_trigger.v1.Config
-	1, // 1: cron_trigger.v1.Cron.Trigger:output_type -> cron_trigger.v1.Payload
+	2, // 1: cron_trigger.v1.Cron.Trigger:output_type -> cron_trigger.v1.Payload
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -160,7 +254,7 @@ func file_capabilities_v2_triggers_cron_cron_trigger_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDesc), len(file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

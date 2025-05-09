@@ -109,15 +109,19 @@ func RegisterTrigger[I, O proto.Message](
 	triggerType string,
 	request TriggerRegistrationRequest,
 	message I,
-	fn func(context.Context, RequestMetadata, I) (<-chan TriggerAndId[O], error),
+	fn func(context.Context, string, RequestMetadata, I) (<-chan TriggerAndId[O], error),
 ) (<-chan TriggerResponse, error) {
-	migrated, err := FromValueOrAny(request.Config, request.Payload, message)
+	fromPayload, err := FromValueOrAny(request.Config, request.Payload, message)
 	if err != nil {
 		return nil, fmt.Errorf("error when unwrapping request: %w", err)
 	}
 
+	if !fromPayload {
+		return nil, fmt.Errorf("expected request payload to be set")
+	}
+
 	response := make(chan TriggerResponse, 100)
-	respCh, err := fn(ctx, request.Metadata, message)
+	respCh, err := fn(ctx, request.TriggerID, request.Metadata, message)
 	if err != nil {
 		return nil, err
 	}
@@ -133,15 +137,11 @@ func RegisterTrigger[I, O proto.Message](
 						ID:          resp.Id,
 					},
 				}
-				if migrated {
-					wrapped, err := anypb.New(resp.Trigger)
-					tr.Err = err
-					tr.Event.Payload = wrapped
-				} else {
-					wrapped, err := values.WrapMap(resp.Trigger)
-					tr.Err = err
-					tr.Event.Outputs = wrapped
-				}
+
+				wrapped, err := anypb.New(resp.Trigger)
+				tr.Err = err
+				tr.Event.Payload = wrapped
+
 				select {
 				case response <- tr:
 				case <-ctx.Done():

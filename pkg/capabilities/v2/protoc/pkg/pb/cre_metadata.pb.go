@@ -24,11 +24,12 @@ const (
 )
 
 type CapabilityMetadata struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Mode          pb.Mode                `protobuf:"varint,1,opt,name=mode,proto3,enum=cre.sdk.v2.Mode" json:"mode,omitempty"`
-	CapabilityId  string                 `protobuf:"bytes,2,opt,name=capability_id,json=capabilityId,proto3" json:"capability_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	Mode                     pb.Mode                `protobuf:"varint,1,opt,name=mode,proto3,enum=cre.sdk.v2.Mode" json:"mode,omitempty"`
+	CapabilityId             string                 `protobuf:"bytes,2,opt,name=capability_id,json=capabilityId,proto3" json:"capability_id,omitempty"`
+	SupportsLegacyTriggerApi bool                   `protobuf:"varint,3,opt,name=supports_legacy_trigger_api,json=supportsLegacyTriggerApi,proto3" json:"supports_legacy_trigger_api,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *CapabilityMetadata) Reset() {
@@ -75,6 +76,13 @@ func (x *CapabilityMetadata) GetCapabilityId() string {
 	return ""
 }
 
+func (x *CapabilityMetadata) GetSupportsLegacyTriggerApi() bool {
+	if x != nil {
+		return x.SupportsLegacyTriggerApi
+	}
+	return false
+}
+
 var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
 		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
@@ -96,10 +104,11 @@ var File_capabilities_v2_protoc_pkg_pb_cre_metadata_proto protoreflect.FileDescr
 
 const file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc = "" +
 	"\n" +
-	"0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x12\fcre.metadata\x1a google/protobuf/descriptor.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"_\n" +
+	"0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x12\fcre.metadata\x1a google/protobuf/descriptor.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\x9e\x01\n" +
 	"\x12CapabilityMetadata\x12$\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x10.cre.sdk.v2.ModeR\x04mode\x12#\n" +
-	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId:c\n" +
+	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId\x12=\n" +
+	"\x1bsupports_legacy_trigger_api\x18\x03 \x01(\bR\x18supportsLegacyTriggerApi:c\n" +
 	"\n" +
 	"capability\x12\x1f.google.protobuf.ServiceOptions\x18І\x03 \x01(\v2 .cre.metadata.CapabilityMetadataR\n" +
 	"capabilityBPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pbb\x06proto3"

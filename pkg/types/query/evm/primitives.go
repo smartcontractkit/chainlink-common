@@ -9,7 +9,7 @@ import (
 type Address = evm.Address
 type Hash = evm.Hash
 
-type EVMVisitor interface {
+type Visitor interface {
 	VisitAddressFilter(f *AddressFilter)
 	VisitEventSigFilter(f *EventSig)
 	VisitEventTopicsByValueFilter(f *EventByTopic)
@@ -27,7 +27,7 @@ func NewAddressFilter(address Address) query.Expression {
 }
 
 func (a *AddressFilter) Accept(visitor primitives.Visitor) {
-	if v, ok := visitor.(EVMVisitor); ok {
+	if v, ok := visitor.(Visitor); ok {
 		v.VisitAddressFilter(a)
 	}
 }
@@ -43,7 +43,7 @@ func NewEventSigFilter(eventSig Hash) query.Expression {
 }
 
 func (es *EventSig) Accept(visitor primitives.Visitor) {
-	if v, ok := visitor.(EVMVisitor); ok {
+	if v, ok := visitor.(Visitor); ok {
 		v.VisitEventSigFilter(es)
 	}
 }
@@ -68,7 +68,7 @@ func NewEventByWordFilter(wordIndex int, valueComparers []HashedValueComparator)
 }
 
 func (ew *EventByWord) Accept(visitor primitives.Visitor) {
-	if v, ok := visitor.(EVMVisitor); ok {
+	if v, ok := visitor.(Visitor); ok {
 		v.VisitEventByWordFilter(ew)
 	}
 }
@@ -88,7 +88,7 @@ func NewEventByTopicFilter(topic uint64, valueComprarer []HashedValueComparator)
 }
 
 func (et *EventByTopic) Accept(visitor primitives.Visitor) {
-	if v, ok := visitor.(EVMVisitor); ok {
+	if v, ok := visitor.(Visitor); ok {
 		v.VisitEventTopicsByValueFilter(et)
 	}
 }

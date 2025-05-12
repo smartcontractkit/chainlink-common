@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746817989986,
+  "lastUpdate": 1747061836092,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13188,6 +13188,48 @@ window.BENCHMARK_DATA = {
             "value": 28134,
             "unit": "ns/op",
             "extra": "42572 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "338652aa53ff6805a321469d29f80e92633b2448",
+          "message": "feat: module executes CallCapability provided by workflow engine (#1184)\n\n* wip set capability executor\n\n* feat: implements SetCapabilityExecutor\n\n* feat: tests SetCapabilityExecutor\n\n* feat: set callcapability handler in module\n\n* fix: handling of callId",
+          "timestamp": "2025-05-12T10:56:01-04:00",
+          "tree_id": "d7a533e193007fcc2063d17ce7fc745af1b14fc3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/338652aa53ff6805a321469d29f80e92633b2448"
+        },
+        "date": 1747061835213,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 399.4,
+            "unit": "ns/op",
+            "extra": "3348652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.1,
+            "unit": "ns/op",
+            "extra": "2930205 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28142,
+            "unit": "ns/op",
+            "extra": "42666 times\n4 procs"
           }
         ]
       }

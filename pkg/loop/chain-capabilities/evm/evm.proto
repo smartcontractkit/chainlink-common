@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evm";
 
 package loop.internal.pb.evm;
 

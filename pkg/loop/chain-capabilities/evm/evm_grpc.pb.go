@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: evm.proto
+// source: loop/chain-capabilities/evm/evm.proto
 
-package evmpb
+package evm
 
 import (
 	context "context"
@@ -537,5 +537,5 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "evm.proto",
+	Metadata: "loop/chain-capabilities/evm/evm.proto",
 }

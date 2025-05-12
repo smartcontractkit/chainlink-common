@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evm";
+
+package loop.internal.pb.evm;
+
+import "loop/internal/pb/contract_writer.proto";
+import "google/protobuf/empty.proto";
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "loop/chain-capabilities/evm/evm.proto";
+
+service EVMCapability {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "mainnet-evm@1.0.0"
+  };
+  rpc CallContract(CallContractRequest) returns (CallContractReply);
+  rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
+  rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
+  rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
+  rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
+  rpc GetTransactionReceipt(GetReceiptRequest) returns (GetReceiptReply);
+  rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
+  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
+  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
+}

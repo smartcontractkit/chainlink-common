@@ -7,7 +7,8 @@
 package evm
 
 import (
-	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	pb1 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -1616,7 +1617,7 @@ func (x *UnregisterLogTrackingRequest) GetFilterName() string {
 
 type QueryTrackedLogsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Expression    []*pb.Expression       `protobuf:"bytes,1,rep,name=expression,proto3" json:"expression,omitempty"`
+	Expression    []*pb1.Expression      `protobuf:"bytes,1,rep,name=expression,proto3" json:"expression,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1651,7 +1652,7 @@ func (*QueryTrackedLogsRequest) Descriptor() ([]byte, []int) {
 	return file_loop_chain_capabilities_evm_evm_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *QueryTrackedLogsRequest) GetExpression() []*pb.Expression {
+func (x *QueryTrackedLogsRequest) GetExpression() []*pb1.Expression {
 	if x != nil {
 		return x.Expression
 	}
@@ -1706,7 +1707,7 @@ var File_loop_chain_capabilities_evm_evm_proto protoreflect.FileDescriptor
 
 const file_loop_chain_capabilities_evm_evm_proto_rawDesc = "" +
 	"\n" +
-	"%loop/chain-capabilities/evm/evm.proto\x12\x14loop.internal.pb.evm\x1a\x1eloop/internal/pb/relayer.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\"#\n" +
+	"%loop/chain-capabilities/evm/evm.proto\x12\x14loop.internal.pb.evm\x1a\x1eloop/internal/pb/relayer.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x16values/pb/values.proto\"#\n" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +
@@ -1719,7 +1720,7 @@ const file_loop_chain_capabilities_evm_evm_proto_rawDesc = "" +
 	"\x02to\x18\x02 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\x02to\x124\n" +
 	"\x04data\x18\x03 \x01(\v2 .loop.internal.pb.evm.ABIPayloadR\x04data\":\n" +
 	"\x06Topics\x120\n" +
-	"\x05topic\x18\x01 \x03(\v2\x1a.loop.internal.pb.evm.HashR\x05topic\"\xcc\x03\n" +
+	"\x05topic\x18\x01 \x03(\v2\x1a.loop.internal.pb.evm.HashR\x05topic\"\xce\x03\n" +
 	"\x03Log\x127\n" +
 	"\aaddress\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\aaddress\x122\n" +
 	"\x06topics\x18\x02 \x03(\v2\x1a.loop.internal.pb.evm.HashR\x06topics\x123\n" +
@@ -1727,27 +1728,27 @@ const file_loop_chain_capabilities_evm_evm_proto_rawDesc = "" +
 	"\n" +
 	"block_hash\x18\x04 \x01(\v2\x1a.loop.internal.pb.evm.HashR\tblockHash\x124\n" +
 	"\x04data\x18\x05 \x01(\v2 .loop.internal.pb.evm.ABIPayloadR\x04data\x126\n" +
-	"\beventSig\x18\x06 \x01(\v2\x1a.loop.internal.pb.evm.HashR\beventSig\x12/\n" +
-	"\fblock_number\x18\a \x01(\v2\f.loop.BigIntR\vblockNumber\x12\x19\n" +
+	"\beventSig\x18\x06 \x01(\v2\x1a.loop.internal.pb.evm.HashR\beventSig\x121\n" +
+	"\fblock_number\x18\a \x01(\v2\x0e.values.BigIntR\vblockNumber\x12\x19\n" +
 	"\btx_index\x18\b \x01(\rR\atxIndex\x12\x14\n" +
 	"\x05index\x18\t \x01(\rR\x05index\x12\x18\n" +
 	"\aremoved\x18\n" +
-	" \x01(\bR\aremoved\"\x8f\x02\n" +
+	" \x01(\bR\aremoved\"\x93\x02\n" +
 	"\vFilterQuery\x129\n" +
 	"\n" +
-	"block_hash\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HashR\tblockHash\x12*\n" +
-	"\tfromBlock\x18\x02 \x01(\v2\f.loop.BigIntR\tfromBlock\x12&\n" +
-	"\atoBlock\x18\x03 \x01(\v2\f.loop.BigIntR\atoBlock\x12;\n" +
+	"block_hash\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HashR\tblockHash\x12,\n" +
+	"\tfromBlock\x18\x02 \x01(\v2\x0e.values.BigIntR\tfromBlock\x12(\n" +
+	"\atoBlock\x18\x03 \x01(\v2\x0e.values.BigIntR\atoBlock\x12;\n" +
 	"\taddresses\x18\x04 \x03(\v2\x1d.loop.internal.pb.evm.AddressR\taddresses\x124\n" +
-	"\x06topics\x18\x05 \x03(\v2\x1c.loop.internal.pb.evm.TopicsR\x06topics\"\x99\x02\n" +
+	"\x06topics\x18\x05 \x03(\v2\x1c.loop.internal.pb.evm.TopicsR\x06topics\"\x9d\x02\n" +
 	"\vTransaction\x12\x14\n" +
 	"\x05nonce\x18\x01 \x01(\x04R\x05nonce\x12\x10\n" +
 	"\x03gas\x18\x02 \x01(\x04R\x03gas\x12-\n" +
 	"\x02to\x18\x03 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\x02to\x124\n" +
 	"\x04data\x18\x04 \x01(\v2 .loop.internal.pb.evm.ABIPayloadR\x04data\x12.\n" +
-	"\x04hash\x18\x05 \x01(\v2\x1a.loop.internal.pb.evm.HashR\x04hash\x12\"\n" +
-	"\x05value\x18\x06 \x01(\v2\f.loop.BigIntR\x05value\x12)\n" +
-	"\tgas_price\x18\a \x01(\v2\f.loop.BigIntR\bgasPrice\"\xaf\x03\n" +
+	"\x04hash\x18\x05 \x01(\v2\x1a.loop.internal.pb.evm.HashR\x04hash\x12$\n" +
+	"\x05value\x18\x06 \x01(\v2\x0e.values.BigIntR\x05value\x12+\n" +
+	"\tgas_price\x18\a \x01(\v2\x0e.values.BigIntR\bgasPrice\"\xb3\x03\n" +
 	"\aReceipt\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\x04R\x06status\x12\x19\n" +
 	"\bgas_used\x18\x02 \x01(\x04R\agasUsed\x12\x19\n" +
@@ -1755,9 +1756,9 @@ const file_loop_chain_capabilities_evm_evm_proto_rawDesc = "" +
 	"\n" +
 	"block_hash\x18\x04 \x01(\v2\x1a.loop.internal.pb.evm.HashR\tblockHash\x12-\n" +
 	"\x04logs\x18\x06 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs\x123\n" +
-	"\atx_hash\x18\a \x01(\v2\x1a.loop.internal.pb.evm.HashR\x06txHash\x12<\n" +
-	"\x13effective_gas_price\x18\b \x01(\v2\f.loop.BigIntR\x11effectiveGasPrice\x12/\n" +
-	"\fblock_number\x18\t \x01(\v2\f.loop.BigIntR\vblockNumber\x12H\n" +
+	"\atx_hash\x18\a \x01(\v2\x1a.loop.internal.pb.evm.HashR\x06txHash\x12>\n" +
+	"\x13effective_gas_price\x18\b \x01(\v2\x0e.values.BigIntR\x11effectiveGasPrice\x121\n" +
+	"\fblock_number\x18\t \x01(\v2\x0e.values.BigIntR\vblockNumber\x12H\n" +
 	"\x10contract_address\x18\n" +
 	" \x01(\v2\x1d.loop.internal.pb.evm.AddressR\x0fcontractAddress\"\xa3\x03\n" +
 	"\bLPFilter\x12\"\n" +
@@ -1770,34 +1771,34 @@ const file_loop_chain_capabilities_evm_evm_proto_rawDesc = "" +
 	"event_sigs\x18\x06 \x03(\v2\x1a.loop.internal.pb.evm.HashR\teventSigs\x122\n" +
 	"\x06topic2\x18\a \x03(\v2\x1a.loop.internal.pb.evm.HashR\x06topic2\x122\n" +
 	"\x06topic3\x18\b \x03(\v2\x1a.loop.internal.pb.evm.HashR\x06topic3\x122\n" +
-	"\x06topic4\x18\t \x03(\v2\x1a.loop.internal.pb.evm.HashR\x06topic4\"\xc2\x01\n" +
+	"\x06topic4\x18\t \x03(\v2\x1a.loop.internal.pb.evm.HashR\x06topic4\"\xc4\x01\n" +
 	"\x04Head\x12\x1c\n" +
-	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x12/\n" +
-	"\fblock_number\x18\x02 \x01(\v2\f.loop.BigIntR\vblockNumber\x12.\n" +
+	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x121\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\x12.\n" +
 	"\x04hash\x18\x03 \x01(\v2\x1a.loop.internal.pb.evm.HashR\x04hash\x12;\n" +
 	"\vparent_hash\x18\x04 \x01(\v2\x1a.loop.internal.pb.evm.HashR\n" +
 	"parentHash\"\x8b\x01\n" +
 	"\x1bLatestAndFinalizedHeadReply\x122\n" +
 	"\x06latest\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\x06latest\x128\n" +
-	"\tfinalized\x18\x02 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\tfinalized\"y\n" +
+	"\tfinalized\x18\x02 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\tfinalized\"{\n" +
 	"\x13CallContractRequest\x121\n" +
-	"\x04call\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x04call\x12/\n" +
-	"\fblock_number\x18\x02 \x01(\v2\f.loop.BigIntR\vblockNumber\"I\n" +
+	"\x04call\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x04call\x121\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\"I\n" +
 	"\x11CallContractReply\x124\n" +
 	"\x04data\x18\x01 \x01(\v2 .loop.internal.pb.evm.ABIPayloadR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
-	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"M\n" +
-	"\x16GetTransactionFeeReply\x123\n" +
-	"\x0etransation_fee\x18\x01 \x01(\v2\f.loop.BigIntR\rtransationFee\"Y\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"O\n" +
+	"\x16GetTransactionFeeReply\x125\n" +
+	"\x0etransation_fee\x18\x01 \x01(\v2\x0e.values.BigIntR\rtransationFee\"Y\n" +
 	"\x11FilterLogsRequest\x12D\n" +
 	"\ffilter_query\x18\x01 \x01(\v2!.loop.internal.pb.evm.FilterQueryR\vfilterQuery\"@\n" +
 	"\x0fFilterLogsReply\x12-\n" +
-	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs\"|\n" +
+	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs\"~\n" +
 	"\x10BalanceAtRequest\x127\n" +
-	"\aaccount\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\aaccount\x12/\n" +
-	"\fblock_number\x18\x02 \x01(\v2\f.loop.BigIntR\vblockNumber\"8\n" +
-	"\x0eBalanceAtReply\x12&\n" +
-	"\abalance\x18\x01 \x01(\v2\f.loop.BigIntR\abalance\"E\n" +
+	"\aaccount\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\aaccount\x121\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\":\n" +
+	"\x0eBalanceAtReply\x12(\n" +
+	"\abalance\x18\x01 \x01(\v2\x0e.values.BigIntR\abalance\"E\n" +
 	"\x12EstimateGasRequest\x12/\n" +
 	"\x03msg\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.CallMsgR\x03msg\"$\n" +
 	"\x10EstimateGasReply\x12\x10\n" +
@@ -1850,41 +1851,41 @@ func file_loop_chain_capabilities_evm_evm_proto_rawDescGZIP() []byte {
 
 var file_loop_chain_capabilities_evm_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_loop_chain_capabilities_evm_evm_proto_goTypes = []any{
-	(*Address)(nil),                        // 0: loop.internal.pb.evm.Address
-	(*Hash)(nil),                           // 1: loop.internal.pb.evm.Hash
-	(*ABIPayload)(nil),                     // 2: loop.internal.pb.evm.ABIPayload
-	(*CallMsg)(nil),                        // 3: loop.internal.pb.evm.CallMsg
-	(*Topics)(nil),                         // 4: loop.internal.pb.evm.Topics
-	(*Log)(nil),                            // 5: loop.internal.pb.evm.Log
-	(*FilterQuery)(nil),                    // 6: loop.internal.pb.evm.FilterQuery
-	(*Transaction)(nil),                    // 7: loop.internal.pb.evm.Transaction
-	(*Receipt)(nil),                        // 8: loop.internal.pb.evm.Receipt
-	(*LPFilter)(nil),                       // 9: loop.internal.pb.evm.LPFilter
-	(*Head)(nil),                           // 10: loop.internal.pb.evm.Head
-	(*LatestAndFinalizedHeadReply)(nil),    // 11: loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	(*CallContractRequest)(nil),            // 12: loop.internal.pb.evm.CallContractRequest
-	(*CallContractReply)(nil),              // 13: loop.internal.pb.evm.CallContractReply
-	(*GetTransactionFeeRequest)(nil),       // 14: loop.internal.pb.evm.GetTransactionFeeRequest
-	(*GetTransactionFeeReply)(nil),         // 15: loop.internal.pb.evm.GetTransactionFeeReply
-	(*FilterLogsRequest)(nil),              // 16: loop.internal.pb.evm.FilterLogsRequest
-	(*FilterLogsReply)(nil),                // 17: loop.internal.pb.evm.FilterLogsReply
-	(*BalanceAtRequest)(nil),               // 18: loop.internal.pb.evm.BalanceAtRequest
-	(*BalanceAtReply)(nil),                 // 19: loop.internal.pb.evm.BalanceAtReply
-	(*EstimateGasRequest)(nil),             // 20: loop.internal.pb.evm.EstimateGasRequest
-	(*EstimateGasReply)(nil),               // 21: loop.internal.pb.evm.EstimateGasReply
-	(*GetTransactionByHashRequest)(nil),    // 22: loop.internal.pb.evm.GetTransactionByHashRequest
-	(*GetTransactionByHashReply)(nil),      // 23: loop.internal.pb.evm.GetTransactionByHashReply
-	(*GetReceiptRequest)(nil),              // 24: loop.internal.pb.evm.GetReceiptRequest
-	(*GetReceiptReply)(nil),                // 25: loop.internal.pb.evm.GetReceiptReply
-	(*RegisterLogTrackingRequest)(nil),     // 26: loop.internal.pb.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil),   // 27: loop.internal.pb.evm.UnregisterLogTrackingRequest
-	(*QueryTrackedLogsRequest)(nil),        // 28: loop.internal.pb.evm.QueryTrackedLogsRequest
-	(*QueryTrackedLogsReply)(nil),          // 29: loop.internal.pb.evm.QueryTrackedLogsReply
-	(*pb.BigInt)(nil),                      // 30: loop.BigInt
-	(*pb.Expression)(nil),                  // 31: loop.Expression
-	(*emptypb.Empty)(nil),                  // 32: google.protobuf.Empty
-	(*pb.GetTransactionStatusRequest)(nil), // 33: loop.GetTransactionStatusRequest
-	(*pb.GetTransactionStatusReply)(nil),   // 34: loop.GetTransactionStatusReply
+	(*Address)(nil),                         // 0: loop.internal.pb.evm.Address
+	(*Hash)(nil),                            // 1: loop.internal.pb.evm.Hash
+	(*ABIPayload)(nil),                      // 2: loop.internal.pb.evm.ABIPayload
+	(*CallMsg)(nil),                         // 3: loop.internal.pb.evm.CallMsg
+	(*Topics)(nil),                          // 4: loop.internal.pb.evm.Topics
+	(*Log)(nil),                             // 5: loop.internal.pb.evm.Log
+	(*FilterQuery)(nil),                     // 6: loop.internal.pb.evm.FilterQuery
+	(*Transaction)(nil),                     // 7: loop.internal.pb.evm.Transaction
+	(*Receipt)(nil),                         // 8: loop.internal.pb.evm.Receipt
+	(*LPFilter)(nil),                        // 9: loop.internal.pb.evm.LPFilter
+	(*Head)(nil),                            // 10: loop.internal.pb.evm.Head
+	(*LatestAndFinalizedHeadReply)(nil),     // 11: loop.internal.pb.evm.LatestAndFinalizedHeadReply
+	(*CallContractRequest)(nil),             // 12: loop.internal.pb.evm.CallContractRequest
+	(*CallContractReply)(nil),               // 13: loop.internal.pb.evm.CallContractReply
+	(*GetTransactionFeeRequest)(nil),        // 14: loop.internal.pb.evm.GetTransactionFeeRequest
+	(*GetTransactionFeeReply)(nil),          // 15: loop.internal.pb.evm.GetTransactionFeeReply
+	(*FilterLogsRequest)(nil),               // 16: loop.internal.pb.evm.FilterLogsRequest
+	(*FilterLogsReply)(nil),                 // 17: loop.internal.pb.evm.FilterLogsReply
+	(*BalanceAtRequest)(nil),                // 18: loop.internal.pb.evm.BalanceAtRequest
+	(*BalanceAtReply)(nil),                  // 19: loop.internal.pb.evm.BalanceAtReply
+	(*EstimateGasRequest)(nil),              // 20: loop.internal.pb.evm.EstimateGasRequest
+	(*EstimateGasReply)(nil),                // 21: loop.internal.pb.evm.EstimateGasReply
+	(*GetTransactionByHashRequest)(nil),     // 22: loop.internal.pb.evm.GetTransactionByHashRequest
+	(*GetTransactionByHashReply)(nil),       // 23: loop.internal.pb.evm.GetTransactionByHashReply
+	(*GetReceiptRequest)(nil),               // 24: loop.internal.pb.evm.GetReceiptRequest
+	(*GetReceiptReply)(nil),                 // 25: loop.internal.pb.evm.GetReceiptReply
+	(*RegisterLogTrackingRequest)(nil),      // 26: loop.internal.pb.evm.RegisterLogTrackingRequest
+	(*UnregisterLogTrackingRequest)(nil),    // 27: loop.internal.pb.evm.UnregisterLogTrackingRequest
+	(*QueryTrackedLogsRequest)(nil),         // 28: loop.internal.pb.evm.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),           // 29: loop.internal.pb.evm.QueryTrackedLogsReply
+	(*pb.BigInt)(nil),                       // 30: values.BigInt
+	(*pb1.Expression)(nil),                  // 31: loop.Expression
+	(*emptypb.Empty)(nil),                   // 32: google.protobuf.Empty
+	(*pb1.GetTransactionStatusRequest)(nil), // 33: loop.GetTransactionStatusRequest
+	(*pb1.GetTransactionStatusReply)(nil),   // 34: loop.GetTransactionStatusReply
 }
 var file_loop_chain_capabilities_evm_evm_proto_depIdxs = []int32{
 	0,  // 0: loop.internal.pb.evm.CallMsg.from:type_name -> loop.internal.pb.evm.Address
@@ -1897,42 +1898,42 @@ var file_loop_chain_capabilities_evm_evm_proto_depIdxs = []int32{
 	1,  // 7: loop.internal.pb.evm.Log.block_hash:type_name -> loop.internal.pb.evm.Hash
 	2,  // 8: loop.internal.pb.evm.Log.data:type_name -> loop.internal.pb.evm.ABIPayload
 	1,  // 9: loop.internal.pb.evm.Log.eventSig:type_name -> loop.internal.pb.evm.Hash
-	30, // 10: loop.internal.pb.evm.Log.block_number:type_name -> loop.BigInt
+	30, // 10: loop.internal.pb.evm.Log.block_number:type_name -> values.BigInt
 	1,  // 11: loop.internal.pb.evm.FilterQuery.block_hash:type_name -> loop.internal.pb.evm.Hash
-	30, // 12: loop.internal.pb.evm.FilterQuery.fromBlock:type_name -> loop.BigInt
-	30, // 13: loop.internal.pb.evm.FilterQuery.toBlock:type_name -> loop.BigInt
+	30, // 12: loop.internal.pb.evm.FilterQuery.fromBlock:type_name -> values.BigInt
+	30, // 13: loop.internal.pb.evm.FilterQuery.toBlock:type_name -> values.BigInt
 	0,  // 14: loop.internal.pb.evm.FilterQuery.addresses:type_name -> loop.internal.pb.evm.Address
 	4,  // 15: loop.internal.pb.evm.FilterQuery.topics:type_name -> loop.internal.pb.evm.Topics
 	0,  // 16: loop.internal.pb.evm.Transaction.to:type_name -> loop.internal.pb.evm.Address
 	2,  // 17: loop.internal.pb.evm.Transaction.data:type_name -> loop.internal.pb.evm.ABIPayload
 	1,  // 18: loop.internal.pb.evm.Transaction.hash:type_name -> loop.internal.pb.evm.Hash
-	30, // 19: loop.internal.pb.evm.Transaction.value:type_name -> loop.BigInt
-	30, // 20: loop.internal.pb.evm.Transaction.gas_price:type_name -> loop.BigInt
+	30, // 19: loop.internal.pb.evm.Transaction.value:type_name -> values.BigInt
+	30, // 20: loop.internal.pb.evm.Transaction.gas_price:type_name -> values.BigInt
 	1,  // 21: loop.internal.pb.evm.Receipt.block_hash:type_name -> loop.internal.pb.evm.Hash
 	5,  // 22: loop.internal.pb.evm.Receipt.logs:type_name -> loop.internal.pb.evm.Log
 	1,  // 23: loop.internal.pb.evm.Receipt.tx_hash:type_name -> loop.internal.pb.evm.Hash
-	30, // 24: loop.internal.pb.evm.Receipt.effective_gas_price:type_name -> loop.BigInt
-	30, // 25: loop.internal.pb.evm.Receipt.block_number:type_name -> loop.BigInt
+	30, // 24: loop.internal.pb.evm.Receipt.effective_gas_price:type_name -> values.BigInt
+	30, // 25: loop.internal.pb.evm.Receipt.block_number:type_name -> values.BigInt
 	0,  // 26: loop.internal.pb.evm.Receipt.contract_address:type_name -> loop.internal.pb.evm.Address
 	0,  // 27: loop.internal.pb.evm.LPFilter.addresses:type_name -> loop.internal.pb.evm.Address
 	1,  // 28: loop.internal.pb.evm.LPFilter.event_sigs:type_name -> loop.internal.pb.evm.Hash
 	1,  // 29: loop.internal.pb.evm.LPFilter.topic2:type_name -> loop.internal.pb.evm.Hash
 	1,  // 30: loop.internal.pb.evm.LPFilter.topic3:type_name -> loop.internal.pb.evm.Hash
 	1,  // 31: loop.internal.pb.evm.LPFilter.topic4:type_name -> loop.internal.pb.evm.Hash
-	30, // 32: loop.internal.pb.evm.Head.block_number:type_name -> loop.BigInt
+	30, // 32: loop.internal.pb.evm.Head.block_number:type_name -> values.BigInt
 	1,  // 33: loop.internal.pb.evm.Head.hash:type_name -> loop.internal.pb.evm.Hash
 	1,  // 34: loop.internal.pb.evm.Head.parent_hash:type_name -> loop.internal.pb.evm.Hash
 	10, // 35: loop.internal.pb.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.internal.pb.evm.Head
 	10, // 36: loop.internal.pb.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.internal.pb.evm.Head
 	3,  // 37: loop.internal.pb.evm.CallContractRequest.call:type_name -> loop.internal.pb.evm.CallMsg
-	30, // 38: loop.internal.pb.evm.CallContractRequest.block_number:type_name -> loop.BigInt
+	30, // 38: loop.internal.pb.evm.CallContractRequest.block_number:type_name -> values.BigInt
 	2,  // 39: loop.internal.pb.evm.CallContractReply.data:type_name -> loop.internal.pb.evm.ABIPayload
-	30, // 40: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
+	30, // 40: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> values.BigInt
 	6,  // 41: loop.internal.pb.evm.FilterLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
 	5,  // 42: loop.internal.pb.evm.FilterLogsReply.logs:type_name -> loop.internal.pb.evm.Log
 	0,  // 43: loop.internal.pb.evm.BalanceAtRequest.account:type_name -> loop.internal.pb.evm.Address
-	30, // 44: loop.internal.pb.evm.BalanceAtRequest.block_number:type_name -> loop.BigInt
-	30, // 45: loop.internal.pb.evm.BalanceAtReply.balance:type_name -> loop.BigInt
+	30, // 44: loop.internal.pb.evm.BalanceAtRequest.block_number:type_name -> values.BigInt
+	30, // 45: loop.internal.pb.evm.BalanceAtReply.balance:type_name -> values.BigInt
 	3,  // 46: loop.internal.pb.evm.EstimateGasRequest.msg:type_name -> loop.internal.pb.evm.CallMsg
 	1,  // 47: loop.internal.pb.evm.GetTransactionByHashRequest.hash:type_name -> loop.internal.pb.evm.Hash
 	7,  // 48: loop.internal.pb.evm.GetTransactionByHashReply.transaction:type_name -> loop.internal.pb.evm.Transaction

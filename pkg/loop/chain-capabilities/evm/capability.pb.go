@@ -8,7 +8,7 @@ package evm
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -27,7 +27,7 @@ var File_loop_chain_capabilities_evm_capability_proto protoreflect.FileDescripto
 
 const file_loop_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\n" +
-	",loop/chain-capabilities/evm/capability.proto\x12\x14loop.internal.pb.evm\x1a&loop/internal/pb/contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a%loop/chain-capabilities/evm/evm.proto2\x82\t\n" +
+	",loop/chain-capabilities/evm/capability.proto\x12\x14loop.internal.pb.evm\x1a&loop/internal/pb/contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a%loop/chain-capabilities/evm/evm.proto2\xa6\b\n" +
 	"\rEVMCapability\x12b\n" +
 	"\fCallContract\x12).loop.internal.pb.evm.CallContractRequest\x1a'.loop.internal.pb.evm.CallContractReply\x12\\\n" +
 	"\n" +
@@ -39,30 +39,27 @@ const file_loop_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a1.loop.internal.pb.evm.LatestAndFinalizedHeadReply\x12n\n" +
 	"\x10QueryTrackedLogs\x12-.loop.internal.pb.evm.QueryTrackedLogsRequest\x1a+.loop.internal.pb.evm.QueryTrackedLogsReply\x12_\n" +
 	"\x13RegisterLogTracking\x120.loop.internal.pb.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12c\n" +
-	"\x15UnregisterLogTracking\x122.loop.internal.pb.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12Z\n" +
-	"\x14GetTransactionStatus\x12!.loop.GetTransactionStatusRequest\x1a\x1f.loop.GetTransactionStatusReply\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BKZIgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmb\x06proto3"
+	"\x15UnregisterLogTracking\x122.loop.internal.pb.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BKZIgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmb\x06proto3"
 
 var file_loop_chain_capabilities_evm_capability_proto_goTypes = []any{
-	(*CallContractRequest)(nil),            // 0: loop.internal.pb.evm.CallContractRequest
-	(*FilterLogsRequest)(nil),              // 1: loop.internal.pb.evm.FilterLogsRequest
-	(*BalanceAtRequest)(nil),               // 2: loop.internal.pb.evm.BalanceAtRequest
-	(*EstimateGasRequest)(nil),             // 3: loop.internal.pb.evm.EstimateGasRequest
-	(*GetTransactionByHashRequest)(nil),    // 4: loop.internal.pb.evm.GetTransactionByHashRequest
-	(*GetReceiptRequest)(nil),              // 5: loop.internal.pb.evm.GetReceiptRequest
-	(*emptypb.Empty)(nil),                  // 6: google.protobuf.Empty
-	(*QueryTrackedLogsRequest)(nil),        // 7: loop.internal.pb.evm.QueryTrackedLogsRequest
-	(*RegisterLogTrackingRequest)(nil),     // 8: loop.internal.pb.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil),   // 9: loop.internal.pb.evm.UnregisterLogTrackingRequest
-	(*pb.GetTransactionStatusRequest)(nil), // 10: loop.GetTransactionStatusRequest
-	(*CallContractReply)(nil),              // 11: loop.internal.pb.evm.CallContractReply
-	(*FilterLogsReply)(nil),                // 12: loop.internal.pb.evm.FilterLogsReply
-	(*BalanceAtReply)(nil),                 // 13: loop.internal.pb.evm.BalanceAtReply
-	(*EstimateGasReply)(nil),               // 14: loop.internal.pb.evm.EstimateGasReply
-	(*GetTransactionByHashReply)(nil),      // 15: loop.internal.pb.evm.GetTransactionByHashReply
-	(*GetReceiptReply)(nil),                // 16: loop.internal.pb.evm.GetReceiptReply
-	(*LatestAndFinalizedHeadReply)(nil),    // 17: loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	(*QueryTrackedLogsReply)(nil),          // 18: loop.internal.pb.evm.QueryTrackedLogsReply
-	(*pb.GetTransactionStatusReply)(nil),   // 19: loop.GetTransactionStatusReply
+	(*CallContractRequest)(nil),          // 0: loop.internal.pb.evm.CallContractRequest
+	(*FilterLogsRequest)(nil),            // 1: loop.internal.pb.evm.FilterLogsRequest
+	(*BalanceAtRequest)(nil),             // 2: loop.internal.pb.evm.BalanceAtRequest
+	(*EstimateGasRequest)(nil),           // 3: loop.internal.pb.evm.EstimateGasRequest
+	(*GetTransactionByHashRequest)(nil),  // 4: loop.internal.pb.evm.GetTransactionByHashRequest
+	(*GetReceiptRequest)(nil),            // 5: loop.internal.pb.evm.GetReceiptRequest
+	(*emptypb.Empty)(nil),                // 6: google.protobuf.Empty
+	(*QueryTrackedLogsRequest)(nil),      // 7: loop.internal.pb.evm.QueryTrackedLogsRequest
+	(*RegisterLogTrackingRequest)(nil),   // 8: loop.internal.pb.evm.RegisterLogTrackingRequest
+	(*UnregisterLogTrackingRequest)(nil), // 9: loop.internal.pb.evm.UnregisterLogTrackingRequest
+	(*CallContractReply)(nil),            // 10: loop.internal.pb.evm.CallContractReply
+	(*FilterLogsReply)(nil),              // 11: loop.internal.pb.evm.FilterLogsReply
+	(*BalanceAtReply)(nil),               // 12: loop.internal.pb.evm.BalanceAtReply
+	(*EstimateGasReply)(nil),             // 13: loop.internal.pb.evm.EstimateGasReply
+	(*GetTransactionByHashReply)(nil),    // 14: loop.internal.pb.evm.GetTransactionByHashReply
+	(*GetReceiptReply)(nil),              // 15: loop.internal.pb.evm.GetReceiptReply
+	(*LatestAndFinalizedHeadReply)(nil),  // 16: loop.internal.pb.evm.LatestAndFinalizedHeadReply
+	(*QueryTrackedLogsReply)(nil),        // 17: loop.internal.pb.evm.QueryTrackedLogsReply
 }
 var file_loop_chain_capabilities_evm_capability_proto_depIdxs = []int32{
 	0,  // 0: loop.internal.pb.evm.EVMCapability.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
@@ -75,20 +72,18 @@ var file_loop_chain_capabilities_evm_capability_proto_depIdxs = []int32{
 	7,  // 7: loop.internal.pb.evm.EVMCapability.QueryTrackedLogs:input_type -> loop.internal.pb.evm.QueryTrackedLogsRequest
 	8,  // 8: loop.internal.pb.evm.EVMCapability.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
 	9,  // 9: loop.internal.pb.evm.EVMCapability.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
-	10, // 10: loop.internal.pb.evm.EVMCapability.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
-	11, // 11: loop.internal.pb.evm.EVMCapability.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
-	12, // 12: loop.internal.pb.evm.EVMCapability.FilterLogs:output_type -> loop.internal.pb.evm.FilterLogsReply
-	13, // 13: loop.internal.pb.evm.EVMCapability.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
-	14, // 14: loop.internal.pb.evm.EVMCapability.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
-	15, // 15: loop.internal.pb.evm.EVMCapability.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
-	16, // 16: loop.internal.pb.evm.EVMCapability.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
-	17, // 17: loop.internal.pb.evm.EVMCapability.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	18, // 18: loop.internal.pb.evm.EVMCapability.QueryTrackedLogs:output_type -> loop.internal.pb.evm.QueryTrackedLogsReply
-	6,  // 19: loop.internal.pb.evm.EVMCapability.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 20: loop.internal.pb.evm.EVMCapability.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	19, // 21: loop.internal.pb.evm.EVMCapability.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
-	11, // [11:22] is the sub-list for method output_type
-	0,  // [0:11] is the sub-list for method input_type
+	10, // 10: loop.internal.pb.evm.EVMCapability.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
+	11, // 11: loop.internal.pb.evm.EVMCapability.FilterLogs:output_type -> loop.internal.pb.evm.FilterLogsReply
+	12, // 12: loop.internal.pb.evm.EVMCapability.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
+	13, // 13: loop.internal.pb.evm.EVMCapability.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
+	14, // 14: loop.internal.pb.evm.EVMCapability.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
+	15, // 15: loop.internal.pb.evm.EVMCapability.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
+	16, // 16: loop.internal.pb.evm.EVMCapability.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
+	17, // 17: loop.internal.pb.evm.EVMCapability.QueryTrackedLogs:output_type -> loop.internal.pb.evm.QueryTrackedLogsReply
+	6,  // 18: loop.internal.pb.evm.EVMCapability.RegisterLogTracking:output_type -> google.protobuf.Empty
+	6,  // 19: loop.internal.pb.evm.EVMCapability.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

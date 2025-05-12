@@ -24,5 +24,4 @@ service EVMCapability {
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
 }

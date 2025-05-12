@@ -6,21 +6,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
-type Address = evm.Address
-type Hash = evm.Hash
-
 type Visitor interface {
-	VisitAddressFilter(f *AddressFilter)
-	VisitEventSigFilter(f *EventSig)
-	VisitEventTopicsByValueFilter(f *EventByTopic)
-	VisitEventByWordFilter(f *EventByWord)
+	Address(primitive *AddressFilter)
+	EventSig(primitive *EventSig)
+	EventTopicsByValue(primitive *EventByTopic)
+	EventByWord(primitive *EventByWord)
 }
 
 type AddressFilter struct {
-	Address Address
+	Address evm.Address
 }
 
-func NewAddressFilter(address Address) query.Expression {
+func NewAddressFilter(address evm.Address) query.Expression {
 	return query.Expression{
 		Primitive: &AddressFilter{Address: address},
 	}
@@ -28,15 +25,15 @@ func NewAddressFilter(address Address) query.Expression {
 
 func (a *AddressFilter) Accept(visitor primitives.Visitor) {
 	if v, ok := visitor.(Visitor); ok {
-		v.VisitAddressFilter(a)
+		v.Address(a)
 	}
 }
 
 type EventSig struct {
-	EventSig Hash
+	EventSig evm.Hash
 }
 
-func NewEventSigFilter(eventSig Hash) query.Expression {
+func NewEventSigFilter(eventSig evm.Hash) query.Expression {
 	return query.Expression{
 		Primitive: &EventSig{EventSig: eventSig},
 	}
@@ -44,12 +41,12 @@ func NewEventSigFilter(eventSig Hash) query.Expression {
 
 func (es *EventSig) Accept(visitor primitives.Visitor) {
 	if v, ok := visitor.(Visitor); ok {
-		v.VisitEventSigFilter(es)
+		v.EventSig(es)
 	}
 }
 
 type HashedValueComparator struct {
-	Values   []Hash
+	Values   []evm.Hash
 	Operator primitives.ComparisonOperator
 }
 
@@ -69,7 +66,7 @@ func NewEventByWordFilter(wordIndex int, valueComparers []HashedValueComparator)
 
 func (ew *EventByWord) Accept(visitor primitives.Visitor) {
 	if v, ok := visitor.(Visitor); ok {
-		v.VisitEventByWordFilter(ew)
+		v.EventByWord(ew)
 	}
 }
 
@@ -89,6 +86,6 @@ func NewEventByTopicFilter(topic uint64, valueComprarer []HashedValueComparator)
 
 func (et *EventByTopic) Accept(visitor primitives.Visitor) {
 	if v, ok := visitor.(Visitor); ok {
-		v.VisitEventTopicsByValueFilter(et)
+		v.EventTopicsByValue(et)
 	}
 }

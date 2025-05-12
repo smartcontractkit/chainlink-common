@@ -677,7 +677,7 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 	pbExpression := &evmpb.Expression{}
 	if expression.IsPrimitive() {
 		p := &pb.Primitive{}
-		ep := &evmpb.EVMPrimitive{}
+		ep := &evmpb.Primitive{}
 		switch primitive := expression.Primitive.(type) {
 		case *primitives.Comparator:
 			return nil, errors.New("comparator primitive is not supported for EVMService")
@@ -716,14 +716,14 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 
 			putGeneralPrimitive(pbExpression, p)
 		case *evmprimitives.AddressFilter:
-			ep.Primitive = &evmpb.EVMPrimitive_Address{Address: &evmpb.AddressFilter{
+			ep.Primitive = &evmpb.Primitive_ContractAddress{ContractAddress: &evmpb.ContractAddress{
 				Address: &evmpb.Address{Address: primitive.Address[:]},
 			}}
 
 			putEVMPrimitive(pbExpression, ep)
 		case *evmprimitives.EventByTopic:
-			ep.Primitive = &evmpb.EVMPrimitive_EventByTopic{
-				EventByTopic: &evmpb.EventByTopicFilter{
+			ep.Primitive = &evmpb.Primitive_EventByTopic{
+				EventByTopic: &evmpb.EventByTopic{
 					Topic:                primitive.Topic,
 					HashedValueComparers: hashedValueComparersToProto(primitive.HashedValueComprarers),
 				},
@@ -731,8 +731,8 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 
 			putEVMPrimitive(pbExpression, ep)
 		case *evmprimitives.EventByWord:
-			ep.Primitive = &evmpb.EVMPrimitive_EventByWord{
-				EventByWord: &evmpb.EventByWordFilter{
+			ep.Primitive = &evmpb.Primitive_EventByWord{
+				EventByWord: &evmpb.EventByWord{
 					WordIndex:            uint32(primitive.WordIndex),
 					HashedValueComparers: hashedValueComparersToProto(primitive.HashedValueComparers),
 				},
@@ -740,8 +740,8 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 
 			putEVMPrimitive(pbExpression, ep)
 		case *evmprimitives.EventSig:
-			ep.Primitive = &evmpb.EVMPrimitive_EventSig{
-				EventSig: &evmpb.EventSigFilter{
+			ep.Primitive = &evmpb.Primitive_EventSig{
+				EventSig: &evmpb.EventSig{
 					EventSig: &evmpb.Hash{Hash: primitive.EventSig[:]},
 				},
 			}
@@ -831,19 +831,19 @@ func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error)
 	}
 }
 
-func protoToEVMExpr(pbEvaluatedExpr *evmpb.EVMPrimitive) (query.Expression, error) {
+func protoToEVMExpr(pbEvaluatedExpr *evmpb.Primitive) (query.Expression, error) {
 	switch primitive := pbEvaluatedExpr.GetPrimitive().(type) {
-	case *evmpb.EVMPrimitive_Address:
-		address := protoToAddress(primitive.Address.GetAddress())
+	case *evmpb.Primitive_ContractAddress:
+		address := protoToAddress(primitive.ContractAddress.GetAddress())
 		return evmprimitives.NewAddressFilter(address), nil
-	case *evmpb.EVMPrimitive_EventSig:
+	case *evmpb.Primitive_EventSig:
 		hash := protoToHash(primitive.EventSig.GetEventSig())
 		return evmprimitives.NewEventSigFilter(hash), nil
-	case *evmpb.EVMPrimitive_EventByTopic:
+	case *evmpb.Primitive_EventByTopic:
 		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(),
 				protoToHashedValueComparers(primitive.EventByTopic.GetHashedValueComparers())),
 			nil
-	case *evmpb.EVMPrimitive_EventByWord:
+	case *evmpb.Primitive_EventByWord:
 		return evmprimitives.NewEventByWordFilter(int(primitive.EventByWord.GetWordIndex()),
 				protoToHashedValueComparers(primitive.EventByWord.GetHashedValueComparers())),
 			nil
@@ -856,6 +856,6 @@ func putGeneralPrimitive(exp *evmpb.Expression, p *pb.Primitive) {
 	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.EXTPrimitive{Primitive: &evmpb.EXTPrimitive_GeneralPrimitive{GeneralPrimitive: p}}}
 }
 
-func putEVMPrimitive(exp *evmpb.Expression, p *evmpb.EVMPrimitive) {
+func putEVMPrimitive(exp *evmpb.Expression, p *evmpb.Primitive) {
 	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.EXTPrimitive{Primitive: &evmpb.EXTPrimitive_EvmPrimitive{EvmPrimitive: p}}}
 }

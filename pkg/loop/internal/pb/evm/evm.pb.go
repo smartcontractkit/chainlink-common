@@ -1166,7 +1166,7 @@ func (x *EXTPrimitive) GetGeneralPrimitive() *pb.Primitive {
 	return nil
 }
 
-func (x *EXTPrimitive) GetEvmPrimitive() *EVMPrimitive {
+func (x *EXTPrimitive) GetEvmPrimitive() *Primitive {
 	if x != nil {
 		if x, ok := x.Primitive.(*EXTPrimitive_EvmPrimitive); ok {
 			return x.EvmPrimitive
@@ -1184,7 +1184,7 @@ type EXTPrimitive_GeneralPrimitive struct {
 }
 
 type EXTPrimitive_EvmPrimitive struct {
-	EvmPrimitive *EVMPrimitive `protobuf:"bytes,2,opt,name=evm_primitive,json=evmPrimitive,proto3,oneof"`
+	EvmPrimitive *Primitive `protobuf:"bytes,2,opt,name=evm_primitive,json=evmPrimitive,proto3,oneof"`
 }
 
 func (*EXTPrimitive_GeneralPrimitive) isEXTPrimitive_Primitive() {}
@@ -1243,27 +1243,27 @@ func (x *HashValueComparator) GetOperator() pb.ComparisonOperator {
 	return pb.ComparisonOperator(0)
 }
 
-type AddressFilter struct {
+type ContractAddress struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Address       *Address               `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AddressFilter) Reset() {
-	*x = AddressFilter{}
+func (x *ContractAddress) Reset() {
+	*x = ContractAddress{}
 	mi := &file_evm_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AddressFilter) String() string {
+func (x *ContractAddress) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AddressFilter) ProtoMessage() {}
+func (*ContractAddress) ProtoMessage() {}
 
-func (x *AddressFilter) ProtoReflect() protoreflect.Message {
+func (x *ContractAddress) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1275,39 +1275,39 @@ func (x *AddressFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AddressFilter.ProtoReflect.Descriptor instead.
-func (*AddressFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use ContractAddress.ProtoReflect.Descriptor instead.
+func (*ContractAddress) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *AddressFilter) GetAddress() *Address {
+func (x *ContractAddress) GetAddress() *Address {
 	if x != nil {
 		return x.Address
 	}
 	return nil
 }
 
-type EventSigFilter struct {
+type EventSig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EventSig      *Hash                  `protobuf:"bytes,1,opt,name=eventSig,proto3" json:"eventSig,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EventSigFilter) Reset() {
-	*x = EventSigFilter{}
+func (x *EventSig) Reset() {
+	*x = EventSig{}
 	mi := &file_evm_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EventSigFilter) String() string {
+func (x *EventSig) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventSigFilter) ProtoMessage() {}
+func (*EventSig) ProtoMessage() {}
 
-func (x *EventSigFilter) ProtoReflect() protoreflect.Message {
+func (x *EventSig) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1319,19 +1319,19 @@ func (x *EventSigFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EventSigFilter.ProtoReflect.Descriptor instead.
-func (*EventSigFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use EventSig.ProtoReflect.Descriptor instead.
+func (*EventSig) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *EventSigFilter) GetEventSig() *Hash {
+func (x *EventSig) GetEventSig() *Hash {
 	if x != nil {
 		return x.EventSig
 	}
 	return nil
 }
 
-type EventByWordFilter struct {
+type EventByWord struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	WordIndex            uint32                 `protobuf:"varint,1,opt,name=word_index,json=wordIndex,proto3" json:"word_index,omitempty"`
 	HashedValueComparers []*HashValueComparator `protobuf:"bytes,2,rep,name=hashed_value_comparers,json=hashedValueComparers,proto3" json:"hashed_value_comparers,omitempty"`
@@ -1339,20 +1339,20 @@ type EventByWordFilter struct {
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *EventByWordFilter) Reset() {
-	*x = EventByWordFilter{}
+func (x *EventByWord) Reset() {
+	*x = EventByWord{}
 	mi := &file_evm_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EventByWordFilter) String() string {
+func (x *EventByWord) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventByWordFilter) ProtoMessage() {}
+func (*EventByWord) ProtoMessage() {}
 
-func (x *EventByWordFilter) ProtoReflect() protoreflect.Message {
+func (x *EventByWord) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1364,26 +1364,26 @@ func (x *EventByWordFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EventByWordFilter.ProtoReflect.Descriptor instead.
-func (*EventByWordFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use EventByWord.ProtoReflect.Descriptor instead.
+func (*EventByWord) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *EventByWordFilter) GetWordIndex() uint32 {
+func (x *EventByWord) GetWordIndex() uint32 {
 	if x != nil {
 		return x.WordIndex
 	}
 	return 0
 }
 
-func (x *EventByWordFilter) GetHashedValueComparers() []*HashValueComparator {
+func (x *EventByWord) GetHashedValueComparers() []*HashValueComparator {
 	if x != nil {
 		return x.HashedValueComparers
 	}
 	return nil
 }
 
-type EventByTopicFilter struct {
+type EventByTopic struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	Topic                uint64                 `protobuf:"varint,1,opt,name=topic,proto3" json:"topic,omitempty"`
 	HashedValueComparers []*HashValueComparator `protobuf:"bytes,2,rep,name=hashed_value_comparers,json=hashedValueComparers,proto3" json:"hashed_value_comparers,omitempty"`
@@ -1391,20 +1391,20 @@ type EventByTopicFilter struct {
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *EventByTopicFilter) Reset() {
-	*x = EventByTopicFilter{}
+func (x *EventByTopic) Reset() {
+	*x = EventByTopic{}
 	mi := &file_evm_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EventByTopicFilter) String() string {
+func (x *EventByTopic) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventByTopicFilter) ProtoMessage() {}
+func (*EventByTopic) ProtoMessage() {}
 
-func (x *EventByTopicFilter) ProtoReflect() protoreflect.Message {
+func (x *EventByTopic) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1416,19 +1416,19 @@ func (x *EventByTopicFilter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EventByTopicFilter.ProtoReflect.Descriptor instead.
-func (*EventByTopicFilter) Descriptor() ([]byte, []int) {
+// Deprecated: Use EventByTopic.ProtoReflect.Descriptor instead.
+func (*EventByTopic) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *EventByTopicFilter) GetTopic() uint64 {
+func (x *EventByTopic) GetTopic() uint64 {
 	if x != nil {
 		return x.Topic
 	}
 	return 0
 }
 
-func (x *EventByTopicFilter) GetHashedValueComparers() []*HashValueComparator {
+func (x *EventByTopic) GetHashedValueComparers() []*HashValueComparator {
 	if x != nil {
 		return x.HashedValueComparers
 	}
@@ -1437,33 +1437,33 @@ func (x *EventByTopicFilter) GetHashedValueComparers() []*HashValueComparator {
 
 // evm-style primitives
 // can be used in combination with general primnitives for querying tracked logs
-type EVMPrimitive struct {
+type Primitive struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Primitive:
 	//
-	//	*EVMPrimitive_Address
-	//	*EVMPrimitive_EventSig
-	//	*EVMPrimitive_EventByWord
-	//	*EVMPrimitive_EventByTopic
-	Primitive     isEVMPrimitive_Primitive `protobuf_oneof:"primitive"`
+	//	*Primitive_ContractAddress
+	//	*Primitive_EventSig
+	//	*Primitive_EventByWord
+	//	*Primitive_EventByTopic
+	Primitive     isPrimitive_Primitive `protobuf_oneof:"primitive"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EVMPrimitive) Reset() {
-	*x = EVMPrimitive{}
+func (x *Primitive) Reset() {
+	*x = Primitive{}
 	mi := &file_evm_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EVMPrimitive) String() string {
+func (x *Primitive) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EVMPrimitive) ProtoMessage() {}
+func (*Primitive) ProtoMessage() {}
 
-func (x *EVMPrimitive) ProtoReflect() protoreflect.Message {
+func (x *Primitive) ProtoReflect() protoreflect.Message {
 	mi := &file_evm_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1475,81 +1475,81 @@ func (x *EVMPrimitive) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EVMPrimitive.ProtoReflect.Descriptor instead.
-func (*EVMPrimitive) Descriptor() ([]byte, []int) {
+// Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
+func (*Primitive) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *EVMPrimitive) GetPrimitive() isEVMPrimitive_Primitive {
+func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
 	if x != nil {
 		return x.Primitive
 	}
 	return nil
 }
 
-func (x *EVMPrimitive) GetAddress() *AddressFilter {
+func (x *Primitive) GetContractAddress() *ContractAddress {
 	if x != nil {
-		if x, ok := x.Primitive.(*EVMPrimitive_Address); ok {
-			return x.Address
+		if x, ok := x.Primitive.(*Primitive_ContractAddress); ok {
+			return x.ContractAddress
 		}
 	}
 	return nil
 }
 
-func (x *EVMPrimitive) GetEventSig() *EventSigFilter {
+func (x *Primitive) GetEventSig() *EventSig {
 	if x != nil {
-		if x, ok := x.Primitive.(*EVMPrimitive_EventSig); ok {
+		if x, ok := x.Primitive.(*Primitive_EventSig); ok {
 			return x.EventSig
 		}
 	}
 	return nil
 }
 
-func (x *EVMPrimitive) GetEventByWord() *EventByWordFilter {
+func (x *Primitive) GetEventByWord() *EventByWord {
 	if x != nil {
-		if x, ok := x.Primitive.(*EVMPrimitive_EventByWord); ok {
+		if x, ok := x.Primitive.(*Primitive_EventByWord); ok {
 			return x.EventByWord
 		}
 	}
 	return nil
 }
 
-func (x *EVMPrimitive) GetEventByTopic() *EventByTopicFilter {
+func (x *Primitive) GetEventByTopic() *EventByTopic {
 	if x != nil {
-		if x, ok := x.Primitive.(*EVMPrimitive_EventByTopic); ok {
+		if x, ok := x.Primitive.(*Primitive_EventByTopic); ok {
 			return x.EventByTopic
 		}
 	}
 	return nil
 }
 
-type isEVMPrimitive_Primitive interface {
-	isEVMPrimitive_Primitive()
+type isPrimitive_Primitive interface {
+	isPrimitive_Primitive()
 }
 
-type EVMPrimitive_Address struct {
-	Address *AddressFilter `protobuf:"bytes,1,opt,name=address,proto3,oneof"`
+type Primitive_ContractAddress struct {
+	ContractAddress *ContractAddress `protobuf:"bytes,1,opt,name=contract_address,json=contractAddress,proto3,oneof"`
 }
 
-type EVMPrimitive_EventSig struct {
-	EventSig *EventSigFilter `protobuf:"bytes,2,opt,name=event_sig,json=eventSig,proto3,oneof"`
+type Primitive_EventSig struct {
+	EventSig *EventSig `protobuf:"bytes,2,opt,name=event_sig,json=eventSig,proto3,oneof"`
 }
 
-type EVMPrimitive_EventByWord struct {
-	EventByWord *EventByWordFilter `protobuf:"bytes,3,opt,name=event_by_word,json=eventByWord,proto3,oneof"`
+type Primitive_EventByWord struct {
+	EventByWord *EventByWord `protobuf:"bytes,3,opt,name=event_by_word,json=eventByWord,proto3,oneof"`
 }
 
-type EVMPrimitive_EventByTopic struct {
-	EventByTopic *EventByTopicFilter `protobuf:"bytes,4,opt,name=event_by_topic,json=eventByTopic,proto3,oneof"`
+type Primitive_EventByTopic struct {
+	EventByTopic *EventByTopic `protobuf:"bytes,4,opt,name=event_by_topic,json=eventByTopic,proto3,oneof"`
 }
 
-func (*EVMPrimitive_Address) isEVMPrimitive_Primitive() {}
+func (*Primitive_ContractAddress) isPrimitive_Primitive() {}
 
-func (*EVMPrimitive_EventSig) isEVMPrimitive_Primitive() {}
+func (*Primitive_EventSig) isPrimitive_Primitive() {}
 
-func (*EVMPrimitive_EventByWord) isEVMPrimitive_Primitive() {}
+func (*Primitive_EventByWord) isPrimitive_Primitive() {}
 
-func (*EVMPrimitive_EventByTopic) isEVMPrimitive_Primitive() {}
+func (*Primitive_EventByTopic) isPrimitive_Primitive() {}
 
 // ----- Request/Reply Wrappers -----
 type LatestAndFinalizedHeadReply struct {
@@ -2518,30 +2518,30 @@ const file_evm_proto_rawDesc = "" +
 	"\x03And\x124\n" +
 	"\x04expr\x18\x01 \x03(\v2 .loop.internal.pb.evm.ExpressionR\x04expr\":\n" +
 	"\x02Or\x124\n" +
-	"\x04expr\x18\x01 \x03(\v2 .loop.internal.pb.evm.ExpressionR\x04expr\"\xa6\x01\n" +
+	"\x04expr\x18\x01 \x03(\v2 .loop.internal.pb.evm.ExpressionR\x04expr\"\xa3\x01\n" +
 	"\fEXTPrimitive\x12>\n" +
-	"\x11general_primitive\x18\x01 \x01(\v2\x0f.loop.PrimitiveH\x00R\x10generalPrimitive\x12I\n" +
-	"\revm_primitive\x18\x02 \x01(\v2\".loop.internal.pb.evm.EVMPrimitiveH\x00R\fevmPrimitiveB\v\n" +
+	"\x11general_primitive\x18\x01 \x01(\v2\x0f.loop.PrimitiveH\x00R\x10generalPrimitive\x12F\n" +
+	"\revm_primitive\x18\x02 \x01(\v2\x1f.loop.internal.pb.evm.PrimitiveH\x00R\fevmPrimitiveB\v\n" +
 	"\tprimitive\"\x7f\n" +
 	"\x13HashValueComparator\x122\n" +
 	"\x06values\x18\x01 \x03(\v2\x1a.loop.internal.pb.evm.HashR\x06values\x124\n" +
-	"\boperator\x18\x02 \x01(\x0e2\x18.loop.ComparisonOperatorR\boperator\"H\n" +
-	"\rAddressFilter\x127\n" +
-	"\aaddress\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\aaddress\"H\n" +
-	"\x0eEventSigFilter\x126\n" +
-	"\beventSig\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HashR\beventSig\"\x93\x01\n" +
-	"\x11EventByWordFilter\x12\x1d\n" +
+	"\boperator\x18\x02 \x01(\x0e2\x18.loop.ComparisonOperatorR\boperator\"J\n" +
+	"\x0fContractAddress\x127\n" +
+	"\aaddress\x18\x01 \x01(\v2\x1d.loop.internal.pb.evm.AddressR\aaddress\"B\n" +
+	"\bEventSig\x126\n" +
+	"\beventSig\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HashR\beventSig\"\x8d\x01\n" +
+	"\vEventByWord\x12\x1d\n" +
 	"\n" +
 	"word_index\x18\x01 \x01(\rR\twordIndex\x12_\n" +
-	"\x16hashed_value_comparers\x18\x02 \x03(\v2).loop.internal.pb.evm.HashValueComparatorR\x14hashedValueComparers\"\x8b\x01\n" +
-	"\x12EventByTopicFilter\x12\x14\n" +
+	"\x16hashed_value_comparers\x18\x02 \x03(\v2).loop.internal.pb.evm.HashValueComparatorR\x14hashedValueComparers\"\x85\x01\n" +
+	"\fEventByTopic\x12\x14\n" +
 	"\x05topic\x18\x01 \x01(\x04R\x05topic\x12_\n" +
-	"\x16hashed_value_comparers\x18\x02 \x03(\v2).loop.internal.pb.evm.HashValueComparatorR\x14hashedValueComparers\"\xc2\x02\n" +
-	"\fEVMPrimitive\x12?\n" +
-	"\aaddress\x18\x01 \x01(\v2#.loop.internal.pb.evm.AddressFilterH\x00R\aaddress\x12C\n" +
-	"\tevent_sig\x18\x02 \x01(\v2$.loop.internal.pb.evm.EventSigFilterH\x00R\beventSig\x12M\n" +
-	"\revent_by_word\x18\x03 \x01(\v2'.loop.internal.pb.evm.EventByWordFilterH\x00R\veventByWord\x12P\n" +
-	"\x0eevent_by_topic\x18\x04 \x01(\v2(.loop.internal.pb.evm.EventByTopicFilterH\x00R\feventByTopicB\v\n" +
+	"\x16hashed_value_comparers\x18\x02 \x03(\v2).loop.internal.pb.evm.HashValueComparatorR\x14hashedValueComparers\"\xc0\x02\n" +
+	"\tPrimitive\x12R\n" +
+	"\x10contract_address\x18\x01 \x01(\v2%.loop.internal.pb.evm.ContractAddressH\x00R\x0fcontractAddress\x12=\n" +
+	"\tevent_sig\x18\x02 \x01(\v2\x1e.loop.internal.pb.evm.EventSigH\x00R\beventSig\x12G\n" +
+	"\revent_by_word\x18\x03 \x01(\v2!.loop.internal.pb.evm.EventByWordH\x00R\veventByWord\x12J\n" +
+	"\x0eevent_by_topic\x18\x04 \x01(\v2\".loop.internal.pb.evm.EventByTopicH\x00R\feventByTopicB\v\n" +
 	"\tprimitive\"\x8b\x01\n" +
 	"\x1bLatestAndFinalizedHeadReply\x122\n" +
 	"\x06latest\x18\x01 \x01(\v2\x1a.loop.internal.pb.evm.HeadR\x06latest\x128\n" +
@@ -2640,11 +2640,11 @@ var file_evm_proto_goTypes = []any{
 	(*Or)(nil),                             // 15: loop.internal.pb.evm.Or
 	(*EXTPrimitive)(nil),                   // 16: loop.internal.pb.evm.EXTPrimitive
 	(*HashValueComparator)(nil),            // 17: loop.internal.pb.evm.HashValueComparator
-	(*AddressFilter)(nil),                  // 18: loop.internal.pb.evm.AddressFilter
-	(*EventSigFilter)(nil),                 // 19: loop.internal.pb.evm.EventSigFilter
-	(*EventByWordFilter)(nil),              // 20: loop.internal.pb.evm.EventByWordFilter
-	(*EventByTopicFilter)(nil),             // 21: loop.internal.pb.evm.EventByTopicFilter
-	(*EVMPrimitive)(nil),                   // 22: loop.internal.pb.evm.EVMPrimitive
+	(*ContractAddress)(nil),                // 18: loop.internal.pb.evm.ContractAddress
+	(*EventSig)(nil),                       // 19: loop.internal.pb.evm.EventSig
+	(*EventByWord)(nil),                    // 20: loop.internal.pb.evm.EventByWord
+	(*EventByTopic)(nil),                   // 21: loop.internal.pb.evm.EventByTopic
+	(*Primitive)(nil),                      // 22: loop.internal.pb.evm.Primitive
 	(*LatestAndFinalizedHeadReply)(nil),    // 23: loop.internal.pb.evm.LatestAndFinalizedHeadReply
 	(*CallContractRequest)(nil),            // 24: loop.internal.pb.evm.CallContractRequest
 	(*CallContractReply)(nil),              // 25: loop.internal.pb.evm.CallContractReply
@@ -2716,17 +2716,17 @@ var file_evm_proto_depIdxs = []int32{
 	12, // 39: loop.internal.pb.evm.And.expr:type_name -> loop.internal.pb.evm.Expression
 	12, // 40: loop.internal.pb.evm.Or.expr:type_name -> loop.internal.pb.evm.Expression
 	43, // 41: loop.internal.pb.evm.EXTPrimitive.general_primitive:type_name -> loop.Primitive
-	22, // 42: loop.internal.pb.evm.EXTPrimitive.evm_primitive:type_name -> loop.internal.pb.evm.EVMPrimitive
+	22, // 42: loop.internal.pb.evm.EXTPrimitive.evm_primitive:type_name -> loop.internal.pb.evm.Primitive
 	2,  // 43: loop.internal.pb.evm.HashValueComparator.values:type_name -> loop.internal.pb.evm.Hash
 	44, // 44: loop.internal.pb.evm.HashValueComparator.operator:type_name -> loop.ComparisonOperator
-	1,  // 45: loop.internal.pb.evm.AddressFilter.address:type_name -> loop.internal.pb.evm.Address
-	2,  // 46: loop.internal.pb.evm.EventSigFilter.eventSig:type_name -> loop.internal.pb.evm.Hash
-	17, // 47: loop.internal.pb.evm.EventByWordFilter.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
-	17, // 48: loop.internal.pb.evm.EventByTopicFilter.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
-	18, // 49: loop.internal.pb.evm.EVMPrimitive.address:type_name -> loop.internal.pb.evm.AddressFilter
-	19, // 50: loop.internal.pb.evm.EVMPrimitive.event_sig:type_name -> loop.internal.pb.evm.EventSigFilter
-	20, // 51: loop.internal.pb.evm.EVMPrimitive.event_by_word:type_name -> loop.internal.pb.evm.EventByWordFilter
-	21, // 52: loop.internal.pb.evm.EVMPrimitive.event_by_topic:type_name -> loop.internal.pb.evm.EventByTopicFilter
+	1,  // 45: loop.internal.pb.evm.ContractAddress.address:type_name -> loop.internal.pb.evm.Address
+	2,  // 46: loop.internal.pb.evm.EventSig.eventSig:type_name -> loop.internal.pb.evm.Hash
+	17, // 47: loop.internal.pb.evm.EventByWord.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
+	17, // 48: loop.internal.pb.evm.EventByTopic.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
+	18, // 49: loop.internal.pb.evm.Primitive.contract_address:type_name -> loop.internal.pb.evm.ContractAddress
+	19, // 50: loop.internal.pb.evm.Primitive.event_sig:type_name -> loop.internal.pb.evm.EventSig
+	20, // 51: loop.internal.pb.evm.Primitive.event_by_word:type_name -> loop.internal.pb.evm.EventByWord
+	21, // 52: loop.internal.pb.evm.Primitive.event_by_topic:type_name -> loop.internal.pb.evm.EventByTopic
 	11, // 53: loop.internal.pb.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.internal.pb.evm.Head
 	11, // 54: loop.internal.pb.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.internal.pb.evm.Head
 	4,  // 55: loop.internal.pb.evm.CallContractRequest.call:type_name -> loop.internal.pb.evm.CallMsg
@@ -2793,10 +2793,10 @@ func file_evm_proto_init() {
 		(*EXTPrimitive_EvmPrimitive)(nil),
 	}
 	file_evm_proto_msgTypes[21].OneofWrappers = []any{
-		(*EVMPrimitive_Address)(nil),
-		(*EVMPrimitive_EventSig)(nil),
-		(*EVMPrimitive_EventByWord)(nil),
-		(*EVMPrimitive_EventByTopic)(nil),
+		(*Primitive_ContractAddress)(nil),
+		(*Primitive_EventSig)(nil),
+		(*Primitive_EventByWord)(nil),
+		(*Primitive_EventByTopic)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

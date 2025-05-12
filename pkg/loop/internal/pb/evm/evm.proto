@@ -152,8 +152,8 @@ message Or {
 // EXTPrimitive extends general primitives with evm-specific primitives 
 message EXTPrimitive {
   oneof primitive{
-	Primitive general_primitive = 1;
-	EVMPrimitive evm_primitive = 2;
+	loop.Primitive general_primitive = 1;
+	Primitive evm_primitive = 2;
   }
 }
 
@@ -162,32 +162,32 @@ message HashValueComparator {
   ComparisonOperator operator = 2;
 }
 
-message AddressFilter {
+message ContractAddress {
   Address address = 1;
 }
 
-message EventSigFilter {
+message EventSig {
   Hash eventSig = 1;
 }
 
-message EventByWordFilter {
+message EventByWord {
   uint32 word_index = 1;
   repeated HashValueComparator  hashed_value_comparers = 2;
 }
 
-message EventByTopicFilter {
+message EventByTopic {
   uint64 topic = 1;
   repeated HashValueComparator hashed_value_comparers = 2;
 }
 
 // evm-style primitives
 // can be used in combination with general primnitives for querying tracked logs
-message EVMPrimitive {
+message Primitive {
   oneof primitive {
-    AddressFilter address = 1;
-    EventSigFilter event_sig = 2;
-    EventByWordFilter event_by_word = 3;
-    EventByTopicFilter event_by_topic = 4;
+    ContractAddress contract_address = 1;
+    EventSig event_sig = 2;
+    EventByWord event_by_word = 3;
+    EventByTopic event_by_topic = 4;
   }
 }
 

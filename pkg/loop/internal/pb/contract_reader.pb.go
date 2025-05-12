@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: contract_reader.proto
+// source: loop/internal/pb/contract_reader.proto
 
 package pb
 
@@ -64,11 +64,11 @@ func (x ComparisonOperator) String() string {
 }
 
 func (ComparisonOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_contract_reader_proto_enumTypes[0].Descriptor()
+	return file_loop_internal_pb_contract_reader_proto_enumTypes[0].Descriptor()
 }
 
 func (ComparisonOperator) Type() protoreflect.EnumType {
-	return &file_contract_reader_proto_enumTypes[0]
+	return &file_loop_internal_pb_contract_reader_proto_enumTypes[0]
 }
 
 func (x ComparisonOperator) Number() protoreflect.EnumNumber {
@@ -77,7 +77,7 @@ func (x ComparisonOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ComparisonOperator.Descriptor instead.
 func (ComparisonOperator) EnumDescriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{0}
 }
 
 type BooleanOperator int32
@@ -110,11 +110,11 @@ func (x BooleanOperator) String() string {
 }
 
 func (BooleanOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_contract_reader_proto_enumTypes[1].Descriptor()
+	return file_loop_internal_pb_contract_reader_proto_enumTypes[1].Descriptor()
 }
 
 func (BooleanOperator) Type() protoreflect.EnumType {
-	return &file_contract_reader_proto_enumTypes[1]
+	return &file_loop_internal_pb_contract_reader_proto_enumTypes[1]
 }
 
 func (x BooleanOperator) Number() protoreflect.EnumNumber {
@@ -123,7 +123,7 @@ func (x BooleanOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BooleanOperator.Descriptor instead.
 func (BooleanOperator) EnumDescriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{1}
 }
 
 type Confidence int32
@@ -156,11 +156,11 @@ func (x Confidence) String() string {
 }
 
 func (Confidence) Descriptor() protoreflect.EnumDescriptor {
-	return file_contract_reader_proto_enumTypes[2].Descriptor()
+	return file_loop_internal_pb_contract_reader_proto_enumTypes[2].Descriptor()
 }
 
 func (Confidence) Type() protoreflect.EnumType {
-	return &file_contract_reader_proto_enumTypes[2]
+	return &file_loop_internal_pb_contract_reader_proto_enumTypes[2]
 }
 
 func (x Confidence) Number() protoreflect.EnumNumber {
@@ -169,7 +169,7 @@ func (x Confidence) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Confidence.Descriptor instead.
 func (Confidence) EnumDescriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{2}
 }
 
 // CursorDirection defines the direction for cursor-based data fetching.
@@ -203,11 +203,11 @@ func (x CursorDirection) String() string {
 }
 
 func (CursorDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_contract_reader_proto_enumTypes[3].Descriptor()
+	return file_loop_internal_pb_contract_reader_proto_enumTypes[3].Descriptor()
 }
 
 func (CursorDirection) Type() protoreflect.EnumType {
-	return &file_contract_reader_proto_enumTypes[3]
+	return &file_loop_internal_pb_contract_reader_proto_enumTypes[3]
 }
 
 func (x CursorDirection) Number() protoreflect.EnumNumber {
@@ -216,7 +216,7 @@ func (x CursorDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CursorDirection.Descriptor instead.
 func (CursorDirection) EnumDescriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{3}
 }
 
 type SortDirection int32
@@ -249,11 +249,11 @@ func (x SortDirection) String() string {
 }
 
 func (SortDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_contract_reader_proto_enumTypes[4].Descriptor()
+	return file_loop_internal_pb_contract_reader_proto_enumTypes[4].Descriptor()
 }
 
 func (SortDirection) Type() protoreflect.EnumType {
-	return &file_contract_reader_proto_enumTypes[4]
+	return &file_loop_internal_pb_contract_reader_proto_enumTypes[4]
 }
 
 func (x SortDirection) Number() protoreflect.EnumNumber {
@@ -262,7 +262,7 @@ func (x SortDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortDirection.Descriptor instead.
 func (SortDirection) EnumDescriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{4}
 }
 
 type SortType int32
@@ -298,11 +298,11 @@ func (x SortType) String() string {
 }
 
 func (SortType) Descriptor() protoreflect.EnumDescriptor {
-	return file_contract_reader_proto_enumTypes[5].Descriptor()
+	return file_loop_internal_pb_contract_reader_proto_enumTypes[5].Descriptor()
 }
 
 func (SortType) Type() protoreflect.EnumType {
-	return &file_contract_reader_proto_enumTypes[5]
+	return &file_loop_internal_pb_contract_reader_proto_enumTypes[5]
 }
 
 func (x SortType) Number() protoreflect.EnumNumber {
@@ -311,7 +311,7 @@ func (x SortType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortType.Descriptor instead.
 func (SortType) EnumDescriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{5}
 }
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
@@ -327,7 +327,7 @@ type GetLatestValueRequest struct {
 
 func (x *GetLatestValueRequest) Reset() {
 	*x = GetLatestValueRequest{}
-	mi := &file_contract_reader_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +339,7 @@ func (x *GetLatestValueRequest) String() string {
 func (*GetLatestValueRequest) ProtoMessage() {}
 
 func (x *GetLatestValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +352,7 @@ func (x *GetLatestValueRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestValueRequest.ProtoReflect.Descriptor instead.
 func (*GetLatestValueRequest) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetLatestValueRequest) GetReadIdentifier() string {
@@ -393,7 +393,7 @@ type BatchGetLatestValuesRequest struct {
 
 func (x *BatchGetLatestValuesRequest) Reset() {
 	*x = BatchGetLatestValuesRequest{}
-	mi := &file_contract_reader_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -405,7 +405,7 @@ func (x *BatchGetLatestValuesRequest) String() string {
 func (*BatchGetLatestValuesRequest) ProtoMessage() {}
 
 func (x *BatchGetLatestValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -418,7 +418,7 @@ func (x *BatchGetLatestValuesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetLatestValuesRequest.ProtoReflect.Descriptor instead.
 func (*BatchGetLatestValuesRequest) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BatchGetLatestValuesRequest) GetRequests() []*ContractBatch {
@@ -441,7 +441,7 @@ type QueryKeyRequest struct {
 
 func (x *QueryKeyRequest) Reset() {
 	*x = QueryKeyRequest{}
-	mi := &file_contract_reader_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -453,7 +453,7 @@ func (x *QueryKeyRequest) String() string {
 func (*QueryKeyRequest) ProtoMessage() {}
 
 func (x *QueryKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -466,7 +466,7 @@ func (x *QueryKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryKeyRequest.ProtoReflect.Descriptor instead.
 func (*QueryKeyRequest) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *QueryKeyRequest) GetContract() *BoundContract {
@@ -508,7 +508,7 @@ type QueryKeysRequest struct {
 
 func (x *QueryKeysRequest) Reset() {
 	*x = QueryKeysRequest{}
-	mi := &file_contract_reader_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -520,7 +520,7 @@ func (x *QueryKeysRequest) String() string {
 func (*QueryKeysRequest) ProtoMessage() {}
 
 func (x *QueryKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,7 +533,7 @@ func (x *QueryKeysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryKeysRequest.ProtoReflect.Descriptor instead.
 func (*QueryKeysRequest) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *QueryKeysRequest) GetFilters() []*ContractKeyFilter {
@@ -561,7 +561,7 @@ type ContractKeyFilter struct {
 
 func (x *ContractKeyFilter) Reset() {
 	*x = ContractKeyFilter{}
-	mi := &file_contract_reader_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -573,7 +573,7 @@ func (x *ContractKeyFilter) String() string {
 func (*ContractKeyFilter) ProtoMessage() {}
 
 func (x *ContractKeyFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -586,7 +586,7 @@ func (x *ContractKeyFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractKeyFilter.ProtoReflect.Descriptor instead.
 func (*ContractKeyFilter) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ContractKeyFilter) GetContract() *BoundContract {
@@ -620,7 +620,7 @@ type BindRequest struct {
 
 func (x *BindRequest) Reset() {
 	*x = BindRequest{}
-	mi := &file_contract_reader_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -632,7 +632,7 @@ func (x *BindRequest) String() string {
 func (*BindRequest) ProtoMessage() {}
 
 func (x *BindRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -645,7 +645,7 @@ func (x *BindRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BindRequest.ProtoReflect.Descriptor instead.
 func (*BindRequest) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BindRequest) GetBindings() []*BoundContract {
@@ -665,7 +665,7 @@ type UnbindRequest struct {
 
 func (x *UnbindRequest) Reset() {
 	*x = UnbindRequest{}
-	mi := &file_contract_reader_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -677,7 +677,7 @@ func (x *UnbindRequest) String() string {
 func (*UnbindRequest) ProtoMessage() {}
 
 func (x *UnbindRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -690,7 +690,7 @@ func (x *UnbindRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnbindRequest.ProtoReflect.Descriptor instead.
 func (*UnbindRequest) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UnbindRequest) GetBindings() []*BoundContract {
@@ -710,7 +710,7 @@ type GetLatestValueReply struct {
 
 func (x *GetLatestValueReply) Reset() {
 	*x = GetLatestValueReply{}
-	mi := &file_contract_reader_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -722,7 +722,7 @@ func (x *GetLatestValueReply) String() string {
 func (*GetLatestValueReply) ProtoMessage() {}
 
 func (x *GetLatestValueReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -735,7 +735,7 @@ func (x *GetLatestValueReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestValueReply.ProtoReflect.Descriptor instead.
 func (*GetLatestValueReply) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetLatestValueReply) GetRetVal() *VersionedBytes {
@@ -756,7 +756,7 @@ type GetLatestValueWithHeadDataReply struct {
 
 func (x *GetLatestValueWithHeadDataReply) Reset() {
 	*x = GetLatestValueWithHeadDataReply{}
-	mi := &file_contract_reader_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -768,7 +768,7 @@ func (x *GetLatestValueWithHeadDataReply) String() string {
 func (*GetLatestValueWithHeadDataReply) ProtoMessage() {}
 
 func (x *GetLatestValueWithHeadDataReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -781,7 +781,7 @@ func (x *GetLatestValueWithHeadDataReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestValueWithHeadDataReply.ProtoReflect.Descriptor instead.
 func (*GetLatestValueWithHeadDataReply) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetLatestValueWithHeadDataReply) GetRetVal() *VersionedBytes {
@@ -808,7 +808,7 @@ type BatchGetLatestValuesReply struct {
 
 func (x *BatchGetLatestValuesReply) Reset() {
 	*x = BatchGetLatestValuesReply{}
-	mi := &file_contract_reader_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -820,7 +820,7 @@ func (x *BatchGetLatestValuesReply) String() string {
 func (*BatchGetLatestValuesReply) ProtoMessage() {}
 
 func (x *BatchGetLatestValuesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -833,7 +833,7 @@ func (x *BatchGetLatestValuesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetLatestValuesReply.ProtoReflect.Descriptor instead.
 func (*BatchGetLatestValuesReply) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *BatchGetLatestValuesReply) GetResults() []*ContractBatchResult {
@@ -853,7 +853,7 @@ type QueryKeyReply struct {
 
 func (x *QueryKeyReply) Reset() {
 	*x = QueryKeyReply{}
-	mi := &file_contract_reader_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -865,7 +865,7 @@ func (x *QueryKeyReply) String() string {
 func (*QueryKeyReply) ProtoMessage() {}
 
 func (x *QueryKeyReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -878,7 +878,7 @@ func (x *QueryKeyReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryKeyReply.ProtoReflect.Descriptor instead.
 func (*QueryKeyReply) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *QueryKeyReply) GetSequences() []*Sequence {
@@ -898,7 +898,7 @@ type QueryKeysReply struct {
 
 func (x *QueryKeysReply) Reset() {
 	*x = QueryKeysReply{}
-	mi := &file_contract_reader_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -910,7 +910,7 @@ func (x *QueryKeysReply) String() string {
 func (*QueryKeysReply) ProtoMessage() {}
 
 func (x *QueryKeysReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -923,7 +923,7 @@ func (x *QueryKeysReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryKeysReply.ProtoReflect.Descriptor instead.
 func (*QueryKeysReply) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *QueryKeysReply) GetSequences() []*SequenceWithKey {
@@ -944,7 +944,7 @@ type ContractBatch struct {
 
 func (x *ContractBatch) Reset() {
 	*x = ContractBatch{}
-	mi := &file_contract_reader_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -956,7 +956,7 @@ func (x *ContractBatch) String() string {
 func (*ContractBatch) ProtoMessage() {}
 
 func (x *ContractBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -969,7 +969,7 @@ func (x *ContractBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractBatch.ProtoReflect.Descriptor instead.
 func (*ContractBatch) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ContractBatch) GetContract() *BoundContract {
@@ -998,7 +998,7 @@ type BatchRead struct {
 
 func (x *BatchRead) Reset() {
 	*x = BatchRead{}
-	mi := &file_contract_reader_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1010,7 +1010,7 @@ func (x *BatchRead) String() string {
 func (*BatchRead) ProtoMessage() {}
 
 func (x *BatchRead) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1023,7 +1023,7 @@ func (x *BatchRead) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchRead.ProtoReflect.Descriptor instead.
 func (*BatchRead) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *BatchRead) GetReadName() string {
@@ -1058,7 +1058,7 @@ type ContractBatchResult struct {
 
 func (x *ContractBatchResult) Reset() {
 	*x = ContractBatchResult{}
-	mi := &file_contract_reader_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1070,7 +1070,7 @@ func (x *ContractBatchResult) String() string {
 func (*ContractBatchResult) ProtoMessage() {}
 
 func (x *ContractBatchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1083,7 +1083,7 @@ func (x *ContractBatchResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractBatchResult.ProtoReflect.Descriptor instead.
 func (*ContractBatchResult) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ContractBatchResult) GetContract() *BoundContract {
@@ -1112,7 +1112,7 @@ type BatchReadResult struct {
 
 func (x *BatchReadResult) Reset() {
 	*x = BatchReadResult{}
-	mi := &file_contract_reader_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1124,7 +1124,7 @@ func (x *BatchReadResult) String() string {
 func (*BatchReadResult) ProtoMessage() {}
 
 func (x *BatchReadResult) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1137,7 +1137,7 @@ func (x *BatchReadResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchReadResult.ProtoReflect.Descriptor instead.
 func (*BatchReadResult) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *BatchReadResult) GetReadName() string {
@@ -1173,7 +1173,7 @@ type Head struct {
 
 func (x *Head) Reset() {
 	*x = Head{}
-	mi := &file_contract_reader_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1185,7 +1185,7 @@ func (x *Head) String() string {
 func (*Head) ProtoMessage() {}
 
 func (x *Head) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1198,7 +1198,7 @@ func (x *Head) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Head.ProtoReflect.Descriptor instead.
 func (*Head) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Head) GetHeight() string {
@@ -1234,7 +1234,7 @@ type Sequence struct {
 
 func (x *Sequence) Reset() {
 	*x = Sequence{}
-	mi := &file_contract_reader_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1246,7 +1246,7 @@ func (x *Sequence) String() string {
 func (*Sequence) ProtoMessage() {}
 
 func (x *Sequence) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1259,7 +1259,7 @@ func (x *Sequence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Sequence.ProtoReflect.Descriptor instead.
 func (*Sequence) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *Sequence) GetSequenceCursor() string {
@@ -1295,7 +1295,7 @@ type SequenceWithKey struct {
 
 func (x *SequenceWithKey) Reset() {
 	*x = SequenceWithKey{}
-	mi := &file_contract_reader_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1307,7 @@ func (x *SequenceWithKey) String() string {
 func (*SequenceWithKey) ProtoMessage() {}
 
 func (x *SequenceWithKey) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1320,7 @@ func (x *SequenceWithKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SequenceWithKey.ProtoReflect.Descriptor instead.
 func (*SequenceWithKey) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SequenceWithKey) GetSequenceCursor() string {
@@ -1362,7 +1362,7 @@ type BoundContract struct {
 
 func (x *BoundContract) Reset() {
 	*x = BoundContract{}
-	mi := &file_contract_reader_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1374,7 +1374,7 @@ func (x *BoundContract) String() string {
 func (*BoundContract) ProtoMessage() {}
 
 func (x *BoundContract) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1387,7 +1387,7 @@ func (x *BoundContract) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoundContract.ProtoReflect.Descriptor instead.
 func (*BoundContract) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *BoundContract) GetAddress() string {
@@ -1415,7 +1415,7 @@ type QueryKeyFilter struct {
 
 func (x *QueryKeyFilter) Reset() {
 	*x = QueryKeyFilter{}
-	mi := &file_contract_reader_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1427,7 +1427,7 @@ func (x *QueryKeyFilter) String() string {
 func (*QueryKeyFilter) ProtoMessage() {}
 
 func (x *QueryKeyFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1440,7 +1440,7 @@ func (x *QueryKeyFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryKeyFilter.ProtoReflect.Descriptor instead.
 func (*QueryKeyFilter) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *QueryKeyFilter) GetKey() string {
@@ -1472,7 +1472,7 @@ type Expression struct {
 
 func (x *Expression) Reset() {
 	*x = Expression{}
-	mi := &file_contract_reader_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1484,7 +1484,7 @@ func (x *Expression) String() string {
 func (*Expression) ProtoMessage() {}
 
 func (x *Expression) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1497,7 +1497,7 @@ func (x *Expression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Expression.ProtoReflect.Descriptor instead.
 func (*Expression) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Expression) GetEvaluator() isExpression_Evaluator {
@@ -1551,7 +1551,7 @@ type BooleanExpression struct {
 
 func (x *BooleanExpression) Reset() {
 	*x = BooleanExpression{}
-	mi := &file_contract_reader_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1563,7 +1563,7 @@ func (x *BooleanExpression) String() string {
 func (*BooleanExpression) ProtoMessage() {}
 
 func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1576,7 +1576,7 @@ func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BooleanExpression.ProtoReflect.Descriptor instead.
 func (*BooleanExpression) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{22}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *BooleanExpression) GetBooleanOperator() BooleanOperator {
@@ -1602,7 +1602,7 @@ type And struct {
 
 func (x *And) Reset() {
 	*x = And{}
-	mi := &file_contract_reader_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1614,7 +1614,7 @@ func (x *And) String() string {
 func (*And) ProtoMessage() {}
 
 func (x *And) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1627,7 +1627,7 @@ func (x *And) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use And.ProtoReflect.Descriptor instead.
 func (*And) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{23}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *And) GetExpr() []*Expression {
@@ -1646,7 +1646,7 @@ type Or struct {
 
 func (x *Or) Reset() {
 	*x = Or{}
-	mi := &file_contract_reader_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1658,7 +1658,7 @@ func (x *Or) String() string {
 func (*Or) ProtoMessage() {}
 
 func (x *Or) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1671,7 +1671,7 @@ func (x *Or) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Or.ProtoReflect.Descriptor instead.
 func (*Or) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{24}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Or) GetExpr() []*Expression {
@@ -1691,7 +1691,7 @@ type ValueComparator struct {
 
 func (x *ValueComparator) Reset() {
 	*x = ValueComparator{}
-	mi := &file_contract_reader_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1703,7 +1703,7 @@ func (x *ValueComparator) String() string {
 func (*ValueComparator) ProtoMessage() {}
 
 func (x *ValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1716,7 +1716,7 @@ func (x *ValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValueComparator.ProtoReflect.Descriptor instead.
 func (*ValueComparator) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{25}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ValueComparator) GetValue() *VersionedBytes {
@@ -1743,7 +1743,7 @@ type Comparator struct {
 
 func (x *Comparator) Reset() {
 	*x = Comparator{}
-	mi := &file_contract_reader_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1755,7 +1755,7 @@ func (x *Comparator) String() string {
 func (*Comparator) ProtoMessage() {}
 
 func (x *Comparator) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1768,7 +1768,7 @@ func (x *Comparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Comparator.ProtoReflect.Descriptor instead.
 func (*Comparator) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{26}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *Comparator) GetName() string {
@@ -1795,7 +1795,7 @@ type Block struct {
 
 func (x *Block) Reset() {
 	*x = Block{}
-	mi := &file_contract_reader_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1807,7 +1807,7 @@ func (x *Block) String() string {
 func (*Block) ProtoMessage() {}
 
 func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1820,7 +1820,7 @@ func (x *Block) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Block.ProtoReflect.Descriptor instead.
 func (*Block) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{27}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *Block) GetBlockNumber() string {
@@ -1847,7 +1847,7 @@ type Timestamp struct {
 
 func (x *Timestamp) Reset() {
 	*x = Timestamp{}
-	mi := &file_contract_reader_proto_msgTypes[28]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1859,7 +1859,7 @@ func (x *Timestamp) String() string {
 func (*Timestamp) ProtoMessage() {}
 
 func (x *Timestamp) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[28]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1872,7 +1872,7 @@ func (x *Timestamp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Timestamp.ProtoReflect.Descriptor instead.
 func (*Timestamp) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{28}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *Timestamp) GetTimestamp() uint64 {
@@ -1898,7 +1898,7 @@ type TxHash struct {
 
 func (x *TxHash) Reset() {
 	*x = TxHash{}
-	mi := &file_contract_reader_proto_msgTypes[29]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1910,7 +1910,7 @@ func (x *TxHash) String() string {
 func (*TxHash) ProtoMessage() {}
 
 func (x *TxHash) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[29]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1923,7 +1923,7 @@ func (x *TxHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TxHash.ProtoReflect.Descriptor instead.
 func (*TxHash) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{29}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *TxHash) GetTxHash() string {
@@ -1950,7 +1950,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_contract_reader_proto_msgTypes[30]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1962,7 +1962,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[30]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1975,7 +1975,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{30}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -2076,7 +2076,7 @@ type Limit struct {
 
 func (x *Limit) Reset() {
 	*x = Limit{}
-	mi := &file_contract_reader_proto_msgTypes[31]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2088,7 +2088,7 @@ func (x *Limit) String() string {
 func (*Limit) ProtoMessage() {}
 
 func (x *Limit) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[31]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2101,7 +2101,7 @@ func (x *Limit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Limit.ProtoReflect.Descriptor instead.
 func (*Limit) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{31}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *Limit) GetCursor() string {
@@ -2135,7 +2135,7 @@ type SortBy struct {
 
 func (x *SortBy) Reset() {
 	*x = SortBy{}
-	mi := &file_contract_reader_proto_msgTypes[32]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2147,7 +2147,7 @@ func (x *SortBy) String() string {
 func (*SortBy) ProtoMessage() {}
 
 func (x *SortBy) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[32]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2160,7 +2160,7 @@ func (x *SortBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBy.ProtoReflect.Descriptor instead.
 func (*SortBy) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{32}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *SortBy) GetSortType() SortType {
@@ -2188,7 +2188,7 @@ type LimitAndSort struct {
 
 func (x *LimitAndSort) Reset() {
 	*x = LimitAndSort{}
-	mi := &file_contract_reader_proto_msgTypes[33]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2200,7 +2200,7 @@ func (x *LimitAndSort) String() string {
 func (*LimitAndSort) ProtoMessage() {}
 
 func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_reader_proto_msgTypes[33]
+	mi := &file_loop_internal_pb_contract_reader_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2213,7 +2213,7 @@ func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LimitAndSort.ProtoReflect.Descriptor instead.
 func (*LimitAndSort) Descriptor() ([]byte, []int) {
-	return file_contract_reader_proto_rawDescGZIP(), []int{33}
+	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *LimitAndSort) GetSortBy() []*SortBy {
@@ -2230,11 +2230,11 @@ func (x *LimitAndSort) GetLimit() *Limit {
 	return nil
 }
 
-var File_contract_reader_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_contract_reader_proto protoreflect.FileDescriptor
 
-const file_contract_reader_proto_rawDesc = "" +
+const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\n" +
-	"\x15contract_reader.proto\x12\x04loop\x1a\vcodec.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc4\x01\n" +
+	"&loop/internal/pb/contract_reader.proto\x12\x04loop\x1a\x1cloop/internal/pb/codec.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc4\x01\n" +
 	"\x15GetLatestValueRequest\x12'\n" +
 	"\x0fread_identifier\x18\x01 \x01(\tR\x0ereadIdentifier\x120\n" +
 	"\n" +
@@ -2398,20 +2398,20 @@ const file_contract_reader_proto_rawDesc = "" +
 	"\x06Unbind\x12\x13.loop.UnbindRequest\x1a\x16.google.protobuf.Empty\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_contract_reader_proto_rawDescOnce sync.Once
-	file_contract_reader_proto_rawDescData []byte
+	file_loop_internal_pb_contract_reader_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_contract_reader_proto_rawDescData []byte
 )
 
-func file_contract_reader_proto_rawDescGZIP() []byte {
-	file_contract_reader_proto_rawDescOnce.Do(func() {
-		file_contract_reader_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_contract_reader_proto_rawDesc), len(file_contract_reader_proto_rawDesc)))
+func file_loop_internal_pb_contract_reader_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_contract_reader_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_contract_reader_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_contract_reader_proto_rawDesc), len(file_loop_internal_pb_contract_reader_proto_rawDesc)))
 	})
-	return file_contract_reader_proto_rawDescData
+	return file_loop_internal_pb_contract_reader_proto_rawDescData
 }
 
-var file_contract_reader_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_contract_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
-var file_contract_reader_proto_goTypes = []any{
+var file_loop_internal_pb_contract_reader_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_loop_internal_pb_contract_reader_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_loop_internal_pb_contract_reader_proto_goTypes = []any{
 	(ComparisonOperator)(0),                 // 0: loop.ComparisonOperator
 	(BooleanOperator)(0),                    // 1: loop.BooleanOperator
 	(Confidence)(0),                         // 2: loop.Confidence
@@ -2455,7 +2455,7 @@ var file_contract_reader_proto_goTypes = []any{
 	(*VersionedBytes)(nil),                  // 40: loop.VersionedBytes
 	(*emptypb.Empty)(nil),                   // 41: google.protobuf.Empty
 }
-var file_contract_reader_proto_depIdxs = []int32{
+var file_loop_internal_pb_contract_reader_proto_depIdxs = []int32{
 	2,  // 0: loop.GetLatestValueRequest.confidence:type_name -> loop.Confidence
 	40, // 1: loop.GetLatestValueRequest.params:type_name -> loop.VersionedBytes
 	18, // 2: loop.BatchGetLatestValuesRequest.requests:type_name -> loop.ContractBatch
@@ -2528,40 +2528,40 @@ var file_contract_reader_proto_depIdxs = []int32{
 	0,  // [0:51] is the sub-list for field type_name
 }
 
-func init() { file_contract_reader_proto_init() }
-func file_contract_reader_proto_init() {
-	if File_contract_reader_proto != nil {
+func init() { file_loop_internal_pb_contract_reader_proto_init() }
+func file_loop_internal_pb_contract_reader_proto_init() {
+	if File_loop_internal_pb_contract_reader_proto != nil {
 		return
 	}
-	file_codec_proto_init()
-	file_contract_reader_proto_msgTypes[21].OneofWrappers = []any{
+	file_loop_internal_pb_codec_proto_init()
+	file_loop_internal_pb_contract_reader_proto_msgTypes[21].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),
 	}
-	file_contract_reader_proto_msgTypes[30].OneofWrappers = []any{
+	file_loop_internal_pb_contract_reader_proto_msgTypes[30].OneofWrappers = []any{
 		(*Primitive_Comparator)(nil),
 		(*Primitive_Block)(nil),
 		(*Primitive_Confidence)(nil),
 		(*Primitive_Timestamp)(nil),
 		(*Primitive_TxHash)(nil),
 	}
-	file_contract_reader_proto_msgTypes[31].OneofWrappers = []any{}
+	file_loop_internal_pb_contract_reader_proto_msgTypes[31].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contract_reader_proto_rawDesc), len(file_contract_reader_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_contract_reader_proto_rawDesc), len(file_loop_internal_pb_contract_reader_proto_rawDesc)),
 			NumEnums:      6,
 			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_contract_reader_proto_goTypes,
-		DependencyIndexes: file_contract_reader_proto_depIdxs,
-		EnumInfos:         file_contract_reader_proto_enumTypes,
-		MessageInfos:      file_contract_reader_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_contract_reader_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_contract_reader_proto_depIdxs,
+		EnumInfos:         file_loop_internal_pb_contract_reader_proto_enumTypes,
+		MessageInfos:      file_loop_internal_pb_contract_reader_proto_msgTypes,
 	}.Build()
-	File_contract_reader_proto = out.File
-	file_contract_reader_proto_goTypes = nil
-	file_contract_reader_proto_depIdxs = nil
+	File_loop_internal_pb_contract_reader_proto = out.File
+	file_loop_internal_pb_contract_reader_proto_goTypes = nil
+	file_loop_internal_pb_contract_reader_proto_depIdxs = nil
 }

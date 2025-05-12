@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: mercury_loop.proto
+// source: loop/internal/pb/mercury/mercury_loop.proto
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
 
@@ -39,7 +39,7 @@ type NewMercuryV4FactoryRequest struct {
 
 func (x *NewMercuryV4FactoryRequest) Reset() {
 	*x = NewMercuryV4FactoryRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *NewMercuryV4FactoryRequest) String() string {
 func (*NewMercuryV4FactoryRequest) ProtoMessage() {}
 
 func (x *NewMercuryV4FactoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *NewMercuryV4FactoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV4FactoryRequest.ProtoReflect.Descriptor instead.
 func (*NewMercuryV4FactoryRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NewMercuryV4FactoryRequest) GetMercuryProviderID() uint32 {
@@ -91,7 +91,7 @@ type NewMercuryV4FactoryReply struct {
 
 func (x *NewMercuryV4FactoryReply) Reset() {
 	*x = NewMercuryV4FactoryReply{}
-	mi := &file_mercury_loop_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -103,7 +103,7 @@ func (x *NewMercuryV4FactoryReply) String() string {
 func (*NewMercuryV4FactoryReply) ProtoMessage() {}
 
 func (x *NewMercuryV4FactoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +116,7 @@ func (x *NewMercuryV4FactoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV4FactoryReply.ProtoReflect.Descriptor instead.
 func (*NewMercuryV4FactoryReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NewMercuryV4FactoryReply) GetMercuryV4FactoryID() uint32 {
@@ -137,7 +137,7 @@ type NewMercuryV3FactoryRequest struct {
 
 func (x *NewMercuryV3FactoryRequest) Reset() {
 	*x = NewMercuryV3FactoryRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +149,7 @@ func (x *NewMercuryV3FactoryRequest) String() string {
 func (*NewMercuryV3FactoryRequest) ProtoMessage() {}
 
 func (x *NewMercuryV3FactoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +162,7 @@ func (x *NewMercuryV3FactoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV3FactoryRequest.ProtoReflect.Descriptor instead.
 func (*NewMercuryV3FactoryRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *NewMercuryV3FactoryRequest) GetMercuryProviderID() uint32 {
@@ -189,7 +189,7 @@ type NewMercuryV3FactoryReply struct {
 
 func (x *NewMercuryV3FactoryReply) Reset() {
 	*x = NewMercuryV3FactoryReply{}
-	mi := &file_mercury_loop_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +201,7 @@ func (x *NewMercuryV3FactoryReply) String() string {
 func (*NewMercuryV3FactoryReply) ProtoMessage() {}
 
 func (x *NewMercuryV3FactoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +214,7 @@ func (x *NewMercuryV3FactoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV3FactoryReply.ProtoReflect.Descriptor instead.
 func (*NewMercuryV3FactoryReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *NewMercuryV3FactoryReply) GetMercuryV3FactoryID() uint32 {
@@ -235,7 +235,7 @@ type NewMercuryV1FactoryRequest struct {
 
 func (x *NewMercuryV1FactoryRequest) Reset() {
 	*x = NewMercuryV1FactoryRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -247,7 +247,7 @@ func (x *NewMercuryV1FactoryRequest) String() string {
 func (*NewMercuryV1FactoryRequest) ProtoMessage() {}
 
 func (x *NewMercuryV1FactoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +260,7 @@ func (x *NewMercuryV1FactoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV1FactoryRequest.ProtoReflect.Descriptor instead.
 func (*NewMercuryV1FactoryRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *NewMercuryV1FactoryRequest) GetMercuryProviderID() uint32 {
@@ -287,7 +287,7 @@ type NewMercuryV1FactoryReply struct {
 
 func (x *NewMercuryV1FactoryReply) Reset() {
 	*x = NewMercuryV1FactoryReply{}
-	mi := &file_mercury_loop_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -299,7 +299,7 @@ func (x *NewMercuryV1FactoryReply) String() string {
 func (*NewMercuryV1FactoryReply) ProtoMessage() {}
 
 func (x *NewMercuryV1FactoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -312,7 +312,7 @@ func (x *NewMercuryV1FactoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV1FactoryReply.ProtoReflect.Descriptor instead.
 func (*NewMercuryV1FactoryReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *NewMercuryV1FactoryReply) GetMercuryV1FactoryID() uint32 {
@@ -333,7 +333,7 @@ type NewMercuryV2FactoryRequest struct {
 
 func (x *NewMercuryV2FactoryRequest) Reset() {
 	*x = NewMercuryV2FactoryRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -345,7 +345,7 @@ func (x *NewMercuryV2FactoryRequest) String() string {
 func (*NewMercuryV2FactoryRequest) ProtoMessage() {}
 
 func (x *NewMercuryV2FactoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -358,7 +358,7 @@ func (x *NewMercuryV2FactoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV2FactoryRequest.ProtoReflect.Descriptor instead.
 func (*NewMercuryV2FactoryRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *NewMercuryV2FactoryRequest) GetMercuryProviderID() uint32 {
@@ -385,7 +385,7 @@ type NewMercuryV2FactoryReply struct {
 
 func (x *NewMercuryV2FactoryReply) Reset() {
 	*x = NewMercuryV2FactoryReply{}
-	mi := &file_mercury_loop_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -397,7 +397,7 @@ func (x *NewMercuryV2FactoryReply) String() string {
 func (*NewMercuryV2FactoryReply) ProtoMessage() {}
 
 func (x *NewMercuryV2FactoryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -410,7 +410,7 @@ func (x *NewMercuryV2FactoryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewMercuryV2FactoryReply.ProtoReflect.Descriptor instead.
 func (*NewMercuryV2FactoryReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *NewMercuryV2FactoryReply) GetMercuryV2FactoryID() uint32 {
@@ -431,7 +431,7 @@ type OnchainConfig struct {
 
 func (x *OnchainConfig) Reset() {
 	*x = OnchainConfig{}
-	mi := &file_mercury_loop_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -443,7 +443,7 @@ func (x *OnchainConfig) String() string {
 func (*OnchainConfig) ProtoMessage() {}
 
 func (x *OnchainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -456,7 +456,7 @@ func (x *OnchainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnchainConfig.ProtoReflect.Descriptor instead.
 func (*OnchainConfig) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *OnchainConfig) GetMin() *pb.BigInt {
@@ -483,7 +483,7 @@ type EncodeOnchainConfigRequest struct {
 
 func (x *EncodeOnchainConfigRequest) Reset() {
 	*x = EncodeOnchainConfigRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -495,7 +495,7 @@ func (x *EncodeOnchainConfigRequest) String() string {
 func (*EncodeOnchainConfigRequest) ProtoMessage() {}
 
 func (x *EncodeOnchainConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -508,7 +508,7 @@ func (x *EncodeOnchainConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncodeOnchainConfigRequest.ProtoReflect.Descriptor instead.
 func (*EncodeOnchainConfigRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EncodeOnchainConfigRequest) GetOnchainConfig() *OnchainConfig {
@@ -528,7 +528,7 @@ type EncodeOnchainConfigReply struct {
 
 func (x *EncodeOnchainConfigReply) Reset() {
 	*x = EncodeOnchainConfigReply{}
-	mi := &file_mercury_loop_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -540,7 +540,7 @@ func (x *EncodeOnchainConfigReply) String() string {
 func (*EncodeOnchainConfigReply) ProtoMessage() {}
 
 func (x *EncodeOnchainConfigReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -553,7 +553,7 @@ func (x *EncodeOnchainConfigReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncodeOnchainConfigReply.ProtoReflect.Descriptor instead.
 func (*EncodeOnchainConfigReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EncodeOnchainConfigReply) GetOnchainConfig() []byte {
@@ -573,7 +573,7 @@ type DecodeOnchainConfigRequest struct {
 
 func (x *DecodeOnchainConfigRequest) Reset() {
 	*x = DecodeOnchainConfigRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -585,7 +585,7 @@ func (x *DecodeOnchainConfigRequest) String() string {
 func (*DecodeOnchainConfigRequest) ProtoMessage() {}
 
 func (x *DecodeOnchainConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -598,7 +598,7 @@ func (x *DecodeOnchainConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecodeOnchainConfigRequest.ProtoReflect.Descriptor instead.
 func (*DecodeOnchainConfigRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DecodeOnchainConfigRequest) GetOnchainConfig() []byte {
@@ -618,7 +618,7 @@ type DecodeOnchainConfigReply struct {
 
 func (x *DecodeOnchainConfigReply) Reset() {
 	*x = DecodeOnchainConfigReply{}
-	mi := &file_mercury_loop_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -630,7 +630,7 @@ func (x *DecodeOnchainConfigReply) String() string {
 func (*DecodeOnchainConfigReply) ProtoMessage() {}
 
 func (x *DecodeOnchainConfigReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -643,7 +643,7 @@ func (x *DecodeOnchainConfigReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecodeOnchainConfigReply.ProtoReflect.Descriptor instead.
 func (*DecodeOnchainConfigReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *DecodeOnchainConfigReply) GetOnchainConfig() *OnchainConfig {
@@ -662,7 +662,7 @@ type FetchInitialMaxFinalizedBlockNumberRequest struct {
 
 func (x *FetchInitialMaxFinalizedBlockNumberRequest) Reset() {
 	*x = FetchInitialMaxFinalizedBlockNumberRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -674,7 +674,7 @@ func (x *FetchInitialMaxFinalizedBlockNumberRequest) String() string {
 func (*FetchInitialMaxFinalizedBlockNumberRequest) ProtoMessage() {}
 
 func (x *FetchInitialMaxFinalizedBlockNumberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -687,7 +687,7 @@ func (x *FetchInitialMaxFinalizedBlockNumberRequest) ProtoReflect() protoreflect
 
 // Deprecated: Use FetchInitialMaxFinalizedBlockNumberRequest.ProtoReflect.Descriptor instead.
 func (*FetchInitialMaxFinalizedBlockNumberRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{13}
 }
 
 // FetchInitialMaxFinalizedBlockNumberReply is gRPC adapter for [pkg/types/mercury/ServerFetcher.FetchInitialMaxFinalizedBlockNumber].
@@ -700,7 +700,7 @@ type FetchInitialMaxFinalizedBlockNumberReply struct {
 
 func (x *FetchInitialMaxFinalizedBlockNumberReply) Reset() {
 	*x = FetchInitialMaxFinalizedBlockNumberReply{}
-	mi := &file_mercury_loop_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -712,7 +712,7 @@ func (x *FetchInitialMaxFinalizedBlockNumberReply) String() string {
 func (*FetchInitialMaxFinalizedBlockNumberReply) ProtoMessage() {}
 
 func (x *FetchInitialMaxFinalizedBlockNumberReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -725,7 +725,7 @@ func (x *FetchInitialMaxFinalizedBlockNumberReply) ProtoReflect() protoreflect.M
 
 // Deprecated: Use FetchInitialMaxFinalizedBlockNumberReply.ProtoReflect.Descriptor instead.
 func (*FetchInitialMaxFinalizedBlockNumberReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *FetchInitialMaxFinalizedBlockNumberReply) GetInitialMaxFinalizedBlockNumber() int64 {
@@ -745,7 +745,7 @@ type LatestPriceRequest struct {
 
 func (x *LatestPriceRequest) Reset() {
 	*x = LatestPriceRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -757,7 +757,7 @@ func (x *LatestPriceRequest) String() string {
 func (*LatestPriceRequest) ProtoMessage() {}
 
 func (x *LatestPriceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -770,7 +770,7 @@ func (x *LatestPriceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestPriceRequest.ProtoReflect.Descriptor instead.
 func (*LatestPriceRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LatestPriceRequest) GetFeedID() []byte {
@@ -790,7 +790,7 @@ type LatestPriceReply struct {
 
 func (x *LatestPriceReply) Reset() {
 	*x = LatestPriceReply{}
-	mi := &file_mercury_loop_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -802,7 +802,7 @@ func (x *LatestPriceReply) String() string {
 func (*LatestPriceReply) ProtoMessage() {}
 
 func (x *LatestPriceReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -815,7 +815,7 @@ func (x *LatestPriceReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestPriceReply.ProtoReflect.Descriptor instead.
 func (*LatestPriceReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *LatestPriceReply) GetLatestPrice() *pb.BigInt {
@@ -834,7 +834,7 @@ type LatestTimestampRequest struct {
 
 func (x *LatestTimestampRequest) Reset() {
 	*x = LatestTimestampRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +846,7 @@ func (x *LatestTimestampRequest) String() string {
 func (*LatestTimestampRequest) ProtoMessage() {}
 
 func (x *LatestTimestampRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +859,7 @@ func (x *LatestTimestampRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestTimestampRequest.ProtoReflect.Descriptor instead.
 func (*LatestTimestampRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{17}
 }
 
 // LatestTimestampReply is gRPC adapter for [pkg/types/mercury/ServerFetcher.LatestTimestamp].
@@ -872,7 +872,7 @@ type LatestTimestampReply struct {
 
 func (x *LatestTimestampReply) Reset() {
 	*x = LatestTimestampReply{}
-	mi := &file_mercury_loop_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -884,7 +884,7 @@ func (x *LatestTimestampReply) String() string {
 func (*LatestTimestampReply) ProtoMessage() {}
 
 func (x *LatestTimestampReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -897,7 +897,7 @@ func (x *LatestTimestampReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestTimestampReply.ProtoReflect.Descriptor instead.
 func (*LatestTimestampReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *LatestTimestampReply) GetLatestTimestamp() int64 {
@@ -919,7 +919,7 @@ type Head struct {
 
 func (x *Head) Reset() {
 	*x = Head{}
-	mi := &file_mercury_loop_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -931,7 +931,7 @@ func (x *Head) String() string {
 func (*Head) ProtoMessage() {}
 
 func (x *Head) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -944,7 +944,7 @@ func (x *Head) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Head.ProtoReflect.Descriptor instead.
 func (*Head) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Head) GetNumber() uint64 {
@@ -978,7 +978,7 @@ type LatestHeadsRequest struct {
 
 func (x *LatestHeadsRequest) Reset() {
 	*x = LatestHeadsRequest{}
-	mi := &file_mercury_loop_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -990,7 +990,7 @@ func (x *LatestHeadsRequest) String() string {
 func (*LatestHeadsRequest) ProtoMessage() {}
 
 func (x *LatestHeadsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1003,7 +1003,7 @@ func (x *LatestHeadsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadsRequest.ProtoReflect.Descriptor instead.
 func (*LatestHeadsRequest) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *LatestHeadsRequest) GetNumHeads() int64 {
@@ -1023,7 +1023,7 @@ type LatestHeadsReply struct {
 
 func (x *LatestHeadsReply) Reset() {
 	*x = LatestHeadsReply{}
-	mi := &file_mercury_loop_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1035,7 +1035,7 @@ func (x *LatestHeadsReply) String() string {
 func (*LatestHeadsReply) ProtoMessage() {}
 
 func (x *LatestHeadsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_mercury_loop_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1048,7 +1048,7 @@ func (x *LatestHeadsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadsReply.ProtoReflect.Descriptor instead.
 func (*LatestHeadsReply) Descriptor() ([]byte, []int) {
-	return file_mercury_loop_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *LatestHeadsReply) GetHeads() []*Head {
@@ -1058,11 +1058,11 @@ func (x *LatestHeadsReply) GetHeads() []*Head {
 	return nil
 }
 
-var File_mercury_loop_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_mercury_mercury_loop_proto protoreflect.FileDescriptor
 
-const file_mercury_loop_proto_rawDesc = "" +
+const file_loop_internal_pb_mercury_mercury_loop_proto_rawDesc = "" +
 	"\n" +
-	"\x12mercury_loop.proto\x12\x18loop.internal.pb.mercury\x1a\rrelayer.proto\x1a\x17v1/reportcodec_v1.proto\x1a\x17v2/reportcodec_v2.proto\x1a\x17v3/reportcodec_v3.proto\x1a\x17v4/reportcodec_v4.proto\"r\n" +
+	"+loop/internal/pb/mercury/mercury_loop.proto\x12\x18loop.internal.pb.mercury\x1a\x1eloop/internal/pb/relayer.proto\x1a0loop/internal/pb/mercury/v1/reportcodec_v1.proto\x1a0loop/internal/pb/mercury/v2/reportcodec_v2.proto\x1a0loop/internal/pb/mercury/v3/reportcodec_v3.proto\x1a0loop/internal/pb/mercury/v4/reportcodec_v4.proto\"r\n" +
 	"\x1aNewMercuryV4FactoryRequest\x12,\n" +
 	"\x11mercuryProviderID\x18\x01 \x01(\rR\x11mercuryProviderID\x12&\n" +
 	"\x0edataSourceV4ID\x18\x02 \x01(\rR\x0edataSourceV4ID\"J\n" +
@@ -1144,19 +1144,19 @@ const file_mercury_loop_proto_rawDesc = "" +
 	"\vLatestHeads\x12,.loop.internal.pb.mercury.LatestHeadsRequest\x1a*.loop.internal.pb.mercury.LatestHeadsReply\"\x00BUZSgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury;mercurypbb\x06proto3"
 
 var (
-	file_mercury_loop_proto_rawDescOnce sync.Once
-	file_mercury_loop_proto_rawDescData []byte
+	file_loop_internal_pb_mercury_mercury_loop_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_mercury_mercury_loop_proto_rawDescData []byte
 )
 
-func file_mercury_loop_proto_rawDescGZIP() []byte {
-	file_mercury_loop_proto_rawDescOnce.Do(func() {
-		file_mercury_loop_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_mercury_loop_proto_rawDesc), len(file_mercury_loop_proto_rawDesc)))
+func file_loop_internal_pb_mercury_mercury_loop_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_mercury_mercury_loop_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_mercury_mercury_loop_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_mercury_mercury_loop_proto_rawDesc), len(file_loop_internal_pb_mercury_mercury_loop_proto_rawDesc)))
 	})
-	return file_mercury_loop_proto_rawDescData
+	return file_loop_internal_pb_mercury_mercury_loop_proto_rawDescData
 }
 
-var file_mercury_loop_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
-var file_mercury_loop_proto_goTypes = []any{
+var file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_loop_internal_pb_mercury_mercury_loop_proto_goTypes = []any{
 	(*NewMercuryV4FactoryRequest)(nil),                 // 0: loop.internal.pb.mercury.NewMercuryV4FactoryRequest
 	(*NewMercuryV4FactoryReply)(nil),                   // 1: loop.internal.pb.mercury.NewMercuryV4FactoryReply
 	(*NewMercuryV3FactoryRequest)(nil),                 // 2: loop.internal.pb.mercury.NewMercuryV3FactoryRequest
@@ -1205,7 +1205,7 @@ var file_mercury_loop_proto_goTypes = []any{
 	(*v2.MaxReportLengthReply)(nil),                    // 45: loop.internal.pb.mercury.v2.MaxReportLengthReply
 	(*v2.ObservationTimestampFromReportReply)(nil),     // 46: loop.internal.pb.mercury.v2.ObservationTimestampFromReportReply
 }
-var file_mercury_loop_proto_depIdxs = []int32{
+var file_loop_internal_pb_mercury_mercury_loop_proto_depIdxs = []int32{
 	22, // 0: loop.internal.pb.mercury.OnchainConfig.min:type_name -> loop.BigInt
 	22, // 1: loop.internal.pb.mercury.OnchainConfig.max:type_name -> loop.BigInt
 	8,  // 2: loop.internal.pb.mercury.EncodeOnchainConfigRequest.onchainConfig:type_name -> loop.internal.pb.mercury.OnchainConfig
@@ -1263,26 +1263,26 @@ var file_mercury_loop_proto_depIdxs = []int32{
 	0,  // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_mercury_loop_proto_init() }
-func file_mercury_loop_proto_init() {
-	if File_mercury_loop_proto != nil {
+func init() { file_loop_internal_pb_mercury_mercury_loop_proto_init() }
+func file_loop_internal_pb_mercury_mercury_loop_proto_init() {
+	if File_loop_internal_pb_mercury_mercury_loop_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mercury_loop_proto_rawDesc), len(file_mercury_loop_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_mercury_mercury_loop_proto_rawDesc), len(file_loop_internal_pb_mercury_mercury_loop_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   8,
 		},
-		GoTypes:           file_mercury_loop_proto_goTypes,
-		DependencyIndexes: file_mercury_loop_proto_depIdxs,
-		MessageInfos:      file_mercury_loop_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_mercury_mercury_loop_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_mercury_mercury_loop_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_mercury_mercury_loop_proto_msgTypes,
 	}.Build()
-	File_mercury_loop_proto = out.File
-	file_mercury_loop_proto_goTypes = nil
-	file_mercury_loop_proto_depIdxs = nil
+	File_loop_internal_pb_mercury_mercury_loop_proto = out.File
+	file_loop_internal_pb_mercury_mercury_loop_proto_goTypes = nil
+	file_loop_internal_pb_mercury_mercury_loop_proto_depIdxs = nil
 }

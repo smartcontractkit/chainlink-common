@@ -4,11 +4,10 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop.internal.pb.evm;
 
-import "relayer.proto";
-import "contract_reader.proto";
-import "contract_writer.proto";
+import "loop/internal/pb/relayer.proto";
+import "loop/internal/pb/contract_reader.proto";
+import "loop/internal/pb/contract_writer.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}

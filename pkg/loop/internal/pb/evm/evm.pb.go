@@ -11,7 +11,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -1707,7 +1706,7 @@ var File_evm_proto protoreflect.FileDescriptor
 
 const file_evm_proto_rawDesc = "" +
 	"\n" +
-	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x15contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
+	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\x1eloop/internal/pb/relayer.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\"#\n" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: priceregistry.proto
+// source: loop/internal/pb/ccip/priceregistry.proto
 
 package ccippb
 
@@ -390,5 +390,5 @@ var PriceRegistryReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "priceregistry.proto",
+	Metadata: "loop/internal/pb/ccip/priceregistry.proto",
 }

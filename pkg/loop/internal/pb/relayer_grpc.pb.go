@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: relayer.proto
+// source: loop/internal/pb/relayer.proto
 
 package pb
 
@@ -118,7 +118,7 @@ var PluginRelayer_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }
 
 const (
@@ -258,7 +258,7 @@ var Keystore_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }
 
 const (
@@ -664,7 +664,7 @@ var Relayer_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }
 
 const (
@@ -805,7 +805,7 @@ var OffchainConfigDigester_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }
 
 const (
@@ -983,7 +983,7 @@ var ContractConfigTracker_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }
 
 const (
@@ -1161,7 +1161,7 @@ var ContractTransmitter_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }
 
 const (
@@ -1377,5 +1377,5 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "relayer.proto",
+	Metadata: "loop/internal/pb/relayer.proto",
 }

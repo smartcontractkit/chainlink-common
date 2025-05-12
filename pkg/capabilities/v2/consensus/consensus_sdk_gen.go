@@ -9,7 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type Consensus struct {
@@ -21,15 +21,15 @@ func (c *Consensus) Simple(runtime sdk.DonRuntime, input *SimpleInputs) sdk.Prom
 	if err != nil {
 		return sdk.PromiseFromResult[*pb.Value](nil, err)
 	}
-	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "offchain_reporting@1.0.0",
 		Payload: wrapped,
 		Method:  "Simple",
-	}), func(i *pb.CapabilityResponse) (*pb.Value, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*pb.Value, error) {
 		switch payload := i.Response.(type) {
-		case *pb.CapabilityResponse_Error:
+		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
-		case *pb.CapabilityResponse_Payload:
+		case *sdkpb.CapabilityResponse_Payload:
 			output := &pb.Value{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err

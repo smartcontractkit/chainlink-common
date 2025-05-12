@@ -12,7 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
@@ -31,38 +31,38 @@ type ConsensusCapability struct {
 	Simple func(ctx context.Context, input *consensus.SimpleInputs) (*pb.Value, error)
 }
 
-func (cap *ConsensusCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-	capResp := &pb.CapabilityResponse{}
+func (cap *ConsensusCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
+	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
 	case "Simple":
 		input := &consensus.SimpleInputs{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.Simple == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for Simple"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for Simple"}
 			break
 		}
 		resp, err := cap.Simple(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	default:
-		capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+		capResp.Response = &sdkpb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
 	}
 	return capResp
 }
 
-func (cap *ConsensusCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
+func (cap *ConsensusCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
 	return nil, fmt.Errorf("method %s not found", request.Method)
 }
 

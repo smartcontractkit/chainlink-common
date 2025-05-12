@@ -20,14 +20,14 @@ import (
 // avoid unused imports
 var _ = testutils.Registry{}
 
-func NewEVMCapabilityCapability(t testing.TB) (*EVMCapabilityCapability, error) {
-	c := &EVMCapabilityCapability{}
+func NewEVMChainCapability(t testing.TB) (*EVMChainCapability, error) {
+	c := &EVMChainCapability{}
 	registry := testutils.GetRegistry(t)
 	err := registry.RegisterCapability(c)
 	return c, err
 }
 
-type EVMCapabilityCapability struct {
+type EVMChainCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	CallContract func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
@@ -50,7 +50,7 @@ type EVMCapabilityCapability struct {
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 }
 
-func (cap *EVMCapabilityCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
+func (cap *EVMChainCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
 	capResp := &pb.CapabilityResponse{}
 	switch request.Method {
 	case "CallContract":
@@ -279,10 +279,10 @@ func (cap *EVMCapabilityCapability) Invoke(ctx context.Context, request *pb.Capa
 	return capResp
 }
 
-func (cap *EVMCapabilityCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
+func (cap *EVMChainCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
 	return nil, fmt.Errorf("method %s not found", request.Method)
 }
 
-func (cap *EVMCapabilityCapability) ID() string {
+func (cap *EVMChainCapability) ID() string {
 	return "mainnet-evm@1.0.0"
 }

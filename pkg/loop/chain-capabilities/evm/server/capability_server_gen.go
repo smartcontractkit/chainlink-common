@@ -19,7 +19,7 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-type EVMCapabilityCapability interface {
+type EVMChainCapability interface {
 	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*evm.CallContractReply, error)
 
 	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
@@ -48,26 +48,26 @@ type EVMCapabilityCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewEVMCapabilityServer(capability EVMCapabilityCapability) loop.StandardCapabilities {
-	return &eVMCapabilityServer{
-		eVMCapabilityCapability: eVMCapabilityCapability{EVMCapabilityCapability: capability},
+func NewEVMChainServer(capability EVMChainCapability) loop.StandardCapabilities {
+	return &eVMChainServer{
+		eVMChainCapability: eVMChainCapability{EVMChainCapability: capability},
 	}
 }
 
-type eVMCapabilityServer struct {
-	eVMCapabilityCapability
+type eVMChainServer struct {
+	eVMChainCapability
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-func (cs *eVMCapabilityServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
-	if err := cs.EVMCapabilityCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+func (cs *eVMChainServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+	if err := cs.EVMChainCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
 	cs.capabilityRegistry = capabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &eVMCapabilityCapability{
-		EVMCapabilityCapability: cs.EVMCapabilityCapability,
+	if err := capabilityRegistry.Add(ctx, &eVMChainCapability{
+		EVMChainCapability: cs.EVMChainCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -75,122 +75,122 @@ func (cs *eVMCapabilityServer) Initialise(ctx context.Context, config string, te
 	return nil
 }
 
-func (cs *eVMCapabilityServer) Close() error {
+func (cs *eVMChainServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := cs.capabilityRegistry.Remove(ctx, "mainnet-evm@1.0.0"); err != nil {
 		return err
 	}
 
-	return cs.eVMCapabilityCapability.Close()
+	return cs.eVMChainCapability.Close()
 }
 
-func (cs *eVMCapabilityServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.eVMCapabilityCapability.Info(ctx)
+func (cs *eVMChainServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := cs.eVMChainCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return []capabilities.CapabilityInfo{info}, nil
 }
 
-type eVMCapabilityCapability struct {
-	EVMCapabilityCapability
+type eVMChainCapability struct {
+	EVMChainCapability
 }
 
-func (c *eVMCapabilityCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+func (c *eVMChainCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("mainnet-evm@1.0.0", capabilities.CapabilityTypeCombined, c.EVMCapabilityCapability.Description())
+	return capabilities.NewCapabilityInfo("mainnet-evm@1.0.0", capabilities.CapabilityTypeCombined, c.EVMChainCapability.Description())
 }
 
-var _ capabilities.ExecutableAndTriggerCapability = (*eVMCapabilityCapability)(nil)
+var _ capabilities.ExecutableAndTriggerCapability = (*eVMChainCapability)(nil)
 
-func (c *eVMCapabilityCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+func (c *eVMChainCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }
 
-func (c *eVMCapabilityCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+func (c *eVMChainCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	return fmt.Errorf("trigger %s not found", request.Method)
 }
 
-func (c *eVMCapabilityCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (c *eVMChainCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	return nil
 }
 
-func (c *eVMCapabilityCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (c *eVMChainCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	return nil
 }
 
-func (c *eVMCapabilityCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+func (c *eVMChainCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "CallContract":
 		input := &evm.CallContractRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, error) {
-			return c.EVMCapabilityCapability.CallContract(ctx, metadata, input)
+			return c.EVMChainCapability.CallContract(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "FilterLogs":
 		input := &evm.FilterLogsRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, error) {
-			return c.EVMCapabilityCapability.FilterLogs(ctx, metadata, input)
+			return c.EVMChainCapability.FilterLogs(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "BalanceAt":
 		input := &evm.BalanceAtRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, error) {
-			return c.EVMCapabilityCapability.BalanceAt(ctx, metadata, input)
+			return c.EVMChainCapability.BalanceAt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "EstimateGas":
 		input := &evm.EstimateGasRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, error) {
-			return c.EVMCapabilityCapability.EstimateGas(ctx, metadata, input)
+			return c.EVMChainCapability.EstimateGas(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionByHash":
 		input := &evm.GetTransactionByHashRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, error) {
-			return c.EVMCapabilityCapability.GetTransactionByHash(ctx, metadata, input)
+			return c.EVMChainCapability.GetTransactionByHash(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionReceipt":
 		input := &evm.GetReceiptRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetReceiptRequest, _ *emptypb.Empty) (*evm.GetReceiptReply, error) {
-			return c.EVMCapabilityCapability.GetTransactionReceipt(ctx, metadata, input)
+			return c.EVMChainCapability.GetTransactionReceipt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "LatestAndFinalizedHead":
 		input := &emptypb.Empty{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty, _ *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error) {
-			return c.EVMCapabilityCapability.LatestAndFinalizedHead(ctx, metadata, input)
+			return c.EVMChainCapability.LatestAndFinalizedHead(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "QueryTrackedLogs":
 		input := &evm.QueryTrackedLogsRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryTrackedLogsRequest, _ *emptypb.Empty) (*evm.QueryTrackedLogsReply, error) {
-			return c.EVMCapabilityCapability.QueryTrackedLogs(ctx, metadata, input)
+			return c.EVMChainCapability.QueryTrackedLogs(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "RegisterLogTracking":
 		input := &evm.RegisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
-			return c.EVMCapabilityCapability.RegisterLogTracking(ctx, metadata, input)
+			return c.EVMChainCapability.RegisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "UnregisterLogTracking":
 		input := &evm.UnregisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
-			return c.EVMCapabilityCapability.UnregisterLogTracking(ctx, metadata, input)
+			return c.EVMChainCapability.UnregisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

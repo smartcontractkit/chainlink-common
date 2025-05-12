@@ -8,7 +8,8 @@ import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "loop/chain-capabilities/evm/evm.proto";
 
-service EVMCapability {
+// TODO rename to EVM, move EVM back to loop/internal, but needs some proto gen template fixing to make imports work
+service EVMChain {
   option (cre.metadata.capability) = {
     mode: DON
     capability_id: "mainnet-evm@1.0.0"

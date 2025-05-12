@@ -21,18 +21,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EVM_GetTransactionFee_FullMethodName      = "/loop.internal.pb.evm.EVM/GetTransactionFee"
-	EVM_CallContract_FullMethodName           = "/loop.internal.pb.evm.EVM/CallContract"
-	EVM_FilterLogs_FullMethodName             = "/loop.internal.pb.evm.EVM/FilterLogs"
-	EVM_BalanceAt_FullMethodName              = "/loop.internal.pb.evm.EVM/BalanceAt"
-	EVM_EstimateGas_FullMethodName            = "/loop.internal.pb.evm.EVM/EstimateGas"
-	EVM_GetTransactionByHash_FullMethodName   = "/loop.internal.pb.evm.EVM/GetTransactionByHash"
-	EVM_GetTransactionReceipt_FullMethodName  = "/loop.internal.pb.evm.EVM/GetTransactionReceipt"
-	EVM_LatestAndFinalizedHead_FullMethodName = "/loop.internal.pb.evm.EVM/LatestAndFinalizedHead"
-	EVM_QueryTrackedLogs_FullMethodName       = "/loop.internal.pb.evm.EVM/QueryTrackedLogs"
-	EVM_RegisterLogTracking_FullMethodName    = "/loop.internal.pb.evm.EVM/RegisterLogTracking"
-	EVM_UnregisterLogTracking_FullMethodName  = "/loop.internal.pb.evm.EVM/UnregisterLogTracking"
-	EVM_GetTransactionStatus_FullMethodName   = "/loop.internal.pb.evm.EVM/GetTransactionStatus"
+	EVM_GetTransactionFee_FullMethodName      = "/loop.chain_capabilities.evm.EVM/GetTransactionFee"
+	EVM_CallContract_FullMethodName           = "/loop.chain_capabilities.evm.EVM/CallContract"
+	EVM_FilterLogs_FullMethodName             = "/loop.chain_capabilities.evm.EVM/FilterLogs"
+	EVM_BalanceAt_FullMethodName              = "/loop.chain_capabilities.evm.EVM/BalanceAt"
+	EVM_EstimateGas_FullMethodName            = "/loop.chain_capabilities.evm.EVM/EstimateGas"
+	EVM_GetTransactionByHash_FullMethodName   = "/loop.chain_capabilities.evm.EVM/GetTransactionByHash"
+	EVM_GetTransactionReceipt_FullMethodName  = "/loop.chain_capabilities.evm.EVM/GetTransactionReceipt"
+	EVM_LatestAndFinalizedHead_FullMethodName = "/loop.chain_capabilities.evm.EVM/LatestAndFinalizedHead"
+	EVM_QueryTrackedLogs_FullMethodName       = "/loop.chain_capabilities.evm.EVM/QueryTrackedLogs"
+	EVM_RegisterLogTracking_FullMethodName    = "/loop.chain_capabilities.evm.EVM/RegisterLogTracking"
+	EVM_UnregisterLogTracking_FullMethodName  = "/loop.chain_capabilities.evm.EVM/UnregisterLogTracking"
+	EVM_GetTransactionStatus_FullMethodName   = "/loop.chain_capabilities.evm.EVM/GetTransactionStatus"
 )
 
 // EVMClient is the client API for EVM service.
@@ -484,7 +484,7 @@ func _EVM_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EVM_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.internal.pb.evm.EVM",
+	ServiceName: "loop.chain_capabilities.evm.EVM",
 	HandlerType: (*EVMServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

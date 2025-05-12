@@ -715,7 +715,7 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 				}}
 
 			putGeneralPrimitive(pbExpression, p)
-		case *evmprimitives.AddressFilter:
+		case *evmprimitives.Address:
 			ep.Primitive = &evmpb.Primitive_ContractAddress{ContractAddress: &evmpb.ContractAddress{
 				Address: &evmpb.Address{Address: primitive.Address[:]},
 			}}

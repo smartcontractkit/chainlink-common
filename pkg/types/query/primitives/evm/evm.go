@@ -7,23 +7,23 @@ import (
 )
 
 type Visitor interface {
-	Address(primitive *AddressFilter)
+	Address(primitive *Address)
 	EventSig(primitive *EventSig)
 	EventTopicsByValue(primitive *EventByTopic)
 	EventByWord(primitive *EventByWord)
 }
 
-type AddressFilter struct {
+type Address struct {
 	Address evm.Address
 }
 
 func NewAddressFilter(address evm.Address) query.Expression {
 	return query.Expression{
-		Primitive: &AddressFilter{Address: address},
+		Primitive: &Address{Address: address},
 	}
 }
 
-func (a *AddressFilter) Accept(visitor primitives.Visitor) {
+func (a *Address) Accept(visitor primitives.Visitor) {
 	if v, ok := visitor.(Visitor); ok {
 		v.Address(a)
 	}

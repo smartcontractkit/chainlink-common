@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747157051856,
+  "lastUpdate": 1747159006736,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13272,6 +13272,48 @@ window.BENCHMARK_DATA = {
             "value": 28321,
             "unit": "ns/op",
             "extra": "42644 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb5474e426a230ddd9b7b8a4dc5225b03dd38453",
+          "message": "Consensus capability proto (#1186)",
+          "timestamp": "2025-05-13T13:55:34-04:00",
+          "tree_id": "1c675a7248a8f4a4a12697e174606a74106c15a5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cb5474e426a230ddd9b7b8a4dc5225b03dd38453"
+        },
+        "date": 1747159005879,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.1,
+            "unit": "ns/op",
+            "extra": "2980464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.9,
+            "unit": "ns/op",
+            "extra": "2924230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28166,
+            "unit": "ns/op",
+            "extra": "42314 times\n4 procs"
           }
         ]
       }

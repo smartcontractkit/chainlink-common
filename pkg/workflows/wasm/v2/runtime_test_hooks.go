@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/google/uuid"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -38,8 +38,8 @@ func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int
 
 	assert.Equal(r.testTb, r.executionId, request.ExecutionId)
 
-	registry := testutils.GetRegistry(r.testTb)
-	capability, err := registry.GetCapability(request.Id)
+	reg := registry.GetRegistry(r.testTb)
+	capability, err := reg.GetCapability(request.Id)
 	require.NoError(r.testTb, err)
 
 	callId := uuid.New()

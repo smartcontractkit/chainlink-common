@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -22,7 +23,7 @@ type runner[T any] struct {
 	err            error
 	workflowId     string
 	executionId    string
-	registry       *Registry
+	registry       *registry.Registry
 	strictTriggers bool
 	runtime        T
 	writer         *testWriter
@@ -85,7 +86,7 @@ func newRunner[T any](tb testing.TB, config []byte, t T, base *sdkimpl.RuntimeBa
 		config:      config,
 		workflowId:  uuid.NewString(),
 		executionId: uuid.NewString(),
-		registry:    GetRegistry(tb),
+		registry:    registry.GetRegistry(tb),
 		runtime:     t,
 		writer:      &testWriter{},
 		base:        base,
@@ -121,7 +122,7 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 
 		response, err := trigger.InvokeTrigger(r.tb.Context(), request)
 
-		var nostub ErrNoTriggerStub
+		var nostub registry.ErrNoTriggerStub
 		if err != nil && (r.strictTriggers || !errors.As(err, &nostub)) {
 			r.err = err
 			return

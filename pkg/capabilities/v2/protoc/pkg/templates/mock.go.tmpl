@@ -21,11 +21,11 @@ import (
     {{- end }}
 
     sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 // avoid unused imports
-var _ = testutils.Registry{}
+var _ = registry.Registry{}
 
 {{- range .Services}}
 {{ $service := . }}
@@ -34,8 +34,8 @@ var _ = testutils.Registry{}
 
 func New{{.GoName}}Capability(t testing.TB) (*{{.GoName}}Capability, error) {
     c := &{{.GoName}}Capability{}
-    registry := testutils.GetRegistry(t)
-    err := registry.RegisterCapability(c)
+    reg := registry.GetRegistry(t)
+    err := reg.RegisterCapability(c)
     return c, err
 }
 
@@ -104,7 +104,7 @@ func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *sd
             }
 
             if cap.{{.GoName}} == nil {
-                return  nil, testutils.ErrNoTriggerStub("{{.GoName}}")
+                return  nil, registry.ErrNoTriggerStub("{{.GoName}}")
             }
 
             resp, err := cap.{{.GoName}}(ctx, input)

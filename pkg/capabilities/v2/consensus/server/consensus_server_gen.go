@@ -22,6 +22,7 @@ var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
 	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *consensus.SimpleInputs) (*pb.Value, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error

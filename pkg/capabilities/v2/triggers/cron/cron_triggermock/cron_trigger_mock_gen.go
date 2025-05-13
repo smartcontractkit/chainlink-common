@@ -11,7 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
@@ -29,14 +29,14 @@ type CronCapability struct {
 	Trigger func(ctx context.Context, input *cron.Config) (*cron.Payload, error)
 }
 
-func (cap *CronCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-	capResp := &pb.CapabilityResponse{}
-	capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+func (cap *CronCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
+	capResp := &sdkpb.CapabilityResponse{}
+	capResp.Response = &sdkpb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
 	return capResp
 }
 
-func (cap *CronCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
-	trigger := &pb.Trigger{}
+func (cap *CronCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
+	trigger := &sdkpb.Trigger{}
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}

@@ -764,7 +764,7 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 	}
 	pbExpression.Evaluator = &evmpb.Expression_BooleanExpression{
 		BooleanExpression: &evmpb.BooleanExpression{
-			BooleanOperator: evmpb.BooleanOperator(expression.BoolExpression.BoolOperator),
+			BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
 			Expression:      expressions,
 		}}
 
@@ -796,7 +796,7 @@ func protoToExpression(pbExpression *evmpb.Expression) (query.Expression, error)
 			}
 			expressions = append(expressions, convertedExpression)
 		}
-		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == evmpb.BooleanOperator_AND {
+		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == pb.BooleanOperator_AND {
 			return query.And(expressions...), nil
 		}
 		return query.Or(expressions...), nil

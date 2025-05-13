@@ -130,11 +130,6 @@ message Expression {
   }
 }
 
-enum BooleanOperator {
-  AND = 0;
-  OR = 1;
-}
-
 message BooleanExpression {
   BooleanOperator boolean_operator = 1;
   repeated Expression expression = 2;

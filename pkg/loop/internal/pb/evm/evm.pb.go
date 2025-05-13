@@ -24,52 +24,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type BooleanOperator int32
-
-const (
-	BooleanOperator_AND BooleanOperator = 0
-	BooleanOperator_OR  BooleanOperator = 1
-)
-
-// Enum value maps for BooleanOperator.
-var (
-	BooleanOperator_name = map[int32]string{
-		0: "AND",
-		1: "OR",
-	}
-	BooleanOperator_value = map[string]int32{
-		"AND": 0,
-		"OR":  1,
-	}
-)
-
-func (x BooleanOperator) Enum() *BooleanOperator {
-	p := new(BooleanOperator)
-	*p = x
-	return p
-}
-
-func (x BooleanOperator) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (BooleanOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_evm_proto_enumTypes[0].Descriptor()
-}
-
-func (BooleanOperator) Type() protoreflect.EnumType {
-	return &file_evm_proto_enumTypes[0]
-}
-
-func (x BooleanOperator) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use BooleanOperator.Descriptor instead.
-func (BooleanOperator) EnumDescriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{0}
-}
-
 // ----- Message Types -----
 // represents evm-style Address
 // [20]byte fix-sized array
@@ -970,7 +924,7 @@ func (*Expression_BooleanExpression) isExpression_Evaluator() {}
 
 type BooleanExpression struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	BooleanOperator BooleanOperator        `protobuf:"varint,1,opt,name=boolean_operator,json=booleanOperator,proto3,enum=loop.internal.pb.evm.BooleanOperator" json:"boolean_operator,omitempty"`
+	BooleanOperator pb.BooleanOperator     `protobuf:"varint,1,opt,name=boolean_operator,json=booleanOperator,proto3,enum=loop.BooleanOperator" json:"boolean_operator,omitempty"`
 	Expression      []*Expression          `protobuf:"bytes,2,rep,name=expression,proto3" json:"expression,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -1006,11 +960,11 @@ func (*BooleanExpression) Descriptor() ([]byte, []int) {
 	return file_evm_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *BooleanExpression) GetBooleanOperator() BooleanOperator {
+func (x *BooleanExpression) GetBooleanOperator() pb.BooleanOperator {
 	if x != nil {
 		return x.BooleanOperator
 	}
-	return BooleanOperator_AND
+	return pb.BooleanOperator(0)
 }
 
 func (x *BooleanExpression) GetExpression() []*Expression {
@@ -2509,9 +2463,9 @@ const file_evm_proto_rawDesc = "" +
 	"Expression\x12B\n" +
 	"\tprimitive\x18\x01 \x01(\v2\".loop.internal.pb.evm.EXTPrimitiveH\x00R\tprimitive\x12X\n" +
 	"\x12boolean_expression\x18\x02 \x01(\v2'.loop.internal.pb.evm.BooleanExpressionH\x00R\x11booleanExpressionB\v\n" +
-	"\tevaluator\"\xa7\x01\n" +
-	"\x11BooleanExpression\x12P\n" +
-	"\x10boolean_operator\x18\x01 \x01(\x0e2%.loop.internal.pb.evm.BooleanOperatorR\x0fbooleanOperator\x12@\n" +
+	"\tevaluator\"\x97\x01\n" +
+	"\x11BooleanExpression\x12@\n" +
+	"\x10boolean_operator\x18\x01 \x01(\x0e2\x15.loop.BooleanOperatorR\x0fbooleanOperator\x12@\n" +
 	"\n" +
 	"expression\x18\x02 \x03(\v2 .loop.internal.pb.evm.ExpressionR\n" +
 	"expression\";\n" +
@@ -2588,10 +2542,7 @@ const file_evm_proto_rawDesc = "" +
 	"\x0elimit_and_sort\x18\x02 \x01(\v2\x12.loop.LimitAndSortR\flimitAndSort\x12;\n" +
 	"\x10confidence_level\x18\x03 \x01(\x0e2\x10.loop.ConfidenceR\x0fconfidenceLevel\"F\n" +
 	"\x15QueryTrackedLogsReply\x12-\n" +
-	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs*\"\n" +
-	"\x0fBooleanOperator\x12\a\n" +
-	"\x03AND\x10\x00\x12\x06\n" +
-	"\x02OR\x10\x012\xd4\t\n" +
+	"\x04logs\x18\x01 \x03(\v2\x19.loop.internal.pb.evm.LogR\x04logs2\xd4\t\n" +
 	"\x03EVM\x12s\n" +
 	"\x11GetTransactionFee\x12..loop.internal.pb.evm.GetTransactionFeeRequest\x1a,.loop.internal.pb.evm.GetTransactionFeeReply\"\x00\x12b\n" +
 	"\fCallContract\x12).loop.internal.pb.evm.CallContractRequest\x1a'.loop.internal.pb.evm.CallContractReply\x12\\\n" +
@@ -2619,52 +2570,51 @@ func file_evm_proto_rawDescGZIP() []byte {
 	return file_evm_proto_rawDescData
 }
 
-var file_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_evm_proto_goTypes = []any{
-	(BooleanOperator)(0),                   // 0: loop.internal.pb.evm.BooleanOperator
-	(*Address)(nil),                        // 1: loop.internal.pb.evm.Address
-	(*Hash)(nil),                           // 2: loop.internal.pb.evm.Hash
-	(*ABIPayload)(nil),                     // 3: loop.internal.pb.evm.ABIPayload
-	(*CallMsg)(nil),                        // 4: loop.internal.pb.evm.CallMsg
-	(*Topics)(nil),                         // 5: loop.internal.pb.evm.Topics
-	(*Log)(nil),                            // 6: loop.internal.pb.evm.Log
-	(*FilterQuery)(nil),                    // 7: loop.internal.pb.evm.FilterQuery
-	(*Transaction)(nil),                    // 8: loop.internal.pb.evm.Transaction
-	(*Receipt)(nil),                        // 9: loop.internal.pb.evm.Receipt
-	(*LPFilter)(nil),                       // 10: loop.internal.pb.evm.LPFilter
-	(*Head)(nil),                           // 11: loop.internal.pb.evm.Head
-	(*Expression)(nil),                     // 12: loop.internal.pb.evm.Expression
-	(*BooleanExpression)(nil),              // 13: loop.internal.pb.evm.BooleanExpression
-	(*And)(nil),                            // 14: loop.internal.pb.evm.And
-	(*Or)(nil),                             // 15: loop.internal.pb.evm.Or
-	(*EXTPrimitive)(nil),                   // 16: loop.internal.pb.evm.EXTPrimitive
-	(*HashValueComparator)(nil),            // 17: loop.internal.pb.evm.HashValueComparator
-	(*ContractAddress)(nil),                // 18: loop.internal.pb.evm.ContractAddress
-	(*EventSig)(nil),                       // 19: loop.internal.pb.evm.EventSig
-	(*EventByWord)(nil),                    // 20: loop.internal.pb.evm.EventByWord
-	(*EventByTopic)(nil),                   // 21: loop.internal.pb.evm.EventByTopic
-	(*Primitive)(nil),                      // 22: loop.internal.pb.evm.Primitive
-	(*LatestAndFinalizedHeadReply)(nil),    // 23: loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	(*CallContractRequest)(nil),            // 24: loop.internal.pb.evm.CallContractRequest
-	(*CallContractReply)(nil),              // 25: loop.internal.pb.evm.CallContractReply
-	(*GetTransactionFeeRequest)(nil),       // 26: loop.internal.pb.evm.GetTransactionFeeRequest
-	(*GetTransactionFeeReply)(nil),         // 27: loop.internal.pb.evm.GetTransactionFeeReply
-	(*FilterLogsRequest)(nil),              // 28: loop.internal.pb.evm.FilterLogsRequest
-	(*FilterLogsReply)(nil),                // 29: loop.internal.pb.evm.FilterLogsReply
-	(*BalanceAtRequest)(nil),               // 30: loop.internal.pb.evm.BalanceAtRequest
-	(*BalanceAtReply)(nil),                 // 31: loop.internal.pb.evm.BalanceAtReply
-	(*EstimateGasRequest)(nil),             // 32: loop.internal.pb.evm.EstimateGasRequest
-	(*EstimateGasReply)(nil),               // 33: loop.internal.pb.evm.EstimateGasReply
-	(*GetTransactionByHashRequest)(nil),    // 34: loop.internal.pb.evm.GetTransactionByHashRequest
-	(*GetTransactionByHashReply)(nil),      // 35: loop.internal.pb.evm.GetTransactionByHashReply
-	(*GetReceiptRequest)(nil),              // 36: loop.internal.pb.evm.GetReceiptRequest
-	(*GetReceiptReply)(nil),                // 37: loop.internal.pb.evm.GetReceiptReply
-	(*RegisterLogTrackingRequest)(nil),     // 38: loop.internal.pb.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil),   // 39: loop.internal.pb.evm.UnregisterLogTrackingRequest
-	(*QueryTrackedLogsRequest)(nil),        // 40: loop.internal.pb.evm.QueryTrackedLogsRequest
-	(*QueryTrackedLogsReply)(nil),          // 41: loop.internal.pb.evm.QueryTrackedLogsReply
-	(*pb.BigInt)(nil),                      // 42: loop.BigInt
+	(*Address)(nil),                        // 0: loop.internal.pb.evm.Address
+	(*Hash)(nil),                           // 1: loop.internal.pb.evm.Hash
+	(*ABIPayload)(nil),                     // 2: loop.internal.pb.evm.ABIPayload
+	(*CallMsg)(nil),                        // 3: loop.internal.pb.evm.CallMsg
+	(*Topics)(nil),                         // 4: loop.internal.pb.evm.Topics
+	(*Log)(nil),                            // 5: loop.internal.pb.evm.Log
+	(*FilterQuery)(nil),                    // 6: loop.internal.pb.evm.FilterQuery
+	(*Transaction)(nil),                    // 7: loop.internal.pb.evm.Transaction
+	(*Receipt)(nil),                        // 8: loop.internal.pb.evm.Receipt
+	(*LPFilter)(nil),                       // 9: loop.internal.pb.evm.LPFilter
+	(*Head)(nil),                           // 10: loop.internal.pb.evm.Head
+	(*Expression)(nil),                     // 11: loop.internal.pb.evm.Expression
+	(*BooleanExpression)(nil),              // 12: loop.internal.pb.evm.BooleanExpression
+	(*And)(nil),                            // 13: loop.internal.pb.evm.And
+	(*Or)(nil),                             // 14: loop.internal.pb.evm.Or
+	(*EXTPrimitive)(nil),                   // 15: loop.internal.pb.evm.EXTPrimitive
+	(*HashValueComparator)(nil),            // 16: loop.internal.pb.evm.HashValueComparator
+	(*ContractAddress)(nil),                // 17: loop.internal.pb.evm.ContractAddress
+	(*EventSig)(nil),                       // 18: loop.internal.pb.evm.EventSig
+	(*EventByWord)(nil),                    // 19: loop.internal.pb.evm.EventByWord
+	(*EventByTopic)(nil),                   // 20: loop.internal.pb.evm.EventByTopic
+	(*Primitive)(nil),                      // 21: loop.internal.pb.evm.Primitive
+	(*LatestAndFinalizedHeadReply)(nil),    // 22: loop.internal.pb.evm.LatestAndFinalizedHeadReply
+	(*CallContractRequest)(nil),            // 23: loop.internal.pb.evm.CallContractRequest
+	(*CallContractReply)(nil),              // 24: loop.internal.pb.evm.CallContractReply
+	(*GetTransactionFeeRequest)(nil),       // 25: loop.internal.pb.evm.GetTransactionFeeRequest
+	(*GetTransactionFeeReply)(nil),         // 26: loop.internal.pb.evm.GetTransactionFeeReply
+	(*FilterLogsRequest)(nil),              // 27: loop.internal.pb.evm.FilterLogsRequest
+	(*FilterLogsReply)(nil),                // 28: loop.internal.pb.evm.FilterLogsReply
+	(*BalanceAtRequest)(nil),               // 29: loop.internal.pb.evm.BalanceAtRequest
+	(*BalanceAtReply)(nil),                 // 30: loop.internal.pb.evm.BalanceAtReply
+	(*EstimateGasRequest)(nil),             // 31: loop.internal.pb.evm.EstimateGasRequest
+	(*EstimateGasReply)(nil),               // 32: loop.internal.pb.evm.EstimateGasReply
+	(*GetTransactionByHashRequest)(nil),    // 33: loop.internal.pb.evm.GetTransactionByHashRequest
+	(*GetTransactionByHashReply)(nil),      // 34: loop.internal.pb.evm.GetTransactionByHashReply
+	(*GetReceiptRequest)(nil),              // 35: loop.internal.pb.evm.GetReceiptRequest
+	(*GetReceiptReply)(nil),                // 36: loop.internal.pb.evm.GetReceiptReply
+	(*RegisterLogTrackingRequest)(nil),     // 37: loop.internal.pb.evm.RegisterLogTrackingRequest
+	(*UnregisterLogTrackingRequest)(nil),   // 38: loop.internal.pb.evm.UnregisterLogTrackingRequest
+	(*QueryTrackedLogsRequest)(nil),        // 39: loop.internal.pb.evm.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),          // 40: loop.internal.pb.evm.QueryTrackedLogsReply
+	(*pb.BigInt)(nil),                      // 41: loop.BigInt
+	(pb.BooleanOperator)(0),                // 42: loop.BooleanOperator
 	(*pb.Primitive)(nil),                   // 43: loop.Primitive
 	(pb.ComparisonOperator)(0),             // 44: loop.ComparisonOperator
 	(*pb.LimitAndSort)(nil),                // 45: loop.LimitAndSort
@@ -2674,101 +2624,101 @@ var file_evm_proto_goTypes = []any{
 	(*pb.GetTransactionStatusReply)(nil),   // 49: loop.GetTransactionStatusReply
 }
 var file_evm_proto_depIdxs = []int32{
-	1,  // 0: loop.internal.pb.evm.CallMsg.from:type_name -> loop.internal.pb.evm.Address
-	1,  // 1: loop.internal.pb.evm.CallMsg.to:type_name -> loop.internal.pb.evm.Address
-	3,  // 2: loop.internal.pb.evm.CallMsg.data:type_name -> loop.internal.pb.evm.ABIPayload
-	2,  // 3: loop.internal.pb.evm.Topics.topic:type_name -> loop.internal.pb.evm.Hash
-	1,  // 4: loop.internal.pb.evm.Log.address:type_name -> loop.internal.pb.evm.Address
-	2,  // 5: loop.internal.pb.evm.Log.topics:type_name -> loop.internal.pb.evm.Hash
-	2,  // 6: loop.internal.pb.evm.Log.tx_hash:type_name -> loop.internal.pb.evm.Hash
-	2,  // 7: loop.internal.pb.evm.Log.block_hash:type_name -> loop.internal.pb.evm.Hash
-	3,  // 8: loop.internal.pb.evm.Log.data:type_name -> loop.internal.pb.evm.ABIPayload
-	2,  // 9: loop.internal.pb.evm.Log.eventSig:type_name -> loop.internal.pb.evm.Hash
-	42, // 10: loop.internal.pb.evm.Log.block_number:type_name -> loop.BigInt
-	2,  // 11: loop.internal.pb.evm.FilterQuery.block_hash:type_name -> loop.internal.pb.evm.Hash
-	42, // 12: loop.internal.pb.evm.FilterQuery.fromBlock:type_name -> loop.BigInt
-	42, // 13: loop.internal.pb.evm.FilterQuery.toBlock:type_name -> loop.BigInt
-	1,  // 14: loop.internal.pb.evm.FilterQuery.addresses:type_name -> loop.internal.pb.evm.Address
-	5,  // 15: loop.internal.pb.evm.FilterQuery.topics:type_name -> loop.internal.pb.evm.Topics
-	1,  // 16: loop.internal.pb.evm.Transaction.to:type_name -> loop.internal.pb.evm.Address
-	3,  // 17: loop.internal.pb.evm.Transaction.data:type_name -> loop.internal.pb.evm.ABIPayload
-	2,  // 18: loop.internal.pb.evm.Transaction.hash:type_name -> loop.internal.pb.evm.Hash
-	42, // 19: loop.internal.pb.evm.Transaction.value:type_name -> loop.BigInt
-	42, // 20: loop.internal.pb.evm.Transaction.gas_price:type_name -> loop.BigInt
-	2,  // 21: loop.internal.pb.evm.Receipt.block_hash:type_name -> loop.internal.pb.evm.Hash
-	6,  // 22: loop.internal.pb.evm.Receipt.logs:type_name -> loop.internal.pb.evm.Log
-	2,  // 23: loop.internal.pb.evm.Receipt.tx_hash:type_name -> loop.internal.pb.evm.Hash
-	42, // 24: loop.internal.pb.evm.Receipt.effective_gas_price:type_name -> loop.BigInt
-	42, // 25: loop.internal.pb.evm.Receipt.block_number:type_name -> loop.BigInt
-	1,  // 26: loop.internal.pb.evm.Receipt.contract_address:type_name -> loop.internal.pb.evm.Address
-	1,  // 27: loop.internal.pb.evm.LPFilter.addresses:type_name -> loop.internal.pb.evm.Address
-	2,  // 28: loop.internal.pb.evm.LPFilter.event_sigs:type_name -> loop.internal.pb.evm.Hash
-	2,  // 29: loop.internal.pb.evm.LPFilter.topic2:type_name -> loop.internal.pb.evm.Hash
-	2,  // 30: loop.internal.pb.evm.LPFilter.topic3:type_name -> loop.internal.pb.evm.Hash
-	2,  // 31: loop.internal.pb.evm.LPFilter.topic4:type_name -> loop.internal.pb.evm.Hash
-	42, // 32: loop.internal.pb.evm.Head.block_number:type_name -> loop.BigInt
-	2,  // 33: loop.internal.pb.evm.Head.hash:type_name -> loop.internal.pb.evm.Hash
-	2,  // 34: loop.internal.pb.evm.Head.parent_hash:type_name -> loop.internal.pb.evm.Hash
-	16, // 35: loop.internal.pb.evm.Expression.primitive:type_name -> loop.internal.pb.evm.EXTPrimitive
-	13, // 36: loop.internal.pb.evm.Expression.boolean_expression:type_name -> loop.internal.pb.evm.BooleanExpression
-	0,  // 37: loop.internal.pb.evm.BooleanExpression.boolean_operator:type_name -> loop.internal.pb.evm.BooleanOperator
-	12, // 38: loop.internal.pb.evm.BooleanExpression.expression:type_name -> loop.internal.pb.evm.Expression
-	12, // 39: loop.internal.pb.evm.And.expr:type_name -> loop.internal.pb.evm.Expression
-	12, // 40: loop.internal.pb.evm.Or.expr:type_name -> loop.internal.pb.evm.Expression
+	0,  // 0: loop.internal.pb.evm.CallMsg.from:type_name -> loop.internal.pb.evm.Address
+	0,  // 1: loop.internal.pb.evm.CallMsg.to:type_name -> loop.internal.pb.evm.Address
+	2,  // 2: loop.internal.pb.evm.CallMsg.data:type_name -> loop.internal.pb.evm.ABIPayload
+	1,  // 3: loop.internal.pb.evm.Topics.topic:type_name -> loop.internal.pb.evm.Hash
+	0,  // 4: loop.internal.pb.evm.Log.address:type_name -> loop.internal.pb.evm.Address
+	1,  // 5: loop.internal.pb.evm.Log.topics:type_name -> loop.internal.pb.evm.Hash
+	1,  // 6: loop.internal.pb.evm.Log.tx_hash:type_name -> loop.internal.pb.evm.Hash
+	1,  // 7: loop.internal.pb.evm.Log.block_hash:type_name -> loop.internal.pb.evm.Hash
+	2,  // 8: loop.internal.pb.evm.Log.data:type_name -> loop.internal.pb.evm.ABIPayload
+	1,  // 9: loop.internal.pb.evm.Log.eventSig:type_name -> loop.internal.pb.evm.Hash
+	41, // 10: loop.internal.pb.evm.Log.block_number:type_name -> loop.BigInt
+	1,  // 11: loop.internal.pb.evm.FilterQuery.block_hash:type_name -> loop.internal.pb.evm.Hash
+	41, // 12: loop.internal.pb.evm.FilterQuery.fromBlock:type_name -> loop.BigInt
+	41, // 13: loop.internal.pb.evm.FilterQuery.toBlock:type_name -> loop.BigInt
+	0,  // 14: loop.internal.pb.evm.FilterQuery.addresses:type_name -> loop.internal.pb.evm.Address
+	4,  // 15: loop.internal.pb.evm.FilterQuery.topics:type_name -> loop.internal.pb.evm.Topics
+	0,  // 16: loop.internal.pb.evm.Transaction.to:type_name -> loop.internal.pb.evm.Address
+	2,  // 17: loop.internal.pb.evm.Transaction.data:type_name -> loop.internal.pb.evm.ABIPayload
+	1,  // 18: loop.internal.pb.evm.Transaction.hash:type_name -> loop.internal.pb.evm.Hash
+	41, // 19: loop.internal.pb.evm.Transaction.value:type_name -> loop.BigInt
+	41, // 20: loop.internal.pb.evm.Transaction.gas_price:type_name -> loop.BigInt
+	1,  // 21: loop.internal.pb.evm.Receipt.block_hash:type_name -> loop.internal.pb.evm.Hash
+	5,  // 22: loop.internal.pb.evm.Receipt.logs:type_name -> loop.internal.pb.evm.Log
+	1,  // 23: loop.internal.pb.evm.Receipt.tx_hash:type_name -> loop.internal.pb.evm.Hash
+	41, // 24: loop.internal.pb.evm.Receipt.effective_gas_price:type_name -> loop.BigInt
+	41, // 25: loop.internal.pb.evm.Receipt.block_number:type_name -> loop.BigInt
+	0,  // 26: loop.internal.pb.evm.Receipt.contract_address:type_name -> loop.internal.pb.evm.Address
+	0,  // 27: loop.internal.pb.evm.LPFilter.addresses:type_name -> loop.internal.pb.evm.Address
+	1,  // 28: loop.internal.pb.evm.LPFilter.event_sigs:type_name -> loop.internal.pb.evm.Hash
+	1,  // 29: loop.internal.pb.evm.LPFilter.topic2:type_name -> loop.internal.pb.evm.Hash
+	1,  // 30: loop.internal.pb.evm.LPFilter.topic3:type_name -> loop.internal.pb.evm.Hash
+	1,  // 31: loop.internal.pb.evm.LPFilter.topic4:type_name -> loop.internal.pb.evm.Hash
+	41, // 32: loop.internal.pb.evm.Head.block_number:type_name -> loop.BigInt
+	1,  // 33: loop.internal.pb.evm.Head.hash:type_name -> loop.internal.pb.evm.Hash
+	1,  // 34: loop.internal.pb.evm.Head.parent_hash:type_name -> loop.internal.pb.evm.Hash
+	15, // 35: loop.internal.pb.evm.Expression.primitive:type_name -> loop.internal.pb.evm.EXTPrimitive
+	12, // 36: loop.internal.pb.evm.Expression.boolean_expression:type_name -> loop.internal.pb.evm.BooleanExpression
+	42, // 37: loop.internal.pb.evm.BooleanExpression.boolean_operator:type_name -> loop.BooleanOperator
+	11, // 38: loop.internal.pb.evm.BooleanExpression.expression:type_name -> loop.internal.pb.evm.Expression
+	11, // 39: loop.internal.pb.evm.And.expr:type_name -> loop.internal.pb.evm.Expression
+	11, // 40: loop.internal.pb.evm.Or.expr:type_name -> loop.internal.pb.evm.Expression
 	43, // 41: loop.internal.pb.evm.EXTPrimitive.general_primitive:type_name -> loop.Primitive
-	22, // 42: loop.internal.pb.evm.EXTPrimitive.evm_primitive:type_name -> loop.internal.pb.evm.Primitive
-	2,  // 43: loop.internal.pb.evm.HashValueComparator.values:type_name -> loop.internal.pb.evm.Hash
+	21, // 42: loop.internal.pb.evm.EXTPrimitive.evm_primitive:type_name -> loop.internal.pb.evm.Primitive
+	1,  // 43: loop.internal.pb.evm.HashValueComparator.values:type_name -> loop.internal.pb.evm.Hash
 	44, // 44: loop.internal.pb.evm.HashValueComparator.operator:type_name -> loop.ComparisonOperator
-	1,  // 45: loop.internal.pb.evm.ContractAddress.address:type_name -> loop.internal.pb.evm.Address
-	2,  // 46: loop.internal.pb.evm.EventSig.eventSig:type_name -> loop.internal.pb.evm.Hash
-	17, // 47: loop.internal.pb.evm.EventByWord.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
-	17, // 48: loop.internal.pb.evm.EventByTopic.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
-	18, // 49: loop.internal.pb.evm.Primitive.contract_address:type_name -> loop.internal.pb.evm.ContractAddress
-	19, // 50: loop.internal.pb.evm.Primitive.event_sig:type_name -> loop.internal.pb.evm.EventSig
-	20, // 51: loop.internal.pb.evm.Primitive.event_by_word:type_name -> loop.internal.pb.evm.EventByWord
-	21, // 52: loop.internal.pb.evm.Primitive.event_by_topic:type_name -> loop.internal.pb.evm.EventByTopic
-	11, // 53: loop.internal.pb.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.internal.pb.evm.Head
-	11, // 54: loop.internal.pb.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.internal.pb.evm.Head
-	4,  // 55: loop.internal.pb.evm.CallContractRequest.call:type_name -> loop.internal.pb.evm.CallMsg
-	42, // 56: loop.internal.pb.evm.CallContractRequest.block_number:type_name -> loop.BigInt
-	3,  // 57: loop.internal.pb.evm.CallContractReply.data:type_name -> loop.internal.pb.evm.ABIPayload
-	42, // 58: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
-	7,  // 59: loop.internal.pb.evm.FilterLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
-	6,  // 60: loop.internal.pb.evm.FilterLogsReply.logs:type_name -> loop.internal.pb.evm.Log
-	1,  // 61: loop.internal.pb.evm.BalanceAtRequest.account:type_name -> loop.internal.pb.evm.Address
-	42, // 62: loop.internal.pb.evm.BalanceAtRequest.block_number:type_name -> loop.BigInt
-	42, // 63: loop.internal.pb.evm.BalanceAtReply.balance:type_name -> loop.BigInt
-	4,  // 64: loop.internal.pb.evm.EstimateGasRequest.msg:type_name -> loop.internal.pb.evm.CallMsg
-	2,  // 65: loop.internal.pb.evm.GetTransactionByHashRequest.hash:type_name -> loop.internal.pb.evm.Hash
-	8,  // 66: loop.internal.pb.evm.GetTransactionByHashReply.transaction:type_name -> loop.internal.pb.evm.Transaction
-	2,  // 67: loop.internal.pb.evm.GetReceiptRequest.hash:type_name -> loop.internal.pb.evm.Hash
-	9,  // 68: loop.internal.pb.evm.GetReceiptReply.receipt:type_name -> loop.internal.pb.evm.Receipt
-	10, // 69: loop.internal.pb.evm.RegisterLogTrackingRequest.filter:type_name -> loop.internal.pb.evm.LPFilter
-	12, // 70: loop.internal.pb.evm.QueryTrackedLogsRequest.expression:type_name -> loop.internal.pb.evm.Expression
+	0,  // 45: loop.internal.pb.evm.ContractAddress.address:type_name -> loop.internal.pb.evm.Address
+	1,  // 46: loop.internal.pb.evm.EventSig.eventSig:type_name -> loop.internal.pb.evm.Hash
+	16, // 47: loop.internal.pb.evm.EventByWord.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
+	16, // 48: loop.internal.pb.evm.EventByTopic.hashed_value_comparers:type_name -> loop.internal.pb.evm.HashValueComparator
+	17, // 49: loop.internal.pb.evm.Primitive.contract_address:type_name -> loop.internal.pb.evm.ContractAddress
+	18, // 50: loop.internal.pb.evm.Primitive.event_sig:type_name -> loop.internal.pb.evm.EventSig
+	19, // 51: loop.internal.pb.evm.Primitive.event_by_word:type_name -> loop.internal.pb.evm.EventByWord
+	20, // 52: loop.internal.pb.evm.Primitive.event_by_topic:type_name -> loop.internal.pb.evm.EventByTopic
+	10, // 53: loop.internal.pb.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.internal.pb.evm.Head
+	10, // 54: loop.internal.pb.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.internal.pb.evm.Head
+	3,  // 55: loop.internal.pb.evm.CallContractRequest.call:type_name -> loop.internal.pb.evm.CallMsg
+	41, // 56: loop.internal.pb.evm.CallContractRequest.block_number:type_name -> loop.BigInt
+	2,  // 57: loop.internal.pb.evm.CallContractReply.data:type_name -> loop.internal.pb.evm.ABIPayload
+	41, // 58: loop.internal.pb.evm.GetTransactionFeeReply.transation_fee:type_name -> loop.BigInt
+	6,  // 59: loop.internal.pb.evm.FilterLogsRequest.filter_query:type_name -> loop.internal.pb.evm.FilterQuery
+	5,  // 60: loop.internal.pb.evm.FilterLogsReply.logs:type_name -> loop.internal.pb.evm.Log
+	0,  // 61: loop.internal.pb.evm.BalanceAtRequest.account:type_name -> loop.internal.pb.evm.Address
+	41, // 62: loop.internal.pb.evm.BalanceAtRequest.block_number:type_name -> loop.BigInt
+	41, // 63: loop.internal.pb.evm.BalanceAtReply.balance:type_name -> loop.BigInt
+	3,  // 64: loop.internal.pb.evm.EstimateGasRequest.msg:type_name -> loop.internal.pb.evm.CallMsg
+	1,  // 65: loop.internal.pb.evm.GetTransactionByHashRequest.hash:type_name -> loop.internal.pb.evm.Hash
+	7,  // 66: loop.internal.pb.evm.GetTransactionByHashReply.transaction:type_name -> loop.internal.pb.evm.Transaction
+	1,  // 67: loop.internal.pb.evm.GetReceiptRequest.hash:type_name -> loop.internal.pb.evm.Hash
+	8,  // 68: loop.internal.pb.evm.GetReceiptReply.receipt:type_name -> loop.internal.pb.evm.Receipt
+	9,  // 69: loop.internal.pb.evm.RegisterLogTrackingRequest.filter:type_name -> loop.internal.pb.evm.LPFilter
+	11, // 70: loop.internal.pb.evm.QueryTrackedLogsRequest.expression:type_name -> loop.internal.pb.evm.Expression
 	45, // 71: loop.internal.pb.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.LimitAndSort
 	46, // 72: loop.internal.pb.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.Confidence
-	6,  // 73: loop.internal.pb.evm.QueryTrackedLogsReply.logs:type_name -> loop.internal.pb.evm.Log
-	26, // 74: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
-	24, // 75: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
-	28, // 76: loop.internal.pb.evm.EVM.FilterLogs:input_type -> loop.internal.pb.evm.FilterLogsRequest
-	30, // 77: loop.internal.pb.evm.EVM.BalanceAt:input_type -> loop.internal.pb.evm.BalanceAtRequest
-	32, // 78: loop.internal.pb.evm.EVM.EstimateGas:input_type -> loop.internal.pb.evm.EstimateGasRequest
-	34, // 79: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
-	36, // 80: loop.internal.pb.evm.EVM.GetTransactionReceipt:input_type -> loop.internal.pb.evm.GetReceiptRequest
+	5,  // 73: loop.internal.pb.evm.QueryTrackedLogsReply.logs:type_name -> loop.internal.pb.evm.Log
+	25, // 74: loop.internal.pb.evm.EVM.GetTransactionFee:input_type -> loop.internal.pb.evm.GetTransactionFeeRequest
+	23, // 75: loop.internal.pb.evm.EVM.CallContract:input_type -> loop.internal.pb.evm.CallContractRequest
+	27, // 76: loop.internal.pb.evm.EVM.FilterLogs:input_type -> loop.internal.pb.evm.FilterLogsRequest
+	29, // 77: loop.internal.pb.evm.EVM.BalanceAt:input_type -> loop.internal.pb.evm.BalanceAtRequest
+	31, // 78: loop.internal.pb.evm.EVM.EstimateGas:input_type -> loop.internal.pb.evm.EstimateGasRequest
+	33, // 79: loop.internal.pb.evm.EVM.GetTransactionByHash:input_type -> loop.internal.pb.evm.GetTransactionByHashRequest
+	35, // 80: loop.internal.pb.evm.EVM.GetTransactionReceipt:input_type -> loop.internal.pb.evm.GetReceiptRequest
 	47, // 81: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	40, // 82: loop.internal.pb.evm.EVM.QueryTrackedLogs:input_type -> loop.internal.pb.evm.QueryTrackedLogsRequest
-	38, // 83: loop.internal.pb.evm.EVM.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
-	39, // 84: loop.internal.pb.evm.EVM.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
+	39, // 82: loop.internal.pb.evm.EVM.QueryTrackedLogs:input_type -> loop.internal.pb.evm.QueryTrackedLogsRequest
+	37, // 83: loop.internal.pb.evm.EVM.RegisterLogTracking:input_type -> loop.internal.pb.evm.RegisterLogTrackingRequest
+	38, // 84: loop.internal.pb.evm.EVM.UnregisterLogTracking:input_type -> loop.internal.pb.evm.UnregisterLogTrackingRequest
 	48, // 85: loop.internal.pb.evm.EVM.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
-	27, // 86: loop.internal.pb.evm.EVM.GetTransactionFee:output_type -> loop.internal.pb.evm.GetTransactionFeeReply
-	25, // 87: loop.internal.pb.evm.EVM.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
-	29, // 88: loop.internal.pb.evm.EVM.FilterLogs:output_type -> loop.internal.pb.evm.FilterLogsReply
-	31, // 89: loop.internal.pb.evm.EVM.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
-	33, // 90: loop.internal.pb.evm.EVM.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
-	35, // 91: loop.internal.pb.evm.EVM.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
-	37, // 92: loop.internal.pb.evm.EVM.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
-	23, // 93: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
-	41, // 94: loop.internal.pb.evm.EVM.QueryTrackedLogs:output_type -> loop.internal.pb.evm.QueryTrackedLogsReply
+	26, // 86: loop.internal.pb.evm.EVM.GetTransactionFee:output_type -> loop.internal.pb.evm.GetTransactionFeeReply
+	24, // 87: loop.internal.pb.evm.EVM.CallContract:output_type -> loop.internal.pb.evm.CallContractReply
+	28, // 88: loop.internal.pb.evm.EVM.FilterLogs:output_type -> loop.internal.pb.evm.FilterLogsReply
+	30, // 89: loop.internal.pb.evm.EVM.BalanceAt:output_type -> loop.internal.pb.evm.BalanceAtReply
+	32, // 90: loop.internal.pb.evm.EVM.EstimateGas:output_type -> loop.internal.pb.evm.EstimateGasReply
+	34, // 91: loop.internal.pb.evm.EVM.GetTransactionByHash:output_type -> loop.internal.pb.evm.GetTransactionByHashReply
+	36, // 92: loop.internal.pb.evm.EVM.GetTransactionReceipt:output_type -> loop.internal.pb.evm.GetReceiptReply
+	22, // 93: loop.internal.pb.evm.EVM.LatestAndFinalizedHead:output_type -> loop.internal.pb.evm.LatestAndFinalizedHeadReply
+	40, // 94: loop.internal.pb.evm.EVM.QueryTrackedLogs:output_type -> loop.internal.pb.evm.QueryTrackedLogsReply
 	47, // 95: loop.internal.pb.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
 	47, // 96: loop.internal.pb.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	49, // 97: loop.internal.pb.evm.EVM.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
@@ -2803,14 +2753,13 @@ func file_evm_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_evm_proto_rawDesc), len(file_evm_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_evm_proto_goTypes,
 		DependencyIndexes: file_evm_proto_depIdxs,
-		EnumInfos:         file_evm_proto_enumTypes,
 		MessageInfos:      file_evm_proto_msgTypes,
 	}.Build()
 	File_evm_proto = out.File

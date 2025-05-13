@@ -168,7 +168,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 				value, err := capability.PerformAction(runtime, &nodeaction.NodeInputs{InputThing: true}).Await()
 				require.NoError(t, err)
 				return int64(value.OutputThing), nil
-			}, pb.SimpleConsensusType_MEDIAN).Await()
+			}, pb.AggregationType_MEDIAN).Await()
 			return result, err
 		}
 
@@ -189,7 +189,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (int64, error) {
 			return sdk.RunInNodeMode(rt, func(runtime sdk.NodeRuntime) (int64, error) {
 				return int64(0), anyError
-			}, pb.SimpleConsensusType_MEDIAN).Await()
+			}, pb.AggregationType_MEDIAN).Await()
 		}
 
 		_, _, err := testRuntime(t, test)
@@ -209,7 +209,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 			sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
 				nrt = nodeRuntime
 				return 0, err
-			}, pb.SimpleConsensusType_MEDIAN)
+			}, pb.AggregationType_MEDIAN)
 			na := nodeaction.BasicAction{}
 			return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
 		}
@@ -231,7 +231,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 				action := basicaction.BasicAction{}
 				_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 				return 0, err
-			}, pb.SimpleConsensusType_MEDIAN)
+			}, pb.AggregationType_MEDIAN)
 
 			return consensus.Await()
 		}
@@ -301,7 +301,7 @@ func (m *mockConsensus) Invoke(ctx context.Context, request *pb.CapabilityReques
 	require.NoError(m.t, proto.Unmarshal(request.Payload.Value, consensus))
 	switch ct := consensus.PrimitiveConsensus.Consensus.(type) {
 	case *pb.PrimitiveConsensus_Simple:
-		assert.Equal(m.t, pb.SimpleConsensusType_MEDIAN, ct.Simple)
+		assert.Equal(m.t, pb.AggregationType_MEDIAN, ct.Simple)
 	default:
 		assert.Fail(m.t, "unexpected consensus type")
 	}

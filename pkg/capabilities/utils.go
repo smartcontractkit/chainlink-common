@@ -109,7 +109,7 @@ func RegisterTrigger[I, O proto.Message](
 	triggerType string,
 	request TriggerRegistrationRequest,
 	message I,
-	fn func(context.Context, RequestMetadata, I) (<-chan TriggerAndId[O], error),
+	fn func(context.Context, string, RequestMetadata, I) (<-chan TriggerAndId[O], error),
 ) (<-chan TriggerResponse, error) {
 	migrated, err := FromValueOrAny(request.Config, request.Payload, message)
 	if err != nil {
@@ -117,7 +117,7 @@ func RegisterTrigger[I, O proto.Message](
 	}
 
 	response := make(chan TriggerResponse, 100)
-	respCh, err := fn(ctx, request.Metadata, message)
+	respCh, err := fn(ctx, request.TriggerID, request.Metadata, message)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,11 @@ func RegisterTrigger[I, O proto.Message](
 		defer close(response)
 		for {
 			select {
-			case resp := <-respCh:
+			case resp, open := <-respCh:
+				if !open {
+					return
+				}
+
 				tr := TriggerResponse{
 					Event: TriggerEvent{
 						TriggerType: triggerType,

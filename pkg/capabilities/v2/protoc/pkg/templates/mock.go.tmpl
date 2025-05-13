@@ -20,7 +20,7 @@ import (
     {{.}}
     {{- end }}
 
-    "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+    sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
     "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
@@ -52,8 +52,8 @@ type {{.GoName}}Capability struct {
     {{- end }}
 }
 
-func (cap *{{.GoName}}Capability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-    capResp := &pb.CapabilityResponse{}
+func (cap *{{.GoName}}Capability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
+    capResp := &sdkpb.CapabilityResponse{}
     {{- if $hasActions }}
     switch request.Method {
         {{- range .Methods }}
@@ -61,39 +61,39 @@ func (cap *{{.GoName}}Capability) Invoke(ctx context.Context, request *pb.Capabi
     case "{{.GoName}}":
         input := &{{name .Input.GoIdent ""}}{}
         if err := request.Payload.UnmarshalTo(input); err != nil {
-            capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+            capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
             break
         }
 
         if cap.{{.GoName}} == nil {
-            capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for {{.GoName}}"}
+            capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for {{.GoName}}"}
             break
         }
         resp, err := cap.{{.GoName}}(ctx, input)
         if err != nil {
-            capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+            capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
         } else {
             payload, err := anypb.New(resp)
             if err == nil {
-                capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+                capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
             } else {
-                capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+                capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
             }
         }
             {{- end }}
         {{- end }}
     default:
-        capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+        capResp.Response = &sdkpb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
     }
     {{- else }}
-    capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+    capResp.Response = &sdkpb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
     {{- end }}
     return capResp
 }
 
-func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error){
+func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error){
     {{- if $hasTriggers }}
-    trigger := &pb.Trigger{}
+    trigger := &sdkpb.Trigger{}
     switch request.Method {
             {{- range .Methods }}
                 {{- if isTrigger . }}

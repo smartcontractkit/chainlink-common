@@ -195,7 +195,7 @@ func TestRegisterTrigger(t *testing.T) {
 		"type",
 		req,
 		&pb.TriggerEvent{},
-		func(_ context.Context, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+		func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
 			ch := make(chan capabilities.TriggerAndId[*pb.TriggerEvent], 1)
 			ch <- capabilities.TriggerAndId[*pb.TriggerEvent]{
 				Trigger: &pb.TriggerEvent{Id: "id"},

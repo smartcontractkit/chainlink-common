@@ -2434,7 +2434,7 @@ var File_evm_proto protoreflect.FileDescriptor
 
 const file_evm_proto_rawDesc = "" +
 	"\n" +
-	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\x15contract_reader.proto\x1a\x15contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
+	"\tevm.proto\x12\x14loop.internal.pb.evm\x1a\rrelayer.proto\x1a\vquery.proto\x1a\x15contract_writer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"#\n" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +

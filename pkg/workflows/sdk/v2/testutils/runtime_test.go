@@ -120,7 +120,7 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
 						require.NoError(t, err)
 						return resp.OutputThing, nil
-					}, pb.SimpleConsensusType_MEDIAN)
+					}, pb.AggregationType_MEDIAN)
 
 					consensusResult, err := consensus.Await()
 					require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
 					consensusType := &sdk.PrimitiveConsensusWithDefault[int32]{
-						SimpleConsensusType: pb.SimpleConsensusType_MEDIAN,
+						SimpleConsensusType: pb.AggregationType_MEDIAN,
 						DefaultValue:        anyValue,
 					}
 					consensus := sdk.RunInNodeMode(
@@ -205,7 +205,7 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, anyErr
 						},
-						pb.SimpleConsensusType_MEDIAN)
+						pb.AggregationType_MEDIAN)
 
 					return consensus.Await()
 				},

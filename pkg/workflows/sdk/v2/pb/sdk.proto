@@ -7,6 +7,13 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/
 import "google/protobuf/any.proto";
 import "values/pb/values.proto";
 
+enum AggregationType {
+  MEDIAN = 0;
+  IDENTICAL = 1;
+  COMMON_PREFIX = 2;
+  COMMON_SUFFIX = 3;
+}
+
 message CapabilityRequest {
   string executionId = 1;
   string id = 2;
@@ -21,15 +28,10 @@ message CapabilityResponse {
   }
 }
 
-enum SimpleConsensusType {
-  MEDIAN = 0;
-  MEDIAN_OF_FIELDS = 1;
-  IDENTICAL = 2;
-}
-
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816 remove this
 message PrimitiveConsensus {
   oneof consensus {
-    SimpleConsensusType simple = 1;
+    AggregationType simple = 1;
   }
 }
 

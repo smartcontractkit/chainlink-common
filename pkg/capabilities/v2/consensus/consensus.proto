@@ -6,13 +6,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 import "values/pb/values.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
-
-enum AggregationType {
-  MEDIAN = 0;
-  IDENTICAL = 1;
-  COMMON_PREFIX = 2;
-  COMMON_SUFFIX = 3;
-}
+import "workflows/sdk/v2/pb/sdk.proto";
 
 message FieldsMap {
   map<string, FieldDescriptor> fields = 1;
@@ -20,7 +14,7 @@ message FieldsMap {
 
 message FieldDescriptor {
   oneof descriptor {
-    AggregationType aggregation = 1;
+    cre.sdk.v2.AggregationType aggregation = 1;
     FieldsMap fieldsMap = 2;
   }
 }

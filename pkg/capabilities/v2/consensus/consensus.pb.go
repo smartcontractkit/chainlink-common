@@ -8,7 +8,8 @@ package consensus
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	pb1 "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,58 +23,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-type AggregationType int32
-
-const (
-	AggregationType_MEDIAN        AggregationType = 0
-	AggregationType_IDENTICAL     AggregationType = 1
-	AggregationType_COMMON_PREFIX AggregationType = 2
-	AggregationType_COMMON_SUFFIX AggregationType = 3
-)
-
-// Enum value maps for AggregationType.
-var (
-	AggregationType_name = map[int32]string{
-		0: "MEDIAN",
-		1: "IDENTICAL",
-		2: "COMMON_PREFIX",
-		3: "COMMON_SUFFIX",
-	}
-	AggregationType_value = map[string]int32{
-		"MEDIAN":        0,
-		"IDENTICAL":     1,
-		"COMMON_PREFIX": 2,
-		"COMMON_SUFFIX": 3,
-	}
-)
-
-func (x AggregationType) Enum() *AggregationType {
-	p := new(AggregationType)
-	*p = x
-	return p
-}
-
-func (x AggregationType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (AggregationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_consensus_consensus_proto_enumTypes[0].Descriptor()
-}
-
-func (AggregationType) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_consensus_consensus_proto_enumTypes[0]
-}
-
-func (x AggregationType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use AggregationType.Descriptor instead.
-func (AggregationType) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_consensus_consensus_proto_rawDescGZIP(), []int{0}
-}
 
 type FieldsMap struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
@@ -167,13 +116,13 @@ func (x *FieldDescriptor) GetDescriptor_() isFieldDescriptor_Descriptor_ {
 	return nil
 }
 
-func (x *FieldDescriptor) GetAggregation() AggregationType {
+func (x *FieldDescriptor) GetAggregation() pb.AggregationType {
 	if x != nil {
 		if x, ok := x.Descriptor_.(*FieldDescriptor_Aggregation); ok {
 			return x.Aggregation
 		}
 	}
-	return AggregationType_MEDIAN
+	return pb.AggregationType(0)
 }
 
 func (x *FieldDescriptor) GetFieldsMap() *FieldsMap {
@@ -190,7 +139,7 @@ type isFieldDescriptor_Descriptor_ interface {
 }
 
 type FieldDescriptor_Aggregation struct {
-	Aggregation AggregationType `protobuf:"varint,1,opt,name=aggregation,proto3,enum=cre.sdk.v2.consensus.AggregationType,oneof"`
+	Aggregation pb.AggregationType `protobuf:"varint,1,opt,name=aggregation,proto3,enum=cre.sdk.v2.AggregationType,oneof"`
 }
 
 type FieldDescriptor_FieldsMap struct {
@@ -203,9 +152,9 @@ func (*FieldDescriptor_FieldsMap) isFieldDescriptor_Descriptor_() {}
 
 type SimpleInputs struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Observation   *pb.Map                     `protobuf:"bytes,1,opt,name=observation,proto3" json:"observation,omitempty"`
+	Observation   *pb1.Map                    `protobuf:"bytes,1,opt,name=observation,proto3" json:"observation,omitempty"`
 	Descriptors   map[string]*FieldDescriptor `protobuf:"bytes,2,rep,name=descriptors,proto3" json:"descriptors,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Default       *pb.Map                     `protobuf:"bytes,3,opt,name=default,proto3" json:"default,omitempty"`
+	Default       *pb1.Map                    `protobuf:"bytes,3,opt,name=default,proto3" json:"default,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -240,7 +189,7 @@ func (*SimpleInputs) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_consensus_consensus_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SimpleInputs) GetObservation() *pb.Map {
+func (x *SimpleInputs) GetObservation() *pb1.Map {
 	if x != nil {
 		return x.Observation
 	}
@@ -254,7 +203,7 @@ func (x *SimpleInputs) GetDescriptors() map[string]*FieldDescriptor {
 	return nil
 }
 
-func (x *SimpleInputs) GetDefault() *pb.Map {
+func (x *SimpleInputs) GetDefault() *pb1.Map {
 	if x != nil {
 		return x.Default
 	}
@@ -265,14 +214,14 @@ var File_capabilities_v2_consensus_consensus_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_consensus_consensus_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/consensus/consensus.proto\x12\x14cre.sdk.v2.consensus\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"\xb2\x01\n" +
+	")capabilities/v2/consensus/consensus.proto\x12\x14cre.sdk.v2.consensus\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xb2\x01\n" +
 	"\tFieldsMap\x12C\n" +
 	"\x06fields\x18\x01 \x03(\v2+.cre.sdk.v2.consensus.FieldsMap.FieldsEntryR\x06fields\x1a`\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12;\n" +
-	"\x05value\x18\x02 \x01(\v2%.cre.sdk.v2.consensus.FieldDescriptorR\x05value:\x028\x01\"\xab\x01\n" +
-	"\x0fFieldDescriptor\x12I\n" +
-	"\vaggregation\x18\x01 \x01(\x0e2%.cre.sdk.v2.consensus.AggregationTypeH\x00R\vaggregation\x12?\n" +
+	"\x05value\x18\x02 \x01(\v2%.cre.sdk.v2.consensus.FieldDescriptorR\x05value:\x028\x01\"\xa1\x01\n" +
+	"\x0fFieldDescriptor\x12?\n" +
+	"\vaggregation\x18\x01 \x01(\x0e2\x1b.cre.sdk.v2.AggregationTypeH\x00R\vaggregation\x12?\n" +
 	"\tfieldsMap\x18\x02 \x01(\v2\x1f.cre.sdk.v2.consensus.FieldsMapH\x00R\tfieldsMapB\f\n" +
 	"\n" +
 	"descriptor\"\xa2\x02\n" +
@@ -282,13 +231,7 @@ const file_capabilities_v2_consensus_consensus_proto_rawDesc = "" +
 	"\adefault\x18\x03 \x01(\v2\v.values.MapR\adefault\x1ae\n" +
 	"\x10DescriptorsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12;\n" +
-	"\x05value\x18\x02 \x01(\v2%.cre.sdk.v2.consensus.FieldDescriptorR\x05value:\x028\x01*R\n" +
-	"\x0fAggregationType\x12\n" +
-	"\n" +
-	"\x06MEDIAN\x10\x00\x12\r\n" +
-	"\tIDENTICAL\x10\x01\x12\x11\n" +
-	"\rCOMMON_PREFIX\x10\x02\x12\x11\n" +
-	"\rCOMMON_SUFFIX\x10\x032h\n" +
+	"\x05value\x18\x02 \x01(\v2%.cre.sdk.v2.consensus.FieldDescriptorR\x05value:\x028\x012h\n" +
 	"\tConsensus\x12;\n" +
 	"\x06Simple\x12\".cre.sdk.v2.consensus.SimpleInputs\x1a\r.values.Value\x1a\x1e\x82\xb5\x18\x1a\x12\x18offchain_reporting@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
 
@@ -304,28 +247,27 @@ func file_capabilities_v2_consensus_consensus_proto_rawDescGZIP() []byte {
 	return file_capabilities_v2_consensus_consensus_proto_rawDescData
 }
 
-var file_capabilities_v2_consensus_consensus_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capabilities_v2_consensus_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_capabilities_v2_consensus_consensus_proto_goTypes = []any{
-	(AggregationType)(0),    // 0: cre.sdk.v2.consensus.AggregationType
-	(*FieldsMap)(nil),       // 1: cre.sdk.v2.consensus.FieldsMap
-	(*FieldDescriptor)(nil), // 2: cre.sdk.v2.consensus.FieldDescriptor
-	(*SimpleInputs)(nil),    // 3: cre.sdk.v2.consensus.SimpleInputs
-	nil,                     // 4: cre.sdk.v2.consensus.FieldsMap.FieldsEntry
-	nil,                     // 5: cre.sdk.v2.consensus.SimpleInputs.DescriptorsEntry
-	(*pb.Map)(nil),          // 6: values.Map
-	(*pb.Value)(nil),        // 7: values.Value
+	(*FieldsMap)(nil),       // 0: cre.sdk.v2.consensus.FieldsMap
+	(*FieldDescriptor)(nil), // 1: cre.sdk.v2.consensus.FieldDescriptor
+	(*SimpleInputs)(nil),    // 2: cre.sdk.v2.consensus.SimpleInputs
+	nil,                     // 3: cre.sdk.v2.consensus.FieldsMap.FieldsEntry
+	nil,                     // 4: cre.sdk.v2.consensus.SimpleInputs.DescriptorsEntry
+	(pb.AggregationType)(0), // 5: cre.sdk.v2.AggregationType
+	(*pb1.Map)(nil),         // 6: values.Map
+	(*pb1.Value)(nil),       // 7: values.Value
 }
 var file_capabilities_v2_consensus_consensus_proto_depIdxs = []int32{
-	4, // 0: cre.sdk.v2.consensus.FieldsMap.fields:type_name -> cre.sdk.v2.consensus.FieldsMap.FieldsEntry
-	0, // 1: cre.sdk.v2.consensus.FieldDescriptor.aggregation:type_name -> cre.sdk.v2.consensus.AggregationType
-	1, // 2: cre.sdk.v2.consensus.FieldDescriptor.fieldsMap:type_name -> cre.sdk.v2.consensus.FieldsMap
+	3, // 0: cre.sdk.v2.consensus.FieldsMap.fields:type_name -> cre.sdk.v2.consensus.FieldsMap.FieldsEntry
+	5, // 1: cre.sdk.v2.consensus.FieldDescriptor.aggregation:type_name -> cre.sdk.v2.AggregationType
+	0, // 2: cre.sdk.v2.consensus.FieldDescriptor.fieldsMap:type_name -> cre.sdk.v2.consensus.FieldsMap
 	6, // 3: cre.sdk.v2.consensus.SimpleInputs.observation:type_name -> values.Map
-	5, // 4: cre.sdk.v2.consensus.SimpleInputs.descriptors:type_name -> cre.sdk.v2.consensus.SimpleInputs.DescriptorsEntry
+	4, // 4: cre.sdk.v2.consensus.SimpleInputs.descriptors:type_name -> cre.sdk.v2.consensus.SimpleInputs.DescriptorsEntry
 	6, // 5: cre.sdk.v2.consensus.SimpleInputs.default:type_name -> values.Map
-	2, // 6: cre.sdk.v2.consensus.FieldsMap.FieldsEntry.value:type_name -> cre.sdk.v2.consensus.FieldDescriptor
-	2, // 7: cre.sdk.v2.consensus.SimpleInputs.DescriptorsEntry.value:type_name -> cre.sdk.v2.consensus.FieldDescriptor
-	3, // 8: cre.sdk.v2.consensus.Consensus.Simple:input_type -> cre.sdk.v2.consensus.SimpleInputs
+	1, // 6: cre.sdk.v2.consensus.FieldsMap.FieldsEntry.value:type_name -> cre.sdk.v2.consensus.FieldDescriptor
+	1, // 7: cre.sdk.v2.consensus.SimpleInputs.DescriptorsEntry.value:type_name -> cre.sdk.v2.consensus.FieldDescriptor
+	2, // 8: cre.sdk.v2.consensus.Consensus.Simple:input_type -> cre.sdk.v2.consensus.SimpleInputs
 	7, // 9: cre.sdk.v2.consensus.Consensus.Simple:output_type -> values.Value
 	9, // [9:10] is the sub-list for method output_type
 	8, // [8:9] is the sub-list for method input_type
@@ -348,14 +290,13 @@ func file_capabilities_v2_consensus_consensus_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_consensus_consensus_proto_rawDesc), len(file_capabilities_v2_consensus_consensus_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_capabilities_v2_consensus_consensus_proto_goTypes,
 		DependencyIndexes: file_capabilities_v2_consensus_consensus_proto_depIdxs,
-		EnumInfos:         file_capabilities_v2_consensus_consensus_proto_enumTypes,
 		MessageInfos:      file_capabilities_v2_consensus_consensus_proto_msgTypes,
 	}.Build()
 	File_capabilities_v2_consensus_consensus_proto = out.File

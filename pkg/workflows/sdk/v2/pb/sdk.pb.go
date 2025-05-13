@@ -23,52 +23,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type SimpleConsensusType int32
+type AggregationType int32
 
 const (
-	SimpleConsensusType_MEDIAN           SimpleConsensusType = 0
-	SimpleConsensusType_MEDIAN_OF_FIELDS SimpleConsensusType = 1
-	SimpleConsensusType_IDENTICAL        SimpleConsensusType = 2
+	AggregationType_MEDIAN        AggregationType = 0
+	AggregationType_IDENTICAL     AggregationType = 1
+	AggregationType_COMMON_PREFIX AggregationType = 2
+	AggregationType_COMMON_SUFFIX AggregationType = 3
 )
 
-// Enum value maps for SimpleConsensusType.
+// Enum value maps for AggregationType.
 var (
-	SimpleConsensusType_name = map[int32]string{
+	AggregationType_name = map[int32]string{
 		0: "MEDIAN",
-		1: "MEDIAN_OF_FIELDS",
-		2: "IDENTICAL",
+		1: "IDENTICAL",
+		2: "COMMON_PREFIX",
+		3: "COMMON_SUFFIX",
 	}
-	SimpleConsensusType_value = map[string]int32{
-		"MEDIAN":           0,
-		"MEDIAN_OF_FIELDS": 1,
-		"IDENTICAL":        2,
+	AggregationType_value = map[string]int32{
+		"MEDIAN":        0,
+		"IDENTICAL":     1,
+		"COMMON_PREFIX": 2,
+		"COMMON_SUFFIX": 3,
 	}
 )
 
-func (x SimpleConsensusType) Enum() *SimpleConsensusType {
-	p := new(SimpleConsensusType)
+func (x AggregationType) Enum() *AggregationType {
+	p := new(AggregationType)
 	*p = x
 	return p
 }
 
-func (x SimpleConsensusType) String() string {
+func (x AggregationType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (SimpleConsensusType) Descriptor() protoreflect.EnumDescriptor {
+func (AggregationType) Descriptor() protoreflect.EnumDescriptor {
 	return file_workflows_sdk_v2_pb_sdk_proto_enumTypes[0].Descriptor()
 }
 
-func (SimpleConsensusType) Type() protoreflect.EnumType {
+func (AggregationType) Type() protoreflect.EnumType {
 	return &file_workflows_sdk_v2_pb_sdk_proto_enumTypes[0]
 }
 
-func (x SimpleConsensusType) Number() protoreflect.EnumNumber {
+func (x AggregationType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use SimpleConsensusType.Descriptor instead.
-func (SimpleConsensusType) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use AggregationType.Descriptor instead.
+func (AggregationType) EnumDescriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{0}
 }
 
@@ -268,6 +271,7 @@ func (*CapabilityResponse_Payload) isCapabilityResponse_Response() {}
 
 func (*CapabilityResponse_Error) isCapabilityResponse_Response() {}
 
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816 remove this
 type PrimitiveConsensus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Consensus:
@@ -315,13 +319,13 @@ func (x *PrimitiveConsensus) GetConsensus() isPrimitiveConsensus_Consensus {
 	return nil
 }
 
-func (x *PrimitiveConsensus) GetSimple() SimpleConsensusType {
+func (x *PrimitiveConsensus) GetSimple() AggregationType {
 	if x != nil {
 		if x, ok := x.Consensus.(*PrimitiveConsensus_Simple); ok {
 			return x.Simple
 		}
 	}
-	return SimpleConsensusType_MEDIAN
+	return AggregationType_MEDIAN
 }
 
 type isPrimitiveConsensus_Consensus interface {
@@ -329,7 +333,7 @@ type isPrimitiveConsensus_Consensus interface {
 }
 
 type PrimitiveConsensus_Simple struct {
-	Simple SimpleConsensusType `protobuf:"varint,1,opt,name=simple,proto3,enum=cre.sdk.v2.SimpleConsensusType,oneof"`
+	Simple AggregationType `protobuf:"varint,1,opt,name=simple,proto3,enum=cre.sdk.v2.AggregationType,oneof"`
 }
 
 func (*PrimitiveConsensus_Simple) isPrimitiveConsensus_Consensus() {}
@@ -707,9 +711,9 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\apayload\x18\x01 \x01(\v2\x14.google.protobuf.AnyH\x00R\apayload\x12\x16\n" +
 	"\x05error\x18\x02 \x01(\tH\x00R\x05errorB\n" +
 	"\n" +
-	"\bresponse\"\\\n" +
-	"\x12PrimitiveConsensus\x129\n" +
-	"\x06simple\x18\x01 \x01(\x0e2\x1f.cre.sdk.v2.SimpleConsensusTypeH\x00R\x06simpleB\v\n" +
+	"\bresponse\"X\n" +
+	"\x12PrimitiveConsensus\x125\n" +
+	"\x06simple\x18\x01 \x01(\x0e2\x1b.cre.sdk.v2.AggregationTypeH\x00R\x06simpleB\v\n" +
 	"\tconsensus\"\x82\x02\n" +
 	"\x17BuiltInConsensusRequest\x12N\n" +
 	"\x12primitiveConsensus\x18\x01 \x01(\v2\x1e.cre.sdk.v2.PrimitiveConsensusR\x12primitiveConsensus\x12%\n" +
@@ -735,12 +739,13 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\tresponses\x18\x01 \x03(\v24.cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntryR\tresponses\x1a\\\n" +
 	"\x0eResponsesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
-	"\x05value\x18\x02 \x01(\v2\x1e.cre.sdk.v2.CapabilityResponseR\x05value:\x028\x01*F\n" +
-	"\x13SimpleConsensusType\x12\n" +
+	"\x05value\x18\x02 \x01(\v2\x1e.cre.sdk.v2.CapabilityResponseR\x05value:\x028\x01*R\n" +
+	"\x0fAggregationType\x12\n" +
 	"\n" +
-	"\x06MEDIAN\x10\x00\x12\x14\n" +
-	"\x10MEDIAN_OF_FIELDS\x10\x01\x12\r\n" +
-	"\tIDENTICAL\x10\x02*\x19\n" +
+	"\x06MEDIAN\x10\x00\x12\r\n" +
+	"\tIDENTICAL\x10\x01\x12\x11\n" +
+	"\rCOMMON_PREFIX\x10\x02\x12\x11\n" +
+	"\rCOMMON_SUFFIX\x10\x03*\x19\n" +
 	"\x04Mode\x12\a\n" +
 	"\x03DON\x10\x00\x12\b\n" +
 	"\x04Node\x10\x01BFZDgithub.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pbb\x06proto3"
@@ -760,7 +765,7 @@ func file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP() []byte {
 var file_workflows_sdk_v2_pb_sdk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_workflows_sdk_v2_pb_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_workflows_sdk_v2_pb_sdk_proto_goTypes = []any{
-	(SimpleConsensusType)(0),           // 0: cre.sdk.v2.SimpleConsensusType
+	(AggregationType)(0),               // 0: cre.sdk.v2.AggregationType
 	(Mode)(0),                          // 1: cre.sdk.v2.Mode
 	(*CapabilityRequest)(nil),          // 2: cre.sdk.v2.CapabilityRequest
 	(*CapabilityResponse)(nil),         // 3: cre.sdk.v2.CapabilityResponse
@@ -778,7 +783,7 @@ var file_workflows_sdk_v2_pb_sdk_proto_goTypes = []any{
 var file_workflows_sdk_v2_pb_sdk_proto_depIdxs = []int32{
 	12, // 0: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
 	12, // 1: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	0,  // 2: cre.sdk.v2.PrimitiveConsensus.simple:type_name -> cre.sdk.v2.SimpleConsensusType
+	0,  // 2: cre.sdk.v2.PrimitiveConsensus.simple:type_name -> cre.sdk.v2.AggregationType
 	4,  // 3: cre.sdk.v2.BuiltInConsensusRequest.primitiveConsensus:type_name -> cre.sdk.v2.PrimitiveConsensus
 	13, // 4: cre.sdk.v2.BuiltInConsensusRequest.value:type_name -> values.Value
 	13, // 5: cre.sdk.v2.BuiltInConsensusRequest.default_value:type_name -> values.Value

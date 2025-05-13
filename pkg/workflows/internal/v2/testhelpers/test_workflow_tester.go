@@ -40,7 +40,7 @@ func SetupExpectedCalls(t *testing.T) {
 	basicAction.PerformAction = func(ctx context.Context, input *basicaction.Inputs) (*basicaction.Outputs, error) {
 		callLock.Lock()
 		defer callLock.Unlock()
-		assert.NotEqual(t, firstCall, input.InputThing)
+		assert.NotEqual(t, firstCall, input.InputThing, "failed first call assertion")
 		firstCall = false
 		if input.InputThing {
 			return &basicaction.Outputs{AdaptedThing: "true"}, nil

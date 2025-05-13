@@ -10,7 +10,6 @@ import (
 
 type NodeEvent struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
 }
 
 func (c NodeEvent) Trigger(config *Config) sdk.NodeTrigger[*Outputs] {
@@ -30,7 +29,7 @@ func (*nodeEventTrigger) NewT() *Outputs {
 	return &Outputs{}
 }
 
-func (*nodeEventTrigger) Id() string {
+func (*nodeEventTrigger) CapabilityID() string {
 	return "basic-test-node-trigger@1.0.0"
 }
 

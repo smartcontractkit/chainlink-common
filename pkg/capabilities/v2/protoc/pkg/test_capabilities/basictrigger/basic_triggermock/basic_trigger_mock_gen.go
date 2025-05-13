@@ -61,7 +61,6 @@ func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.Trigg
 				return nil, err
 			}
 			trigger.Payload = payload
-			trigger.Id = "mock"
 		}
 	default:
 		return nil, fmt.Errorf("method %s not found", request.Method)

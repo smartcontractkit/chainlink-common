@@ -35,7 +35,7 @@ type Registry struct {
 }
 
 func (r *Registry) RegisterCapability(c Capability) error {
-	return r.Add(r.tb.Context(), &capabilityWrapper{Capability: c})
+	return r.Add(r.tb.Context(), &CapabilityWrapper{Capability: c})
 }
 
 func (r *Registry) GetCapability(id string) (Capability, error) {

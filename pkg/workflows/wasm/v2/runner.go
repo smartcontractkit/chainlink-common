@@ -65,10 +65,8 @@ var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
 func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	// used to ensure that the export isn't optimized away
 	d.versionV2()
-	for _, handler := range args.Handlers {
-		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-809 multiple of the same trigger registered
-		// The ID field could be changed to trigger-# and we can use the index or similar.
-		if handler.Id() == d.trigger.Id {
+	for idx, handler := range args.Handlers {
+		if uint64(idx) == d.trigger.Id {
 			response, err := handler.Callback()(d.runtime, d.trigger.Payload)
 			execResponse := &pb.ExecutionResult{Id: d.id}
 			if err == nil {
@@ -110,7 +108,7 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for i, handler := range args.Handlers {
 		subscriptions[i] = &sdkpb.TriggerSubscription{
 			ExecId:  d.id,
-			Id:      handler.Id(),
+			Id:      handler.CapabilityID(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),
 		}

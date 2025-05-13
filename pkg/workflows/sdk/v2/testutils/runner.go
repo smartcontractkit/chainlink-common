@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -103,7 +104,7 @@ func (r *runner[T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
 
 func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for _, handler := range args.Handlers {
-		trigger, err := r.registry.GetCapability(handler.Id())
+		trigger, err := r.registry.GetCapability(handler.CapabilityID())
 		if err != nil {
 			if r.strictTriggers {
 				r.err = err
@@ -119,7 +120,9 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		response, err := trigger.InvokeTrigger(r.tb.Context(), request)
-		if err != nil {
+
+		var nostub ErrNoTriggerStub
+		if err != nil && (r.strictTriggers || !errors.As(err, &nostub)) {
 			r.err = err
 			return
 		}

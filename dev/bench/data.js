@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747061836092,
+  "lastUpdate": 1747157051856,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13230,6 +13230,48 @@ window.BENCHMARK_DATA = {
             "value": 28142,
             "unit": "ns/op",
             "extra": "42666 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "72874b2434b345e776d32ebe651d222974102261",
+          "message": "Capability Interface Test Framework (#1083)\n\nThis commit introduces a testing framework for asserting essential tests that all capabilities should conform to. As a\nstarting point, both trigger and executable capabilities must conform to the `BaseCapability` interface and produce\nproperly structured information. Additionally, executable capabilities should return metering information in\na `CapabilityResponse`.\n\nTests for the `BaseCapability` cannot be disabled but those for `ExecutableCapability` can be per capability\nimplementation as each implemtation will be different.",
+          "timestamp": "2025-05-13T12:22:55-05:00",
+          "tree_id": "6b7175fae8c077fcf3d74c4185ebc91cb0eaefbd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/72874b2434b345e776d32ebe651d222974102261"
+        },
+        "date": 1747157050806,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364,
+            "unit": "ns/op",
+            "extra": "3389190 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.5,
+            "unit": "ns/op",
+            "extra": "2952498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28321,
+            "unit": "ns/op",
+            "extra": "42644 times\n4 procs"
           }
         ]
       }

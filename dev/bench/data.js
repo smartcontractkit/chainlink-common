@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747159743986,
+  "lastUpdate": 1747162489079,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13356,6 +13356,48 @@ window.BENCHMARK_DATA = {
             "value": 28098,
             "unit": "ns/op",
             "extra": "42648 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07ee1579d0e9ffdc5133d92149f4304bf70b47ac",
+          "message": "migrate cron capability to v2 api (#1181)\n\n* migrate cron capability to v2 api\n\n* regenerate",
+          "timestamp": "2025-05-13T19:53:18+01:00",
+          "tree_id": "cd9ec43a6a574ac9b48d5b1409d75906fbe18557",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/07ee1579d0e9ffdc5133d92149f4304bf70b47ac"
+        },
+        "date": 1747162488248,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.8,
+            "unit": "ns/op",
+            "extra": "3339858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 421.9,
+            "unit": "ns/op",
+            "extra": "2935840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28130,
+            "unit": "ns/op",
+            "extra": "42676 times\n4 procs"
           }
         ]
       }

@@ -802,15 +802,14 @@ func protoToExpression(pbExpression *evmpb.Expression) (query.Expression, error)
 		return query.Or(expressions...), nil
 	case *evmpb.Expression_Primitive:
 		switch primitive := pbEvaluatedExpr.Primitive.GetPrimitive().(type) {
-		case *evmpb.EXTPrimitive_GeneralPrimitive:
+		case *evmpb.Primitive_GeneralPrimitive:
 			return protoToGeneralExpr(primitive.GeneralPrimitive)
-		case *evmpb.EXTPrimitive_EvmPrimitive:
-			return protoToEVMExpr(primitive.EvmPrimitive)
+		default:
+			return protoToEVMExpr(pbEvaluatedExpr.Primitive)
 		}
 	default:
 		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
 	}
-	return query.Expression{}, nil
 }
 
 func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error) {
@@ -853,9 +852,9 @@ func protoToEVMExpr(pbEvaluatedExpr *evmpb.Primitive) (query.Expression, error) 
 }
 
 func putGeneralPrimitive(exp *evmpb.Expression, p *pb.Primitive) {
-	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.EXTPrimitive{Primitive: &evmpb.EXTPrimitive_GeneralPrimitive{GeneralPrimitive: p}}}
+	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.Primitive{Primitive: &evmpb.Primitive_GeneralPrimitive{GeneralPrimitive: p}}}
 }
 
 func putEVMPrimitive(exp *evmpb.Expression, p *evmpb.Primitive) {
-	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.EXTPrimitive{Primitive: &evmpb.EXTPrimitive_EvmPrimitive{EvmPrimitive: p}}}
+	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.Primitive{Primitive: p.Primitive}}
 }

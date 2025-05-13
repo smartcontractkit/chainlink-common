@@ -125,7 +125,7 @@ message Head {
 
 message Expression {
  oneof evaluator {
-    EXTPrimitive primitive = 1;
+    Primitive primitive = 1;
     BooleanExpression boolean_expression = 2;
   }
 }
@@ -141,15 +141,6 @@ message And {
 
 message Or {
   repeated Expression expr = 1;
-}
-
-
-// EXTPrimitive extends general primitives with evm-specific primitives 
-message EXTPrimitive {
-  oneof primitive{
-	loop.Primitive general_primitive = 1;
-	Primitive evm_primitive = 2;
-  }
 }
 
 message HashValueComparator {
@@ -179,10 +170,11 @@ message EventByTopic {
 // can be used in combination with general primnitives for querying tracked logs
 message Primitive {
   oneof primitive {
-    ContractAddress contract_address = 1;
-    EventSig event_sig = 2;
-    EventByWord event_by_word = 3;
-    EventByTopic event_by_topic = 4;
+    loop.Primitive general_primitive = 1;
+    ContractAddress contract_address = 2;
+    EventSig event_sig = 3;
+    EventByWord event_by_word = 4;
+    EventByTopic event_by_topic = 5;
   }
 }
 

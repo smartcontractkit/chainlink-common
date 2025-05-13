@@ -21,6 +21,7 @@ var _ = emptypb.Empty{}
 
 type BasicActionCapability interface {
 	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error

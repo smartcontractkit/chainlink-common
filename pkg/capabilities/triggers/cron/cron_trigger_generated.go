@@ -31,9 +31,6 @@ func (j *Config) UnmarshalJSON(b []byte) error {
 }
 
 type Payload struct {
-	// Time that cron trigger's task execution occurred (RFC3339Nano formatted)
-	ActualExecutionTime string `json:"ActualExecutionTime" yaml:"ActualExecutionTime" mapstructure:"ActualExecutionTime"`
-
 	// Time that cron trigger's task execution had been scheduled to occur
 	// (RFC3339Nano formatted)
 	ScheduledExecutionTime string `json:"ScheduledExecutionTime" yaml:"ScheduledExecutionTime" mapstructure:"ScheduledExecutionTime"`
@@ -44,9 +41,6 @@ func (j *Payload) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
-	}
-	if _, ok := raw["ActualExecutionTime"]; raw != nil && !ok {
-		return fmt.Errorf("field ActualExecutionTime in Payload: required")
 	}
 	if _, ok := raw["ScheduledExecutionTime"]; raw != nil && !ok {
 		return fmt.Errorf("field ScheduledExecutionTime in Payload: required")

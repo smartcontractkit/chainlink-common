@@ -21,6 +21,7 @@ var _ = emptypb.Empty{}
 
 type MismatchedCapability interface {
 	ExampleMethod(ctx context.Context, metadata capabilities.RequestMetadata, input *mismatchedpb.Input) (*emptypb.Empty, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error

@@ -20,8 +20,9 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicCapability interface {
-	RegisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
-	UnregisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -105,7 +106,7 @@ func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabil
 		if err != nil {
 			return err
 		}
-		return c.BasicCapability.UnregisterTrigger(ctx, request.Metadata, input)
+		return c.BasicCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

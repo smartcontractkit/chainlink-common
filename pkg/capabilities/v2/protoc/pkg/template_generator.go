@@ -90,6 +90,18 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 			return m, nil
 		},
 		"isTrigger": func(m *protogen.Method) bool { return m.Desc.IsStreamingServer() },
+		"MapToUntypedAPI": func(m *protogen.Method) (bool, error) {
+			md, err := getCapabilityMethodMetadata(m)
+			if err != nil {
+				return false, err
+			}
+
+			if md == nil {
+				return false, nil
+			} else {
+				return md.MapToUntypedApi, nil
+			}
+		},
 		"addImport": func(importPath protogen.GoImportPath, ignore string) string {
 			importName := importPath.String()
 			if ignore == importName {
@@ -194,6 +206,18 @@ func getCapabilityMetadata(service *protogen.Service) (*pb.CapabilityMetadata, e
 			return meta, nil
 		}
 		return nil, fmt.Errorf("invalid type for CapabilityMetadata")
+	}
+	return nil, nil
+}
+
+func getCapabilityMethodMetadata(m *protogen.Method) (*pb.CapabilityMethodMetadata, error) {
+	opts := m.Desc.Options().(*descriptorpb.MethodOptions)
+	if proto.HasExtension(opts, pb.E_Method) {
+		ext := proto.GetExtension(opts, pb.E_Method)
+		if meta, ok := ext.(*pb.CapabilityMethodMetadata); ok {
+			return meta, nil
+		}
+		return nil, fmt.Errorf("invalid type for CapabilityMethodMetadata")
 	}
 	return nil, nil
 }

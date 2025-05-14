@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747162489079,
+  "lastUpdate": 1747241526070,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13398,6 +13398,48 @@ window.BENCHMARK_DATA = {
             "value": 28130,
             "unit": "ns/op",
             "extra": "42676 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be3024969afc90aec185e909ecfe0df42bba8fa4",
+          "message": "Use beholder newAttributes function to process attributes provided to Emit function (#1188)",
+          "timestamp": "2025-05-14T11:50:49-05:00",
+          "tree_id": "b758e49fa8a529d61116b81b9e2ad3bd50fb2757",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/be3024969afc90aec185e909ecfe0df42bba8fa4"
+        },
+        "date": 1747241525295,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.8,
+            "unit": "ns/op",
+            "extra": "3381271 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.1,
+            "unit": "ns/op",
+            "extra": "2978599 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28285,
+            "unit": "ns/op",
+            "extra": "42637 times\n4 procs"
           }
         ]
       }

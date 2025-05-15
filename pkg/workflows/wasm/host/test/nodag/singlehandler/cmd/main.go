@@ -3,7 +3,7 @@
 package main
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
+	testhelpers "github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2"
 )
 

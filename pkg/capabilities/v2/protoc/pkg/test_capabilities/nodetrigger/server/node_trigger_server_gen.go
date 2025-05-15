@@ -20,8 +20,9 @@ import (
 var _ = emptypb.Empty{}
 
 type NodeEventCapability interface {
-	RegisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *nodetrigger.Config) (<-chan capabilities.TriggerAndId[*nodetrigger.Outputs], error)
-	UnregisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *nodetrigger.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *nodetrigger.Config) (<-chan capabilities.TriggerAndId[*nodetrigger.Outputs], error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *nodetrigger.Config) error
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -105,7 +106,7 @@ func (c *nodeEventCapability) UnregisterTrigger(ctx context.Context, request cap
 		if err != nil {
 			return err
 		}
-		return c.NodeEventCapability.UnregisterTrigger(ctx, request.Metadata, input)
+		return c.NodeEventCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	testhelpers "github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

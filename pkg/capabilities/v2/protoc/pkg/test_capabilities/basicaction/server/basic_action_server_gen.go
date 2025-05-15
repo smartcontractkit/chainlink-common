@@ -21,6 +21,7 @@ var _ = emptypb.Empty{}
 
 type BasicActionCapability interface {
 	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -106,6 +107,13 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "PerformAction":
+		input := &basicaction.Inputs{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs, _ *emptypb.Empty) (*basicaction.Outputs, error) {
+			return c.BasicActionCapability.PerformAction(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "":
 		input := &basicaction.Inputs{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs, _ *emptypb.Empty) (*basicaction.Outputs, error) {

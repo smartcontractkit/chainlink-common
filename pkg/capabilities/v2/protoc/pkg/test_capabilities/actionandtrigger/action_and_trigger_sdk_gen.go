@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type Basic struct {
@@ -20,15 +20,15 @@ func (c *Basic) Action(runtime sdk.DonRuntime, input *Input) sdk.Promise[*Output
 	if err != nil {
 		return sdk.PromiseFromResult[*Output](nil, err)
 	}
-	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "basic-test-action-trigger@1.0.0",
 		Payload: wrapped,
 		Method:  "Action",
-	}), func(i *pb.CapabilityResponse) (*Output, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*Output, error) {
 		switch payload := i.Response.(type) {
-		case *pb.CapabilityResponse_Error:
+		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
-		case *pb.CapabilityResponse_Payload:
+		case *sdkpb.CapabilityResponse_Payload:
 			output := &Output{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err

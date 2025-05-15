@@ -6,14 +6,16 @@ import (
 	"math/big"
 	"time"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	"google.golang.org/protobuf/types/known/emptypb"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ types.EVMService = (*evmClient)(nil)
@@ -29,7 +31,7 @@ func (e *evmClient) GetTransactionFee(ctx context.Context, transactionID string)
 	}
 
 	return &evm.TransactionFee{
-		TransactionFee: reply.TransationFee.Int(),
+		TransactionFee: valuespb.NewIntFromBigInt(reply.TransationFee),
 	}, nil
 }
 
@@ -41,7 +43,7 @@ func (e *evmClient) CallContract(ctx context.Context, msg *evm.CallMsg, blockNum
 
 	reply, err := e.cl.CallContract(ctx, &evmpb.CallContractRequest{
 		Call:        call,
-		BlockNumber: pb.NewBigIntFromInt(blockNumber),
+		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
 
 	if err != nil {
@@ -66,14 +68,14 @@ func (e *evmClient) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery)
 func (e *evmClient) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
 	reply, err := e.cl.BalanceAt(ctx, &evmpb.BalanceAtRequest{
 		Account:     &evmpb.Address{Address: account[:]},
-		BlockNumber: pb.NewBigIntFromInt(blockNumber),
+		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return reply.Balance.Int(), nil
+	return valuespb.NewIntFromBigInt(reply.Balance), nil
 }
 
 func (e *evmClient) EstimateGas(ctx context.Context, msg *evm.CallMsg) (uint64, error) {
@@ -121,8 +123,8 @@ func (e *evmClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head
 	return protoToHead(reply.Latest), protoToHead(reply.Finalized), err
 
 }
-func (e *evmClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
-	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+func (e *evmClient) QueryTrackedLogs(_ context.Context, _ []query.Expression,
+	_ query.LimitAndSort, _ primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	//TODO BCFR-1328
 	return nil, errors.New("unimplemented")
 }
@@ -167,7 +169,7 @@ func (e *evmServer) GetTransactionFee(ctx context.Context, request *evmpb.GetTra
 	}
 
 	return &evmpb.GetTransactionFeeReply{
-		TransationFee: pb.NewBigIntFromInt(reply.TransactionFee),
+		TransationFee: valuespb.NewBigIntFromInt(reply.TransactionFee),
 	}, nil
 }
 
@@ -177,7 +179,7 @@ func (e *evmServer) CallContract(ctx context.Context, req *evmpb.CallContractReq
 		return nil, err
 	}
 
-	data, err := e.impl.CallContract(ctx, call, req.BlockNumber.Int())
+	data, err := e.impl.CallContract(ctx, call, valuespb.NewIntFromBigInt(req.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -201,13 +203,13 @@ func (e *evmServer) FilterLogs(ctx context.Context, req *evmpb.FilterLogsRequest
 	}, nil
 }
 func (e *evmServer) BalanceAt(ctx context.Context, req *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
-	balance, err := e.impl.BalanceAt(ctx, protoToAddress(req.Account), req.BlockNumber.Int())
+	balance, err := e.impl.BalanceAt(ctx, protoToAddress(req.Account), valuespb.NewIntFromBigInt(req.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
 
 	return &evmpb.BalanceAtReply{
-		Balance: pb.NewBigIntFromInt(balance),
+		Balance: valuespb.NewBigIntFromInt(balance),
 	}, nil
 }
 
@@ -304,14 +306,14 @@ func protoToHead(h *evmpb.Head) evm.Head {
 		Timestamp:  h.Timestamp,
 		Hash:       protoToHash(h.GetHash()),
 		ParentHash: protoToHash(h.GetParentHash()),
-		Number:     h.BlockNumber.Int(),
+		Number:     valuespb.NewIntFromBigInt(h.BlockNumber),
 	}
 }
 
 func headToProto(h evm.Head) *evmpb.Head {
 	return &evmpb.Head{
 		Timestamp:   h.Timestamp,
-		BlockNumber: pb.NewBigIntFromInt(h.Number),
+		BlockNumber: valuespb.NewBigIntFromInt(h.Number),
 		Hash:        toProtoHash(h.Hash),
 		ParentHash:  toProtoHash(h.ParentHash),
 	}
@@ -331,9 +333,9 @@ func receiptToProto(r *evm.Receipt) (*evmpb.Receipt, error) {
 		ContractAddress:   toProtoAddress(r.ContractAddress),
 		GasUsed:           r.GasUsed,
 		BlockHash:         toProtoHash(r.BlockHash),
-		BlockNumber:       pb.NewBigIntFromInt(r.BlockNumber),
+		BlockNumber:       valuespb.NewBigIntFromInt(r.BlockNumber),
 		TxIndex:           r.TransactionIndex,
-		EffectiveGasPrice: pb.NewBigIntFromInt(r.EffectiveGasPrice),
+		EffectiveGasPrice: valuespb.NewBigIntFromInt(r.EffectiveGasPrice),
 	}, nil
 }
 
@@ -348,9 +350,9 @@ func protoToReceipt(r *evmpb.Receipt) (*evm.Receipt, error) {
 		ContractAddress:   protoToAddress(r.GetContractAddress()),
 		GasUsed:           r.GasUsed,
 		BlockHash:         protoToHash(r.GetBlockHash()),
-		BlockNumber:       r.BlockNumber.Int(),
+		BlockNumber:       valuespb.NewIntFromBigInt(r.BlockNumber),
 		TransactionIndex:  r.TxIndex,
-		EffectiveGasPrice: r.EffectiveGasPrice.Int(),
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(r.EffectiveGasPrice),
 	}, nil
 }
 
@@ -366,8 +368,8 @@ func transactionToProto(tx *evm.Transaction) (*evmpb.Transaction, error) {
 		Hash:     toProtoHash(tx.Hash),
 		Nonce:    tx.Nonce,
 		Gas:      tx.Gas,
-		GasPrice: pb.NewBigIntFromInt(tx.GasPrice),
-		Value:    pb.NewBigIntFromInt(tx.Value),
+		GasPrice: valuespb.NewBigIntFromInt(tx.GasPrice),
+		Value:    valuespb.NewBigIntFromInt(tx.Value),
 	}, nil
 }
 
@@ -377,12 +379,12 @@ func protoToTransaction(tx *evmpb.Transaction) (*evm.Transaction, error) {
 	}
 	return &evm.Transaction{
 		To:       protoToAddress(tx.GetTo()),
-		Data:     tx.Data.GetAbi(),
+		Data:     tx.GetData().GetAbi(),
 		Hash:     protoToHash(tx.GetHash()),
-		Nonce:    tx.Nonce,
-		Gas:      tx.Gas,
-		GasPrice: tx.GasPrice.Int(),
-		Value:    tx.Value.Int(),
+		Nonce:    tx.GetNonce(),
+		Gas:      tx.GetGas(),
+		GasPrice: valuespb.NewIntFromBigInt(tx.GetGasPrice()),
+		Value:    valuespb.NewIntFromBigInt(tx.GetValue()),
 	}, nil
 }
 
@@ -450,8 +452,8 @@ func protoToEvmFilter(f *evmpb.FilterQuery) (evm.FilterQuery, error) {
 	}
 	return evm.FilterQuery{
 		BlockHash: protoToHash(f.GetBlockHash()),
-		FromBlock: f.GetFromBlock().Int(),
-		ToBlock:   f.GetToBlock().Int(),
+		FromBlock: valuespb.NewIntFromBigInt(f.GetFromBlock()),
+		ToBlock:   valuespb.NewIntFromBigInt(f.GetToBlock()),
 		Addresses: protoToAddreses(f.Addresses),
 		Topics:    protoToTopics(f.Topics),
 	}, nil
@@ -460,8 +462,8 @@ func protoToEvmFilter(f *evmpb.FilterQuery) (evm.FilterQuery, error) {
 func evmFilterToProto(f evm.FilterQuery) *evmpb.FilterQuery {
 	return &evmpb.FilterQuery{
 		BlockHash: toProtoHash(f.BlockHash),
-		FromBlock: pb.NewBigIntFromInt(f.FromBlock),
-		ToBlock:   pb.NewBigIntFromInt(f.ToBlock),
+		FromBlock: valuespb.NewBigIntFromInt(f.FromBlock),
+		ToBlock:   valuespb.NewBigIntFromInt(f.ToBlock),
 		Addresses: toProtoAddresses(f.Addresses),
 		Topics:    toProtoTopics(f.Topics),
 	}
@@ -489,7 +491,7 @@ func logToProto(l *evm.Log) *evmpb.Log {
 	return &evmpb.Log{
 		Index:       l.LogIndex,
 		BlockHash:   toProtoHash(l.BlockHash),
-		BlockNumber: pb.NewBigIntFromInt(l.BlockNumber),
+		BlockNumber: valuespb.NewBigIntFromInt(l.BlockNumber),
 		Topics:      toProtoHashes(l.Topics),
 		EventSig:    toProtoHash(l.EventSig),
 		Address:     toProtoAddress(l.Address),
@@ -501,15 +503,15 @@ func logToProto(l *evm.Log) *evmpb.Log {
 
 func protoToLog(l *evmpb.Log) *evm.Log {
 	return &evm.Log{
-		LogIndex:    l.Index,
+		LogIndex:    l.GetIndex(),
 		BlockHash:   protoToHash(l.GetBlockHash()),
-		BlockNumber: l.BlockNumber.Int(),
+		BlockNumber: valuespb.NewIntFromBigInt(l.GetBlockNumber()),
 		Topics:      protoToHashes(l.Topics),
 		EventSig:    protoToHash(l.GetEventSig()),
 		Address:     protoToAddress(l.GetAddress()),
 		TxHash:      protoToHash(l.GetTxHash()),
 		Data:        l.Data.GetAbi(),
-		Removed:     l.Removed,
+		Removed:     l.GetRemoved(),
 	}
 }
 

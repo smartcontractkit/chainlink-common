@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"

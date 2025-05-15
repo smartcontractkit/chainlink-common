@@ -1239,7 +1239,7 @@ func file_query_proto_init() {
 	if File_query_proto != nil {
 		return
 	}
-	file_codec_proto_init()
+	//file_codec_proto_init()
 	file_query_proto_msgTypes[0].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),

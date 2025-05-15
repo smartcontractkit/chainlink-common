@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"math/big"
 	"time"
 

@@ -1354,7 +1354,7 @@ func file_loop_internal_pb_contract_reader_proto_init() {
 		return
 	}
 	file_loop_internal_pb_codec_proto_init()
-	file_loop_internal_pb_query_proto_init()
+	//file_loop_internal_pb_query_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

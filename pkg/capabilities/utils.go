@@ -11,6 +11,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
+var ErrNeitherValueNorAny = errors.New("neither value nor any provided")
+
 // UnwrapRequest extracts the input and config from the request, returning true if they were migrated to use pbany.Any values.
 func UnwrapRequest(request CapabilityRequest, config proto.Message, value proto.Message) (bool, error) {
 	migrated, err := FromValueOrAny(request.Inputs, request.Payload, value)
@@ -58,16 +60,27 @@ func SetResponse(response *CapabilityResponse, migrated bool, value proto.Messag
 
 // FromValueOrAny extracts the value from either a values.Value or an anypb.Any, returning true if the value was migrated to use pbany.Any.
 func FromValueOrAny(value values.Value, any *anypb.Any, into proto.Message) (bool, error) {
+	var migrated bool
 	if any == nil {
-		if value == nil {
-			return false, errors.New("neither value nor any provided")
+		// Check if the underlying concrete value is nil
+		if v, ok := value.(*values.Map); ok && v == nil {
+			return migrated, ErrNeitherValueNorAny
 		}
-		err := value.UnwrapTo(into)
-		return false, err
+		if value == nil {
+			return migrated, ErrNeitherValueNorAny
+		}
+		if err := value.UnwrapTo(into); err != nil {
+			return migrated, fmt.Errorf("failed to transform value to proto: %w", err)
+		}
+		return migrated, nil
 	}
 
-	err := any.UnmarshalTo(into)
-	return true, err
+	migrated = true
+	if err := any.UnmarshalTo(into); err != nil {
+		return migrated, fmt.Errorf("failed to transform any to proto: %w", err)
+	}
+
+	return migrated, nil
 }
 
 // Execute is a helper function for capabilities that allows them to use their native types for input, config, and response

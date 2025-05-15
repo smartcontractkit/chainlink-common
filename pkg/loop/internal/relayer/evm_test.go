@@ -12,6 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -45,7 +46,9 @@ var (
 	retention    = time.Second
 )
 
-func TestDomainRoundTripThroughGRPC(t *testing.T) {
+func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
+	t.Parallel()
+
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
 	evmService := &staticEVMService{}
@@ -270,6 +273,38 @@ func TestDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expHead, got1)
 	})
+
+	t.Run("QueryTrackedLogs", func(t *testing.T) {
+		expQuery := generateFixtureQuery()
+		expLimitAndSort := query.NewLimitAndSort(query.CountLimit(10), query.SortByTimestamp{})
+		expConfidence := primitives.Finalized
+		expLog := []*evm.Log{
+			{
+				LogIndex:    2,
+				BlockHash:   blockHash,
+				BlockNumber: blockNum,
+				Topics:      []evm.Hash{topic, topic2},
+				EventSig:    eventSigHash,
+				Address:     address,
+				TxHash:      txHash,
+				Data:        abi,
+				Removed:     false,
+			},
+		}
+
+		evmService.staticQueryTrackedLogs = func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort,
+			confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+			require.Equal(t, expQuery, filterQuery)
+			require.Equal(t, expLimitAndSort, limitAndSort)
+			require.Equal(t, expConfidence, confidenceLevel)
+			return expLog, nil
+		}
+
+		got, err := client.QueryTrackedLogs(ctx, expQuery, expLimitAndSort, expConfidence)
+		require.NoError(t, err)
+		require.Equal(t, expLog, got)
+
+	})
 }
 
 type staticEVMService struct {
@@ -333,4 +368,49 @@ func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName
 
 func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
 	return s.staticGetTransactionStatus(ctx, transactionID)
+}
+
+func generateFixtureQuery() []query.Expression {
+	exprs := make([]query.Expression, 0)
+
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
+
+	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
+	values := []evm.Hash{topic3, topic2}
+	for _, op := range operatorValues {
+		primitiveExpressions = append(primitiveExpressions, query.Block("123", op))
+		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewAddressFilter(address))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventSigFilter(topic2))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventByWordFilter(10, []evmprimitives.HashedValueComparator{{
+			Values:   values,
+			Operator: op,
+		}}))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventByTopicFilter(10, []evmprimitives.HashedValueComparator{{
+			Values:   values,
+			Operator: op,
+		}}))
+	}
+
+	for _, conf := range confirmationsValues {
+		primitiveExpressions = append(primitiveExpressions, query.Confidence(conf))
+	}
+	exprs = append(exprs, primitiveExpressions...)
+
+	andOverPrimitivesBoolExpr := query.And(primitiveExpressions...)
+	orOverPrimitivesBoolExpr := query.Or(primitiveExpressions...)
+
+	nestedBoolExpr := query.And(
+		query.TxHash("txHash"),
+		andOverPrimitivesBoolExpr,
+		orOverPrimitivesBoolExpr,
+		query.TxHash("txHash"),
+	)
+
+	exprs = append(exprs, nestedBoolExpr)
+	exprs = append(exprs, andOverPrimitivesBoolExpr)
+	exprs = append(exprs, orOverPrimitivesBoolExpr)
+
+	return exprs
 }

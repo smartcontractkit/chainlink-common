@@ -43,24 +43,21 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 // ExtractSourceAndType extracts source domain and entity from the attributes
 func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 
+	attributes := newAttributes(attrKVs...)
+
 	var sourceDomain string
 	var entityType string
 
-	for i := 0; i < len(attrKVs)-1; i += 2 {
-
-		key, ok := attrKVs[i].(string)
-		if !ok {
-			continue
-		}
+	for key, value := range attributes {
 
 		// Retrieve source and type using either ChIP or legacy attribute names, prioritizing source/type
 		if key == "source" || (key == "beholder_domain" && sourceDomain == "") {
-			if val, ok := attrKVs[i+1].(string); ok {
+			if val, ok := value.(string); ok {
 				sourceDomain = val
 			}
 		}
 		if key == "type" || (key == "beholder_entity" && entityType == "") {
-			if val, ok := attrKVs[i+1].(string); ok {
+			if val, ok := value.(string); ok {
 				entityType = val
 			}
 		}

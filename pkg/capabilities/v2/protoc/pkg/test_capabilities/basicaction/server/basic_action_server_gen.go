@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -31,18 +30,18 @@ type BasicActionCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewBasicActionServer(capability BasicActionCapability) loop.StandardCapabilities {
-	return &basicActionServer{
+func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
+	return &BasicActionServer{
 		basicActionCapability: basicActionCapability{BasicActionCapability: capability},
 	}
 }
 
-type basicActionServer struct {
+type BasicActionServer struct {
 	basicActionCapability
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-func (cs *basicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -58,17 +57,20 @@ func (cs *basicActionServer) Initialise(ctx context.Context, config string, tele
 	return nil
 }
 
-func (cs *basicActionServer) Close() error {
+func (cs *BasicActionServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-action@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-action@1.0.0"); err != nil {
+			return err
+		}
 	}
 
 	return cs.basicActionCapability.Close()
 }
 
-func (cs *basicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *BasicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.basicActionCapability.Info(ctx)
 	if err != nil {
 		return nil, err

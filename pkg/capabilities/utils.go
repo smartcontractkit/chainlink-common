@@ -60,20 +60,27 @@ func SetResponse(response *CapabilityResponse, migrated bool, value proto.Messag
 
 // FromValueOrAny extracts the value from either a values.Value or an anypb.Any, returning true if the value was migrated to use pbany.Any.
 func FromValueOrAny(value values.Value, any *anypb.Any, into proto.Message) (bool, error) {
+	var migrated bool
 	if any == nil {
 		// Check if the underlying concrete value is nil
 		if v, ok := value.(*values.Map); ok && v == nil {
-			return false, ErrNeitherValueNorAny
+			return migrated, ErrNeitherValueNorAny
 		}
 		if value == nil {
-			return false, ErrNeitherValueNorAny
+			return migrated, ErrNeitherValueNorAny
 		}
-		err := value.UnwrapTo(into)
-		return false, fmt.Errorf("failed to transform value to proto: %w", err)
+		if err := value.UnwrapTo(into); err != nil {
+			return migrated, fmt.Errorf("failed to transform value to proto: %w", err)
+		}
+		return migrated, nil
 	}
 
-	err := any.UnmarshalTo(into)
-	return true, fmt.Errorf("failed to transform any to proto: %w", err)
+	migrated = true
+	if err := any.UnmarshalTo(into); err != nil {
+		return migrated, fmt.Errorf("failed to transform any to proto: %w", err)
+	}
+
+	return migrated, nil
 }
 
 // Execute is a helper function for capabilities that allows them to use their native types for input, config, and response

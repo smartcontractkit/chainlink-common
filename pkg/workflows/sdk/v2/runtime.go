@@ -28,7 +28,9 @@ type DonRuntime interface {
 	RunInNodeMode(fn func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest) Promise[values.Value]
 }
 
-type SimpleConsensusType = pb.SimpleConsensusType
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816 use consensus capability
+
+type SimpleConsensusType = pb.AggregationType
 
 type PrimitiveConsensusWithDefault[T any] struct {
 	SimpleConsensusType
@@ -65,7 +67,7 @@ func RunInNodeMode[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nod
 			primitiveConsensus = &pb.PrimitiveConsensus{
 				Consensus: &pb.PrimitiveConsensus_Simple{Simple: c.SimpleConsensusType},
 			}
-		case pb.SimpleConsensusType:
+		case pb.AggregationType:
 			primitiveConsensus = &pb.PrimitiveConsensus{Consensus: &pb.PrimitiveConsensus_Simple{Simple: c}}
 		}
 

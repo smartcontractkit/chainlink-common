@@ -18,7 +18,7 @@ func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
 		return 42, nil
-	}, pb.SimpleConsensusType_MEDIAN)
+	}, pb.AggregationType_MEDIAN)
 
 	val, err := p.Await()
 	require.NoError(t, err)
@@ -30,7 +30,7 @@ func TestRunInNodeMode_PointerTypes(t *testing.T) {
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*int, error) {
 		val := 42
 		return &val, nil
-	}, pb.SimpleConsensusType_MEDIAN)
+	}, pb.AggregationType_MEDIAN)
 
 	val, err := p.Await()
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestRunInNodeMode_PrimitiveConsensusWithDefault(t *testing.T) {
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
 		return 99, nil
 	}, &sdk.PrimitiveConsensusWithDefault[int]{
-		SimpleConsensusType: pb.SimpleConsensusType_IDENTICAL,
+		SimpleConsensusType: pb.AggregationType_IDENTICAL,
 		DefaultValue:        123,
 	})
 
@@ -57,7 +57,7 @@ func TestRunInNodeMode_ErrorFromFunction(t *testing.T) {
 
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
 		return 0, errors.New("some error")
-	}, pb.SimpleConsensusType_MEDIAN)
+	}, pb.AggregationType_MEDIAN)
 
 	_, err := p.Await()
 	require.Error(t, err)
@@ -72,7 +72,7 @@ func TestRunInNodeMode_ErrorWrappingResult(t *testing.T) {
 	}
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
 		return &unsupported{Test: make(chan int)}, nil
-	}, pb.SimpleConsensusType_MEDIAN)
+	}, pb.AggregationType_MEDIAN)
 
 	_, err := p.Await()
 	require.Error(t, err)
@@ -89,7 +89,7 @@ func TestRunInNodeMode_ErrorWrappingDefault(t *testing.T) {
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
 		return nil, errors.New("some error")
 	}, &sdk.PrimitiveConsensusWithDefault[*unsupported]{
-		SimpleConsensusType: pb.SimpleConsensusType_MEDIAN,
+		SimpleConsensusType: pb.AggregationType_MEDIAN,
 		DefaultValue:        &unsupported{Test: make(chan int)},
 	})
 

@@ -34,7 +34,6 @@ func PayloadWrapper(raw sdk.CapDefinition[Payload]) PayloadCap {
 
 type PayloadCap interface {
 	sdk.CapDefinition[Payload]
-	ActualExecutionTime() sdk.CapDefinition[string]
 	ScheduledExecutionTime() sdk.CapDefinition[string]
 	private()
 }
@@ -44,9 +43,6 @@ type payloadCap struct {
 }
 
 func (*payloadCap) private() {}
-func (c *payloadCap) ActualExecutionTime() sdk.CapDefinition[string] {
-	return sdk.AccessField[Payload, string](c.CapDefinition, "ActualExecutionTime")
-}
 func (c *payloadCap) ScheduledExecutionTime() sdk.CapDefinition[string] {
 	return sdk.AccessField[Payload, string](c.CapDefinition, "ScheduledExecutionTime")
 }
@@ -56,27 +52,20 @@ func ConstantPayload(value Payload) PayloadCap {
 }
 
 func NewPayloadFromFields(
-	actualExecutionTime sdk.CapDefinition[string],
 	scheduledExecutionTime sdk.CapDefinition[string]) PayloadCap {
 	return &simplePayload{
 		CapDefinition: sdk.ComponentCapDefinition[Payload]{
-			"ActualExecutionTime":    actualExecutionTime.Ref(),
 			"ScheduledExecutionTime": scheduledExecutionTime.Ref(),
 		},
-		actualExecutionTime:    actualExecutionTime,
 		scheduledExecutionTime: scheduledExecutionTime,
 	}
 }
 
 type simplePayload struct {
 	sdk.CapDefinition[Payload]
-	actualExecutionTime    sdk.CapDefinition[string]
 	scheduledExecutionTime sdk.CapDefinition[string]
 }
 
-func (c *simplePayload) ActualExecutionTime() sdk.CapDefinition[string] {
-	return c.actualExecutionTime
-}
 func (c *simplePayload) ScheduledExecutionTime() sdk.CapDefinition[string] {
 	return c.scheduledExecutionTime
 }

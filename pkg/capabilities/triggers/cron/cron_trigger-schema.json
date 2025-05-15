@@ -5,16 +5,12 @@
     "Payload": {
       "type": "object",
       "properties": {
-        "ActualExecutionTime": {
-          "type": "string",
-          "description": "Time that cron trigger's task execution occurred (RFC3339Nano formatted)"
-        },
         "ScheduledExecutionTime": {
           "type": "string",
           "description": "Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)"
         }
       },
-      "required": ["ActualExecutionTime", "ScheduledExecutionTime"],
+      "required": ["ScheduledExecutionTime"],
       "additionalProperties": false
     },
     "Config": {

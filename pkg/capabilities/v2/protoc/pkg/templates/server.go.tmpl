@@ -34,13 +34,15 @@ type {{.GoName}}Capability interface {
     {{- range .Methods}}
         {{- if isTrigger . }}
             {{ $hasTriggers = true }}
-    Register{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) (<- chan capabilities.TriggerAndId[*{{name .Output.GoIdent ""}}], error)
-    Unregister{{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) error
+    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) (<- chan capabilities.TriggerAndId[*{{name .Output.GoIdent ""}}], error)
+    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}) error
         {{- else }}
             {{ $hasActions = true }}
     {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{name .Output.GoIdent ""}}, error)
         {{- end }}
     {{- end }}
+
+
     Start(ctx context.Context) error
     Close() error
     HealthReport() map[string]error
@@ -118,6 +120,11 @@ func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, 
                 input := &{{name .Input.GoIdent ""}}{}
                 return capabilities.RegisterTrigger(ctx, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
+        {{- if (MapToUntypedAPI .) }}
+            case "":
+                input := &{{name .Input.GoIdent ""}}{}
+                return capabilities.RegisterTrigger(ctx, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
+        {{- end }}
         {{- end }}
         	default:
         	    return nil, fmt.Errorf("trigger %s not found", request.Method)
@@ -138,7 +145,16 @@ func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context
                     if err != nil {
                         return err
                     }
-                    return c.{{$service.GoName}}Capability.Unregister{{.GoName}}(ctx, request.Metadata, input)
+                    return c.{{$service.GoName}}Capability.Unregister{{.GoName}}(ctx, request.TriggerID, request.Metadata, input)
+            {{- end }}
+            {{- if (MapToUntypedAPI .) }}
+                case "":
+                    input := &{{name .Input.GoIdent ""}}{}
+                    _, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+                    if err != nil {
+                        return err
+                    }
+                    return c.{{$service.GoName}}Capability.Unregister{{.GoName}}(ctx, request.TriggerID, request.Metadata, input)
             {{- end }}
             {{- end }}
             	default:
@@ -174,6 +190,19 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
             {{- else }}
             return capabilities.Execute(ctx, request, input, config, c.{{.GoName}}Capability.{{.GoName}})
             {{- end }}
+          {{- if (MapToUntypedAPI .) }}
+         case "":
+             input := &{{name .Input.GoIdent ""}}{}
+             config := &{{ConfigType $service}}{}
+             {{- if eq "emptypb.Empty" (ConfigType $service) }}
+             wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *{{name .Input.GoIdent ""}}, _ *emptypb.Empty) (*{{name .Output.GoIdent ""}}, error) {
+                 return c.{{$service.GoName}}Capability.{{.GoName}}(ctx, metadata, input)
+             }
+             return capabilities.Execute(ctx, request, input, config, wrapped)
+             {{- else }}
+             return capabilities.Execute(ctx, request, input, config, c.{{.GoName}}Capability.{{.GoName}})
+             {{- end }}
+          {{- end }}
     {{- end }}
     {{- end }}
     	default:

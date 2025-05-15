@@ -6,7 +6,7 @@ package loop;
 
 import "loop/internal/pb/codec.proto";
 import "google/protobuf/empty.proto";
-import "query.proto";
+import "loop/internal/pb/query.proto";
 
 service ContractReader {
   rpc GetLatestValue (GetLatestValueRequest) returns (GetLatestValueReply) {}

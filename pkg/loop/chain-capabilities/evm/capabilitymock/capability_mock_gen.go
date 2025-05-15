@@ -13,7 +13,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
@@ -50,236 +50,236 @@ type EVMChainCapability struct {
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 }
 
-func (cap *EVMChainCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-	capResp := &pb.CapabilityResponse{}
+func (cap *EVMChainCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
+	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
 	case "CallContract":
 		input := &evm.CallContractRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.CallContract == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for CallContract"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for CallContract"}
 			break
 		}
 		resp, err := cap.CallContract(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "FilterLogs":
 		input := &evm.FilterLogsRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.FilterLogs == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for FilterLogs"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for FilterLogs"}
 			break
 		}
 		resp, err := cap.FilterLogs(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "BalanceAt":
 		input := &evm.BalanceAtRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.BalanceAt == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for BalanceAt"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for BalanceAt"}
 			break
 		}
 		resp, err := cap.BalanceAt(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "EstimateGas":
 		input := &evm.EstimateGasRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.EstimateGas == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for EstimateGas"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for EstimateGas"}
 			break
 		}
 		resp, err := cap.EstimateGas(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "GetTransactionByHash":
 		input := &evm.GetTransactionByHashRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.GetTransactionByHash == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for GetTransactionByHash"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for GetTransactionByHash"}
 			break
 		}
 		resp, err := cap.GetTransactionByHash(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "GetTransactionReceipt":
 		input := &evm.GetReceiptRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.GetTransactionReceipt == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for GetTransactionReceipt"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for GetTransactionReceipt"}
 			break
 		}
 		resp, err := cap.GetTransactionReceipt(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "LatestAndFinalizedHead":
 		input := &emptypb.Empty{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.LatestAndFinalizedHead == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for LatestAndFinalizedHead"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for LatestAndFinalizedHead"}
 			break
 		}
 		resp, err := cap.LatestAndFinalizedHead(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "QueryTrackedLogs":
 		input := &evm.QueryTrackedLogsRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.QueryTrackedLogs == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for QueryTrackedLogs"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for QueryTrackedLogs"}
 			break
 		}
 		resp, err := cap.QueryTrackedLogs(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "RegisterLogTracking":
 		input := &evm.RegisterLogTrackingRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.RegisterLogTracking == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for RegisterLogTracking"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for RegisterLogTracking"}
 			break
 		}
 		resp, err := cap.RegisterLogTracking(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	case "UnregisterLogTracking":
 		input := &evm.UnregisterLogTrackingRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
 		if cap.UnregisterLogTracking == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for UnregisterLogTracking"}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for UnregisterLogTracking"}
 			break
 		}
 		resp, err := cap.UnregisterLogTracking(ctx, input)
 		if err != nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
 			payload, err := anypb.New(resp)
 			if err == nil {
-				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
 			} else {
-				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
 	default:
-		capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+		capResp.Response = &sdkpb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
 	}
 	return capResp
 }
 
-func (cap *EVMChainCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
+func (cap *EVMChainCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
 	return nil, fmt.Errorf("method %s not found", request.Method)
 }
 

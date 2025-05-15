@@ -39,6 +39,7 @@ type EVMChainCapability interface {
 	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error

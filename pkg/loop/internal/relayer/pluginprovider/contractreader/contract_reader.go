@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -426,7 +427,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	confidenceLevel, err := ConfidenceFromProto(request.Confidence)
+	confidenceLevel, err := evm.ConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +465,7 @@ func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 
-	confidenceLevel, err := ConfidenceFromProto(request.Confidence)
+	confidenceLevel, err := evm.ConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -523,7 +524,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	limitAndSort, err := ConvertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := evm.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +569,7 @@ func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*
 		})
 	}
 
-	limitAndSort, err := ConvertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := evm.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -1016,7 +1017,7 @@ func convertExpressionFromProto(pbExpression *pb.Expression, contract types.Boun
 			}
 			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 		case *pb.Primitive_Confidence:
-			confidence, err := ConfidenceFromProto(primitive.Confidence)
+			confidence, err := evm.ConfidenceFromProto(primitive.Confidence)
 			return query.Confidence(confidence), err
 		case *pb.Primitive_Block:
 			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
@@ -1030,46 +1031,6 @@ func convertExpressionFromProto(pbExpression *pb.Expression, contract types.Boun
 	default:
 		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
 	}
-}
-
-func ConfidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel, error) {
-	switch pbConfidence {
-	case pb.Confidence_Finalized:
-		return primitives.Finalized, nil
-	case pb.Confidence_Unconfirmed:
-		return primitives.Unconfirmed, nil
-	default:
-		return "", fmt.Errorf("invalid pb confidence level: %d", pbConfidence)
-	}
-}
-
-func ConvertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAndSort, error) {
-	sortByArr := make([]query.SortBy, len(limitAndSort.SortBy))
-
-	for idx, sortBy := range limitAndSort.SortBy {
-		switch sortBy.SortType {
-		case pb.SortType_SortTimestamp:
-			sortByArr[idx] = query.NewSortByTimestamp(query.SortDirection(sortBy.GetDirection()))
-		case pb.SortType_SortBlock:
-			sortByArr[idx] = query.NewSortByBlock(query.SortDirection(sortBy.GetDirection()))
-		case pb.SortType_SortSequence:
-			sortByArr[idx] = query.NewSortBySequence(query.SortDirection(sortBy.GetDirection()))
-		default:
-			return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sortBy)
-		}
-	}
-
-	limit := limitAndSort.Limit
-	cursorDefined := limit.Cursor != nil
-	cursorDirectionDefined := limit.Direction != nil
-
-	if cursorDefined && cursorDirectionDefined {
-		return query.NewLimitAndSort(query.CursorLimit(*limit.Cursor, (query.CursorDirection)(*limit.Direction), limit.Count)), nil
-	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
-		return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
-	}
-
-	return query.NewLimitAndSort(query.CountLimit(limit.Count), sortByArr...), nil
 }
 
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {

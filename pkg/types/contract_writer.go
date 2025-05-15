@@ -67,5 +67,5 @@ type ChainFeeComponents struct {
 // Estimated total cost of TX execution in the underlying chain's currency
 type EstimateFee struct {
 	Fee      *big.Int
-	Decimals uint8
+	Decimals uint32
 }

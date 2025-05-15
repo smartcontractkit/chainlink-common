@@ -31,18 +31,18 @@ type ConsensusCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewConsensusServer(capability ConsensusCapability) *consensusServer {
-	return &consensusServer{
+func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
+	return &ConsensusServer{
 		consensusCapability: consensusCapability{ConsensusCapability: capability},
 	}
 }
 
-type consensusServer struct {
+type ConsensusServer struct {
 	consensusCapability
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-func (cs *consensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -58,7 +58,7 @@ func (cs *consensusServer) Initialise(ctx context.Context, config string, teleme
 	return nil
 }
 
-func (cs *consensusServer) Close() error {
+func (cs *ConsensusServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := cs.capabilityRegistry.Remove(ctx, "offchain_reporting@1.0.0"); err != nil {
@@ -68,7 +68,7 @@ func (cs *consensusServer) Close() error {
 	return cs.consensusCapability.Close()
 }
 
-func (cs *consensusServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *ConsensusServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.consensusCapability.Info(ctx)
 	if err != nil {
 		return nil, err

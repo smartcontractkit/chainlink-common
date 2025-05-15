@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747325443785,
+  "lastUpdate": 1747332345202,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13524,6 +13524,48 @@ window.BENCHMARK_DATA = {
             "value": 28471,
             "unit": "ns/op",
             "extra": "38868 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "966be0b926dbe7cf475d2d00db724f49112e341a",
+          "message": "fix: add nil check for server that is not initialized (#1194)",
+          "timestamp": "2025-05-15T14:04:21-04:00",
+          "tree_id": "e5867b4dea36acfb2ea6c098e38c4febe434fdef",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/966be0b926dbe7cf475d2d00db724f49112e341a"
+        },
+        "date": 1747332343623,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.9,
+            "unit": "ns/op",
+            "extra": "3280738 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.9,
+            "unit": "ns/op",
+            "extra": "2899665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28543,
+            "unit": "ns/op",
+            "extra": "42244 times\n4 procs"
           }
         ]
       }

@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -32,7 +31,7 @@ type ConsensusCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewConsensusServer(capability ConsensusCapability) loop.StandardCapabilities {
+func NewConsensusServer(capability ConsensusCapability) *consensusServer {
 	return &consensusServer{
 		consensusCapability: consensusCapability{ConsensusCapability: capability},
 	}

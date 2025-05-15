@@ -52,7 +52,7 @@ type {{.GoName}}Capability interface {
     Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func New{{.GoName}}Server(capability {{.GoName}}Capability) loop.StandardCapabilities {
+func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName|LowerFirst}}Server {
     return &{{.GoName|LowerFirst}}Server{
         {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability},
     }

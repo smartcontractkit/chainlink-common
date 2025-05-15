@@ -61,8 +61,11 @@ func (cs *CronServer) Initialise(ctx context.Context, config string, telemetrySe
 func (cs *CronServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
+			return err
+		}
 	}
 
 	return cs.cronCapability.Close()

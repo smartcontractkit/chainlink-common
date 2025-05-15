@@ -61,8 +61,11 @@ func (cs *BasicServer) Initialise(ctx context.Context, config string, telemetryS
 func (cs *BasicServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-trigger@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-trigger@1.0.0"); err != nil {
+			return err
+		}
 	}
 
 	return cs.basicCapability.Close()

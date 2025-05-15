@@ -83,9 +83,12 @@ func (cs *{{.GoName}}Server) Initialise(ctx context.Context, config string, tele
 func (cs *{{.GoName}}Server) Close() error{
     ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-    if err := cs.capabilityRegistry.Remove(ctx, "{{(CapabilityId $service)}}"); err != nil {
-		return err
-	}
+
+    if cs.capabilityRegistry != nil {
+        if err := cs.capabilityRegistry.Remove(ctx, "{{(CapabilityId $service)}}"); err != nil {
+            return err
+        }
+    }
 
 	return cs.{{.GoName|LowerFirst}}Capability.Close()
 }

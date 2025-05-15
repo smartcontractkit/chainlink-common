@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747241526070,
+  "lastUpdate": 1747303890298,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13440,6 +13440,48 @@ window.BENCHMARK_DATA = {
             "value": 28285,
             "unit": "ns/op",
             "extra": "42637 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "90b1d1b66ce4f62f585610f4b9b71b1713629f5e",
+          "message": "PLEX-500 (#1179)\n\n* wire QueryTrackedLogs\n\n* evm.EVMVisitor -> evm.Visitor\n\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2025-05-15T06:10:02-04:00",
+          "tree_id": "52999bf7b03ee37a75fe188046744c0e22f4563d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/90b1d1b66ce4f62f585610f4b9b71b1713629f5e"
+        },
+        "date": 1747303888842,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 377.3,
+            "unit": "ns/op",
+            "extra": "3313524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.3,
+            "unit": "ns/op",
+            "extra": "2920978 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28911,
+            "unit": "ns/op",
+            "extra": "41887 times\n4 procs"
           }
         ]
       }

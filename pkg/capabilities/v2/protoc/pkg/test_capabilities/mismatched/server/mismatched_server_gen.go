@@ -60,8 +60,11 @@ func (cs *MismatchedServer) Initialise(ctx context.Context, config string, telem
 func (cs *MismatchedServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "example@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "example@1.0.0"); err != nil {
+			return err
+		}
 	}
 
 	return cs.mismatchedCapability.Close()

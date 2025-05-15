@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747338786966,
+  "lastUpdate": 1747352517343,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13608,6 +13608,48 @@ window.BENCHMARK_DATA = {
             "value": 28785,
             "unit": "ns/op",
             "extra": "41907 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8262bc72993a9f0951a552836d2ddc0e63bff60b",
+          "message": "fix: ensures every call can be found by an await (#1197)",
+          "timestamp": "2025-05-15T19:40:41-04:00",
+          "tree_id": "32ceeea9e4f4d04cabbb4551544ed20e56f15122",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8262bc72993a9f0951a552836d2ddc0e63bff60b"
+        },
+        "date": 1747352516477,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.6,
+            "unit": "ns/op",
+            "extra": "3388064 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.8,
+            "unit": "ns/op",
+            "extra": "2952675 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28564,
+            "unit": "ns/op",
+            "extra": "42166 times\n4 procs"
           }
         ]
       }

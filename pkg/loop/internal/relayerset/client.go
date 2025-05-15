@@ -112,6 +112,20 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 	}, nil
 }
 
+func (k *Client) EVM(ctx context.Context, relayID types.RelayID) (uint32, error) {
+	// TODO what to do
+	//req := &relayerset.EVMRequest{
+	//	RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+	//}
+
+	//resp, err := k.relayerSetClient.EVM(ctx, req)
+	//if err != nil {
+	//	return 0, fmt.Errorf("error getting new contract writer: %w", err)
+	//}
+
+	return 0, nil
+}
+
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {
 	// TODO at a later phase these credentials should be set as part of the relay config and not as a separate field
 	var mercuryCredentials *relayerset.MercuryCredentials

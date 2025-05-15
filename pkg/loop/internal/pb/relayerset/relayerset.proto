@@ -59,6 +59,15 @@ message NewPluginProviderResponse {
   uint32 plugin_provider_id = 1;
 }
 
+message EVMRequest {
+  // relayerId is same as EVM Relayer ID
+  RelayerId relayerId = 1;
+}
+
+message EVMResponse {
+  RelayerId relayerId = 1;
+}
+
 message NewContractReaderRequest {
   RelayerId relayerId = 1;
   bytes contractReaderConfig = 2;
@@ -98,6 +107,7 @@ message RelayerNameResponse {
 service RelayerSet {
   rpc Get(GetRelayerRequest) returns (GetRelayerResponse) {}
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
+  rpc EVM(EVMRequest) returns (EVMResponse) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
   rpc NewContractReader(NewContractReaderRequest) returns (NewContractReaderResponse) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterResponse) {}

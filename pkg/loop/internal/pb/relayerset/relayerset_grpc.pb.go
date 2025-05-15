@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	RelayerSet_Get_FullMethodName                                      = "/loop.relayerset.RelayerSet/Get"
 	RelayerSet_List_FullMethodName                                     = "/loop.relayerset.RelayerSet/List"
+	RelayerSet_EVM_FullMethodName                                      = "/loop.relayerset.RelayerSet/EVM"
 	RelayerSet_NewPluginProvider_FullMethodName                        = "/loop.relayerset.RelayerSet/NewPluginProvider"
 	RelayerSet_NewContractReader_FullMethodName                        = "/loop.relayerset.RelayerSet/NewContractReader"
 	RelayerSet_NewContractWriter_FullMethodName                        = "/loop.relayerset.RelayerSet/NewContractWriter"
@@ -49,6 +50,7 @@ const (
 type RelayerSetClient interface {
 	Get(ctx context.Context, in *GetRelayerRequest, opts ...grpc.CallOption) (*GetRelayerResponse, error)
 	List(ctx context.Context, in *ListAllRelayersRequest, opts ...grpc.CallOption) (*ListAllRelayersResponse, error)
+	EVM(ctx context.Context, in *EVMRequest, opts ...grpc.CallOption) (*EVMResponse, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderResponse, error)
 	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterResponse, error)
@@ -91,6 +93,16 @@ func (c *relayerSetClient) List(ctx context.Context, in *ListAllRelayersRequest,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAllRelayersResponse)
 	err := c.cc.Invoke(ctx, RelayerSet_List_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVM(ctx context.Context, in *EVMRequest, opts ...grpc.CallOption) (*EVMResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EVMResponse)
+	err := c.cc.Invoke(ctx, RelayerSet_EVM_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,6 +295,7 @@ func (c *relayerSetClient) ContractReaderClose(ctx context.Context, in *Contract
 type RelayerSetServer interface {
 	Get(context.Context, *GetRelayerRequest) (*GetRelayerResponse, error)
 	List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error)
+	EVM(context.Context, *EVMRequest) (*EVMResponse, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error)
 	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterResponse, error)
@@ -316,6 +329,9 @@ func (UnimplementedRelayerSetServer) Get(context.Context, *GetRelayerRequest) (*
 }
 func (UnimplementedRelayerSetServer) List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedRelayerSetServer) EVM(context.Context, *EVMRequest) (*EVMResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
 }
 func (UnimplementedRelayerSetServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
@@ -424,6 +440,24 @@ func _RelayerSet_List_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RelayerSetServer).List(ctx, req.(*ListAllRelayersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVM(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVM_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVM(ctx, req.(*EVMRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -766,6 +800,10 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _RelayerSet_List_Handler,
+		},
+		{
+			MethodName: "EVM",
+			Handler:    _RelayerSet_EVM_Handler,
 		},
 		{
 			MethodName: "NewPluginProvider",

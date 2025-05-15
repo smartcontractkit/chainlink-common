@@ -270,7 +270,7 @@ func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, fil
 		return nil, err
 	}
 
-	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
+	pbLimitAndSort, err := ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +312,7 @@ func (c *Client) QueryKeys(ctx context.Context, keyQueries []types.ContractKeyFi
 		})
 	}
 
-	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
+	pbLimitAndSort, err := ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, err
 	}
@@ -523,7 +523,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +568,7 @@ func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*
 		})
 	}
 
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -787,7 +787,7 @@ func ConfidenceToProto(confidenceLevel primitives.ConfidenceLevel) (pb.Confidenc
 	}
 }
 
-func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSort, error) {
+func ConvertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSort, error) {
 	sortByArr := make([]*pb.SortBy, len(limitAndSort.SortBy))
 
 	for idx, sortBy := range limitAndSort.SortBy {
@@ -1043,7 +1043,7 @@ func ConfidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel
 	}
 }
 
-func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAndSort, error) {
+func ConvertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAndSort, error) {
 	sortByArr := make([]query.SortBy, len(limitAndSort.SortBy))
 
 	for idx, sortBy := range limitAndSort.SortBy {

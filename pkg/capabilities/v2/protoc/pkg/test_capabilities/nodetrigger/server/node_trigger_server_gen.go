@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodetrigger"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -32,18 +31,18 @@ type NodeEventCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewNodeEventServer(capability NodeEventCapability) loop.StandardCapabilities {
-	return &nodeEventServer{
+func NewNodeEventServer(capability NodeEventCapability) *NodeEventServer {
+	return &NodeEventServer{
 		nodeEventCapability: nodeEventCapability{NodeEventCapability: capability},
 	}
 }
 
-type nodeEventServer struct {
+type NodeEventServer struct {
 	nodeEventCapability
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-func (cs *nodeEventServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *NodeEventServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.NodeEventCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -59,17 +58,20 @@ func (cs *nodeEventServer) Initialise(ctx context.Context, config string, teleme
 	return nil
 }
 
-func (cs *nodeEventServer) Close() error {
+func (cs *NodeEventServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-node-trigger@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-node-trigger@1.0.0"); err != nil {
+			return err
+		}
 	}
 
 	return cs.nodeEventCapability.Close()
 }
 
-func (cs *nodeEventServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *NodeEventServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.nodeEventCapability.Info(ctx)
 	if err != nil {
 		return nil, err

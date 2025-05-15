@@ -52,19 +52,19 @@ type {{.GoName}}Capability interface {
     Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func New{{.GoName}}Server(capability {{.GoName}}Capability) loop.StandardCapabilities {
-    return &{{.GoName|LowerFirst}}Server{
+func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
+    return &{{.GoName}}Server{
         {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability},
     }
 }
 
-type {{.GoName|LowerFirst}}Server struct {
+type {{.GoName}}Server struct {
     {{.GoName|LowerFirst}}Capability
     capabilityRegistry core.CapabilitiesRegistry
 }
 
 
-func (cs *{{.GoName|LowerFirst}}Server) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *{{.GoName}}Server) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
     if err := cs.{{.GoName}}Capability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
         return fmt.Errorf("error when initializing capability: %w", err)
     }
@@ -80,18 +80,21 @@ func (cs *{{.GoName|LowerFirst}}Server) Initialise(ctx context.Context, config s
 	return nil
 }
 
-func (cs *{{.GoName|LowerFirst}}Server) Close() error{
+func (cs *{{.GoName}}Server) Close() error{
     ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-    if err := cs.capabilityRegistry.Remove(ctx, "{{(CapabilityId $service)}}"); err != nil {
-		return err
-	}
+
+    if cs.capabilityRegistry != nil {
+        if err := cs.capabilityRegistry.Remove(ctx, "{{(CapabilityId $service)}}"); err != nil {
+            return err
+        }
+    }
 
 	return cs.{{.GoName|LowerFirst}}Capability.Close()
 }
 
 
-func (cs *{{.GoName|LowerFirst}}Server) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *{{.GoName}}Server) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
     info, err := cs.{{.GoName|LowerFirst}}Capability.Info(ctx)
     if err != nil {
         return nil, err

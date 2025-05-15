@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.evm;
 
 import "relayer.proto";
-import "contract_reader.proto";
+import "query.proto";
 import "contract_writer.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
@@ -123,6 +123,61 @@ message Head {
   Hash parent_hash = 4;
 }
 
+message Expression {
+ oneof evaluator {
+    Primitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+message BooleanExpression {
+  BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
+}
+
+message And {
+  repeated Expression expr = 1;
+}
+
+message Or {
+  repeated Expression expr = 1;
+}
+
+message HashValueComparator {
+  repeated Hash values = 1;
+  ComparisonOperator operator = 2;
+}
+
+message ContractAddress {
+  Address address = 1;
+}
+
+message EventSig {
+  Hash eventSig = 1;
+}
+
+message EventByWord {
+  uint32 word_index = 1;
+  repeated HashValueComparator  hashed_value_comparers = 2;
+}
+
+message EventByTopic {
+  uint64 topic = 1;
+  repeated HashValueComparator hashed_value_comparers = 2;
+}
+
+// evm-style primitives
+// can be used in combination with general primnitives for querying tracked logs
+message Primitive {
+  oneof primitive {
+    loop.Primitive general_primitive = 1;
+    ContractAddress contract_address = 2;
+    EventSig event_sig = 3;
+    EventByWord event_by_word = 4;
+    EventByTopic event_by_topic = 5;
+  }
+}
+
 // ----- Request/Reply Wrappers -----
 message LatestAndFinalizedHeadReply {
   Head latest = 1;
@@ -199,6 +254,8 @@ message UnregisterLogTrackingRequest {
 
 message QueryTrackedLogsRequest {
   repeated Expression expression = 1;
+  LimitAndSort limit_and_sort = 2;
+  Confidence confidence_level = 3;
 }
 
 message QueryTrackedLogsReply {

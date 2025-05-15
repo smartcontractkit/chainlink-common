@@ -43,6 +43,22 @@ func TestFromValueOrAny(t *testing.T) {
 		var out pb.TriggerEvent
 		_, err := capabilities.FromValueOrAny(nil, nil, &out)
 		require.Error(t, err)
+		require.ErrorIs(t, err, capabilities.ErrNeitherValueNorAny)
+	})
+
+	t.Run("with nil map", func(t *testing.T) {
+		var out pb.TriggerEvent
+		req := capabilities.TriggerRegistrationRequest{}
+		_, err := capabilities.FromValueOrAny(req.Config, req.Payload, &out)
+		require.Error(t, err)
+		require.ErrorIs(t, err, capabilities.ErrNeitherValueNorAny)
+	})
+
+	t.Run("with nil any other values", func(t *testing.T) {
+		var out pb.TriggerEvent
+		_, err := capabilities.FromValueOrAny(new(values.Int64), nil, &out)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to transform value to proto")
 	})
 
 	t.Run("emptybp works", func(t *testing.T) {

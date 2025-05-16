@@ -119,6 +119,7 @@ type TriggerAndId[T proto.Message] struct {
 // while adhering to the standard capability interface.
 func RegisterTrigger[I, O proto.Message](
 	ctx context.Context,
+	stop <-chan struct{},
 	triggerType string,
 	request TriggerRegistrationRequest,
 	message I,
@@ -129,7 +130,7 @@ func RegisterTrigger[I, O proto.Message](
 		return nil, fmt.Errorf("error when unwrapping request: %w", err)
 	}
 
-	response := make(chan TriggerResponse, 100)
+	response := make(chan TriggerResponse)
 	respCh, err := fn(ctx, request.TriggerID, request.Metadata, message)
 	if err != nil {
 		return nil, err
@@ -161,10 +162,10 @@ func RegisterTrigger[I, O proto.Message](
 				}
 				select {
 				case response <- tr:
-				case <-ctx.Done():
+				case <-stop:
 					return
 				}
-			case <-ctx.Done():
+			case <-stop:
 				return
 			}
 		}

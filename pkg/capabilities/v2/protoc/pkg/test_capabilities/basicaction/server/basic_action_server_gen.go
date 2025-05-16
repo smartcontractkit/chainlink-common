@@ -31,14 +31,17 @@ type BasicActionCapability interface {
 }
 
 func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
+	stopCh := make(chan struct{})
 	return &BasicActionServer{
-		basicActionCapability: basicActionCapability{BasicActionCapability: capability},
+		basicActionCapability: basicActionCapability{BasicActionCapability: capability, stopCh: stopCh},
+		stopCh:                stopCh,
 	}
 }
 
 type BasicActionServer struct {
 	basicActionCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
 func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
@@ -67,6 +70,10 @@ func (cs *BasicActionServer) Close() error {
 		}
 	}
 
+	if cs.stopCh != nil {
+		close(cs.stopCh)
+	}
+
 	return cs.basicActionCapability.Close()
 }
 
@@ -80,6 +87,7 @@ func (cs *BasicActionServer) Infos(ctx context.Context) ([]capabilities.Capabili
 
 type basicActionCapability struct {
 	BasicActionCapability
+	stopCh chan struct{}
 }
 
 func (c *basicActionCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

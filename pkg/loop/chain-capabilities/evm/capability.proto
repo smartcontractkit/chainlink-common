@@ -7,6 +7,14 @@ package loop.chain_capabilities.evm;
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "loop/chain-capabilities/evm/evm.proto";
+import "google/protobuf/duration.proto";
+
+
+message FilterLogTriggerRequest {
+  FilterQuery filter_query = 1;
+  google.protobuf.Duration poll_interval = 2; // interval to poll for new logs expressed in seconds
+}
+
 
 // TODO rename to EVM, move EVM back to loop/internal, but needs some proto gen template fixing to make imports work
 service EVMChain {
@@ -24,4 +32,6 @@ service EVMChain {
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream FilterLogsReply);
+
 }

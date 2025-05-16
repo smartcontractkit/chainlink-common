@@ -40,6 +40,12 @@ type EVMChainCapability interface {
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
+	//generated RegisterLogTrigger
+	//RegisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.FilterLogsReply], error)
+	//modified RegisterLogTrigger
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.FilterLogsReply], error)
+
+	UnregisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -106,11 +112,27 @@ func (c *eVMChainCapability) Info(ctx context.Context) (capabilities.CapabilityI
 var _ capabilities.ExecutableAndTriggerCapability = (*eVMChainCapability)(nil)
 
 func (c *eVMChainCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	return nil, fmt.Errorf("trigger %s not found", request.Method)
+	switch request.Method {
+	case "LogTrigger":
+		input := &evm.FilterLogTriggerRequest{}
+		return capabilities.RegisterTrigger(ctx, "mainnet-evm@1.0.0", request, input, c.EVMChainCapability.RegisterLogTrigger)
+	default:
+		return nil, fmt.Errorf("trigger %s not found", request.Method)
+	}
 }
 
 func (c *eVMChainCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	return fmt.Errorf("trigger %s not found", request.Method)
+	switch request.Method {
+	case "LogTrigger":
+		input := &evm.FilterLogTriggerRequest{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+		if err != nil {
+			return err
+		}
+		return c.EVMChainCapability.UnregisterLogTrigger(ctx, request.Metadata, input)
+	default:
+		return fmt.Errorf("method %s not found", request.Method)
+	}
 }
 
 func (c *eVMChainCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

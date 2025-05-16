@@ -31,14 +31,17 @@ type MismatchedCapability interface {
 }
 
 func NewMismatchedServer(capability MismatchedCapability) *MismatchedServer {
+	stopCh := make(chan struct{})
 	return &MismatchedServer{
-		mismatchedCapability: mismatchedCapability{MismatchedCapability: capability},
+		mismatchedCapability: mismatchedCapability{MismatchedCapability: capability, stopCh: stopCh},
+		stopCh:               stopCh,
 	}
 }
 
 type MismatchedServer struct {
 	mismatchedCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
 func (cs *MismatchedServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
@@ -67,6 +70,10 @@ func (cs *MismatchedServer) Close() error {
 		}
 	}
 
+	if cs.stopCh != nil {
+		close(cs.stopCh)
+	}
+
 	return cs.mismatchedCapability.Close()
 }
 
@@ -80,6 +87,7 @@ func (cs *MismatchedServer) Infos(ctx context.Context) ([]capabilities.Capabilit
 
 type mismatchedCapability struct {
 	MismatchedCapability
+	stopCh chan struct{}
 }
 
 func (c *mismatchedCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

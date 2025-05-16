@@ -13,7 +13,6 @@ import (
 	pb4 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -32,18 +31,21 @@ type BasicActionCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewBasicActionServer(capability BasicActionCapability) loop.StandardCapabilities {
-	return &basicActionServer{
-		basicActionCapability: basicActionCapability{BasicActionCapability: capability},
+func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
+	stopCh := make(chan struct{})
+	return &BasicActionServer{
+		basicActionCapability: basicActionCapability{BasicActionCapability: capability, stopCh: stopCh},
+		stopCh:                stopCh,
 	}
 }
 
-type basicActionServer struct {
+type BasicActionServer struct {
 	basicActionCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
-func (cs *basicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -59,17 +61,24 @@ func (cs *basicActionServer) Initialise(ctx context.Context, config string, tele
 	return nil
 }
 
-func (cs *basicActionServer) Close() error {
+func (cs *BasicActionServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "import-clash@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "import-clash@1.0.0"); err != nil {
+			return err
+		}
+	}
+
+	if cs.stopCh != nil {
+		close(cs.stopCh)
 	}
 
 	return cs.basicActionCapability.Close()
 }
 
-func (cs *basicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *BasicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.basicActionCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -79,6 +88,7 @@ func (cs *basicActionServer) Infos(ctx context.Context) ([]capabilities.Capabili
 
 type basicActionCapability struct {
 	BasicActionCapability
+	stopCh chan struct{}
 }
 
 func (c *basicActionCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

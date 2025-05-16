@@ -306,12 +306,12 @@ func (e *evmServer) QueryTrackedLogs(ctx context.Context, req *evmpb.QueryTracke
 		return nil, err
 	}
 
-	conf, err := evmcap.ConfidenceFromProto(req.ConfidenceLevel)
+	conf, err := evmpb.ConfidenceFromProto(req.ConfidenceLevel)
 	if err != nil {
 		return nil, err
 	}
 
-	limitAndSort, err := evmcap.ConvertLimitAndSortFromProto(req.LimitAndSort)
+	limitAndSort, err := evmpb.ConvertLimitAndSortFromProto(req.LimitAndSort)
 
 	logs, err := e.impl.QueryTrackedLogs(ctx, exprs, limitAndSort, conf)
 	if err != nil {
@@ -819,7 +819,7 @@ func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error)
 	case *pb.Primitive_Comparator:
 		return query.Expression{}, errors.New("comparator primitive is not supported for EVMService")
 	case *pb.Primitive_Confidence:
-		confidence, err := evmcap.ConfidenceFromProto(primitive.Confidence)
+		confidence, err := evmpb.ConfidenceFromProto(primitive.Confidence)
 		return query.Confidence(confidence), err
 	case *pb.Primitive_Block:
 		return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747352517343,
+  "lastUpdate": 1747413384523,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13650,6 +13650,48 @@ window.BENCHMARK_DATA = {
             "value": 28564,
             "unit": "ns/op",
             "extra": "42166 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d5e3379929b90e15cf0c242a27d5068b008c5d6",
+          "message": "fix(capabilities): enable long running trigger response transform (#1198)\n\n* fix(capabilities): separate transform from register request\n\n* fix(capabilities): pass a stop channel to RegisterTrigger in servers",
+          "timestamp": "2025-05-16T12:35:04-04:00",
+          "tree_id": "d11f0c48bd4cc2b62e2a3d0a67ace27c73b3e751",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5d5e3379929b90e15cf0c242a27d5068b008c5d6"
+        },
+        "date": 1747413383472,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.3,
+            "unit": "ns/op",
+            "extra": "3355836 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.4,
+            "unit": "ns/op",
+            "extra": "2945244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28635,
+            "unit": "ns/op",
+            "extra": "41726 times\n4 procs"
           }
         ]
       }

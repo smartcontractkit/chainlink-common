@@ -271,6 +271,7 @@ func (x *GetTransactionStatusRequest) GetTransactionId() string {
 	return ""
 }
 
+// GetEstimateFeeReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
 type GetEstimateFeeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ContractName  string                 `protobuf:"bytes,1,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
@@ -453,6 +454,7 @@ func (x *GetFeeComponentsReply) GetDataAvailabilityFee() *BigInt {
 	return nil
 }
 
+// GetEstimateFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
 type GetEstimateFeeReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Fee           *BigInt                `protobuf:"bytes,1,opt,name=fee,proto3" json:"fee,omitempty"`

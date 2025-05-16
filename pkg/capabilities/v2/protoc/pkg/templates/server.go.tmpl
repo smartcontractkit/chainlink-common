@@ -53,14 +53,17 @@ type {{.GoName}}Capability interface {
 }
 
 func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
+    stopCh := make(chan struct{})
     return &{{.GoName}}Server{
-        {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability},
+        {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability, stopCh: stopCh},
+        stopCh: stopCh,
     }
 }
 
 type {{.GoName}}Server struct {
     {{.GoName|LowerFirst}}Capability
     capabilityRegistry core.CapabilitiesRegistry
+    stopCh chan struct{}
 }
 
 
@@ -90,6 +93,10 @@ func (cs *{{.GoName}}Server) Close() error{
         }
     }
 
+    if cs.stopCh != nil {
+        close(cs.stopCh)
+    }
+
 	return cs.{{.GoName|LowerFirst}}Capability.Close()
 }
 
@@ -104,6 +111,7 @@ func (cs *{{.GoName}}Server) Infos(ctx context.Context) ([]capabilities.Capabili
 
 type {{.GoName|LowerFirst}}Capability struct {
     {{.GoName}}Capability
+    stopCh chan struct{}
 }
 
 func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -121,12 +129,12 @@ func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, 
         {{- if (isTrigger .) }}
             case "{{.GoName}}":
                 input := &{{name .Input.GoIdent ""}}{}
-                return capabilities.RegisterTrigger(ctx, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
+                return capabilities.RegisterTrigger(ctx, c.stopCh, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- if (MapToUntypedAPI .) }}
             case "":
                 input := &{{name .Input.GoIdent ""}}{}
-                return capabilities.RegisterTrigger(ctx, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
+                return capabilities.RegisterTrigger(ctx, c.stopCh, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- end }}
         	default:

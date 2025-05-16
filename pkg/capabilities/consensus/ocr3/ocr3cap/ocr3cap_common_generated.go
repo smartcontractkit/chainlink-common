@@ -14,11 +14,13 @@ type Encoder string
 type EncoderConfig map[string]interface{}
 
 const EncoderEVM Encoder = "EVM"
+const EncoderPassthrough Encoder = "Passthrough"
 const EncoderValueMap Encoder = "ValueMap"
 
 var enumValues_Encoder = []interface{}{
 	"EVM",
 	"ValueMap",
+	"Passthrough",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

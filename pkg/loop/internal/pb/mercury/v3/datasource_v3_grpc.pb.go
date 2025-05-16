@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: datasource_v3.proto
+// source: loop/internal/pb/mercury/v3/datasource_v3.proto
 
 package mercuryv3pb
 
@@ -121,5 +121,5 @@ var DataSource_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "datasource_v3.proto",
+	Metadata: "loop/internal/pb/mercury/v3/datasource_v3.proto",
 }

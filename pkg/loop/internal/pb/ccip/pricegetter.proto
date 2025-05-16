@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 
 package loop.internal.pb.ccip;
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
 import "google/protobuf/empty.proto";
 
 

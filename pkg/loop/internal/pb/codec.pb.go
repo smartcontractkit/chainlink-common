@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: codec.proto
+// source: loop/internal/pb/codec.proto
 
 package pb
 
@@ -31,7 +31,7 @@ type VersionedBytes struct {
 
 func (x *VersionedBytes) Reset() {
 	*x = VersionedBytes{}
-	mi := &file_codec_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *VersionedBytes) String() string {
 func (*VersionedBytes) ProtoMessage() {}
 
 func (x *VersionedBytes) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *VersionedBytes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionedBytes.ProtoReflect.Descriptor instead.
 func (*VersionedBytes) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *VersionedBytes) GetVersion() uint32 {
@@ -83,7 +83,7 @@ type GetEncodingRequest struct {
 
 func (x *GetEncodingRequest) Reset() {
 	*x = GetEncodingRequest{}
-	mi := &file_codec_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +95,7 @@ func (x *GetEncodingRequest) String() string {
 func (*GetEncodingRequest) ProtoMessage() {}
 
 func (x *GetEncodingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +108,7 @@ func (x *GetEncodingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEncodingRequest.ProtoReflect.Descriptor instead.
 func (*GetEncodingRequest) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetEncodingRequest) GetParams() *VersionedBytes {
@@ -134,7 +134,7 @@ type GetEncodingResponse struct {
 
 func (x *GetEncodingResponse) Reset() {
 	*x = GetEncodingResponse{}
-	mi := &file_codec_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +146,7 @@ func (x *GetEncodingResponse) String() string {
 func (*GetEncodingResponse) ProtoMessage() {}
 
 func (x *GetEncodingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +159,7 @@ func (x *GetEncodingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEncodingResponse.ProtoReflect.Descriptor instead.
 func (*GetEncodingResponse) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetEncodingResponse) GetRetVal() []byte {
@@ -180,7 +180,7 @@ type GetDecodingRequest struct {
 
 func (x *GetDecodingRequest) Reset() {
 	*x = GetDecodingRequest{}
-	mi := &file_codec_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -192,7 +192,7 @@ func (x *GetDecodingRequest) String() string {
 func (*GetDecodingRequest) ProtoMessage() {}
 
 func (x *GetDecodingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -205,7 +205,7 @@ func (x *GetDecodingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDecodingRequest.ProtoReflect.Descriptor instead.
 func (*GetDecodingRequest) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetDecodingRequest) GetEncoded() []byte {
@@ -238,7 +238,7 @@ type GetDecodingResponse struct {
 
 func (x *GetDecodingResponse) Reset() {
 	*x = GetDecodingResponse{}
-	mi := &file_codec_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -250,7 +250,7 @@ func (x *GetDecodingResponse) String() string {
 func (*GetDecodingResponse) ProtoMessage() {}
 
 func (x *GetDecodingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -263,7 +263,7 @@ func (x *GetDecodingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDecodingResponse.ProtoReflect.Descriptor instead.
 func (*GetDecodingResponse) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetDecodingResponse) GetRetVal() *VersionedBytes {
@@ -284,7 +284,7 @@ type GetMaxSizeRequest struct {
 
 func (x *GetMaxSizeRequest) Reset() {
 	*x = GetMaxSizeRequest{}
-	mi := &file_codec_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +296,7 @@ func (x *GetMaxSizeRequest) String() string {
 func (*GetMaxSizeRequest) ProtoMessage() {}
 
 func (x *GetMaxSizeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +309,7 @@ func (x *GetMaxSizeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMaxSizeRequest.ProtoReflect.Descriptor instead.
 func (*GetMaxSizeRequest) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetMaxSizeRequest) GetN() int32 {
@@ -342,7 +342,7 @@ type GetMaxSizeResponse struct {
 
 func (x *GetMaxSizeResponse) Reset() {
 	*x = GetMaxSizeResponse{}
-	mi := &file_codec_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -354,7 +354,7 @@ func (x *GetMaxSizeResponse) String() string {
 func (*GetMaxSizeResponse) ProtoMessage() {}
 
 func (x *GetMaxSizeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_codec_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_codec_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -367,7 +367,7 @@ func (x *GetMaxSizeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMaxSizeResponse.ProtoReflect.Descriptor instead.
 func (*GetMaxSizeResponse) Descriptor() ([]byte, []int) {
-	return file_codec_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_codec_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetMaxSizeResponse) GetSizeInBytes() int32 {
@@ -377,11 +377,11 @@ func (x *GetMaxSizeResponse) GetSizeInBytes() int32 {
 	return 0
 }
 
-var File_codec_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_codec_proto protoreflect.FileDescriptor
 
-const file_codec_proto_rawDesc = "" +
+const file_loop_internal_pb_codec_proto_rawDesc = "" +
 	"\n" +
-	"\vcodec.proto\x12\x04loop\">\n" +
+	"\x1cloop/internal/pb/codec.proto\x12\x04loop\">\n" +
 	"\x0eVersionedBytes\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\rR\aversion\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\"^\n" +
@@ -409,19 +409,19 @@ const file_codec_proto_rawDesc = "" +
 	"GetMaxSize\x12\x17.loop.GetMaxSizeRequest\x1a\x18.loop.GetMaxSizeResponseBCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_codec_proto_rawDescOnce sync.Once
-	file_codec_proto_rawDescData []byte
+	file_loop_internal_pb_codec_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_codec_proto_rawDescData []byte
 )
 
-func file_codec_proto_rawDescGZIP() []byte {
-	file_codec_proto_rawDescOnce.Do(func() {
-		file_codec_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_codec_proto_rawDesc), len(file_codec_proto_rawDesc)))
+func file_loop_internal_pb_codec_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_codec_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_codec_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_codec_proto_rawDesc), len(file_loop_internal_pb_codec_proto_rawDesc)))
 	})
-	return file_codec_proto_rawDescData
+	return file_loop_internal_pb_codec_proto_rawDescData
 }
 
-var file_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_codec_proto_goTypes = []any{
+var file_loop_internal_pb_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_loop_internal_pb_codec_proto_goTypes = []any{
 	(*VersionedBytes)(nil),      // 0: loop.VersionedBytes
 	(*GetEncodingRequest)(nil),  // 1: loop.GetEncodingRequest
 	(*GetEncodingResponse)(nil), // 2: loop.GetEncodingResponse
@@ -430,7 +430,7 @@ var file_codec_proto_goTypes = []any{
 	(*GetMaxSizeRequest)(nil),   // 5: loop.GetMaxSizeRequest
 	(*GetMaxSizeResponse)(nil),  // 6: loop.GetMaxSizeResponse
 }
-var file_codec_proto_depIdxs = []int32{
+var file_loop_internal_pb_codec_proto_depIdxs = []int32{
 	0, // 0: loop.GetEncodingRequest.params:type_name -> loop.VersionedBytes
 	0, // 1: loop.GetDecodingResponse.retVal:type_name -> loop.VersionedBytes
 	1, // 2: loop.Codec.GetEncoding:input_type -> loop.GetEncodingRequest
@@ -446,26 +446,26 @@ var file_codec_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_codec_proto_init() }
-func file_codec_proto_init() {
-	if File_codec_proto != nil {
+func init() { file_loop_internal_pb_codec_proto_init() }
+func file_loop_internal_pb_codec_proto_init() {
+	if File_loop_internal_pb_codec_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codec_proto_rawDesc), len(file_codec_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_codec_proto_rawDesc), len(file_loop_internal_pb_codec_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_codec_proto_goTypes,
-		DependencyIndexes: file_codec_proto_depIdxs,
-		MessageInfos:      file_codec_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_codec_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_codec_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_codec_proto_msgTypes,
 	}.Build()
-	File_codec_proto = out.File
-	file_codec_proto_goTypes = nil
-	file_codec_proto_depIdxs = nil
+	File_loop_internal_pb_codec_proto = out.File
+	file_loop_internal_pb_codec_proto_goTypes = nil
+	file_loop_internal_pb_codec_proto_depIdxs = nil
 }

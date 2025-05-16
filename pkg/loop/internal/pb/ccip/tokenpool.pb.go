@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: tokenpool.proto
+// source: loop/internal/pb/ccip/tokenpool.proto
 
 package ccippb
 
@@ -33,7 +33,7 @@ type GetInboundTokenPoolRateLimitsRequest struct {
 
 func (x *GetInboundTokenPoolRateLimitsRequest) Reset() {
 	*x = GetInboundTokenPoolRateLimitsRequest{}
-	mi := &file_tokenpool_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_tokenpool_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *GetInboundTokenPoolRateLimitsRequest) String() string {
 func (*GetInboundTokenPoolRateLimitsRequest) ProtoMessage() {}
 
 func (x *GetInboundTokenPoolRateLimitsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tokenpool_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_tokenpool_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *GetInboundTokenPoolRateLimitsRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetInboundTokenPoolRateLimitsRequest.ProtoReflect.Descriptor instead.
 func (*GetInboundTokenPoolRateLimitsRequest) Descriptor() ([]byte, []int) {
-	return file_tokenpool_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_tokenpool_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetInboundTokenPoolRateLimitsRequest) GetTokenPoolReaders() []string {
@@ -79,7 +79,7 @@ type GetInboundTokenPoolRateLimitsResponse struct {
 
 func (x *GetInboundTokenPoolRateLimitsResponse) Reset() {
 	*x = GetInboundTokenPoolRateLimitsResponse{}
-	mi := &file_tokenpool_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_tokenpool_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -91,7 +91,7 @@ func (x *GetInboundTokenPoolRateLimitsResponse) String() string {
 func (*GetInboundTokenPoolRateLimitsResponse) ProtoMessage() {}
 
 func (x *GetInboundTokenPoolRateLimitsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tokenpool_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_tokenpool_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -104,7 +104,7 @@ func (x *GetInboundTokenPoolRateLimitsResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetInboundTokenPoolRateLimitsResponse.ProtoReflect.Descriptor instead.
 func (*GetInboundTokenPoolRateLimitsResponse) Descriptor() ([]byte, []int) {
-	return file_tokenpool_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_tokenpool_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetInboundTokenPoolRateLimitsResponse) GetTokenPoolRateLimits() []*TokenPoolRateLimit {
@@ -114,11 +114,11 @@ func (x *GetInboundTokenPoolRateLimitsResponse) GetTokenPoolRateLimits() []*Toke
 	return nil
 }
 
-var File_tokenpool_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_tokenpool_proto protoreflect.FileDescriptor
 
-const file_tokenpool_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_tokenpool_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftokenpool.proto\x12\x15loop.internal.pb.ccip\x1a\fmodels.proto\x1a\x1bgoogle/protobuf/empty.proto\"T\n" +
+	"%loop/internal/pb/ccip/tokenpool.proto\x12\x15loop.internal.pb.ccip\x1a\"loop/internal/pb/ccip/models.proto\x1a\x1bgoogle/protobuf/empty.proto\"T\n" +
 	"$GetInboundTokenPoolRateLimitsRequest\x12,\n" +
 	"\x12token_pool_readers\x18\x01 \x03(\tR\x10tokenPoolReaders\"\x87\x01\n" +
 	"%GetInboundTokenPoolRateLimitsResponse\x12^\n" +
@@ -128,25 +128,25 @@ const file_tokenpool_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00BOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_tokenpool_proto_rawDescOnce sync.Once
-	file_tokenpool_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_tokenpool_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_tokenpool_proto_rawDescData []byte
 )
 
-func file_tokenpool_proto_rawDescGZIP() []byte {
-	file_tokenpool_proto_rawDescOnce.Do(func() {
-		file_tokenpool_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tokenpool_proto_rawDesc), len(file_tokenpool_proto_rawDesc)))
+func file_loop_internal_pb_ccip_tokenpool_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_tokenpool_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_tokenpool_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_tokenpool_proto_rawDesc), len(file_loop_internal_pb_ccip_tokenpool_proto_rawDesc)))
 	})
-	return file_tokenpool_proto_rawDescData
+	return file_loop_internal_pb_ccip_tokenpool_proto_rawDescData
 }
 
-var file_tokenpool_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_tokenpool_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_tokenpool_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_loop_internal_pb_ccip_tokenpool_proto_goTypes = []any{
 	(*GetInboundTokenPoolRateLimitsRequest)(nil),  // 0: loop.internal.pb.ccip.GetInboundTokenPoolRateLimitsRequest
 	(*GetInboundTokenPoolRateLimitsResponse)(nil), // 1: loop.internal.pb.ccip.GetInboundTokenPoolRateLimitsResponse
 	(*TokenPoolRateLimit)(nil),                    // 2: loop.internal.pb.ccip.TokenPoolRateLimit
 	(*emptypb.Empty)(nil),                         // 3: google.protobuf.Empty
 }
-var file_tokenpool_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_tokenpool_proto_depIdxs = []int32{
 	2, // 0: loop.internal.pb.ccip.GetInboundTokenPoolRateLimitsResponse.token_pool_rate_limits:type_name -> loop.internal.pb.ccip.TokenPoolRateLimit
 	0, // 1: loop.internal.pb.ccip.TokenPoolBatcherReader.GetInboundTokenPoolRateLimits:input_type -> loop.internal.pb.ccip.GetInboundTokenPoolRateLimitsRequest
 	3, // 2: loop.internal.pb.ccip.TokenPoolBatcherReader.Close:input_type -> google.protobuf.Empty
@@ -159,27 +159,27 @@ var file_tokenpool_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_tokenpool_proto_init() }
-func file_tokenpool_proto_init() {
-	if File_tokenpool_proto != nil {
+func init() { file_loop_internal_pb_ccip_tokenpool_proto_init() }
+func file_loop_internal_pb_ccip_tokenpool_proto_init() {
+	if File_loop_internal_pb_ccip_tokenpool_proto != nil {
 		return
 	}
-	file_models_proto_init()
+	file_loop_internal_pb_ccip_models_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tokenpool_proto_rawDesc), len(file_tokenpool_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_tokenpool_proto_rawDesc), len(file_loop_internal_pb_ccip_tokenpool_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_tokenpool_proto_goTypes,
-		DependencyIndexes: file_tokenpool_proto_depIdxs,
-		MessageInfos:      file_tokenpool_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_tokenpool_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_tokenpool_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_ccip_tokenpool_proto_msgTypes,
 	}.Build()
-	File_tokenpool_proto = out.File
-	file_tokenpool_proto_goTypes = nil
-	file_tokenpool_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_tokenpool_proto = out.File
+	file_loop_internal_pb_ccip_tokenpool_proto_goTypes = nil
+	file_loop_internal_pb_ccip_tokenpool_proto_depIdxs = nil
 }

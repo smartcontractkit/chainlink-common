@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: onramp.proto
+// source: loop/internal/pb/ccip/onramp.proto
 
 package ccippb
 
@@ -390,5 +390,5 @@ var OnRampReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "onramp.proto",
+	Metadata: "loop/internal/pb/ccip/onramp.proto",
 }

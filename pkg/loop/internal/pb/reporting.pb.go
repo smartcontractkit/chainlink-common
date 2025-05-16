@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: reporting.proto
+// source: loop/internal/pb/reporting.proto
 
 package pb
 
@@ -31,7 +31,7 @@ type NewReportingPluginRequest struct {
 
 func (x *NewReportingPluginRequest) Reset() {
 	*x = NewReportingPluginRequest{}
-	mi := &file_reporting_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *NewReportingPluginRequest) String() string {
 func (*NewReportingPluginRequest) ProtoMessage() {}
 
 func (x *NewReportingPluginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *NewReportingPluginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewReportingPluginRequest.ProtoReflect.Descriptor instead.
 func (*NewReportingPluginRequest) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NewReportingPluginRequest) GetReportingPluginConfig() *ReportingPluginConfig {
@@ -76,7 +76,7 @@ type NewReportingPluginReply struct {
 
 func (x *NewReportingPluginReply) Reset() {
 	*x = NewReportingPluginReply{}
-	mi := &file_reporting_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +88,7 @@ func (x *NewReportingPluginReply) String() string {
 func (*NewReportingPluginReply) ProtoMessage() {}
 
 func (x *NewReportingPluginReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +101,7 @@ func (x *NewReportingPluginReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewReportingPluginReply.ProtoReflect.Descriptor instead.
 func (*NewReportingPluginReply) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NewReportingPluginReply) GetReportingPluginID() uint32 {
@@ -139,7 +139,7 @@ type ReportingPluginConfig struct {
 
 func (x *ReportingPluginConfig) Reset() {
 	*x = ReportingPluginConfig{}
-	mi := &file_reporting_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -151,7 +151,7 @@ func (x *ReportingPluginConfig) String() string {
 func (*ReportingPluginConfig) ProtoMessage() {}
 
 func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -164,7 +164,7 @@ func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginConfig.ProtoReflect.Descriptor instead.
 func (*ReportingPluginConfig) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ReportingPluginConfig) GetConfigDigest() []byte {
@@ -263,7 +263,7 @@ type ReportingPluginLimits struct {
 
 func (x *ReportingPluginLimits) Reset() {
 	*x = ReportingPluginLimits{}
-	mi := &file_reporting_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -275,7 +275,7 @@ func (x *ReportingPluginLimits) String() string {
 func (*ReportingPluginLimits) ProtoMessage() {}
 
 func (x *ReportingPluginLimits) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -288,7 +288,7 @@ func (x *ReportingPluginLimits) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginLimits.ProtoReflect.Descriptor instead.
 func (*ReportingPluginLimits) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ReportingPluginLimits) GetMaxQueryLength() uint64 {
@@ -324,7 +324,7 @@ type ReportingPluginInfo struct {
 
 func (x *ReportingPluginInfo) Reset() {
 	*x = ReportingPluginInfo{}
-	mi := &file_reporting_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +336,7 @@ func (x *ReportingPluginInfo) String() string {
 func (*ReportingPluginInfo) ProtoMessage() {}
 
 func (x *ReportingPluginInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +349,7 @@ func (x *ReportingPluginInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginInfo.ProtoReflect.Descriptor instead.
 func (*ReportingPluginInfo) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReportingPluginInfo) GetName() string {
@@ -383,7 +383,7 @@ type QueryRequest struct {
 
 func (x *QueryRequest) Reset() {
 	*x = QueryRequest{}
-	mi := &file_reporting_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +395,7 @@ func (x *QueryRequest) String() string {
 func (*QueryRequest) ProtoMessage() {}
 
 func (x *QueryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +408,7 @@ func (x *QueryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryRequest.ProtoReflect.Descriptor instead.
 func (*QueryRequest) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *QueryRequest) GetReportTimestamp() *ReportTimestamp {
@@ -428,7 +428,7 @@ type QueryReply struct {
 
 func (x *QueryReply) Reset() {
 	*x = QueryReply{}
-	mi := &file_reporting_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -440,7 +440,7 @@ func (x *QueryReply) String() string {
 func (*QueryReply) ProtoMessage() {}
 
 func (x *QueryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -453,7 +453,7 @@ func (x *QueryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryReply.ProtoReflect.Descriptor instead.
 func (*QueryReply) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QueryReply) GetQuery() []byte {
@@ -474,7 +474,7 @@ type ObservationRequest struct {
 
 func (x *ObservationRequest) Reset() {
 	*x = ObservationRequest{}
-	mi := &file_reporting_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -486,7 +486,7 @@ func (x *ObservationRequest) String() string {
 func (*ObservationRequest) ProtoMessage() {}
 
 func (x *ObservationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -499,7 +499,7 @@ func (x *ObservationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObservationRequest.ProtoReflect.Descriptor instead.
 func (*ObservationRequest) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ObservationRequest) GetReportTimestamp() *ReportTimestamp {
@@ -526,7 +526,7 @@ type ObservationReply struct {
 
 func (x *ObservationReply) Reset() {
 	*x = ObservationReply{}
-	mi := &file_reporting_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -538,7 +538,7 @@ func (x *ObservationReply) String() string {
 func (*ObservationReply) ProtoMessage() {}
 
 func (x *ObservationReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -551,7 +551,7 @@ func (x *ObservationReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObservationReply.ProtoReflect.Descriptor instead.
 func (*ObservationReply) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ObservationReply) GetObservation() []byte {
@@ -572,7 +572,7 @@ type AttributedObservation struct {
 
 func (x *AttributedObservation) Reset() {
 	*x = AttributedObservation{}
-	mi := &file_reporting_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -584,7 +584,7 @@ func (x *AttributedObservation) String() string {
 func (*AttributedObservation) ProtoMessage() {}
 
 func (x *AttributedObservation) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -597,7 +597,7 @@ func (x *AttributedObservation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributedObservation.ProtoReflect.Descriptor instead.
 func (*AttributedObservation) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AttributedObservation) GetObservation() []byte {
@@ -626,7 +626,7 @@ type ReportRequest struct {
 
 func (x *ReportRequest) Reset() {
 	*x = ReportRequest{}
-	mi := &file_reporting_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -638,7 +638,7 @@ func (x *ReportRequest) String() string {
 func (*ReportRequest) ProtoMessage() {}
 
 func (x *ReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -651,7 +651,7 @@ func (x *ReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportRequest.ProtoReflect.Descriptor instead.
 func (*ReportRequest) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ReportRequest) GetReportTimestamp() *ReportTimestamp {
@@ -686,7 +686,7 @@ type ReportReply struct {
 
 func (x *ReportReply) Reset() {
 	*x = ReportReply{}
-	mi := &file_reporting_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -698,7 +698,7 @@ func (x *ReportReply) String() string {
 func (*ReportReply) ProtoMessage() {}
 
 func (x *ReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -711,7 +711,7 @@ func (x *ReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportReply.ProtoReflect.Descriptor instead.
 func (*ReportReply) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ReportReply) GetShouldReport() bool {
@@ -739,7 +739,7 @@ type ShouldAcceptFinalizedReportRequest struct {
 
 func (x *ShouldAcceptFinalizedReportRequest) Reset() {
 	*x = ShouldAcceptFinalizedReportRequest{}
-	mi := &file_reporting_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -751,7 +751,7 @@ func (x *ShouldAcceptFinalizedReportRequest) String() string {
 func (*ShouldAcceptFinalizedReportRequest) ProtoMessage() {}
 
 func (x *ShouldAcceptFinalizedReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -764,7 +764,7 @@ func (x *ShouldAcceptFinalizedReportRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ShouldAcceptFinalizedReportRequest.ProtoReflect.Descriptor instead.
 func (*ShouldAcceptFinalizedReportRequest) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ShouldAcceptFinalizedReportRequest) GetReportTimestamp() *ReportTimestamp {
@@ -791,7 +791,7 @@ type ShouldAcceptFinalizedReportReply struct {
 
 func (x *ShouldAcceptFinalizedReportReply) Reset() {
 	*x = ShouldAcceptFinalizedReportReply{}
-	mi := &file_reporting_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -803,7 +803,7 @@ func (x *ShouldAcceptFinalizedReportReply) String() string {
 func (*ShouldAcceptFinalizedReportReply) ProtoMessage() {}
 
 func (x *ShouldAcceptFinalizedReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -816,7 +816,7 @@ func (x *ShouldAcceptFinalizedReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShouldAcceptFinalizedReportReply.ProtoReflect.Descriptor instead.
 func (*ShouldAcceptFinalizedReportReply) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ShouldAcceptFinalizedReportReply) GetShouldAccept() bool {
@@ -837,7 +837,7 @@ type ShouldTransmitAcceptedReportRequest struct {
 
 func (x *ShouldTransmitAcceptedReportRequest) Reset() {
 	*x = ShouldTransmitAcceptedReportRequest{}
-	mi := &file_reporting_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -849,7 +849,7 @@ func (x *ShouldTransmitAcceptedReportRequest) String() string {
 func (*ShouldTransmitAcceptedReportRequest) ProtoMessage() {}
 
 func (x *ShouldTransmitAcceptedReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,7 +862,7 @@ func (x *ShouldTransmitAcceptedReportRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ShouldTransmitAcceptedReportRequest.ProtoReflect.Descriptor instead.
 func (*ShouldTransmitAcceptedReportRequest) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ShouldTransmitAcceptedReportRequest) GetReportTimestamp() *ReportTimestamp {
@@ -889,7 +889,7 @@ type ShouldTransmitAcceptedReportReply struct {
 
 func (x *ShouldTransmitAcceptedReportReply) Reset() {
 	*x = ShouldTransmitAcceptedReportReply{}
-	mi := &file_reporting_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +901,7 @@ func (x *ShouldTransmitAcceptedReportReply) String() string {
 func (*ShouldTransmitAcceptedReportReply) ProtoMessage() {}
 
 func (x *ShouldTransmitAcceptedReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reporting_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_reporting_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +914,7 @@ func (x *ShouldTransmitAcceptedReportReply) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ShouldTransmitAcceptedReportReply.ProtoReflect.Descriptor instead.
 func (*ShouldTransmitAcceptedReportReply) Descriptor() ([]byte, []int) {
-	return file_reporting_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_reporting_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ShouldTransmitAcceptedReportReply) GetShouldTransmit() bool {
@@ -924,11 +924,11 @@ func (x *ShouldTransmitAcceptedReportReply) GetShouldTransmit() bool {
 	return false
 }
 
-var File_reporting_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_reporting_proto protoreflect.FileDescriptor
 
-const file_reporting_proto_rawDesc = "" +
+const file_loop_internal_pb_reporting_proto_rawDesc = "" +
 	"\n" +
-	"\x0freporting.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\rrelayer.proto\"n\n" +
+	" loop/internal/pb/reporting.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eloop/internal/pb/relayer.proto\"n\n" +
 	"\x19NewReportingPluginRequest\x12Q\n" +
 	"\x15reportingPluginConfig\x18\x01 \x01(\v2\x1b.loop.ReportingPluginConfigR\x15reportingPluginConfig\"\x94\x01\n" +
 	"\x17NewReportingPluginReply\x12,\n" +
@@ -997,19 +997,19 @@ const file_reporting_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_reporting_proto_rawDescOnce sync.Once
-	file_reporting_proto_rawDescData []byte
+	file_loop_internal_pb_reporting_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_reporting_proto_rawDescData []byte
 )
 
-func file_reporting_proto_rawDescGZIP() []byte {
-	file_reporting_proto_rawDescOnce.Do(func() {
-		file_reporting_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_reporting_proto_rawDesc), len(file_reporting_proto_rawDesc)))
+func file_loop_internal_pb_reporting_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_reporting_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_reporting_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_reporting_proto_rawDesc), len(file_loop_internal_pb_reporting_proto_rawDesc)))
 	})
-	return file_reporting_proto_rawDescData
+	return file_loop_internal_pb_reporting_proto_rawDescData
 }
 
-var file_reporting_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_reporting_proto_goTypes = []any{
+var file_loop_internal_pb_reporting_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_loop_internal_pb_reporting_proto_goTypes = []any{
 	(*NewReportingPluginRequest)(nil),           // 0: loop.NewReportingPluginRequest
 	(*NewReportingPluginReply)(nil),             // 1: loop.NewReportingPluginReply
 	(*ReportingPluginConfig)(nil),               // 2: loop.ReportingPluginConfig
@@ -1029,7 +1029,7 @@ var file_reporting_proto_goTypes = []any{
 	(*ReportTimestamp)(nil),                     // 16: loop.ReportTimestamp
 	(*emptypb.Empty)(nil),                       // 17: google.protobuf.Empty
 }
-var file_reporting_proto_depIdxs = []int32{
+var file_loop_internal_pb_reporting_proto_depIdxs = []int32{
 	2,  // 0: loop.NewReportingPluginRequest.reportingPluginConfig:type_name -> loop.ReportingPluginConfig
 	4,  // 1: loop.NewReportingPluginReply.reportingPluginInfo:type_name -> loop.ReportingPluginInfo
 	3,  // 2: loop.ReportingPluginInfo.reportingPluginLimits:type_name -> loop.ReportingPluginLimits
@@ -1060,27 +1060,27 @@ var file_reporting_proto_depIdxs = []int32{
 	0,  // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_reporting_proto_init() }
-func file_reporting_proto_init() {
-	if File_reporting_proto != nil {
+func init() { file_loop_internal_pb_reporting_proto_init() }
+func file_loop_internal_pb_reporting_proto_init() {
+	if File_loop_internal_pb_reporting_proto != nil {
 		return
 	}
-	file_relayer_proto_init()
+	file_loop_internal_pb_relayer_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_reporting_proto_rawDesc), len(file_reporting_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_reporting_proto_rawDesc), len(file_loop_internal_pb_reporting_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
-		GoTypes:           file_reporting_proto_goTypes,
-		DependencyIndexes: file_reporting_proto_depIdxs,
-		MessageInfos:      file_reporting_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_reporting_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_reporting_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_reporting_proto_msgTypes,
 	}.Build()
-	File_reporting_proto = out.File
-	file_reporting_proto_goTypes = nil
-	file_reporting_proto_depIdxs = nil
+	File_loop_internal_pb_reporting_proto = out.File
+	file_loop_internal_pb_reporting_proto_goTypes = nil
+	file_loop_internal_pb_reporting_proto_depIdxs = nil
 }

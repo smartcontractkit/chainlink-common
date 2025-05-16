@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: mercury_plugin.proto
+// source: loop/internal/pb/mercury/mercury_plugin.proto
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
 
@@ -120,7 +120,7 @@ var MercuryPluginFactory_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_plugin.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_plugin.proto",
 }
 
 const (
@@ -298,5 +298,5 @@ var MercuryPlugin_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_plugin.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_plugin.proto",
 }

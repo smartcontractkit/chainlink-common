@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: commitstore.proto
+// source: loop/internal/pb/ccip/commitstore.proto
 
 package ccippb
 
@@ -656,5 +656,5 @@ var CommitStoreReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "commitstore.proto",
+	Metadata: "loop/internal/pb/ccip/commitstore.proto",
 }

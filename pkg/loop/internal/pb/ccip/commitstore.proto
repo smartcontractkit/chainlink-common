@@ -6,7 +6,7 @@ package loop.internal.pb.ccip;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "models.proto";
+import "loop/internal/pb/ccip/models.proto";
 
 // CommitStoreReader is a gRPC service adapter to the CommitStoreReader interface 
 // [github.com/smartcontractkit/chainlink-common/chainlink-common/pkg/types/ccip/CommitStoreReader]

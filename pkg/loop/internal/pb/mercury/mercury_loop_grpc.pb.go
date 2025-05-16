@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: mercury_loop.proto
+// source: loop/internal/pb/mercury/mercury_loop.proto
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
 
@@ -237,7 +237,7 @@ var MercuryAdapter_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -381,7 +381,7 @@ var OnchainConfigCodec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -563,7 +563,7 @@ var ReportCodecV4_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -745,7 +745,7 @@ var ReportCodecV3_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -927,7 +927,7 @@ var ReportCodecV1_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -1109,7 +1109,7 @@ var ReportCodecV2_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -1291,7 +1291,7 @@ var ServerFetcher_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }
 
 const (
@@ -1397,5 +1397,5 @@ var MercuryChainReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "mercury_loop.proto",
+	Metadata: "loop/internal/pb/mercury/mercury_loop.proto",
 }

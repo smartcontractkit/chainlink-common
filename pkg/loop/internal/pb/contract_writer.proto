@@ -4,8 +4,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "codec.proto";
-import "relayer.proto";
+import "loop/internal/pb/codec.proto";
+import "loop/internal/pb/relayer.proto";
 import "google/protobuf/empty.proto";
 
 service ContractWriter {

@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.ccip;
 import "google/protobuf/empty.proto";
 import "google/protobuf/duration.proto";
-import "models.proto";
+import "loop/internal/pb/ccip/models.proto";
 
 // OffRampReader is a gRPC service adapter for the OffRampReader interface 
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip/OffRampReader]

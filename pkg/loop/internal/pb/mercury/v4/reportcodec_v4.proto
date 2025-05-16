@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.mercury.v4;
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
 
 // ReportCodec is a gRPC adapter for the ReportCodec interface [pkg/types/mercury/v4/ReportCodec].
 // NOTE: MaxReport and ObservationTimestampFromReport are common amongst all mercury versions, but BuildReport is not.

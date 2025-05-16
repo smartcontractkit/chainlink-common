@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: median_datasource.proto
+// source: loop/internal/pb/median_datasource.proto
 
 package pb
 
@@ -31,7 +31,7 @@ type ObserveRequest struct {
 
 func (x *ObserveRequest) Reset() {
 	*x = ObserveRequest{}
-	mi := &file_median_datasource_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_median_datasource_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *ObserveRequest) String() string {
 func (*ObserveRequest) ProtoMessage() {}
 
 func (x *ObserveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_median_datasource_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_median_datasource_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *ObserveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveRequest.ProtoReflect.Descriptor instead.
 func (*ObserveRequest) Descriptor() ([]byte, []int) {
-	return file_median_datasource_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_median_datasource_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ObserveRequest) GetReportTimestamp() *ReportTimestamp {
@@ -76,7 +76,7 @@ type ObserveReply struct {
 
 func (x *ObserveReply) Reset() {
 	*x = ObserveReply{}
-	mi := &file_median_datasource_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_median_datasource_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +88,7 @@ func (x *ObserveReply) String() string {
 func (*ObserveReply) ProtoMessage() {}
 
 func (x *ObserveReply) ProtoReflect() protoreflect.Message {
-	mi := &file_median_datasource_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_median_datasource_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +101,7 @@ func (x *ObserveReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveReply.ProtoReflect.Descriptor instead.
 func (*ObserveReply) Descriptor() ([]byte, []int) {
-	return file_median_datasource_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_median_datasource_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ObserveReply) GetValue() *BigInt {
@@ -111,11 +111,11 @@ func (x *ObserveReply) GetValue() *BigInt {
 	return nil
 }
 
-var File_median_datasource_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_median_datasource_proto protoreflect.FileDescriptor
 
-const file_median_datasource_proto_rawDesc = "" +
+const file_loop_internal_pb_median_datasource_proto_rawDesc = "" +
 	"\n" +
-	"\x17median_datasource.proto\x12\x04loop\x1a\rrelayer.proto\"Q\n" +
+	"(loop/internal/pb/median_datasource.proto\x12\x04loop\x1a\x1eloop/internal/pb/relayer.proto\"Q\n" +
 	"\x0eObserveRequest\x12?\n" +
 	"\x0freportTimestamp\x18\x01 \x01(\v2\x15.loop.ReportTimestampR\x0freportTimestamp\"2\n" +
 	"\fObserveReply\x12\"\n" +
@@ -125,25 +125,25 @@ const file_median_datasource_proto_rawDesc = "" +
 	"\aObserve\x12\x14.loop.ObserveRequest\x1a\x12.loop.ObserveReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_median_datasource_proto_rawDescOnce sync.Once
-	file_median_datasource_proto_rawDescData []byte
+	file_loop_internal_pb_median_datasource_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_median_datasource_proto_rawDescData []byte
 )
 
-func file_median_datasource_proto_rawDescGZIP() []byte {
-	file_median_datasource_proto_rawDescOnce.Do(func() {
-		file_median_datasource_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_median_datasource_proto_rawDesc), len(file_median_datasource_proto_rawDesc)))
+func file_loop_internal_pb_median_datasource_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_median_datasource_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_median_datasource_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_median_datasource_proto_rawDesc), len(file_loop_internal_pb_median_datasource_proto_rawDesc)))
 	})
-	return file_median_datasource_proto_rawDescData
+	return file_loop_internal_pb_median_datasource_proto_rawDescData
 }
 
-var file_median_datasource_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_median_datasource_proto_goTypes = []any{
+var file_loop_internal_pb_median_datasource_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_loop_internal_pb_median_datasource_proto_goTypes = []any{
 	(*ObserveRequest)(nil),  // 0: loop.ObserveRequest
 	(*ObserveReply)(nil),    // 1: loop.ObserveReply
 	(*ReportTimestamp)(nil), // 2: loop.ReportTimestamp
 	(*BigInt)(nil),          // 3: loop.BigInt
 }
-var file_median_datasource_proto_depIdxs = []int32{
+var file_loop_internal_pb_median_datasource_proto_depIdxs = []int32{
 	2, // 0: loop.ObserveRequest.reportTimestamp:type_name -> loop.ReportTimestamp
 	3, // 1: loop.ObserveReply.value:type_name -> loop.BigInt
 	0, // 2: loop.DataSource.Observe:input_type -> loop.ObserveRequest
@@ -155,27 +155,27 @@ var file_median_datasource_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_median_datasource_proto_init() }
-func file_median_datasource_proto_init() {
-	if File_median_datasource_proto != nil {
+func init() { file_loop_internal_pb_median_datasource_proto_init() }
+func file_loop_internal_pb_median_datasource_proto_init() {
+	if File_loop_internal_pb_median_datasource_proto != nil {
 		return
 	}
-	file_relayer_proto_init()
+	file_loop_internal_pb_relayer_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_median_datasource_proto_rawDesc), len(file_median_datasource_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_median_datasource_proto_rawDesc), len(file_loop_internal_pb_median_datasource_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_median_datasource_proto_goTypes,
-		DependencyIndexes: file_median_datasource_proto_depIdxs,
-		MessageInfos:      file_median_datasource_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_median_datasource_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_median_datasource_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_median_datasource_proto_msgTypes,
 	}.Build()
-	File_median_datasource_proto = out.File
-	file_median_datasource_proto_goTypes = nil
-	file_median_datasource_proto_depIdxs = nil
+	File_loop_internal_pb_median_datasource_proto = out.File
+	file_loop_internal_pb_median_datasource_proto_goTypes = nil
+	file_loop_internal_pb_median_datasource_proto_depIdxs = nil
 }

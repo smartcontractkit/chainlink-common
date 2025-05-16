@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: tokendata.proto
+// source: loop/internal/pb/ccip/tokendata.proto
 
 package ccippb
 
@@ -34,7 +34,7 @@ type TokenDataRequest struct {
 
 func (x *TokenDataRequest) Reset() {
 	*x = TokenDataRequest{}
-	mi := &file_tokendata_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_tokendata_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *TokenDataRequest) String() string {
 func (*TokenDataRequest) ProtoMessage() {}
 
 func (x *TokenDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tokendata_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_tokendata_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *TokenDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenDataRequest.ProtoReflect.Descriptor instead.
 func (*TokenDataRequest) Descriptor() ([]byte, []int) {
-	return file_tokendata_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_tokendata_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TokenDataRequest) GetMsg() *EVM2EVMOnRampCCIPSendRequestedWithMeta {
@@ -87,7 +87,7 @@ type TokenDataResponse struct {
 
 func (x *TokenDataResponse) Reset() {
 	*x = TokenDataResponse{}
-	mi := &file_tokendata_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_tokendata_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *TokenDataResponse) String() string {
 func (*TokenDataResponse) ProtoMessage() {}
 
 func (x *TokenDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tokendata_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_tokendata_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *TokenDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenDataResponse.ProtoReflect.Descriptor instead.
 func (*TokenDataResponse) Descriptor() ([]byte, []int) {
-	return file_tokendata_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_tokendata_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TokenDataResponse) GetTokenData() []byte {
@@ -122,11 +122,11 @@ func (x *TokenDataResponse) GetTokenData() []byte {
 	return nil
 }
 
-var File_tokendata_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_tokendata_proto protoreflect.FileDescriptor
 
-const file_tokendata_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_tokendata_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftokendata.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\fmodels.proto\"\x84\x01\n" +
+	"%loop/internal/pb/ccip/tokendata.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\"loop/internal/pb/ccip/models.proto\"\x84\x01\n" +
 	"\x10TokenDataRequest\x12O\n" +
 	"\x03msg\x18\x01 \x01(\v2=.loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMetaR\x03msg\x12\x1f\n" +
 	"\vtoken_index\x18\x02 \x01(\x04R\n" +
@@ -139,25 +139,25 @@ const file_tokendata_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00BOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_tokendata_proto_rawDescOnce sync.Once
-	file_tokendata_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_tokendata_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_tokendata_proto_rawDescData []byte
 )
 
-func file_tokendata_proto_rawDescGZIP() []byte {
-	file_tokendata_proto_rawDescOnce.Do(func() {
-		file_tokendata_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tokendata_proto_rawDesc), len(file_tokendata_proto_rawDesc)))
+func file_loop_internal_pb_ccip_tokendata_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_tokendata_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_tokendata_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_tokendata_proto_rawDesc), len(file_loop_internal_pb_ccip_tokendata_proto_rawDesc)))
 	})
-	return file_tokendata_proto_rawDescData
+	return file_loop_internal_pb_ccip_tokendata_proto_rawDescData
 }
 
-var file_tokendata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_tokendata_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_tokendata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_loop_internal_pb_ccip_tokendata_proto_goTypes = []any{
 	(*TokenDataRequest)(nil),                       // 0: loop.internal.pb.ccip.TokenDataRequest
 	(*TokenDataResponse)(nil),                      // 1: loop.internal.pb.ccip.TokenDataResponse
 	(*EVM2EVMOnRampCCIPSendRequestedWithMeta)(nil), // 2: loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta
 	(*emptypb.Empty)(nil),                          // 3: google.protobuf.Empty
 }
-var file_tokendata_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_tokendata_proto_depIdxs = []int32{
 	2, // 0: loop.internal.pb.ccip.TokenDataRequest.msg:type_name -> loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta
 	0, // 1: loop.internal.pb.ccip.TokenDataReader.ReadTokenData:input_type -> loop.internal.pb.ccip.TokenDataRequest
 	3, // 2: loop.internal.pb.ccip.TokenDataReader.Close:input_type -> google.protobuf.Empty
@@ -170,27 +170,27 @@ var file_tokendata_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_tokendata_proto_init() }
-func file_tokendata_proto_init() {
-	if File_tokendata_proto != nil {
+func init() { file_loop_internal_pb_ccip_tokendata_proto_init() }
+func file_loop_internal_pb_ccip_tokendata_proto_init() {
+	if File_loop_internal_pb_ccip_tokendata_proto != nil {
 		return
 	}
-	file_models_proto_init()
+	file_loop_internal_pb_ccip_models_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tokendata_proto_rawDesc), len(file_tokendata_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_tokendata_proto_rawDesc), len(file_loop_internal_pb_ccip_tokendata_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_tokendata_proto_goTypes,
-		DependencyIndexes: file_tokendata_proto_depIdxs,
-		MessageInfos:      file_tokendata_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_tokendata_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_tokendata_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_ccip_tokendata_proto_msgTypes,
 	}.Build()
-	File_tokendata_proto = out.File
-	file_tokendata_proto_goTypes = nil
-	file_tokendata_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_tokendata_proto = out.File
+	file_loop_internal_pb_ccip_tokendata_proto_goTypes = nil
+	file_loop_internal_pb_ccip_tokendata_proto_depIdxs = nil
 }

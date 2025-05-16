@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -52,7 +52,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
 	evmService := &staticEVMService{}
-	evmpb.RegisterEVMServer(s, &evmServer{impl: evmService})
+	evmpb.RegisterEVMServer(s, &EvmServer{impl: evmService})
 
 	go func() {
 		_ = s.Serve(lis)
@@ -73,7 +73,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	require.NoError(t, err)
 
 	defer conn.Close()
-	client := &evmClient{
+	client := &EVMClient{
 		cl: evmpb.NewEVMClient(conn),
 	}
 	t.Run("BalanceAt", func(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -143,7 +144,7 @@ type EVMService interface {
 type Relayer interface {
 	ChainService
 
-	// Returns EVMService that provides access to evm-family specific functionalities
+	// EVM returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

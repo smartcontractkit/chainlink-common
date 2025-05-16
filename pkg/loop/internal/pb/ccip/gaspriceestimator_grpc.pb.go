@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: gaspriceestimator.proto
+// source: loop/internal/pb/ccip/gaspriceestimator.proto
 
 package ccippb
 
@@ -240,7 +240,7 @@ var GasPriceEstimatorExec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "gaspriceestimator.proto",
+	Metadata: "loop/internal/pb/ccip/gaspriceestimator.proto",
 }
 
 const (
@@ -465,5 +465,5 @@ var GasPriceEstimatorCommit_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "gaspriceestimator.proto",
+	Metadata: "loop/internal/pb/ccip/gaspriceestimator.proto",
 }

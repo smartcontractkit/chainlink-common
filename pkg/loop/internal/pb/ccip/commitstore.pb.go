@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: commitstore.proto
+// source: loop/internal/pb/ccip/commitstore.proto
 
 package ccippb
 
@@ -35,7 +35,7 @@ type GetExpectedNextSequenceNumberResponse struct {
 
 func (x *GetExpectedNextSequenceNumberResponse) Reset() {
 	*x = GetExpectedNextSequenceNumberResponse{}
-	mi := &file_commitstore_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *GetExpectedNextSequenceNumberResponse) String() string {
 func (*GetExpectedNextSequenceNumberResponse) ProtoMessage() {}
 
 func (x *GetExpectedNextSequenceNumberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *GetExpectedNextSequenceNumberResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetExpectedNextSequenceNumberResponse.ProtoReflect.Descriptor instead.
 func (*GetExpectedNextSequenceNumberResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetExpectedNextSequenceNumberResponse) GetSequenceNumber() uint64 {
@@ -81,7 +81,7 @@ type GetLatestPriceEpochAndRoundResponse struct {
 
 func (x *GetLatestPriceEpochAndRoundResponse) Reset() {
 	*x = GetLatestPriceEpochAndRoundResponse{}
-	mi := &file_commitstore_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +93,7 @@ func (x *GetLatestPriceEpochAndRoundResponse) String() string {
 func (*GetLatestPriceEpochAndRoundResponse) ProtoMessage() {}
 
 func (x *GetLatestPriceEpochAndRoundResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +106,7 @@ func (x *GetLatestPriceEpochAndRoundResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetLatestPriceEpochAndRoundResponse.ProtoReflect.Descriptor instead.
 func (*GetLatestPriceEpochAndRoundResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetLatestPriceEpochAndRoundResponse) GetEpochAndRound() uint64 {
@@ -128,7 +128,7 @@ type GetCommitReportMatchingSequenceNumberRequest struct {
 
 func (x *GetCommitReportMatchingSequenceNumberRequest) Reset() {
 	*x = GetCommitReportMatchingSequenceNumberRequest{}
-	mi := &file_commitstore_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -140,7 +140,7 @@ func (x *GetCommitReportMatchingSequenceNumberRequest) String() string {
 func (*GetCommitReportMatchingSequenceNumberRequest) ProtoMessage() {}
 
 func (x *GetCommitReportMatchingSequenceNumberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -153,7 +153,7 @@ func (x *GetCommitReportMatchingSequenceNumberRequest) ProtoReflect() protorefle
 
 // Deprecated: Use GetCommitReportMatchingSequenceNumberRequest.ProtoReflect.Descriptor instead.
 func (*GetCommitReportMatchingSequenceNumberRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetCommitReportMatchingSequenceNumberRequest) GetSequenceNumber() uint64 {
@@ -181,7 +181,7 @@ type GetCommitReportMatchingSequenceNumberResponse struct {
 
 func (x *GetCommitReportMatchingSequenceNumberResponse) Reset() {
 	*x = GetCommitReportMatchingSequenceNumberResponse{}
-	mi := &file_commitstore_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +193,7 @@ func (x *GetCommitReportMatchingSequenceNumberResponse) String() string {
 func (*GetCommitReportMatchingSequenceNumberResponse) ProtoMessage() {}
 
 func (x *GetCommitReportMatchingSequenceNumberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +206,7 @@ func (x *GetCommitReportMatchingSequenceNumberResponse) ProtoReflect() protorefl
 
 // Deprecated: Use GetCommitReportMatchingSequenceNumberResponse.ProtoReflect.Descriptor instead.
 func (*GetCommitReportMatchingSequenceNumberResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetCommitReportMatchingSequenceNumberResponse) GetReports() []*CommitStoreReportWithTxMeta {
@@ -228,7 +228,7 @@ type GetAcceptedCommitReportsGteTimestampRequest struct {
 
 func (x *GetAcceptedCommitReportsGteTimestampRequest) Reset() {
 	*x = GetAcceptedCommitReportsGteTimestampRequest{}
-	mi := &file_commitstore_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +240,7 @@ func (x *GetAcceptedCommitReportsGteTimestampRequest) String() string {
 func (*GetAcceptedCommitReportsGteTimestampRequest) ProtoMessage() {}
 
 func (x *GetAcceptedCommitReportsGteTimestampRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +253,7 @@ func (x *GetAcceptedCommitReportsGteTimestampRequest) ProtoReflect() protoreflec
 
 // Deprecated: Use GetAcceptedCommitReportsGteTimestampRequest.ProtoReflect.Descriptor instead.
 func (*GetAcceptedCommitReportsGteTimestampRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetAcceptedCommitReportsGteTimestampRequest) GetTimestamp() *timestamppb.Timestamp {
@@ -281,7 +281,7 @@ type GetAcceptedCommitReportsGteTimestampResponse struct {
 
 func (x *GetAcceptedCommitReportsGteTimestampResponse) Reset() {
 	*x = GetAcceptedCommitReportsGteTimestampResponse{}
-	mi := &file_commitstore_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -293,7 +293,7 @@ func (x *GetAcceptedCommitReportsGteTimestampResponse) String() string {
 func (*GetAcceptedCommitReportsGteTimestampResponse) ProtoMessage() {}
 
 func (x *GetAcceptedCommitReportsGteTimestampResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -306,7 +306,7 @@ func (x *GetAcceptedCommitReportsGteTimestampResponse) ProtoReflect() protorefle
 
 // Deprecated: Use GetAcceptedCommitReportsGteTimestampResponse.ProtoReflect.Descriptor instead.
 func (*GetAcceptedCommitReportsGteTimestampResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAcceptedCommitReportsGteTimestampResponse) GetReports() []*CommitStoreReportWithTxMeta {
@@ -327,7 +327,7 @@ type IsDownResponse struct {
 
 func (x *IsDownResponse) Reset() {
 	*x = IsDownResponse{}
-	mi := &file_commitstore_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +339,7 @@ func (x *IsDownResponse) String() string {
 func (*IsDownResponse) ProtoMessage() {}
 
 func (x *IsDownResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +352,7 @@ func (x *IsDownResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsDownResponse.ProtoReflect.Descriptor instead.
 func (*IsDownResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *IsDownResponse) GetIsDown() bool {
@@ -373,7 +373,7 @@ type IsBlessedRequest struct {
 
 func (x *IsBlessedRequest) Reset() {
 	*x = IsBlessedRequest{}
-	mi := &file_commitstore_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -385,7 +385,7 @@ func (x *IsBlessedRequest) String() string {
 func (*IsBlessedRequest) ProtoMessage() {}
 
 func (x *IsBlessedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -398,7 +398,7 @@ func (x *IsBlessedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsBlessedRequest.ProtoReflect.Descriptor instead.
 func (*IsBlessedRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *IsBlessedRequest) GetRoot() []byte {
@@ -419,7 +419,7 @@ type IsBlessedResponse struct {
 
 func (x *IsBlessedResponse) Reset() {
 	*x = IsBlessedResponse{}
-	mi := &file_commitstore_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -431,7 +431,7 @@ func (x *IsBlessedResponse) String() string {
 func (*IsBlessedResponse) ProtoMessage() {}
 
 func (x *IsBlessedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -444,7 +444,7 @@ func (x *IsBlessedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsBlessedResponse.ProtoReflect.Descriptor instead.
 func (*IsBlessedResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *IsBlessedResponse) GetIsBlessed() bool {
@@ -466,7 +466,7 @@ type CommitStoreChangeConfigRequest struct {
 
 func (x *CommitStoreChangeConfigRequest) Reset() {
 	*x = CommitStoreChangeConfigRequest{}
-	mi := &file_commitstore_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -478,7 +478,7 @@ func (x *CommitStoreChangeConfigRequest) String() string {
 func (*CommitStoreChangeConfigRequest) ProtoMessage() {}
 
 func (x *CommitStoreChangeConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -491,7 +491,7 @@ func (x *CommitStoreChangeConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStoreChangeConfigRequest.ProtoReflect.Descriptor instead.
 func (*CommitStoreChangeConfigRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CommitStoreChangeConfigRequest) GetOnchainConfig() []byte {
@@ -519,7 +519,7 @@ type CommitStoreChangeConfigResponse struct {
 
 func (x *CommitStoreChangeConfigResponse) Reset() {
 	*x = CommitStoreChangeConfigResponse{}
-	mi := &file_commitstore_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -531,7 +531,7 @@ func (x *CommitStoreChangeConfigResponse) String() string {
 func (*CommitStoreChangeConfigResponse) ProtoMessage() {}
 
 func (x *CommitStoreChangeConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -544,7 +544,7 @@ func (x *CommitStoreChangeConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStoreChangeConfigResponse.ProtoReflect.Descriptor instead.
 func (*CommitStoreChangeConfigResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CommitStoreChangeConfigResponse) GetAddress() string {
@@ -565,7 +565,7 @@ type GetOffchainConfigResponse struct {
 
 func (x *GetOffchainConfigResponse) Reset() {
 	*x = GetOffchainConfigResponse{}
-	mi := &file_commitstore_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -577,7 +577,7 @@ func (x *GetOffchainConfigResponse) String() string {
 func (*GetOffchainConfigResponse) ProtoMessage() {}
 
 func (x *GetOffchainConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -590,7 +590,7 @@ func (x *GetOffchainConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOffchainConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetOffchainConfigResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetOffchainConfigResponse) GetOffchainConfig() *CommitOffchainConfig {
@@ -613,7 +613,7 @@ type GetCommitGasPriceEstimatorResponse struct {
 
 func (x *GetCommitGasPriceEstimatorResponse) Reset() {
 	*x = GetCommitGasPriceEstimatorResponse{}
-	mi := &file_commitstore_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -625,7 +625,7 @@ func (x *GetCommitGasPriceEstimatorResponse) String() string {
 func (*GetCommitGasPriceEstimatorResponse) ProtoMessage() {}
 
 func (x *GetCommitGasPriceEstimatorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -638,7 +638,7 @@ func (x *GetCommitGasPriceEstimatorResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetCommitGasPriceEstimatorResponse.ProtoReflect.Descriptor instead.
 func (*GetCommitGasPriceEstimatorResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetCommitGasPriceEstimatorResponse) GetGasPriceEstimatorId() uint32 {
@@ -659,7 +659,7 @@ type EncodeCommitReportRequest struct {
 
 func (x *EncodeCommitReportRequest) Reset() {
 	*x = EncodeCommitReportRequest{}
-	mi := &file_commitstore_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -671,7 +671,7 @@ func (x *EncodeCommitReportRequest) String() string {
 func (*EncodeCommitReportRequest) ProtoMessage() {}
 
 func (x *EncodeCommitReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -684,7 +684,7 @@ func (x *EncodeCommitReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncodeCommitReportRequest.ProtoReflect.Descriptor instead.
 func (*EncodeCommitReportRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EncodeCommitReportRequest) GetReport() *CommitStoreReport {
@@ -705,7 +705,7 @@ type EncodeCommitReportResponse struct {
 
 func (x *EncodeCommitReportResponse) Reset() {
 	*x = EncodeCommitReportResponse{}
-	mi := &file_commitstore_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -717,7 +717,7 @@ func (x *EncodeCommitReportResponse) String() string {
 func (*EncodeCommitReportResponse) ProtoMessage() {}
 
 func (x *EncodeCommitReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -730,7 +730,7 @@ func (x *EncodeCommitReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EncodeCommitReportResponse.ProtoReflect.Descriptor instead.
 func (*EncodeCommitReportResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *EncodeCommitReportResponse) GetEncodedReport() []byte {
@@ -751,7 +751,7 @@ type DecodeCommitReportRequest struct {
 
 func (x *DecodeCommitReportRequest) Reset() {
 	*x = DecodeCommitReportRequest{}
-	mi := &file_commitstore_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -763,7 +763,7 @@ func (x *DecodeCommitReportRequest) String() string {
 func (*DecodeCommitReportRequest) ProtoMessage() {}
 
 func (x *DecodeCommitReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -776,7 +776,7 @@ func (x *DecodeCommitReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecodeCommitReportRequest.ProtoReflect.Descriptor instead.
 func (*DecodeCommitReportRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *DecodeCommitReportRequest) GetEncodedReport() []byte {
@@ -797,7 +797,7 @@ type DecodeCommitReportResponse struct {
 
 func (x *DecodeCommitReportResponse) Reset() {
 	*x = DecodeCommitReportResponse{}
-	mi := &file_commitstore_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -809,7 +809,7 @@ func (x *DecodeCommitReportResponse) String() string {
 func (*DecodeCommitReportResponse) ProtoMessage() {}
 
 func (x *DecodeCommitReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -822,7 +822,7 @@ func (x *DecodeCommitReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecodeCommitReportResponse.ProtoReflect.Descriptor instead.
 func (*DecodeCommitReportResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DecodeCommitReportResponse) GetReport() *CommitStoreReport {
@@ -844,7 +844,7 @@ type VerifyExecutionReportRequest struct {
 
 func (x *VerifyExecutionReportRequest) Reset() {
 	*x = VerifyExecutionReportRequest{}
-	mi := &file_commitstore_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -856,7 +856,7 @@ func (x *VerifyExecutionReportRequest) String() string {
 func (*VerifyExecutionReportRequest) ProtoMessage() {}
 
 func (x *VerifyExecutionReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -869,7 +869,7 @@ func (x *VerifyExecutionReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyExecutionReportRequest.ProtoReflect.Descriptor instead.
 func (*VerifyExecutionReportRequest) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *VerifyExecutionReportRequest) GetReport() *ExecutionReport {
@@ -897,7 +897,7 @@ type VerifyExecutionReportResponse struct {
 
 func (x *VerifyExecutionReportResponse) Reset() {
 	*x = VerifyExecutionReportResponse{}
-	mi := &file_commitstore_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -909,7 +909,7 @@ func (x *VerifyExecutionReportResponse) String() string {
 func (*VerifyExecutionReportResponse) ProtoMessage() {}
 
 func (x *VerifyExecutionReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -922,7 +922,7 @@ func (x *VerifyExecutionReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyExecutionReportResponse.ProtoReflect.Descriptor instead.
 func (*VerifyExecutionReportResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *VerifyExecutionReportResponse) GetIsValid() bool {
@@ -943,7 +943,7 @@ type GetCommitStoreStaticConfigResponse struct {
 
 func (x *GetCommitStoreStaticConfigResponse) Reset() {
 	*x = GetCommitStoreStaticConfigResponse{}
-	mi := &file_commitstore_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -955,7 +955,7 @@ func (x *GetCommitStoreStaticConfigResponse) String() string {
 func (*GetCommitStoreStaticConfigResponse) ProtoMessage() {}
 
 func (x *GetCommitStoreStaticConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -968,7 +968,7 @@ func (x *GetCommitStoreStaticConfigResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetCommitStoreStaticConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetCommitStoreStaticConfigResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetCommitStoreStaticConfigResponse) GetStaticConfig() *CommitStoreStaticConfig {
@@ -993,7 +993,7 @@ type CommitOffchainConfig struct {
 
 func (x *CommitOffchainConfig) Reset() {
 	*x = CommitOffchainConfig{}
-	mi := &file_commitstore_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1005,7 +1005,7 @@ func (x *CommitOffchainConfig) String() string {
 func (*CommitOffchainConfig) ProtoMessage() {}
 
 func (x *CommitOffchainConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1018,7 +1018,7 @@ func (x *CommitOffchainConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitOffchainConfig.ProtoReflect.Descriptor instead.
 func (*CommitOffchainConfig) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CommitOffchainConfig) GetGasPriceDeviationPpb() uint32 {
@@ -1068,7 +1068,7 @@ type CommitStoreReportWithTxMeta struct {
 
 func (x *CommitStoreReportWithTxMeta) Reset() {
 	*x = CommitStoreReportWithTxMeta{}
-	mi := &file_commitstore_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1080,7 +1080,7 @@ func (x *CommitStoreReportWithTxMeta) String() string {
 func (*CommitStoreReportWithTxMeta) ProtoMessage() {}
 
 func (x *CommitStoreReportWithTxMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1093,7 +1093,7 @@ func (x *CommitStoreReportWithTxMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStoreReportWithTxMeta.ProtoReflect.Descriptor instead.
 func (*CommitStoreReportWithTxMeta) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CommitStoreReportWithTxMeta) GetReport() *CommitStoreReport {
@@ -1124,7 +1124,7 @@ type CommitStoreReport struct {
 
 func (x *CommitStoreReport) Reset() {
 	*x = CommitStoreReport{}
-	mi := &file_commitstore_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1136,7 +1136,7 @@ func (x *CommitStoreReport) String() string {
 func (*CommitStoreReport) ProtoMessage() {}
 
 func (x *CommitStoreReport) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1149,7 +1149,7 @@ func (x *CommitStoreReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStoreReport.ProtoReflect.Descriptor instead.
 func (*CommitStoreReport) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{22}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CommitStoreReport) GetTokenPrices() []*TokenPrice {
@@ -1192,7 +1192,7 @@ type CommitStoreInterval struct {
 
 func (x *CommitStoreInterval) Reset() {
 	*x = CommitStoreInterval{}
-	mi := &file_commitstore_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1204,7 +1204,7 @@ func (x *CommitStoreInterval) String() string {
 func (*CommitStoreInterval) ProtoMessage() {}
 
 func (x *CommitStoreInterval) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1217,7 +1217,7 @@ func (x *CommitStoreInterval) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStoreInterval.ProtoReflect.Descriptor instead.
 func (*CommitStoreInterval) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{23}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *CommitStoreInterval) GetMin() uint64 {
@@ -1248,7 +1248,7 @@ type CommitStoreStaticConfig struct {
 
 func (x *CommitStoreStaticConfig) Reset() {
 	*x = CommitStoreStaticConfig{}
-	mi := &file_commitstore_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1260,7 +1260,7 @@ func (x *CommitStoreStaticConfig) String() string {
 func (*CommitStoreStaticConfig) ProtoMessage() {}
 
 func (x *CommitStoreStaticConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1273,7 +1273,7 @@ func (x *CommitStoreStaticConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStoreStaticConfig.ProtoReflect.Descriptor instead.
 func (*CommitStoreStaticConfig) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{24}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CommitStoreStaticConfig) GetChainSelector() uint64 {
@@ -1313,7 +1313,7 @@ type IsDestChainHealthyResponse struct {
 
 func (x *IsDestChainHealthyResponse) Reset() {
 	*x = IsDestChainHealthyResponse{}
-	mi := &file_commitstore_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1325,7 +1325,7 @@ func (x *IsDestChainHealthyResponse) String() string {
 func (*IsDestChainHealthyResponse) ProtoMessage() {}
 
 func (x *IsDestChainHealthyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_commitstore_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_ccip_commitstore_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1338,7 +1338,7 @@ func (x *IsDestChainHealthyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsDestChainHealthyResponse.ProtoReflect.Descriptor instead.
 func (*IsDestChainHealthyResponse) Descriptor() ([]byte, []int) {
-	return file_commitstore_proto_rawDescGZIP(), []int{25}
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *IsDestChainHealthyResponse) GetIsHealthy() bool {
@@ -1348,11 +1348,11 @@ func (x *IsDestChainHealthyResponse) GetIsHealthy() bool {
 	return false
 }
 
-var File_commitstore_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_commitstore_proto protoreflect.FileDescriptor
 
-const file_commitstore_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_commitstore_proto_rawDesc = "" +
 	"\n" +
-	"\x11commitstore.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\fmodels.proto\"P\n" +
+	"'loop/internal/pb/ccip/commitstore.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\"loop/internal/pb/ccip/models.proto\"P\n" +
 	"%GetExpectedNextSequenceNumberResponse\x12'\n" +
 	"\x0fsequence_number\x18\x01 \x01(\x04R\x0esequenceNumber\"M\n" +
 	"#GetLatestPriceEpochAndRoundResponse\x12&\n" +
@@ -1443,19 +1443,19 @@ const file_commitstore_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.EmptyBOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_commitstore_proto_rawDescOnce sync.Once
-	file_commitstore_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_commitstore_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_commitstore_proto_rawDescData []byte
 )
 
-func file_commitstore_proto_rawDescGZIP() []byte {
-	file_commitstore_proto_rawDescOnce.Do(func() {
-		file_commitstore_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_commitstore_proto_rawDesc), len(file_commitstore_proto_rawDesc)))
+func file_loop_internal_pb_ccip_commitstore_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_commitstore_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_commitstore_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_commitstore_proto_rawDesc), len(file_loop_internal_pb_ccip_commitstore_proto_rawDesc)))
 	})
-	return file_commitstore_proto_rawDescData
+	return file_loop_internal_pb_ccip_commitstore_proto_rawDescData
 }
 
-var file_commitstore_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
-var file_commitstore_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_commitstore_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_loop_internal_pb_ccip_commitstore_proto_goTypes = []any{
 	(*GetExpectedNextSequenceNumberResponse)(nil),         // 0: loop.internal.pb.ccip.GetExpectedNextSequenceNumberResponse
 	(*GetLatestPriceEpochAndRoundResponse)(nil),           // 1: loop.internal.pb.ccip.GetLatestPriceEpochAndRoundResponse
 	(*GetCommitReportMatchingSequenceNumberRequest)(nil),  // 2: loop.internal.pb.ccip.GetCommitReportMatchingSequenceNumberRequest
@@ -1490,7 +1490,7 @@ var file_commitstore_proto_goTypes = []any{
 	(*GasPrice)(nil),                                      // 31: loop.internal.pb.ccip.GasPrice
 	(*emptypb.Empty)(nil),                                 // 32: google.protobuf.Empty
 }
-var file_commitstore_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_commitstore_proto_depIdxs = []int32{
 	21, // 0: loop.internal.pb.ccip.GetCommitReportMatchingSequenceNumberResponse.reports:type_name -> loop.internal.pb.ccip.CommitStoreReportWithTxMeta
 	26, // 1: loop.internal.pb.ccip.GetAcceptedCommitReportsGteTimestampRequest.timestamp:type_name -> google.protobuf.Timestamp
 	21, // 2: loop.internal.pb.ccip.GetAcceptedCommitReportsGteTimestampResponse.reports:type_name -> loop.internal.pb.ccip.CommitStoreReportWithTxMeta
@@ -1544,27 +1544,27 @@ var file_commitstore_proto_depIdxs = []int32{
 	0,  // [0:16] is the sub-list for field type_name
 }
 
-func init() { file_commitstore_proto_init() }
-func file_commitstore_proto_init() {
-	if File_commitstore_proto != nil {
+func init() { file_loop_internal_pb_ccip_commitstore_proto_init() }
+func file_loop_internal_pb_ccip_commitstore_proto_init() {
+	if File_loop_internal_pb_ccip_commitstore_proto != nil {
 		return
 	}
-	file_models_proto_init()
+	file_loop_internal_pb_ccip_models_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_commitstore_proto_rawDesc), len(file_commitstore_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_commitstore_proto_rawDesc), len(file_loop_internal_pb_ccip_commitstore_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_commitstore_proto_goTypes,
-		DependencyIndexes: file_commitstore_proto_depIdxs,
-		MessageInfos:      file_commitstore_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_commitstore_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_commitstore_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_ccip_commitstore_proto_msgTypes,
 	}.Build()
-	File_commitstore_proto = out.File
-	file_commitstore_proto_goTypes = nil
-	file_commitstore_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_commitstore_proto = out.File
+	file_loop_internal_pb_ccip_commitstore_proto_goTypes = nil
+	file_loop_internal_pb_ccip_commitstore_proto_depIdxs = nil
 }

@@ -6,7 +6,7 @@ package loop;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
 
 service PluginMedian {
   rpc NewMedianFactory (NewMedianFactoryRequest) returns (NewMedianFactoryReply) {}

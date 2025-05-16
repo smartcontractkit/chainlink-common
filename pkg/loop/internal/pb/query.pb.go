@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: query.proto
+// source: loop/internal/pb/query.proto
 
 package pb
 
@@ -63,11 +63,11 @@ func (x ComparisonOperator) String() string {
 }
 
 func (ComparisonOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_proto_enumTypes[0].Descriptor()
+	return file_loop_internal_pb_query_proto_enumTypes[0].Descriptor()
 }
 
 func (ComparisonOperator) Type() protoreflect.EnumType {
-	return &file_query_proto_enumTypes[0]
+	return &file_loop_internal_pb_query_proto_enumTypes[0]
 }
 
 func (x ComparisonOperator) Number() protoreflect.EnumNumber {
@@ -76,7 +76,7 @@ func (x ComparisonOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ComparisonOperator.Descriptor instead.
 func (ComparisonOperator) EnumDescriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{0}
 }
 
 type BooleanOperator int32
@@ -109,11 +109,11 @@ func (x BooleanOperator) String() string {
 }
 
 func (BooleanOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_proto_enumTypes[1].Descriptor()
+	return file_loop_internal_pb_query_proto_enumTypes[1].Descriptor()
 }
 
 func (BooleanOperator) Type() protoreflect.EnumType {
-	return &file_query_proto_enumTypes[1]
+	return &file_loop_internal_pb_query_proto_enumTypes[1]
 }
 
 func (x BooleanOperator) Number() protoreflect.EnumNumber {
@@ -122,7 +122,7 @@ func (x BooleanOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BooleanOperator.Descriptor instead.
 func (BooleanOperator) EnumDescriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{1}
 }
 
 type Confidence int32
@@ -155,11 +155,11 @@ func (x Confidence) String() string {
 }
 
 func (Confidence) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_proto_enumTypes[2].Descriptor()
+	return file_loop_internal_pb_query_proto_enumTypes[2].Descriptor()
 }
 
 func (Confidence) Type() protoreflect.EnumType {
-	return &file_query_proto_enumTypes[2]
+	return &file_loop_internal_pb_query_proto_enumTypes[2]
 }
 
 func (x Confidence) Number() protoreflect.EnumNumber {
@@ -168,7 +168,7 @@ func (x Confidence) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Confidence.Descriptor instead.
 func (Confidence) EnumDescriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{2}
 }
 
 // CursorDirection defines the direction for cursor-based data fetching.
@@ -202,11 +202,11 @@ func (x CursorDirection) String() string {
 }
 
 func (CursorDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_proto_enumTypes[3].Descriptor()
+	return file_loop_internal_pb_query_proto_enumTypes[3].Descriptor()
 }
 
 func (CursorDirection) Type() protoreflect.EnumType {
-	return &file_query_proto_enumTypes[3]
+	return &file_loop_internal_pb_query_proto_enumTypes[3]
 }
 
 func (x CursorDirection) Number() protoreflect.EnumNumber {
@@ -215,7 +215,7 @@ func (x CursorDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CursorDirection.Descriptor instead.
 func (CursorDirection) EnumDescriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{3}
 }
 
 type SortDirection int32
@@ -248,11 +248,11 @@ func (x SortDirection) String() string {
 }
 
 func (SortDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_proto_enumTypes[4].Descriptor()
+	return file_loop_internal_pb_query_proto_enumTypes[4].Descriptor()
 }
 
 func (SortDirection) Type() protoreflect.EnumType {
-	return &file_query_proto_enumTypes[4]
+	return &file_loop_internal_pb_query_proto_enumTypes[4]
 }
 
 func (x SortDirection) Number() protoreflect.EnumNumber {
@@ -261,7 +261,7 @@ func (x SortDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortDirection.Descriptor instead.
 func (SortDirection) EnumDescriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{4}
 }
 
 type SortType int32
@@ -297,11 +297,11 @@ func (x SortType) String() string {
 }
 
 func (SortType) Descriptor() protoreflect.EnumDescriptor {
-	return file_query_proto_enumTypes[5].Descriptor()
+	return file_loop_internal_pb_query_proto_enumTypes[5].Descriptor()
 }
 
 func (SortType) Type() protoreflect.EnumType {
-	return &file_query_proto_enumTypes[5]
+	return &file_loop_internal_pb_query_proto_enumTypes[5]
 }
 
 func (x SortType) Number() protoreflect.EnumNumber {
@@ -310,7 +310,7 @@ func (x SortType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortType.Descriptor instead.
 func (SortType) EnumDescriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{5}
 }
 
 // Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions.
@@ -328,7 +328,7 @@ type Expression struct {
 
 func (x *Expression) Reset() {
 	*x = Expression{}
-	mi := &file_query_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +340,7 @@ func (x *Expression) String() string {
 func (*Expression) ProtoMessage() {}
 
 func (x *Expression) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +353,7 @@ func (x *Expression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Expression.ProtoReflect.Descriptor instead.
 func (*Expression) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Expression) GetEvaluator() isExpression_Evaluator {
@@ -407,7 +407,7 @@ type BooleanExpression struct {
 
 func (x *BooleanExpression) Reset() {
 	*x = BooleanExpression{}
-	mi := &file_query_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -419,7 +419,7 @@ func (x *BooleanExpression) String() string {
 func (*BooleanExpression) ProtoMessage() {}
 
 func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -432,7 +432,7 @@ func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BooleanExpression.ProtoReflect.Descriptor instead.
 func (*BooleanExpression) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BooleanExpression) GetBooleanOperator() BooleanOperator {
@@ -458,7 +458,7 @@ type And struct {
 
 func (x *And) Reset() {
 	*x = And{}
-	mi := &file_query_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -470,7 +470,7 @@ func (x *And) String() string {
 func (*And) ProtoMessage() {}
 
 func (x *And) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +483,7 @@ func (x *And) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use And.ProtoReflect.Descriptor instead.
 func (*And) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *And) GetExpr() []*Expression {
@@ -502,7 +502,7 @@ type Or struct {
 
 func (x *Or) Reset() {
 	*x = Or{}
-	mi := &file_query_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -514,7 +514,7 @@ func (x *Or) String() string {
 func (*Or) ProtoMessage() {}
 
 func (x *Or) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -527,7 +527,7 @@ func (x *Or) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Or.ProtoReflect.Descriptor instead.
 func (*Or) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Or) GetExpr() []*Expression {
@@ -547,7 +547,7 @@ type ValueComparator struct {
 
 func (x *ValueComparator) Reset() {
 	*x = ValueComparator{}
-	mi := &file_query_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +559,7 @@ func (x *ValueComparator) String() string {
 func (*ValueComparator) ProtoMessage() {}
 
 func (x *ValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,7 +572,7 @@ func (x *ValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValueComparator.ProtoReflect.Descriptor instead.
 func (*ValueComparator) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ValueComparator) GetValue() *VersionedBytes {
@@ -599,7 +599,7 @@ type Comparator struct {
 
 func (x *Comparator) Reset() {
 	*x = Comparator{}
-	mi := &file_query_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -611,7 +611,7 @@ func (x *Comparator) String() string {
 func (*Comparator) ProtoMessage() {}
 
 func (x *Comparator) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -624,7 +624,7 @@ func (x *Comparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Comparator.ProtoReflect.Descriptor instead.
 func (*Comparator) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Comparator) GetName() string {
@@ -651,7 +651,7 @@ type Block struct {
 
 func (x *Block) Reset() {
 	*x = Block{}
-	mi := &file_query_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -663,7 +663,7 @@ func (x *Block) String() string {
 func (*Block) ProtoMessage() {}
 
 func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -676,7 +676,7 @@ func (x *Block) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Block.ProtoReflect.Descriptor instead.
 func (*Block) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Block) GetBlockNumber() string {
@@ -703,7 +703,7 @@ type Timestamp struct {
 
 func (x *Timestamp) Reset() {
 	*x = Timestamp{}
-	mi := &file_query_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -715,7 +715,7 @@ func (x *Timestamp) String() string {
 func (*Timestamp) ProtoMessage() {}
 
 func (x *Timestamp) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -728,7 +728,7 @@ func (x *Timestamp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Timestamp.ProtoReflect.Descriptor instead.
 func (*Timestamp) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Timestamp) GetTimestamp() uint64 {
@@ -754,7 +754,7 @@ type TxHash struct {
 
 func (x *TxHash) Reset() {
 	*x = TxHash{}
-	mi := &file_query_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +766,7 @@ func (x *TxHash) String() string {
 func (*TxHash) ProtoMessage() {}
 
 func (x *TxHash) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +779,7 @@ func (x *TxHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TxHash.ProtoReflect.Descriptor instead.
 func (*TxHash) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TxHash) GetTxHash() string {
@@ -806,7 +806,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_query_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -818,7 +818,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -831,7 +831,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -932,7 +932,7 @@ type Limit struct {
 
 func (x *Limit) Reset() {
 	*x = Limit{}
-	mi := &file_query_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -944,7 +944,7 @@ func (x *Limit) String() string {
 func (*Limit) ProtoMessage() {}
 
 func (x *Limit) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -957,7 +957,7 @@ func (x *Limit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Limit.ProtoReflect.Descriptor instead.
 func (*Limit) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Limit) GetCursor() string {
@@ -991,7 +991,7 @@ type SortBy struct {
 
 func (x *SortBy) Reset() {
 	*x = SortBy{}
-	mi := &file_query_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1003,7 +1003,7 @@ func (x *SortBy) String() string {
 func (*SortBy) ProtoMessage() {}
 
 func (x *SortBy) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1016,7 +1016,7 @@ func (x *SortBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBy.ProtoReflect.Descriptor instead.
 func (*SortBy) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SortBy) GetSortType() SortType {
@@ -1044,7 +1044,7 @@ type LimitAndSort struct {
 
 func (x *LimitAndSort) Reset() {
 	*x = LimitAndSort{}
-	mi := &file_query_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1056,7 @@ func (x *LimitAndSort) String() string {
 func (*LimitAndSort) ProtoMessage() {}
 
 func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
-	mi := &file_query_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_query_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1069,7 @@ func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LimitAndSort.ProtoReflect.Descriptor instead.
 func (*LimitAndSort) Descriptor() ([]byte, []int) {
-	return file_query_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *LimitAndSort) GetSortBy() []*SortBy {
@@ -1086,11 +1086,11 @@ func (x *LimitAndSort) GetLimit() *Limit {
 	return nil
 }
 
-var File_query_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_query_proto protoreflect.FileDescriptor
 
-const file_query_proto_rawDesc = "" +
+const file_loop_internal_pb_query_proto_rawDesc = "" +
 	"\n" +
-	"\vquery.proto\x12\x04loop\x1a\vcodec.proto\"\x94\x01\n" +
+	"\x1cloop/internal/pb/query.proto\x12\x04loop\x1a\x1cloop/internal/pb/codec.proto\"\x94\x01\n" +
 	"\n" +
 	"Expression\x12/\n" +
 	"\tprimitive\x18\x01 \x01(\v2\x0f.loop.PrimitiveH\x00R\tprimitive\x12H\n" +
@@ -1170,20 +1170,20 @@ const file_query_proto_rawDesc = "" +
 	"\fSortSequence\x10\x02BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_query_proto_rawDescOnce sync.Once
-	file_query_proto_rawDescData []byte
+	file_loop_internal_pb_query_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_query_proto_rawDescData []byte
 )
 
-func file_query_proto_rawDescGZIP() []byte {
-	file_query_proto_rawDescOnce.Do(func() {
-		file_query_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_query_proto_rawDesc), len(file_query_proto_rawDesc)))
+func file_loop_internal_pb_query_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_query_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_query_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_query_proto_rawDesc), len(file_loop_internal_pb_query_proto_rawDesc)))
 	})
-	return file_query_proto_rawDescData
+	return file_loop_internal_pb_query_proto_rawDescData
 }
 
-var file_query_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_query_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
-var file_query_proto_goTypes = []any{
+var file_loop_internal_pb_query_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_loop_internal_pb_query_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_loop_internal_pb_query_proto_goTypes = []any{
 	(ComparisonOperator)(0),   // 0: loop.ComparisonOperator
 	(BooleanOperator)(0),      // 1: loop.BooleanOperator
 	(Confidence)(0),           // 2: loop.Confidence
@@ -1205,7 +1205,7 @@ var file_query_proto_goTypes = []any{
 	(*LimitAndSort)(nil),      // 18: loop.LimitAndSort
 	(*VersionedBytes)(nil),    // 19: loop.VersionedBytes
 }
-var file_query_proto_depIdxs = []int32{
+var file_loop_internal_pb_query_proto_depIdxs = []int32{
 	15, // 0: loop.Expression.primitive:type_name -> loop.Primitive
 	7,  // 1: loop.Expression.boolean_expression:type_name -> loop.BooleanExpression
 	1,  // 2: loop.BooleanExpression.boolean_operator:type_name -> loop.BooleanOperator
@@ -1234,40 +1234,40 @@ var file_query_proto_depIdxs = []int32{
 	0,  // [0:21] is the sub-list for field type_name
 }
 
-func init() { file_query_proto_init() }
-func file_query_proto_init() {
-	if File_query_proto != nil {
+func init() { file_loop_internal_pb_query_proto_init() }
+func file_loop_internal_pb_query_proto_init() {
+	if File_loop_internal_pb_query_proto != nil {
 		return
 	}
-	//file_codec_proto_init()
-	file_query_proto_msgTypes[0].OneofWrappers = []any{
+	file_loop_internal_pb_codec_proto_init()
+	file_loop_internal_pb_query_proto_msgTypes[0].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),
 	}
-	file_query_proto_msgTypes[9].OneofWrappers = []any{
+	file_loop_internal_pb_query_proto_msgTypes[9].OneofWrappers = []any{
 		(*Primitive_Comparator)(nil),
 		(*Primitive_Block)(nil),
 		(*Primitive_Confidence)(nil),
 		(*Primitive_Timestamp)(nil),
 		(*Primitive_TxHash)(nil),
 	}
-	file_query_proto_msgTypes[10].OneofWrappers = []any{}
+	file_loop_internal_pb_query_proto_msgTypes[10].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_query_proto_rawDesc), len(file_query_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_query_proto_rawDesc), len(file_loop_internal_pb_query_proto_rawDesc)),
 			NumEnums:      6,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_query_proto_goTypes,
-		DependencyIndexes: file_query_proto_depIdxs,
-		EnumInfos:         file_query_proto_enumTypes,
-		MessageInfos:      file_query_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_query_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_query_proto_depIdxs,
+		EnumInfos:         file_loop_internal_pb_query_proto_enumTypes,
+		MessageInfos:      file_loop_internal_pb_query_proto_msgTypes,
 	}.Build()
-	File_query_proto = out.File
-	file_query_proto_goTypes = nil
-	file_query_proto_depIdxs = nil
+	File_loop_internal_pb_query_proto = out.File
+	file_loop_internal_pb_query_proto_goTypes = nil
+	file_loop_internal_pb_query_proto_depIdxs = nil
 }

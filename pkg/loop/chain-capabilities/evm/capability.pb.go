@@ -10,8 +10,10 @@ import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -22,11 +24,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type FilterLogTriggerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FilterQuery   *FilterQuery           `protobuf:"bytes,1,opt,name=filter_query,json=filterQuery,proto3" json:"filter_query,omitempty"`
+	PollInterval  *durationpb.Duration   `protobuf:"bytes,2,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"` // interval to poll for new logs expressed in seconds
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FilterLogTriggerRequest) Reset() {
+	*x = FilterLogTriggerRequest{}
+	mi := &file_loop_chain_capabilities_evm_capability_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FilterLogTriggerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FilterLogTriggerRequest) ProtoMessage() {}
+
+func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_chain_capabilities_evm_capability_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
+func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
+	return file_loop_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FilterLogTriggerRequest) GetFilterQuery() *FilterQuery {
+	if x != nil {
+		return x.FilterQuery
+	}
+	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetPollInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PollInterval
+	}
+	return nil
+}
+
 var File_loop_chain_capabilities_evm_capability_proto protoreflect.FileDescriptor
 
 const file_loop_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\n" +
-	",loop/chain-capabilities/evm/capability.proto\x12\x1bloop.chain_capabilities.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a%loop/chain-capabilities/evm/evm.proto2\x99\t\n" +
+	",loop/chain-capabilities/evm/capability.proto\x12\x1bloop.chain_capabilities.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a%loop/chain-capabilities/evm/evm.proto\x1a\x1egoogle/protobuf/duration.proto\"\xa6\x01\n" +
+	"\x17FilterLogTriggerRequest\x12K\n" +
+	"\ffilter_query\x18\x01 \x01(\v2(.loop.chain_capabilities.evm.FilterQueryR\vfilterQuery\x12>\n" +
+	"\rpoll_interval\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval2\x8d\n" +
+	"\n" +
 	"\bEVMChain\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
 	"\n" +
@@ -38,54 +96,76 @@ const file_loop_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12|\n" +
 	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
-	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evmb\x06proto3"
+	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12r\n" +
+	"\n" +
+	"LogTrigger\x124.loop.chain_capabilities.evm.FilterLogTriggerRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply0\x01\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evmb\x06proto3"
 
+var (
+	file_loop_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
+	file_loop_chain_capabilities_evm_capability_proto_rawDescData []byte
+)
+
+func file_loop_chain_capabilities_evm_capability_proto_rawDescGZIP() []byte {
+	file_loop_chain_capabilities_evm_capability_proto_rawDescOnce.Do(func() {
+		file_loop_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_chain_capabilities_evm_capability_proto_rawDesc), len(file_loop_chain_capabilities_evm_capability_proto_rawDesc)))
+	})
+	return file_loop_chain_capabilities_evm_capability_proto_rawDescData
+}
+
+var file_loop_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_loop_chain_capabilities_evm_capability_proto_goTypes = []any{
-	(*CallContractRequest)(nil),          // 0: loop.chain_capabilities.evm.CallContractRequest
-	(*FilterLogsRequest)(nil),            // 1: loop.chain_capabilities.evm.FilterLogsRequest
-	(*BalanceAtRequest)(nil),             // 2: loop.chain_capabilities.evm.BalanceAtRequest
-	(*EstimateGasRequest)(nil),           // 3: loop.chain_capabilities.evm.EstimateGasRequest
-	(*GetTransactionByHashRequest)(nil),  // 4: loop.chain_capabilities.evm.GetTransactionByHashRequest
-	(*GetReceiptRequest)(nil),            // 5: loop.chain_capabilities.evm.GetReceiptRequest
-	(*emptypb.Empty)(nil),                // 6: google.protobuf.Empty
-	(*QueryTrackedLogsRequest)(nil),      // 7: loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	(*RegisterLogTrackingRequest)(nil),   // 8: loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil), // 9: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	(*CallContractReply)(nil),            // 10: loop.chain_capabilities.evm.CallContractReply
-	(*FilterLogsReply)(nil),              // 11: loop.chain_capabilities.evm.FilterLogsReply
-	(*BalanceAtReply)(nil),               // 12: loop.chain_capabilities.evm.BalanceAtReply
-	(*EstimateGasReply)(nil),             // 13: loop.chain_capabilities.evm.EstimateGasReply
-	(*GetTransactionByHashReply)(nil),    // 14: loop.chain_capabilities.evm.GetTransactionByHashReply
-	(*GetReceiptReply)(nil),              // 15: loop.chain_capabilities.evm.GetReceiptReply
-	(*LatestAndFinalizedHeadReply)(nil),  // 16: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	(*QueryTrackedLogsReply)(nil),        // 17: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*FilterLogTriggerRequest)(nil),      // 0: loop.chain_capabilities.evm.FilterLogTriggerRequest
+	(*FilterQuery)(nil),                  // 1: loop.chain_capabilities.evm.FilterQuery
+	(*durationpb.Duration)(nil),          // 2: google.protobuf.Duration
+	(*CallContractRequest)(nil),          // 3: loop.chain_capabilities.evm.CallContractRequest
+	(*FilterLogsRequest)(nil),            // 4: loop.chain_capabilities.evm.FilterLogsRequest
+	(*BalanceAtRequest)(nil),             // 5: loop.chain_capabilities.evm.BalanceAtRequest
+	(*EstimateGasRequest)(nil),           // 6: loop.chain_capabilities.evm.EstimateGasRequest
+	(*GetTransactionByHashRequest)(nil),  // 7: loop.chain_capabilities.evm.GetTransactionByHashRequest
+	(*GetReceiptRequest)(nil),            // 8: loop.chain_capabilities.evm.GetReceiptRequest
+	(*emptypb.Empty)(nil),                // 9: google.protobuf.Empty
+	(*QueryTrackedLogsRequest)(nil),      // 10: loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	(*RegisterLogTrackingRequest)(nil),   // 11: loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	(*UnregisterLogTrackingRequest)(nil), // 12: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	(*CallContractReply)(nil),            // 13: loop.chain_capabilities.evm.CallContractReply
+	(*FilterLogsReply)(nil),              // 14: loop.chain_capabilities.evm.FilterLogsReply
+	(*BalanceAtReply)(nil),               // 15: loop.chain_capabilities.evm.BalanceAtReply
+	(*EstimateGasReply)(nil),             // 16: loop.chain_capabilities.evm.EstimateGasReply
+	(*GetTransactionByHashReply)(nil),    // 17: loop.chain_capabilities.evm.GetTransactionByHashReply
+	(*GetReceiptReply)(nil),              // 18: loop.chain_capabilities.evm.GetReceiptReply
+	(*LatestAndFinalizedHeadReply)(nil),  // 19: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	(*QueryTrackedLogsReply)(nil),        // 20: loop.chain_capabilities.evm.QueryTrackedLogsReply
 }
 var file_loop_chain_capabilities_evm_capability_proto_depIdxs = []int32{
-	0,  // 0: loop.chain_capabilities.evm.EVMChain.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	1,  // 1: loop.chain_capabilities.evm.EVMChain.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	2,  // 2: loop.chain_capabilities.evm.EVMChain.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	3,  // 3: loop.chain_capabilities.evm.EVMChain.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	4,  // 4: loop.chain_capabilities.evm.EVMChain.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
-	5,  // 5: loop.chain_capabilities.evm.EVMChain.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetReceiptRequest
-	6,  // 6: loop.chain_capabilities.evm.EVMChain.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	7,  // 7: loop.chain_capabilities.evm.EVMChain.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	8,  // 8: loop.chain_capabilities.evm.EVMChain.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	9,  // 9: loop.chain_capabilities.evm.EVMChain.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	10, // 10: loop.chain_capabilities.evm.EVMChain.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	11, // 11: loop.chain_capabilities.evm.EVMChain.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	12, // 12: loop.chain_capabilities.evm.EVMChain.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	13, // 13: loop.chain_capabilities.evm.EVMChain.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	14, // 14: loop.chain_capabilities.evm.EVMChain.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	15, // 15: loop.chain_capabilities.evm.EVMChain.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetReceiptReply
-	16, // 16: loop.chain_capabilities.evm.EVMChain.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	17, // 17: loop.chain_capabilities.evm.EVMChain.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	6,  // 18: loop.chain_capabilities.evm.EVMChain.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 19: loop.chain_capabilities.evm.EVMChain.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	10, // [10:20] is the sub-list for method output_type
-	0,  // [0:10] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	1,  // 0: loop.chain_capabilities.evm.FilterLogTriggerRequest.filter_query:type_name -> loop.chain_capabilities.evm.FilterQuery
+	2,  // 1: loop.chain_capabilities.evm.FilterLogTriggerRequest.poll_interval:type_name -> google.protobuf.Duration
+	3,  // 2: loop.chain_capabilities.evm.EVMChain.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
+	4,  // 3: loop.chain_capabilities.evm.EVMChain.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
+	5,  // 4: loop.chain_capabilities.evm.EVMChain.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
+	6,  // 5: loop.chain_capabilities.evm.EVMChain.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
+	7,  // 6: loop.chain_capabilities.evm.EVMChain.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
+	8,  // 7: loop.chain_capabilities.evm.EVMChain.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetReceiptRequest
+	9,  // 8: loop.chain_capabilities.evm.EVMChain.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	10, // 9: loop.chain_capabilities.evm.EVMChain.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	11, // 10: loop.chain_capabilities.evm.EVMChain.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	12, // 11: loop.chain_capabilities.evm.EVMChain.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	0,  // 12: loop.chain_capabilities.evm.EVMChain.LogTrigger:input_type -> loop.chain_capabilities.evm.FilterLogTriggerRequest
+	13, // 13: loop.chain_capabilities.evm.EVMChain.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	14, // 14: loop.chain_capabilities.evm.EVMChain.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	15, // 15: loop.chain_capabilities.evm.EVMChain.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	16, // 16: loop.chain_capabilities.evm.EVMChain.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	17, // 17: loop.chain_capabilities.evm.EVMChain.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	18, // 18: loop.chain_capabilities.evm.EVMChain.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetReceiptReply
+	19, // 19: loop.chain_capabilities.evm.EVMChain.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	20, // 20: loop.chain_capabilities.evm.EVMChain.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	9,  // 21: loop.chain_capabilities.evm.EVMChain.RegisterLogTracking:output_type -> google.protobuf.Empty
+	9,  // 22: loop.chain_capabilities.evm.EVMChain.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	14, // 23: loop.chain_capabilities.evm.EVMChain.LogTrigger:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	13, // [13:24] is the sub-list for method output_type
+	2,  // [2:13] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_loop_chain_capabilities_evm_capability_proto_init() }
@@ -100,12 +180,13 @@ func file_loop_chain_capabilities_evm_capability_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_chain_capabilities_evm_capability_proto_rawDesc), len(file_loop_chain_capabilities_evm_capability_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_loop_chain_capabilities_evm_capability_proto_goTypes,
 		DependencyIndexes: file_loop_chain_capabilities_evm_capability_proto_depIdxs,
+		MessageInfos:      file_loop_chain_capabilities_evm_capability_proto_msgTypes,
 	}.Build()
 	File_loop_chain_capabilities_evm_capability_proto = out.File
 	file_loop_chain_capabilities_evm_capability_proto_goTypes = nil

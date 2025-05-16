@@ -30,6 +30,7 @@ const (
 	EVMChain_QueryTrackedLogs_FullMethodName       = "/loop.chain_capabilities.evm.EVMChain/QueryTrackedLogs"
 	EVMChain_RegisterLogTracking_FullMethodName    = "/loop.chain_capabilities.evm.EVMChain/RegisterLogTracking"
 	EVMChain_UnregisterLogTracking_FullMethodName  = "/loop.chain_capabilities.evm.EVMChain/UnregisterLogTracking"
+	EVMChain_LogTrigger_FullMethodName             = "/loop.chain_capabilities.evm.EVMChain/LogTrigger"
 )
 
 // EVMChainClient is the client API for EVMChain service.
@@ -48,6 +49,7 @@ type EVMChainClient interface {
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	LogTrigger(ctx context.Context, in *FilterLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FilterLogsReply], error)
 }
 
 type eVMChainClient struct {
@@ -158,6 +160,25 @@ func (c *eVMChainClient) UnregisterLogTracking(ctx context.Context, in *Unregist
 	return out, nil
 }
 
+func (c *eVMChainClient) LogTrigger(ctx context.Context, in *FilterLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FilterLogsReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EVMChain_ServiceDesc.Streams[0], EVMChain_LogTrigger_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FilterLogTriggerRequest, FilterLogsReply]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EVMChain_LogTriggerClient = grpc.ServerStreamingClient[FilterLogsReply]
+
 // EVMChainServer is the server API for EVMChain service.
 // All implementations must embed UnimplementedEVMChainServer
 // for forward compatibility.
@@ -174,6 +195,7 @@ type EVMChainServer interface {
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	LogTrigger(*FilterLogTriggerRequest, grpc.ServerStreamingServer[FilterLogsReply]) error
 	mustEmbedUnimplementedEVMChainServer()
 }
 
@@ -213,6 +235,9 @@ func (UnimplementedEVMChainServer) RegisterLogTracking(context.Context, *Registe
 }
 func (UnimplementedEVMChainServer) UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+func (UnimplementedEVMChainServer) LogTrigger(*FilterLogTriggerRequest, grpc.ServerStreamingServer[FilterLogsReply]) error {
+	return status.Errorf(codes.Unimplemented, "method LogTrigger not implemented")
 }
 func (UnimplementedEVMChainServer) mustEmbedUnimplementedEVMChainServer() {}
 func (UnimplementedEVMChainServer) testEmbeddedByValue()                  {}
@@ -415,6 +440,17 @@ func _EVMChain_UnregisterLogTracking_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVMChain_LogTrigger_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FilterLogTriggerRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EVMChainServer).LogTrigger(m, &grpc.GenericServerStream[FilterLogTriggerRequest, FilterLogsReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EVMChain_LogTriggerServer = grpc.ServerStreamingServer[FilterLogsReply]
+
 // EVMChain_ServiceDesc is the grpc.ServiceDesc for EVMChain service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -463,6 +499,12 @@ var EVMChain_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVMChain_UnregisterLogTracking_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "LogTrigger",
+			Handler:       _EVMChain_LogTrigger_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "loop/chain-capabilities/evm/capability.proto",
 }

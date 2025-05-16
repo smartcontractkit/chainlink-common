@@ -32,17 +32,14 @@ type CronCapability interface {
 }
 
 func NewCronServer(capability CronCapability) *CronServer {
-	stopCh := make(chan struct{})
 	return &CronServer{
-		cronCapability: cronCapability{CronCapability: capability, stopCh: stopCh},
-		stopCh:         stopCh,
+		cronCapability: cronCapability{CronCapability: capability, stop: func() {}},
 	}
 }
 
 type CronServer struct {
 	cronCapability
 	capabilityRegistry core.CapabilitiesRegistry
-	stopCh             chan struct{}
 }
 
 func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
@@ -71,9 +68,7 @@ func (cs *CronServer) Close() error {
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
-	}
+	cs.cronCapability.stop()
 
 	return cs.cronCapability.Close()
 }
@@ -88,7 +83,7 @@ func (cs *CronServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo,
 
 type cronCapability struct {
 	CronCapability
-	stopCh chan struct{}
+	stop func()
 }
 
 func (c *cronCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -102,10 +97,20 @@ func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabiliti
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		ch, stop, err := capabilities.RegisterTrigger(ctx, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		if err != nil {
+			return nil, err
+		}
+		c.stop = stop
+		return ch, nil
 	case "":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		ch, stop, err := capabilities.RegisterTrigger(ctx, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		if err != nil {
+			return nil, err
+		}
+		c.stop = stop
+		return ch, nil
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

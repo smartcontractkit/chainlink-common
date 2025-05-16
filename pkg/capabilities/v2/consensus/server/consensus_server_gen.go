@@ -32,17 +32,14 @@ type ConsensusCapability interface {
 }
 
 func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
-	stopCh := make(chan struct{})
 	return &ConsensusServer{
-		consensusCapability: consensusCapability{ConsensusCapability: capability, stopCh: stopCh},
-		stopCh:              stopCh,
+		consensusCapability: consensusCapability{ConsensusCapability: capability, stop: func() {}},
 	}
 }
 
 type ConsensusServer struct {
 	consensusCapability
 	capabilityRegistry core.CapabilitiesRegistry
-	stopCh             chan struct{}
 }
 
 func (cs *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
@@ -71,9 +68,7 @@ func (cs *ConsensusServer) Close() error {
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
-	}
+	cs.consensusCapability.stop()
 
 	return cs.consensusCapability.Close()
 }
@@ -88,7 +83,7 @@ func (cs *ConsensusServer) Infos(ctx context.Context) ([]capabilities.Capability
 
 type consensusCapability struct {
 	ConsensusCapability
-	stopCh chan struct{}
+	stop func()
 }
 
 func (c *consensusCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

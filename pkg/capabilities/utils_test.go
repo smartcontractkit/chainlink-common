@@ -201,8 +201,6 @@ func TestRegisterTrigger(t *testing.T) {
 	// all sent events are received and transformed.
 	t.Run("OK channel drained before context cancels", func(t *testing.T) {
 		ctx := t.Context()
-		stop := make(chan struct{})
-		t.Cleanup(func() { close(stop) })
 
 		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
 		require.NoError(t, err)
@@ -228,9 +226,8 @@ func TestRegisterTrigger(t *testing.T) {
 			}
 		}()
 
-		respCh, err := capabilities.RegisterTrigger(
+		respCh, shutdown, err := capabilities.RegisterTrigger(
 			ctx,
-			stop,
 			"type",
 			req,
 			&pb.TriggerEvent{},
@@ -240,6 +237,7 @@ func TestRegisterTrigger(t *testing.T) {
 				return eventCh, nil
 			},
 		)
+		defer shutdown()
 		require.NoError(t, err)
 
 		gotEvents := 0
@@ -262,9 +260,6 @@ func TestRegisterTrigger(t *testing.T) {
 		// Cancel the context immediately
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-
-		stop := make(chan struct{})
-		t.Cleanup(func() { close(stop) })
 
 		wantEvents := 50
 
@@ -290,9 +285,8 @@ func TestRegisterTrigger(t *testing.T) {
 			}
 		}()
 
-		respCh, err := capabilities.RegisterTrigger(
+		respCh, shutdown, err := capabilities.RegisterTrigger(
 			ctx,
-			stop,
 			"type",
 			req,
 			&pb.TriggerEvent{},
@@ -303,6 +297,7 @@ func TestRegisterTrigger(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
+		defer shutdown()
 
 		gotEvents := 0
 		for resp := range respCh {
@@ -325,9 +320,6 @@ func TestRegisterTrigger(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		stop := make(chan struct{})
-		t.Cleanup(func() { close(stop) })
-
 		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
 		require.NoError(t, err)
 		req := capabilities.TriggerRegistrationRequest{
@@ -335,9 +327,8 @@ func TestRegisterTrigger(t *testing.T) {
 			Payload:  a,
 		}
 
-		_, err = capabilities.RegisterTrigger(
+		_, _, err = capabilities.RegisterTrigger(
 			ctx,
-			stop,
 			"type",
 			req,
 			&pb.TriggerEvent{},
@@ -355,7 +346,6 @@ func TestRegisterTrigger(t *testing.T) {
 
 		sentEvents := 50
 		wantEvents := 10
-		stop := make(chan struct{})
 
 		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
 		require.NoError(t, err)
@@ -380,9 +370,8 @@ func TestRegisterTrigger(t *testing.T) {
 			}
 		}()
 
-		respCh, err := capabilities.RegisterTrigger(
+		respCh, shutdown, err := capabilities.RegisterTrigger(
 			ctx,
-			stop,
 			"type",
 			req,
 			&pb.TriggerEvent{},
@@ -400,7 +389,7 @@ func TestRegisterTrigger(t *testing.T) {
 
 			// close the stop channel to cancel transforming
 			if gotEvents == wantEvents {
-				close(stop)
+				shutdown()
 			}
 
 			assert.Equal(t, "trigger-id", resp.Event.ID)

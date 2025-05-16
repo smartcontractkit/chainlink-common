@@ -34,17 +34,14 @@ type BasicCapability interface {
 }
 
 func NewBasicServer(capability BasicCapability) *BasicServer {
-	stopCh := make(chan struct{})
 	return &BasicServer{
-		basicCapability: basicCapability{BasicCapability: capability, stopCh: stopCh},
-		stopCh:          stopCh,
+		basicCapability: basicCapability{BasicCapability: capability, stop: func() {}},
 	}
 }
 
 type BasicServer struct {
 	basicCapability
 	capabilityRegistry core.CapabilitiesRegistry
-	stopCh             chan struct{}
 }
 
 func (cs *BasicServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
@@ -73,9 +70,7 @@ func (cs *BasicServer) Close() error {
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
-	}
+	cs.basicCapability.stop()
 
 	return cs.basicCapability.Close()
 }
@@ -90,7 +85,7 @@ func (cs *BasicServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo
 
 type basicCapability struct {
 	BasicCapability
-	stopCh chan struct{}
+	stop func()
 }
 
 func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -104,7 +99,12 @@ func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilit
 	switch request.Method {
 	case "Trigger":
 		input := &actionandtrigger.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-action-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
+		ch, stop, err := capabilities.RegisterTrigger(ctx, "basic-test-action-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
+		if err != nil {
+			return nil, err
+		}
+		c.stop = stop
+		return ch, nil
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

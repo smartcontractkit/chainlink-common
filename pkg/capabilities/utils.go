@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -119,26 +120,28 @@ type TriggerAndId[T proto.Message] struct {
 // while adhering to the standard capability interface.
 func RegisterTrigger[I, O proto.Message](
 	ctx context.Context,
-	stop <-chan struct{},
 	triggerType string,
 	request TriggerRegistrationRequest,
 	message I,
 	fn func(context.Context, string, RequestMetadata, I) (<-chan TriggerAndId[O], error),
-) (<-chan TriggerResponse, error) {
+) (<-chan TriggerResponse, func(), error) {
 	migrated, err := FromValueOrAny(request.Config, request.Payload, message)
 	if err != nil {
-		return nil, fmt.Errorf("error when unwrapping request: %w", err)
+		return nil, nil, fmt.Errorf("error when unwrapping request: %w", err)
 	}
 
 	response := make(chan TriggerResponse)
 	respCh, err := fn(ctx, request.TriggerID, request.Metadata, message)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	stop := make(chan struct{})
 	go func() {
 		defer close(response)
+
 		for {
+			// block until trigger received or stopped
 			select {
 			case resp, open := <-respCh:
 				if !open {
@@ -151,6 +154,7 @@ func RegisterTrigger[I, O proto.Message](
 						ID:          resp.Id,
 					},
 				}
+
 				if migrated {
 					wrapped, err := anypb.New(resp.Trigger)
 					tr.Err = err
@@ -160,16 +164,21 @@ func RegisterTrigger[I, O proto.Message](
 					tr.Err = err
 					tr.Event.Outputs = wrapped
 				}
+
+				// block until sent or stopped
 				select {
 				case response <- tr:
 				case <-stop:
 					return
 				}
+
 			case <-stop:
 				return
 			}
 		}
 	}()
 
-	return response, nil
+	return response, sync.OnceFunc(func() {
+		close(stop)
+	}), nil
 }

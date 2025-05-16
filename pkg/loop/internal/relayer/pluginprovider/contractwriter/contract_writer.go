@@ -89,6 +89,32 @@ func (c *Client) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponent
 	}, nil
 }
 
+func (c *Client) GetEstimateFee(ctx context.Context, contract, method string, params any, toAddress string, meta *types.TxMeta, val *big.Int) (types.EstimateFee, error) {
+	versionedParams, err := contractreader.EncodeVersionedBytes(params, c.encodeWith)
+	if err != nil {
+		return types.EstimateFee{}, err
+	}
+
+	req := &pb.GetEstimateFeeRequest{
+		ContractName: contract,
+		Method:       method,
+		Params:       versionedParams,
+		ToAddress:    toAddress,
+		Meta:         TxMetaToProto(meta),
+		Value:        pb.NewBigIntFromInt(val),
+	}
+
+	reply, err := c.grpc.GetEstimateFee(ctx, req)
+	if err != nil {
+		return types.EstimateFee{}, net.WrapRPCErr(err)
+	}
+
+	return types.EstimateFee{
+		Fee:      reply.Fee.Int(),
+		Decimals: reply.Decimals,
+	}, nil
+}
+
 // Server.
 
 var _ pb.ContractWriterServer = (*Server)(nil)
@@ -152,6 +178,23 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 	return &pb.GetFeeComponentsReply{
 		ExecutionFee:        pb.NewBigIntFromInt(feeComponents.ExecutionFee),
 		DataAvailabilityFee: pb.NewBigIntFromInt(feeComponents.DataAvailabilityFee),
+	}, nil
+}
+
+func (s *Server) GetEstimateFee(ctx context.Context, req *pb.GetEstimateFeeRequest) (*pb.GetEstimateFeeReply, error) {
+	params := map[string]any{}
+	if err := contractreader.DecodeVersionedBytes(&params, req.Params); err != nil {
+		return nil, err
+	}
+
+	estimateFee, err := s.impl.GetEstimateFee(ctx, req.ContractName, req.Method, params, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int())
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetEstimateFeeReply{
+		Fee:      pb.NewBigIntFromInt(estimateFee.Fee),
+		Decimals: estimateFee.Decimals,
 	}, nil
 }
 

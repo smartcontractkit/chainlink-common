@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747413384523,
+  "lastUpdate": 1747421093583,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13692,6 +13692,48 @@ window.BENCHMARK_DATA = {
             "value": 28635,
             "unit": "ns/op",
             "extra": "41726 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7b64923532730b8227aca43a632fde2ce05fcf87",
+          "message": "Fix a bug where generated code cannot import the same package name twice (#1195)",
+          "timestamp": "2025-05-16T14:43:34-04:00",
+          "tree_id": "7f93a77f416e015bfc5cafda395f5d3fcd36c722",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7b64923532730b8227aca43a632fde2ce05fcf87"
+        },
+        "date": 1747421092653,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.2,
+            "unit": "ns/op",
+            "extra": "3336435 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.1,
+            "unit": "ns/op",
+            "extra": "2913996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28719,
+            "unit": "ns/op",
+            "extra": "42133 times\n4 procs"
           }
         ]
       }

@@ -28,9 +28,9 @@ type EVMChainCapability interface {
 
 	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
 
-	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionByHashRequest) (*evm.TransactionByHashReply, error)
 
-	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetReceiptRequest) (*evm.GetReceiptReply, error)
+	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionReceiptRequest) (*evm.TransactionReceiptReply, error)
 
 	LatestAndFinalizedHead(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
 
@@ -153,16 +153,16 @@ func (c *eVMChainCapability) Execute(ctx context.Context, request capabilities.C
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionByHash":
-		input := &evm.GetTransactionByHashRequest{}
+		input := &evm.TransactionByHashRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionByHashRequest, _ *emptypb.Empty) (*evm.TransactionByHashReply, error) {
 			return c.EVMChainCapability.GetTransactionByHash(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionReceipt":
-		input := &evm.GetReceiptRequest{}
+		input := &evm.TransactionReceiptRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetReceiptRequest, _ *emptypb.Empty) (*evm.GetReceiptReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionReceiptRequest, _ *emptypb.Empty) (*evm.TransactionReceiptReply, error) {
 			return c.EVMChainCapability.GetTransactionReceipt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

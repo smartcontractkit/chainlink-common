@@ -8,6 +8,7 @@ package relayerset
 
 import (
 	context "context"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -42,6 +43,18 @@ const (
 	RelayerSet_ContractReaderUnbind_FullMethodName                     = "/loop.relayerset.RelayerSet/ContractReaderUnbind"
 	RelayerSet_ContractReaderStart_FullMethodName                      = "/loop.relayerset.RelayerSet/ContractReaderStart"
 	RelayerSet_ContractReaderClose_FullMethodName                      = "/loop.relayerset.RelayerSet/ContractReaderClose"
+	RelayerSet_EVMGetTransactionFee_FullMethodName                     = "/loop.relayerset.RelayerSet/EVMGetTransactionFee"
+	RelayerSet_EVMCallContract_FullMethodName                          = "/loop.relayerset.RelayerSet/EVMCallContract"
+	RelayerSet_EVMFilterLogs_FullMethodName                            = "/loop.relayerset.RelayerSet/EVMFilterLogs"
+	RelayerSet_EVMBalanceAt_FullMethodName                             = "/loop.relayerset.RelayerSet/EVMBalanceAt"
+	RelayerSet_EVMEstimateGas_FullMethodName                           = "/loop.relayerset.RelayerSet/EVMEstimateGas"
+	RelayerSet_EVMTransactionByHash_FullMethodName                     = "/loop.relayerset.RelayerSet/EVMTransactionByHash"
+	RelayerSet_EVMTransactionReceipt_FullMethodName                    = "/loop.relayerset.RelayerSet/EVMTransactionReceipt"
+	RelayerSet_EVMLatestAndFinalizedHead_FullMethodName                = "/loop.relayerset.RelayerSet/EVMLatestAndFinalizedHead"
+	RelayerSet_EVMQueryTrackedLogs_FullMethodName                      = "/loop.relayerset.RelayerSet/EVMQueryTrackedLogs"
+	RelayerSet_EVMRegisterLogTracking_FullMethodName                   = "/loop.relayerset.RelayerSet/EVMRegisterLogTracking"
+	RelayerSet_EVMUnregisterLogTracking_FullMethodName                 = "/loop.relayerset.RelayerSet/EVMUnregisterLogTracking"
+	RelayerSet_EVMGetTransactionStatus_FullMethodName                  = "/loop.relayerset.RelayerSet/EVMGetTransactionStatus"
 )
 
 // RelayerSetClient is the client API for RelayerSet service.
@@ -50,7 +63,7 @@ const (
 type RelayerSetClient interface {
 	Get(ctx context.Context, in *GetRelayerRequest, opts ...grpc.CallOption) (*GetRelayerResponse, error)
 	List(ctx context.Context, in *ListAllRelayersRequest, opts ...grpc.CallOption) (*ListAllRelayersResponse, error)
-	EVM(ctx context.Context, in *EVMRequest, opts ...grpc.CallOption) (*EVMResponse, error)
+	EVM(ctx context.Context, in *EVMRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	NewPluginProvider(ctx context.Context, in *NewPluginProviderRequest, opts ...grpc.CallOption) (*NewPluginProviderResponse, error)
 	NewContractReader(ctx context.Context, in *NewContractReaderRequest, opts ...grpc.CallOption) (*NewContractReaderResponse, error)
 	NewContractWriter(ctx context.Context, in *NewContractWriterRequest, opts ...grpc.CallOption) (*NewContractWriterResponse, error)
@@ -69,6 +82,18 @@ type RelayerSetClient interface {
 	ContractReaderUnbind(ctx context.Context, in *ContractReaderUnbindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ContractReaderStart(ctx context.Context, in *ContractReaderStartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ContractReaderClose(ctx context.Context, in *ContractReaderCloseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EVMGetTransactionFee(ctx context.Context, in *EVMGetTransactionFeeRequest, opts ...grpc.CallOption) (*evm.GetTransactionFeeReply, error)
+	EVMCallContract(ctx context.Context, in *EVMCallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error)
+	EVMFilterLogs(ctx context.Context, in *EVMFilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error)
+	EVMBalanceAt(ctx context.Context, in *EVMBalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error)
+	EVMEstimateGas(ctx context.Context, in *EVMEstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error)
+	EVMTransactionByHash(ctx context.Context, in *EVMTransactionByHashRequest, opts ...grpc.CallOption) (*evm.TransactionByHashReply, error)
+	EVMTransactionReceipt(ctx context.Context, in *EVMReceiptRequest, opts ...grpc.CallOption) (*evm.TransactionReceiptReply, error)
+	EVMLatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error)
+	EVMQueryTrackedLogs(ctx context.Context, in *EVMQueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
+	EVMRegisterLogTracking(ctx context.Context, in *EVMRegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EVMUnregisterLogTracking(ctx context.Context, in *EVMUnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EVMGetTransactionStatus(ctx context.Context, in *EVMGetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error)
 }
 
 type relayerSetClient struct {
@@ -99,9 +124,9 @@ func (c *relayerSetClient) List(ctx context.Context, in *ListAllRelayersRequest,
 	return out, nil
 }
 
-func (c *relayerSetClient) EVM(ctx context.Context, in *EVMRequest, opts ...grpc.CallOption) (*EVMResponse, error) {
+func (c *relayerSetClient) EVM(ctx context.Context, in *EVMRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EVMResponse)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, RelayerSet_EVM_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -289,13 +314,133 @@ func (c *relayerSetClient) ContractReaderClose(ctx context.Context, in *Contract
 	return out, nil
 }
 
+func (c *relayerSetClient) EVMGetTransactionFee(ctx context.Context, in *EVMGetTransactionFeeRequest, opts ...grpc.CallOption) (*evm.GetTransactionFeeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.GetTransactionFeeReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMGetTransactionFee_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMCallContract(ctx context.Context, in *EVMCallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.CallContractReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMCallContract_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMFilterLogs(ctx context.Context, in *EVMFilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.FilterLogsReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMFilterLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMBalanceAt(ctx context.Context, in *EVMBalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.BalanceAtReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMBalanceAt_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMEstimateGas(ctx context.Context, in *EVMEstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.EstimateGasReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMEstimateGas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMTransactionByHash(ctx context.Context, in *EVMTransactionByHashRequest, opts ...grpc.CallOption) (*evm.TransactionByHashReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.TransactionByHashReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMTransactionByHash_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMTransactionReceipt(ctx context.Context, in *EVMReceiptRequest, opts ...grpc.CallOption) (*evm.TransactionReceiptReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.TransactionReceiptReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMTransactionReceipt_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMLatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.LatestAndFinalizedHeadReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMLatestAndFinalizedHead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMQueryTrackedLogs(ctx context.Context, in *EVMQueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.QueryTrackedLogsReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMQueryTrackedLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMRegisterLogTracking(ctx context.Context, in *EVMRegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMRegisterLogTracking_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMUnregisterLogTracking(ctx context.Context, in *EVMUnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMUnregisterLogTracking_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relayerSetClient) EVMGetTransactionStatus(ctx context.Context, in *EVMGetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.GetTransactionStatusReply)
+	err := c.cc.Invoke(ctx, RelayerSet_EVMGetTransactionStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RelayerSetServer is the server API for RelayerSet service.
 // All implementations must embed UnimplementedRelayerSetServer
 // for forward compatibility.
 type RelayerSetServer interface {
 	Get(context.Context, *GetRelayerRequest) (*GetRelayerResponse, error)
 	List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error)
-	EVM(context.Context, *EVMRequest) (*EVMResponse, error)
+	EVM(context.Context, *EVMRequest) (*emptypb.Empty, error)
 	NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error)
 	NewContractReader(context.Context, *NewContractReaderRequest) (*NewContractReaderResponse, error)
 	NewContractWriter(context.Context, *NewContractWriterRequest) (*NewContractWriterResponse, error)
@@ -314,6 +459,18 @@ type RelayerSetServer interface {
 	ContractReaderUnbind(context.Context, *ContractReaderUnbindRequest) (*emptypb.Empty, error)
 	ContractReaderStart(context.Context, *ContractReaderStartRequest) (*emptypb.Empty, error)
 	ContractReaderClose(context.Context, *ContractReaderCloseRequest) (*emptypb.Empty, error)
+	EVMGetTransactionFee(context.Context, *EVMGetTransactionFeeRequest) (*evm.GetTransactionFeeReply, error)
+	EVMCallContract(context.Context, *EVMCallContractRequest) (*evm.CallContractReply, error)
+	EVMFilterLogs(context.Context, *EVMFilterLogsRequest) (*evm.FilterLogsReply, error)
+	EVMBalanceAt(context.Context, *EVMBalanceAtRequest) (*evm.BalanceAtReply, error)
+	EVMEstimateGas(context.Context, *EVMEstimateGasRequest) (*evm.EstimateGasReply, error)
+	EVMTransactionByHash(context.Context, *EVMTransactionByHashRequest) (*evm.TransactionByHashReply, error)
+	EVMTransactionReceipt(context.Context, *EVMReceiptRequest) (*evm.TransactionReceiptReply, error)
+	EVMLatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*evm.LatestAndFinalizedHeadReply, error)
+	EVMQueryTrackedLogs(context.Context, *EVMQueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
+	EVMRegisterLogTracking(context.Context, *EVMRegisterLogTrackingRequest) (*emptypb.Empty, error)
+	EVMUnregisterLogTracking(context.Context, *EVMUnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	EVMGetTransactionStatus(context.Context, *EVMGetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error)
 	mustEmbedUnimplementedRelayerSetServer()
 }
 
@@ -330,7 +487,7 @@ func (UnimplementedRelayerSetServer) Get(context.Context, *GetRelayerRequest) (*
 func (UnimplementedRelayerSetServer) List(context.Context, *ListAllRelayersRequest) (*ListAllRelayersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedRelayerSetServer) EVM(context.Context, *EVMRequest) (*EVMResponse, error) {
+func (UnimplementedRelayerSetServer) EVM(context.Context, *EVMRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
 }
 func (UnimplementedRelayerSetServer) NewPluginProvider(context.Context, *NewPluginProviderRequest) (*NewPluginProviderResponse, error) {
@@ -386,6 +543,42 @@ func (UnimplementedRelayerSetServer) ContractReaderStart(context.Context, *Contr
 }
 func (UnimplementedRelayerSetServer) ContractReaderClose(context.Context, *ContractReaderCloseRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderClose not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMGetTransactionFee(context.Context, *EVMGetTransactionFeeRequest) (*evm.GetTransactionFeeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMGetTransactionFee not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMCallContract(context.Context, *EVMCallContractRequest) (*evm.CallContractReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMCallContract not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMFilterLogs(context.Context, *EVMFilterLogsRequest) (*evm.FilterLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMFilterLogs not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMBalanceAt(context.Context, *EVMBalanceAtRequest) (*evm.BalanceAtReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMBalanceAt not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMEstimateGas(context.Context, *EVMEstimateGasRequest) (*evm.EstimateGasReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMEstimateGas not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMTransactionByHash(context.Context, *EVMTransactionByHashRequest) (*evm.TransactionByHashReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMTransactionByHash not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMTransactionReceipt(context.Context, *EVMReceiptRequest) (*evm.TransactionReceiptReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMTransactionReceipt not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMLatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*evm.LatestAndFinalizedHeadReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMLatestAndFinalizedHead not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMQueryTrackedLogs(context.Context, *EVMQueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMQueryTrackedLogs not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMRegisterLogTracking(context.Context, *EVMRegisterLogTrackingRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMRegisterLogTracking not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMUnregisterLogTracking(context.Context, *EVMUnregisterLogTrackingRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMUnregisterLogTracking not implemented")
+}
+func (UnimplementedRelayerSetServer) EVMGetTransactionStatus(context.Context, *EVMGetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVMGetTransactionStatus not implemented")
 }
 func (UnimplementedRelayerSetServer) mustEmbedUnimplementedRelayerSetServer() {}
 func (UnimplementedRelayerSetServer) testEmbeddedByValue()                    {}
@@ -786,6 +979,222 @@ func _RelayerSet_ContractReaderClose_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RelayerSet_EVMGetTransactionFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMGetTransactionFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMGetTransactionFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMGetTransactionFee_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMGetTransactionFee(ctx, req.(*EVMGetTransactionFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMCallContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMCallContractRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMCallContract(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMCallContract_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMCallContract(ctx, req.(*EVMCallContractRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMFilterLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMFilterLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMFilterLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMFilterLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMFilterLogs(ctx, req.(*EVMFilterLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMBalanceAt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMBalanceAtRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMBalanceAt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMBalanceAt_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMBalanceAt(ctx, req.(*EVMBalanceAtRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMEstimateGas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMEstimateGasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMEstimateGas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMEstimateGas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMEstimateGas(ctx, req.(*EVMEstimateGasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMTransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMTransactionByHashRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMTransactionByHash(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMTransactionByHash_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMTransactionByHash(ctx, req.(*EVMTransactionByHashRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMTransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMReceiptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMTransactionReceipt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMTransactionReceipt_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMTransactionReceipt(ctx, req.(*EVMReceiptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMLatestAndFinalizedHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LatestHeadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMLatestAndFinalizedHead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMLatestAndFinalizedHead_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMLatestAndFinalizedHead(ctx, req.(*LatestHeadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMQueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMQueryTrackedLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMQueryTrackedLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMQueryTrackedLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMQueryTrackedLogs(ctx, req.(*EVMQueryTrackedLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMRegisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMRegisterLogTrackingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMRegisterLogTracking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMRegisterLogTracking_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMRegisterLogTracking(ctx, req.(*EVMRegisterLogTrackingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMUnregisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMUnregisterLogTrackingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMUnregisterLogTracking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMUnregisterLogTracking_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMUnregisterLogTracking(ctx, req.(*EVMUnregisterLogTrackingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RelayerSet_EVMGetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EVMGetTransactionStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).EVMGetTransactionStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_EVMGetTransactionStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).EVMGetTransactionStatus(ctx, req.(*EVMGetTransactionStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RelayerSet_ServiceDesc is the grpc.ServiceDesc for RelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -876,6 +1285,54 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ContractReaderClose",
 			Handler:    _RelayerSet_ContractReaderClose_Handler,
+		},
+		{
+			MethodName: "EVMGetTransactionFee",
+			Handler:    _RelayerSet_EVMGetTransactionFee_Handler,
+		},
+		{
+			MethodName: "EVMCallContract",
+			Handler:    _RelayerSet_EVMCallContract_Handler,
+		},
+		{
+			MethodName: "EVMFilterLogs",
+			Handler:    _RelayerSet_EVMFilterLogs_Handler,
+		},
+		{
+			MethodName: "EVMBalanceAt",
+			Handler:    _RelayerSet_EVMBalanceAt_Handler,
+		},
+		{
+			MethodName: "EVMEstimateGas",
+			Handler:    _RelayerSet_EVMEstimateGas_Handler,
+		},
+		{
+			MethodName: "EVMTransactionByHash",
+			Handler:    _RelayerSet_EVMTransactionByHash_Handler,
+		},
+		{
+			MethodName: "EVMTransactionReceipt",
+			Handler:    _RelayerSet_EVMTransactionReceipt_Handler,
+		},
+		{
+			MethodName: "EVMLatestAndFinalizedHead",
+			Handler:    _RelayerSet_EVMLatestAndFinalizedHead_Handler,
+		},
+		{
+			MethodName: "EVMQueryTrackedLogs",
+			Handler:    _RelayerSet_EVMQueryTrackedLogs_Handler,
+		},
+		{
+			MethodName: "EVMRegisterLogTracking",
+			Handler:    _RelayerSet_EVMRegisterLogTracking_Handler,
+		},
+		{
+			MethodName: "EVMUnregisterLogTracking",
+			Handler:    _RelayerSet_EVMUnregisterLogTracking_Handler,
+		},
+		{
+			MethodName: "EVMGetTransactionStatus",
+			Handler:    _RelayerSet_EVMGetTransactionStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

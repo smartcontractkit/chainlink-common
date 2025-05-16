@@ -37,9 +37,9 @@ type EVMChainCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	EstimateGas func(ctx context.Context, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	GetTransactionByHash func(ctx context.Context, input *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+	GetTransactionByHash func(ctx context.Context, input *evm.TransactionByHashRequest) (*evm.TransactionByHashReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	GetTransactionReceipt func(ctx context.Context, input *evm.GetReceiptRequest) (*evm.GetReceiptReply, error)
+	GetTransactionReceipt func(ctx context.Context, input *evm.TransactionReceiptRequest) (*evm.TransactionReceiptReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	LatestAndFinalizedHead func(ctx context.Context, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
@@ -142,7 +142,7 @@ func (cap *EVMChainCapability) Invoke(ctx context.Context, request *sdkpb.Capabi
 			}
 		}
 	case "GetTransactionByHash":
-		input := &evm.GetTransactionByHashRequest{}
+		input := &evm.TransactionByHashRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -164,7 +164,7 @@ func (cap *EVMChainCapability) Invoke(ctx context.Context, request *sdkpb.Capabi
 			}
 		}
 	case "GetTransactionReceipt":
-		input := &evm.GetReceiptRequest{}
+		input := &evm.TransactionReceiptRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break

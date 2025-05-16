@@ -52,7 +52,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
 	evmService := &staticEVMService{}
-	evmpb.RegisterEVMServer(s, &evmServer{impl: evmService})
+	evmpb.RegisterEVMServer(s, &EvmServer{impl: evmService})
 
 	go func() {
 		_ = s.Serve(lis)
@@ -73,7 +73,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	require.NoError(t, err)
 
 	defer conn.Close()
-	client := &evmClient{
+	client := &EVMClient{
 		cl: evmpb.NewEVMClient(conn),
 	}
 	t.Run("BalanceAt", func(t *testing.T) {

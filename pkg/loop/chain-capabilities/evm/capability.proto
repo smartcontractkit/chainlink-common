@@ -18,8 +18,8 @@ service EVMChain {
   rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
   rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
-  rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
-  rpc GetTransactionReceipt(GetReceiptRequest) returns (GetReceiptReply);
+  rpc GetTransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
+  rpc GetTransactionReceipt(TransactionReceiptRequest) returns (TransactionReceiptReply);
   rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);

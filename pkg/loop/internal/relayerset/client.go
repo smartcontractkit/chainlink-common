@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
+	relayer2 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -112,18 +113,11 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 	}, nil
 }
 
-func (k *Client) EVM(ctx context.Context, relayID types.RelayID) (uint32, error) {
-	// TODO what to do
-	//req := &relayerset.EVMRequest{
-	//	RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
-	//}
-
-	//resp, err := k.relayerSetClient.EVM(ctx, req)
-	//if err != nil {
-	//	return 0, fmt.Errorf("error getting new contract writer: %w", err)
-	//}
-
-	return 0, nil
+func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
+	return relayer2.NewEVMCClient(&evm{
+		relayID: relayID,
+		client:  k,
+	}), nil
 }
 
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {

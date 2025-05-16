@@ -127,7 +127,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 		if evmService, ok := r.(types.EVMService); ok {
-			evmpb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
+			evmpb.RegisterEVMServer(s, NewEVMServer(evmService, p.BrokerExt))
 		}
 	}, rRes, ksRes, crRes)
 	if err != nil {
@@ -383,7 +383,7 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 }
 
 func (r *relayerClient) EVM() (types.EVMService, error) {
-	return &evmClient{
+	return &EVMClient{
 		r.evmClient,
 	}, nil
 }

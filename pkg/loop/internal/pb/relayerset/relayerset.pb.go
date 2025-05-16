@@ -7,6 +7,7 @@
 package relayerset
 
 import (
+	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -546,9 +547,8 @@ func (x *NewPluginProviderResponse) GetPluginProviderId() uint32 {
 }
 
 type EVMRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// relayerId is same as EVM Relayer ID
-	RelayerId     *RelayerId `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -590,50 +590,6 @@ func (x *EVMRequest) GetRelayerId() *RelayerId {
 	return nil
 }
 
-type EVMResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EVMResponse) Reset() {
-	*x = EVMResponse{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EVMResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EVMResponse) ProtoMessage() {}
-
-func (x *EVMResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EVMResponse.ProtoReflect.Descriptor instead.
-func (*EVMResponse) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *EVMResponse) GetRelayerId() *RelayerId {
-	if x != nil {
-		return x.RelayerId
-	}
-	return nil
-}
-
 type NewContractReaderRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	RelayerId            *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
@@ -644,7 +600,7 @@ type NewContractReaderRequest struct {
 
 func (x *NewContractReaderRequest) Reset() {
 	*x = NewContractReaderRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -656,7 +612,7 @@ func (x *NewContractReaderRequest) String() string {
 func (*NewContractReaderRequest) ProtoMessage() {}
 
 func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -669,7 +625,7 @@ func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderRequest.ProtoReflect.Descriptor instead.
 func (*NewContractReaderRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NewContractReaderRequest) GetRelayerId() *RelayerId {
@@ -695,7 +651,7 @@ type NewContractReaderResponse struct {
 
 func (x *NewContractReaderResponse) Reset() {
 	*x = NewContractReaderResponse{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -707,7 +663,7 @@ func (x *NewContractReaderResponse) String() string {
 func (*NewContractReaderResponse) ProtoMessage() {}
 
 func (x *NewContractReaderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +676,7 @@ func (x *NewContractReaderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderResponse.ProtoReflect.Descriptor instead.
 func (*NewContractReaderResponse) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NewContractReaderResponse) GetContractReaderId() string {
@@ -740,7 +696,7 @@ type NewContractWriterRequest struct {
 
 func (x *NewContractWriterRequest) Reset() {
 	*x = NewContractWriterRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -752,7 +708,7 @@ func (x *NewContractWriterRequest) String() string {
 func (*NewContractWriterRequest) ProtoMessage() {}
 
 func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -765,7 +721,7 @@ func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterRequest.ProtoReflect.Descriptor instead.
 func (*NewContractWriterRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NewContractWriterRequest) GetRelayerId() *RelayerId {
@@ -791,7 +747,7 @@ type NewContractWriterResponse struct {
 
 func (x *NewContractWriterResponse) Reset() {
 	*x = NewContractWriterResponse{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -803,7 +759,7 @@ func (x *NewContractWriterResponse) String() string {
 func (*NewContractWriterResponse) ProtoMessage() {}
 
 func (x *NewContractWriterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -816,7 +772,7 @@ func (x *NewContractWriterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterResponse.ProtoReflect.Descriptor instead.
 func (*NewContractWriterResponse) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NewContractWriterResponse) GetContractWriterId() uint32 {
@@ -835,7 +791,7 @@ type LatestHeadRequest struct {
 
 func (x *LatestHeadRequest) Reset() {
 	*x = LatestHeadRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -847,7 +803,7 @@ func (x *LatestHeadRequest) String() string {
 func (*LatestHeadRequest) ProtoMessage() {}
 
 func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -860,7 +816,7 @@ func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadRequest.ProtoReflect.Descriptor instead.
 func (*LatestHeadRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LatestHeadRequest) GetRelayerId() *RelayerId {
@@ -881,7 +837,7 @@ type LatestHeadResponse struct {
 
 func (x *LatestHeadResponse) Reset() {
 	*x = LatestHeadResponse{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -893,7 +849,7 @@ func (x *LatestHeadResponse) String() string {
 func (*LatestHeadResponse) ProtoMessage() {}
 
 func (x *LatestHeadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -906,7 +862,7 @@ func (x *LatestHeadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadResponse.ProtoReflect.Descriptor instead.
 func (*LatestHeadResponse) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *LatestHeadResponse) GetHeight() string {
@@ -939,7 +895,7 @@ type RelayerHealthReportResponse struct {
 
 func (x *RelayerHealthReportResponse) Reset() {
 	*x = RelayerHealthReportResponse{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +907,7 @@ func (x *RelayerHealthReportResponse) String() string {
 func (*RelayerHealthReportResponse) ProtoMessage() {}
 
 func (x *RelayerHealthReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +920,7 @@ func (x *RelayerHealthReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerHealthReportResponse.ProtoReflect.Descriptor instead.
 func (*RelayerHealthReportResponse) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RelayerHealthReportResponse) GetReport() map[string]string {
@@ -983,7 +939,7 @@ type RelayerNameResponse struct {
 
 func (x *RelayerNameResponse) Reset() {
 	*x = RelayerNameResponse{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -995,7 +951,7 @@ func (x *RelayerNameResponse) String() string {
 func (*RelayerNameResponse) ProtoMessage() {}
 
 func (x *RelayerNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1008,7 +964,7 @@ func (x *RelayerNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerNameResponse.ProtoReflect.Descriptor instead.
 func (*RelayerNameResponse) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RelayerNameResponse) GetName() string {
@@ -1028,7 +984,7 @@ type ContractReaderGetLatestValueRequest struct {
 
 func (x *ContractReaderGetLatestValueRequest) Reset() {
 	*x = ContractReaderGetLatestValueRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1040,7 +996,7 @@ func (x *ContractReaderGetLatestValueRequest) String() string {
 func (*ContractReaderGetLatestValueRequest) ProtoMessage() {}
 
 func (x *ContractReaderGetLatestValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1053,7 +1009,7 @@ func (x *ContractReaderGetLatestValueRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ContractReaderGetLatestValueRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderGetLatestValueRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ContractReaderGetLatestValueRequest) GetContractReaderId() string {
@@ -1080,7 +1036,7 @@ type ContractReaderBatchGetLatestValuesRequest struct {
 
 func (x *ContractReaderBatchGetLatestValuesRequest) Reset() {
 	*x = ContractReaderBatchGetLatestValuesRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1092,7 +1048,7 @@ func (x *ContractReaderBatchGetLatestValuesRequest) String() string {
 func (*ContractReaderBatchGetLatestValuesRequest) ProtoMessage() {}
 
 func (x *ContractReaderBatchGetLatestValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1105,7 +1061,7 @@ func (x *ContractReaderBatchGetLatestValuesRequest) ProtoReflect() protoreflect.
 
 // Deprecated: Use ContractReaderBatchGetLatestValuesRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderBatchGetLatestValuesRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ContractReaderBatchGetLatestValuesRequest) GetContractReaderId() string {
@@ -1132,7 +1088,7 @@ type ContractReaderQueryKeyRequest struct {
 
 func (x *ContractReaderQueryKeyRequest) Reset() {
 	*x = ContractReaderQueryKeyRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1144,7 +1100,7 @@ func (x *ContractReaderQueryKeyRequest) String() string {
 func (*ContractReaderQueryKeyRequest) ProtoMessage() {}
 
 func (x *ContractReaderQueryKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1157,7 +1113,7 @@ func (x *ContractReaderQueryKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderQueryKeyRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderQueryKeyRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{22}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ContractReaderQueryKeyRequest) GetContractReaderId() string {
@@ -1184,7 +1140,7 @@ type ContractReaderQueryKeysRequest struct {
 
 func (x *ContractReaderQueryKeysRequest) Reset() {
 	*x = ContractReaderQueryKeysRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1196,7 +1152,7 @@ func (x *ContractReaderQueryKeysRequest) String() string {
 func (*ContractReaderQueryKeysRequest) ProtoMessage() {}
 
 func (x *ContractReaderQueryKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1209,7 +1165,7 @@ func (x *ContractReaderQueryKeysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderQueryKeysRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderQueryKeysRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{23}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ContractReaderQueryKeysRequest) GetContractReaderId() string {
@@ -1236,7 +1192,7 @@ type ContractReaderBindRequest struct {
 
 func (x *ContractReaderBindRequest) Reset() {
 	*x = ContractReaderBindRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1248,7 +1204,7 @@ func (x *ContractReaderBindRequest) String() string {
 func (*ContractReaderBindRequest) ProtoMessage() {}
 
 func (x *ContractReaderBindRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1261,7 +1217,7 @@ func (x *ContractReaderBindRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderBindRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderBindRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{24}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ContractReaderBindRequest) GetContractReaderId() string {
@@ -1288,7 +1244,7 @@ type ContractReaderUnbindRequest struct {
 
 func (x *ContractReaderUnbindRequest) Reset() {
 	*x = ContractReaderUnbindRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1300,7 +1256,7 @@ func (x *ContractReaderUnbindRequest) String() string {
 func (*ContractReaderUnbindRequest) ProtoMessage() {}
 
 func (x *ContractReaderUnbindRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1313,7 +1269,7 @@ func (x *ContractReaderUnbindRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderUnbindRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderUnbindRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{25}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ContractReaderUnbindRequest) GetContractReaderId() string {
@@ -1339,7 +1295,7 @@ type ContractReaderStartRequest struct {
 
 func (x *ContractReaderStartRequest) Reset() {
 	*x = ContractReaderStartRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1351,7 +1307,7 @@ func (x *ContractReaderStartRequest) String() string {
 func (*ContractReaderStartRequest) ProtoMessage() {}
 
 func (x *ContractReaderStartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1364,7 +1320,7 @@ func (x *ContractReaderStartRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderStartRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderStartRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{26}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ContractReaderStartRequest) GetContractReaderId() string {
@@ -1383,7 +1339,7 @@ type ContractReaderCloseRequest struct {
 
 func (x *ContractReaderCloseRequest) Reset() {
 	*x = ContractReaderCloseRequest{}
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1395,7 +1351,7 @@ func (x *ContractReaderCloseRequest) String() string {
 func (*ContractReaderCloseRequest) ProtoMessage() {}
 
 func (x *ContractReaderCloseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1408,7 +1364,7 @@ func (x *ContractReaderCloseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderCloseRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderCloseRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{27}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ContractReaderCloseRequest) GetContractReaderId() string {
@@ -1418,11 +1374,583 @@ func (x *ContractReaderCloseRequest) GetContractReaderId() string {
 	return ""
 }
 
+type EVMGetTransactionFeeRequest struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	RelayerId     *RelayerId                    `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.GetTransactionFeeRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMGetTransactionFeeRequest) Reset() {
+	*x = EVMGetTransactionFeeRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMGetTransactionFeeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMGetTransactionFeeRequest) ProtoMessage() {}
+
+func (x *EVMGetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMGetTransactionFeeRequest.ProtoReflect.Descriptor instead.
+func (*EVMGetTransactionFeeRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *EVMGetTransactionFeeRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMGetTransactionFeeRequest) GetRequest() *evm.GetTransactionFeeRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMCallContractRequest struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	RelayerId     *RelayerId               `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.CallContractRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMCallContractRequest) Reset() {
+	*x = EVMCallContractRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMCallContractRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMCallContractRequest) ProtoMessage() {}
+
+func (x *EVMCallContractRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMCallContractRequest.ProtoReflect.Descriptor instead.
+func (*EVMCallContractRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *EVMCallContractRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMCallContractRequest) GetRequest() *evm.CallContractRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMFilterLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.FilterLogsRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMFilterLogsRequest) Reset() {
+	*x = EVMFilterLogsRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMFilterLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMFilterLogsRequest) ProtoMessage() {}
+
+func (x *EVMFilterLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMFilterLogsRequest.ProtoReflect.Descriptor instead.
+func (*EVMFilterLogsRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *EVMFilterLogsRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMFilterLogsRequest) GetRequest() *evm.FilterLogsRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMBalanceAtRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.BalanceAtRequest  `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMBalanceAtRequest) Reset() {
+	*x = EVMBalanceAtRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMBalanceAtRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMBalanceAtRequest) ProtoMessage() {}
+
+func (x *EVMBalanceAtRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMBalanceAtRequest.ProtoReflect.Descriptor instead.
+func (*EVMBalanceAtRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *EVMBalanceAtRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMBalanceAtRequest) GetRequest() *evm.BalanceAtRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMEstimateGasRequest struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	RelayerId     *RelayerId              `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.EstimateGasRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMEstimateGasRequest) Reset() {
+	*x = EVMEstimateGasRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMEstimateGasRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMEstimateGasRequest) ProtoMessage() {}
+
+func (x *EVMEstimateGasRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMEstimateGasRequest.ProtoReflect.Descriptor instead.
+func (*EVMEstimateGasRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *EVMEstimateGasRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMEstimateGasRequest) GetRequest() *evm.EstimateGasRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMTransactionByHashRequest struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	RelayerId     *RelayerId                    `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.TransactionByHashRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMTransactionByHashRequest) Reset() {
+	*x = EVMTransactionByHashRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMTransactionByHashRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMTransactionByHashRequest) ProtoMessage() {}
+
+func (x *EVMTransactionByHashRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMTransactionByHashRequest.ProtoReflect.Descriptor instead.
+func (*EVMTransactionByHashRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *EVMTransactionByHashRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMTransactionByHashRequest) GetRequest() *evm.TransactionByHashRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMReceiptRequest struct {
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	RelayerId     *RelayerId                     `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.TransactionReceiptRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMReceiptRequest) Reset() {
+	*x = EVMReceiptRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMReceiptRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMReceiptRequest) ProtoMessage() {}
+
+func (x *EVMReceiptRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMReceiptRequest.ProtoReflect.Descriptor instead.
+func (*EVMReceiptRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *EVMReceiptRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMReceiptRequest) GetRequest() *evm.TransactionReceiptRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMQueryTrackedLogsRequest struct {
+	state         protoimpl.MessageState       `protogen:"open.v1"`
+	RelayerId     *RelayerId                   `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.QueryTrackedLogsRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMQueryTrackedLogsRequest) Reset() {
+	*x = EVMQueryTrackedLogsRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMQueryTrackedLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMQueryTrackedLogsRequest) ProtoMessage() {}
+
+func (x *EVMQueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMQueryTrackedLogsRequest.ProtoReflect.Descriptor instead.
+func (*EVMQueryTrackedLogsRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *EVMQueryTrackedLogsRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMQueryTrackedLogsRequest) GetRequest() *evm.QueryTrackedLogsRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMRegisterLogTrackingRequest struct {
+	state         protoimpl.MessageState          `protogen:"open.v1"`
+	RelayerId     *RelayerId                      `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.RegisterLogTrackingRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMRegisterLogTrackingRequest) Reset() {
+	*x = EVMRegisterLogTrackingRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMRegisterLogTrackingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMRegisterLogTrackingRequest) ProtoMessage() {}
+
+func (x *EVMRegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMRegisterLogTrackingRequest.ProtoReflect.Descriptor instead.
+func (*EVMRegisterLogTrackingRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *EVMRegisterLogTrackingRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMRegisterLogTrackingRequest) GetRequest() *evm.RegisterLogTrackingRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMUnregisterLogTrackingRequest struct {
+	state         protoimpl.MessageState            `protogen:"open.v1"`
+	RelayerId     *RelayerId                        `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.UnregisterLogTrackingRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMUnregisterLogTrackingRequest) Reset() {
+	*x = EVMUnregisterLogTrackingRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMUnregisterLogTrackingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMUnregisterLogTrackingRequest) ProtoMessage() {}
+
+func (x *EVMUnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMUnregisterLogTrackingRequest.ProtoReflect.Descriptor instead.
+func (*EVMUnregisterLogTrackingRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *EVMUnregisterLogTrackingRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMUnregisterLogTrackingRequest) GetRequest() *evm.UnregisterLogTrackingRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type EVMGetTransactionStatusRequest struct {
+	state         protoimpl.MessageState          `protogen:"open.v1"`
+	RelayerId     *RelayerId                      `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *pb.GetTransactionStatusRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EVMGetTransactionStatusRequest) Reset() {
+	*x = EVMGetTransactionStatusRequest{}
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EVMGetTransactionStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EVMGetTransactionStatusRequest) ProtoMessage() {}
+
+func (x *EVMGetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EVMGetTransactionStatusRequest.ProtoReflect.Descriptor instead.
+func (*EVMGetTransactionStatusRequest) Descriptor() ([]byte, []int) {
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *EVMGetTransactionStatusRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *EVMGetTransactionStatusRequest) GetRequest() *pb.GetTransactionStatusRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
 var File_loop_internal_pb_relayerset_relayerset_proto protoreflect.FileDescriptor
 
 const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\n" +
-	",loop/internal/pb/relayerset/relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\"@\n" +
+	",loop/internal/pb/relayerset/relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a%loop/chain-capabilities/evm/evm.proto\"@\n" +
 	"\tRelayerId\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x19\n" +
 	"\bchain_id\x18\x02 \x01(\tR\achainId\"?\n" +
@@ -1461,8 +1989,6 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x12plugin_provider_id\x18\x01 \x01(\rR\x10pluginProviderId\"F\n" +
 	"\n" +
 	"EVMRequest\x128\n" +
-	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"G\n" +
-	"\vEVMResponse\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"\x88\x01\n" +
 	"\x18NewContractReaderRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x122\n" +
@@ -1508,12 +2034,45 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x1aContractReaderStartRequest\x12*\n" +
 	"\x10contractReaderId\x18\x01 \x01(\tR\x10contractReaderId\"H\n" +
 	"\x1aContractReaderCloseRequest\x12*\n" +
-	"\x10contractReaderId\x18\x01 \x01(\tR\x10contractReaderId2\xf3\x0f\n" +
+	"\x10contractReaderId\x18\x01 \x01(\tR\x10contractReaderId\"\xa8\x01\n" +
+	"\x1bEVMGetTransactionFeeRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12O\n" +
+	"\arequest\x18\x02 \x01(\v25.loop.chain_capabilities.evm.GetTransactionFeeRequestR\arequest\"\x9e\x01\n" +
+	"\x16EVMCallContractRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12J\n" +
+	"\arequest\x18\x02 \x01(\v20.loop.chain_capabilities.evm.CallContractRequestR\arequest\"\x9a\x01\n" +
+	"\x14EVMFilterLogsRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12H\n" +
+	"\arequest\x18\x02 \x01(\v2..loop.chain_capabilities.evm.FilterLogsRequestR\arequest\"\x98\x01\n" +
+	"\x13EVMBalanceAtRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12G\n" +
+	"\arequest\x18\x02 \x01(\v2-.loop.chain_capabilities.evm.BalanceAtRequestR\arequest\"\x9c\x01\n" +
+	"\x15EVMEstimateGasRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12I\n" +
+	"\arequest\x18\x02 \x01(\v2/.loop.chain_capabilities.evm.EstimateGasRequestR\arequest\"\xa8\x01\n" +
+	"\x1bEVMTransactionByHashRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12O\n" +
+	"\arequest\x18\x02 \x01(\v25.loop.chain_capabilities.evm.TransactionByHashRequestR\arequest\"\x9f\x01\n" +
+	"\x11EVMReceiptRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12P\n" +
+	"\arequest\x18\x02 \x01(\v26.loop.chain_capabilities.evm.TransactionReceiptRequestR\arequest\"\xa6\x01\n" +
+	"\x1aEVMQueryTrackedLogsRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12N\n" +
+	"\arequest\x18\x02 \x01(\v24.loop.chain_capabilities.evm.QueryTrackedLogsRequestR\arequest\"\xac\x01\n" +
+	"\x1dEVMRegisterLogTrackingRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12Q\n" +
+	"\arequest\x18\x02 \x01(\v27.loop.chain_capabilities.evm.RegisterLogTrackingRequestR\arequest\"\xb0\x01\n" +
+	"\x1fEVMUnregisterLogTrackingRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12S\n" +
+	"\arequest\x18\x02 \x01(\v29.loop.chain_capabilities.evm.UnregisterLogTrackingRequestR\arequest\"\x97\x01\n" +
+	"\x1eEVMGetTransactionStatusRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12;\n" +
+	"\arequest\x18\x02 \x01(\v2!.loop.GetTransactionStatusRequestR\arequest2\x9e\x1a\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
-	"\x04List\x12'.loop.relayerset.ListAllRelayersRequest\x1a(.loop.relayerset.ListAllRelayersResponse\"\x00\x12B\n" +
-	"\x03EVM\x12\x1b.loop.relayerset.EVMRequest\x1a\x1c.loop.relayerset.EVMResponse\"\x00\x12l\n" +
+	"\x04List\x12'.loop.relayerset.ListAllRelayersRequest\x1a(.loop.relayerset.ListAllRelayersResponse\"\x00\x12<\n" +
+	"\x03EVM\x12\x1b.loop.relayerset.EVMRequest\x1a\x16.google.protobuf.Empty\"\x00\x12l\n" +
 	"\x11NewPluginProvider\x12).loop.relayerset.NewPluginProviderRequest\x1a*.loop.relayerset.NewPluginProviderResponse\"\x00\x12l\n" +
 	"\x11NewContractReader\x12).loop.relayerset.NewContractReaderRequest\x1a*.loop.relayerset.NewContractReaderResponse\"\x00\x12l\n" +
 	"\x11NewContractWriter\x12).loop.relayerset.NewContractWriterRequest\x1a*.loop.relayerset.NewContractWriterResponse\"\x00\x12D\n" +
@@ -1531,7 +2090,19 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x12ContractReaderBind\x12*.loop.relayerset.ContractReaderBindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n" +
 	"\x14ContractReaderUnbind\x12,.loop.relayerset.ContractReaderUnbindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
 	"\x13ContractReaderStart\x12+.loop.relayerset.ContractReaderStartRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
-	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x00BNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
+	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x00\x12{\n" +
+	"\x14EVMGetTransactionFee\x12,.loop.relayerset.EVMGetTransactionFeeRequest\x1a3.loop.chain_capabilities.evm.GetTransactionFeeReply\"\x00\x12j\n" +
+	"\x0fEVMCallContract\x12'.loop.relayerset.EVMCallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12d\n" +
+	"\rEVMFilterLogs\x12%.loop.relayerset.EVMFilterLogsRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply\x12a\n" +
+	"\fEVMBalanceAt\x12$.loop.relayerset.EVMBalanceAtRequest\x1a+.loop.chain_capabilities.evm.BalanceAtReply\x12g\n" +
+	"\x0eEVMEstimateGas\x12&.loop.relayerset.EVMEstimateGasRequest\x1a-.loop.chain_capabilities.evm.EstimateGasReply\x12y\n" +
+	"\x14EVMTransactionByHash\x12,.loop.relayerset.EVMTransactionByHashRequest\x1a3.loop.chain_capabilities.evm.TransactionByHashReply\x12q\n" +
+	"\x15EVMTransactionReceipt\x12\".loop.relayerset.EVMReceiptRequest\x1a4.loop.chain_capabilities.evm.TransactionReceiptReply\x12y\n" +
+	"\x19EVMLatestAndFinalizedHead\x12\".loop.relayerset.LatestHeadRequest\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12v\n" +
+	"\x13EVMQueryTrackedLogs\x12+.loop.relayerset.EVMQueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12`\n" +
+	"\x16EVMRegisterLogTracking\x12..loop.relayerset.EVMRegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12d\n" +
+	"\x18EVMUnregisterLogTracking\x120.loop.relayerset.EVMUnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12k\n" +
+	"\x17EVMGetTransactionStatus\x12/.loop.relayerset.EVMGetTransactionStatusRequest\x1a\x1f.loop.GetTransactionStatusReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
 
 var (
 	file_loop_internal_pb_relayerset_relayerset_proto_rawDescOnce sync.Once
@@ -1545,7 +2116,7 @@ func file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP() []byte {
 	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescData
 }
 
-var file_loop_internal_pb_relayerset_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_loop_internal_pb_relayerset_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*RelayerId)(nil),                                 // 0: loop.relayerset.RelayerId
 	(*GetRelayerRequest)(nil),                         // 1: loop.relayerset.GetRelayerRequest
@@ -1558,36 +2129,67 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*NewPluginProviderRequest)(nil),                  // 8: loop.relayerset.NewPluginProviderRequest
 	(*NewPluginProviderResponse)(nil),                 // 9: loop.relayerset.NewPluginProviderResponse
 	(*EVMRequest)(nil),                                // 10: loop.relayerset.EVMRequest
-	(*EVMResponse)(nil),                               // 11: loop.relayerset.EVMResponse
-	(*NewContractReaderRequest)(nil),                  // 12: loop.relayerset.NewContractReaderRequest
-	(*NewContractReaderResponse)(nil),                 // 13: loop.relayerset.NewContractReaderResponse
-	(*NewContractWriterRequest)(nil),                  // 14: loop.relayerset.NewContractWriterRequest
-	(*NewContractWriterResponse)(nil),                 // 15: loop.relayerset.NewContractWriterResponse
-	(*LatestHeadRequest)(nil),                         // 16: loop.relayerset.LatestHeadRequest
-	(*LatestHeadResponse)(nil),                        // 17: loop.relayerset.LatestHeadResponse
-	(*RelayerHealthReportResponse)(nil),               // 18: loop.relayerset.RelayerHealthReportResponse
-	(*RelayerNameResponse)(nil),                       // 19: loop.relayerset.RelayerNameResponse
-	(*ContractReaderGetLatestValueRequest)(nil),       // 20: loop.relayerset.ContractReaderGetLatestValueRequest
-	(*ContractReaderBatchGetLatestValuesRequest)(nil), // 21: loop.relayerset.ContractReaderBatchGetLatestValuesRequest
-	(*ContractReaderQueryKeyRequest)(nil),             // 22: loop.relayerset.ContractReaderQueryKeyRequest
-	(*ContractReaderQueryKeysRequest)(nil),            // 23: loop.relayerset.ContractReaderQueryKeysRequest
-	(*ContractReaderBindRequest)(nil),                 // 24: loop.relayerset.ContractReaderBindRequest
-	(*ContractReaderUnbindRequest)(nil),               // 25: loop.relayerset.ContractReaderUnbindRequest
-	(*ContractReaderStartRequest)(nil),                // 26: loop.relayerset.ContractReaderStartRequest
-	(*ContractReaderCloseRequest)(nil),                // 27: loop.relayerset.ContractReaderCloseRequest
-	nil,                                               // 28: loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	(*pb.GetLatestValueRequest)(nil),                  // 29: loop.GetLatestValueRequest
-	(*pb.BatchGetLatestValuesRequest)(nil),            // 30: loop.BatchGetLatestValuesRequest
-	(*pb.QueryKeyRequest)(nil),                        // 31: loop.QueryKeyRequest
-	(*pb.QueryKeysRequest)(nil),                       // 32: loop.QueryKeysRequest
-	(*pb.BindRequest)(nil),                            // 33: loop.BindRequest
-	(*pb.UnbindRequest)(nil),                          // 34: loop.UnbindRequest
-	(*emptypb.Empty)(nil),                             // 35: google.protobuf.Empty
-	(*pb.GetLatestValueReply)(nil),                    // 36: loop.GetLatestValueReply
-	(*pb.GetLatestValueWithHeadDataReply)(nil),        // 37: loop.GetLatestValueWithHeadDataReply
-	(*pb.BatchGetLatestValuesReply)(nil),              // 38: loop.BatchGetLatestValuesReply
-	(*pb.QueryKeyReply)(nil),                          // 39: loop.QueryKeyReply
-	(*pb.QueryKeysReply)(nil),                         // 40: loop.QueryKeysReply
+	(*NewContractReaderRequest)(nil),                  // 11: loop.relayerset.NewContractReaderRequest
+	(*NewContractReaderResponse)(nil),                 // 12: loop.relayerset.NewContractReaderResponse
+	(*NewContractWriterRequest)(nil),                  // 13: loop.relayerset.NewContractWriterRequest
+	(*NewContractWriterResponse)(nil),                 // 14: loop.relayerset.NewContractWriterResponse
+	(*LatestHeadRequest)(nil),                         // 15: loop.relayerset.LatestHeadRequest
+	(*LatestHeadResponse)(nil),                        // 16: loop.relayerset.LatestHeadResponse
+	(*RelayerHealthReportResponse)(nil),               // 17: loop.relayerset.RelayerHealthReportResponse
+	(*RelayerNameResponse)(nil),                       // 18: loop.relayerset.RelayerNameResponse
+	(*ContractReaderGetLatestValueRequest)(nil),       // 19: loop.relayerset.ContractReaderGetLatestValueRequest
+	(*ContractReaderBatchGetLatestValuesRequest)(nil), // 20: loop.relayerset.ContractReaderBatchGetLatestValuesRequest
+	(*ContractReaderQueryKeyRequest)(nil),             // 21: loop.relayerset.ContractReaderQueryKeyRequest
+	(*ContractReaderQueryKeysRequest)(nil),            // 22: loop.relayerset.ContractReaderQueryKeysRequest
+	(*ContractReaderBindRequest)(nil),                 // 23: loop.relayerset.ContractReaderBindRequest
+	(*ContractReaderUnbindRequest)(nil),               // 24: loop.relayerset.ContractReaderUnbindRequest
+	(*ContractReaderStartRequest)(nil),                // 25: loop.relayerset.ContractReaderStartRequest
+	(*ContractReaderCloseRequest)(nil),                // 26: loop.relayerset.ContractReaderCloseRequest
+	(*EVMGetTransactionFeeRequest)(nil),               // 27: loop.relayerset.EVMGetTransactionFeeRequest
+	(*EVMCallContractRequest)(nil),                    // 28: loop.relayerset.EVMCallContractRequest
+	(*EVMFilterLogsRequest)(nil),                      // 29: loop.relayerset.EVMFilterLogsRequest
+	(*EVMBalanceAtRequest)(nil),                       // 30: loop.relayerset.EVMBalanceAtRequest
+	(*EVMEstimateGasRequest)(nil),                     // 31: loop.relayerset.EVMEstimateGasRequest
+	(*EVMTransactionByHashRequest)(nil),               // 32: loop.relayerset.EVMTransactionByHashRequest
+	(*EVMReceiptRequest)(nil),                         // 33: loop.relayerset.EVMReceiptRequest
+	(*EVMQueryTrackedLogsRequest)(nil),                // 34: loop.relayerset.EVMQueryTrackedLogsRequest
+	(*EVMRegisterLogTrackingRequest)(nil),             // 35: loop.relayerset.EVMRegisterLogTrackingRequest
+	(*EVMUnregisterLogTrackingRequest)(nil),           // 36: loop.relayerset.EVMUnregisterLogTrackingRequest
+	(*EVMGetTransactionStatusRequest)(nil),            // 37: loop.relayerset.EVMGetTransactionStatusRequest
+	nil,                                               // 38: loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	(*pb.GetLatestValueRequest)(nil),                  // 39: loop.GetLatestValueRequest
+	(*pb.BatchGetLatestValuesRequest)(nil),            // 40: loop.BatchGetLatestValuesRequest
+	(*pb.QueryKeyRequest)(nil),                        // 41: loop.QueryKeyRequest
+	(*pb.QueryKeysRequest)(nil),                       // 42: loop.QueryKeysRequest
+	(*pb.BindRequest)(nil),                            // 43: loop.BindRequest
+	(*pb.UnbindRequest)(nil),                          // 44: loop.UnbindRequest
+	(*evm.GetTransactionFeeRequest)(nil),              // 45: loop.chain_capabilities.evm.GetTransactionFeeRequest
+	(*evm.CallContractRequest)(nil),                   // 46: loop.chain_capabilities.evm.CallContractRequest
+	(*evm.FilterLogsRequest)(nil),                     // 47: loop.chain_capabilities.evm.FilterLogsRequest
+	(*evm.BalanceAtRequest)(nil),                      // 48: loop.chain_capabilities.evm.BalanceAtRequest
+	(*evm.EstimateGasRequest)(nil),                    // 49: loop.chain_capabilities.evm.EstimateGasRequest
+	(*evm.TransactionByHashRequest)(nil),              // 50: loop.chain_capabilities.evm.TransactionByHashRequest
+	(*evm.TransactionReceiptRequest)(nil),             // 51: loop.chain_capabilities.evm.TransactionReceiptRequest
+	(*evm.QueryTrackedLogsRequest)(nil),               // 52: loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	(*evm.RegisterLogTrackingRequest)(nil),            // 53: loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	(*evm.UnregisterLogTrackingRequest)(nil),          // 54: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	(*pb.GetTransactionStatusRequest)(nil),            // 55: loop.GetTransactionStatusRequest
+	(*emptypb.Empty)(nil),                             // 56: google.protobuf.Empty
+	(*pb.GetLatestValueReply)(nil),                    // 57: loop.GetLatestValueReply
+	(*pb.GetLatestValueWithHeadDataReply)(nil),        // 58: loop.GetLatestValueWithHeadDataReply
+	(*pb.BatchGetLatestValuesReply)(nil),              // 59: loop.BatchGetLatestValuesReply
+	(*pb.QueryKeyReply)(nil),                          // 60: loop.QueryKeyReply
+	(*pb.QueryKeysReply)(nil),                         // 61: loop.QueryKeysReply
+	(*evm.GetTransactionFeeReply)(nil),                // 62: loop.chain_capabilities.evm.GetTransactionFeeReply
+	(*evm.CallContractReply)(nil),                     // 63: loop.chain_capabilities.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),                       // 64: loop.chain_capabilities.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),                        // 65: loop.chain_capabilities.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),                      // 66: loop.chain_capabilities.evm.EstimateGasReply
+	(*evm.TransactionByHashReply)(nil),                // 67: loop.chain_capabilities.evm.TransactionByHashReply
+	(*evm.TransactionReceiptReply)(nil),               // 68: loop.chain_capabilities.evm.TransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),           // 69: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),                 // 70: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*pb.GetTransactionStatusReply)(nil),              // 71: loop.GetTransactionStatusReply
 }
 var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
@@ -1599,64 +2201,109 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	5,  // 6: loop.relayerset.NewPluginProviderRequest.relayArgs:type_name -> loop.relayerset.RelayArgs
 	7,  // 7: loop.relayerset.NewPluginProviderRequest.pluginArgs:type_name -> loop.relayerset.PluginArgs
 	0,  // 8: loop.relayerset.EVMRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 9: loop.relayerset.EVMResponse.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 10: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 11: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 12: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	28, // 13: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	29, // 14: loop.relayerset.ContractReaderGetLatestValueRequest.request:type_name -> loop.GetLatestValueRequest
-	30, // 15: loop.relayerset.ContractReaderBatchGetLatestValuesRequest.request:type_name -> loop.BatchGetLatestValuesRequest
-	31, // 16: loop.relayerset.ContractReaderQueryKeyRequest.request:type_name -> loop.QueryKeyRequest
-	32, // 17: loop.relayerset.ContractReaderQueryKeysRequest.request:type_name -> loop.QueryKeysRequest
-	33, // 18: loop.relayerset.ContractReaderBindRequest.request:type_name -> loop.BindRequest
-	34, // 19: loop.relayerset.ContractReaderUnbindRequest.request:type_name -> loop.UnbindRequest
-	1,  // 20: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
-	3,  // 21: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
-	10, // 22: loop.relayerset.RelayerSet.EVM:input_type -> loop.relayerset.EVMRequest
-	8,  // 23: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
-	12, // 24: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
-	14, // 25: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
-	0,  // 26: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
-	0,  // 27: loop.relayerset.RelayerSet.CloseRelayer:input_type -> loop.relayerset.RelayerId
-	0,  // 28: loop.relayerset.RelayerSet.RelayerReady:input_type -> loop.relayerset.RelayerId
-	0,  // 29: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
-	0,  // 30: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
-	16, // 31: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
-	20, // 32: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
-	20, // 33: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
-	21, // 34: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:input_type -> loop.relayerset.ContractReaderBatchGetLatestValuesRequest
-	22, // 35: loop.relayerset.RelayerSet.ContractReaderQueryKey:input_type -> loop.relayerset.ContractReaderQueryKeyRequest
-	23, // 36: loop.relayerset.RelayerSet.ContractReaderQueryKeys:input_type -> loop.relayerset.ContractReaderQueryKeysRequest
-	24, // 37: loop.relayerset.RelayerSet.ContractReaderBind:input_type -> loop.relayerset.ContractReaderBindRequest
-	25, // 38: loop.relayerset.RelayerSet.ContractReaderUnbind:input_type -> loop.relayerset.ContractReaderUnbindRequest
-	26, // 39: loop.relayerset.RelayerSet.ContractReaderStart:input_type -> loop.relayerset.ContractReaderStartRequest
-	27, // 40: loop.relayerset.RelayerSet.ContractReaderClose:input_type -> loop.relayerset.ContractReaderCloseRequest
-	2,  // 41: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
-	4,  // 42: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
-	11, // 43: loop.relayerset.RelayerSet.EVM:output_type -> loop.relayerset.EVMResponse
-	9,  // 44: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
-	13, // 45: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
-	15, // 46: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
-	35, // 47: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
-	35, // 48: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
-	35, // 49: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
-	18, // 50: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
-	19, // 51: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
-	17, // 52: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
-	36, // 53: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:output_type -> loop.GetLatestValueReply
-	37, // 54: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
-	38, // 55: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
-	39, // 56: loop.relayerset.RelayerSet.ContractReaderQueryKey:output_type -> loop.QueryKeyReply
-	40, // 57: loop.relayerset.RelayerSet.ContractReaderQueryKeys:output_type -> loop.QueryKeysReply
-	35, // 58: loop.relayerset.RelayerSet.ContractReaderBind:output_type -> google.protobuf.Empty
-	35, // 59: loop.relayerset.RelayerSet.ContractReaderUnbind:output_type -> google.protobuf.Empty
-	35, // 60: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
-	35, // 61: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
-	41, // [41:62] is the sub-list for method output_type
-	20, // [20:41] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	0,  // 9: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 10: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,  // 11: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	38, // 12: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	39, // 13: loop.relayerset.ContractReaderGetLatestValueRequest.request:type_name -> loop.GetLatestValueRequest
+	40, // 14: loop.relayerset.ContractReaderBatchGetLatestValuesRequest.request:type_name -> loop.BatchGetLatestValuesRequest
+	41, // 15: loop.relayerset.ContractReaderQueryKeyRequest.request:type_name -> loop.QueryKeyRequest
+	42, // 16: loop.relayerset.ContractReaderQueryKeysRequest.request:type_name -> loop.QueryKeysRequest
+	43, // 17: loop.relayerset.ContractReaderBindRequest.request:type_name -> loop.BindRequest
+	44, // 18: loop.relayerset.ContractReaderUnbindRequest.request:type_name -> loop.UnbindRequest
+	0,  // 19: loop.relayerset.EVMGetTransactionFeeRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	45, // 20: loop.relayerset.EVMGetTransactionFeeRequest.request:type_name -> loop.chain_capabilities.evm.GetTransactionFeeRequest
+	0,  // 21: loop.relayerset.EVMCallContractRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	46, // 22: loop.relayerset.EVMCallContractRequest.request:type_name -> loop.chain_capabilities.evm.CallContractRequest
+	0,  // 23: loop.relayerset.EVMFilterLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	47, // 24: loop.relayerset.EVMFilterLogsRequest.request:type_name -> loop.chain_capabilities.evm.FilterLogsRequest
+	0,  // 25: loop.relayerset.EVMBalanceAtRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	48, // 26: loop.relayerset.EVMBalanceAtRequest.request:type_name -> loop.chain_capabilities.evm.BalanceAtRequest
+	0,  // 27: loop.relayerset.EVMEstimateGasRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	49, // 28: loop.relayerset.EVMEstimateGasRequest.request:type_name -> loop.chain_capabilities.evm.EstimateGasRequest
+	0,  // 29: loop.relayerset.EVMTransactionByHashRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	50, // 30: loop.relayerset.EVMTransactionByHashRequest.request:type_name -> loop.chain_capabilities.evm.TransactionByHashRequest
+	0,  // 31: loop.relayerset.EVMReceiptRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	51, // 32: loop.relayerset.EVMReceiptRequest.request:type_name -> loop.chain_capabilities.evm.TransactionReceiptRequest
+	0,  // 33: loop.relayerset.EVMQueryTrackedLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	52, // 34: loop.relayerset.EVMQueryTrackedLogsRequest.request:type_name -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	0,  // 35: loop.relayerset.EVMRegisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	53, // 36: loop.relayerset.EVMRegisterLogTrackingRequest.request:type_name -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	0,  // 37: loop.relayerset.EVMUnregisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	54, // 38: loop.relayerset.EVMUnregisterLogTrackingRequest.request:type_name -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	0,  // 39: loop.relayerset.EVMGetTransactionStatusRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	55, // 40: loop.relayerset.EVMGetTransactionStatusRequest.request:type_name -> loop.GetTransactionStatusRequest
+	1,  // 41: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
+	3,  // 42: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
+	10, // 43: loop.relayerset.RelayerSet.EVM:input_type -> loop.relayerset.EVMRequest
+	8,  // 44: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
+	11, // 45: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
+	13, // 46: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
+	0,  // 47: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
+	0,  // 48: loop.relayerset.RelayerSet.CloseRelayer:input_type -> loop.relayerset.RelayerId
+	0,  // 49: loop.relayerset.RelayerSet.RelayerReady:input_type -> loop.relayerset.RelayerId
+	0,  // 50: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
+	0,  // 51: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
+	15, // 52: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
+	19, // 53: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
+	19, // 54: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
+	20, // 55: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:input_type -> loop.relayerset.ContractReaderBatchGetLatestValuesRequest
+	21, // 56: loop.relayerset.RelayerSet.ContractReaderQueryKey:input_type -> loop.relayerset.ContractReaderQueryKeyRequest
+	22, // 57: loop.relayerset.RelayerSet.ContractReaderQueryKeys:input_type -> loop.relayerset.ContractReaderQueryKeysRequest
+	23, // 58: loop.relayerset.RelayerSet.ContractReaderBind:input_type -> loop.relayerset.ContractReaderBindRequest
+	24, // 59: loop.relayerset.RelayerSet.ContractReaderUnbind:input_type -> loop.relayerset.ContractReaderUnbindRequest
+	25, // 60: loop.relayerset.RelayerSet.ContractReaderStart:input_type -> loop.relayerset.ContractReaderStartRequest
+	26, // 61: loop.relayerset.RelayerSet.ContractReaderClose:input_type -> loop.relayerset.ContractReaderCloseRequest
+	27, // 62: loop.relayerset.RelayerSet.EVMGetTransactionFee:input_type -> loop.relayerset.EVMGetTransactionFeeRequest
+	28, // 63: loop.relayerset.RelayerSet.EVMCallContract:input_type -> loop.relayerset.EVMCallContractRequest
+	29, // 64: loop.relayerset.RelayerSet.EVMFilterLogs:input_type -> loop.relayerset.EVMFilterLogsRequest
+	30, // 65: loop.relayerset.RelayerSet.EVMBalanceAt:input_type -> loop.relayerset.EVMBalanceAtRequest
+	31, // 66: loop.relayerset.RelayerSet.EVMEstimateGas:input_type -> loop.relayerset.EVMEstimateGasRequest
+	32, // 67: loop.relayerset.RelayerSet.EVMTransactionByHash:input_type -> loop.relayerset.EVMTransactionByHashRequest
+	33, // 68: loop.relayerset.RelayerSet.EVMTransactionReceipt:input_type -> loop.relayerset.EVMReceiptRequest
+	15, // 69: loop.relayerset.RelayerSet.EVMLatestAndFinalizedHead:input_type -> loop.relayerset.LatestHeadRequest
+	34, // 70: loop.relayerset.RelayerSet.EVMQueryTrackedLogs:input_type -> loop.relayerset.EVMQueryTrackedLogsRequest
+	35, // 71: loop.relayerset.RelayerSet.EVMRegisterLogTracking:input_type -> loop.relayerset.EVMRegisterLogTrackingRequest
+	36, // 72: loop.relayerset.RelayerSet.EVMUnregisterLogTracking:input_type -> loop.relayerset.EVMUnregisterLogTrackingRequest
+	37, // 73: loop.relayerset.RelayerSet.EVMGetTransactionStatus:input_type -> loop.relayerset.EVMGetTransactionStatusRequest
+	2,  // 74: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
+	4,  // 75: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
+	56, // 76: loop.relayerset.RelayerSet.EVM:output_type -> google.protobuf.Empty
+	9,  // 77: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
+	12, // 78: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
+	14, // 79: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
+	56, // 80: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
+	56, // 81: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
+	56, // 82: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
+	17, // 83: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
+	18, // 84: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
+	16, // 85: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
+	57, // 86: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:output_type -> loop.GetLatestValueReply
+	58, // 87: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
+	59, // 88: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
+	60, // 89: loop.relayerset.RelayerSet.ContractReaderQueryKey:output_type -> loop.QueryKeyReply
+	61, // 90: loop.relayerset.RelayerSet.ContractReaderQueryKeys:output_type -> loop.QueryKeysReply
+	56, // 91: loop.relayerset.RelayerSet.ContractReaderBind:output_type -> google.protobuf.Empty
+	56, // 92: loop.relayerset.RelayerSet.ContractReaderUnbind:output_type -> google.protobuf.Empty
+	56, // 93: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
+	56, // 94: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
+	62, // 95: loop.relayerset.RelayerSet.EVMGetTransactionFee:output_type -> loop.chain_capabilities.evm.GetTransactionFeeReply
+	63, // 96: loop.relayerset.RelayerSet.EVMCallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	64, // 97: loop.relayerset.RelayerSet.EVMFilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	65, // 98: loop.relayerset.RelayerSet.EVMBalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	66, // 99: loop.relayerset.RelayerSet.EVMEstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	67, // 100: loop.relayerset.RelayerSet.EVMTransactionByHash:output_type -> loop.chain_capabilities.evm.TransactionByHashReply
+	68, // 101: loop.relayerset.RelayerSet.EVMTransactionReceipt:output_type -> loop.chain_capabilities.evm.TransactionReceiptReply
+	69, // 102: loop.relayerset.RelayerSet.EVMLatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	70, // 103: loop.relayerset.RelayerSet.EVMQueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	56, // 104: loop.relayerset.RelayerSet.EVMRegisterLogTracking:output_type -> google.protobuf.Empty
+	56, // 105: loop.relayerset.RelayerSet.EVMUnregisterLogTracking:output_type -> google.protobuf.Empty
+	71, // 106: loop.relayerset.RelayerSet.EVMGetTransactionStatus:output_type -> loop.GetTransactionStatusReply
+	74, // [74:107] is the sub-list for method output_type
+	41, // [41:74] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_loop_internal_pb_relayerset_relayerset_proto_init() }
@@ -1670,7 +2317,7 @@ func file_loop_internal_pb_relayerset_relayerset_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayerset_relayerset_proto_rawDesc), len(file_loop_internal_pb_relayerset_relayerset_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   29,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

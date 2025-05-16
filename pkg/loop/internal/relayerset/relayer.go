@@ -36,8 +36,7 @@ func (r *relayer) NewPluginProvider(ctx context.Context, rargs core.RelayArgs, p
 }
 
 func (r *relayer) EVM() (types.EVMService, error) {
-	// TODO what to do
-	return nil, fmt.Errorf("fix me")
+	return r.relayerSetClient.EVM(r.relayerID)
 }
 
 func (r *relayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {

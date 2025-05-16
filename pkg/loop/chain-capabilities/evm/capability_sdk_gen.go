@@ -109,21 +109,21 @@ func (c *EVMChain) EstimateGas(runtime sdk.DonRuntime, input *EstimateGasRequest
 	})
 }
 
-func (c *EVMChain) GetTransactionByHash(runtime sdk.DonRuntime, input *GetTransactionByHashRequest) sdk.Promise[*GetTransactionByHashReply] {
+func (c *EVMChain) GetTransactionByHash(runtime sdk.DonRuntime, input *TransactionByHashRequest) sdk.Promise[*TransactionByHashReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*GetTransactionByHashReply](nil, err)
+		return sdk.PromiseFromResult[*TransactionByHashReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "mainnet-evm@1.0.0",
 		Payload: wrapped,
 		Method:  "GetTransactionByHash",
-	}), func(i *sdkpb.CapabilityResponse) (*GetTransactionByHashReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*TransactionByHashReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &GetTransactionByHashReply{}
+			output := &TransactionByHashReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -132,21 +132,21 @@ func (c *EVMChain) GetTransactionByHash(runtime sdk.DonRuntime, input *GetTransa
 	})
 }
 
-func (c *EVMChain) GetTransactionReceipt(runtime sdk.DonRuntime, input *GetReceiptRequest) sdk.Promise[*GetReceiptReply] {
+func (c *EVMChain) GetTransactionReceipt(runtime sdk.DonRuntime, input *TransactionReceiptRequest) sdk.Promise[*TransactionReceiptReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*GetReceiptReply](nil, err)
+		return sdk.PromiseFromResult[*TransactionReceiptReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "mainnet-evm@1.0.0",
 		Payload: wrapped,
 		Method:  "GetTransactionReceipt",
-	}), func(i *sdkpb.CapabilityResponse) (*GetReceiptReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*TransactionReceiptReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &GetReceiptReply{}
+			output := &TransactionReceiptReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

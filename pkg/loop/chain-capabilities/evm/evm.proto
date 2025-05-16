@@ -17,8 +17,8 @@ service EVM{
   rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
   rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
-  rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
-  rpc GetTransactionReceipt(GetReceiptRequest) returns (GetReceiptReply);
+  rpc TransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
+  rpc TransactionReceipt(TransactionReceiptRequest) returns (TransactionReceiptReply);
   rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
@@ -179,7 +179,7 @@ message Primitive {
   }
 }
 
-// ----- Request/Reply Wrappers -----
+// ----- Request/Reply Wrappexrs -----
 message LatestAndFinalizedHeadReply {
   Head latest = 1;
   Head finalized = 2;
@@ -229,19 +229,19 @@ message EstimateGasReply {
   uint64 gas = 1; // estimated amount of gas in gas units, needed for tx execution
 }
 
-message GetTransactionByHashRequest {
+message TransactionByHashRequest {
   Hash hash = 1;
 }
 
-message GetTransactionByHashReply {
+message TransactionByHashReply {
   Transaction transaction = 1;
 }
 
-message GetReceiptRequest {
+message TransactionReceiptRequest {
   Hash hash = 1;
 } 
 
-message GetReceiptReply {
+message TransactionReceiptReply {
   Receipt receipt = 1;
 }
 

@@ -42,8 +42,8 @@ type EVMChainClient interface {
 	FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*FilterLogsReply, error)
 	BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*BalanceAtReply, error)
 	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*EstimateGasReply, error)
-	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*GetTransactionByHashReply, error)
-	GetTransactionReceipt(ctx context.Context, in *GetReceiptRequest, opts ...grpc.CallOption) (*GetReceiptReply, error)
+	GetTransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error)
+	GetTransactionReceipt(ctx context.Context, in *TransactionReceiptRequest, opts ...grpc.CallOption) (*TransactionReceiptReply, error)
 	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error)
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -98,9 +98,9 @@ func (c *eVMChainClient) EstimateGas(ctx context.Context, in *EstimateGasRequest
 	return out, nil
 }
 
-func (c *eVMChainClient) GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*GetTransactionByHashReply, error) {
+func (c *eVMChainClient) GetTransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTransactionByHashReply)
+	out := new(TransactionByHashReply)
 	err := c.cc.Invoke(ctx, EVMChain_GetTransactionByHash_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -108,9 +108,9 @@ func (c *eVMChainClient) GetTransactionByHash(ctx context.Context, in *GetTransa
 	return out, nil
 }
 
-func (c *eVMChainClient) GetTransactionReceipt(ctx context.Context, in *GetReceiptRequest, opts ...grpc.CallOption) (*GetReceiptReply, error) {
+func (c *eVMChainClient) GetTransactionReceipt(ctx context.Context, in *TransactionReceiptRequest, opts ...grpc.CallOption) (*TransactionReceiptReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetReceiptReply)
+	out := new(TransactionReceiptReply)
 	err := c.cc.Invoke(ctx, EVMChain_GetTransactionReceipt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -168,8 +168,8 @@ type EVMChainServer interface {
 	FilterLogs(context.Context, *FilterLogsRequest) (*FilterLogsReply, error)
 	BalanceAt(context.Context, *BalanceAtRequest) (*BalanceAtReply, error)
 	EstimateGas(context.Context, *EstimateGasRequest) (*EstimateGasReply, error)
-	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*GetTransactionByHashReply, error)
-	GetTransactionReceipt(context.Context, *GetReceiptRequest) (*GetReceiptReply, error)
+	GetTransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error)
+	GetTransactionReceipt(context.Context, *TransactionReceiptRequest) (*TransactionReceiptReply, error)
 	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error)
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
@@ -196,10 +196,10 @@ func (UnimplementedEVMChainServer) BalanceAt(context.Context, *BalanceAtRequest)
 func (UnimplementedEVMChainServer) EstimateGas(context.Context, *EstimateGasRequest) (*EstimateGasReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
 }
-func (UnimplementedEVMChainServer) GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*GetTransactionByHashReply, error) {
+func (UnimplementedEVMChainServer) GetTransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
 }
-func (UnimplementedEVMChainServer) GetTransactionReceipt(context.Context, *GetReceiptRequest) (*GetReceiptReply, error) {
+func (UnimplementedEVMChainServer) GetTransactionReceipt(context.Context, *TransactionReceiptRequest) (*TransactionReceiptReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
 func (UnimplementedEVMChainServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error) {
@@ -308,7 +308,7 @@ func _EVMChain_EstimateGas_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _EVMChain_GetTransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTransactionByHashRequest)
+	in := new(TransactionByHashRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -320,13 +320,13 @@ func _EVMChain_GetTransactionByHash_Handler(srv interface{}, ctx context.Context
 		FullMethod: EVMChain_GetTransactionByHash_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).GetTransactionByHash(ctx, req.(*GetTransactionByHashRequest))
+		return srv.(EVMChainServer).GetTransactionByHash(ctx, req.(*TransactionByHashRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _EVMChain_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetReceiptRequest)
+	in := new(TransactionReceiptRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func _EVMChain_GetTransactionReceipt_Handler(srv interface{}, ctx context.Contex
 		FullMethod: EVMChain_GetTransactionReceipt_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).GetTransactionReceipt(ctx, req.(*GetReceiptRequest))
+		return srv.(EVMChainServer).GetTransactionReceipt(ctx, req.(*TransactionReceiptRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

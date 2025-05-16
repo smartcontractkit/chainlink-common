@@ -8,27 +8,10 @@ import "values/pb/values.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "workflows/sdk/v2/pb/sdk.proto";
 
-message FieldsMap {
-  map<string, FieldDescriptor> fields = 1;
-}
-
-message FieldDescriptor {
-  oneof descriptor {
-    cre.sdk.v2.AggregationType aggregation = 1;
-    FieldsMap fieldsMap = 2;
-  }
-}
-
-message SimpleInputs {
-  values.Map observation = 1;
-  map<string, FieldDescriptor> descriptors = 2;
-  values.Map default = 3;
-}
-
 service Consensus {
   option (cre.metadata.capability) = {
     mode: DON
     capability_id: "offchain_reporting@1.0.0"
   };
-  rpc Simple (SimpleInputs) returns (values.Value);
+  rpc Simple (cre.sdk.v2.SimpleConsensusInputs) returns (values.Value);
 }

@@ -121,6 +121,230 @@ func (Mode) EnumDescriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{1}
 }
 
+type SimpleConsensusInputs struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Observation:
+	//
+	//	*SimpleConsensusInputs_Value
+	//	*SimpleConsensusInputs_Error
+	Observation   isSimpleConsensusInputs_Observation `protobuf_oneof:"observation"`
+	Descriptors   *ConsensusDescriptor                `protobuf:"bytes,3,opt,name=descriptors,proto3" json:"descriptors,omitempty"`
+	Default       *pb.Value                           `protobuf:"bytes,4,opt,name=default,proto3" json:"default,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SimpleConsensusInputs) Reset() {
+	*x = SimpleConsensusInputs{}
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SimpleConsensusInputs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SimpleConsensusInputs) ProtoMessage() {}
+
+func (x *SimpleConsensusInputs) ProtoReflect() protoreflect.Message {
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SimpleConsensusInputs.ProtoReflect.Descriptor instead.
+func (*SimpleConsensusInputs) Descriptor() ([]byte, []int) {
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SimpleConsensusInputs) GetObservation() isSimpleConsensusInputs_Observation {
+	if x != nil {
+		return x.Observation
+	}
+	return nil
+}
+
+func (x *SimpleConsensusInputs) GetValue() *pb.Value {
+	if x != nil {
+		if x, ok := x.Observation.(*SimpleConsensusInputs_Value); ok {
+			return x.Value
+		}
+	}
+	return nil
+}
+
+func (x *SimpleConsensusInputs) GetError() string {
+	if x != nil {
+		if x, ok := x.Observation.(*SimpleConsensusInputs_Error); ok {
+			return x.Error
+		}
+	}
+	return ""
+}
+
+func (x *SimpleConsensusInputs) GetDescriptors() *ConsensusDescriptor {
+	if x != nil {
+		return x.Descriptors
+	}
+	return nil
+}
+
+func (x *SimpleConsensusInputs) GetDefault() *pb.Value {
+	if x != nil {
+		return x.Default
+	}
+	return nil
+}
+
+type isSimpleConsensusInputs_Observation interface {
+	isSimpleConsensusInputs_Observation()
+}
+
+type SimpleConsensusInputs_Value struct {
+	Value *pb.Value `protobuf:"bytes,1,opt,name=value,proto3,oneof"`
+}
+
+type SimpleConsensusInputs_Error struct {
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
+}
+
+func (*SimpleConsensusInputs_Value) isSimpleConsensusInputs_Observation() {}
+
+func (*SimpleConsensusInputs_Error) isSimpleConsensusInputs_Observation() {}
+
+type FieldsMap struct {
+	state         protoimpl.MessageState          `protogen:"open.v1"`
+	Fields        map[string]*ConsensusDescriptor `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FieldsMap) Reset() {
+	*x = FieldsMap{}
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FieldsMap) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FieldsMap) ProtoMessage() {}
+
+func (x *FieldsMap) ProtoReflect() protoreflect.Message {
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FieldsMap.ProtoReflect.Descriptor instead.
+func (*FieldsMap) Descriptor() ([]byte, []int) {
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *FieldsMap) GetFields() map[string]*ConsensusDescriptor {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+type ConsensusDescriptor struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Descriptor_:
+	//
+	//	*ConsensusDescriptor_Aggregation
+	//	*ConsensusDescriptor_FieldsMap
+	Descriptor_   isConsensusDescriptor_Descriptor_ `protobuf_oneof:"descriptor"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsensusDescriptor) Reset() {
+	*x = ConsensusDescriptor{}
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsensusDescriptor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusDescriptor) ProtoMessage() {}
+
+func (x *ConsensusDescriptor) ProtoReflect() protoreflect.Message {
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusDescriptor.ProtoReflect.Descriptor instead.
+func (*ConsensusDescriptor) Descriptor() ([]byte, []int) {
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ConsensusDescriptor) GetDescriptor_() isConsensusDescriptor_Descriptor_ {
+	if x != nil {
+		return x.Descriptor_
+	}
+	return nil
+}
+
+func (x *ConsensusDescriptor) GetAggregation() AggregationType {
+	if x != nil {
+		if x, ok := x.Descriptor_.(*ConsensusDescriptor_Aggregation); ok {
+			return x.Aggregation
+		}
+	}
+	return AggregationType_MEDIAN
+}
+
+func (x *ConsensusDescriptor) GetFieldsMap() *FieldsMap {
+	if x != nil {
+		if x, ok := x.Descriptor_.(*ConsensusDescriptor_FieldsMap); ok {
+			return x.FieldsMap
+		}
+	}
+	return nil
+}
+
+type isConsensusDescriptor_Descriptor_ interface {
+	isConsensusDescriptor_Descriptor_()
+}
+
+type ConsensusDescriptor_Aggregation struct {
+	Aggregation AggregationType `protobuf:"varint,1,opt,name=aggregation,proto3,enum=cre.sdk.v2.AggregationType,oneof"`
+}
+
+type ConsensusDescriptor_FieldsMap struct {
+	FieldsMap *FieldsMap `protobuf:"bytes,2,opt,name=fieldsMap,proto3,oneof"`
+}
+
+func (*ConsensusDescriptor_Aggregation) isConsensusDescriptor_Descriptor_() {}
+
+func (*ConsensusDescriptor_FieldsMap) isConsensusDescriptor_Descriptor_() {}
+
 type CapabilityRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=executionId,proto3" json:"executionId,omitempty"`
@@ -133,7 +357,7 @@ type CapabilityRequest struct {
 
 func (x *CapabilityRequest) Reset() {
 	*x = CapabilityRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[0]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -145,7 +369,7 @@ func (x *CapabilityRequest) String() string {
 func (*CapabilityRequest) ProtoMessage() {}
 
 func (x *CapabilityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[0]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -158,7 +382,7 @@ func (x *CapabilityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityRequest.ProtoReflect.Descriptor instead.
 func (*CapabilityRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{0}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CapabilityRequest) GetExecutionId() string {
@@ -202,7 +426,7 @@ type CapabilityResponse struct {
 
 func (x *CapabilityResponse) Reset() {
 	*x = CapabilityResponse{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[1]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +438,7 @@ func (x *CapabilityResponse) String() string {
 func (*CapabilityResponse) ProtoMessage() {}
 
 func (x *CapabilityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[1]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +451,7 @@ func (x *CapabilityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityResponse.ProtoReflect.Descriptor instead.
 func (*CapabilityResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{1}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CapabilityResponse) GetResponse() isCapabilityResponse_Response {
@@ -271,171 +495,6 @@ func (*CapabilityResponse_Payload) isCapabilityResponse_Response() {}
 
 func (*CapabilityResponse_Error) isCapabilityResponse_Response() {}
 
-// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816 remove this
-type PrimitiveConsensus struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Consensus:
-	//
-	//	*PrimitiveConsensus_Simple
-	Consensus     isPrimitiveConsensus_Consensus `protobuf_oneof:"consensus"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PrimitiveConsensus) Reset() {
-	*x = PrimitiveConsensus{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PrimitiveConsensus) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PrimitiveConsensus) ProtoMessage() {}
-
-func (x *PrimitiveConsensus) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PrimitiveConsensus.ProtoReflect.Descriptor instead.
-func (*PrimitiveConsensus) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *PrimitiveConsensus) GetConsensus() isPrimitiveConsensus_Consensus {
-	if x != nil {
-		return x.Consensus
-	}
-	return nil
-}
-
-func (x *PrimitiveConsensus) GetSimple() AggregationType {
-	if x != nil {
-		if x, ok := x.Consensus.(*PrimitiveConsensus_Simple); ok {
-			return x.Simple
-		}
-	}
-	return AggregationType_MEDIAN
-}
-
-type isPrimitiveConsensus_Consensus interface {
-	isPrimitiveConsensus_Consensus()
-}
-
-type PrimitiveConsensus_Simple struct {
-	Simple AggregationType `protobuf:"varint,1,opt,name=simple,proto3,enum=cre.sdk.v2.AggregationType,oneof"`
-}
-
-func (*PrimitiveConsensus_Simple) isPrimitiveConsensus_Consensus() {}
-
-type BuiltInConsensusRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	PrimitiveConsensus *PrimitiveConsensus    `protobuf:"bytes,1,opt,name=primitiveConsensus,proto3" json:"primitiveConsensus,omitempty"`
-	// Types that are valid to be assigned to Observation:
-	//
-	//	*BuiltInConsensusRequest_Value
-	//	*BuiltInConsensusRequest_Error
-	Observation   isBuiltInConsensusRequest_Observation `protobuf_oneof:"observation"`
-	DefaultValue  *pb.Value                             `protobuf:"bytes,4,opt,name=default_value,json=defaultValue,proto3,oneof" json:"default_value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *BuiltInConsensusRequest) Reset() {
-	*x = BuiltInConsensusRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BuiltInConsensusRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BuiltInConsensusRequest) ProtoMessage() {}
-
-func (x *BuiltInConsensusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BuiltInConsensusRequest.ProtoReflect.Descriptor instead.
-func (*BuiltInConsensusRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *BuiltInConsensusRequest) GetPrimitiveConsensus() *PrimitiveConsensus {
-	if x != nil {
-		return x.PrimitiveConsensus
-	}
-	return nil
-}
-
-func (x *BuiltInConsensusRequest) GetObservation() isBuiltInConsensusRequest_Observation {
-	if x != nil {
-		return x.Observation
-	}
-	return nil
-}
-
-func (x *BuiltInConsensusRequest) GetValue() *pb.Value {
-	if x != nil {
-		if x, ok := x.Observation.(*BuiltInConsensusRequest_Value); ok {
-			return x.Value
-		}
-	}
-	return nil
-}
-
-func (x *BuiltInConsensusRequest) GetError() string {
-	if x != nil {
-		if x, ok := x.Observation.(*BuiltInConsensusRequest_Error); ok {
-			return x.Error
-		}
-	}
-	return ""
-}
-
-func (x *BuiltInConsensusRequest) GetDefaultValue() *pb.Value {
-	if x != nil {
-		return x.DefaultValue
-	}
-	return nil
-}
-
-type isBuiltInConsensusRequest_Observation interface {
-	isBuiltInConsensusRequest_Observation()
-}
-
-type BuiltInConsensusRequest_Value struct {
-	Value *pb.Value `protobuf:"bytes,2,opt,name=value,proto3,oneof"`
-}
-
-type BuiltInConsensusRequest_Error struct {
-	Error string `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
-}
-
-func (*BuiltInConsensusRequest_Value) isBuiltInConsensusRequest_Observation() {}
-
-func (*BuiltInConsensusRequest_Error) isBuiltInConsensusRequest_Observation() {}
-
 type TriggerSubscription struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecId        string                 `protobuf:"bytes,1,opt,name=execId,proto3" json:"execId,omitempty"`
@@ -448,7 +507,7 @@ type TriggerSubscription struct {
 
 func (x *TriggerSubscription) Reset() {
 	*x = TriggerSubscription{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[4]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -460,7 +519,7 @@ func (x *TriggerSubscription) String() string {
 func (*TriggerSubscription) ProtoMessage() {}
 
 func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[4]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -473,7 +532,7 @@ func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscription.ProtoReflect.Descriptor instead.
 func (*TriggerSubscription) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{4}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TriggerSubscription) GetExecId() string {
@@ -513,7 +572,7 @@ type TriggerSubscriptionRequest struct {
 
 func (x *TriggerSubscriptionRequest) Reset() {
 	*x = TriggerSubscriptionRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[5]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -525,7 +584,7 @@ func (x *TriggerSubscriptionRequest) String() string {
 func (*TriggerSubscriptionRequest) ProtoMessage() {}
 
 func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[5]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -538,7 +597,7 @@ func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscriptionRequest.ProtoReflect.Descriptor instead.
 func (*TriggerSubscriptionRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{5}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TriggerSubscriptionRequest) GetSubscriptions() []*TriggerSubscription {
@@ -558,7 +617,7 @@ type Trigger struct {
 
 func (x *Trigger) Reset() {
 	*x = Trigger{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[6]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -570,7 +629,7 @@ func (x *Trigger) String() string {
 func (*Trigger) ProtoMessage() {}
 
 func (x *Trigger) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[6]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -583,7 +642,7 @@ func (x *Trigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trigger.ProtoReflect.Descriptor instead.
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{6}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Trigger) GetId() uint64 {
@@ -610,7 +669,7 @@ type AwaitCapabilitiesRequest struct {
 
 func (x *AwaitCapabilitiesRequest) Reset() {
 	*x = AwaitCapabilitiesRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[7]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -622,7 +681,7 @@ func (x *AwaitCapabilitiesRequest) String() string {
 func (*AwaitCapabilitiesRequest) ProtoMessage() {}
 
 func (x *AwaitCapabilitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[7]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -635,7 +694,7 @@ func (x *AwaitCapabilitiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwaitCapabilitiesRequest.ProtoReflect.Descriptor instead.
 func (*AwaitCapabilitiesRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{7}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AwaitCapabilitiesRequest) GetExecId() string {
@@ -661,7 +720,7 @@ type AwaitCapabilitiesResponse struct {
 
 func (x *AwaitCapabilitiesResponse) Reset() {
 	*x = AwaitCapabilitiesResponse{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[8]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -673,7 +732,7 @@ func (x *AwaitCapabilitiesResponse) String() string {
 func (*AwaitCapabilitiesResponse) ProtoMessage() {}
 
 func (x *AwaitCapabilitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[8]
+	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,7 +745,7 @@ func (x *AwaitCapabilitiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwaitCapabilitiesResponse.ProtoReflect.Descriptor instead.
 func (*AwaitCapabilitiesResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{8}
+	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AwaitCapabilitiesResponse) GetResponses() map[string]*CapabilityResponse {
@@ -701,7 +760,23 @@ var File_workflows_sdk_v2_pb_sdk_proto protoreflect.FileDescriptor
 const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\n" +
 	"\x1dworkflows/sdk/v2/pb/sdk.proto\x12\n" +
-	"cre.sdk.v2\x1a\x19google/protobuf/any.proto\x1a\x16values/pb/values.proto\"\x8d\x01\n" +
+	"cre.sdk.v2\x1a\x19google/protobuf/any.proto\x1a\x16values/pb/values.proto\"\xd1\x01\n" +
+	"\x15SimpleConsensusInputs\x12%\n" +
+	"\x05value\x18\x01 \x01(\v2\r.values.ValueH\x00R\x05value\x12\x16\n" +
+	"\x05error\x18\x02 \x01(\tH\x00R\x05error\x12A\n" +
+	"\vdescriptors\x18\x03 \x01(\v2\x1f.cre.sdk.v2.ConsensusDescriptorR\vdescriptors\x12'\n" +
+	"\adefault\x18\x04 \x01(\v2\r.values.ValueR\adefaultB\r\n" +
+	"\vobservation\"\xa2\x01\n" +
+	"\tFieldsMap\x129\n" +
+	"\x06fields\x18\x01 \x03(\v2!.cre.sdk.v2.FieldsMap.FieldsEntryR\x06fields\x1aZ\n" +
+	"\vFieldsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x125\n" +
+	"\x05value\x18\x02 \x01(\v2\x1f.cre.sdk.v2.ConsensusDescriptorR\x05value:\x028\x01\"\x9b\x01\n" +
+	"\x13ConsensusDescriptor\x12?\n" +
+	"\vaggregation\x18\x01 \x01(\x0e2\x1b.cre.sdk.v2.AggregationTypeH\x00R\vaggregation\x125\n" +
+	"\tfieldsMap\x18\x02 \x01(\v2\x15.cre.sdk.v2.FieldsMapH\x00R\tfieldsMapB\f\n" +
+	"\n" +
+	"descriptor\"\x8d\x01\n" +
 	"\x11CapabilityRequest\x12 \n" +
 	"\vexecutionId\x18\x01 \x01(\tR\vexecutionId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12.\n" +
@@ -711,17 +786,7 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\apayload\x18\x01 \x01(\v2\x14.google.protobuf.AnyH\x00R\apayload\x12\x16\n" +
 	"\x05error\x18\x02 \x01(\tH\x00R\x05errorB\n" +
 	"\n" +
-	"\bresponse\"X\n" +
-	"\x12PrimitiveConsensus\x125\n" +
-	"\x06simple\x18\x01 \x01(\x0e2\x1b.cre.sdk.v2.AggregationTypeH\x00R\x06simpleB\v\n" +
-	"\tconsensus\"\x82\x02\n" +
-	"\x17BuiltInConsensusRequest\x12N\n" +
-	"\x12primitiveConsensus\x18\x01 \x01(\v2\x1e.cre.sdk.v2.PrimitiveConsensusR\x12primitiveConsensus\x12%\n" +
-	"\x05value\x18\x02 \x01(\v2\r.values.ValueH\x00R\x05value\x12\x16\n" +
-	"\x05error\x18\x03 \x01(\tH\x00R\x05error\x127\n" +
-	"\rdefault_value\x18\x04 \x01(\v2\r.values.ValueH\x01R\fdefaultValue\x88\x01\x01B\r\n" +
-	"\vobservationB\x10\n" +
-	"\x0e_default_value\"\x85\x01\n" +
+	"\bresponse\"\x85\x01\n" +
 	"\x13TriggerSubscription\x12\x16\n" +
 	"\x06execId\x18\x01 \x01(\tR\x06execId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12.\n" +
@@ -763,40 +828,45 @@ func file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP() []byte {
 }
 
 var file_workflows_sdk_v2_pb_sdk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_workflows_sdk_v2_pb_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_workflows_sdk_v2_pb_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_workflows_sdk_v2_pb_sdk_proto_goTypes = []any{
 	(AggregationType)(0),               // 0: cre.sdk.v2.AggregationType
 	(Mode)(0),                          // 1: cre.sdk.v2.Mode
-	(*CapabilityRequest)(nil),          // 2: cre.sdk.v2.CapabilityRequest
-	(*CapabilityResponse)(nil),         // 3: cre.sdk.v2.CapabilityResponse
-	(*PrimitiveConsensus)(nil),         // 4: cre.sdk.v2.PrimitiveConsensus
-	(*BuiltInConsensusRequest)(nil),    // 5: cre.sdk.v2.BuiltInConsensusRequest
-	(*TriggerSubscription)(nil),        // 6: cre.sdk.v2.TriggerSubscription
-	(*TriggerSubscriptionRequest)(nil), // 7: cre.sdk.v2.TriggerSubscriptionRequest
-	(*Trigger)(nil),                    // 8: cre.sdk.v2.Trigger
-	(*AwaitCapabilitiesRequest)(nil),   // 9: cre.sdk.v2.AwaitCapabilitiesRequest
-	(*AwaitCapabilitiesResponse)(nil),  // 10: cre.sdk.v2.AwaitCapabilitiesResponse
-	nil,                                // 11: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
-	(*anypb.Any)(nil),                  // 12: google.protobuf.Any
-	(*pb.Value)(nil),                   // 13: values.Value
+	(*SimpleConsensusInputs)(nil),      // 2: cre.sdk.v2.SimpleConsensusInputs
+	(*FieldsMap)(nil),                  // 3: cre.sdk.v2.FieldsMap
+	(*ConsensusDescriptor)(nil),        // 4: cre.sdk.v2.ConsensusDescriptor
+	(*CapabilityRequest)(nil),          // 5: cre.sdk.v2.CapabilityRequest
+	(*CapabilityResponse)(nil),         // 6: cre.sdk.v2.CapabilityResponse
+	(*TriggerSubscription)(nil),        // 7: cre.sdk.v2.TriggerSubscription
+	(*TriggerSubscriptionRequest)(nil), // 8: cre.sdk.v2.TriggerSubscriptionRequest
+	(*Trigger)(nil),                    // 9: cre.sdk.v2.Trigger
+	(*AwaitCapabilitiesRequest)(nil),   // 10: cre.sdk.v2.AwaitCapabilitiesRequest
+	(*AwaitCapabilitiesResponse)(nil),  // 11: cre.sdk.v2.AwaitCapabilitiesResponse
+	nil,                                // 12: cre.sdk.v2.FieldsMap.FieldsEntry
+	nil,                                // 13: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
+	(*pb.Value)(nil),                   // 14: values.Value
+	(*anypb.Any)(nil),                  // 15: google.protobuf.Any
 }
 var file_workflows_sdk_v2_pb_sdk_proto_depIdxs = []int32{
-	12, // 0: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
-	12, // 1: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	0,  // 2: cre.sdk.v2.PrimitiveConsensus.simple:type_name -> cre.sdk.v2.AggregationType
-	4,  // 3: cre.sdk.v2.BuiltInConsensusRequest.primitiveConsensus:type_name -> cre.sdk.v2.PrimitiveConsensus
-	13, // 4: cre.sdk.v2.BuiltInConsensusRequest.value:type_name -> values.Value
-	13, // 5: cre.sdk.v2.BuiltInConsensusRequest.default_value:type_name -> values.Value
-	12, // 6: cre.sdk.v2.TriggerSubscription.payload:type_name -> google.protobuf.Any
-	6,  // 7: cre.sdk.v2.TriggerSubscriptionRequest.subscriptions:type_name -> cre.sdk.v2.TriggerSubscription
-	12, // 8: cre.sdk.v2.Trigger.payload:type_name -> google.protobuf.Any
-	11, // 9: cre.sdk.v2.AwaitCapabilitiesResponse.responses:type_name -> cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
-	3,  // 10: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> cre.sdk.v2.CapabilityResponse
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	14, // 0: cre.sdk.v2.SimpleConsensusInputs.value:type_name -> values.Value
+	4,  // 1: cre.sdk.v2.SimpleConsensusInputs.descriptors:type_name -> cre.sdk.v2.ConsensusDescriptor
+	14, // 2: cre.sdk.v2.SimpleConsensusInputs.default:type_name -> values.Value
+	12, // 3: cre.sdk.v2.FieldsMap.fields:type_name -> cre.sdk.v2.FieldsMap.FieldsEntry
+	0,  // 4: cre.sdk.v2.ConsensusDescriptor.aggregation:type_name -> cre.sdk.v2.AggregationType
+	3,  // 5: cre.sdk.v2.ConsensusDescriptor.fieldsMap:type_name -> cre.sdk.v2.FieldsMap
+	15, // 6: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
+	15, // 7: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
+	15, // 8: cre.sdk.v2.TriggerSubscription.payload:type_name -> google.protobuf.Any
+	7,  // 9: cre.sdk.v2.TriggerSubscriptionRequest.subscriptions:type_name -> cre.sdk.v2.TriggerSubscription
+	15, // 10: cre.sdk.v2.Trigger.payload:type_name -> google.protobuf.Any
+	13, // 11: cre.sdk.v2.AwaitCapabilitiesResponse.responses:type_name -> cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
+	4,  // 12: cre.sdk.v2.FieldsMap.FieldsEntry.value:type_name -> cre.sdk.v2.ConsensusDescriptor
+	6,  // 13: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> cre.sdk.v2.CapabilityResponse
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_workflows_sdk_v2_pb_sdk_proto_init() }
@@ -804,16 +874,17 @@ func file_workflows_sdk_v2_pb_sdk_proto_init() {
 	if File_workflows_sdk_v2_pb_sdk_proto != nil {
 		return
 	}
-	file_workflows_sdk_v2_pb_sdk_proto_msgTypes[1].OneofWrappers = []any{
-		(*CapabilityResponse_Payload)(nil),
-		(*CapabilityResponse_Error)(nil),
+	file_workflows_sdk_v2_pb_sdk_proto_msgTypes[0].OneofWrappers = []any{
+		(*SimpleConsensusInputs_Value)(nil),
+		(*SimpleConsensusInputs_Error)(nil),
 	}
 	file_workflows_sdk_v2_pb_sdk_proto_msgTypes[2].OneofWrappers = []any{
-		(*PrimitiveConsensus_Simple)(nil),
+		(*ConsensusDescriptor_Aggregation)(nil),
+		(*ConsensusDescriptor_FieldsMap)(nil),
 	}
-	file_workflows_sdk_v2_pb_sdk_proto_msgTypes[3].OneofWrappers = []any{
-		(*BuiltInConsensusRequest_Value)(nil),
-		(*BuiltInConsensusRequest_Error)(nil),
+	file_workflows_sdk_v2_pb_sdk_proto_msgTypes[4].OneofWrappers = []any{
+		(*CapabilityResponse_Payload)(nil),
+		(*CapabilityResponse_Error)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -821,7 +892,7 @@ func file_workflows_sdk_v2_pb_sdk_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_workflows_sdk_v2_pb_sdk_proto_rawDesc), len(file_workflows_sdk_v2_pb_sdk_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

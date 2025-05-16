@@ -6,13 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus/consensusmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	actionandtriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger/action_and_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
@@ -21,9 +15,14 @@ import (
 	basictriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger/basic_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	nodeactionmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction/node_actionmock"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var anyTrigger = &basictrigger.Outputs{CoolOutput: "cool"}
@@ -155,12 +154,8 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 		nodeMock.PerformAction = func(ctx context.Context, input *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error) {
 			return &nodeaction.NodeOutputs{OutputThing: anyObservation}, nil
 		}
-		reg := testutils.GetRegistry(t)
-		require.NoError(t, reg.RegisterCapability(&mockConsensus{
-			t:           t,
-			observation: int64(anyObservation),
-			resp:        anyMedian,
-		}))
+
+		setupSimpleConsensus(t, &consensusValues{Observation: int64(anyObservation), Resp: anyMedian})
 
 		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (int64, error) {
 			result, err := sdk.RunInNodeMode(rt, func(runtime sdk.NodeRuntime) (int64, error) {
@@ -168,7 +163,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 				value, err := capability.PerformAction(runtime, &nodeaction.NodeInputs{InputThing: true}).Await()
 				require.NoError(t, err)
 				return int64(value.OutputThing), nil
-			}, pb.AggregationType_MEDIAN).Await()
+			}, sdk.ConsensusMedianAggregation[int64]()).Await()
 			return result, err
 		}
 
@@ -180,16 +175,13 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 
 	t.Run("Failed consensus", func(t *testing.T) {
 		anyError := errors.New("error")
-		reg := testutils.GetRegistry(t)
-		require.NoError(t, reg.RegisterCapability(&mockConsensus{
-			t:   t,
-			err: anyError,
-		}))
+
+		setupSimpleConsensus(t, &consensusValues{Err: anyError})
 
 		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (int64, error) {
 			return sdk.RunInNodeMode(rt, func(runtime sdk.NodeRuntime) (int64, error) {
 				return int64(0), anyError
-			}, pb.AggregationType_MEDIAN).Await()
+			}, sdk.ConsensusMedianAggregation[int64]()).Await()
 		}
 
 		_, _, err := testRuntime(t, test)
@@ -209,7 +201,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 			sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
 				nrt = nodeRuntime
 				return 0, err
-			}, pb.AggregationType_MEDIAN)
+			}, sdk.ConsensusMedianAggregation[int32]())
 			na := nodeaction.BasicAction{}
 			return na.PerformAction(nrt, &nodeaction.NodeInputs{InputThing: true}).Await()
 		}
@@ -231,7 +223,7 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 				action := basicaction.BasicAction{}
 				_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 				return 0, err
-			}, pb.AggregationType_MEDIAN)
+			}, sdk.ConsensusMedianAggregation[int32]())
 
 			return consensus.Await()
 		}
@@ -286,48 +278,41 @@ func testRuntime[T any](t *testing.T, testFn func(rt sdk.DonRuntime, _ *basictri
 	return runner.Result()
 }
 
-type mockConsensus struct {
-	t           *testing.T
-	observation int64
-	err         error
-	resp        int64
-}
+func setupSimpleConsensus(t *testing.T, values *consensusValues) {
+	consensus, err := consensusmock.NewConsensusCapability(t)
+	require.NoError(t, err)
 
-func (m *mockConsensus) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-	// TODO https: //smartcontract-it.atlassian.net/browse/CAPPL-816 use the generated consensus code
-	assert.Equal(m.t, "consensus@1.0.0", request.Id)
-	assert.Equal(m.t, "BuiltIn", request.Method)
-	consensus := &pb.BuiltInConsensusRequest{}
-	require.NoError(m.t, proto.Unmarshal(request.Payload.Value, consensus))
-	switch ct := consensus.PrimitiveConsensus.Consensus.(type) {
-	case *pb.PrimitiveConsensus_Simple:
-		assert.Equal(m.t, pb.AggregationType_MEDIAN, ct.Simple)
-	default:
-		assert.Fail(m.t, "unexpected consensus type")
+	consensus.Simple = func(ctx context.Context, input *pb.SimpleConsensusInputs) (*valuespb.Value, error) {
+		assert.Nil(t, input.Default.Value)
+		switch d := input.Descriptors.Descriptor_.(type) {
+		case *pb.ConsensusDescriptor_Aggregation:
+			assert.Equal(t, pb.AggregationType_MEDIAN, d.Aggregation)
+		default:
+			assert.Fail(t, "unexpected descriptor type")
+		}
+
+		switch o := input.Observation.(type) {
+		case *pb.SimpleConsensusInputs_Value:
+			assert.Nil(t, values.Err)
+			switch v := o.Value.Value.(type) {
+			case *valuespb.Value_Int64Value:
+				assert.Equal(t, values.Observation, v.Int64Value)
+			default:
+				assert.Fail(t, "unexpected observation value type")
+			}
+			return &valuespb.Value{Value: &valuespb.Value_Int64Value{Int64Value: values.Resp}}, nil
+		case *pb.SimpleConsensusInputs_Error:
+			assert.Equal(t, values.Err.Error(), o.Error)
+			return nil, values.Err
+		default:
+			require.Fail(t, "unexpected observation type")
+			return nil, errors.New("should net get here")
+		}
 	}
-
-	resp := &pb.CapabilityResponse{}
-	if m.err == nil {
-		o, ok := consensus.Observation.(*pb.BuiltInConsensusRequest_Value)
-		require.True(m.t, ok)
-		assert.Equal(m.t, m.observation, o.Value.GetInt64Value())
-		consensusResp := &valuespb.Value{Value: &valuespb.Value_Int64Value{Int64Value: m.resp}}
-		a, err := anypb.New(consensusResp)
-		require.NoError(m.t, err)
-
-		resp.Response = &pb.CapabilityResponse_Payload{Payload: a}
-	} else {
-		assert.Equal(m.t, m.err.Error(), consensus.Observation.(*pb.BuiltInConsensusRequest_Error).Error)
-		resp.Response = &pb.CapabilityResponse_Error{Error: m.err.Error()}
-	}
-
-	return resp
 }
 
-func (m *mockConsensus) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
-	return nil, errors.New("not a trigger")
-}
-
-func (m *mockConsensus) ID() string {
-	return "consensus@1.0.0"
+type consensusValues struct {
+	Observation int64
+	Err         error
+	Resp        int64
 }

@@ -25,20 +25,81 @@ type DonRuntime interface {
 	RuntimeBase
 
 	// RunInNodeMode is meant to be used by the helper method RunInNodeMode
-	RunInNodeMode(fn func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest) Promise[values.Value]
+	RunInNodeMode(fn func(nodeRuntime NodeRuntime) *pb.SimpleConsensusInputs) Promise[values.Value]
 }
 
-// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816 use consensus capability
-
-type SimpleConsensusType = pb.AggregationType
-
-type PrimitiveConsensusWithDefault[T any] struct {
-	SimpleConsensusType
-	DefaultValue T
+type ConsensusAggregation[T any] interface {
+	Descriptor() *pb.ConsensusDescriptor
+	Default() *T
+	Error() error
+	WithDefault(t T) ConsensusAggregation[T]
 }
 
-type BuiltInConsensus[T any] interface {
-	SimpleConsensusType | *PrimitiveConsensusWithDefault[T]
+type consensusDescriptor[T any] pb.ConsensusDescriptor
+
+func (c *consensusDescriptor[T]) Descriptor() *pb.ConsensusDescriptor {
+	return (*pb.ConsensusDescriptor)(c)
+}
+
+func (c *consensusDescriptor[T]) Default() *T {
+	return nil
+}
+func (c *consensusDescriptor[T]) Error() error {
+	return nil
+}
+
+func (c *consensusDescriptor[T]) WithDefault(t T) ConsensusAggregation[T] {
+	return &consensusWithDefault[T]{
+		ConsensusDescriptor: c.Descriptor(),
+		DefaultValue:        t,
+	}
+}
+
+var _ ConsensusAggregation[int] = (*consensusDescriptor[int])(nil)
+
+type consensusWithDefault[T any] struct {
+	ConsensusDescriptor *pb.ConsensusDescriptor
+	DefaultValue        T
+}
+
+func (c *consensusWithDefault[T]) Descriptor() *pb.ConsensusDescriptor {
+	return c.ConsensusDescriptor
+}
+
+func (c *consensusWithDefault[T]) Default() *T {
+	cpy := c.DefaultValue
+	return &cpy
+}
+
+func (c *consensusWithDefault[T]) Error() error {
+	return nil
+}
+
+func (c *consensusWithDefault[T]) WithDefault(t T) ConsensusAggregation[T] {
+	return &consensusWithDefault[T]{
+		ConsensusDescriptor: c.ConsensusDescriptor,
+		DefaultValue:        t,
+	}
+}
+
+type consensusDescriptorError[T any] struct {
+	Err error
+}
+
+func (d *consensusDescriptorError[T]) Descriptor() *pb.ConsensusDescriptor {
+	return nil
+}
+
+func (d *consensusDescriptorError[T]) Default() *T {
+	return nil
+}
+
+func (d *consensusDescriptorError[T]) Error() error {
+	return d.Err
+}
+
+func (d *consensusDescriptorError[T]) WithDefault(_ T) ConsensusAggregation[T] {
+	return d
 }
 
 var nodeModeCallInDonMode = errors.New("cannot use NodeRuntime outside RunInNodeMode")
@@ -53,43 +114,43 @@ func DonModeCallInNodeMode() error {
 	return donModeCallInNodeMode
 }
 
-func RunInNodeMode[T any, C BuiltInConsensus[T]](runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), consensus C) Promise[T] {
-	observationFn := func(nodeRuntime NodeRuntime) *pb.BuiltInConsensusRequest {
-		var primitiveConsensus *pb.PrimitiveConsensus
-		var defaultValue values.Value
-		var err error
-		switch c := any(consensus).(type) {
-		case *PrimitiveConsensusWithDefault[T]:
-			defaultValue, err = values.Wrap(c.DefaultValue)
-			if err != nil {
-				return &pb.BuiltInConsensusRequest{Observation: &pb.BuiltInConsensusRequest_Error{Error: err.Error()}}
-			}
-			primitiveConsensus = &pb.PrimitiveConsensus{
-				Consensus: &pb.PrimitiveConsensus_Simple{Simple: c.SimpleConsensusType},
-			}
-		case pb.AggregationType:
-			primitiveConsensus = &pb.PrimitiveConsensus{Consensus: &pb.PrimitiveConsensus_Simple{Simple: c}}
+func RunInNodeMode[T any](
+	runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), cd ConsensusAggregation[T]) Promise[T] {
+	observationFn := func(nodeRuntime NodeRuntime) *pb.SimpleConsensusInputs {
+
+		if cd.Error() != nil {
+			return &pb.SimpleConsensusInputs{Observation: &pb.SimpleConsensusInputs_Error{Error: cd.Error().Error()}}
 		}
 
-		consensusRequest := &pb.BuiltInConsensusRequest{
-			PrimitiveConsensus: primitiveConsensus,
-			DefaultValue:       values.Proto(defaultValue),
+		var defaultValue values.Value
+		descriptor := cd.Descriptor()
+		var err error
+		if d := cd.Default(); d != nil {
+			defaultValue, err = values.Wrap(d)
+			if err != nil {
+				return &pb.SimpleConsensusInputs{Observation: &pb.SimpleConsensusInputs_Error{Error: err.Error()}}
+			}
+		}
+
+		returnValue := &pb.SimpleConsensusInputs{
+			Descriptors: descriptor,
+			Default:     values.Proto(defaultValue),
 		}
 
 		result, err := fn(nodeRuntime)
 		if err != nil {
-			consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
-			return consensusRequest
+			returnValue.Observation = &pb.SimpleConsensusInputs_Error{Error: err.Error()}
+			return returnValue
 		}
 
 		wrapped, err := values.Wrap(result)
 		if err != nil {
-			consensusRequest.Observation = &pb.BuiltInConsensusRequest_Error{Error: err.Error()}
-			return consensusRequest
+			returnValue.Observation = &pb.SimpleConsensusInputs_Error{Error: err.Error()}
+			return returnValue
 		}
 
-		consensusRequest.Observation = &pb.BuiltInConsensusRequest_Value{Value: values.Proto(wrapped)}
-		return consensusRequest
+		returnValue.Observation = &pb.SimpleConsensusInputs_Value{Value: values.Proto(wrapped)}
+		return returnValue
 	}
 
 	return Then(runtime.RunInNodeMode(observationFn), func(v values.Value) (T, error) {

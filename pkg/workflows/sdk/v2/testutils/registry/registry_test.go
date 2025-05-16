@@ -1,4 +1,4 @@
-package testutils_test
+package registry_test
 
 import (
 	"testing"
@@ -8,11 +8,11 @@ import (
 
 	basicactionmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction/basic_actionmock"
 	basictriggermock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger/basic_triggermock"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 func TestRegisterCapability(t *testing.T) {
-	r := testutils.GetRegistry(t)
+	r := registry.GetRegistry(t)
 	c := &basictriggermock.BasicCapability{}
 
 	err := r.RegisterCapability(c)
@@ -25,7 +25,7 @@ func TestRegisterCapability(t *testing.T) {
 }
 
 func TestGetCapability(t *testing.T) {
-	r := testutils.GetRegistry(t)
+	r := registry.GetRegistry(t)
 	c1 := &basictriggermock.BasicCapability{}
 	c2 := &basicactionmock.BasicActionCapability{}
 

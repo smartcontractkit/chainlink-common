@@ -14,6 +14,26 @@ enum AggregationType {
   COMMON_SUFFIX = 3;
 }
 
+message SimpleConsensusInputs {
+  oneof  observation {
+    values.Value value = 1;
+    string error = 2;
+  };
+  ConsensusDescriptor descriptors = 3;
+  values.Value default = 4;
+}
+
+message FieldsMap {
+  map<string, ConsensusDescriptor> fields = 1;
+}
+
+message ConsensusDescriptor {
+  oneof descriptor{
+    AggregationType aggregation = 1;
+    FieldsMap fieldsMap = 2;
+  }
+}
+
 message CapabilityRequest {
   string executionId = 1;
   string id = 2;
@@ -28,27 +48,10 @@ message CapabilityResponse {
   }
 }
 
-// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816 remove this
-message PrimitiveConsensus {
-  oneof consensus {
-    AggregationType simple = 1;
-  }
-}
-
-message BuiltInConsensusRequest {
-  PrimitiveConsensus primitiveConsensus = 1;
-  oneof observation {
-    values.Value value = 2;
-    string error = 3;
-  }
-  optional values.Value default_value = 4;
-}
-
 enum Mode {
   DON = 0;
   Node = 1;
 }
-
 
 message TriggerSubscription {
   string execId = 1;

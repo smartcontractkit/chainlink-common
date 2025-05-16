@@ -1,4 +1,4 @@
-package testutils
+package registry
 
 import (
 	"sync"

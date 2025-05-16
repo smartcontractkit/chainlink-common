@@ -8,12 +8,15 @@ import (
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -682,4 +685,43 @@ func Test_toEmissible(t *testing.T) {
 		_, _, _, err := toEmissible([]byte("not proto bufs"))
 		assert.Error(t, err)
 	})
+}
+
+// CallAwaitRace validates that every call can be awaited.
+func Test_CallAwaitRace(t *testing.T) {
+	ctx := t.Context()
+	mockCapExec := NewMockCapabilityExecutor(t)
+	mockCapExec.EXPECT().
+		CallCapability(matches.AnyContext, mock.Anything).
+		Return(&sdkpb.CapabilityResponse{}, nil)
+
+	m := &module{
+		handler: mockCapExec,
+		capabilityCallStore: &store[<-chan *sdkpb.CapabilityResponse]{
+			m: map[string]<-chan *sdkpb.CapabilityResponse{},
+		},
+	}
+
+	var wg sync.WaitGroup
+	var wantAttempts = 100
+
+	for range wantAttempts {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// call
+			id, err := m.callCapAsync(ctx, &sdkpb.CapabilityRequest{
+				Id: "test-cap-request",
+			})
+			require.NoError(t, err)
+
+			// await with id
+			_, err = m.awaitCapabilities(ctx, &sdkpb.AwaitCapabilitiesRequest{
+				Ids: []string{string(id[:])},
+			})
+			require.NoError(t, err)
+		}()
+	}
+
+	wg.Wait()
 }

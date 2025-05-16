@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package importclash.p2.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb";
+
+message Outputs {
+  string adapted_thing = 1;
+}

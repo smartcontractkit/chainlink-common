@@ -230,9 +230,11 @@ func (t *triggerExecutableServer) RegisterTrigger(request *capabilitiespb.Trigge
 	for {
 		select {
 		case <-server.Context().Done():
+			t.Logger.Debug("server context canceled, exiting server")
 			return nil
 		case resp, ok := <-responseCh:
 			if !ok {
+				t.Logger.Debug("source channel closed, exiting server")
 				return nil
 			}
 

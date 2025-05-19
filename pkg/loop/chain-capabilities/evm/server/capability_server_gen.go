@@ -9,10 +9,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
+	evm1 "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -20,25 +19,25 @@ import (
 var _ = emptypb.Empty{}
 
 type EVMChainCapability interface {
-	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*evm.CallContractReply, error)
+	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.CallContractRequest) (*evm1.CallContractReply, error)
 
-	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.FilterLogsRequest) (*evm1.FilterLogsReply, error)
 
-	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.BalanceAtRequest) (*evm1.BalanceAtReply, error)
 
-	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
+	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.EstimateGasRequest) (*evm1.EstimateGasReply, error)
 
-	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionByHashRequest) (*evm.TransactionByHashReply, error)
+	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.TransactionByHashRequest) (*evm1.TransactionByHashReply, error)
 
-	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionReceiptRequest) (*evm.TransactionReceiptReply, error)
+	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.TransactionReceiptRequest) (*evm1.TransactionReceiptReply, error)
 
-	LatestAndFinalizedHead(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
+	LatestAndFinalizedHead(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (*evm1.LatestAndFinalizedHeadReply, error)
 
-	QueryTrackedLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
+	QueryTrackedLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.QueryTrackedLogsRequest) (*evm1.QueryTrackedLogsReply, error)
 
-	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 
-	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -49,18 +48,21 @@ type EVMChainCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewEVMChainServer(capability EVMChainCapability) loop.StandardCapabilities {
-	return &eVMChainServer{
-		eVMChainCapability: eVMChainCapability{EVMChainCapability: capability},
+func NewEVMChainServer(capability EVMChainCapability) *EVMChainServer {
+	stopCh := make(chan struct{})
+	return &EVMChainServer{
+		eVMChainCapability: eVMChainCapability{EVMChainCapability: capability, stopCh: stopCh},
+		stopCh:             stopCh,
 	}
 }
 
-type eVMChainServer struct {
+type EVMChainServer struct {
 	eVMChainCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
-func (cs *eVMChainServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *EVMChainServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.EVMChainCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -76,17 +78,24 @@ func (cs *eVMChainServer) Initialise(ctx context.Context, config string, telemet
 	return nil
 }
 
-func (cs *eVMChainServer) Close() error {
+func (cs *EVMChainServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "mainnet-evm@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "mainnet-evm@1.0.0"); err != nil {
+			return err
+		}
+	}
+
+	if cs.stopCh != nil {
+		close(cs.stopCh)
 	}
 
 	return cs.eVMChainCapability.Close()
 }
 
-func (cs *eVMChainServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *EVMChainServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.eVMChainCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -96,6 +105,7 @@ func (cs *eVMChainServer) Infos(ctx context.Context) ([]capabilities.CapabilityI
 
 type eVMChainCapability struct {
 	EVMChainCapability
+	stopCh chan struct{}
 }
 
 func (c *eVMChainCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -125,72 +135,72 @@ func (c *eVMChainCapability) Execute(ctx context.Context, request capabilities.C
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "CallContract":
-		input := &evm.CallContractRequest{}
+		input := &evm1.CallContractRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.CallContractRequest, _ *emptypb.Empty) (*evm1.CallContractReply, error) {
 			return c.EVMChainCapability.CallContract(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "FilterLogs":
-		input := &evm.FilterLogsRequest{}
+		input := &evm1.FilterLogsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.FilterLogsRequest, _ *emptypb.Empty) (*evm1.FilterLogsReply, error) {
 			return c.EVMChainCapability.FilterLogs(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "BalanceAt":
-		input := &evm.BalanceAtRequest{}
+		input := &evm1.BalanceAtRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.BalanceAtRequest, _ *emptypb.Empty) (*evm1.BalanceAtReply, error) {
 			return c.EVMChainCapability.BalanceAt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "EstimateGas":
-		input := &evm.EstimateGasRequest{}
+		input := &evm1.EstimateGasRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.EstimateGasRequest, _ *emptypb.Empty) (*evm1.EstimateGasReply, error) {
 			return c.EVMChainCapability.EstimateGas(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionByHash":
-		input := &evm.TransactionByHashRequest{}
+		input := &evm1.TransactionByHashRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionByHashRequest, _ *emptypb.Empty) (*evm.TransactionByHashReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.TransactionByHashRequest, _ *emptypb.Empty) (*evm1.TransactionByHashReply, error) {
 			return c.EVMChainCapability.GetTransactionByHash(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "GetTransactionReceipt":
-		input := &evm.TransactionReceiptRequest{}
+		input := &evm1.TransactionReceiptRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.TransactionReceiptRequest, _ *emptypb.Empty) (*evm.TransactionReceiptReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.TransactionReceiptRequest, _ *emptypb.Empty) (*evm1.TransactionReceiptReply, error) {
 			return c.EVMChainCapability.GetTransactionReceipt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "LatestAndFinalizedHead":
 		input := &emptypb.Empty{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty, _ *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty, _ *emptypb.Empty) (*evm1.LatestAndFinalizedHeadReply, error) {
 			return c.EVMChainCapability.LatestAndFinalizedHead(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "QueryTrackedLogs":
-		input := &evm.QueryTrackedLogsRequest{}
+		input := &evm1.QueryTrackedLogsRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryTrackedLogsRequest, _ *emptypb.Empty) (*evm.QueryTrackedLogsReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.QueryTrackedLogsRequest, _ *emptypb.Empty) (*evm1.QueryTrackedLogsReply, error) {
 			return c.EVMChainCapability.QueryTrackedLogs(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "RegisterLogTracking":
-		input := &evm.RegisterLogTrackingRequest{}
+		input := &evm1.RegisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.RegisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
 			return c.EVMChainCapability.RegisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "UnregisterLogTracking":
-		input := &evm.UnregisterLogTrackingRequest{}
+		input := &evm1.UnregisterLogTrackingRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
 			return c.EVMChainCapability.UnregisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

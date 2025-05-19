@@ -1438,7 +1438,7 @@ func (*Primitive_EventByWord) isPrimitive_Primitive() {}
 
 func (*Primitive_EventByTopic) isPrimitive_Primitive() {}
 
-// ----- Request/Reply Wrappexrs -----
+// ----- Request/Reply Wrappers -----
 type LatestAndFinalizedHeadReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Latest        *Head                  `protobuf:"bytes,1,opt,name=latest,proto3" json:"latest,omitempty"`

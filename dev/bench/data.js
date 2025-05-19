@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747421093583,
+  "lastUpdate": 1747671205234,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13734,6 +13734,48 @@ window.BENCHMARK_DATA = {
             "value": 28719,
             "unit": "ns/op",
             "extra": "42133 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "80bc8b13c0e7839849182ef9e55b8ac0063145c9",
+          "message": "add GetEstimateFee (#1196)\n\n* add GetEstimateFee\n\n\n\n---------\n\nCo-authored-by: ilija42 <57732589+ilija42@users.noreply.github.com>",
+          "timestamp": "2025-05-19T12:12:08-04:00",
+          "tree_id": "5bfb469f3ba3e47f221aafe71507efa2cdd88725",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/80bc8b13c0e7839849182ef9e55b8ac0063145c9"
+        },
+        "date": 1747671204397,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.2,
+            "unit": "ns/op",
+            "extra": "3297458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 428.5,
+            "unit": "ns/op",
+            "extra": "2767701 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28164,
+            "unit": "ns/op",
+            "extra": "42610 times\n4 procs"
           }
         ]
       }

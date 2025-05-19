@@ -161,7 +161,7 @@ func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContr
 		return nil, err
 	}
 
-	callMsg, err := rel.ProtoToCallMsg(request.Request.Call)
+	callMsg, err := rel.ConvertCallMsgFromProto(request.Request.Call)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsR
 		return nil, err
 	}
 
-	expression, err := rel.ProtoToEvmFilter(request.Request.FilterQuery)
+	expression, err := rel.ConvertFilterFromProto(request.Request.FilterQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsR
 		return nil, err
 	}
 
-	return &evmservice.FilterLogsReply{Logs: rel.LogsToProto(reply)}, nil
+	return &evmservice.FilterLogsReply{Logs: rel.ConvertLogsToProto(reply)}, nil
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtRequest) (*evmservice.BalanceAtReply, error) {
@@ -201,7 +201,7 @@ func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtReq
 		return nil, err
 	}
 
-	balance, err := evmService.BalanceAt(ctx, rel.ProtoToAddress(request.GetRequest().GetAccount()), valuespb.NewIntFromBigInt(request.Request.BlockNumber))
+	balance, err := evmService.BalanceAt(ctx, rel.ConvertAddressFromProto(request.GetRequest().GetAccount()), valuespb.NewIntFromBigInt(request.Request.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (s *Server) EstimateGas(ctx context.Context, request *relayerset.EstimateGa
 		return nil, err
 	}
 
-	callMsg, err := rel.ProtoToCallMsg(request.Request.GetMsg())
+	callMsg, err := rel.ConvertCallMsgFromProto(request.Request.GetMsg())
 	if err != nil {
 		return nil, err
 	}
@@ -234,12 +234,12 @@ func (s *Server) TransactionByHash(ctx context.Context, request *relayerset.Tran
 		return nil, err
 	}
 
-	reply, err := evmService.TransactionByHash(ctx, rel.ProtoToHash(request.Request.GetHash()))
+	reply, err := evmService.TransactionByHash(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := rel.TransactionToProto(reply)
+	tx, err := rel.ConvertTransactionToProto(reply)
 	if err != nil {
 		return nil, err
 	}
@@ -255,12 +255,12 @@ func (s *Server) TransactionReceipt(ctx context.Context, request *relayerset.Rec
 		return nil, err
 	}
 
-	reply, err := evmService.TransactionReceipt(ctx, rel.ProtoToHash(request.Request.GetHash()))
+	reply, err := evmService.TransactionReceipt(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
 
-	receipt, err := rel.ReceiptToProto(reply)
+	receipt, err := rel.ConvertReceiptToProto(reply)
 	if err != nil {
 		return nil, err
 	}
@@ -282,8 +282,8 @@ func (s *Server) LatestAndFinalizedHead(ctx context.Context, request *relayerset
 	}
 
 	return &evmservice.LatestAndFinalizedHeadReply{
-		Latest:    rel.HeadToProto(latest),
-		Finalized: rel.HeadToProto(finalized),
+		Latest:    rel.ConvertHeadToProto(latest),
+		Finalized: rel.ConvertHeadToProto(finalized),
 	}, nil
 }
 
@@ -293,7 +293,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	expression, err := rel.ProtoToExpressions(request.GetRequest().GetExpression())
+	expression, err := rel.ConvertExpressionsFromProto(request.GetRequest().GetExpression())
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	return &evmservice.QueryTrackedLogsReply{Logs: rel.LogsToProto(logs)}, nil
+	return &evmservice.QueryTrackedLogsReply{Logs: rel.ConvertLogsToProto(logs)}, nil
 }
 
 func (s *Server) RegisterLogTracking(ctx context.Context, request *relayerset.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -322,7 +322,7 @@ func (s *Server) RegisterLogTracking(ctx context.Context, request *relayerset.Re
 		return nil, err
 	}
 
-	filter, err := rel.ProtoToLpFilter(request.GetRequest().GetFilter())
+	filter, err := rel.ConvertLPFilterFromProto(request.GetRequest().GetFilter())
 	if err != nil {
 		return nil, err
 	}

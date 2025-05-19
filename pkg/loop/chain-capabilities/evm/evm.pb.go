@@ -1307,7 +1307,7 @@ func (x *EventByTopic) GetHashedValueComparers() []*HashValueComparator {
 }
 
 // evm-style primitives
-// can be used in combination with general primnitives for querying tracked logs
+// can be used in combination with general primitives for querying tracked logs
 type Primitive struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Primitive:

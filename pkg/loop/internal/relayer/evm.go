@@ -40,42 +40,36 @@ var _ types.EVMService = (*EVMClient)(nil)
 func (e *EVMClient) GetTransactionFee(ctx context.Context, transactionID string) (*evm.TransactionFee, error) {
 	reply, err := e.grpcClient.GetTransactionFee(ctx, &evmcap.GetTransactionFeeRequest{TransactionId: transactionID})
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	return &evm.TransactionFee{
-		TransactionFee: valuespb.NewIntFromBigInt(reply.TransationFee),
-	}, nil
+	return &evm.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.TransationFee)}, nil
 }
 
 func (e *EVMClient) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	call, err := CallMsgToProto(msg)
+	protoCallMsg, err := ConvertCallMsgToProto(msg)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
 	reply, err := e.grpcClient.CallContract(ctx, &evmcap.CallContractRequest{
-		Call:        call,
+		Call:        protoCallMsg,
 		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
-
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return reply.Data.GetAbi(), nil
 }
 
 func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
-	reply, err := e.grpcClient.FilterLogs(ctx, &evmcap.FilterLogsRequest{
-		FilterQuery: evmFilterToProto(filterQuery),
-	})
-
+	reply, err := e.grpcClient.FilterLogs(ctx, &evmcap.FilterLogsRequest{FilterQuery: ConvertFilterToProto(filterQuery)})
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	return protoToLogs(reply.Logs), nil
+	return ConvertLogsFromProto(reply.Logs), nil
 }
 
 func (e *EVMClient) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
@@ -83,103 +77,107 @@ func (e *EVMClient) BalanceAt(ctx context.Context, account evm.Address, blockNum
 		Account:     &evmcap.Address{Address: account[:]},
 		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
-
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
 	return valuespb.NewIntFromBigInt(reply.Balance), nil
 }
 
 func (e *EVMClient) EstimateGas(ctx context.Context, msg *evm.CallMsg) (uint64, error) {
-	call, err := CallMsgToProto(msg)
+	protoCallMsg, err := ConvertCallMsgToProto(msg)
 	if err != nil {
-		return 0, err
+		return 0, net.WrapRPCErr(err)
 	}
 
-	reply, err := e.grpcClient.EstimateGas(ctx, &evmcap.EstimateGasRequest{
-		Msg: call,
-	})
+	reply, err := e.grpcClient.EstimateGas(ctx, &evmcap.EstimateGasRequest{Msg: protoCallMsg})
 	if err != nil {
-		return 0, err
+		return 0, net.WrapRPCErr(err)
 	}
 
 	return reply.Gas, nil
 }
 
 func (e *EVMClient) TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
-	reply, err := e.grpcClient.TransactionByHash(ctx, &evmcap.TransactionByHashRequest{
-		Hash: &evmcap.Hash{Hash: hash[:]},
-	})
+	reply, err := e.grpcClient.TransactionByHash(ctx, &evmcap.TransactionByHashRequest{Hash: &evmcap.Hash{Hash: hash[:]}})
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	return ProtoToTransaction(reply.Transaction)
+	return ConvertTransactionFromProto(reply.Transaction)
 }
 
 func (e *EVMClient) TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error) {
 	reply, err := e.grpcClient.TransactionReceipt(ctx, &evmcap.TransactionReceiptRequest{Hash: &evmcap.Hash{Hash: txHash[:]}})
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	return protoToReceipt(reply.Receipt)
+	return ConvertReceiptFromProto(reply.Receipt)
 }
 
 func (e *EVMClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error) {
 	reply, err := e.grpcClient.LatestAndFinalizedHead(ctx, &emptypb.Empty{})
 	if err != nil {
-		return evm.Head{}, evm.Head{}, err
+		return evm.Head{}, evm.Head{}, net.WrapRPCErr(err)
 	}
 
-	return protoToHead(reply.Latest), protoToHead(reply.Finalized), err
+	latest, err = convertHeadFromProto(reply.Latest)
+	if err != nil {
+		return evm.Head{}, evm.Head{}, net.WrapRPCErr(err)
+	}
+
+	finalized, err = convertHeadFromProto(reply.Finalized)
+	if err != nil {
+		return evm.Head{}, evm.Head{}, net.WrapRPCErr(err)
+	}
+
+	return latest, finalized, nil
 
 }
 func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	q, err := expressionsToProto(filterQuery)
+	protoExpressions, err := convertExpressionsToProto(filterQuery)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	sort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
+	protoLimitAndSort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	conf, err := contractreader.ConfidenceToProto(confidenceLevel)
+	protoConfidenceLevel, err := contractreader.ConfidenceToProto(confidenceLevel)
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
 	reply, err := e.grpcClient.QueryTrackedLogs(ctx, &evmcap.QueryTrackedLogsRequest{
-		Expression:      q,
-		LimitAndSort:    sort,
-		ConfidenceLevel: conf,
+		Expression:      protoExpressions,
+		LimitAndSort:    protoLimitAndSort,
+		ConfidenceLevel: protoConfidenceLevel,
 	})
-
 	if err != nil {
-		return nil, err
+		return nil, net.WrapRPCErr(err)
 	}
 
-	return protoToLogs(reply.Logs), nil
+	return ConvertLogsFromProto(reply.Logs), nil
 }
 
 func (e *EVMClient) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
-	_, err := e.grpcClient.RegisterLogTracking(ctx, &evmcap.RegisterLogTrackingRequest{Filter: lPfilterToProto(filter)})
-	return err
+	_, err := e.grpcClient.RegisterLogTracking(ctx, &evmcap.RegisterLogTrackingRequest{Filter: convertLPFilterToProto(filter)})
+	return net.WrapRPCErr(err)
 }
 
 func (e *EVMClient) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	_, err := e.grpcClient.UnregisterLogTracking(ctx, &evmcap.UnregisterLogTrackingRequest{FilterName: filterName})
-	return err
+	return net.WrapRPCErr(err)
 }
 
 func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
 	reply, err := e.grpcClient.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
-		return types.Unknown, err
+		return types.Unknown, net.WrapRPCErr(err)
 	}
 
 	return types.TransactionStatus(reply.TransactionStatus), nil
@@ -200,100 +198,89 @@ func NewEVMServer(impl types.EVMService, b *net.BrokerExt) *EvmServer {
 }
 
 func (e *EvmServer) GetTransactionFee(ctx context.Context, request *evmcap.GetTransactionFeeRequest) (*evmcap.GetTransactionFeeReply, error) {
-	reply, err := e.impl.GetTransactionFee(ctx, request.TransactionId)
+	txFee, err := e.impl.GetTransactionFee(ctx, request.TransactionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmcap.GetTransactionFeeReply{
-		TransationFee: valuespb.NewBigIntFromInt(reply.TransactionFee),
-	}, nil
+	return &evmcap.GetTransactionFeeReply{TransationFee: valuespb.NewBigIntFromInt(txFee.TransactionFee)}, nil
 }
 
 func (e *EvmServer) CallContract(ctx context.Context, req *evmcap.CallContractRequest) (*evmcap.CallContractReply, error) {
-	call, err := ProtoToCallMsg(req.Call)
+	callMsg, err := ConvertCallMsgFromProto(req.Call)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := e.impl.CallContract(ctx, call, valuespb.NewIntFromBigInt(req.BlockNumber))
+	data, err := e.impl.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(req.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmcap.CallContractReply{
-		Data: &evmcap.ABIPayload{Abi: data},
-	}, nil
+	return &evmcap.CallContractReply{Data: &evmcap.ABIPayload{Abi: data}}, nil
 }
 func (e *EvmServer) FilterLogs(ctx context.Context, req *evmcap.FilterLogsRequest) (*evmcap.FilterLogsReply, error) {
-	f, err := ProtoToEvmFilter(req.FilterQuery)
-	if err != nil {
-		return nil, err
-	}
-	logs, err := e.impl.FilterLogs(ctx, f)
+	filter, err := ConvertFilterFromProto(req.FilterQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmcap.FilterLogsReply{
-		Logs: LogsToProto(logs),
-	}, nil
+	logs, err := e.impl.FilterLogs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmcap.FilterLogsReply{Logs: ConvertLogsToProto(logs)}, nil
 }
 func (e *EvmServer) BalanceAt(ctx context.Context, req *evmcap.BalanceAtRequest) (*evmcap.BalanceAtReply, error) {
-	balance, err := e.impl.BalanceAt(ctx, ProtoToAddress(req.Account), valuespb.NewIntFromBigInt(req.BlockNumber))
+	balance, err := e.impl.BalanceAt(ctx, ConvertAddressFromProto(req.Account), valuespb.NewIntFromBigInt(req.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmcap.BalanceAtReply{
-		Balance: valuespb.NewBigIntFromInt(balance),
-	}, nil
+	return &evmcap.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(balance)}, nil
 }
 
 func (e *EvmServer) EstimateGas(ctx context.Context, req *evmcap.EstimateGasRequest) (*evmcap.EstimateGasReply, error) {
-	call, err := ProtoToCallMsg(req.Msg)
+	callMsg, err := ConvertCallMsgFromProto(req.Msg)
 	if err != nil {
 		return nil, err
 	}
 
-	gas, err := e.impl.EstimateGas(ctx, call)
+	gas, err := e.impl.EstimateGas(ctx, callMsg)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmcap.EstimateGasReply{
-		Gas: gas,
-	}, nil
+	return &evmcap.EstimateGasReply{Gas: gas}, nil
 }
 
 func (e *EvmServer) GetTransactionByHash(ctx context.Context, req *evmcap.TransactionByHashRequest) (*evmcap.TransactionByHashReply, error) {
-	tx, err := e.impl.TransactionByHash(ctx, ProtoToHash(req.GetHash()))
+	tx, err := e.impl.TransactionByHash(ctx, ConvertHashFromProto(req.GetHash()))
 	if err != nil {
 		return nil, err
 	}
 
-	pbtx, err := TransactionToProto(tx)
+	protoTx, err := ConvertTransactionToProto(tx)
 	if err != nil {
 		return nil, err
 	}
-	return &evmcap.TransactionByHashReply{
-		Transaction: pbtx,
-	}, nil
+
+	return &evmcap.TransactionByHashReply{Transaction: protoTx}, nil
 }
 
 func (e *EvmServer) GetTransactionReceipt(ctx context.Context, req *evmcap.TransactionReceiptRequest) (*evmcap.TransactionReceiptReply, error) {
-	rec, err := e.impl.TransactionReceipt(ctx, ProtoToHash(req.GetHash()))
+	receipt, err := e.impl.TransactionReceipt(ctx, ConvertHashFromProto(req.GetHash()))
 	if err != nil {
 		return nil, err
 	}
 
-	pbrec, err := ReceiptToProto(rec)
+	protoReceipt, err := ConvertReceiptToProto(receipt)
 	if err != nil {
 		return nil, err
 	}
-	return &evmcap.TransactionReceiptReply{
-		Receipt: pbrec,
-	}, nil
+
+	return &evmcap.TransactionReceiptReply{Receipt: protoReceipt}, nil
 }
 
 func (e *EvmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*evmcap.LatestAndFinalizedHeadReply, error) {
@@ -303,13 +290,13 @@ func (e *EvmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty
 	}
 
 	return &evmcap.LatestAndFinalizedHeadReply{
-		Latest:    HeadToProto(latest),
-		Finalized: HeadToProto(finalized),
+		Latest:    ConvertHeadToProto(latest),
+		Finalized: ConvertHeadToProto(finalized),
 	}, nil
 }
 
 func (e *EvmServer) QueryTrackedLogs(ctx context.Context, req *evmcap.QueryTrackedLogsRequest) (*evmcap.QueryTrackedLogsReply, error) {
-	exprs, err := ProtoToExpressions(req.Expression)
+	expressions, err := ConvertExpressionsFromProto(req.Expression)
 	if err != nil {
 		return nil, err
 	}
@@ -324,22 +311,20 @@ func (e *EvmServer) QueryTrackedLogs(ctx context.Context, req *evmcap.QueryTrack
 		return nil, err
 	}
 
-	logs, err := e.impl.QueryTrackedLogs(ctx, exprs, limitAndSort, conf)
+	logs, err := e.impl.QueryTrackedLogs(ctx, expressions, limitAndSort, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmcap.QueryTrackedLogsReply{
-		Logs: LogsToProto(logs),
-	}, nil
+	return &evmcap.QueryTrackedLogsReply{Logs: ConvertLogsToProto(logs)}, nil
 }
 
 func (e *EvmServer) RegisterLogTracking(ctx context.Context, req *evmcap.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
-	f, err := ProtoToLpFilter(req.Filter)
+	lpFilter, err := ConvertLPFilterFromProto(req.Filter)
 	if err != nil {
 		return nil, err
 	}
-	return nil, e.impl.RegisterLogTracking(ctx, f)
+	return nil, e.impl.RegisterLogTracking(ctx, lpFilter)
 }
 
 func (e *EvmServer) UnregisterLogTracking(ctx context.Context, req *evmcap.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -347,81 +332,85 @@ func (e *EvmServer) UnregisterLogTracking(ctx context.Context, req *evmcap.Unreg
 }
 
 func (e *EvmServer) GetTransactionStatus(ctx context.Context, req *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
-	s, err := e.impl.GetTransactionStatus(ctx, req.TransactionId)
+	txStatus, err := e.impl.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(s)}, nil
+	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(txStatus)}, nil
 }
 
-var errEmptyMsg = errors.New("call msg can't be empty")
-
-func protoToHead(h *evmcap.Head) evm.Head {
-	return evm.Head{
-		Timestamp:  h.Timestamp,
-		Hash:       ProtoToHash(h.GetHash()),
-		ParentHash: ProtoToHash(h.GetParentHash()),
-		Number:     valuespb.NewIntFromBigInt(h.BlockNumber),
-	}
-}
-
-func HeadToProto(h evm.Head) *evmcap.Head {
+func ConvertHeadToProto(h evm.Head) *evmcap.Head {
 	return &evmcap.Head{
 		Timestamp:   h.Timestamp,
 		BlockNumber: valuespb.NewBigIntFromInt(h.Number),
-		Hash:        toProtoHash(h.Hash),
-		ParentHash:  toProtoHash(h.ParentHash),
+		Hash:        convertHashToProto(h.Hash),
+		ParentHash:  convertHashToProto(h.ParentHash),
 	}
 }
 
-var errEmptyReceipt = errors.New("receipt is empty")
+var errEmptyHead = errors.New("head is nil")
 
-func ReceiptToProto(r *evm.Receipt) (*evmcap.Receipt, error) {
+func convertHeadFromProto(h *evmcap.Head) (evm.Head, error) {
+	if h == nil {
+		return evm.Head{}, errEmptyHead
+	}
+	return evm.Head{
+		Timestamp:  h.Timestamp,
+		Hash:       ConvertHashFromProto(h.GetHash()),
+		ParentHash: ConvertHashFromProto(h.GetParentHash()),
+		Number:     valuespb.NewIntFromBigInt(h.GetBlockNumber()),
+	}, nil
+}
+
+var errEmptyReceipt = errors.New("receipt is nil")
+
+func ConvertReceiptToProto(r *evm.Receipt) (*evmcap.Receipt, error) {
 	if r == nil {
 		return nil, errEmptyReceipt
 	}
 
 	return &evmcap.Receipt{
 		Status:            r.Status,
-		Logs:              LogsToProto(r.Logs),
-		TxHash:            toProtoHash(r.TxHash),
-		ContractAddress:   toProtoAddress(r.ContractAddress),
+		Logs:              ConvertLogsToProto(r.Logs),
+		TxHash:            convertHashToProto(r.TxHash),
+		ContractAddress:   convertAddressToProto(r.ContractAddress),
 		GasUsed:           r.GasUsed,
-		BlockHash:         toProtoHash(r.BlockHash),
+		BlockHash:         convertHashToProto(r.BlockHash),
 		BlockNumber:       valuespb.NewBigIntFromInt(r.BlockNumber),
 		TxIndex:           r.TransactionIndex,
 		EffectiveGasPrice: valuespb.NewBigIntFromInt(r.EffectiveGasPrice),
 	}, nil
 }
 
-func protoToReceipt(r *evmcap.Receipt) (*evm.Receipt, error) {
-	if r == nil {
+func ConvertReceiptFromProto(protoReceipt *evmcap.Receipt) (*evm.Receipt, error) {
+	if protoReceipt == nil {
 		return nil, errEmptyReceipt
 	}
+
 	return &evm.Receipt{
-		Status:            r.Status,
-		Logs:              protoToLogs(r.Logs),
-		TxHash:            ProtoToHash(r.GetTxHash()),
-		ContractAddress:   ProtoToAddress(r.GetContractAddress()),
-		GasUsed:           r.GasUsed,
-		BlockHash:         ProtoToHash(r.GetBlockHash()),
-		BlockNumber:       valuespb.NewIntFromBigInt(r.BlockNumber),
-		TransactionIndex:  r.TxIndex,
-		EffectiveGasPrice: valuespb.NewIntFromBigInt(r.EffectiveGasPrice),
+		Status:            protoReceipt.GetStatus(),
+		Logs:              ConvertLogsFromProto(protoReceipt.GetLogs()),
+		TxHash:            ConvertHashFromProto(protoReceipt.GetTxHash()),
+		ContractAddress:   ConvertAddressFromProto(protoReceipt.GetContractAddress()),
+		GasUsed:           protoReceipt.GetGasUsed(),
+		BlockHash:         ConvertHashFromProto(protoReceipt.GetBlockHash()),
+		BlockNumber:       valuespb.NewIntFromBigInt(protoReceipt.GetBlockNumber()),
+		TransactionIndex:  protoReceipt.GetTxIndex(),
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(protoReceipt.GetEffectiveGasPrice()),
 	}, nil
 }
 
-var errEmptyTx = errors.New("transaction is empty")
+var errEmptyTx = errors.New("transaction is nil")
 
-func TransactionToProto(tx *evm.Transaction) (*evmcap.Transaction, error) {
+func ConvertTransactionToProto(tx *evm.Transaction) (*evmcap.Transaction, error) {
 	if tx == nil {
 		return nil, errEmptyTx
 	}
 	return &evmcap.Transaction{
-		To:       toProtoAddress(tx.To),
-		Data:     toProtoABI(tx.Data),
-		Hash:     toProtoHash(tx.Hash),
+		To:       convertAddressToProto(tx.To),
+		Data:     ConvertABIPayloadToProto(tx.Data),
+		Hash:     convertHashToProto(tx.Hash),
 		Nonce:    tx.Nonce,
 		Gas:      tx.Gas,
 		GasPrice: valuespb.NewBigIntFromInt(tx.GasPrice),
@@ -429,268 +418,292 @@ func TransactionToProto(tx *evm.Transaction) (*evmcap.Transaction, error) {
 	}, nil
 }
 
-func ProtoToTransaction(tx *evmcap.Transaction) (*evm.Transaction, error) {
-	if tx == nil {
+func ConvertTransactionFromProto(protoTx *evmcap.Transaction) (*evm.Transaction, error) {
+	if protoTx == nil {
 		return nil, errEmptyTx
 	}
+
+	var data []byte
+	if protoTx.GetData() != nil {
+		data = protoTx.GetData().GetAbi()
+	}
+
 	return &evm.Transaction{
-		To:       ProtoToAddress(tx.GetTo()),
-		Data:     tx.GetData().GetAbi(),
-		Hash:     ProtoToHash(tx.GetHash()),
-		Nonce:    tx.GetNonce(),
-		Gas:      tx.GetGas(),
-		GasPrice: valuespb.NewIntFromBigInt(tx.GetGasPrice()),
-		Value:    valuespb.NewIntFromBigInt(tx.GetValue()),
+		To:       ConvertAddressFromProto(protoTx.GetTo()),
+		Data:     data,
+		Hash:     ConvertHashFromProto(protoTx.GetHash()),
+		Nonce:    protoTx.GetNonce(),
+		Gas:      protoTx.GetGas(),
+		GasPrice: valuespb.NewIntFromBigInt(protoTx.GetGasPrice()),
+		Value:    valuespb.NewIntFromBigInt(protoTx.GetValue()),
 	}, nil
 }
 
-func CallMsgToProto(m *evm.CallMsg) (*evmcap.CallMsg, error) {
-	if m == nil {
+var errEmptyMsg = errors.New("call msg can't be nil")
+
+func ConvertCallMsgToProto(msg *evm.CallMsg) (*evmcap.CallMsg, error) {
+	if msg == nil {
 		return nil, errEmptyMsg
 	}
 
 	return &evmcap.CallMsg{
-		From: toProtoAddress(m.From),
-		To:   toProtoAddress(m.To),
-		Data: toProtoABI(m.Data),
+		From: convertAddressToProto(msg.From),
+		To:   convertAddressToProto(msg.To),
+		Data: ConvertABIPayloadToProto(msg.Data),
 	}, nil
 }
 
-func ProtoToCallMsg(p *evmcap.CallMsg) (*evm.CallMsg, error) {
-	if p == nil {
+func ConvertCallMsgFromProto(protoMsg *evmcap.CallMsg) (*evm.CallMsg, error) {
+	if protoMsg == nil {
 		return nil, errEmptyMsg
 	}
 
 	return &evm.CallMsg{
-		From: ProtoToAddress(p.GetFrom()),
-		Data: p.GetData().GetAbi(),
-		To:   ProtoToAddress(p.GetTo()),
+		From: ConvertAddressFromProto(protoMsg.GetFrom()),
+		Data: protoMsg.GetData().GetAbi(),
+		To:   ConvertAddressFromProto(protoMsg.GetTo()),
 	}, nil
 }
 
-func lPfilterToProto(f evm.LPFilterQuery) *evmcap.LPFilter {
+var errEmptyFilter = errors.New("filter cant be nil")
+
+func convertLPFilterToProto(filter evm.LPFilterQuery) *evmcap.LPFilter {
 	return &evmcap.LPFilter{
-		Name:          f.Name,
-		RetentionTime: int64(f.Retention),
-		Addresses:     toProtoAddresses(f.Addresses),
-		EventSigs:     toProtoHashes(f.EventSigs),
-		Topic2:        toProtoHashes(f.Topic2),
-		Topic3:        toProtoHashes(f.Topic3),
-		Topic4:        toProtoHashes(f.Topic4),
-		MaxLogsKept:   f.MaxLogsKept,
-		LogsPerBlock:  f.LogsPerBlock,
+		Name:          filter.Name,
+		RetentionTime: int64(filter.Retention),
+		Addresses:     convertAddressesToProto(filter.Addresses),
+		EventSigs:     convertHashesToProto(filter.EventSigs),
+		Topic2:        convertHashesToProto(filter.Topic2),
+		Topic3:        convertHashesToProto(filter.Topic3),
+		Topic4:        convertHashesToProto(filter.Topic4),
+		MaxLogsKept:   filter.MaxLogsKept,
+		LogsPerBlock:  filter.LogsPerBlock,
 	}
 }
 
-func ProtoToLpFilter(f *evmcap.LPFilter) (evm.LPFilterQuery, error) {
-	if f == nil {
+func ConvertLPFilterFromProto(protoFilter *evmcap.LPFilter) (evm.LPFilterQuery, error) {
+	if protoFilter == nil {
 		return evm.LPFilterQuery{}, errEmptyFilter
 	}
 
 	return evm.LPFilterQuery{
-		Name:         f.Name,
-		Retention:    time.Duration(f.RetentionTime),
-		Addresses:    protoToAddreses(f.Addresses),
-		EventSigs:    protoToHashes(f.EventSigs),
-		Topic2:       protoToHashes(f.Topic2),
-		Topic3:       protoToHashes(f.Topic3),
-		Topic4:       protoToHashes(f.Topic4),
-		MaxLogsKept:  f.MaxLogsKept,
-		LogsPerBlock: f.LogsPerBlock,
+		Name:         protoFilter.GetName(),
+		Retention:    time.Duration(protoFilter.GetRetentionTime()),
+		Addresses:    ConvertAddressesFromProto(protoFilter.GetAddresses()),
+		EventSigs:    convertHashesFromProto(protoFilter.GetEventSigs()),
+		Topic2:       convertHashesFromProto(protoFilter.GetTopic2()),
+		Topic3:       convertHashesFromProto(protoFilter.GetTopic3()),
+		Topic4:       convertHashesFromProto(protoFilter.GetTopic4()),
+		MaxLogsKept:  protoFilter.GetMaxLogsKept(),
+		LogsPerBlock: protoFilter.GetLogsPerBlock(),
 	}, nil
 }
 
-var errEmptyFilter = errors.New("filter cant be empty")
+func ConvertFilterToProto(filter evm.FilterQuery) *evmcap.FilterQuery {
+	return &evmcap.FilterQuery{
+		BlockHash: convertHashToProto(filter.BlockHash),
+		FromBlock: valuespb.NewBigIntFromInt(filter.FromBlock),
+		ToBlock:   valuespb.NewBigIntFromInt(filter.ToBlock),
+		Addresses: convertAddressesToProto(filter.Addresses),
+		Topics:    convertTopicsToProto(filter.Topics),
+	}
+}
 
-func ProtoToEvmFilter(f *evmcap.FilterQuery) (evm.FilterQuery, error) {
-	if f == nil {
+func ConvertFilterFromProto(protoFilter *evmcap.FilterQuery) (evm.FilterQuery, error) {
+	if protoFilter == nil {
 		return evm.FilterQuery{}, errEmptyFilter
 	}
 	return evm.FilterQuery{
-		BlockHash: ProtoToHash(f.GetBlockHash()),
-		FromBlock: valuespb.NewIntFromBigInt(f.GetFromBlock()),
-		ToBlock:   valuespb.NewIntFromBigInt(f.GetToBlock()),
-		Addresses: protoToAddreses(f.Addresses),
-		Topics:    protoToTopics(f.Topics),
+		BlockHash: ConvertHashFromProto(protoFilter.GetBlockHash()),
+		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
+		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
+		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),
+		Topics:    convertTopicsFromProto(protoFilter.GetTopics()),
 	}, nil
 }
 
-func evmFilterToProto(f evm.FilterQuery) *evmcap.FilterQuery {
-	return &evmcap.FilterQuery{
-		BlockHash: toProtoHash(f.BlockHash),
-		FromBlock: valuespb.NewBigIntFromInt(f.FromBlock),
-		ToBlock:   valuespb.NewBigIntFromInt(f.ToBlock),
-		Addresses: toProtoAddresses(f.Addresses),
-		Topics:    toProtoTopics(f.Topics),
-	}
-}
-
-func protoToLogs(logs []*evmcap.Log) []*evm.Log {
-	ret := make([]*evm.Log, 0, len(logs))
-	for _, l := range logs {
-		ret = append(ret, protoToLog(l))
-	}
-
-	return ret
-}
-
-func LogsToProto(logs []*evm.Log) []*evmcap.Log {
+func ConvertLogsToProto(logs []*evm.Log) []*evmcap.Log {
 	ret := make([]*evmcap.Log, 0, len(logs))
 	for _, l := range logs {
-		ret = append(ret, logToProto(l))
+		ret = append(ret, ConvertLogToProto(l))
 	}
-
 	return ret
 }
 
-func logToProto(l *evm.Log) *evmcap.Log {
+func ConvertLogsFromProto(protoLogs []*evmcap.Log) []*evm.Log {
+	logs := make([]*evm.Log, 0, len(protoLogs))
+	for _, protoLog := range protoLogs {
+		logs = append(logs, convertLogFromProto(protoLog))
+	}
+	return logs
+}
+
+func ConvertLogToProto(log *evm.Log) *evmcap.Log {
 	return &evmcap.Log{
-		Index:       l.LogIndex,
-		BlockHash:   toProtoHash(l.BlockHash),
-		BlockNumber: valuespb.NewBigIntFromInt(l.BlockNumber),
-		Topics:      toProtoHashes(l.Topics),
-		EventSig:    toProtoHash(l.EventSig),
-		Address:     toProtoAddress(l.Address),
-		TxHash:      toProtoHash(l.TxHash),
-		Data:        toProtoABI(l.Data),
-		Removed:     l.Removed,
+		Index:       log.LogIndex,
+		BlockHash:   convertHashToProto(log.BlockHash),
+		BlockNumber: valuespb.NewBigIntFromInt(log.BlockNumber),
+		Topics:      convertHashesToProto(log.Topics),
+		EventSig:    convertHashToProto(log.EventSig),
+		Address:     convertAddressToProto(log.Address),
+		TxHash:      convertHashToProto(log.TxHash),
+		Data:        ConvertABIPayloadToProto(log.Data),
+		Removed:     log.Removed,
 	}
 }
 
-func protoToLog(l *evmcap.Log) *evm.Log {
+func convertLogFromProto(l *evmcap.Log) *evm.Log {
+	var data []byte
+	if l.GetData() != nil {
+		data = l.GetData().GetAbi()
+	}
+
 	return &evm.Log{
 		LogIndex:    l.GetIndex(),
-		BlockHash:   ProtoToHash(l.GetBlockHash()),
+		BlockHash:   ConvertHashFromProto(l.GetBlockHash()),
 		BlockNumber: valuespb.NewIntFromBigInt(l.GetBlockNumber()),
-		Topics:      protoToHashes(l.Topics),
-		EventSig:    ProtoToHash(l.GetEventSig()),
-		Address:     ProtoToAddress(l.GetAddress()),
-		TxHash:      ProtoToHash(l.GetTxHash()),
-		Data:        l.Data.GetAbi(),
+		Topics:      convertHashesFromProto(l.GetTopics()),
+		EventSig:    ConvertHashFromProto(l.GetEventSig()),
+		Address:     ConvertAddressFromProto(l.GetAddress()),
+		TxHash:      ConvertHashFromProto(l.GetTxHash()),
+		Data:        data,
 		Removed:     l.GetRemoved(),
 	}
 }
 
-func toProtoHash(h evm.Hash) *evmcap.Hash {
-	return &evmcap.Hash{Hash: h[:]}
-}
-
-func toProtoTopics(ss [][]evm.Hash) []*evmcap.Topics {
-	ret := make([]*evmcap.Topics, 0, len(ss))
-	for _, s := range ss {
-		ret = append(ret, &evmcap.Topics{Topic: toProtoHashes(s)})
+func convertHashesToProto(hash []evm.Hash) []*evmcap.Hash {
+	protoHash := make([]*evmcap.Hash, 0, len(hash))
+	for _, s := range hash {
+		protoHash = append(protoHash, convertHashToProto(s))
 	}
-
-	return ret
+	return protoHash
 }
 
-func toProtoHashes(ss []evm.Hash) []*evmcap.Hash {
-	ret := make([]*evmcap.Hash, 0, len(ss))
-	for _, s := range ss {
-		ret = append(ret, toProtoHash(s))
+func convertHashesFromProto(protoHashes []*evmcap.Hash) []evm.Hash {
+	hashes := make([]evm.Hash, 0, len(protoHashes))
+	for _, h := range protoHashes {
+		hashes = append(hashes, ConvertHashFromProto(h))
 	}
-	return ret
+	return hashes
 }
 
-func protoToTopics(topics []*evmcap.Topics) [][]evm.Hash {
-	ret := make([][]evm.Hash, 0, len(topics))
-	for _, topic := range topics {
-		ret = append(ret, protoToHashes(topic.Topic))
-	}
-
-	return ret
+func convertHashToProto(hash evm.Hash) *evmcap.Hash {
+	return &evmcap.Hash{Hash: hash[:]}
 }
 
-func protoToHashes(hs []*evmcap.Hash) []evm.Hash {
-	ret := make([]evm.Hash, 0, len(hs))
-	for _, h := range hs {
-		ret = append(ret, ProtoToHash(h))
-	}
-
-	return ret
-}
-
-func toProtoAddress(a evm.Address) *evmcap.Address {
-	return &evmcap.Address{Address: a[:]}
-}
-
-func toProtoAddresses(ss []evm.Address) []*evmcap.Address {
-	ret := make([]*evmcap.Address, 0, len(ss))
-	for _, s := range ss {
-		ret = append(ret, toProtoAddress(s))
-	}
-	return ret
-}
-
-func protoToAddreses(s []*evmcap.Address) []evm.Address {
-	ret := make([]evm.Address, 0, len(s))
-	for _, a := range s {
-		ret = append(ret, ProtoToAddress(a))
-	}
-
-	return ret
-}
-
-func toProtoABI(data []byte) *evmcap.ABIPayload {
-	return &evmcap.ABIPayload{Abi: data}
-}
-
-func ProtoToHash(hp *evmcap.Hash) evm.Hash {
+func ConvertHashFromProto(protoHash *evmcap.Hash) evm.Hash {
 	var h evm.Hash
-	copy(h[:], hp.GetHash())
+	if protoHash != nil {
+		copy(h[:], protoHash.GetHash())
+	}
 	return h
 }
 
-func ProtoToAddress(ap *evmcap.Address) evm.Address {
-	var a evm.Address
-	copy(a[:], ap.GetAddress())
-	return a
+func convertTopicsToProto(topics [][]evm.Hash) []*evmcap.Topics {
+	protoTopics := make([]*evmcap.Topics, 0, len(topics))
+	for _, topic := range topics {
+		protoTopics = append(protoTopics, &evmcap.Topics{Topic: convertHashesToProto(topic)})
+	}
+	return protoTopics
 }
-func hashedValueComparersToProto(cs []evmprimitives.HashedValueComparator) []*evmcap.HashValueComparator {
-	ret := make([]*evmcap.HashValueComparator, 0, len(cs))
-	for _, c := range cs {
-		ret = append(ret, &evmcap.HashValueComparator{
-			Operator: pb.ComparisonOperator(c.Operator),
-			Values:   toProtoHashes(c.Values),
-		})
+
+func convertTopicsFromProto(protoTopics []*evmcap.Topics) [][]evm.Hash {
+	topics := make([][]evm.Hash, 0, len(protoTopics))
+	for _, topic := range protoTopics {
+		topics = append(topics, convertHashesFromProto(topic.GetTopic()))
+	}
+	return topics
+}
+
+func convertAddressesToProto(addresses []evm.Address) []*evmcap.Address {
+	protoAddresses := make([]*evmcap.Address, 0, len(addresses))
+	for _, s := range addresses {
+		protoAddresses = append(protoAddresses, convertAddressToProto(s))
+	}
+	return protoAddresses
+}
+
+func ConvertAddressesFromProto(protoAddresses []*evmcap.Address) []evm.Address {
+	addresses := make([]evm.Address, 0, len(protoAddresses))
+	for _, protoAddress := range protoAddresses {
+		addresses = append(addresses, ConvertAddressFromProto(protoAddress))
 	}
 
-	return ret
+	return addresses
 }
 
-func protoToHashedValueComparers(hvc []*evmcap.HashValueComparator) []evmprimitives.HashedValueComparator {
-	ret := make([]evmprimitives.HashedValueComparator, 0, len(hvc))
-	for _, c := range hvc {
-		ret = append(ret, evmprimitives.HashedValueComparator{
-			Values:   protoToHashes(c.Values),
-			Operator: primitives.ComparisonOperator(c.Operator),
-		})
+func convertAddressToProto(address evm.Address) *evmcap.Address {
+	return &evmcap.Address{Address: address[:]}
+}
+
+func ConvertAddressFromProto(protoAddress *evmcap.Address) evm.Address {
+	if protoAddress != nil {
+		return evm.Address(protoAddress.GetAddress()[:])
 	}
-
-	return ret
+	return evm.Address{}
 }
 
-func expressionsToProto(expressions []query.Expression) ([]*evmcap.Expression, error) {
-	q := make([]*evmcap.Expression, 0, len(expressions))
-	for idx, expr := range expressions {
-		exprpb, err := expressionToProto(expr)
+func ConvertABIPayloadToProto(payload []byte) *evmcap.ABIPayload {
+	return &evmcap.ABIPayload{Abi: payload}
+}
+
+func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives.HashedValueComparator) []*evmcap.HashValueComparator {
+	protoHashedValueComparators := make([]*evmcap.HashValueComparator, 0, len(hashedValueComparators))
+	for _, hvc := range hashedValueComparators {
+		protoHashedValueComparators = append(protoHashedValueComparators,
+			&evmcap.HashValueComparator{
+				Operator: pb.ComparisonOperator(hvc.Operator),
+				Values:   convertHashesToProto(hvc.Values),
+			})
+	}
+	return protoHashedValueComparators
+}
+
+func ConvertHashedValueComparatorsFromProto(protoHashedValueComparators []*evmcap.HashValueComparator) []evmprimitives.HashedValueComparator {
+	hashedValueComparators := make([]evmprimitives.HashedValueComparator, 0, len(protoHashedValueComparators))
+	for _, pbHvc := range protoHashedValueComparators {
+		hashedValueComparators = append(hashedValueComparators,
+			evmprimitives.HashedValueComparator{
+				Values:   convertHashesFromProto(pbHvc.GetValues()),
+				Operator: primitives.ComparisonOperator(pbHvc.GetOperator()),
+			})
+	}
+	return hashedValueComparators
+}
+
+func convertExpressionsToProto(expressions []query.Expression) ([]*evmcap.Expression, error) {
+	protoExpressions := make([]*evmcap.Expression, 0, len(expressions))
+	for _, expr := range expressions {
+		protoExpression, err := convertExpressionToProto(expr)
 		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+			return nil, net.WrapRPCErr(err)
 		}
-		q = append(q, exprpb)
+		protoExpressions = append(protoExpressions, protoExpression)
 	}
-
-	return q, nil
+	return protoExpressions, nil
 }
 
-func expressionToProto(expression query.Expression) (*evmcap.Expression, error) {
+func ConvertExpressionsFromProto(protoExpressions []*evmcap.Expression) ([]query.Expression, error) {
+	expressions := make([]query.Expression, 0, len(protoExpressions))
+	for _, protoExpression := range protoExpressions {
+		expr, err := convertExpressionFromProto(protoExpression)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert expressions, err: %w", err)
+		}
+
+		expressions = append(expressions, expr)
+	}
+	return expressions, nil
+}
+
+func convertExpressionToProto(expression query.Expression) (*evmcap.Expression, error) {
 	pbExpression := &evmcap.Expression{}
 	if expression.IsPrimitive() {
 		p := &pb.Primitive{}
 		ep := &evmcap.Primitive{}
 		switch primitive := expression.Primitive.(type) {
 		case *primitives.Comparator:
-			return nil, errors.New("comparator primitive is not supported for EVMService")
+			return nil, errors.New("comparator primitive is not supported for evm service")
 		case *primitives.Block:
 			p.Primitive = &pb.Primitive_Block{
 				Block: &pb.Block{
@@ -702,7 +715,7 @@ func expressionToProto(expression query.Expression) (*evmcap.Expression, error) 
 		case *primitives.Confidence:
 			pbConfidence, err := contractreader.ConfidenceToProto(primitive.ConfidenceLevel)
 			if err != nil {
-				return nil, err
+				return nil, net.WrapRPCErr(err)
 			}
 
 			p.Primitive = &pb.Primitive_Confidence{
@@ -735,7 +748,7 @@ func expressionToProto(expression query.Expression) (*evmcap.Expression, error) 
 			ep.Primitive = &evmcap.Primitive_EventByTopic{
 				EventByTopic: &evmcap.EventByTopic{
 					Topic:                primitive.Topic,
-					HashedValueComparers: hashedValueComparersToProto(primitive.HashedValueComprarers),
+					HashedValueComparers: ConvertHashedValueComparatorsToProto(primitive.HashedValueComparers),
 				},
 			}
 
@@ -744,7 +757,7 @@ func expressionToProto(expression query.Expression) (*evmcap.Expression, error) 
 			ep.Primitive = &evmcap.Primitive_EventByWord{
 				EventByWord: &evmcap.EventByWord{
 					WordIndex:            uint32(primitive.WordIndex),
-					HashedValueComparers: hashedValueComparersToProto(primitive.HashedValueComparers),
+					HashedValueComparers: ConvertHashedValueComparatorsToProto(primitive.HashedValueComparers),
 				},
 			}
 
@@ -758,7 +771,7 @@ func expressionToProto(expression query.Expression) (*evmcap.Expression, error) 
 
 			putEVMPrimitive(pbExpression, ep)
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+			return nil, status.Errorf(codes.InvalidArgument, "unknown primitive type: %T", primitive)
 		}
 		return pbExpression, nil
 	}
@@ -766,9 +779,9 @@ func expressionToProto(expression query.Expression) (*evmcap.Expression, error) 
 	pbExpression.Evaluator = &evmcap.Expression_BooleanExpression{BooleanExpression: &evmcap.BooleanExpression{}}
 	var expressions []*evmcap.Expression
 	for _, expr := range expression.BoolExpression.Expressions {
-		pbExpr, err := expressionToProto(expr)
+		pbExpr, err := convertExpressionToProto(expr)
 		if err != nil {
-			return nil, err
+			return nil, net.WrapRPCErr(err)
 		}
 		expressions = append(expressions, pbExpr)
 	}
@@ -781,51 +794,37 @@ func expressionToProto(expression query.Expression) (*evmcap.Expression, error) 
 	return pbExpression, nil
 }
 
-func ProtoToExpressions(expressions []*evmcap.Expression) ([]query.Expression, error) {
-	exprs := make([]query.Expression, 0, len(expressions))
-	for idx, exprpb := range expressions {
-		expr, err := protoToExpression(exprpb)
-		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
-		}
-
-		exprs = append(exprs, expr)
-	}
-
-	return exprs, nil
-}
-
-func protoToExpression(pbExpression *evmcap.Expression) (query.Expression, error) {
-	switch pbEvaluatedExpr := pbExpression.Evaluator.(type) {
+func convertExpressionFromProto(protoExpression *evmcap.Expression) (query.Expression, error) {
+	switch protoEvaluatedExpr := protoExpression.GetEvaluator().(type) {
 	case *evmcap.Expression_BooleanExpression:
 		var expressions []query.Expression
-		for _, expression := range pbEvaluatedExpr.BooleanExpression.Expression {
-			convertedExpression, err := protoToExpression(expression)
+		for _, expression := range protoEvaluatedExpr.BooleanExpression.GetExpression() {
+			convertedExpression, err := convertExpressionFromProto(expression)
 			if err != nil {
 				return query.Expression{}, err
 			}
 			expressions = append(expressions, convertedExpression)
 		}
-		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == pb.BooleanOperator_AND {
+		if protoEvaluatedExpr.BooleanExpression.GetBooleanOperator() == pb.BooleanOperator_AND {
 			return query.And(expressions...), nil
 		}
 		return query.Or(expressions...), nil
 	case *evmcap.Expression_Primitive:
-		switch primitive := pbEvaluatedExpr.Primitive.GetPrimitive().(type) {
+		switch primitive := protoEvaluatedExpr.Primitive.GetPrimitive().(type) {
 		case *evmcap.Primitive_GeneralPrimitive:
-			return protoToGeneralExpr(primitive.GeneralPrimitive)
+			return convertGeneralExpressionToProto(primitive.GeneralPrimitive)
 		default:
-			return protoToEVMExpr(pbEvaluatedExpr.Primitive)
+			return convertEVMExpressionToProto(protoEvaluatedExpr.Primitive)
 		}
 	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
+		return query.Expression{}, status.Errorf(codes.InvalidArgument, "unknown expression type: %T", protoEvaluatedExpr)
 	}
 }
 
-func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error) {
+func convertGeneralExpressionToProto(pbEvaluatedExpr *pb.Primitive) (query.Expression, error) {
 	switch primitive := pbEvaluatedExpr.GetPrimitive().(type) {
 	case *pb.Primitive_Comparator:
-		return query.Expression{}, errors.New("comparator primitive is not supported for EVMService")
+		return query.Expression{}, errors.New("comparator primitive is not supported")
 	case *pb.Primitive_Confidence:
 		confidence, err := evmcap.ConfidenceFromProto(primitive.Confidence)
 		return query.Confidence(confidence), err
@@ -840,24 +839,22 @@ func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error)
 	}
 }
 
-func protoToEVMExpr(pbEvaluatedExpr *evmcap.Primitive) (query.Expression, error) {
+func convertEVMExpressionToProto(pbEvaluatedExpr *evmcap.Primitive) (query.Expression, error) {
 	switch primitive := pbEvaluatedExpr.GetPrimitive().(type) {
 	case *evmcap.Primitive_ContractAddress:
-		address := ProtoToAddress(primitive.ContractAddress.GetAddress())
+		address := ConvertAddressFromProto(primitive.ContractAddress.GetAddress())
 		return evmprimitives.NewAddressFilter(address), nil
 	case *evmcap.Primitive_EventSig:
-		hash := ProtoToHash(primitive.EventSig.GetEventSig())
+		hash := ConvertHashFromProto(primitive.EventSig.GetEventSig())
 		return evmprimitives.NewEventSigFilter(hash), nil
 	case *evmcap.Primitive_EventByTopic:
 		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(),
-				protoToHashedValueComparers(primitive.EventByTopic.GetHashedValueComparers())),
-			nil
+			ConvertHashedValueComparatorsFromProto(primitive.EventByTopic.GetHashedValueComparers())), nil
 	case *evmcap.Primitive_EventByWord:
 		return evmprimitives.NewEventByWordFilter(int(primitive.EventByWord.GetWordIndex()),
-				protoToHashedValueComparers(primitive.EventByWord.GetHashedValueComparers())),
-			nil
+			ConvertHashedValueComparatorsFromProto(primitive.EventByWord.GetHashedValueComparers())), nil
 	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+		return query.Expression{}, status.Errorf(codes.InvalidArgument, "unknown primitive type: %T", primitive)
 	}
 }
 

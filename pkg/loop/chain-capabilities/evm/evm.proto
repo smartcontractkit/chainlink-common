@@ -168,7 +168,7 @@ message EventByTopic {
 }
 
 // evm-style primitives
-// can be used in combination with general primnitives for querying tracked logs
+// can be used in combination with general primitives for querying tracked logs
 message Primitive {
   oneof primitive {
     loop.Primitive general_primitive = 1;
@@ -179,7 +179,7 @@ message Primitive {
   }
 }
 
-// ----- Request/Reply Wrappexrs -----
+// ----- Request/Reply Wrappers -----
 message LatestAndFinalizedHeadReply {
   Head latest = 1;
   Head finalized = 2;

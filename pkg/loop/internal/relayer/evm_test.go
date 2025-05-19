@@ -7,16 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
+
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 var (
@@ -74,7 +75,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 
 	defer conn.Close()
 	client := &EVMClient{
-		cl: evmpb.NewEVMClient(conn),
+		grpcClient: evmpb.NewEVMClient(conn),
 	}
 	t.Run("BalanceAt", func(t *testing.T) {
 		evmService.staticBalanceAt = func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {

@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -32,18 +31,21 @@ type CronCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewCronServer(capability CronCapability) loop.StandardCapabilities {
-	return &cronServer{
-		cronCapability: cronCapability{CronCapability: capability},
+func NewCronServer(capability CronCapability) *CronServer {
+	stopCh := make(chan struct{})
+	return &CronServer{
+		cronCapability: cronCapability{CronCapability: capability, stopCh: stopCh},
+		stopCh:         stopCh,
 	}
 }
 
-type cronServer struct {
+type CronServer struct {
 	cronCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
-func (cs *cronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -59,17 +61,24 @@ func (cs *cronServer) Initialise(ctx context.Context, config string, telemetrySe
 	return nil
 }
 
-func (cs *cronServer) Close() error {
+func (cs *CronServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
+			return err
+		}
+	}
+
+	if cs.stopCh != nil {
+		close(cs.stopCh)
 	}
 
 	return cs.cronCapability.Close()
 }
 
-func (cs *cronServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *CronServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.cronCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -79,6 +88,7 @@ func (cs *cronServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo,
 
 type cronCapability struct {
 	CronCapability
+	stopCh chan struct{}
 }
 
 func (c *cronCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -92,10 +102,10 @@ func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabiliti
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
 	case "":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

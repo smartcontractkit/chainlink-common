@@ -12,7 +12,6 @@ import (
 	mismatchedpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/mismatched"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -31,18 +30,21 @@ type MismatchedCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewMismatchedServer(capability MismatchedCapability) loop.StandardCapabilities {
-	return &mismatchedServer{
-		mismatchedCapability: mismatchedCapability{MismatchedCapability: capability},
+func NewMismatchedServer(capability MismatchedCapability) *MismatchedServer {
+	stopCh := make(chan struct{})
+	return &MismatchedServer{
+		mismatchedCapability: mismatchedCapability{MismatchedCapability: capability, stopCh: stopCh},
+		stopCh:               stopCh,
 	}
 }
 
-type mismatchedServer struct {
+type MismatchedServer struct {
 	mismatchedCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
-func (cs *mismatchedServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *MismatchedServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.MismatchedCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -58,17 +60,24 @@ func (cs *mismatchedServer) Initialise(ctx context.Context, config string, telem
 	return nil
 }
 
-func (cs *mismatchedServer) Close() error {
+func (cs *MismatchedServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "example@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "example@1.0.0"); err != nil {
+			return err
+		}
+	}
+
+	if cs.stopCh != nil {
+		close(cs.stopCh)
 	}
 
 	return cs.mismatchedCapability.Close()
 }
 
-func (cs *mismatchedServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *MismatchedServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.mismatchedCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -78,6 +87,7 @@ func (cs *mismatchedServer) Infos(ctx context.Context) ([]capabilities.Capabilit
 
 type mismatchedCapability struct {
 	MismatchedCapability
+	stopCh chan struct{}
 }
 
 func (c *mismatchedCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {

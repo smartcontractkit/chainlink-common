@@ -9,7 +9,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
+	pb3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb"
+	pb4 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -19,7 +20,7 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicActionCapability interface {
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *nodeaction.NodeInputs) (*nodeaction.NodeOutputs, error)
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs) (*pb4.Outputs, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -65,7 +66,7 @@ func (cs *BasicActionServer) Close() error {
 	defer cancel()
 
 	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-node-action@1.0.0"); err != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "import-clash@1.0.0"); err != nil {
 			return err
 		}
 	}
@@ -92,7 +93,7 @@ type basicActionCapability struct {
 
 func (c *basicActionCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("basic-test-node-action@1.0.0", capabilities.CapabilityTypeCombined, c.BasicActionCapability.Description())
+	return capabilities.NewCapabilityInfo("import-clash@1.0.0", capabilities.CapabilityTypeCombined, c.BasicActionCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicActionCapability)(nil)
@@ -117,9 +118,16 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "PerformAction":
-		input := &nodeaction.NodeInputs{}
+		input := &pb3.Inputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *nodeaction.NodeInputs, _ *emptypb.Empty) (*nodeaction.NodeOutputs, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs, _ *emptypb.Empty) (*pb4.Outputs, error) {
+			return c.BasicActionCapability.PerformAction(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "":
+		input := &pb3.Inputs{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs, _ *emptypb.Empty) (*pb4.Outputs, error) {
 			return c.BasicActionCapability.PerformAction(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

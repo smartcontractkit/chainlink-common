@@ -43,11 +43,11 @@ type {{.GoName}}Capability struct {
     {{- range .Methods}}
       {{- if isTrigger . }}
     {{ $hasTriggers = true }}
-    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
+    {{.GoName}} func(ctx context.Context, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error)
         {{- else }}
     {{- $hasActions = true }}
     // TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-    {{.GoName}} func(ctx context.Context, input *{{name .Input.GoIdent ""}}) (*{{name .Output.GoIdent ""}}, error)
+    {{.GoName}} func(ctx context.Context, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error)
         {{- end }}
     {{- end }}
 }
@@ -59,7 +59,7 @@ func (cap *{{.GoName}}Capability) Invoke(ctx context.Context, request *sdkpb.Cap
         {{- range .Methods }}
             {{- if not (isTrigger .) }}
     case "{{.GoName}}":
-        input := &{{name .Input.GoIdent ""}}{}
+        input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
         if err := request.Payload.UnmarshalTo(input); err != nil {
             capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
             break
@@ -98,7 +98,7 @@ func (cap *{{.GoName}}Capability) InvokeTrigger(ctx context.Context, request *sd
             {{- range .Methods }}
                 {{- if isTrigger . }}
         case "{{.GoName}}":
-            input := &{{name .Input.GoIdent ""}}{}
+            input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
             if err := request.Payload.UnmarshalTo(input); err != nil {
                 return nil, err
             }

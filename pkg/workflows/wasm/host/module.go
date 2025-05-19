@@ -620,11 +620,10 @@ func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
 // retrieval on await.
 func (m *module) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) ([sdk.IdLen]byte, error) {
 	callId := uuid.NewString()
+	ch := make(chan *sdkpb.CapabilityResponse, 1)
+	m.capabilityCallStore.add(callId, ch)
 
-	go func(id string) {
-		ch := make(chan *sdkpb.CapabilityResponse, 1)
-		m.capabilityCallStore.add(id, ch)
-
+	go func() {
 		m.handlerLock.RLock()
 		resp, err := m.handler.CallCapability(ctx, req)
 		m.handlerLock.RUnlock()
@@ -641,7 +640,7 @@ func (m *module) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest)
 		case <-ctx.Done():
 		case ch <- resp:
 		}
-	}(callId)
+	}()
 
 	var idBuffer [sdk.IdLen]byte
 	copy(idBuffer[:], []byte(callId))

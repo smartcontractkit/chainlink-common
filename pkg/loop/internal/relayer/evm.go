@@ -25,20 +25,20 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
-var _ types.EVMService = (*EVMClient)(nil)
+type EVMClient struct {
+	grpcClient evmcap.EVMClient
+}
 
-func NewEVMCClient(cl evmcap.EVMClient) *EVMClient {
+func NewEVMCClient(grpcClient evmcap.EVMClient) *EVMClient {
 	return &EVMClient{
-		cl: cl,
+		grpcClient: grpcClient,
 	}
 }
 
-type EVMClient struct {
-	cl evmcap.EVMClient
-}
+var _ types.EVMService = (*EVMClient)(nil)
 
 func (e *EVMClient) GetTransactionFee(ctx context.Context, transactionID string) (*evm.TransactionFee, error) {
-	reply, err := e.cl.GetTransactionFee(ctx, &evmcap.GetTransactionFeeRequest{TransactionId: transactionID})
+	reply, err := e.grpcClient.GetTransactionFee(ctx, &evmcap.GetTransactionFeeRequest{TransactionId: transactionID})
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (e *EVMClient) CallContract(ctx context.Context, msg *evm.CallMsg, blockNum
 		return nil, err
 	}
 
-	reply, err := e.cl.CallContract(ctx, &evmcap.CallContractRequest{
+	reply, err := e.grpcClient.CallContract(ctx, &evmcap.CallContractRequest{
 		Call:        call,
 		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
@@ -67,7 +67,7 @@ func (e *EVMClient) CallContract(ctx context.Context, msg *evm.CallMsg, blockNum
 }
 
 func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
-	reply, err := e.cl.FilterLogs(ctx, &evmcap.FilterLogsRequest{
+	reply, err := e.grpcClient.FilterLogs(ctx, &evmcap.FilterLogsRequest{
 		FilterQuery: evmFilterToProto(filterQuery),
 	})
 
@@ -79,7 +79,7 @@ func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery)
 }
 
 func (e *EVMClient) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
-	reply, err := e.cl.BalanceAt(ctx, &evmcap.BalanceAtRequest{
+	reply, err := e.grpcClient.BalanceAt(ctx, &evmcap.BalanceAtRequest{
 		Account:     &evmcap.Address{Address: account[:]},
 		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
@@ -97,7 +97,7 @@ func (e *EVMClient) EstimateGas(ctx context.Context, msg *evm.CallMsg) (uint64, 
 		return 0, err
 	}
 
-	reply, err := e.cl.EstimateGas(ctx, &evmcap.EstimateGasRequest{
+	reply, err := e.grpcClient.EstimateGas(ctx, &evmcap.EstimateGasRequest{
 		Msg: call,
 	})
 	if err != nil {
@@ -108,7 +108,7 @@ func (e *EVMClient) EstimateGas(ctx context.Context, msg *evm.CallMsg) (uint64, 
 }
 
 func (e *EVMClient) TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
-	reply, err := e.cl.TransactionByHash(ctx, &evmcap.TransactionByHashRequest{
+	reply, err := e.grpcClient.TransactionByHash(ctx, &evmcap.TransactionByHashRequest{
 		Hash: &evmcap.Hash{Hash: hash[:]},
 	})
 	if err != nil {
@@ -119,7 +119,7 @@ func (e *EVMClient) TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.
 }
 
 func (e *EVMClient) TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error) {
-	reply, err := e.cl.TransactionReceipt(ctx, &evmcap.TransactionReceiptRequest{Hash: &evmcap.Hash{Hash: txHash[:]}})
+	reply, err := e.grpcClient.TransactionReceipt(ctx, &evmcap.TransactionReceiptRequest{Hash: &evmcap.Hash{Hash: txHash[:]}})
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (e *EVMClient) TransactionReceipt(ctx context.Context, txHash evm.Hash) (*e
 }
 
 func (e *EVMClient) LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error) {
-	reply, err := e.cl.LatestAndFinalizedHead(ctx, &emptypb.Empty{})
+	reply, err := e.grpcClient.LatestAndFinalizedHead(ctx, &emptypb.Empty{})
 	if err != nil {
 		return evm.Head{}, evm.Head{}, err
 	}
@@ -153,7 +153,7 @@ func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 		return nil, err
 	}
 
-	reply, err := e.cl.QueryTrackedLogs(ctx, &evmcap.QueryTrackedLogsRequest{
+	reply, err := e.grpcClient.QueryTrackedLogs(ctx, &evmcap.QueryTrackedLogsRequest{
 		Expression:      q,
 		LimitAndSort:    sort,
 		ConfidenceLevel: conf,
@@ -167,25 +167,23 @@ func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 }
 
 func (e *EVMClient) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
-	_, err := e.cl.RegisterLogTracking(ctx, &evmcap.RegisterLogTrackingRequest{Filter: lPfilterToProto(filter)})
+	_, err := e.grpcClient.RegisterLogTracking(ctx, &evmcap.RegisterLogTrackingRequest{Filter: lPfilterToProto(filter)})
 	return err
 }
 
 func (e *EVMClient) UnregisterLogTracking(ctx context.Context, filterName string) error {
-	_, err := e.cl.UnregisterLogTracking(ctx, &evmcap.UnregisterLogTrackingRequest{FilterName: filterName})
+	_, err := e.grpcClient.UnregisterLogTracking(ctx, &evmcap.UnregisterLogTrackingRequest{FilterName: filterName})
 	return err
 }
 
 func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	reply, err := e.cl.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
+	reply, err := e.grpcClient.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
 		return types.Unknown, err
 	}
 
 	return types.TransactionStatus(reply.TransactionStatus), nil
 }
-
-var _ evmcap.EVMServer = (*EvmServer)(nil)
 
 type EvmServer struct {
 	evmcap.UnimplementedEVMServer
@@ -194,6 +192,8 @@ type EvmServer struct {
 
 	impl types.EVMService
 }
+
+var _ evmcap.EVMServer = (*EvmServer)(nil)
 
 func NewEVMServer(impl types.EVMService, b *net.BrokerExt) *EvmServer {
 	return &EvmServer{impl: impl, BrokerExt: b.WithName("EVMServer")}

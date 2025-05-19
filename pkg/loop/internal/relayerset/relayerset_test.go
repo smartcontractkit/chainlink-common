@@ -194,7 +194,7 @@ func Test_RelayerSet_ContractReader(t *testing.T) {
 	require.ErrorContains(t, err, "contract reader not found")
 }
 
-func Test_RelayerSet_EVM(t *testing.T) {
+func Test_RelayerSet_EVMService(t *testing.T) {
 	ctx := t.Context()
 	stopCh := make(chan struct{})
 	log := logger.Test(t)
@@ -204,7 +204,7 @@ func Test_RelayerSet_EVM(t *testing.T) {
 		{Network: "N1", ChainID: "C1"}: relayer1,
 	}
 
-	pluginName := "relayerset-test"
+	pluginName := "evm-relayerset-test"
 	client, server := plugin.TestPluginGRPCConn(
 		t,
 		true,
@@ -554,6 +554,6 @@ func (r *testRelaySetPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	r.brokerExt.Broker = broker
 
 	rs, _ := NewRelayerSetServer(r.log, r.impl, r.brokerExt)
-	relayerset.RegisterRelayerSetServer(server, rs)
+	relayerset.RegisterRelayerSetServerWithDependants(server, rs)
 	return nil
 }

@@ -61,10 +61,6 @@ message NewPluginProviderResponse {
   uint32 plugin_provider_id = 1;
 }
 
-message EVMRequest {
-  RelayerId relayerId = 1;
-}
-
 message NewContractReaderRequest {
   RelayerId relayerId = 1;
   bytes contractReaderConfig = 2;
@@ -104,7 +100,6 @@ message RelayerNameResponse {
 service RelayerSet {
   rpc Get(GetRelayerRequest) returns (GetRelayerResponse) {}
   rpc List(ListAllRelayersRequest) returns (ListAllRelayersResponse) {}
-  rpc EVM(EVMRequest) returns (google.protobuf.Empty) {}
   rpc NewPluginProvider(NewPluginProviderRequest) returns (NewPluginProviderResponse) {}
   rpc NewContractReader(NewContractReaderRequest) returns (NewContractReaderResponse) {}
   rpc NewContractWriter(NewContractWriterRequest) returns (NewContractWriterResponse) {}
@@ -125,19 +120,21 @@ service RelayerSet {
   rpc ContractReaderUnbind(ContractReaderUnbindRequest) returns (google.protobuf.Empty) {}
   rpc ContractReaderStart(ContractReaderStartRequest) returns (google.protobuf.Empty) {}
   rpc ContractReaderClose(ContractReaderCloseRequest) returns (google.protobuf.Empty) {}
+}
 
-  rpc EVMGetTransactionFee(EVMGetTransactionFeeRequest) returns (loop.chain_capabilities.evm.GetTransactionFeeReply) {}
-  rpc EVMCallContract(EVMCallContractRequest) returns (loop.chain_capabilities.evm.CallContractReply);
-  rpc EVMFilterLogs(EVMFilterLogsRequest) returns (loop.chain_capabilities.evm.FilterLogsReply);
-  rpc EVMBalanceAt(EVMBalanceAtRequest) returns (loop.chain_capabilities.evm.BalanceAtReply);
-  rpc EVMEstimateGas(EVMEstimateGasRequest) returns (loop.chain_capabilities.evm.EstimateGasReply);
-  rpc EVMTransactionByHash(EVMTransactionByHashRequest) returns (loop.chain_capabilities.evm.TransactionByHashReply);
-  rpc EVMTransactionReceipt(EVMReceiptRequest) returns (loop.chain_capabilities.evm.TransactionReceiptReply);
-  rpc EVMLatestAndFinalizedHead(LatestHeadRequest) returns (loop.chain_capabilities.evm.LatestAndFinalizedHeadReply);
-  rpc EVMQueryTrackedLogs(EVMQueryTrackedLogsRequest) returns (loop.chain_capabilities.evm.QueryTrackedLogsReply);
-  rpc EVMRegisterLogTracking(EVMRegisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc EVMUnregisterLogTracking(EVMUnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc EVMGetTransactionStatus(EVMGetTransactionStatusRequest) returns (GetTransactionStatusReply);
+service EVMRelayerSet {
+  rpc GetTransactionFee(GetTransactionFeeRequest) returns (loop.chain_capabilities.evm.GetTransactionFeeReply) {}
+  rpc CallContract(CallContractRequest) returns (loop.chain_capabilities.evm.CallContractReply);
+  rpc FilterLogs(FilterLogsRequest) returns (loop.chain_capabilities.evm.FilterLogsReply);
+  rpc BalanceAt(BalanceAtRequest) returns (loop.chain_capabilities.evm.BalanceAtReply);
+  rpc EstimateGas(EstimateGasRequest) returns (loop.chain_capabilities.evm.EstimateGasReply);
+  rpc TransactionByHash(TransactionByHashRequest) returns (loop.chain_capabilities.evm.TransactionByHashReply);
+  rpc TransactionReceipt(ReceiptRequest) returns (loop.chain_capabilities.evm.TransactionReceiptReply);
+  rpc LatestAndFinalizedHead(LatestHeadRequest) returns (loop.chain_capabilities.evm.LatestAndFinalizedHeadReply);
+  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (loop.chain_capabilities.evm.QueryTrackedLogsReply);
+  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
 }
 
 message ContractReaderGetLatestValueRequest {
@@ -178,59 +175,59 @@ message ContractReaderCloseRequest {
   string contractReaderId = 1;
 }
 
-message EVMGetTransactionFeeRequest {
+message GetTransactionFeeRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.GetTransactionFeeRequest request = 2;
 }
 
-message EVMCallContractRequest {
+message CallContractRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.CallContractRequest request = 2;
 }
 
-message EVMFilterLogsRequest {
+message FilterLogsRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.FilterLogsRequest request = 2;
 }
 
-message EVMBalanceAtRequest {
+message BalanceAtRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.BalanceAtRequest request = 2;
 }
 
-message EVMEstimateGasRequest {
+message EstimateGasRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.EstimateGasRequest request = 2;
 }
 
-message EVMTransactionByHashRequest {
+message TransactionByHashRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.TransactionByHashRequest request = 2;
 }
 
-message EVMReceiptRequest {
+message ReceiptRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.TransactionReceiptRequest request = 2;
 }
 
-message EVMQueryTrackedLogsRequest {
+message QueryTrackedLogsRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.QueryTrackedLogsRequest request = 2;
 }
 
-message EVMRegisterLogTrackingRequest {
+message RegisterLogTrackingRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.RegisterLogTrackingRequest request = 2;
 }
 
-message EVMUnregisterLogTrackingRequest {
+message UnregisterLogTrackingRequest {
   RelayerId relayerId = 1;
   loop.chain_capabilities.evm.UnregisterLogTrackingRequest request = 2;
 }
 
-message EVMGetTransactionStatusRequest {
+message GetTransactionStatusRequest {
   RelayerId relayerId = 1;
-  GetTransactionStatusRequest request = 2;
+  loop.GetTransactionStatusRequest request = 2;
 }
 
 

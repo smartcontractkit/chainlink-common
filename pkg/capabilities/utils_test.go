@@ -2,6 +2,7 @@ package capabilities_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,6 +44,22 @@ func TestFromValueOrAny(t *testing.T) {
 		var out pb.TriggerEvent
 		_, err := capabilities.FromValueOrAny(nil, nil, &out)
 		require.Error(t, err)
+		require.ErrorIs(t, err, capabilities.ErrNeitherValueNorAny)
+	})
+
+	t.Run("with nil map", func(t *testing.T) {
+		var out pb.TriggerEvent
+		req := capabilities.TriggerRegistrationRequest{}
+		_, err := capabilities.FromValueOrAny(req.Config, req.Payload, &out)
+		require.Error(t, err)
+		require.ErrorIs(t, err, capabilities.ErrNeitherValueNorAny)
+	})
+
+	t.Run("with nil any other values", func(t *testing.T) {
+		var out pb.TriggerEvent
+		_, err := capabilities.FromValueOrAny(new(values.Int64), nil, &out)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to transform value to proto")
 	})
 
 	t.Run("emptybp works", func(t *testing.T) {
@@ -180,34 +197,219 @@ func TestExecute(t *testing.T) {
 }
 
 func TestRegisterTrigger(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Validate that if context is not canceled and stop remains open that
+	// all sent events are received and transformed.
+	t.Run("OK channel drained before context cancels", func(t *testing.T) {
+		ctx := t.Context()
+		stop := make(chan struct{})
+		t.Cleanup(func() { close(stop) })
 
-	a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
-	require.NoError(t, err)
-	req := capabilities.TriggerRegistrationRequest{
-		Metadata: capabilities.RequestMetadata{WorkflowID: "workflow-id"},
-		Payload:  a,
-	}
+		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
+		require.NoError(t, err)
+		req := capabilities.TriggerRegistrationRequest{
+			Metadata: capabilities.RequestMetadata{WorkflowID: "workflow-id"},
+			Payload:  a,
+		}
 
-	respCh, err := capabilities.RegisterTrigger[*pb.TriggerEvent, *pb.TriggerEvent](
-		ctx,
-		"type",
-		req,
-		&pb.TriggerEvent{},
-		func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
-			ch := make(chan capabilities.TriggerAndId[*pb.TriggerEvent], 1)
-			ch <- capabilities.TriggerAndId[*pb.TriggerEvent]{
-				Trigger: &pb.TriggerEvent{Id: "id"},
-				Id:      "trigger-id",
+		wantEvents := 50
+		eventCh := make(chan capabilities.TriggerAndId[*pb.TriggerEvent])
+
+		go func() {
+			defer close(eventCh)
+			for i := range wantEvents {
+				select {
+				case eventCh <- capabilities.TriggerAndId[*pb.TriggerEvent]{
+					Trigger: &pb.TriggerEvent{Id: fmt.Sprintf("id-%d", i+1)},
+					Id:      "trigger-id",
+				}:
+				case <-ctx.Done():
+					return
+				}
 			}
-			assert.Equal(t, "workflow-id", m.WorkflowID)
-			assert.Equal(t, "reg", r.Id)
-			return ch, nil
-		},
-	)
-	require.NoError(t, err)
-	resp := <-respCh
-	assert.Equal(t, "trigger-id", resp.Event.ID)
-	assert.Equal(t, "type", resp.Event.TriggerType)
+		}()
+
+		respCh, err := capabilities.RegisterTrigger(
+			ctx,
+			stop,
+			"type",
+			req,
+			&pb.TriggerEvent{},
+			func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+				assert.Equal(t, "workflow-id", m.WorkflowID)
+				assert.Equal(t, "reg", r.Id)
+				return eventCh, nil
+			},
+		)
+		require.NoError(t, err)
+
+		gotEvents := 0
+		for resp := range respCh {
+			gotEvents++
+
+			assert.Equal(t, "trigger-id", resp.Event.ID)
+			assert.Equal(t, "type", resp.Event.TriggerType)
+
+			var gotTrigger pb.TriggerEvent
+			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
+			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
+		}
+		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+	})
+
+	// Validate that if the original context is canceled, all events are sent
+	// and transformed because the stop channel remains open.
+	t.Run("OK context canceled stop channel open and source channel drained", func(t *testing.T) {
+		// Cancel the context immediately
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		stop := make(chan struct{})
+		t.Cleanup(func() { close(stop) })
+
+		wantEvents := 50
+
+		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
+		require.NoError(t, err)
+		req := capabilities.TriggerRegistrationRequest{
+			Metadata: capabilities.RequestMetadata{WorkflowID: "workflow-id"},
+			Payload:  a,
+		}
+
+		eventCh := make(chan capabilities.TriggerAndId[*pb.TriggerEvent])
+		go func() {
+			defer close(eventCh)
+			for i := range wantEvents {
+				select {
+				case eventCh <- capabilities.TriggerAndId[*pb.TriggerEvent]{
+					Trigger: &pb.TriggerEvent{Id: fmt.Sprintf("id-%d", i+1)},
+					Id:      "trigger-id",
+				}:
+				case <-t.Context().Done():
+					return
+				}
+			}
+		}()
+
+		respCh, err := capabilities.RegisterTrigger(
+			ctx,
+			stop,
+			"type",
+			req,
+			&pb.TriggerEvent{},
+			func(_ context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+				assert.Equal(t, "workflow-id", m.WorkflowID)
+				assert.Equal(t, "reg", r.Id)
+				return eventCh, nil
+			},
+		)
+		require.NoError(t, err)
+
+		gotEvents := 0
+		for resp := range respCh {
+			gotEvents++
+
+			assert.Equal(t, "trigger-id", resp.Event.ID)
+			assert.Equal(t, "type", resp.Event.TriggerType)
+
+			var gotTrigger pb.TriggerEvent
+			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
+			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
+		}
+		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+	})
+
+	// Validate that if the context is canceled while calling the passed function
+	// that the error is returned.
+	t.Run("NOK context cancels when calling fn", func(t *testing.T) {
+		// Cancel the context immediately
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		stop := make(chan struct{})
+		t.Cleanup(func() { close(stop) })
+
+		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
+		require.NoError(t, err)
+		req := capabilities.TriggerRegistrationRequest{
+			Metadata: capabilities.RequestMetadata{WorkflowID: "workflow-id"},
+			Payload:  a,
+		}
+
+		_, err = capabilities.RegisterTrigger(
+			ctx,
+			stop,
+			"type",
+			req,
+			&pb.TriggerEvent{},
+			func(ctx context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+				return nil, ctx.Err()
+			},
+		)
+		require.Error(t, err)
+	})
+
+	// Validate that closing the stop channel prevents all events from being
+	// sent.
+	t.Run("OK stop prevents draining channel", func(t *testing.T) {
+		ctx := t.Context()
+
+		sentEvents := 50
+		wantEvents := 10
+		stop := make(chan struct{})
+
+		a, err := anypb.New(&pb.TriggerEvent{Id: "reg"})
+		require.NoError(t, err)
+		req := capabilities.TriggerRegistrationRequest{
+			Metadata: capabilities.RequestMetadata{WorkflowID: "workflow-id"},
+			Payload:  a,
+		}
+
+		eventCh := make(chan capabilities.TriggerAndId[*pb.TriggerEvent])
+
+		go func() {
+			defer close(eventCh)
+			for i := range sentEvents {
+				select {
+				case eventCh <- capabilities.TriggerAndId[*pb.TriggerEvent]{
+					Trigger: &pb.TriggerEvent{Id: fmt.Sprintf("id-%d", i+1)},
+					Id:      "trigger-id",
+				}:
+				case <-t.Context().Done():
+					return
+				}
+			}
+		}()
+
+		respCh, err := capabilities.RegisterTrigger(
+			ctx,
+			stop,
+			"type",
+			req,
+			&pb.TriggerEvent{},
+			func(ctx context.Context, triggerID string, m capabilities.RequestMetadata, r *pb.TriggerEvent) (<-chan capabilities.TriggerAndId[*pb.TriggerEvent], error) {
+				assert.Equal(t, "workflow-id", m.WorkflowID)
+				assert.Equal(t, "reg", r.Id)
+				return eventCh, ctx.Err()
+			},
+		)
+		require.NoError(t, err)
+
+		gotEvents := 0
+		for resp := range respCh {
+			gotEvents++
+
+			// close the stop channel to cancel transforming
+			if gotEvents == wantEvents {
+				close(stop)
+			}
+
+			assert.Equal(t, "trigger-id", resp.Event.ID)
+			assert.Equal(t, "type", resp.Event.TriggerType)
+
+			var gotTrigger pb.TriggerEvent
+			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
+			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
+		}
+		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
+	})
 }

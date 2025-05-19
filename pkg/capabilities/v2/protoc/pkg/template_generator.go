@@ -24,10 +24,22 @@ type templateGenerator struct {
 }
 
 func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
-	importToPkg := make(map[protogen.GoImportPath]protogen.GoPackageName)
+	
+	seen := map[string]int{}
+	importToPkg := map[protogen.GoImportPath]protogen.GoPackageName{}
 	for _, f := range plugin.Files {
-		importToPkg[f.GoImportPath] = f.GoPackageName
+		base := string(f.GoPackageName)
+		alias := base
+		if count, ok := seen[base]; ok {
+			count++
+			alias = fmt.Sprintf("%s%d", base, count)
+			seen[base] = count
+		} else {
+			seen[base] = 0
+		}
+		importToPkg[f.GoImportPath] = protogen.GoPackageName(alias)
 	}
+
 
 	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg)
 	if err != nil {
@@ -66,6 +78,9 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 	buf := &bytes.Buffer{}
 	imports := map[string]bool{}
 	templ := template.New(name).Funcs(template.FuncMap{
+		"ImportAlias": func(importPath protogen.GoImportPath) string {
+			return string(importToPkg[importPath])
+		},
 		"LowerFirst": func(s string) string {
 			if len(s) == 0 {
 				return s

@@ -271,91 +271,6 @@ func (x *GetTransactionStatusRequest) GetTransactionId() string {
 	return ""
 }
 
-// GetEstimateFeeReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
-type GetEstimateFeeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ContractName  string                 `protobuf:"bytes,1,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
-	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Params        *VersionedBytes        `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
-	ToAddress     string                 `protobuf:"bytes,4,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	Meta          *TransactionMeta       `protobuf:"bytes,5,opt,name=meta,proto3" json:"meta,omitempty"`
-	Value         *BigInt                `protobuf:"bytes,6,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetEstimateFeeRequest) Reset() {
-	*x = GetEstimateFeeRequest{}
-	mi := &file_contract_writer_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetEstimateFeeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetEstimateFeeRequest) ProtoMessage() {}
-
-func (x *GetEstimateFeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_writer_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetEstimateFeeRequest.ProtoReflect.Descriptor instead.
-func (*GetEstimateFeeRequest) Descriptor() ([]byte, []int) {
-	return file_contract_writer_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *GetEstimateFeeRequest) GetContractName() string {
-	if x != nil {
-		return x.ContractName
-	}
-	return ""
-}
-
-func (x *GetEstimateFeeRequest) GetMethod() string {
-	if x != nil {
-		return x.Method
-	}
-	return ""
-}
-
-func (x *GetEstimateFeeRequest) GetParams() *VersionedBytes {
-	if x != nil {
-		return x.Params
-	}
-	return nil
-}
-
-func (x *GetEstimateFeeRequest) GetToAddress() string {
-	if x != nil {
-		return x.ToAddress
-	}
-	return ""
-}
-
-func (x *GetEstimateFeeRequest) GetMeta() *TransactionMeta {
-	if x != nil {
-		return x.Meta
-	}
-	return nil
-}
-
-func (x *GetEstimateFeeRequest) GetValue() *BigInt {
-	if x != nil {
-		return x.Value
-	}
-	return nil
-}
-
 // GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionStatus].
 type GetTransactionStatusReply struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -366,7 +281,7 @@ type GetTransactionStatusReply struct {
 
 func (x *GetTransactionStatusReply) Reset() {
 	*x = GetTransactionStatusReply{}
-	mi := &file_contract_writer_proto_msgTypes[4]
+	mi := &file_contract_writer_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -378,7 +293,7 @@ func (x *GetTransactionStatusReply) String() string {
 func (*GetTransactionStatusReply) ProtoMessage() {}
 
 func (x *GetTransactionStatusReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_writer_proto_msgTypes[4]
+	mi := &file_contract_writer_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +306,7 @@ func (x *GetTransactionStatusReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionStatusReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionStatusReply) Descriptor() ([]byte, []int) {
-	return file_contract_writer_proto_rawDescGZIP(), []int{4}
+	return file_contract_writer_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetTransactionStatusReply) GetTransactionStatus() TransactionStatus {
@@ -412,7 +327,7 @@ type GetFeeComponentsReply struct {
 
 func (x *GetFeeComponentsReply) Reset() {
 	*x = GetFeeComponentsReply{}
-	mi := &file_contract_writer_proto_msgTypes[5]
+	mi := &file_contract_writer_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +339,7 @@ func (x *GetFeeComponentsReply) String() string {
 func (*GetFeeComponentsReply) ProtoMessage() {}
 
 func (x *GetFeeComponentsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_writer_proto_msgTypes[5]
+	mi := &file_contract_writer_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +352,7 @@ func (x *GetFeeComponentsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeeComponentsReply.ProtoReflect.Descriptor instead.
 func (*GetFeeComponentsReply) Descriptor() ([]byte, []int) {
-	return file_contract_writer_proto_rawDescGZIP(), []int{5}
+	return file_contract_writer_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetFeeComponentsReply) GetExecutionFee() *BigInt {
@@ -452,59 +367,6 @@ func (x *GetFeeComponentsReply) GetDataAvailabilityFee() *BigInt {
 		return x.DataAvailabilityFee
 	}
 	return nil
-}
-
-// GetEstimateFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
-type GetEstimateFeeReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Fee           *BigInt                `protobuf:"bytes,1,opt,name=fee,proto3" json:"fee,omitempty"`
-	Decimals      uint32                 `protobuf:"varint,2,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetEstimateFeeReply) Reset() {
-	*x = GetEstimateFeeReply{}
-	mi := &file_contract_writer_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetEstimateFeeReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetEstimateFeeReply) ProtoMessage() {}
-
-func (x *GetEstimateFeeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_contract_writer_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetEstimateFeeReply.ProtoReflect.Descriptor instead.
-func (*GetEstimateFeeReply) Descriptor() ([]byte, []int) {
-	return file_contract_writer_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *GetEstimateFeeReply) GetFee() *BigInt {
-	if x != nil {
-		return x.Fee
-	}
-	return nil
-}
-
-func (x *GetEstimateFeeReply) GetDecimals() uint32 {
-	if x != nil {
-		return x.Decimals
-	}
-	return 0
 }
 
 var File_contract_writer_proto protoreflect.FileDescriptor
@@ -525,35 +387,23 @@ const file_contract_writer_proto_rawDesc = "" +
 	"\x15workflow_execution_id\x18\x01 \x01(\tR\x13workflowExecutionId\x12)\n" +
 	"\tgas_limit\x18\x02 \x01(\v2\f.loop.BigIntR\bgasLimit\"D\n" +
 	"\x1bGetTransactionStatusRequest\x12%\n" +
-	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"\xf0\x01\n" +
-	"\x15GetEstimateFeeRequest\x12#\n" +
-	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12,\n" +
-	"\x06params\x18\x03 \x01(\v2\x14.loop.VersionedBytesR\x06params\x12\x1d\n" +
-	"\n" +
-	"to_address\x18\x04 \x01(\tR\ttoAddress\x12)\n" +
-	"\x04meta\x18\x05 \x01(\v2\x15.loop.TransactionMetaR\x04meta\x12\"\n" +
-	"\x05value\x18\x06 \x01(\v2\f.loop.BigIntR\x05value\"c\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"c\n" +
 	"\x19GetTransactionStatusReply\x12F\n" +
 	"\x12transaction_status\x18\x01 \x01(\x0e2\x17.loop.TransactionStatusR\x11transactionStatus\"\x8c\x01\n" +
 	"\x15GetFeeComponentsReply\x121\n" +
 	"\rexecution_fee\x18\x01 \x01(\v2\f.loop.BigIntR\fexecutionFee\x12@\n" +
-	"\x15data_availability_fee\x18\x02 \x01(\v2\f.loop.BigIntR\x13dataAvailabilityFee\"Q\n" +
-	"\x13GetEstimateFeeReply\x12\x1e\n" +
-	"\x03fee\x18\x01 \x01(\v2\f.loop.BigIntR\x03fee\x12\x1a\n" +
-	"\bdecimals\x18\x02 \x01(\rR\bdecimals*\xd6\x01\n" +
+	"\x15data_availability_fee\x18\x02 \x01(\v2\f.loop.BigIntR\x13dataAvailabilityFee*\xd6\x01\n" +
 	"\x11TransactionStatus\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_UNKNOWN\x10\x00\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12\"\n" +
 	"\x1eTRANSACTION_STATUS_UNCONFIRMED\x10\x02\x12 \n" +
 	"\x1cTRANSACTION_STATUS_FINALIZED\x10\x03\x12\x1d\n" +
 	"\x19TRANSACTION_STATUS_FAILED\x10\x04\x12\x1c\n" +
-	"\x18TRANSACTION_STATUS_FATAL\x10\x052\xd4\x02\n" +
+	"\x18TRANSACTION_STATUS_FATAL\x10\x052\x88\x02\n" +
 	"\x0eContractWriter\x12M\n" +
 	"\x11SubmitTransaction\x12\x1e.loop.SubmitTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
 	"\x14GetTransactionStatus\x12!.loop.GetTransactionStatusRequest\x1a\x1f.loop.GetTransactionStatusReply\"\x00\x12I\n" +
-	"\x10GetFeeComponents\x12\x16.google.protobuf.Empty\x1a\x1b.loop.GetFeeComponentsReply\"\x00\x12J\n" +
-	"\x0eGetEstimateFee\x12\x1b.loop.GetEstimateFeeRequest\x1a\x19.loop.GetEstimateFeeReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
+	"\x10GetFeeComponents\x12\x16.google.protobuf.Empty\x1a\x1b.loop.GetFeeComponentsReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
 	file_contract_writer_proto_rawDescOnce sync.Once
@@ -568,45 +418,37 @@ func file_contract_writer_proto_rawDescGZIP() []byte {
 }
 
 var file_contract_writer_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_contract_writer_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_contract_writer_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_contract_writer_proto_goTypes = []any{
 	(TransactionStatus)(0),              // 0: loop.TransactionStatus
 	(*SubmitTransactionRequest)(nil),    // 1: loop.SubmitTransactionRequest
 	(*TransactionMeta)(nil),             // 2: loop.TransactionMeta
 	(*GetTransactionStatusRequest)(nil), // 3: loop.GetTransactionStatusRequest
-	(*GetEstimateFeeRequest)(nil),       // 4: loop.GetEstimateFeeRequest
-	(*GetTransactionStatusReply)(nil),   // 5: loop.GetTransactionStatusReply
-	(*GetFeeComponentsReply)(nil),       // 6: loop.GetFeeComponentsReply
-	(*GetEstimateFeeReply)(nil),         // 7: loop.GetEstimateFeeReply
-	(*VersionedBytes)(nil),              // 8: loop.VersionedBytes
-	(*BigInt)(nil),                      // 9: loop.BigInt
-	(*emptypb.Empty)(nil),               // 10: google.protobuf.Empty
+	(*GetTransactionStatusReply)(nil),   // 4: loop.GetTransactionStatusReply
+	(*GetFeeComponentsReply)(nil),       // 5: loop.GetFeeComponentsReply
+	(*VersionedBytes)(nil),              // 6: loop.VersionedBytes
+	(*BigInt)(nil),                      // 7: loop.BigInt
+	(*emptypb.Empty)(nil),               // 8: google.protobuf.Empty
 }
 var file_contract_writer_proto_depIdxs = []int32{
-	8,  // 0: loop.SubmitTransactionRequest.params:type_name -> loop.VersionedBytes
+	6,  // 0: loop.SubmitTransactionRequest.params:type_name -> loop.VersionedBytes
 	2,  // 1: loop.SubmitTransactionRequest.meta:type_name -> loop.TransactionMeta
-	9,  // 2: loop.SubmitTransactionRequest.value:type_name -> loop.BigInt
-	9,  // 3: loop.TransactionMeta.gas_limit:type_name -> loop.BigInt
-	8,  // 4: loop.GetEstimateFeeRequest.params:type_name -> loop.VersionedBytes
-	2,  // 5: loop.GetEstimateFeeRequest.meta:type_name -> loop.TransactionMeta
-	9,  // 6: loop.GetEstimateFeeRequest.value:type_name -> loop.BigInt
-	0,  // 7: loop.GetTransactionStatusReply.transaction_status:type_name -> loop.TransactionStatus
-	9,  // 8: loop.GetFeeComponentsReply.execution_fee:type_name -> loop.BigInt
-	9,  // 9: loop.GetFeeComponentsReply.data_availability_fee:type_name -> loop.BigInt
-	9,  // 10: loop.GetEstimateFeeReply.fee:type_name -> loop.BigInt
-	1,  // 11: loop.ContractWriter.SubmitTransaction:input_type -> loop.SubmitTransactionRequest
-	3,  // 12: loop.ContractWriter.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
-	10, // 13: loop.ContractWriter.GetFeeComponents:input_type -> google.protobuf.Empty
-	4,  // 14: loop.ContractWriter.GetEstimateFee:input_type -> loop.GetEstimateFeeRequest
-	10, // 15: loop.ContractWriter.SubmitTransaction:output_type -> google.protobuf.Empty
-	5,  // 16: loop.ContractWriter.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
-	6,  // 17: loop.ContractWriter.GetFeeComponents:output_type -> loop.GetFeeComponentsReply
-	7,  // 18: loop.ContractWriter.GetEstimateFee:output_type -> loop.GetEstimateFeeReply
-	15, // [15:19] is the sub-list for method output_type
-	11, // [11:15] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	7,  // 2: loop.SubmitTransactionRequest.value:type_name -> loop.BigInt
+	7,  // 3: loop.TransactionMeta.gas_limit:type_name -> loop.BigInt
+	0,  // 4: loop.GetTransactionStatusReply.transaction_status:type_name -> loop.TransactionStatus
+	7,  // 5: loop.GetFeeComponentsReply.execution_fee:type_name -> loop.BigInt
+	7,  // 6: loop.GetFeeComponentsReply.data_availability_fee:type_name -> loop.BigInt
+	1,  // 7: loop.ContractWriter.SubmitTransaction:input_type -> loop.SubmitTransactionRequest
+	3,  // 8: loop.ContractWriter.GetTransactionStatus:input_type -> loop.GetTransactionStatusRequest
+	8,  // 9: loop.ContractWriter.GetFeeComponents:input_type -> google.protobuf.Empty
+	8,  // 10: loop.ContractWriter.SubmitTransaction:output_type -> google.protobuf.Empty
+	4,  // 11: loop.ContractWriter.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
+	5,  // 12: loop.ContractWriter.GetFeeComponents:output_type -> loop.GetFeeComponentsReply
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_contract_writer_proto_init() }
@@ -622,7 +464,7 @@ func file_contract_writer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contract_writer_proto_rawDesc), len(file_contract_writer_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

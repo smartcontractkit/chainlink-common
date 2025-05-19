@@ -23,7 +23,6 @@ const (
 	ContractWriter_SubmitTransaction_FullMethodName    = "/loop.ContractWriter/SubmitTransaction"
 	ContractWriter_GetTransactionStatus_FullMethodName = "/loop.ContractWriter/GetTransactionStatus"
 	ContractWriter_GetFeeComponents_FullMethodName     = "/loop.ContractWriter/GetFeeComponents"
-	ContractWriter_GetEstimateFee_FullMethodName       = "/loop.ContractWriter/GetEstimateFee"
 )
 
 // ContractWriterClient is the client API for ContractWriter service.
@@ -33,7 +32,6 @@ type ContractWriterClient interface {
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
 	GetFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFeeComponentsReply, error)
-	GetEstimateFee(ctx context.Context, in *GetEstimateFeeRequest, opts ...grpc.CallOption) (*GetEstimateFeeReply, error)
 }
 
 type contractWriterClient struct {
@@ -74,16 +72,6 @@ func (c *contractWriterClient) GetFeeComponents(ctx context.Context, in *emptypb
 	return out, nil
 }
 
-func (c *contractWriterClient) GetEstimateFee(ctx context.Context, in *GetEstimateFeeRequest, opts ...grpc.CallOption) (*GetEstimateFeeReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetEstimateFeeReply)
-	err := c.cc.Invoke(ctx, ContractWriter_GetEstimateFee_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ContractWriterServer is the server API for ContractWriter service.
 // All implementations must embed UnimplementedContractWriterServer
 // for forward compatibility.
@@ -91,7 +79,6 @@ type ContractWriterServer interface {
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
 	GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error)
-	GetEstimateFee(context.Context, *GetEstimateFeeRequest) (*GetEstimateFeeReply, error)
 	mustEmbedUnimplementedContractWriterServer()
 }
 
@@ -110,9 +97,6 @@ func (UnimplementedContractWriterServer) GetTransactionStatus(context.Context, *
 }
 func (UnimplementedContractWriterServer) GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeComponents not implemented")
-}
-func (UnimplementedContractWriterServer) GetEstimateFee(context.Context, *GetEstimateFeeRequest) (*GetEstimateFeeReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEstimateFee not implemented")
 }
 func (UnimplementedContractWriterServer) mustEmbedUnimplementedContractWriterServer() {}
 func (UnimplementedContractWriterServer) testEmbeddedByValue()                        {}
@@ -189,24 +173,6 @@ func _ContractWriter_GetFeeComponents_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ContractWriter_GetEstimateFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEstimateFeeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ContractWriterServer).GetEstimateFee(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ContractWriter_GetEstimateFee_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContractWriterServer).GetEstimateFee(ctx, req.(*GetEstimateFeeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ContractWriter_ServiceDesc is the grpc.ServiceDesc for ContractWriter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -225,10 +191,6 @@ var ContractWriter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFeeComponents",
 			Handler:    _ContractWriter_GetFeeComponents_Handler,
-		},
-		{
-			MethodName: "GetEstimateFee",
-			Handler:    _ContractWriter_GetEstimateFee_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

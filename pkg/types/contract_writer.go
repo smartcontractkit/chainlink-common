@@ -28,10 +28,6 @@ type ContractWriter interface {
 
 	// GetFeeComponents retrieves the associated gas costs for executing a transaction.
 	GetFeeComponents(ctx context.Context) (*ChainFeeComponents, error)
-
-	// GetEstimateFee returns total cost of TX execution in the underlying chain's currency
-	// The value (val) is included in the fee calculation.
-	GetEstimateFee(ctx context.Context, contract, method string, args any, toAddress string, meta *TxMeta, val *big.Int) (EstimateFee, error)
 }
 
 // TxMeta contains metadata fields for a transaction.
@@ -63,10 +59,4 @@ type ChainFeeComponents struct {
 
 	// The cost associated with an L2 posting a transaction's data to the L1.
 	DataAvailabilityFee *big.Int
-}
-
-// Estimated total cost of TX execution in the underlying chain's currency
-type EstimateFee struct {
-	Fee      *big.Int
-	Decimals uint32
 }

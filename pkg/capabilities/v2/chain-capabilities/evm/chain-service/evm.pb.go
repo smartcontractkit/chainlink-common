@@ -7,16 +7,14 @@
 package evmpb
 
 import (
-	"reflect"
-	"sync"
-	"unsafe"
-
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/runtime/protoimpl"
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	chain_common "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (

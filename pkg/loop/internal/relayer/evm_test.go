@@ -206,7 +206,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, gas, resp)
 	})
 
-	t.Run("TransactionReceipt", func(t *testing.T) {
+	t.Run("GetTransactionReceipt", func(t *testing.T) {
 		expReceipt := &evm.Receipt{
 			Status: 1,
 			Logs: []*evm.Log{
@@ -228,18 +228,18 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			BlockNumber:       blockNum,
 			TransactionIndex:  uint64(txIndex),
 		}
-		evmService.staticTransactionReceipt = func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
+		evmService.staticGetTransactionReceipt = func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
 			require.Equal(t, txHash, got)
 			return expReceipt, nil
 		}
 
-		got, err := client.TransactionReceipt(ctx, txHash)
+		got, err := client.GetTransactionReceipt(ctx, txHash)
 		require.NoError(t, err)
 		require.Equal(t, expReceipt, got)
 
 	})
 
-	t.Run("TransactionByHash", func(t *testing.T) {
+	t.Run("GetTransactionByHash", func(t *testing.T) {
 		expTx := &evm.Transaction{
 			To:       address,
 			Data:     abi,
@@ -248,13 +248,13 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			Gas:      gas,
 			GasPrice: gasPrice,
 		}
-		evmService.staticTransactionByHash = func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
+		evmService.staticGetTransactionByHash = func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
 			require.Equal(t, txHash, hash)
 			return expTx, nil
 
 		}
 
-		got, err := client.TransactionByHash(ctx, txHash)
+		got, err := client.GetTransactionByHash(ctx, txHash)
 		require.NoError(t, err)
 		require.Equal(t, expTx, got)
 	})
@@ -313,8 +313,8 @@ type staticEVMService struct {
 	staticFilterLogs             func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	staticBalanceAt              func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	staticEstimateGas            func(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	staticTransactionByHash      func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	staticTransactionReceipt     func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+	staticGetTransactionByHash   func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	staticGetTransactionReceipt  func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 	staticGetTransactionFee      func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
 	staticQueryTrackedLogs       func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 	staticLatestAndFinalizedHead func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
@@ -339,12 +339,12 @@ func (s *staticEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (
 	return s.staticEstimateGas(ctx, call)
 }
 
-func (s *staticEVMService) TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
-	return s.staticTransactionByHash(ctx, hash)
+func (s *staticEVMService) GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
+	return s.staticGetTransactionByHash(ctx, hash)
 }
 
-func (s *staticEVMService) TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error) {
-	return s.staticTransactionReceipt(ctx, txHash)
+func (s *staticEVMService) GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error) {
+	return s.staticGetTransactionReceipt(ctx, txHash)
 }
 
 func (s *staticEVMService) GetTransactionFee(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error) {

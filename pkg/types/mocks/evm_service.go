@@ -265,6 +265,65 @@ func (_c *EVMService_FilterLogs_Call) RunAndReturn(run func(context.Context, evm
 	return _c
 }
 
+// GetTransactionByHash provides a mock function with given fields: ctx, hash
+func (_m *EVMService) GetTransactionByHash(ctx context.Context, hash [32]byte) (*evm.Transaction, error) {
+	ret := _m.Called(ctx, hash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionByHash")
+	}
+
+	var r0 *evm.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (*evm.Transaction, error)); ok {
+		return rf(ctx, hash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) *evm.Transaction); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*evm.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_GetTransactionByHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionByHash'
+type EVMService_GetTransactionByHash_Call struct {
+	*mock.Call
+}
+
+// GetTransactionByHash is a helper method to define mock.On call
+//   - ctx context.Context
+//   - hash [32]byte
+func (_e *EVMService_Expecter) GetTransactionByHash(ctx interface{}, hash interface{}) *EVMService_GetTransactionByHash_Call {
+	return &EVMService_GetTransactionByHash_Call{Call: _e.mock.On("GetTransactionByHash", ctx, hash)}
+}
+
+func (_c *EVMService_GetTransactionByHash_Call) Run(run func(ctx context.Context, hash [32]byte)) *EVMService_GetTransactionByHash_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([32]byte))
+	})
+	return _c
+}
+
+func (_c *EVMService_GetTransactionByHash_Call) Return(_a0 *evm.Transaction, _a1 error) *EVMService_GetTransactionByHash_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_GetTransactionByHash_Call) RunAndReturn(run func(context.Context, [32]byte) (*evm.Transaction, error)) *EVMService_GetTransactionByHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTransactionFee provides a mock function with given fields: ctx, transactionID
 func (_m *EVMService) GetTransactionFee(ctx context.Context, transactionID string) (*evm.TransactionFee, error) {
 	ret := _m.Called(ctx, transactionID)
@@ -320,6 +379,65 @@ func (_c *EVMService_GetTransactionFee_Call) Return(_a0 *evm.TransactionFee, _a1
 }
 
 func (_c *EVMService_GetTransactionFee_Call) RunAndReturn(run func(context.Context, string) (*evm.TransactionFee, error)) *EVMService_GetTransactionFee_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionReceipt provides a mock function with given fields: ctx, txHash
+func (_m *EVMService) GetTransactionReceipt(ctx context.Context, txHash [32]byte) (*evm.Receipt, error) {
+	ret := _m.Called(ctx, txHash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionReceipt")
+	}
+
+	var r0 *evm.Receipt
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (*evm.Receipt, error)); ok {
+		return rf(ctx, txHash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) *evm.Receipt); ok {
+		r0 = rf(ctx, txHash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*evm.Receipt)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
+		r1 = rf(ctx, txHash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_GetTransactionReceipt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionReceipt'
+type EVMService_GetTransactionReceipt_Call struct {
+	*mock.Call
+}
+
+// GetTransactionReceipt is a helper method to define mock.On call
+//   - ctx context.Context
+//   - txHash [32]byte
+func (_e *EVMService_Expecter) GetTransactionReceipt(ctx interface{}, txHash interface{}) *EVMService_GetTransactionReceipt_Call {
+	return &EVMService_GetTransactionReceipt_Call{Call: _e.mock.On("GetTransactionReceipt", ctx, txHash)}
+}
+
+func (_c *EVMService_GetTransactionReceipt_Call) Run(run func(ctx context.Context, txHash [32]byte)) *EVMService_GetTransactionReceipt_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([32]byte))
+	})
+	return _c
+}
+
+func (_c *EVMService_GetTransactionReceipt_Call) Return(_a0 *evm.Receipt, _a1 error) *EVMService_GetTransactionReceipt_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_GetTransactionReceipt_Call) RunAndReturn(run func(context.Context, [32]byte) (*evm.Receipt, error)) *EVMService_GetTransactionReceipt_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -548,124 +666,6 @@ func (_c *EVMService_RegisterLogTracking_Call) Return(_a0 error) *EVMService_Reg
 }
 
 func (_c *EVMService_RegisterLogTracking_Call) RunAndReturn(run func(context.Context, evm.LPFilterQuery) error) *EVMService_RegisterLogTracking_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// TransactionByHash provides a mock function with given fields: ctx, hash
-func (_m *EVMService) TransactionByHash(ctx context.Context, hash [32]byte) (*evm.Transaction, error) {
-	ret := _m.Called(ctx, hash)
-
-	if len(ret) == 0 {
-		panic("no return value specified for TransactionByHash")
-	}
-
-	var r0 *evm.Transaction
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (*evm.Transaction, error)); ok {
-		return rf(ctx, hash)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) *evm.Transaction); ok {
-		r0 = rf(ctx, hash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*evm.Transaction)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
-		r1 = rf(ctx, hash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// EVMService_TransactionByHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransactionByHash'
-type EVMService_TransactionByHash_Call struct {
-	*mock.Call
-}
-
-// TransactionByHash is a helper method to define mock.On call
-//   - ctx context.Context
-//   - hash [32]byte
-func (_e *EVMService_Expecter) TransactionByHash(ctx interface{}, hash interface{}) *EVMService_TransactionByHash_Call {
-	return &EVMService_TransactionByHash_Call{Call: _e.mock.On("TransactionByHash", ctx, hash)}
-}
-
-func (_c *EVMService_TransactionByHash_Call) Run(run func(ctx context.Context, hash [32]byte)) *EVMService_TransactionByHash_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([32]byte))
-	})
-	return _c
-}
-
-func (_c *EVMService_TransactionByHash_Call) Return(_a0 *evm.Transaction, _a1 error) *EVMService_TransactionByHash_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *EVMService_TransactionByHash_Call) RunAndReturn(run func(context.Context, [32]byte) (*evm.Transaction, error)) *EVMService_TransactionByHash_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// TransactionReceipt provides a mock function with given fields: ctx, txHash
-func (_m *EVMService) TransactionReceipt(ctx context.Context, txHash [32]byte) (*evm.Receipt, error) {
-	ret := _m.Called(ctx, txHash)
-
-	if len(ret) == 0 {
-		panic("no return value specified for TransactionReceipt")
-	}
-
-	var r0 *evm.Receipt
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (*evm.Receipt, error)); ok {
-		return rf(ctx, txHash)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) *evm.Receipt); ok {
-		r0 = rf(ctx, txHash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*evm.Receipt)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
-		r1 = rf(ctx, txHash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// EVMService_TransactionReceipt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransactionReceipt'
-type EVMService_TransactionReceipt_Call struct {
-	*mock.Call
-}
-
-// TransactionReceipt is a helper method to define mock.On call
-//   - ctx context.Context
-//   - txHash [32]byte
-func (_e *EVMService_Expecter) TransactionReceipt(ctx interface{}, txHash interface{}) *EVMService_TransactionReceipt_Call {
-	return &EVMService_TransactionReceipt_Call{Call: _e.mock.On("TransactionReceipt", ctx, txHash)}
-}
-
-func (_c *EVMService_TransactionReceipt_Call) Run(run func(ctx context.Context, txHash [32]byte)) *EVMService_TransactionReceipt_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([32]byte))
-	})
-	return _c
-}
-
-func (_c *EVMService_TransactionReceipt_Call) Return(_a0 *evm.Receipt, _a1 error) *EVMService_TransactionReceipt_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *EVMService_TransactionReceipt_Call) RunAndReturn(run func(context.Context, [32]byte) (*evm.Receipt, error)) *EVMService_TransactionReceipt_Call {
 	_c.Call.Return(run)
 	return _c
 }

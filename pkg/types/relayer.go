@@ -105,8 +105,8 @@ type GethClient interface {
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 }
 
 type EVMService interface {

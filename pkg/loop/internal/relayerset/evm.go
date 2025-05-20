@@ -75,8 +75,8 @@ func (e eVMClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest
 	}, opts...)
 }
 
-func (e eVMClient) TransactionByHash(ctx context.Context, in *evmpb.TransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.TransactionByHashReply, error) {
-	return e.client.TransactionByHash(ctx, &relayerset.TransactionByHashRequest{
+func (e eVMClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionByHashReply, error) {
+	return e.client.GetTransactionByHash(ctx, &relayerset.GetTransactionByHashRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
 			ChainId: e.relayID.ChainID,
@@ -85,8 +85,8 @@ func (e eVMClient) TransactionByHash(ctx context.Context, in *evmpb.TransactionB
 	}, opts...)
 }
 
-func (e eVMClient) TransactionReceipt(ctx context.Context, in *evmpb.TransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.TransactionReceiptReply, error) {
-	return e.client.TransactionReceipt(ctx, &relayerset.ReceiptRequest{
+func (e eVMClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionReceiptReply, error) {
+	return e.client.GetTransactionReceipt(ctx, &relayerset.GetTransactionReceiptRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
 			ChainId: e.relayID.ChainID,
@@ -231,13 +231,13 @@ func (s *Server) EstimateGas(ctx context.Context, request *relayerset.EstimateGa
 	return &evmpb.EstimateGasReply{Gas: gasLimit}, nil
 }
 
-func (s *Server) TransactionByHash(ctx context.Context, request *relayerset.TransactionByHashRequest) (*evmpb.TransactionByHashReply, error) {
+func (s *Server) GetTransactionByHash(ctx context.Context, request *relayerset.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := evmService.TransactionByHash(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
+	reply, err := evmService.GetTransactionByHash(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -247,18 +247,18 @@ func (s *Server) TransactionByHash(ctx context.Context, request *relayerset.Tran
 		return nil, err
 	}
 
-	return &evmpb.TransactionByHashReply{
+	return &evmpb.GetTransactionByHashReply{
 		Transaction: tx,
 	}, nil
 }
 
-func (s *Server) TransactionReceipt(ctx context.Context, request *relayerset.ReceiptRequest) (*evmpb.TransactionReceiptReply, error) {
+func (s *Server) GetTransactionReceipt(ctx context.Context, request *relayerset.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := evmService.TransactionReceipt(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
+	reply, err := evmService.GetTransactionReceipt(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func (s *Server) TransactionReceipt(ctx context.Context, request *relayerset.Rec
 		return nil, err
 	}
 
-	return &evmpb.TransactionReceiptReply{
+	return &evmpb.GetTransactionReceiptReply{
 		Receipt: receipt,
 	}, nil
 }

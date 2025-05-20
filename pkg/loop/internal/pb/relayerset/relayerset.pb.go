@@ -1590,28 +1590,28 @@ func (x *EstimateGasRequest) GetRequest() *evm.EstimateGasRequest {
 	return nil
 }
 
-type TransactionByHashRequest struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	RelayerId     *RelayerId                    `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
-	Request       *evm.TransactionByHashRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+type GetTransactionByHashRequest struct {
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	RelayerId     *RelayerId                       `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.GetTransactionByHashRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TransactionByHashRequest) Reset() {
-	*x = TransactionByHashRequest{}
+func (x *GetTransactionByHashRequest) Reset() {
+	*x = GetTransactionByHashRequest{}
 	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TransactionByHashRequest) String() string {
+func (x *GetTransactionByHashRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TransactionByHashRequest) ProtoMessage() {}
+func (*GetTransactionByHashRequest) ProtoMessage() {}
 
-func (x *TransactionByHashRequest) ProtoReflect() protoreflect.Message {
+func (x *GetTransactionByHashRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1623,47 +1623,47 @@ func (x *TransactionByHashRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TransactionByHashRequest.ProtoReflect.Descriptor instead.
-func (*TransactionByHashRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetTransactionByHashRequest.ProtoReflect.Descriptor instead.
+func (*GetTransactionByHashRequest) Descriptor() ([]byte, []int) {
 	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{31}
 }
 
-func (x *TransactionByHashRequest) GetRelayerId() *RelayerId {
+func (x *GetTransactionByHashRequest) GetRelayerId() *RelayerId {
 	if x != nil {
 		return x.RelayerId
 	}
 	return nil
 }
 
-func (x *TransactionByHashRequest) GetRequest() *evm.TransactionByHashRequest {
+func (x *GetTransactionByHashRequest) GetRequest() *evm.GetTransactionByHashRequest {
 	if x != nil {
 		return x.Request
 	}
 	return nil
 }
 
-type ReceiptRequest struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	RelayerId     *RelayerId                     `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
-	Request       *evm.TransactionReceiptRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+type GetTransactionReceiptRequest struct {
+	state         protoimpl.MessageState            `protogen:"open.v1"`
+	RelayerId     *RelayerId                        `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *evm.GetTransactionReceiptRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReceiptRequest) Reset() {
-	*x = ReceiptRequest{}
+func (x *GetTransactionReceiptRequest) Reset() {
+	*x = GetTransactionReceiptRequest{}
 	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReceiptRequest) String() string {
+func (x *GetTransactionReceiptRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReceiptRequest) ProtoMessage() {}
+func (*GetTransactionReceiptRequest) ProtoMessage() {}
 
-func (x *ReceiptRequest) ProtoReflect() protoreflect.Message {
+func (x *GetTransactionReceiptRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1675,19 +1675,19 @@ func (x *ReceiptRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReceiptRequest.ProtoReflect.Descriptor instead.
-func (*ReceiptRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetTransactionReceiptRequest.ProtoReflect.Descriptor instead.
+func (*GetTransactionReceiptRequest) Descriptor() ([]byte, []int) {
 	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *ReceiptRequest) GetRelayerId() *RelayerId {
+func (x *GetTransactionReceiptRequest) GetRelayerId() *RelayerId {
 	if x != nil {
 		return x.RelayerId
 	}
 	return nil
 }
 
-func (x *ReceiptRequest) GetRequest() *evm.TransactionReceiptRequest {
+func (x *GetTransactionReceiptRequest) GetRequest() *evm.GetTransactionReceiptRequest {
 	if x != nil {
 		return x.Request
 	}
@@ -2002,13 +2002,13 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\arequest\x18\x02 \x01(\v2\x1a.loop.evm.BalanceAtRequestR\arequest\"\x86\x01\n" +
 	"\x12EstimateGasRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x126\n" +
-	"\arequest\x18\x02 \x01(\v2\x1c.loop.evm.EstimateGasRequestR\arequest\"\x92\x01\n" +
-	"\x18TransactionByHashRequest\x128\n" +
-	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12<\n" +
-	"\arequest\x18\x02 \x01(\v2\".loop.evm.TransactionByHashRequestR\arequest\"\x89\x01\n" +
-	"\x0eReceiptRequest\x128\n" +
-	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12=\n" +
-	"\arequest\x18\x02 \x01(\v2#.loop.evm.TransactionReceiptRequestR\arequest\"\x90\x01\n" +
+	"\arequest\x18\x02 \x01(\v2\x1c.loop.evm.EstimateGasRequestR\arequest\"\x98\x01\n" +
+	"\x1bGetTransactionByHashRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12?\n" +
+	"\arequest\x18\x02 \x01(\v2%.loop.evm.GetTransactionByHashRequestR\arequest\"\x9a\x01\n" +
+	"\x1cGetTransactionReceiptRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12@\n" +
+	"\arequest\x18\x02 \x01(\v2&.loop.evm.GetTransactionReceiptRequestR\arequest\"\x90\x01\n" +
 	"\x17QueryTrackedLogsRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12;\n" +
 	"\arequest\x18\x02 \x01(\v2!.loop.evm.QueryTrackedLogsRequestR\arequest\"\x96\x01\n" +
@@ -2042,16 +2042,16 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x12ContractReaderBind\x12*.loop.relayerset.ContractReaderBindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n" +
 	"\x14ContractReaderUnbind\x12,.loop.relayerset.ContractReaderUnbindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
 	"\x13ContractReaderStart\x12+.loop.relayerset.ContractReaderStartRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
-	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x002\xd0\b\n" +
+	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x002\xed\b\n" +
 	"\rEVMRelayerSet\x12b\n" +
 	"\x11GetTransactionFee\x12).loop.relayerset.GetTransactionFeeRequest\x1a .loop.evm.GetTransactionFeeReply\"\x00\x12Q\n" +
 	"\fCallContract\x12$.loop.relayerset.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12K\n" +
 	"\n" +
 	"FilterLogs\x12\".loop.relayerset.FilterLogsRequest\x1a\x19.loop.evm.FilterLogsReply\x12H\n" +
 	"\tBalanceAt\x12!.loop.relayerset.BalanceAtRequest\x1a\x18.loop.evm.BalanceAtReply\x12N\n" +
-	"\vEstimateGas\x12#.loop.relayerset.EstimateGasRequest\x1a\x1a.loop.evm.EstimateGasReply\x12`\n" +
-	"\x11TransactionByHash\x12).loop.relayerset.TransactionByHashRequest\x1a .loop.evm.TransactionByHashReply\x12X\n" +
-	"\x12TransactionReceipt\x12\x1f.loop.relayerset.ReceiptRequest\x1a!.loop.evm.TransactionReceiptReply\x12c\n" +
+	"\vEstimateGas\x12#.loop.relayerset.EstimateGasRequest\x1a\x1a.loop.evm.EstimateGasReply\x12i\n" +
+	"\x14GetTransactionByHash\x12,.loop.relayerset.GetTransactionByHashRequest\x1a#.loop.evm.GetTransactionByHashReply\x12l\n" +
+	"\x15GetTransactionReceipt\x12-.loop.relayerset.GetTransactionReceiptRequest\x1a$.loop.evm.GetTransactionReceiptReply\x12c\n" +
 	"\x16LatestAndFinalizedHead\x12\".loop.relayerset.LatestHeadRequest\x1a%.loop.evm.LatestAndFinalizedHeadReply\x12]\n" +
 	"\x10QueryTrackedLogs\x12(.loop.relayerset.QueryTrackedLogsRequest\x1a\x1f.loop.evm.QueryTrackedLogsReply\x12Z\n" +
 	"\x13RegisterLogTracking\x12+.loop.relayerset.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12^\n" +
@@ -2103,8 +2103,8 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*FilterLogsRequest)(nil),                         // 28: loop.relayerset.FilterLogsRequest
 	(*BalanceAtRequest)(nil),                          // 29: loop.relayerset.BalanceAtRequest
 	(*EstimateGasRequest)(nil),                        // 30: loop.relayerset.EstimateGasRequest
-	(*TransactionByHashRequest)(nil),                  // 31: loop.relayerset.TransactionByHashRequest
-	(*ReceiptRequest)(nil),                            // 32: loop.relayerset.ReceiptRequest
+	(*GetTransactionByHashRequest)(nil),               // 31: loop.relayerset.GetTransactionByHashRequest
+	(*GetTransactionReceiptRequest)(nil),              // 32: loop.relayerset.GetTransactionReceiptRequest
 	(*QueryTrackedLogsRequest)(nil),                   // 33: loop.relayerset.QueryTrackedLogsRequest
 	(*RegisterLogTrackingRequest)(nil),                // 34: loop.relayerset.RegisterLogTrackingRequest
 	(*UnregisterLogTrackingRequest)(nil),              // 35: loop.relayerset.UnregisterLogTrackingRequest
@@ -2121,8 +2121,8 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*evm.FilterLogsRequest)(nil),                     // 46: loop.evm.FilterLogsRequest
 	(*evm.BalanceAtRequest)(nil),                      // 47: loop.evm.BalanceAtRequest
 	(*evm.EstimateGasRequest)(nil),                    // 48: loop.evm.EstimateGasRequest
-	(*evm.TransactionByHashRequest)(nil),              // 49: loop.evm.TransactionByHashRequest
-	(*evm.TransactionReceiptRequest)(nil),             // 50: loop.evm.TransactionReceiptRequest
+	(*evm.GetTransactionByHashRequest)(nil),           // 49: loop.evm.GetTransactionByHashRequest
+	(*evm.GetTransactionReceiptRequest)(nil),          // 50: loop.evm.GetTransactionReceiptRequest
 	(*evm.QueryTrackedLogsRequest)(nil),               // 51: loop.evm.QueryTrackedLogsRequest
 	(*evm.RegisterLogTrackingRequest)(nil),            // 52: loop.evm.RegisterLogTrackingRequest
 	(*evm.UnregisterLogTrackingRequest)(nil),          // 53: loop.evm.UnregisterLogTrackingRequest
@@ -2138,8 +2138,8 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*evm.FilterLogsReply)(nil),                       // 63: loop.evm.FilterLogsReply
 	(*evm.BalanceAtReply)(nil),                        // 64: loop.evm.BalanceAtReply
 	(*evm.EstimateGasReply)(nil),                      // 65: loop.evm.EstimateGasReply
-	(*evm.TransactionByHashReply)(nil),                // 66: loop.evm.TransactionByHashReply
-	(*evm.TransactionReceiptReply)(nil),               // 67: loop.evm.TransactionReceiptReply
+	(*evm.GetTransactionByHashReply)(nil),             // 66: loop.evm.GetTransactionByHashReply
+	(*evm.GetTransactionReceiptReply)(nil),            // 67: loop.evm.GetTransactionReceiptReply
 	(*evm.LatestAndFinalizedHeadReply)(nil),           // 68: loop.evm.LatestAndFinalizedHeadReply
 	(*evm.QueryTrackedLogsReply)(nil),                 // 69: loop.evm.QueryTrackedLogsReply
 	(*pb.GetTransactionStatusReply)(nil),              // 70: loop.GetTransactionStatusReply
@@ -2173,10 +2173,10 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	47, // 25: loop.relayerset.BalanceAtRequest.request:type_name -> loop.evm.BalanceAtRequest
 	0,  // 26: loop.relayerset.EstimateGasRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	48, // 27: loop.relayerset.EstimateGasRequest.request:type_name -> loop.evm.EstimateGasRequest
-	0,  // 28: loop.relayerset.TransactionByHashRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	49, // 29: loop.relayerset.TransactionByHashRequest.request:type_name -> loop.evm.TransactionByHashRequest
-	0,  // 30: loop.relayerset.ReceiptRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	50, // 31: loop.relayerset.ReceiptRequest.request:type_name -> loop.evm.TransactionReceiptRequest
+	0,  // 28: loop.relayerset.GetTransactionByHashRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	49, // 29: loop.relayerset.GetTransactionByHashRequest.request:type_name -> loop.evm.GetTransactionByHashRequest
+	0,  // 30: loop.relayerset.GetTransactionReceiptRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	50, // 31: loop.relayerset.GetTransactionReceiptRequest.request:type_name -> loop.evm.GetTransactionReceiptRequest
 	0,  // 32: loop.relayerset.QueryTrackedLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	51, // 33: loop.relayerset.QueryTrackedLogsRequest.request:type_name -> loop.evm.QueryTrackedLogsRequest
 	0,  // 34: loop.relayerset.RegisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
@@ -2210,8 +2210,8 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	28, // 62: loop.relayerset.EVMRelayerSet.FilterLogs:input_type -> loop.relayerset.FilterLogsRequest
 	29, // 63: loop.relayerset.EVMRelayerSet.BalanceAt:input_type -> loop.relayerset.BalanceAtRequest
 	30, // 64: loop.relayerset.EVMRelayerSet.EstimateGas:input_type -> loop.relayerset.EstimateGasRequest
-	31, // 65: loop.relayerset.EVMRelayerSet.TransactionByHash:input_type -> loop.relayerset.TransactionByHashRequest
-	32, // 66: loop.relayerset.EVMRelayerSet.TransactionReceipt:input_type -> loop.relayerset.ReceiptRequest
+	31, // 65: loop.relayerset.EVMRelayerSet.GetTransactionByHash:input_type -> loop.relayerset.GetTransactionByHashRequest
+	32, // 66: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:input_type -> loop.relayerset.GetTransactionReceiptRequest
 	14, // 67: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:input_type -> loop.relayerset.LatestHeadRequest
 	33, // 68: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:input_type -> loop.relayerset.QueryTrackedLogsRequest
 	34, // 69: loop.relayerset.EVMRelayerSet.RegisterLogTracking:input_type -> loop.relayerset.RegisterLogTrackingRequest
@@ -2242,8 +2242,8 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	63, // 94: loop.relayerset.EVMRelayerSet.FilterLogs:output_type -> loop.evm.FilterLogsReply
 	64, // 95: loop.relayerset.EVMRelayerSet.BalanceAt:output_type -> loop.evm.BalanceAtReply
 	65, // 96: loop.relayerset.EVMRelayerSet.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	66, // 97: loop.relayerset.EVMRelayerSet.TransactionByHash:output_type -> loop.evm.TransactionByHashReply
-	67, // 98: loop.relayerset.EVMRelayerSet.TransactionReceipt:output_type -> loop.evm.TransactionReceiptReply
+	66, // 97: loop.relayerset.EVMRelayerSet.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	67, // 98: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
 	68, // 99: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
 	69, // 100: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
 	55, // 101: loop.relayerset.EVMRelayerSet.RegisterLogTracking:output_type -> google.protobuf.Empty

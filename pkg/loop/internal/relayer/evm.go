@@ -98,8 +98,8 @@ func (e *EVMClient) EstimateGas(ctx context.Context, msg *evmtypes.CallMsg) (uin
 	return reply.GetGas(), nil
 }
 
-func (e *EVMClient) TransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
-	reply, err := e.grpcClient.TransactionByHash(ctx, &evmpb.TransactionByHashRequest{Hash: &evmpb.Hash{Hash: hash[:]}})
+func (e *EVMClient) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
+	reply, err := e.grpcClient.GetTransactionByHash(ctx, &evmpb.GetTransactionByHashRequest{Hash: &evmpb.Hash{Hash: hash[:]}})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -107,8 +107,8 @@ func (e *EVMClient) TransactionByHash(ctx context.Context, hash evmtypes.Hash) (
 	return ConvertTransactionFromProto(reply.GetTransaction())
 }
 
-func (e *EVMClient) TransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
-	reply, err := e.grpcClient.TransactionReceipt(ctx, &evmpb.TransactionReceiptRequest{Hash: &evmpb.Hash{Hash: txHash[:]}})
+func (e *EVMClient) GetTransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
+	reply, err := e.grpcClient.GetTransactionReceipt(ctx, &evmpb.GetTransactionReceiptRequest{Hash: &evmpb.Hash{Hash: txHash[:]}})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -255,8 +255,8 @@ func (e *evmServer) EstimateGas(ctx context.Context, request *evmpb.EstimateGasR
 	return &evmpb.EstimateGasReply{Gas: gas}, nil
 }
 
-func (e *evmServer) TransactionByHash(ctx context.Context, request *evmpb.TransactionByHashRequest) (*evmpb.TransactionByHashReply, error) {
-	tx, err := e.impl.TransactionByHash(ctx, ConvertHashFromProto(request.GetHash()))
+func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
+	tx, err := e.impl.GetTransactionByHash(ctx, ConvertHashFromProto(request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -266,11 +266,11 @@ func (e *evmServer) TransactionByHash(ctx context.Context, request *evmpb.Transa
 		return nil, err
 	}
 
-	return &evmpb.TransactionByHashReply{Transaction: protoTx}, nil
+	return &evmpb.GetTransactionByHashReply{Transaction: protoTx}, nil
 }
 
-func (e *evmServer) TransactionReceipt(ctx context.Context, request *evmpb.TransactionReceiptRequest) (*evmpb.TransactionReceiptReply, error) {
-	receipt, err := e.impl.TransactionReceipt(ctx, ConvertHashFromProto(request.GetHash()))
+func (e *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
+	receipt, err := e.impl.GetTransactionReceipt(ctx, ConvertHashFromProto(request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +280,7 @@ func (e *evmServer) TransactionReceipt(ctx context.Context, request *evmpb.Trans
 		return nil, err
 	}
 
-	return &evmpb.TransactionReceiptReply{Receipt: protoReceipt}, nil
+	return &evmpb.GetTransactionReceiptReply{Receipt: protoReceipt}, nil
 }
 
 func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*evmpb.LatestAndFinalizedHeadReply, error) {

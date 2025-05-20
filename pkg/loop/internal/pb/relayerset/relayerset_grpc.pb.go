@@ -851,8 +851,8 @@ const (
 	EVMRelayerSet_FilterLogs_FullMethodName             = "/loop.relayerset.EVMRelayerSet/FilterLogs"
 	EVMRelayerSet_BalanceAt_FullMethodName              = "/loop.relayerset.EVMRelayerSet/BalanceAt"
 	EVMRelayerSet_EstimateGas_FullMethodName            = "/loop.relayerset.EVMRelayerSet/EstimateGas"
-	EVMRelayerSet_TransactionByHash_FullMethodName      = "/loop.relayerset.EVMRelayerSet/TransactionByHash"
-	EVMRelayerSet_TransactionReceipt_FullMethodName     = "/loop.relayerset.EVMRelayerSet/TransactionReceipt"
+	EVMRelayerSet_GetTransactionByHash_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionByHash"
+	EVMRelayerSet_GetTransactionReceipt_FullMethodName  = "/loop.relayerset.EVMRelayerSet/GetTransactionReceipt"
 	EVMRelayerSet_LatestAndFinalizedHead_FullMethodName = "/loop.relayerset.EVMRelayerSet/LatestAndFinalizedHead"
 	EVMRelayerSet_QueryTrackedLogs_FullMethodName       = "/loop.relayerset.EVMRelayerSet/QueryTrackedLogs"
 	EVMRelayerSet_RegisterLogTracking_FullMethodName    = "/loop.relayerset.EVMRelayerSet/RegisterLogTracking"
@@ -869,8 +869,8 @@ type EVMRelayerSetClient interface {
 	FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error)
 	BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error)
 	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error)
-	TransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*evm.TransactionByHashReply, error)
-	TransactionReceipt(ctx context.Context, in *ReceiptRequest, opts ...grpc.CallOption) (*evm.TransactionReceiptReply, error)
+	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*evm.GetTransactionByHashReply, error)
+	GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evm.GetTransactionReceiptReply, error)
 	LatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error)
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -936,20 +936,20 @@ func (c *eVMRelayerSetClient) EstimateGas(ctx context.Context, in *EstimateGasRe
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) TransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*evm.TransactionByHashReply, error) {
+func (c *eVMRelayerSetClient) GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*evm.GetTransactionByHashReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.TransactionByHashReply)
-	err := c.cc.Invoke(ctx, EVMRelayerSet_TransactionByHash_FullMethodName, in, out, cOpts...)
+	out := new(evm.GetTransactionByHashReply)
+	err := c.cc.Invoke(ctx, EVMRelayerSet_GetTransactionByHash_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) TransactionReceipt(ctx context.Context, in *ReceiptRequest, opts ...grpc.CallOption) (*evm.TransactionReceiptReply, error) {
+func (c *eVMRelayerSetClient) GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evm.GetTransactionReceiptReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.TransactionReceiptReply)
-	err := c.cc.Invoke(ctx, EVMRelayerSet_TransactionReceipt_FullMethodName, in, out, cOpts...)
+	out := new(evm.GetTransactionReceiptReply)
+	err := c.cc.Invoke(ctx, EVMRelayerSet_GetTransactionReceipt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1015,8 +1015,8 @@ type EVMRelayerSetServer interface {
 	FilterLogs(context.Context, *FilterLogsRequest) (*evm.FilterLogsReply, error)
 	BalanceAt(context.Context, *BalanceAtRequest) (*evm.BalanceAtReply, error)
 	EstimateGas(context.Context, *EstimateGasRequest) (*evm.EstimateGasReply, error)
-	TransactionByHash(context.Context, *TransactionByHashRequest) (*evm.TransactionByHashReply, error)
-	TransactionReceipt(context.Context, *ReceiptRequest) (*evm.TransactionReceiptReply, error)
+	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+	GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
 	LatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*evm.LatestAndFinalizedHeadReply, error)
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
@@ -1047,11 +1047,11 @@ func (UnimplementedEVMRelayerSetServer) BalanceAt(context.Context, *BalanceAtReq
 func (UnimplementedEVMRelayerSetServer) EstimateGas(context.Context, *EstimateGasRequest) (*evm.EstimateGasReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) TransactionByHash(context.Context, *TransactionByHashRequest) (*evm.TransactionByHashReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TransactionByHash not implemented")
+func (UnimplementedEVMRelayerSetServer) GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) TransactionReceipt(context.Context, *ReceiptRequest) (*evm.TransactionReceiptReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TransactionReceipt not implemented")
+func (UnimplementedEVMRelayerSetServer) GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
 func (UnimplementedEVMRelayerSetServer) LatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*evm.LatestAndFinalizedHeadReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestAndFinalizedHead not implemented")
@@ -1179,38 +1179,38 @@ func _EVMRelayerSet_EstimateGas_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMRelayerSet_TransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransactionByHashRequest)
+func _EVMRelayerSet_GetTransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionByHashRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMRelayerSetServer).TransactionByHash(ctx, in)
+		return srv.(EVMRelayerSetServer).GetTransactionByHash(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMRelayerSet_TransactionByHash_FullMethodName,
+		FullMethod: EVMRelayerSet_GetTransactionByHash_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMRelayerSetServer).TransactionByHash(ctx, req.(*TransactionByHashRequest))
+		return srv.(EVMRelayerSetServer).GetTransactionByHash(ctx, req.(*GetTransactionByHashRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMRelayerSet_TransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReceiptRequest)
+func _EVMRelayerSet_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionReceiptRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMRelayerSetServer).TransactionReceipt(ctx, in)
+		return srv.(EVMRelayerSetServer).GetTransactionReceipt(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMRelayerSet_TransactionReceipt_FullMethodName,
+		FullMethod: EVMRelayerSet_GetTransactionReceipt_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMRelayerSetServer).TransactionReceipt(ctx, req.(*ReceiptRequest))
+		return srv.(EVMRelayerSetServer).GetTransactionReceipt(ctx, req.(*GetTransactionReceiptRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1333,12 +1333,12 @@ var EVMRelayerSet_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVMRelayerSet_EstimateGas_Handler,
 		},
 		{
-			MethodName: "TransactionByHash",
-			Handler:    _EVMRelayerSet_TransactionByHash_Handler,
+			MethodName: "GetTransactionByHash",
+			Handler:    _EVMRelayerSet_GetTransactionByHash_Handler,
 		},
 		{
-			MethodName: "TransactionReceipt",
-			Handler:    _EVMRelayerSet_TransactionReceipt_Handler,
+			MethodName: "GetTransactionReceipt",
+			Handler:    _EVMRelayerSet_GetTransactionReceipt_Handler,
 		},
 		{
 			MethodName: "LatestAndFinalizedHead",

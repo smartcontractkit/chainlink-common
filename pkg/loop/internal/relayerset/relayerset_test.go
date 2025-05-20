@@ -285,18 +285,18 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			},
 		},
 		{
-			name: "TransactionByHash",
+			name: "GetTransactionByHash",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				hash := evmtypes.Hash{0xcc}
 				tx := &evmtypes.Transaction{Hash: hash}
-				mockEVM.EXPECT().TransactionByHash(mock.Anything, hash).Return(tx, nil)
-				out, err := evm.TransactionByHash(ctx, hash)
+				mockEVM.EXPECT().GetTransactionByHash(mock.Anything, hash).Return(tx, nil)
+				out, err := evm.GetTransactionByHash(ctx, hash)
 				require.NoError(t, err)
 				require.Equal(t, tx, out)
 			},
 		},
 		{
-			name: "TransactionReceipt",
+			name: "GetTransactionReceipt",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				hash := evmtypes.Hash{0xdd}
 				receipt := &evmtypes.Receipt{
@@ -311,9 +311,9 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 					EffectiveGasPrice: nil,
 				}
 
-				mockEVM.EXPECT().TransactionReceipt(mock.Anything, hash).Return(receipt, nil)
+				mockEVM.EXPECT().GetTransactionReceipt(mock.Anything, hash).Return(receipt, nil)
 
-				out, err := evm.TransactionReceipt(ctx, hash)
+				out, err := evm.GetTransactionReceipt(ctx, hash)
 				require.NoError(t, err)
 
 				// Manual comparison to avoid nil vs empty slice mismatch
@@ -487,12 +487,12 @@ func (t TestEVM) EstimateGas(ctx context.Context, call *evmtypes.CallMsg) (uint6
 	return t.mockedContractReader.EstimateGas(ctx, call)
 }
 
-func (t TestEVM) TransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
-	return t.mockedContractReader.TransactionByHash(ctx, hash)
+func (t TestEVM) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
+	return t.mockedContractReader.GetTransactionByHash(ctx, hash)
 }
 
-func (t TestEVM) TransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
-	return t.mockedContractReader.TransactionReceipt(ctx, txHash)
+func (t TestEVM) GetTransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
+	return t.mockedContractReader.GetTransactionReceipt(ctx, txHash)
 }
 
 func (t TestEVM) RegisterLogTracking(ctx context.Context, filter evmtypes.LPFilterQuery) error {

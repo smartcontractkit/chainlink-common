@@ -17,8 +17,8 @@ service EVM {
   rpc FilterLogs(loop.evm.FilterLogsRequest) returns (loop.evm.FilterLogsReply);
   rpc BalanceAt(loop.evm.BalanceAtRequest) returns (loop.evm.BalanceAtReply);
   rpc EstimateGas(loop.evm.EstimateGasRequest) returns (loop.evm.EstimateGasReply);
-  rpc GetTransactionByHash(loop.evm.TransactionByHashRequest) returns (loop.evm.TransactionByHashReply);
-  rpc GetTransactionReceipt(loop.evm.TransactionReceiptRequest) returns (loop.evm.TransactionReceiptReply);
+  rpc GetTransactionByHash(loop.evm.GetTransactionByHashRequest) returns (loop.evm.GetTransactionByHashReply);
+  rpc GetTransactionReceipt(loop.evm.GetTransactionReceiptRequest) returns (loop.evm.GetTransactionReceiptReply);
   rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (loop.evm.LatestAndFinalizedHeadReply);
   rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);

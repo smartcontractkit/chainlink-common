@@ -110,21 +110,21 @@ func (c *EVM) EstimateGas(runtime sdk.DonRuntime, input *evmpb.EstimateGasReques
 	})
 }
 
-func (c *EVM) GetTransactionByHash(runtime sdk.DonRuntime, input *evmpb.TransactionByHashRequest) sdk.Promise[*evmpb.TransactionByHashReply] {
+func (c *EVM) GetTransactionByHash(runtime sdk.DonRuntime, input *evmpb.GetTransactionByHashRequest) sdk.Promise[*evmpb.GetTransactionByHashReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evmpb.TransactionByHashReply](nil, err)
+		return sdk.PromiseFromResult[*evmpb.GetTransactionByHashReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "mainnet-evm@1.0.0",
 		Payload: wrapped,
 		Method:  "GetTransactionByHash",
-	}), func(i *sdkpb.CapabilityResponse) (*evmpb.TransactionByHashReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*evmpb.GetTransactionByHashReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evmpb.TransactionByHashReply{}
+			output := &evmpb.GetTransactionByHashReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -133,21 +133,21 @@ func (c *EVM) GetTransactionByHash(runtime sdk.DonRuntime, input *evmpb.Transact
 	})
 }
 
-func (c *EVM) GetTransactionReceipt(runtime sdk.DonRuntime, input *evmpb.TransactionReceiptRequest) sdk.Promise[*evmpb.TransactionReceiptReply] {
+func (c *EVM) GetTransactionReceipt(runtime sdk.DonRuntime, input *evmpb.GetTransactionReceiptRequest) sdk.Promise[*evmpb.GetTransactionReceiptReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evmpb.TransactionReceiptReply](nil, err)
+		return sdk.PromiseFromResult[*evmpb.GetTransactionReceiptReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "mainnet-evm@1.0.0",
 		Payload: wrapped,
 		Method:  "GetTransactionReceipt",
-	}), func(i *sdkpb.CapabilityResponse) (*evmpb.TransactionReceiptReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*evmpb.GetTransactionReceiptReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evmpb.TransactionReceiptReply{}
+			output := &evmpb.GetTransactionReceiptReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

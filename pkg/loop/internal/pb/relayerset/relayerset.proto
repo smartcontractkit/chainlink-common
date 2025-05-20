@@ -128,8 +128,8 @@ service EVMRelayerSet {
   rpc FilterLogs(FilterLogsRequest) returns (loop.evm.FilterLogsReply);
   rpc BalanceAt(BalanceAtRequest) returns (loop.evm.BalanceAtReply);
   rpc EstimateGas(EstimateGasRequest) returns (loop.evm.EstimateGasReply);
-  rpc TransactionByHash(TransactionByHashRequest) returns (loop.evm.TransactionByHashReply);
-  rpc TransactionReceipt(ReceiptRequest) returns (loop.evm.TransactionReceiptReply);
+  rpc GetTransactionByHash(GetTransactionByHashRequest) returns (loop.evm.GetTransactionByHashReply);
+  rpc GetTransactionReceipt(GetTransactionReceiptRequest) returns (loop.evm.GetTransactionReceiptReply);
   rpc LatestAndFinalizedHead(LatestHeadRequest) returns (loop.evm.LatestAndFinalizedHeadReply);
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
@@ -200,14 +200,14 @@ message EstimateGasRequest {
   loop.evm.EstimateGasRequest request = 2;
 }
 
-message TransactionByHashRequest {
+message GetTransactionByHashRequest {
   RelayerId relayerId = 1;
-  loop.evm.TransactionByHashRequest request = 2;
+  loop.evm.GetTransactionByHashRequest request = 2;
 }
 
-message ReceiptRequest {
+message GetTransactionReceiptRequest {
   RelayerId relayerId = 1;
-  loop.evm.TransactionReceiptRequest request = 2;
+  loop.evm.GetTransactionReceiptRequest request = 2;
 }
 
 message QueryTrackedLogsRequest {

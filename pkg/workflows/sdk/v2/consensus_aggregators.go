@@ -141,7 +141,6 @@ func isNumeric(t reflect.Type) bool {
 }
 
 func isIdenticalType(t reflect.Type) bool {
-	// TODO: arrays and slices...
 	switch t.Kind() {
 	case reflect.String, reflect.Bool,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,

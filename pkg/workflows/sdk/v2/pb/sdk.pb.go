@@ -347,10 +347,9 @@ func (*ConsensusDescriptor_FieldsMap) isConsensusDescriptor_Descriptor_() {}
 
 type CapabilityRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExecutionId   string                 `protobuf:"bytes,1,opt,name=executionId,proto3" json:"executionId,omitempty"`
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Payload       *anypb.Any             `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
-	Method        string                 `protobuf:"bytes,4,opt,name=method,proto3" json:"method,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Payload       *anypb.Any             `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -383,13 +382,6 @@ func (x *CapabilityRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CapabilityRequest.ProtoReflect.Descriptor instead.
 func (*CapabilityRequest) Descriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *CapabilityRequest) GetExecutionId() string {
-	if x != nil {
-		return x.ExecutionId
-	}
-	return ""
 }
 
 func (x *CapabilityRequest) GetId() string {
@@ -497,10 +489,9 @@ func (*CapabilityResponse_Error) isCapabilityResponse_Response() {}
 
 type TriggerSubscription struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExecId        string                 `protobuf:"bytes,1,opt,name=execId,proto3" json:"execId,omitempty"`
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Payload       *anypb.Any             `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
-	Method        string                 `protobuf:"bytes,4,opt,name=method,proto3" json:"method,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Payload       *anypb.Any             `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -533,13 +524,6 @@ func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
 // Deprecated: Use TriggerSubscription.ProtoReflect.Descriptor instead.
 func (*TriggerSubscription) Descriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *TriggerSubscription) GetExecId() string {
-	if x != nil {
-		return x.ExecId
-	}
-	return ""
 }
 
 func (x *TriggerSubscription) GetId() string {
@@ -661,8 +645,7 @@ func (x *Trigger) GetPayload() *anypb.Any {
 
 type AwaitCapabilitiesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ExecId        string                 `protobuf:"bytes,1,opt,name=execId,proto3" json:"execId,omitempty"`
-	Ids           []string               `protobuf:"bytes,2,rep,name=ids,proto3" json:"ids,omitempty"`
+	Ids           []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -695,13 +678,6 @@ func (x *AwaitCapabilitiesRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AwaitCapabilitiesRequest.ProtoReflect.Descriptor instead.
 func (*AwaitCapabilitiesRequest) Descriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *AwaitCapabilitiesRequest) GetExecId() string {
-	if x != nil {
-		return x.ExecId
-	}
-	return ""
 }
 
 func (x *AwaitCapabilitiesRequest) GetIds() []string {
@@ -776,30 +752,27 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\vaggregation\x18\x01 \x01(\x0e2\x1b.cre.sdk.v2.AggregationTypeH\x00R\vaggregation\x125\n" +
 	"\tfieldsMap\x18\x02 \x01(\v2\x15.cre.sdk.v2.FieldsMapH\x00R\tfieldsMapB\f\n" +
 	"\n" +
-	"descriptor\"\x8d\x01\n" +
-	"\x11CapabilityRequest\x12 \n" +
-	"\vexecutionId\x18\x01 \x01(\tR\vexecutionId\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\x12.\n" +
-	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12\x16\n" +
-	"\x06method\x18\x04 \x01(\tR\x06method\"j\n" +
+	"descriptor\"k\n" +
+	"\x11CapabilityRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
+	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\"j\n" +
 	"\x12CapabilityResponse\x120\n" +
 	"\apayload\x18\x01 \x01(\v2\x14.google.protobuf.AnyH\x00R\apayload\x12\x16\n" +
 	"\x05error\x18\x02 \x01(\tH\x00R\x05errorB\n" +
 	"\n" +
-	"\bresponse\"\x85\x01\n" +
-	"\x13TriggerSubscription\x12\x16\n" +
-	"\x06execId\x18\x01 \x01(\tR\x06execId\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\x12.\n" +
-	"\apayload\x18\x03 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12\x16\n" +
-	"\x06method\x18\x04 \x01(\tR\x06method\"c\n" +
+	"\bresponse\"m\n" +
+	"\x13TriggerSubscription\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
+	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\"c\n" +
 	"\x1aTriggerSubscriptionRequest\x12E\n" +
 	"\rsubscriptions\x18\x01 \x03(\v2\x1f.cre.sdk.v2.TriggerSubscriptionR\rsubscriptions\"I\n" +
 	"\aTrigger\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12.\n" +
-	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\"D\n" +
-	"\x18AwaitCapabilitiesRequest\x12\x16\n" +
-	"\x06execId\x18\x01 \x01(\tR\x06execId\x12\x10\n" +
-	"\x03ids\x18\x02 \x03(\tR\x03ids\"\xcd\x01\n" +
+	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\",\n" +
+	"\x18AwaitCapabilitiesRequest\x12\x10\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xcd\x01\n" +
 	"\x19AwaitCapabilitiesResponse\x12R\n" +
 	"\tresponses\x18\x01 \x03(\v24.cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntryR\tresponses\x1a\\\n" +
 	"\x0eResponsesEntry\x12\x10\n" +

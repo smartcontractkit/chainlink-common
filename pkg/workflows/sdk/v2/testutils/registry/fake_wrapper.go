@@ -11,6 +11,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
+const anyExecutionId = "anyExecutionId"
+
 func NewFakeWrapper(tb testing.TB, capability capabilities.BaseCapability) (*FakeWrapper, error) {
 	wrapper := &FakeWrapper{
 		BaseCapability: capability,
@@ -37,7 +39,7 @@ func (f *FakeWrapper) Invoke(ctx context.Context, request *pb.CapabilityRequest)
 
 	response, err := executable.Execute(ctx, capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
-			WorkflowExecutionID: request.ExecutionId,
+			WorkflowExecutionID: "anyExecutionId",
 		},
 		Payload: request.Payload,
 		// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
@@ -61,7 +63,7 @@ func (f *FakeWrapper) InvokeTrigger(ctx context.Context, request *pb.TriggerSubs
 	register := capabilities.TriggerRegistrationRequest{
 		TriggerID: request.Id,
 		Metadata: capabilities.RequestMetadata{
-			WorkflowExecutionID: request.ExecId,
+			WorkflowExecutionID: anyExecutionId,
 		},
 		Payload: request.Payload,
 		Method:  request.Method,

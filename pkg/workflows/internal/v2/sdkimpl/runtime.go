@@ -15,7 +15,6 @@ type CallCapabilityFn func(request *pb.CapabilityRequest) (id []byte, err error)
 type AwaitCapabilitiesFn func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error)
 
 type RuntimeBase struct {
-	ExecId          string
 	ConfigBytes     []byte
 	MaxResponseSize uint64
 	Call            CallCapabilityFn
@@ -30,7 +29,6 @@ func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[
 		return sdk.PromiseFromResult[*pb.CapabilityResponse](nil, r.modeErr)
 	}
 
-	request.ExecutionId = r.ExecId
 	id, err := r.Call(request)
 	if err != nil {
 		return sdk.PromiseFromResult[*pb.CapabilityResponse](nil, err)
@@ -38,8 +36,7 @@ func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[
 
 	return sdk.NewBasicPromise(func() (*pb.CapabilityResponse, error) {
 		awaitRequest := &pb.AwaitCapabilitiesRequest{
-			ExecId: r.ExecId,
-			Ids:    []string{string(id)},
+			Ids: []string{string(id)},
 		}
 		awaitResponse, err := r.Await(awaitRequest, r.MaxResponseSize)
 		if err != nil {

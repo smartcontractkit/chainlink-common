@@ -29,8 +29,7 @@ func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInter
 		&runner[sdk.DonRuntime]{
 			runtime:         drt,
 			runnerInternals: runnerInternals,
-			setRuntime: func(id string, config []byte, maxResponseSize uint64) {
-				drt.ExecId = id
+			setRuntime: func(config []byte, maxResponseSize uint64) {
 				drt.ConfigBytes = config
 				drt.MaxResponseSize = maxResponseSize
 			}})
@@ -43,8 +42,7 @@ func newNodeRunner(runnerInternals runnerInternals, runtimeInternals runtimeInte
 		&runner[sdk.NodeRuntime]{
 			runnerInternals: runnerInternals,
 			runtime:         nrt,
-			setRuntime: func(id string, config []byte, maxResponseSize uint64) {
-				nrt.ExecId = id
+			setRuntime: func(config []byte, maxResponseSize uint64) {
 				nrt.ConfigBytes = config
 				nrt.MaxResponseSize = maxResponseSize
 			}})
@@ -55,7 +53,7 @@ type runner[T any] struct {
 	trigger    *sdkpb.Trigger
 	id         string
 	runtime    T
-	setRuntime func(id string, config []byte, maxResponseSize uint64)
+	setRuntime func(config []byte, maxResponseSize uint64)
 	config     []byte
 }
 
@@ -68,7 +66,7 @@ func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for idx, handler := range args.Handlers {
 		if uint64(idx) == d.trigger.Id {
 			response, err := handler.Callback()(d.runtime, d.trigger.Payload)
-			execResponse := &pb.ExecutionResult{Id: d.id}
+			execResponse := &pb.ExecutionResult{}
 			if err == nil {
 				wrapped, err := values.Wrap(response)
 				if err != nil {
@@ -107,7 +105,6 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 	subscriptions := make([]*sdkpb.TriggerSubscription, len(args.Handlers))
 	for i, handler := range args.Handlers {
 		subscriptions[i] = &sdkpb.TriggerSubscription{
-			ExecId:  d.id,
 			Id:      handler.CapabilityID(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),
@@ -116,7 +113,6 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 	triggerSubscription := &sdkpb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
 
 	execResponse := &pb.ExecutionResult{
-		Id:     d.id,
 		Result: &pb.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: triggerSubscription},
 	}
 
@@ -171,14 +167,12 @@ func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T]
 
 	switch req := execRequest.Request.(type) {
 	case *pb.ExecuteRequest_Subscribe:
-		subscribe.id = execRequest.Id
 		subscribe.config = execRequest.Config
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
-		run.id = execRequest.Id
 		run.config = execRequest.Config
-		run.setRuntime(execRequest.Id, execRequest.Config, execRequest.MaxResponseSize)
+		run.setRuntime(execRequest.Config, execRequest.MaxResponseSize)
 		return run
 	}
 

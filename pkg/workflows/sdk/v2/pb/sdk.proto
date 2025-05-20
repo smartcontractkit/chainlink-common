@@ -35,10 +35,9 @@ message ConsensusDescriptor {
 }
 
 message CapabilityRequest {
-  string executionId = 1;
-  string id = 2;
-  google.protobuf.Any payload = 3;
-  string method = 4;
+  string id = 1;
+  google.protobuf.Any payload = 2;
+  string method = 3;
 }
 
 message CapabilityResponse {
@@ -54,10 +53,9 @@ enum Mode {
 }
 
 message TriggerSubscription {
-  string execId = 1;
-  string id = 2;
-  google.protobuf.Any payload = 3;
-  string method = 4;
+  string id = 1;
+  google.protobuf.Any payload = 2;
+  string method = 3;
 }
 
 message TriggerSubscriptionRequest {
@@ -70,8 +68,7 @@ message Trigger {
 }
 
 message AwaitCapabilitiesRequest {
-  string execId = 1;
-  repeated string ids = 2;
+  repeated string ids = 1;
 }
 
 message AwaitCapabilitiesResponse {

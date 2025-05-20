@@ -27,7 +27,6 @@ func newRuntime(tb testing.TB, configBytes []byte) sdkimpl.RuntimeBase {
 	}
 
 	return sdkimpl.RuntimeBase{
-		ExecId:          tb.Name(),
 		ConfigBytes:     configBytes,
 		MaxResponseSize: sdk.DefaultMaxResponseSizeBytes,
 		Call:            createCallCapability(tb),

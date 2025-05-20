@@ -413,11 +413,6 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG)
 }
 
-type idMessage interface {
-	GetId() string
-	proto.Message
-}
-
 func instantiate(m *module, linker *wasmtime.Linker, store *wasmtime.Store) (*wasmtime.Instance, error) {
 	modCfg := m.cfg
 	logger := modCfg.Logger
@@ -433,7 +428,7 @@ func instantiate(m *module, linker *wasmtime.Linker, store *wasmtime.Store) (*wa
 	return linker.Instantiate(store, m.module)
 }
 
-func runWasm[I idMessage, O proto.Message](
+func runWasm[I, O proto.Message](
 	ctx context.Context,
 	m *module,
 	request I,
@@ -499,12 +494,11 @@ func runWasm[I idMessage, O proto.Message](
 		return o, errors.New("could not get start function")
 	}
 
-	reqId := request.GetId()
 	_, err = start.Call(store)
 	switch {
 	case containsCode(err, wasm.CodeSuccess):
 		if any(exec.response) == nil {
-			return o, fmt.Errorf("could not find response for id %s", reqId)
+			return o, errors.New("could not find response for execution")
 		}
 
 		return exec.response, nil
@@ -548,7 +542,7 @@ func containsCode(err error, code int) bool {
 
 // createSendResponseFn injects the dependency required by a WASM guest to
 // send a response back to the host.
-func createSendResponseFn[T idMessage](
+func createSendResponseFn[T proto.Message](
 	logger logger.Logger,
 	exec *execution[T],
 	newT func() T) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {

@@ -82,11 +82,9 @@ func TestRuntimeBase_LogWriter(t *testing.T) {
 
 func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride func() ([]byte, error)) sdkimpl.RuntimeBase {
 	internals := testRuntimeInternals(t)
-	internals.executionId = anyExecutionId
 	internals.callCapabilityErr = callCapabilityErr
 	internals.awaitResponseOverride = awaitResponseOverride
 	runtime := newRuntime(internals)
-	runtime.ExecId = anyExecutionId
 	runtime.ConfigBytes = anyConfig
 	runtime.MaxResponseSize = sdk.DefaultMaxResponseSizeBytes
 	return runtime

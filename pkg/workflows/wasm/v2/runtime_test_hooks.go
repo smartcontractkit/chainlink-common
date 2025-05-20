@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -20,7 +19,6 @@ type runtimeInternalsTestHook struct {
 	testTb                testing.TB
 	awaitResponseOverride func() ([]byte, error)
 	callCapabilityErr     bool
-	executionId           string
 	outstandingCalls      map[string]sdk.Promise[*sdkpb.CapabilityResponse]
 }
 
@@ -35,8 +33,6 @@ func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int
 	request := sdkpb.CapabilityRequest{}
 	err := proto.Unmarshal(reqBuff, &request)
 	require.NoError(r.testTb, err)
-
-	assert.Equal(r.testTb, r.executionId, request.ExecutionId)
 
 	reg := registry.GetRegistry(r.testTb)
 	capability, err := reg.GetCapability(request.Id)

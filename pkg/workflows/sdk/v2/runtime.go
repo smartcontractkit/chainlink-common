@@ -31,7 +31,7 @@ type DonRuntime interface {
 type ConsensusAggregation[T any] interface {
 	Descriptor() *pb.ConsensusDescriptor
 	Default() *T
-	Error() error
+	Err() error
 	WithDefault(t T) ConsensusAggregation[T]
 }
 
@@ -44,7 +44,7 @@ func (c *consensusDescriptor[T]) Descriptor() *pb.ConsensusDescriptor {
 func (c *consensusDescriptor[T]) Default() *T {
 	return nil
 }
-func (c *consensusDescriptor[T]) Error() error {
+func (c *consensusDescriptor[T]) Err() error {
 	return nil
 }
 
@@ -71,7 +71,7 @@ func (c *consensusWithDefault[T]) Default() *T {
 	return &cpy
 }
 
-func (c *consensusWithDefault[T]) Error() error {
+func (c *consensusWithDefault[T]) Err() error {
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (c *consensusWithDefault[T]) WithDefault(t T) ConsensusAggregation[T] {
 }
 
 type consensusDescriptorError[T any] struct {
-	Err error
+	Error error
 }
 
 func (d *consensusDescriptorError[T]) Descriptor() *pb.ConsensusDescriptor {
@@ -94,8 +94,8 @@ func (d *consensusDescriptorError[T]) Default() *T {
 	return nil
 }
 
-func (d *consensusDescriptorError[T]) Error() error {
-	return d.Err
+func (d *consensusDescriptorError[T]) Err() error {
+	return d.Error
 }
 
 func (d *consensusDescriptorError[T]) WithDefault(_ T) ConsensusAggregation[T] {
@@ -118,8 +118,8 @@ func RunInNodeMode[T any](
 	runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), cd ConsensusAggregation[T]) Promise[T] {
 	observationFn := func(nodeRuntime NodeRuntime) *pb.SimpleConsensusInputs {
 
-		if cd.Error() != nil {
-			return &pb.SimpleConsensusInputs{Observation: &pb.SimpleConsensusInputs_Error{Error: cd.Error().Error()}}
+		if cd.Err() != nil {
+			return &pb.SimpleConsensusInputs{Observation: &pb.SimpleConsensusInputs_Error{Error: cd.Err().Error()}}
 		}
 
 		var defaultValue values.Value

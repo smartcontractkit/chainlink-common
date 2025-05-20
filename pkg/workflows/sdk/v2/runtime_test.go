@@ -84,7 +84,7 @@ func TestRunInNodeMode_ErrorWrappingDefault(t *testing.T) {
 
 	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
 		return nil, errors.New("some error")
-	}, &hackedDescription[*unsupported]{T: &unsupported{Test: make(chan int)}})
+	}, &medianTestFieldDescription[*unsupported]{T: &unsupported{Test: make(chan int)}})
 
 	_, err := p.Await()
 	require.Error(t, err)
@@ -130,11 +130,11 @@ func (m *mockDonRuntime) CallCapability(*pb.CapabilityRequest) sdk.Promise[*pb.C
 func (m *mockDonRuntime) Config() []byte       { return nil }
 func (m *mockDonRuntime) LogWriter() io.Writer { return nil }
 
-type hackedDescription[T any] struct {
+type medianTestFieldDescription[T any] struct {
 	T T
 }
 
-func (h *hackedDescription[T]) Descriptor() *pb.ConsensusDescriptor {
+func (h *medianTestFieldDescription[T]) Descriptor() *pb.ConsensusDescriptor {
 	return &pb.ConsensusDescriptor{
 		Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 			FieldsMap: &pb.FieldsMap{
@@ -146,14 +146,14 @@ func (h *hackedDescription[T]) Descriptor() *pb.ConsensusDescriptor {
 	}
 }
 
-func (h *hackedDescription[T]) Default() *T {
+func (h *medianTestFieldDescription[T]) Default() *T {
 	return &h.T
 }
 
-func (h *hackedDescription[T]) Error() error {
+func (h *medianTestFieldDescription[T]) Err() error {
 	return nil
 }
 
-func (h *hackedDescription[T]) WithDefault(t T) sdk.ConsensusAggregation[T] {
-	return &hackedDescription[T]{T: t}
+func (h *medianTestFieldDescription[T]) WithDefault(t T) sdk.ConsensusAggregation[T] {
+	return &medianTestFieldDescription[T]{T: t}
 }

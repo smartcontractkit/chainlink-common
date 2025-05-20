@@ -14,20 +14,20 @@ import (
 
 func TestConsensusMedianAggregation(t *testing.T) {
 	descriptor := sdk.ConsensusMedianAggregation[int]()
-	require.NoError(t, descriptor.Error())
+	require.NoError(t, descriptor.Err())
 	assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_MEDIAN)
 }
 
 func TestConsensusIdenticalAggregation(t *testing.T) {
 	t.Run("valid types", func(t *testing.T) {
 		descriptor := sdk.ConsensusIdenticalAggregation[int]()
-		require.NoError(t, descriptor.Error())
+		require.NoError(t, descriptor.Err())
 		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_IDENTICAL)
 	})
 
 	t.Run("invalid types", func(t *testing.T) {
 		descriptor := sdk.ConsensusIdenticalAggregation[chan int]()
-		require.Error(t, descriptor.Error())
+		require.Error(t, descriptor.Err())
 	})
 }
 
@@ -83,7 +83,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Array [2]string `consensus:"identical"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[S]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -120,7 +120,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val []string `consensus:"common_prefix"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[S]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -142,7 +142,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val [2]string `consensus:"common_suffix"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[S]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -167,7 +167,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			In Inner `consensus:"nested"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[Outer]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -202,7 +202,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			PIn *Inner `consensus:"identical"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[Outer]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -233,7 +233,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			In Inner `consensus:"identical"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[Outer]()
-		require.Error(t, desc.Error())
+		require.Error(t, desc.Err())
 	})
 
 	t.Run("invalid nested field", func(t *testing.T) {
@@ -244,7 +244,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			In Inner `consensus:"nested"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[Outer]()
-		require.Error(t, desc.Error())
+		require.Error(t, desc.Err())
 	})
 
 	t.Run("valid pointer", func(t *testing.T) {
@@ -253,7 +253,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 		}
 
 		desc := sdk.ConsensusAggregationFromTags[*S]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -275,12 +275,12 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val string `consensus:"median"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[S]()
-		require.ErrorContains(t, desc.Error(), "not a numeric type")
+		require.ErrorContains(t, desc.Err(), "not a numeric type")
 	})
 
 	t.Run("invalid not a struct", func(t *testing.T) {
 		desc := sdk.ConsensusAggregationFromTags[int]()
-		require.ErrorContains(t, desc.Error(), "expects a struct type")
+		require.ErrorContains(t, desc.Err(), "expects a struct type")
 	})
 
 	t.Run("ignore fields", func(t *testing.T) {
@@ -290,7 +290,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			IgnoredImplicitField string
 		}
 		desc := sdk.ConsensusAggregationFromTags[S]()
-		require.NoError(t, desc.Error())
+		require.NoError(t, desc.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -317,7 +317,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val []int `consensus:"common_prefix"`
 		}]()
 
-		require.NoError(t, descriptor.Error())
+		require.NoError(t, descriptor.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -340,7 +340,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val chan int `consensus:"common_prefix"`
 		}]()
 
-		require.Error(t, desc.Error())
+		require.Error(t, desc.Err())
 	})
 
 	t.Run("common suffix for valid types", func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val []int `consensus:"common_suffix"`
 		}]()
 
-		require.NoError(t, descriptor.Error())
+		require.NoError(t, descriptor.Err())
 		expected := &pb.ConsensusDescriptor{
 			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 				FieldsMap: &pb.FieldsMap{
@@ -371,7 +371,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			Val chan int `consensus:"common_suffix"`
 		}]()
 
-		require.Error(t, desc.Error())
+		require.Error(t, desc.Err())
 	})
 
 	t.Run("invalid tag", func(t *testing.T) {
@@ -379,7 +379,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			In int `consensus:"not_real"`
 		}
 		desc := sdk.ConsensusAggregationFromTags[Invalid]()
-		require.Error(t, desc.Error())
+		require.Error(t, desc.Err())
 	})
 }
 
@@ -389,7 +389,7 @@ func testMedianField[T any](t *testing.T) {
 		Val  T  `consensus:"median"`
 		PVal *T `consensus:"median"`
 	}]()
-	require.NoError(t, desc.Error())
+	require.NoError(t, desc.Err())
 	expected := &pb.ConsensusDescriptor{
 		Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 			FieldsMap: &pb.FieldsMap{
@@ -422,5 +422,5 @@ func testInvalidIdenticalFieldHelper[T any](t *testing.T) {
 	desc := sdk.ConsensusAggregationFromTags[struct {
 		Val T `consensus:"identical"`
 	}]()
-	require.ErrorContains(t, desc.Error(), "field Val marked as identical but is not a valid type")
+	require.ErrorContains(t, desc.Err(), "field Val marked as identical but is not a valid type")
 }

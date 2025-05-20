@@ -27,7 +27,7 @@ func ConsensusIdenticalAggregation[T any]() ConsensusAggregation[T] {
 		return &consensusDescriptor[T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_IDENTICAL}}
 	}
 
-	return &consensusDescriptorError[T]{Err: fmt.Errorf("%T is not a valid type for identical consensus", t)}
+	return &consensusDescriptorError[T]{Error: fmt.Errorf("%T is not a valid type for identical consensus", t)}
 }
 
 func ConsensusCommonPrefixAggregation[T any]() func() (ConsensusAggregation[[]T], error) {
@@ -57,7 +57,7 @@ func ConsensusAggregationFromTags[T any]() ConsensusAggregation[T] {
 	t := reflect.TypeOf(zero)
 	descriptor, err := parseConsensusTag(t)
 	if err != nil {
-		return &consensusDescriptorError[T]{Err: err}
+		return &consensusDescriptorError[T]{Error: err}
 	}
 	return (*consensusDescriptor[T])(descriptor)
 }

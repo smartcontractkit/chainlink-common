@@ -8,6 +8,7 @@ package evm
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -26,61 +27,61 @@ var File_loop_chain_capabilities_evm_capability_proto protoreflect.FileDescripto
 
 const file_loop_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\n" +
-	",loop/chain-capabilities/evm/capability.proto\x12\x1bloop.chain_capabilities.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a%loop/chain-capabilities/evm/evm.proto2\xa4\t\n" +
-	"\bEVMChain\x12p\n" +
-	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
+	",loop/chain-capabilities/evm/capability.proto\x12\x1bloop.chain_capabilities.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1eloop/internal/pb/evm/evm.proto2\xda\x06\n" +
+	"\x03EVM\x12J\n" +
+	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +
 	"\n" +
-	"FilterLogs\x12..loop.chain_capabilities.evm.FilterLogsRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply\x12g\n" +
-	"\tBalanceAt\x12-.loop.chain_capabilities.evm.BalanceAtRequest\x1a+.loop.chain_capabilities.evm.BalanceAtReply\x12m\n" +
-	"\vEstimateGas\x12/.loop.chain_capabilities.evm.EstimateGasRequest\x1a-.loop.chain_capabilities.evm.EstimateGasReply\x12\x82\x01\n" +
-	"\x14GetTransactionByHash\x125.loop.chain_capabilities.evm.TransactionByHashRequest\x1a3.loop.chain_capabilities.evm.TransactionByHashReply\x12\x85\x01\n" +
-	"\x15GetTransactionReceipt\x126.loop.chain_capabilities.evm.TransactionReceiptRequest\x1a4.loop.chain_capabilities.evm.TransactionReceiptReply\x12j\n" +
-	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12|\n" +
-	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
-	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
-	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evmb\x06proto3"
+	"FilterLogs\x12\x1b.loop.evm.FilterLogsRequest\x1a\x19.loop.evm.FilterLogsReply\x12A\n" +
+	"\tBalanceAt\x12\x1a.loop.evm.BalanceAtRequest\x1a\x18.loop.evm.BalanceAtReply\x12G\n" +
+	"\vEstimateGas\x12\x1c.loop.evm.EstimateGasRequest\x1a\x1a.loop.evm.EstimateGasReply\x12\\\n" +
+	"\x14GetTransactionByHash\x12\".loop.evm.TransactionByHashRequest\x1a .loop.evm.TransactionByHashReply\x12_\n" +
+	"\x15GetTransactionReceipt\x12#.loop.evm.TransactionReceiptRequest\x1a!.loop.evm.TransactionReceiptReply\x12W\n" +
+	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a%.loop.evm.LatestAndFinalizedHeadReply\x12V\n" +
+	"\x10QueryTrackedLogs\x12!.loop.evm.QueryTrackedLogsRequest\x1a\x1f.loop.evm.QueryTrackedLogsReply\x12S\n" +
+	"\x13RegisterLogTracking\x12$.loop.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
+	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evmb\x06proto3"
 
 var file_loop_chain_capabilities_evm_capability_proto_goTypes = []any{
-	(*CallContractRequest)(nil),          // 0: loop.chain_capabilities.evm.CallContractRequest
-	(*FilterLogsRequest)(nil),            // 1: loop.chain_capabilities.evm.FilterLogsRequest
-	(*BalanceAtRequest)(nil),             // 2: loop.chain_capabilities.evm.BalanceAtRequest
-	(*EstimateGasRequest)(nil),           // 3: loop.chain_capabilities.evm.EstimateGasRequest
-	(*TransactionByHashRequest)(nil),     // 4: loop.chain_capabilities.evm.TransactionByHashRequest
-	(*TransactionReceiptRequest)(nil),    // 5: loop.chain_capabilities.evm.TransactionReceiptRequest
-	(*emptypb.Empty)(nil),                // 6: google.protobuf.Empty
-	(*QueryTrackedLogsRequest)(nil),      // 7: loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	(*RegisterLogTrackingRequest)(nil),   // 8: loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil), // 9: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	(*CallContractReply)(nil),            // 10: loop.chain_capabilities.evm.CallContractReply
-	(*FilterLogsReply)(nil),              // 11: loop.chain_capabilities.evm.FilterLogsReply
-	(*BalanceAtReply)(nil),               // 12: loop.chain_capabilities.evm.BalanceAtReply
-	(*EstimateGasReply)(nil),             // 13: loop.chain_capabilities.evm.EstimateGasReply
-	(*TransactionByHashReply)(nil),       // 14: loop.chain_capabilities.evm.TransactionByHashReply
-	(*TransactionReceiptReply)(nil),      // 15: loop.chain_capabilities.evm.TransactionReceiptReply
-	(*LatestAndFinalizedHeadReply)(nil),  // 16: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	(*QueryTrackedLogsReply)(nil),        // 17: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*evm.CallContractRequest)(nil),          // 0: loop.evm.CallContractRequest
+	(*evm.FilterLogsRequest)(nil),            // 1: loop.evm.FilterLogsRequest
+	(*evm.BalanceAtRequest)(nil),             // 2: loop.evm.BalanceAtRequest
+	(*evm.EstimateGasRequest)(nil),           // 3: loop.evm.EstimateGasRequest
+	(*evm.TransactionByHashRequest)(nil),     // 4: loop.evm.TransactionByHashRequest
+	(*evm.TransactionReceiptRequest)(nil),    // 5: loop.evm.TransactionReceiptRequest
+	(*emptypb.Empty)(nil),                    // 6: google.protobuf.Empty
+	(*evm.QueryTrackedLogsRequest)(nil),      // 7: loop.evm.QueryTrackedLogsRequest
+	(*evm.RegisterLogTrackingRequest)(nil),   // 8: loop.evm.RegisterLogTrackingRequest
+	(*evm.UnregisterLogTrackingRequest)(nil), // 9: loop.evm.UnregisterLogTrackingRequest
+	(*evm.CallContractReply)(nil),            // 10: loop.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),              // 11: loop.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),               // 12: loop.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),             // 13: loop.evm.EstimateGasReply
+	(*evm.TransactionByHashReply)(nil),       // 14: loop.evm.TransactionByHashReply
+	(*evm.TransactionReceiptReply)(nil),      // 15: loop.evm.TransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),  // 16: loop.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),        // 17: loop.evm.QueryTrackedLogsReply
 }
 var file_loop_chain_capabilities_evm_capability_proto_depIdxs = []int32{
-	0,  // 0: loop.chain_capabilities.evm.EVMChain.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	1,  // 1: loop.chain_capabilities.evm.EVMChain.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	2,  // 2: loop.chain_capabilities.evm.EVMChain.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	3,  // 3: loop.chain_capabilities.evm.EVMChain.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	4,  // 4: loop.chain_capabilities.evm.EVMChain.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.TransactionByHashRequest
-	5,  // 5: loop.chain_capabilities.evm.EVMChain.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.TransactionReceiptRequest
-	6,  // 6: loop.chain_capabilities.evm.EVMChain.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	7,  // 7: loop.chain_capabilities.evm.EVMChain.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	8,  // 8: loop.chain_capabilities.evm.EVMChain.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	9,  // 9: loop.chain_capabilities.evm.EVMChain.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	10, // 10: loop.chain_capabilities.evm.EVMChain.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	11, // 11: loop.chain_capabilities.evm.EVMChain.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	12, // 12: loop.chain_capabilities.evm.EVMChain.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	13, // 13: loop.chain_capabilities.evm.EVMChain.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	14, // 14: loop.chain_capabilities.evm.EVMChain.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.TransactionByHashReply
-	15, // 15: loop.chain_capabilities.evm.EVMChain.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.TransactionReceiptReply
-	16, // 16: loop.chain_capabilities.evm.EVMChain.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	17, // 17: loop.chain_capabilities.evm.EVMChain.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	6,  // 18: loop.chain_capabilities.evm.EVMChain.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 19: loop.chain_capabilities.evm.EVMChain.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	0,  // 0: loop.chain_capabilities.evm.EVM.CallContract:input_type -> loop.evm.CallContractRequest
+	1,  // 1: loop.chain_capabilities.evm.EVM.FilterLogs:input_type -> loop.evm.FilterLogsRequest
+	2,  // 2: loop.chain_capabilities.evm.EVM.BalanceAt:input_type -> loop.evm.BalanceAtRequest
+	3,  // 3: loop.chain_capabilities.evm.EVM.EstimateGas:input_type -> loop.evm.EstimateGasRequest
+	4,  // 4: loop.chain_capabilities.evm.EVM.GetTransactionByHash:input_type -> loop.evm.TransactionByHashRequest
+	5,  // 5: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:input_type -> loop.evm.TransactionReceiptRequest
+	6,  // 6: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	7,  // 7: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
+	8,  // 8: loop.chain_capabilities.evm.EVM.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
+	9,  // 9: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
+	10, // 10: loop.chain_capabilities.evm.EVM.CallContract:output_type -> loop.evm.CallContractReply
+	11, // 11: loop.chain_capabilities.evm.EVM.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	12, // 12: loop.chain_capabilities.evm.EVM.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	13, // 13: loop.chain_capabilities.evm.EVM.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	14, // 14: loop.chain_capabilities.evm.EVM.GetTransactionByHash:output_type -> loop.evm.TransactionByHashReply
+	15, // 15: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:output_type -> loop.evm.TransactionReceiptReply
+	16, // 16: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	17, // 17: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	6,  // 18: loop.chain_capabilities.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	6,  // 19: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	10, // [10:20] is the sub-list for method output_type
 	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
@@ -93,7 +94,6 @@ func file_loop_chain_capabilities_evm_capability_proto_init() {
 	if File_loop_chain_capabilities_evm_capability_proto != nil {
 		return
 	}
-	file_loop_chain_capabilities_evm_evm_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

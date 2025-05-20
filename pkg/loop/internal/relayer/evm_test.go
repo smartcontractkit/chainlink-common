@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -53,7 +53,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
 	evmService := &staticEVMService{}
-	evmpb.RegisterEVMServer(s, &EvmServer{impl: evmService})
+	evmpb.RegisterEVMServer(s, &evmServer{impl: evmService})
 
 	go func() {
 		_ = s.Serve(lis)

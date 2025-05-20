@@ -8,8 +8,8 @@ package relayerset
 
 import (
 	context "context"
-	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

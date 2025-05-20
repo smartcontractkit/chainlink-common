@@ -6,22 +6,21 @@ package loop.chain_capabilities.evm;
 
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
-import "loop/chain-capabilities/evm/evm.proto";
+import "loop/internal/pb/evm/evm.proto";
 
-// TODO rename to EVM, move EVM back to loop/internal, but needs some proto gen template fixing to make imports work
-service EVMChain {
+service EVM {
   option (cre.metadata.capability) = {
     mode: DON
     capability_id: "mainnet-evm@1.0.0"
   };
-  rpc CallContract(CallContractRequest) returns (CallContractReply);
-  rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
-  rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
-  rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
-  rpc GetTransactionByHash(TransactionByHashRequest) returns (TransactionByHashReply);
-  rpc GetTransactionReceipt(TransactionReceiptRequest) returns (TransactionReceiptReply);
-  rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
-  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
-  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc CallContract(loop.evm.CallContractRequest) returns (loop.evm.CallContractReply);
+  rpc FilterLogs(loop.evm.FilterLogsRequest) returns (loop.evm.FilterLogsReply);
+  rpc BalanceAt(loop.evm.BalanceAtRequest) returns (loop.evm.BalanceAtReply);
+  rpc EstimateGas(loop.evm.EstimateGasRequest) returns (loop.evm.EstimateGasReply);
+  rpc GetTransactionByHash(loop.evm.TransactionByHashRequest) returns (loop.evm.TransactionByHashReply);
+  rpc GetTransactionReceipt(loop.evm.TransactionReceiptRequest) returns (loop.evm.TransactionReceiptReply);
+  rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (loop.evm.LatestAndFinalizedHeadReply);
+  rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
+  rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
 }

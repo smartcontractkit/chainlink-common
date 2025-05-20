@@ -14,11 +14,11 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractwriter"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
@@ -127,7 +127,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		pb.RegisterServiceServer(s, &goplugin.ServiceServer{Srv: r})
 		pb.RegisterRelayerServer(s, newChainRelayerServer(r, p.BrokerExt))
 		if evmService, ok := r.(types.EVMService); ok {
-			evmpb.RegisterEVMServer(s, NewEVMServer(evmService, p.BrokerExt))
+			evmpb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
 		}
 	}, rRes, ksRes, crRes)
 	if err != nil {

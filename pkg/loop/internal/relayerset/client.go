@@ -29,7 +29,7 @@ type Client struct {
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
-	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn)}
+	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn), eVMRelayerSetClient: relayerset.NewEVMRelayerSetClient(conn)}
 }
 
 func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, error) {
@@ -117,6 +117,9 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 // EVM creates an EVM Relayer Set client which is a wrapper over the regular EVM client that attaches the Relayer ID to every request.
 // This wrapper is then returned as a regular EVMClient .
 func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
+	if k.eVMRelayerSetClient == nil {
+		return nil, fmt.Errorf("eVMRelayerSetClient can't be nil")
+	}
 	return rel.NewEVMCClient(&eVMClient{
 		relayID: relayID,
 		client:  k.eVMRelayerSetClient,

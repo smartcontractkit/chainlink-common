@@ -8,6 +8,7 @@ package evm
 
 import (
 	context "context"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,447 +21,443 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EVMChain_CallContract_FullMethodName           = "/loop.chain_capabilities.evm.EVMChain/CallContract"
-	EVMChain_FilterLogs_FullMethodName             = "/loop.chain_capabilities.evm.EVMChain/FilterLogs"
-	EVMChain_BalanceAt_FullMethodName              = "/loop.chain_capabilities.evm.EVMChain/BalanceAt"
-	EVMChain_EstimateGas_FullMethodName            = "/loop.chain_capabilities.evm.EVMChain/EstimateGas"
-	EVMChain_GetTransactionByHash_FullMethodName   = "/loop.chain_capabilities.evm.EVMChain/GetTransactionByHash"
-	EVMChain_GetTransactionReceipt_FullMethodName  = "/loop.chain_capabilities.evm.EVMChain/GetTransactionReceipt"
-	EVMChain_LatestAndFinalizedHead_FullMethodName = "/loop.chain_capabilities.evm.EVMChain/LatestAndFinalizedHead"
-	EVMChain_QueryTrackedLogs_FullMethodName       = "/loop.chain_capabilities.evm.EVMChain/QueryTrackedLogs"
-	EVMChain_RegisterLogTracking_FullMethodName    = "/loop.chain_capabilities.evm.EVMChain/RegisterLogTracking"
-	EVMChain_UnregisterLogTracking_FullMethodName  = "/loop.chain_capabilities.evm.EVMChain/UnregisterLogTracking"
+	EVM_CallContract_FullMethodName           = "/loop.chain_capabilities.evm.EVM/CallContract"
+	EVM_FilterLogs_FullMethodName             = "/loop.chain_capabilities.evm.EVM/FilterLogs"
+	EVM_BalanceAt_FullMethodName              = "/loop.chain_capabilities.evm.EVM/BalanceAt"
+	EVM_EstimateGas_FullMethodName            = "/loop.chain_capabilities.evm.EVM/EstimateGas"
+	EVM_GetTransactionByHash_FullMethodName   = "/loop.chain_capabilities.evm.EVM/GetTransactionByHash"
+	EVM_GetTransactionReceipt_FullMethodName  = "/loop.chain_capabilities.evm.EVM/GetTransactionReceipt"
+	EVM_LatestAndFinalizedHead_FullMethodName = "/loop.chain_capabilities.evm.EVM/LatestAndFinalizedHead"
+	EVM_QueryTrackedLogs_FullMethodName       = "/loop.chain_capabilities.evm.EVM/QueryTrackedLogs"
+	EVM_RegisterLogTracking_FullMethodName    = "/loop.chain_capabilities.evm.EVM/RegisterLogTracking"
+	EVM_UnregisterLogTracking_FullMethodName  = "/loop.chain_capabilities.evm.EVM/UnregisterLogTracking"
 )
 
-// EVMChainClient is the client API for EVMChain service.
+// EVMClient is the client API for EVM service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// TODO rename to EVM, move EVM back to loop/internal, but needs some proto gen template fixing to make imports work
-type EVMChainClient interface {
-	CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*CallContractReply, error)
-	FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*FilterLogsReply, error)
-	BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*BalanceAtReply, error)
-	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*EstimateGasReply, error)
-	GetTransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error)
-	GetTransactionReceipt(ctx context.Context, in *TransactionReceiptRequest, opts ...grpc.CallOption) (*TransactionReceiptReply, error)
-	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error)
-	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
-	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+type EVMClient interface {
+	CallContract(ctx context.Context, in *evm.CallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error)
+	FilterLogs(ctx context.Context, in *evm.FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error)
+	BalanceAt(ctx context.Context, in *evm.BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error)
+	EstimateGas(ctx context.Context, in *evm.EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error)
+	GetTransactionByHash(ctx context.Context, in *evm.TransactionByHashRequest, opts ...grpc.CallOption) (*evm.TransactionByHashReply, error)
+	GetTransactionReceipt(ctx context.Context, in *evm.TransactionReceiptRequest, opts ...grpc.CallOption) (*evm.TransactionReceiptReply, error)
+	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error)
+	QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
+	RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type eVMChainClient struct {
+type eVMClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewEVMChainClient(cc grpc.ClientConnInterface) EVMChainClient {
-	return &eVMChainClient{cc}
+func NewEVMClient(cc grpc.ClientConnInterface) EVMClient {
+	return &eVMClient{cc}
 }
 
-func (c *eVMChainClient) CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*CallContractReply, error) {
+func (c *eVMClient) CallContract(ctx context.Context, in *evm.CallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CallContractReply)
-	err := c.cc.Invoke(ctx, EVMChain_CallContract_FullMethodName, in, out, cOpts...)
+	out := new(evm.CallContractReply)
+	err := c.cc.Invoke(ctx, EVM_CallContract_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*FilterLogsReply, error) {
+func (c *eVMClient) FilterLogs(ctx context.Context, in *evm.FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FilterLogsReply)
-	err := c.cc.Invoke(ctx, EVMChain_FilterLogs_FullMethodName, in, out, cOpts...)
+	out := new(evm.FilterLogsReply)
+	err := c.cc.Invoke(ctx, EVM_FilterLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*BalanceAtReply, error) {
+func (c *eVMClient) BalanceAt(ctx context.Context, in *evm.BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BalanceAtReply)
-	err := c.cc.Invoke(ctx, EVMChain_BalanceAt_FullMethodName, in, out, cOpts...)
+	out := new(evm.BalanceAtReply)
+	err := c.cc.Invoke(ctx, EVM_BalanceAt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*EstimateGasReply, error) {
+func (c *eVMClient) EstimateGas(ctx context.Context, in *evm.EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EstimateGasReply)
-	err := c.cc.Invoke(ctx, EVMChain_EstimateGas_FullMethodName, in, out, cOpts...)
+	out := new(evm.EstimateGasReply)
+	err := c.cc.Invoke(ctx, EVM_EstimateGas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) GetTransactionByHash(ctx context.Context, in *TransactionByHashRequest, opts ...grpc.CallOption) (*TransactionByHashReply, error) {
+func (c *eVMClient) GetTransactionByHash(ctx context.Context, in *evm.TransactionByHashRequest, opts ...grpc.CallOption) (*evm.TransactionByHashReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TransactionByHashReply)
-	err := c.cc.Invoke(ctx, EVMChain_GetTransactionByHash_FullMethodName, in, out, cOpts...)
+	out := new(evm.TransactionByHashReply)
+	err := c.cc.Invoke(ctx, EVM_GetTransactionByHash_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) GetTransactionReceipt(ctx context.Context, in *TransactionReceiptRequest, opts ...grpc.CallOption) (*TransactionReceiptReply, error) {
+func (c *eVMClient) GetTransactionReceipt(ctx context.Context, in *evm.TransactionReceiptRequest, opts ...grpc.CallOption) (*evm.TransactionReceiptReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TransactionReceiptReply)
-	err := c.cc.Invoke(ctx, EVMChain_GetTransactionReceipt_FullMethodName, in, out, cOpts...)
+	out := new(evm.TransactionReceiptReply)
+	err := c.cc.Invoke(ctx, EVM_GetTransactionReceipt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error) {
+func (c *eVMClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LatestAndFinalizedHeadReply)
-	err := c.cc.Invoke(ctx, EVMChain_LatestAndFinalizedHead_FullMethodName, in, out, cOpts...)
+	out := new(evm.LatestAndFinalizedHeadReply)
+	err := c.cc.Invoke(ctx, EVM_LatestAndFinalizedHead_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error) {
+func (c *eVMClient) QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryTrackedLogsReply)
-	err := c.cc.Invoke(ctx, EVMChain_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
+	out := new(evm.QueryTrackedLogsReply)
+	err := c.cc.Invoke(ctx, EVM_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *eVMChainClient) RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, EVMChain_RegisterLogTracking_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *eVMChainClient) UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *eVMClient) RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, EVMChain_UnregisterLogTracking_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, EVM_RegisterLogTracking_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// EVMChainServer is the server API for EVMChain service.
-// All implementations must embed UnimplementedEVMChainServer
+func (c *eVMClient) UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, EVM_UnregisterLogTracking_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// EVMServer is the server API for EVM service.
+// All implementations must embed UnimplementedEVMServer
 // for forward compatibility.
-//
-// TODO rename to EVM, move EVM back to loop/internal, but needs some proto gen template fixing to make imports work
-type EVMChainServer interface {
-	CallContract(context.Context, *CallContractRequest) (*CallContractReply, error)
-	FilterLogs(context.Context, *FilterLogsRequest) (*FilterLogsReply, error)
-	BalanceAt(context.Context, *BalanceAtRequest) (*BalanceAtReply, error)
-	EstimateGas(context.Context, *EstimateGasRequest) (*EstimateGasReply, error)
-	GetTransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error)
-	GetTransactionReceipt(context.Context, *TransactionReceiptRequest) (*TransactionReceiptReply, error)
-	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error)
-	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
-	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
-	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedEVMChainServer()
+type EVMServer interface {
+	CallContract(context.Context, *evm.CallContractRequest) (*evm.CallContractReply, error)
+	FilterLogs(context.Context, *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+	BalanceAt(context.Context, *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+	EstimateGas(context.Context, *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
+	GetTransactionByHash(context.Context, *evm.TransactionByHashRequest) (*evm.TransactionByHashReply, error)
+	GetTransactionReceipt(context.Context, *evm.TransactionReceiptRequest) (*evm.TransactionReceiptReply, error)
+	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
+	QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
+	RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+	UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedEVMServer()
 }
 
-// UnimplementedEVMChainServer must be embedded to have
+// UnimplementedEVMServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedEVMChainServer struct{}
+type UnimplementedEVMServer struct{}
 
-func (UnimplementedEVMChainServer) CallContract(context.Context, *CallContractRequest) (*CallContractReply, error) {
+func (UnimplementedEVMServer) CallContract(context.Context, *evm.CallContractRequest) (*evm.CallContractReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallContract not implemented")
 }
-func (UnimplementedEVMChainServer) FilterLogs(context.Context, *FilterLogsRequest) (*FilterLogsReply, error) {
+func (UnimplementedEVMServer) FilterLogs(context.Context, *evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FilterLogs not implemented")
 }
-func (UnimplementedEVMChainServer) BalanceAt(context.Context, *BalanceAtRequest) (*BalanceAtReply, error) {
+func (UnimplementedEVMServer) BalanceAt(context.Context, *evm.BalanceAtRequest) (*evm.BalanceAtReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BalanceAt not implemented")
 }
-func (UnimplementedEVMChainServer) EstimateGas(context.Context, *EstimateGasRequest) (*EstimateGasReply, error) {
+func (UnimplementedEVMServer) EstimateGas(context.Context, *evm.EstimateGasRequest) (*evm.EstimateGasReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
 }
-func (UnimplementedEVMChainServer) GetTransactionByHash(context.Context, *TransactionByHashRequest) (*TransactionByHashReply, error) {
+func (UnimplementedEVMServer) GetTransactionByHash(context.Context, *evm.TransactionByHashRequest) (*evm.TransactionByHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
 }
-func (UnimplementedEVMChainServer) GetTransactionReceipt(context.Context, *TransactionReceiptRequest) (*TransactionReceiptReply, error) {
+func (UnimplementedEVMServer) GetTransactionReceipt(context.Context, *evm.TransactionReceiptRequest) (*evm.TransactionReceiptReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
-func (UnimplementedEVMChainServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error) {
+func (UnimplementedEVMServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestAndFinalizedHead not implemented")
 }
-func (UnimplementedEVMChainServer) QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error) {
+func (UnimplementedEVMServer) QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
-func (UnimplementedEVMChainServer) RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error) {
+func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
 }
-func (UnimplementedEVMChainServer) UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
+func (UnimplementedEVMServer) UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
-func (UnimplementedEVMChainServer) mustEmbedUnimplementedEVMChainServer() {}
-func (UnimplementedEVMChainServer) testEmbeddedByValue()                  {}
+func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
+func (UnimplementedEVMServer) testEmbeddedByValue()             {}
 
-// UnsafeEVMChainServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to EVMChainServer will
+// UnsafeEVMServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to EVMServer will
 // result in compilation errors.
-type UnsafeEVMChainServer interface {
-	mustEmbedUnimplementedEVMChainServer()
+type UnsafeEVMServer interface {
+	mustEmbedUnimplementedEVMServer()
 }
 
-func RegisterEVMChainServer(s grpc.ServiceRegistrar, srv EVMChainServer) {
-	// If the following call pancis, it indicates UnimplementedEVMChainServer was
+func RegisterEVMServer(s grpc.ServiceRegistrar, srv EVMServer) {
+	// If the following call pancis, it indicates UnimplementedEVMServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&EVMChain_ServiceDesc, srv)
+	s.RegisterService(&EVM_ServiceDesc, srv)
 }
 
-func _EVMChain_CallContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CallContractRequest)
+func _EVM_CallContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.CallContractRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).CallContract(ctx, in)
+		return srv.(EVMServer).CallContract(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_CallContract_FullMethodName,
+		FullMethod: EVM_CallContract_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).CallContract(ctx, req.(*CallContractRequest))
+		return srv.(EVMServer).CallContract(ctx, req.(*evm.CallContractRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_FilterLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FilterLogsRequest)
+func _EVM_FilterLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.FilterLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).FilterLogs(ctx, in)
+		return srv.(EVMServer).FilterLogs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_FilterLogs_FullMethodName,
+		FullMethod: EVM_FilterLogs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).FilterLogs(ctx, req.(*FilterLogsRequest))
+		return srv.(EVMServer).FilterLogs(ctx, req.(*evm.FilterLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_BalanceAt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BalanceAtRequest)
+func _EVM_BalanceAt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.BalanceAtRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).BalanceAt(ctx, in)
+		return srv.(EVMServer).BalanceAt(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_BalanceAt_FullMethodName,
+		FullMethod: EVM_BalanceAt_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).BalanceAt(ctx, req.(*BalanceAtRequest))
+		return srv.(EVMServer).BalanceAt(ctx, req.(*evm.BalanceAtRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_EstimateGas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EstimateGasRequest)
+func _EVM_EstimateGas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.EstimateGasRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).EstimateGas(ctx, in)
+		return srv.(EVMServer).EstimateGas(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_EstimateGas_FullMethodName,
+		FullMethod: EVM_EstimateGas_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).EstimateGas(ctx, req.(*EstimateGasRequest))
+		return srv.(EVMServer).EstimateGas(ctx, req.(*evm.EstimateGasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_GetTransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransactionByHashRequest)
+func _EVM_GetTransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.TransactionByHashRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).GetTransactionByHash(ctx, in)
+		return srv.(EVMServer).GetTransactionByHash(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_GetTransactionByHash_FullMethodName,
+		FullMethod: EVM_GetTransactionByHash_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).GetTransactionByHash(ctx, req.(*TransactionByHashRequest))
+		return srv.(EVMServer).GetTransactionByHash(ctx, req.(*evm.TransactionByHashRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransactionReceiptRequest)
+func _EVM_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.TransactionReceiptRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).GetTransactionReceipt(ctx, in)
+		return srv.(EVMServer).GetTransactionReceipt(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_GetTransactionReceipt_FullMethodName,
+		FullMethod: EVM_GetTransactionReceipt_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).GetTransactionReceipt(ctx, req.(*TransactionReceiptRequest))
+		return srv.(EVMServer).GetTransactionReceipt(ctx, req.(*evm.TransactionReceiptRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_LatestAndFinalizedHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _EVM_LatestAndFinalizedHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).LatestAndFinalizedHead(ctx, in)
+		return srv.(EVMServer).LatestAndFinalizedHead(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_LatestAndFinalizedHead_FullMethodName,
+		FullMethod: EVM_LatestAndFinalizedHead_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).LatestAndFinalizedHead(ctx, req.(*emptypb.Empty))
+		return srv.(EVMServer).LatestAndFinalizedHead(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTrackedLogsRequest)
+func _EVM_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.QueryTrackedLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).QueryTrackedLogs(ctx, in)
+		return srv.(EVMServer).QueryTrackedLogs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_QueryTrackedLogs_FullMethodName,
+		FullMethod: EVM_QueryTrackedLogs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).QueryTrackedLogs(ctx, req.(*QueryTrackedLogsRequest))
+		return srv.(EVMServer).QueryTrackedLogs(ctx, req.(*evm.QueryTrackedLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_RegisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterLogTrackingRequest)
+func _EVM_RegisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.RegisterLogTrackingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).RegisterLogTracking(ctx, in)
+		return srv.(EVMServer).RegisterLogTracking(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_RegisterLogTracking_FullMethodName,
+		FullMethod: EVM_RegisterLogTracking_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).RegisterLogTracking(ctx, req.(*RegisterLogTrackingRequest))
+		return srv.(EVMServer).RegisterLogTracking(ctx, req.(*evm.RegisterLogTrackingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMChain_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnregisterLogTrackingRequest)
+func _EVM_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.UnregisterLogTrackingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMChainServer).UnregisterLogTracking(ctx, in)
+		return srv.(EVMServer).UnregisterLogTracking(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVMChain_UnregisterLogTracking_FullMethodName,
+		FullMethod: EVM_UnregisterLogTracking_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMChainServer).UnregisterLogTracking(ctx, req.(*UnregisterLogTrackingRequest))
+		return srv.(EVMServer).UnregisterLogTracking(ctx, req.(*evm.UnregisterLogTrackingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// EVMChain_ServiceDesc is the grpc.ServiceDesc for EVMChain service.
+// EVM_ServiceDesc is the grpc.ServiceDesc for EVM service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var EVMChain_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.chain_capabilities.evm.EVMChain",
-	HandlerType: (*EVMChainServer)(nil),
+var EVM_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "loop.chain_capabilities.evm.EVM",
+	HandlerType: (*EVMServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "CallContract",
-			Handler:    _EVMChain_CallContract_Handler,
+			Handler:    _EVM_CallContract_Handler,
 		},
 		{
 			MethodName: "FilterLogs",
-			Handler:    _EVMChain_FilterLogs_Handler,
+			Handler:    _EVM_FilterLogs_Handler,
 		},
 		{
 			MethodName: "BalanceAt",
-			Handler:    _EVMChain_BalanceAt_Handler,
+			Handler:    _EVM_BalanceAt_Handler,
 		},
 		{
 			MethodName: "EstimateGas",
-			Handler:    _EVMChain_EstimateGas_Handler,
+			Handler:    _EVM_EstimateGas_Handler,
 		},
 		{
 			MethodName: "GetTransactionByHash",
-			Handler:    _EVMChain_GetTransactionByHash_Handler,
+			Handler:    _EVM_GetTransactionByHash_Handler,
 		},
 		{
 			MethodName: "GetTransactionReceipt",
-			Handler:    _EVMChain_GetTransactionReceipt_Handler,
+			Handler:    _EVM_GetTransactionReceipt_Handler,
 		},
 		{
 			MethodName: "LatestAndFinalizedHead",
-			Handler:    _EVMChain_LatestAndFinalizedHead_Handler,
+			Handler:    _EVM_LatestAndFinalizedHead_Handler,
 		},
 		{
 			MethodName: "QueryTrackedLogs",
-			Handler:    _EVMChain_QueryTrackedLogs_Handler,
+			Handler:    _EVM_QueryTrackedLogs_Handler,
 		},
 		{
 			MethodName: "RegisterLogTracking",
-			Handler:    _EVMChain_RegisterLogTracking_Handler,
+			Handler:    _EVM_RegisterLogTracking_Handler,
 		},
 		{
 			MethodName: "UnregisterLogTracking",
-			Handler:    _EVMChain_UnregisterLogTracking_Handler,
+			Handler:    _EVM_UnregisterLogTracking_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

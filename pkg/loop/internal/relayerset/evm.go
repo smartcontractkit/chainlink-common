@@ -2,14 +2,16 @@ package relayerset
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmservice "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	rel "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -20,9 +22,9 @@ type eVMClient struct {
 	client  relayerset.EVMRelayerSetClient
 }
 
-var _ evmservice.EVMClient = (*eVMClient)(nil)
+var _ evmpb.EVMClient = (*eVMClient)(nil)
 
-func (e eVMClient) GetTransactionFee(ctx context.Context, in *evmservice.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmservice.GetTransactionFeeReply, error) {
+func (e eVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
 	return e.client.GetTransactionFee(ctx, &relayerset.GetTransactionFeeRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -32,7 +34,8 @@ func (e eVMClient) GetTransactionFee(ctx context.Context, in *evmservice.GetTran
 		opts...)
 }
 
-func (e eVMClient) CallContract(ctx context.Context, in *evmservice.CallContractRequest, opts ...grpc.CallOption) (*evmservice.CallContractReply, error) {
+func (e eVMClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
+	fmt.Println("client is ", e.client)
 	return e.client.CallContract(ctx, &relayerset.CallContractRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -42,7 +45,7 @@ func (e eVMClient) CallContract(ctx context.Context, in *evmservice.CallContract
 	}, opts...)
 }
 
-func (e eVMClient) FilterLogs(ctx context.Context, in *evmservice.FilterLogsRequest, opts ...grpc.CallOption) (*evmservice.FilterLogsReply, error) {
+func (e eVMClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
 	return e.client.FilterLogs(ctx, &relayerset.FilterLogsRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -52,7 +55,7 @@ func (e eVMClient) FilterLogs(ctx context.Context, in *evmservice.FilterLogsRequ
 	}, opts...)
 }
 
-func (e eVMClient) BalanceAt(ctx context.Context, in *evmservice.BalanceAtRequest, opts ...grpc.CallOption) (*evmservice.BalanceAtReply, error) {
+func (e eVMClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
 	return e.client.BalanceAt(ctx, &relayerset.BalanceAtRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -62,7 +65,7 @@ func (e eVMClient) BalanceAt(ctx context.Context, in *evmservice.BalanceAtReques
 	}, opts...)
 }
 
-func (e eVMClient) EstimateGas(ctx context.Context, in *evmservice.EstimateGasRequest, opts ...grpc.CallOption) (*evmservice.EstimateGasReply, error) {
+func (e eVMClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest, opts ...grpc.CallOption) (*evmpb.EstimateGasReply, error) {
 	return e.client.EstimateGas(ctx, &relayerset.EstimateGasRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -72,7 +75,7 @@ func (e eVMClient) EstimateGas(ctx context.Context, in *evmservice.EstimateGasRe
 	}, opts...)
 }
 
-func (e eVMClient) TransactionByHash(ctx context.Context, in *evmservice.TransactionByHashRequest, opts ...grpc.CallOption) (*evmservice.TransactionByHashReply, error) {
+func (e eVMClient) TransactionByHash(ctx context.Context, in *evmpb.TransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.TransactionByHashReply, error) {
 	return e.client.TransactionByHash(ctx, &relayerset.TransactionByHashRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -82,7 +85,7 @@ func (e eVMClient) TransactionByHash(ctx context.Context, in *evmservice.Transac
 	}, opts...)
 }
 
-func (e eVMClient) TransactionReceipt(ctx context.Context, in *evmservice.TransactionReceiptRequest, opts ...grpc.CallOption) (*evmservice.TransactionReceiptReply, error) {
+func (e eVMClient) TransactionReceipt(ctx context.Context, in *evmpb.TransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.TransactionReceiptReply, error) {
 	return e.client.TransactionReceipt(ctx, &relayerset.ReceiptRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -92,7 +95,7 @@ func (e eVMClient) TransactionReceipt(ctx context.Context, in *evmservice.Transa
 	}, opts...)
 }
 
-func (e eVMClient) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty, opts ...grpc.CallOption) (*evmservice.LatestAndFinalizedHeadReply, error) {
+func (e eVMClient) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
 	return e.client.LatestAndFinalizedHead(ctx, &relayerset.LatestHeadRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -101,7 +104,7 @@ func (e eVMClient) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty,
 	}, opts...)
 }
 
-func (e eVMClient) QueryTrackedLogs(ctx context.Context, in *evmservice.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmservice.QueryTrackedLogsReply, error) {
+func (e eVMClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmpb.QueryTrackedLogsReply, error) {
 	return e.client.QueryTrackedLogs(ctx, &relayerset.QueryTrackedLogsRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -111,7 +114,7 @@ func (e eVMClient) QueryTrackedLogs(ctx context.Context, in *evmservice.QueryTra
 	}, opts...)
 }
 
-func (e eVMClient) RegisterLogTracking(ctx context.Context, in *evmservice.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (e eVMClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return e.client.RegisterLogTracking(ctx, &relayerset.RegisterLogTrackingRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -121,7 +124,7 @@ func (e eVMClient) RegisterLogTracking(ctx context.Context, in *evmservice.Regis
 	}, opts...)
 }
 
-func (e eVMClient) UnregisterLogTracking(ctx context.Context, in *evmservice.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (e eVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return e.client.UnregisterLogTracking(ctx, &relayerset.UnregisterLogTrackingRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -141,7 +144,7 @@ func (e eVMClient) GetTransactionStatus(ctx context.Context, in *pb.GetTransacti
 	}, opts...)
 }
 
-func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetTransactionFeeRequest) (*evmservice.GetTransactionFeeReply, error) {
+func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -152,10 +155,10 @@ func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetT
 		return nil, err
 	}
 
-	return &evmservice.GetTransactionFeeReply{TransationFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
+	return &evmpb.GetTransactionFeeReply{TransationFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
 }
 
-func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContractRequest) (*evmservice.CallContractReply, error) {
+func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContractRequest) (*evmpb.CallContractReply, error) {
 	evmService, err := s.getEVMService(ctx, request.RelayerId)
 	if err != nil {
 		return nil, err
@@ -171,12 +174,12 @@ func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContr
 		return nil, err
 	}
 
-	return &evmservice.CallContractReply{
-		Data: &evmservice.ABIPayload{Abi: reply},
+	return &evmpb.CallContractReply{
+		Data: &evmpb.ABIPayload{Abi: reply},
 	}, nil
 }
 
-func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsRequest) (*evmservice.FilterLogsReply, error) {
+func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -192,10 +195,10 @@ func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsR
 		return nil, err
 	}
 
-	return &evmservice.FilterLogsReply{Logs: rel.ConvertLogsToProto(reply)}, nil
+	return &evmpb.FilterLogsReply{Logs: rel.ConvertLogsToProto(reply)}, nil
 }
 
-func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtRequest) (*evmservice.BalanceAtReply, error) {
+func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -206,10 +209,10 @@ func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtReq
 		return nil, err
 	}
 
-	return &evmservice.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(balance)}, nil
+	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(balance)}, nil
 }
 
-func (s *Server) EstimateGas(ctx context.Context, request *relayerset.EstimateGasRequest) (*evmservice.EstimateGasReply, error) {
+func (s *Server) EstimateGas(ctx context.Context, request *relayerset.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -225,10 +228,10 @@ func (s *Server) EstimateGas(ctx context.Context, request *relayerset.EstimateGa
 		return nil, err
 	}
 
-	return &evmservice.EstimateGasReply{Gas: gasLimit}, nil
+	return &evmpb.EstimateGasReply{Gas: gasLimit}, nil
 }
 
-func (s *Server) TransactionByHash(ctx context.Context, request *relayerset.TransactionByHashRequest) (*evmservice.TransactionByHashReply, error) {
+func (s *Server) TransactionByHash(ctx context.Context, request *relayerset.TransactionByHashRequest) (*evmpb.TransactionByHashReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -244,12 +247,12 @@ func (s *Server) TransactionByHash(ctx context.Context, request *relayerset.Tran
 		return nil, err
 	}
 
-	return &evmservice.TransactionByHashReply{
+	return &evmpb.TransactionByHashReply{
 		Transaction: tx,
 	}, nil
 }
 
-func (s *Server) TransactionReceipt(ctx context.Context, request *relayerset.ReceiptRequest) (*evmservice.TransactionReceiptReply, error) {
+func (s *Server) TransactionReceipt(ctx context.Context, request *relayerset.ReceiptRequest) (*evmpb.TransactionReceiptReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -265,12 +268,12 @@ func (s *Server) TransactionReceipt(ctx context.Context, request *relayerset.Rec
 		return nil, err
 	}
 
-	return &evmservice.TransactionReceiptReply{
+	return &evmpb.TransactionReceiptReply{
 		Receipt: receipt,
 	}, nil
 }
 
-func (s *Server) LatestAndFinalizedHead(ctx context.Context, request *relayerset.LatestHeadRequest) (*evmservice.LatestAndFinalizedHeadReply, error) {
+func (s *Server) LatestAndFinalizedHead(ctx context.Context, request *relayerset.LatestHeadRequest) (*evmpb.LatestAndFinalizedHeadReply, error) {
 	evmService, err := s.getEVMService(ctx, request.RelayerId)
 	if err != nil {
 		return nil, err
@@ -281,13 +284,13 @@ func (s *Server) LatestAndFinalizedHead(ctx context.Context, request *relayerset
 		return nil, err
 	}
 
-	return &evmservice.LatestAndFinalizedHeadReply{
+	return &evmpb.LatestAndFinalizedHeadReply{
 		Latest:    rel.ConvertHeadToProto(latest),
 		Finalized: rel.ConvertHeadToProto(finalized),
 	}, nil
 }
 
-func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.QueryTrackedLogsRequest) (*evmservice.QueryTrackedLogsReply, error) {
+func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -298,12 +301,12 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	limitAndSort, err := evmservice.ConvertLimitAndSortFromProto(request.GetRequest().GetLimitAndSort())
+	limitAndSort, err := contractreader.ConvertLimitAndSortFromProto(request.GetRequest().GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
 
-	conf, err := evmservice.ConfidenceFromProto(request.GetRequest().GetConfidenceLevel())
+	conf, err := contractreader.ConfidenceFromProto(request.GetRequest().GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +316,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	return &evmservice.QueryTrackedLogsReply{Logs: rel.ConvertLogsToProto(logs)}, nil
+	return &evmpb.QueryTrackedLogsReply{Logs: rel.ConvertLogsToProto(logs)}, nil
 }
 
 func (s *Server) RegisterLogTracking(ctx context.Context, request *relayerset.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -362,10 +365,10 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.G
 }
 
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {
-	rel, err := s.getRelayer(ctx, id)
+	r, err := s.getRelayer(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return rel.EVM()
+	return r.EVM()
 }

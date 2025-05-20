@@ -1,11 +1,9 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evm";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpb";
 
-package loop.chain_capabilities.evm;
+package loop.evm;
 
-import "loop/internal/pb/relayer.proto";
-import "loop/internal/pb/contract_reader.proto";
 import "loop/internal/pb/contract_writer.proto";
 import "loop/internal/pb/query.proto";
 import "google/protobuf/empty.proto";

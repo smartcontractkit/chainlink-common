@@ -1,8 +1,7 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpb";
-
-package loop.evm;
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service;evmpb";
+package loop.chain_capabilities.evm;
 
 import "loop/internal/pb/contract_writer.proto";
 import "loop/internal/pb/query.proto";

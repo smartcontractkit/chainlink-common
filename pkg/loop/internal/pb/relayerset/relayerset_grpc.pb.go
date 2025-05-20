@@ -8,8 +8,8 @@ package relayerset
 
 import (
 	context "context"
+	chain_service "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	evm "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -864,15 +864,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EVMRelayerSetClient interface {
-	GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*evm.GetTransactionFeeReply, error)
-	CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error)
-	FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error)
-	BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error)
-	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error)
-	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*evm.GetTransactionByHashReply, error)
-	GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evm.GetTransactionReceiptReply, error)
-	LatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error)
-	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
+	GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionFeeReply, error)
+	CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*chain_service.CallContractReply, error)
+	FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*chain_service.FilterLogsReply, error)
+	BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*chain_service.BalanceAtReply, error)
+	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*chain_service.EstimateGasReply, error)
+	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionByHashReply, error)
+	GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionReceiptReply, error)
+	LatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*chain_service.LatestAndFinalizedHeadReply, error)
+	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*chain_service.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error)
@@ -886,9 +886,9 @@ func NewEVMRelayerSetClient(cc grpc.ClientConnInterface) EVMRelayerSetClient {
 	return &eVMRelayerSetClient{cc}
 }
 
-func (c *eVMRelayerSetClient) GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*evm.GetTransactionFeeReply, error) {
+func (c *eVMRelayerSetClient) GetTransactionFee(ctx context.Context, in *GetTransactionFeeRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionFeeReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.GetTransactionFeeReply)
+	out := new(chain_service.GetTransactionFeeReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_GetTransactionFee_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -896,9 +896,9 @@ func (c *eVMRelayerSetClient) GetTransactionFee(ctx context.Context, in *GetTran
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error) {
+func (c *eVMRelayerSetClient) CallContract(ctx context.Context, in *CallContractRequest, opts ...grpc.CallOption) (*chain_service.CallContractReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.CallContractReply)
+	out := new(chain_service.CallContractReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_CallContract_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -906,9 +906,9 @@ func (c *eVMRelayerSetClient) CallContract(ctx context.Context, in *CallContract
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error) {
+func (c *eVMRelayerSetClient) FilterLogs(ctx context.Context, in *FilterLogsRequest, opts ...grpc.CallOption) (*chain_service.FilterLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.FilterLogsReply)
+	out := new(chain_service.FilterLogsReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_FilterLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -916,9 +916,9 @@ func (c *eVMRelayerSetClient) FilterLogs(ctx context.Context, in *FilterLogsRequ
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error) {
+func (c *eVMRelayerSetClient) BalanceAt(ctx context.Context, in *BalanceAtRequest, opts ...grpc.CallOption) (*chain_service.BalanceAtReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.BalanceAtReply)
+	out := new(chain_service.BalanceAtReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_BalanceAt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -926,9 +926,9 @@ func (c *eVMRelayerSetClient) BalanceAt(ctx context.Context, in *BalanceAtReques
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error) {
+func (c *eVMRelayerSetClient) EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*chain_service.EstimateGasReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.EstimateGasReply)
+	out := new(chain_service.EstimateGasReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_EstimateGas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -936,9 +936,9 @@ func (c *eVMRelayerSetClient) EstimateGas(ctx context.Context, in *EstimateGasRe
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*evm.GetTransactionByHashReply, error) {
+func (c *eVMRelayerSetClient) GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionByHashReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.GetTransactionByHashReply)
+	out := new(chain_service.GetTransactionByHashReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_GetTransactionByHash_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -946,9 +946,9 @@ func (c *eVMRelayerSetClient) GetTransactionByHash(ctx context.Context, in *GetT
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evm.GetTransactionReceiptReply, error) {
+func (c *eVMRelayerSetClient) GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionReceiptReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.GetTransactionReceiptReply)
+	out := new(chain_service.GetTransactionReceiptReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_GetTransactionReceipt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -956,9 +956,9 @@ func (c *eVMRelayerSetClient) GetTransactionReceipt(ctx context.Context, in *Get
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) LatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error) {
+func (c *eVMRelayerSetClient) LatestAndFinalizedHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*chain_service.LatestAndFinalizedHeadReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.LatestAndFinalizedHeadReply)
+	out := new(chain_service.LatestAndFinalizedHeadReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_LatestAndFinalizedHead_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -966,9 +966,9 @@ func (c *eVMRelayerSetClient) LatestAndFinalizedHead(ctx context.Context, in *La
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error) {
+func (c *eVMRelayerSetClient) QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*chain_service.QueryTrackedLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.QueryTrackedLogsReply)
+	out := new(chain_service.QueryTrackedLogsReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -1010,15 +1010,15 @@ func (c *eVMRelayerSetClient) GetTransactionStatus(ctx context.Context, in *GetT
 // All implementations must embed UnimplementedEVMRelayerSetServer
 // for forward compatibility.
 type EVMRelayerSetServer interface {
-	GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*evm.GetTransactionFeeReply, error)
-	CallContract(context.Context, *CallContractRequest) (*evm.CallContractReply, error)
-	FilterLogs(context.Context, *FilterLogsRequest) (*evm.FilterLogsReply, error)
-	BalanceAt(context.Context, *BalanceAtRequest) (*evm.BalanceAtReply, error)
-	EstimateGas(context.Context, *EstimateGasRequest) (*evm.EstimateGasReply, error)
-	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
-	GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
-	LatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*evm.LatestAndFinalizedHeadReply, error)
-	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
+	GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*chain_service.GetTransactionFeeReply, error)
+	CallContract(context.Context, *CallContractRequest) (*chain_service.CallContractReply, error)
+	FilterLogs(context.Context, *FilterLogsRequest) (*chain_service.FilterLogsReply, error)
+	BalanceAt(context.Context, *BalanceAtRequest) (*chain_service.BalanceAtReply, error)
+	EstimateGas(context.Context, *EstimateGasRequest) (*chain_service.EstimateGasReply, error)
+	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*chain_service.GetTransactionByHashReply, error)
+	GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*chain_service.GetTransactionReceiptReply, error)
+	LatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*chain_service.LatestAndFinalizedHeadReply, error)
+	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*chain_service.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error)
@@ -1032,31 +1032,31 @@ type EVMRelayerSetServer interface {
 // pointer dereference when methods are called.
 type UnimplementedEVMRelayerSetServer struct{}
 
-func (UnimplementedEVMRelayerSetServer) GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*evm.GetTransactionFeeReply, error) {
+func (UnimplementedEVMRelayerSetServer) GetTransactionFee(context.Context, *GetTransactionFeeRequest) (*chain_service.GetTransactionFeeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) CallContract(context.Context, *CallContractRequest) (*evm.CallContractReply, error) {
+func (UnimplementedEVMRelayerSetServer) CallContract(context.Context, *CallContractRequest) (*chain_service.CallContractReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallContract not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) FilterLogs(context.Context, *FilterLogsRequest) (*evm.FilterLogsReply, error) {
+func (UnimplementedEVMRelayerSetServer) FilterLogs(context.Context, *FilterLogsRequest) (*chain_service.FilterLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FilterLogs not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) BalanceAt(context.Context, *BalanceAtRequest) (*evm.BalanceAtReply, error) {
+func (UnimplementedEVMRelayerSetServer) BalanceAt(context.Context, *BalanceAtRequest) (*chain_service.BalanceAtReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BalanceAt not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) EstimateGas(context.Context, *EstimateGasRequest) (*evm.EstimateGasReply, error) {
+func (UnimplementedEVMRelayerSetServer) EstimateGas(context.Context, *EstimateGasRequest) (*chain_service.EstimateGasReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error) {
+func (UnimplementedEVMRelayerSetServer) GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*chain_service.GetTransactionByHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error) {
+func (UnimplementedEVMRelayerSetServer) GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*chain_service.GetTransactionReceiptReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) LatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*evm.LatestAndFinalizedHeadReply, error) {
+func (UnimplementedEVMRelayerSetServer) LatestAndFinalizedHead(context.Context, *LatestHeadRequest) (*chain_service.LatestAndFinalizedHeadReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestAndFinalizedHead not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error) {
+func (UnimplementedEVMRelayerSetServer) QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*chain_service.QueryTrackedLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
 func (UnimplementedEVMRelayerSetServer) RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error) {

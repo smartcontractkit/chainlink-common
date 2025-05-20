@@ -3,7 +3,6 @@ syntax = "proto3";
 package billing;
 
 import "google/protobuf/timestamp.proto";
-import "capabilities/pb/capabilities.proto";
 import "metering/pb/metering.proto";
 
 option go_package = "./pb";

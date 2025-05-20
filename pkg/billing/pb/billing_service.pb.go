@@ -7,7 +7,6 @@
 package pb
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1217,7 +1216,7 @@ var File_billing_pb_billing_service_proto protoreflect.FileDescriptor
 
 const file_billing_pb_billing_service_proto_rawDesc = "" +
 	"\n" +
-	" billing/pb/billing_service.proto\x12\abilling\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"capabilities/pb/capabilities.proto\x1a\x1ametering/pb/metering.proto\"\x0e\n" +
+	" billing/pb/billing_service.proto\x12\abilling\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ametering/pb/metering.proto\"\x0e\n" +
 	"\fEmptyRequest\")\n" +
 	"\rEmptyResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"P\n" +

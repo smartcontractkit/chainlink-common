@@ -15,9 +15,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"

@@ -22,10 +22,15 @@ const (
 var FastFillABI string
 
 type LogRelayerConfig struct {
+	// Note this could be the tokenAdminRegistry instead
+	// for multi-token.
 	SourceTokenPoolAddress string
 	DestTokenPoolAddress   string
 	LookbackMinutes        int
 	Schedule               string
+	// Specific pair of chains for this workflow,
+	// again could be generalized.
+	SourceChainSelector, DestChainSelector uint64
 }
 
 // FillRequestedEvent represents the structure of the FillRequested event data
@@ -40,7 +45,11 @@ type FillCompletedEvent struct {
 	RequestID string `json:"requestId"`
 }
 
-// BuildWorkflow creates a workflow that listens for FillRequested events
+// LogRelayerWorkflow relays logs from source to destination
+// for a given pair of chains and token pools.
+// Relatively straightforward to extend to multi-chain/multi-token
+// where token pools are read from the tokenAdminRegistry
+// (a singleton contract per chain).
 func LogRelayerWorkflow(runner sdk.DonRunner) {
 	logger := slog.Default()
 	config := &LogRelayerConfig{}
@@ -90,7 +99,7 @@ func blockByTime(client evm.Client, ts time.Time) uint64 {
 
 func doBatchFill(runtime sdk.DonRuntime, executionTime int64, config *LogRelayerConfig) (struct{}, error) {
 	logger := slog.Default()
-
+	// TODO use config chain selectors to load clients
 	evmClientSource, evmClientDest := &evm.Client{}, &evm.Client{}
 
 	// Calculate time window for log queries (last X minutes)

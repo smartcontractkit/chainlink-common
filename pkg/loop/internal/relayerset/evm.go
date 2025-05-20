@@ -10,7 +10,6 @@ import (
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	rel "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -164,7 +163,7 @@ func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContr
 		return nil, err
 	}
 
-	callMsg, err := rel.ConvertCallMsgFromProto(request.Request.Call)
+	callMsg, err := evmpb.ConvertCallMsgFromProto(request.Request.Call)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +184,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsR
 		return nil, err
 	}
 
-	expression, err := rel.ConvertFilterFromProto(request.Request.FilterQuery)
+	expression, err := evmpb.ConvertFilterFromProto(request.Request.FilterQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +194,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *relayerset.FilterLogsR
 		return nil, err
 	}
 
-	return &evmpb.FilterLogsReply{Logs: rel.ConvertLogsToProto(reply)}, nil
+	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply)}, nil
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
@@ -204,7 +203,7 @@ func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtReq
 		return nil, err
 	}
 
-	balance, err := evmService.BalanceAt(ctx, rel.ConvertAddressFromProto(request.GetRequest().GetAccount()), valuespb.NewIntFromBigInt(request.Request.BlockNumber))
+	balance, err := evmService.BalanceAt(ctx, evmpb.ConvertAddressFromProto(request.GetRequest().GetAccount()), valuespb.NewIntFromBigInt(request.Request.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +217,7 @@ func (s *Server) EstimateGas(ctx context.Context, request *relayerset.EstimateGa
 		return nil, err
 	}
 
-	callMsg, err := rel.ConvertCallMsgFromProto(request.Request.GetMsg())
+	callMsg, err := evmpb.ConvertCallMsgFromProto(request.Request.GetMsg())
 	if err != nil {
 		return nil, err
 	}
@@ -237,12 +236,12 @@ func (s *Server) GetTransactionByHash(ctx context.Context, request *relayerset.G
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionByHash(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
+	reply, err := evmService.GetTransactionByHash(ctx, evmpb.ConvertHashFromProto(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := rel.ConvertTransactionToProto(reply)
+	tx, err := evmpb.ConvertTransactionToProto(reply)
 	if err != nil {
 		return nil, err
 	}
@@ -258,12 +257,12 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *relayerset.
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionReceipt(ctx, rel.ConvertHashFromProto(request.Request.GetHash()))
+	reply, err := evmService.GetTransactionReceipt(ctx, evmpb.ConvertHashFromProto(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
 
-	receipt, err := rel.ConvertReceiptToProto(reply)
+	receipt, err := evmpb.ConvertReceiptToProto(reply)
 	if err != nil {
 		return nil, err
 	}
@@ -285,8 +284,8 @@ func (s *Server) LatestAndFinalizedHead(ctx context.Context, request *relayerset
 	}
 
 	return &evmpb.LatestAndFinalizedHeadReply{
-		Latest:    rel.ConvertHeadToProto(latest),
-		Finalized: rel.ConvertHeadToProto(finalized),
+		Latest:    evmpb.ConvertHeadToProto(latest),
+		Finalized: evmpb.ConvertHeadToProto(finalized),
 	}, nil
 }
 
@@ -296,7 +295,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	expression, err := rel.ConvertExpressionsFromProto(request.GetRequest().GetExpression())
+	expression, err := evmpb.ConvertExpressionsFromProto(request.GetRequest().GetExpression())
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +315,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	return &evmpb.QueryTrackedLogsReply{Logs: rel.ConvertLogsToProto(logs)}, nil
+	return &evmpb.QueryTrackedLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
 }
 
 func (s *Server) RegisterLogTracking(ctx context.Context, request *relayerset.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
@@ -325,7 +324,7 @@ func (s *Server) RegisterLogTracking(ctx context.Context, request *relayerset.Re
 		return nil, err
 	}
 
-	filter, err := rel.ConvertLPFilterFromProto(request.GetRequest().GetFilter())
+	filter, err := evmpb.ConvertLPFilterFromProto(request.GetRequest().GetFilter())
 	if err != nil {
 		return nil, err
 	}

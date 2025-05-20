@@ -274,7 +274,9 @@ func ConvertLogToProto(log *evmtypes.Log) *Log {
 		Address:     convertAddressToProto(log.Address),
 		TxHash:      convertHashToProto(log.TxHash),
 		Data:        convertABIPayloadToProto(log.Data),
-		Removed:     log.Removed,
+		// TODO tx index
+		//TxIndex: log.TxIndex
+		Removed: log.Removed,
 	}
 }
 

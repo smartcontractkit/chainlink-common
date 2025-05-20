@@ -180,11 +180,11 @@ func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEnco
 	pbExpression.Evaluator = &Expression_BooleanExpression{BooleanExpression: &BooleanExpression{}}
 	var expressions []*Expression
 	for _, expr := range expression.BoolExpression.Expressions {
-		primitive, err := ConvertPrimitiveToProto(expr.Primitive, encodeValue)
+		e, err := ConvertExpressionToProto(expr, encodeValue)
 		if err != nil {
 			return nil, err
 		}
-		expressions = append(expressions, &Expression{Evaluator: &Expression_Primitive{Primitive: primitive}})
+		expressions = append(expressions, e)
 	}
 	pbExpression.Evaluator = &Expression_BooleanExpression{
 		BooleanExpression: &BooleanExpression{
@@ -289,7 +289,7 @@ func ConvertPrimitiveToProto(primitive primitives.Primitive, encodeValue ValueEn
 				TxHash: p.TxHash,
 			}}
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "Unknown p type: %T", p)
+		return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", p)
 	}
 
 	return primitiveToReturn, nil

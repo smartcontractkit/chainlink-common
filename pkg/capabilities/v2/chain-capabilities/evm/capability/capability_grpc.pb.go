@@ -2,13 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: loop/chain-capabilities/evm/capability/capability.proto
+// source: capabilities/v2/chain-capabilities/evm/capability/capability.proto
 
 package evmcappb
 
 import (
 	context "context"
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
+	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -21,16 +21,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EVM_CallContract_FullMethodName           = "/loop.chain_capabilities.evmcap.EVM/CallContract"
-	EVM_FilterLogs_FullMethodName             = "/loop.chain_capabilities.evmcap.EVM/FilterLogs"
-	EVM_BalanceAt_FullMethodName              = "/loop.chain_capabilities.evmcap.EVM/BalanceAt"
-	EVM_EstimateGas_FullMethodName            = "/loop.chain_capabilities.evmcap.EVM/EstimateGas"
-	EVM_GetTransactionByHash_FullMethodName   = "/loop.chain_capabilities.evmcap.EVM/GetTransactionByHash"
-	EVM_GetTransactionReceipt_FullMethodName  = "/loop.chain_capabilities.evmcap.EVM/GetTransactionReceipt"
-	EVM_LatestAndFinalizedHead_FullMethodName = "/loop.chain_capabilities.evmcap.EVM/LatestAndFinalizedHead"
-	EVM_QueryTrackedLogs_FullMethodName       = "/loop.chain_capabilities.evmcap.EVM/QueryTrackedLogs"
-	EVM_RegisterLogTracking_FullMethodName    = "/loop.chain_capabilities.evmcap.EVM/RegisterLogTracking"
-	EVM_UnregisterLogTracking_FullMethodName  = "/loop.chain_capabilities.evmcap.EVM/UnregisterLogTracking"
+	EVM_CallContract_FullMethodName           = "/cre.sdk.v2.evmcap.EVM/CallContract"
+	EVM_FilterLogs_FullMethodName             = "/cre.sdk.v2.evmcap.EVM/FilterLogs"
+	EVM_BalanceAt_FullMethodName              = "/cre.sdk.v2.evmcap.EVM/BalanceAt"
+	EVM_EstimateGas_FullMethodName            = "/cre.sdk.v2.evmcap.EVM/EstimateGas"
+	EVM_GetTransactionByHash_FullMethodName   = "/cre.sdk.v2.evmcap.EVM/GetTransactionByHash"
+	EVM_GetTransactionReceipt_FullMethodName  = "/cre.sdk.v2.evmcap.EVM/GetTransactionReceipt"
+	EVM_LatestAndFinalizedHead_FullMethodName = "/cre.sdk.v2.evmcap.EVM/LatestAndFinalizedHead"
+	EVM_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evmcap.EVM/QueryTrackedLogs"
+	EVM_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evmcap.EVM/RegisterLogTracking"
+	EVM_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evmcap.EVM/UnregisterLogTracking"
 )
 
 // EVMClient is the client API for EVM service.
@@ -416,7 +416,7 @@ func _EVM_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, de
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EVM_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.chain_capabilities.evmcap.EVM",
+	ServiceName: "cre.sdk.v2.evmcap.EVM",
 	HandlerType: (*EVMServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -461,5 +461,5 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/chain-capabilities/evm/capability/capability.proto",
+	Metadata: "capabilities/v2/chain-capabilities/evm/capability/capability.proto",
 }

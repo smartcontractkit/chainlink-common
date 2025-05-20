@@ -7,7 +7,7 @@
 package relayerset
 
 import (
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
+	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1851,9 +1851,9 @@ func (x *UnregisterLogTrackingRequest) GetRequest() *chain_service.UnregisterLog
 }
 
 type GetTransactionStatusRequest struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
-	RelayerId     *RelayerId                      `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
-	Request       *pb.GetTransactionStatusRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	state         protoimpl.MessageState                     `protogen:"open.v1"`
+	RelayerId     *RelayerId                                 `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *chain_service.GetTransactionStatusRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1895,7 +1895,7 @@ func (x *GetTransactionStatusRequest) GetRelayerId() *RelayerId {
 	return nil
 }
 
-func (x *GetTransactionStatusRequest) GetRequest() *pb.GetTransactionStatusRequest {
+func (x *GetTransactionStatusRequest) GetRequest() *chain_service.GetTransactionStatusRequest {
 	if x != nil {
 		return x.Request
 	}
@@ -1906,7 +1906,7 @@ var File_loop_internal_pb_relayerset_relayerset_proto protoreflect.FileDescripto
 
 const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\n" +
-	",loop/internal/pb/relayerset/relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a3loop/chain-capabilities/evm/chain-service/evm.proto\"@\n" +
+	",loop/internal/pb/relayerset/relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\"@\n" +
 	"\tRelayerId\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x19\n" +
 	"\bchain_id\x18\x02 \x01(\tR\achainId\"?\n" +
@@ -2017,10 +2017,10 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\arequest\x18\x02 \x01(\v27.loop.chain_capabilities.evm.RegisterLogTrackingRequestR\arequest\"\xad\x01\n" +
 	"\x1cUnregisterLogTrackingRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12S\n" +
-	"\arequest\x18\x02 \x01(\v29.loop.chain_capabilities.evm.UnregisterLogTrackingRequestR\arequest\"\x94\x01\n" +
+	"\arequest\x18\x02 \x01(\v29.loop.chain_capabilities.evm.UnregisterLogTrackingRequestR\arequest\"\xab\x01\n" +
 	"\x1bGetTransactionStatusRequest\x128\n" +
-	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12;\n" +
-	"\arequest\x18\x02 \x01(\v2!.loop.GetTransactionStatusRequestR\arequest2\xaf\x0f\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12R\n" +
+	"\arequest\x18\x02 \x01(\v28.loop.chain_capabilities.evm.GetTransactionStatusRequestR\arequest2\xaf\x0f\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
@@ -2042,7 +2042,7 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x12ContractReaderBind\x12*.loop.relayerset.ContractReaderBindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n" +
 	"\x14ContractReaderUnbind\x12,.loop.relayerset.ContractReaderUnbindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
 	"\x13ContractReaderStart\x12+.loop.relayerset.ContractReaderStartRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
-	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x002\x98\n" +
+	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x002\xaf\n" +
 	"\n" +
 	"\rEVMRelayerSet\x12u\n" +
 	"\x11GetTransactionFee\x12).loop.relayerset.GetTransactionFeeRequest\x1a3.loop.chain_capabilities.evm.GetTransactionFeeReply\"\x00\x12d\n" +
@@ -2056,8 +2056,8 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x16LatestAndFinalizedHead\x12\".loop.relayerset.LatestHeadRequest\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12p\n" +
 	"\x10QueryTrackedLogs\x12(.loop.relayerset.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12Z\n" +
 	"\x13RegisterLogTracking\x12+.loop.relayerset.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12^\n" +
-	"\x15UnregisterLogTracking\x12-.loop.relayerset.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12e\n" +
-	"\x14GetTransactionStatus\x12,.loop.relayerset.GetTransactionStatusRequest\x1a\x1f.loop.GetTransactionStatusReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
+	"\x15UnregisterLogTracking\x12-.loop.relayerset.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12|\n" +
+	"\x14GetTransactionStatus\x12,.loop.relayerset.GetTransactionStatusRequest\x1a6.loop.chain_capabilities.evm.GetTransactionStatusReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
 
 var (
 	file_loop_internal_pb_relayerset_relayerset_proto_rawDescOnce sync.Once
@@ -2127,7 +2127,7 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*chain_service.QueryTrackedLogsRequest)(nil),      // 51: loop.chain_capabilities.evm.QueryTrackedLogsRequest
 	(*chain_service.RegisterLogTrackingRequest)(nil),   // 52: loop.chain_capabilities.evm.RegisterLogTrackingRequest
 	(*chain_service.UnregisterLogTrackingRequest)(nil), // 53: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	(*pb.GetTransactionStatusRequest)(nil),             // 54: loop.GetTransactionStatusRequest
+	(*chain_service.GetTransactionStatusRequest)(nil),  // 54: loop.chain_capabilities.evm.GetTransactionStatusRequest
 	(*emptypb.Empty)(nil),                              // 55: google.protobuf.Empty
 	(*pb.GetLatestValueReply)(nil),                     // 56: loop.GetLatestValueReply
 	(*pb.GetLatestValueWithHeadDataReply)(nil),         // 57: loop.GetLatestValueWithHeadDataReply
@@ -2143,7 +2143,7 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*chain_service.GetTransactionReceiptReply)(nil),   // 67: loop.chain_capabilities.evm.GetTransactionReceiptReply
 	(*chain_service.LatestAndFinalizedHeadReply)(nil),  // 68: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
 	(*chain_service.QueryTrackedLogsReply)(nil),        // 69: loop.chain_capabilities.evm.QueryTrackedLogsReply
-	(*pb.GetTransactionStatusReply)(nil),               // 70: loop.GetTransactionStatusReply
+	(*chain_service.GetTransactionStatusReply)(nil),    // 70: loop.chain_capabilities.evm.GetTransactionStatusReply
 }
 var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
@@ -2185,7 +2185,7 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	0,  // 36: loop.relayerset.UnregisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	53, // 37: loop.relayerset.UnregisterLogTrackingRequest.request:type_name -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
 	0,  // 38: loop.relayerset.GetTransactionStatusRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	54, // 39: loop.relayerset.GetTransactionStatusRequest.request:type_name -> loop.GetTransactionStatusRequest
+	54, // 39: loop.relayerset.GetTransactionStatusRequest.request:type_name -> loop.chain_capabilities.evm.GetTransactionStatusRequest
 	1,  // 40: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
 	3,  // 41: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
 	8,  // 42: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
@@ -2249,7 +2249,7 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	69, // 100: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
 	55, // 101: loop.relayerset.EVMRelayerSet.RegisterLogTracking:output_type -> google.protobuf.Empty
 	55, // 102: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	70, // 103: loop.relayerset.EVMRelayerSet.GetTransactionStatus:output_type -> loop.GetTransactionStatusReply
+	70, // 103: loop.relayerset.EVMRelayerSet.GetTransactionStatus:output_type -> loop.chain_capabilities.evm.GetTransactionStatusReply
 	72, // [72:104] is the sub-list for method output_type
 	40, // [40:72] is the sub-list for method input_type
 	40, // [40:40] is the sub-list for extension type_name

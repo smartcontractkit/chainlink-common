@@ -2,11 +2,11 @@ syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappb";
 
-package loop.chain_capabilities.evmcap;
+package cre.sdk.v2.evmcap;
 
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
-import "loop/chain-capabilities/evm/chain-service/evm.proto";
+import "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto";
 
 service EVM {
   option (cre.metadata.capability) = {

@@ -7,10 +7,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,14 +22,14 @@ type ClientOpt func(*Client)
 type Client struct {
 	*goplugin.ServiceClient
 	grpc       pb.ContractWriterClient
-	encodeWith contractreader.EncodingVersion
+	encodeWith chaincommonpb.EncodingVersion
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewContractWriterClient(cc),
-		encodeWith:    contractreader.DefaultEncodingVersion,
+		encodeWith:    chaincommonpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -38,14 +39,14 @@ func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt)
 	return client
 }
 
-func WithClientEncoding(version contractreader.EncodingVersion) ClientOpt {
+func WithClientEncoding(version chaincommonpb.EncodingVersion) ClientOpt {
 	return func(client *Client) {
 		client.encodeWith = version
 	}
 }
 
 func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int) error {
-	versionedParams, err := contractreader.EncodeVersionedBytes(params, c.encodeWith)
+	versionedParams, err := chaincommonpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (c *Client) SubmitTransaction(ctx context.Context, contractName, method str
 }
 
 func (c *Client) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	reply, err := c.grpc.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
+	reply, err := c.grpc.GetTransactionStatus(ctx, &evmpb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
 		return types.Unknown, net.WrapRPCErr(err)
 	}
@@ -90,7 +91,7 @@ func (c *Client) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponent
 }
 
 func (c *Client) GetEstimateFee(ctx context.Context, contract, method string, params any, toAddress string, meta *types.TxMeta, val *big.Int) (types.EstimateFee, error) {
-	versionedParams, err := contractreader.EncodeVersionedBytes(params, c.encodeWith)
+	versionedParams, err := chaincommonpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return types.EstimateFee{}, err
 	}
@@ -124,13 +125,13 @@ type ServerOpt func(*Server)
 type Server struct {
 	pb.UnimplementedContractWriterServer
 	impl       types.ContractWriter
-	encodeWith contractreader.EncodingVersion
+	encodeWith chaincommonpb.EncodingVersion
 }
 
 func NewServer(impl types.ContractWriter, opts ...ServerOpt) pb.ContractWriterServer {
 	server := &Server{
 		impl:       impl,
-		encodeWith: contractreader.DefaultEncodingVersion,
+		encodeWith: chaincommonpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -140,7 +141,7 @@ func NewServer(impl types.ContractWriter, opts ...ServerOpt) pb.ContractWriterSe
 	return server
 }
 
-func WithServerEncoding(version contractreader.EncodingVersion) ServerOpt {
+func WithServerEncoding(version chaincommonpb.EncodingVersion) ServerOpt {
 	return func(server *Server) {
 		server.encodeWith = version
 	}
@@ -148,7 +149,7 @@ func WithServerEncoding(version contractreader.EncodingVersion) ServerOpt {
 
 func (s *Server) SubmitTransaction(ctx context.Context, req *pb.SubmitTransactionRequest) (*emptypb.Empty, error) {
 	params := map[string]any{}
-	if err := contractreader.DecodeVersionedBytes(&params, req.Params); err != nil {
+	if err := chaincommonpb.DecodeVersionedBytes(&params, req.Params); err != nil {
 		return nil, err
 	}
 
@@ -160,13 +161,13 @@ func (s *Server) SubmitTransaction(ctx context.Context, req *pb.SubmitTransactio
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) GetTransactionStatus(ctx context.Context, req *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+func (s *Server) GetTransactionStatus(ctx context.Context, req *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
 	status, err := s.impl.GetTransactionStatus(ctx, req.TransactionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(status)}, nil
+	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(status)}, nil
 }
 
 func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.GetFeeComponentsReply, error) {
@@ -183,7 +184,7 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 
 func (s *Server) GetEstimateFee(ctx context.Context, req *pb.GetEstimateFeeRequest) (*pb.GetEstimateFeeReply, error) {
 	params := map[string]any{}
-	if err := contractreader.DecodeVersionedBytes(&params, req.Params); err != nil {
+	if err := chaincommonpb.DecodeVersionedBytes(&params, req.Params); err != nil {
 		return nil, err
 	}
 

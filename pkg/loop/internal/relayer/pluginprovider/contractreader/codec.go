@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -15,22 +15,22 @@ var _ types.Codec = (*CodecClient)(nil)
 // NewCodecTestClient is a test client for [types.Codec]
 // internal users should instantiate a client directly and set all private fields.
 func NewCodecTestClient(conn *grpc.ClientConn) types.Codec {
-	return &CodecClient{grpc: pb.NewCodecClient(conn)}
+	return &CodecClient{grpc: chaincommonpb.NewCodecClient(conn)}
 }
 
 type CodecClientOpt func(*CodecClient)
 
 type CodecClient struct {
 	*net.BrokerExt
-	grpc       pb.CodecClient
-	encodeWith EncodingVersion
+	grpc       chaincommonpb.CodecClient
+	encodeWith chaincommonpb.EncodingVersion
 }
 
 func NewCodecClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...CodecClientOpt) *CodecClient {
 	client := &CodecClient{
 		BrokerExt:  b,
-		grpc:       pb.NewCodecClient(cc),
-		encodeWith: DefaultEncodingVersion,
+		grpc:       chaincommonpb.NewCodecClient(cc),
+		encodeWith: chaincommonpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -40,19 +40,19 @@ func NewCodecClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...Codec
 	return client
 }
 
-func WithCodecClientEncoding(version EncodingVersion) CodecClientOpt {
+func WithCodecClientEncoding(version chaincommonpb.EncodingVersion) CodecClientOpt {
 	return func(client *CodecClient) {
 		client.encodeWith = version
 	}
 }
 
 func (c *CodecClient) Encode(ctx context.Context, item any, itemType string) ([]byte, error) {
-	versionedParams, err := EncodeVersionedBytes(item, c.encodeWith)
+	versionedParams, err := chaincommonpb.EncodeVersionedBytes(item, c.encodeWith)
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := c.grpc.GetEncoding(ctx, &pb.GetEncodingRequest{
+	reply, err := c.grpc.GetEncoding(ctx, &chaincommonpb.GetEncodingRequest{
 		Params:   versionedParams,
 		ItemType: itemType,
 	})
@@ -64,7 +64,7 @@ func (c *CodecClient) Encode(ctx context.Context, item any, itemType string) ([]
 }
 
 func (c *CodecClient) Decode(ctx context.Context, raw []byte, into any, itemType string) error {
-	request := &pb.GetDecodingRequest{
+	request := &chaincommonpb.GetDecodingRequest{
 		Encoded:             raw,
 		ItemType:            itemType,
 		WireEncodingVersion: c.encodeWith.Uint32(),
@@ -74,11 +74,11 @@ func (c *CodecClient) Decode(ctx context.Context, raw []byte, into any, itemType
 		return net.WrapRPCErr(err)
 	}
 
-	return DecodeVersionedBytes(into, resp.RetVal)
+	return chaincommonpb.DecodeVersionedBytes(into, resp.RetVal)
 }
 
 func (c *CodecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
-	res, err := c.grpc.GetMaxSize(ctx, &pb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: true})
+	res, err := c.grpc.GetMaxSize(ctx, &chaincommonpb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: true})
 	if err != nil {
 		return 0, net.WrapRPCErr(err)
 	}
@@ -87,7 +87,7 @@ func (c *CodecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType st
 }
 
 func (c *CodecClient) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
-	res, err := c.grpc.GetMaxSize(ctx, &pb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: false})
+	res, err := c.grpc.GetMaxSize(ctx, &chaincommonpb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: false})
 	if err != nil {
 		return 0, net.WrapRPCErr(err)
 	}
@@ -95,32 +95,32 @@ func (c *CodecClient) GetMaxDecodingSize(ctx context.Context, n int, itemType st
 	return int(res.SizeInBytes), nil
 }
 
-var _ pb.CodecServer = (*CodecServer)(nil)
+var _ chaincommonpb.CodecServer = (*CodecServer)(nil)
 
 type CodecServer struct {
-	pb.UnimplementedCodecServer
+	chaincommonpb.UnimplementedCodecServer
 	impl types.Codec
 }
 
-func NewCodecServer(impl types.Codec) pb.CodecServer {
+func NewCodecServer(impl types.Codec) chaincommonpb.CodecServer {
 	return &CodecServer{impl: impl}
 }
 
-func (c *CodecServer) GetEncoding(ctx context.Context, req *pb.GetEncodingRequest) (*pb.GetEncodingResponse, error) {
+func (c *CodecServer) GetEncoding(ctx context.Context, req *chaincommonpb.GetEncodingRequest) (*chaincommonpb.GetEncodingResponse, error) {
 	encodedType, err := getEncodedType(req.ItemType, c.impl, true)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = DecodeVersionedBytes(encodedType, req.Params); err != nil {
+	if err = chaincommonpb.DecodeVersionedBytes(encodedType, req.Params); err != nil {
 		return nil, err
 	}
 
 	encoded, err := c.impl.Encode(ctx, encodedType, req.ItemType)
-	return &pb.GetEncodingResponse{RetVal: encoded}, err
+	return &chaincommonpb.GetEncodingResponse{RetVal: encoded}, err
 }
 
-func (c *CodecServer) GetDecoding(ctx context.Context, req *pb.GetDecodingRequest) (*pb.GetDecodingResponse, error) {
+func (c *CodecServer) GetDecoding(ctx context.Context, req *chaincommonpb.GetDecodingRequest) (*chaincommonpb.GetDecodingResponse, error) {
 	encodedType, err := getEncodedType(req.ItemType, c.impl, false)
 	if err != nil {
 		return nil, err
@@ -131,12 +131,12 @@ func (c *CodecServer) GetDecoding(ctx context.Context, req *pb.GetDecodingReques
 		return nil, err
 	}
 
-	versionBytes, err := EncodeVersionedBytes(encodedType, EncodingVersion(req.WireEncodingVersion))
+	versionBytes, err := chaincommonpb.EncodeVersionedBytes(encodedType, chaincommonpb.EncodingVersion(req.WireEncodingVersion))
 
-	return &pb.GetDecodingResponse{RetVal: versionBytes}, err
+	return &chaincommonpb.GetDecodingResponse{RetVal: versionBytes}, err
 }
 
-func (c *CodecServer) GetMaxSize(ctx context.Context, req *pb.GetMaxSizeRequest) (*pb.GetMaxSizeResponse, error) {
+func (c *CodecServer) GetMaxSize(ctx context.Context, req *chaincommonpb.GetMaxSizeRequest) (*chaincommonpb.GetMaxSizeResponse, error) {
 	var sizeFn func(context.Context, int, string) (int, error)
 	if req.ForEncoding {
 		sizeFn = c.impl.GetMaxEncodingSize
@@ -148,7 +148,7 @@ func (c *CodecServer) GetMaxSize(ctx context.Context, req *pb.GetMaxSizeRequest)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
+	return &chaincommonpb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
 }
 
 func getEncodedType(itemType string, possibleTypeProvider any, forEncoding bool) (any, error) {

@@ -8,7 +8,7 @@ package relayerset
 
 import (
 	context "context"
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
+	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -875,7 +875,7 @@ type EVMRelayerSetClient interface {
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*chain_service.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error)
+	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionStatusReply, error)
 }
 
 type eVMRelayerSetClient struct {
@@ -996,9 +996,9 @@ func (c *eVMRelayerSetClient) UnregisterLogTracking(ctx context.Context, in *Unr
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
+func (c *eVMRelayerSetClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionStatusReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(pb.GetTransactionStatusReply)
+	out := new(chain_service.GetTransactionStatusReply)
 	err := c.cc.Invoke(ctx, EVMRelayerSet_GetTransactionStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -1021,7 +1021,7 @@ type EVMRelayerSetServer interface {
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*chain_service.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error)
+	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*chain_service.GetTransactionStatusReply, error)
 	mustEmbedUnimplementedEVMRelayerSetServer()
 }
 
@@ -1065,7 +1065,7 @@ func (UnimplementedEVMRelayerSetServer) RegisterLogTracking(context.Context, *Re
 func (UnimplementedEVMRelayerSetServer) UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
-func (UnimplementedEVMRelayerSetServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+func (UnimplementedEVMRelayerSetServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*chain_service.GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
 }
 func (UnimplementedEVMRelayerSetServer) mustEmbedUnimplementedEVMRelayerSetServer() {}

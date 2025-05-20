@@ -7,10 +7,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
@@ -133,7 +132,7 @@ func (e eVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.Unregist
 	}, opts...)
 }
 
-func (e eVMClient) GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
+func (e eVMClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
 	return e.client.GetTransactionStatus(ctx, &relayerset.GetTransactionStatusRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -300,12 +299,12 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	limitAndSort, err := contractreader.ConvertLimitAndSortFromProto(request.GetRequest().GetLimitAndSort())
+	limitAndSort, err := chaincommonpb.ConvertLimitAndSortFromProto(request.GetRequest().GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
 
-	conf, err := contractreader.ConfidenceFromProto(request.GetRequest().GetConfidenceLevel())
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetRequest().GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +348,7 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *relayerset.
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
 		return nil, err
@@ -360,7 +359,7 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.G
 		return nil, err
 	}
 
-	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(txStatus)}, nil
+	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {

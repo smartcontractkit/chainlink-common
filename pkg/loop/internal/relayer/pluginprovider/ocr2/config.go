@@ -7,6 +7,7 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -236,7 +237,7 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 	}
 
 	if provider.Codec() != nil {
-		pb.RegisterCodecServer(s, contractreader.NewCodecServer(provider.Codec()))
+		chaincommonpb.RegisterCodecServer(s, contractreader.NewCodecServer(provider.Codec()))
 	}
 }
 

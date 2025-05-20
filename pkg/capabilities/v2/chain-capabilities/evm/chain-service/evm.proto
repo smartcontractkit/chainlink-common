@@ -1,11 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service;evmpb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service;evmpb";
 package loop.chain_capabilities.evm;
 
-import "loop/internal/pb/contract_writer.proto";
-import "loop/internal/pb/query.proto";
 import "google/protobuf/empty.proto";
+import "loop/chain-common/query.proto";
 import "values/pb/values.proto";
 
 service EVM{
@@ -129,7 +128,7 @@ message Expression {
 }
 
 message BooleanExpression {
-  BooleanOperator boolean_operator = 1;
+  loop.chain.common.BooleanOperator boolean_operator = 1;
   repeated Expression expression = 2;
 }
 
@@ -143,7 +142,7 @@ message Or {
 
 message HashValueComparator {
   repeated Hash values = 1;
-  ComparisonOperator operator = 2;
+  loop.chain.common.ComparisonOperator operator = 2;
 }
 
 message ContractAddress {
@@ -168,7 +167,7 @@ message EventByTopic {
 // can be used in combination with general primitives for querying tracked logs
 message Primitive {
   oneof primitive {
-    loop.Primitive general_primitive = 1;
+    loop.chain.common.Primitive general_primitive = 1;
     ContractAddress contract_address = 2;
     EventSig event_sig = 3;
     EventByWord event_by_word = 4;
@@ -252,11 +251,29 @@ message UnregisterLogTrackingRequest {
 
 message QueryTrackedLogsRequest {
   repeated Expression expression = 1;
-  LimitAndSort limit_and_sort = 2;
-  Confidence confidence_level = 3;
+  loop.chain.common.LimitAndSort limit_and_sort = 2;
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message QueryTrackedLogsReply {
   repeated Log logs = 1;
 }
 
+message GetTransactionStatusRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionStatusReply {
+  TransactionStatus transaction_status = 1;
+}
+
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNKNOWN = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_UNCONFIRMED = 2;
+  TRANSACTION_STATUS_FINALIZED = 3;
+  TRANSACTION_STATUS_FAILED = 4;
+  TRANSACTION_STATUS_FATAL = 5;
+}

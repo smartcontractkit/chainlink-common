@@ -6,11 +6,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
-
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -135,12 +133,12 @@ func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 		return nil, net.WrapRPCErr(err)
 	}
 
-	protoLimitAndSort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
+	protoLimitAndSort, err := chaincommonpb.ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	protoConfidenceLevel, err := contractreader.ConvertConfidenceToProto(confidenceLevel)
+	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -168,7 +166,7 @@ func (e *EVMClient) UnregisterLogTracking(ctx context.Context, filterName string
 }
 
 func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	reply, err := e.grpcClient.GetTransactionStatus(ctx, &pb.GetTransactionStatusRequest{TransactionId: transactionID})
+	reply, err := e.grpcClient.GetTransactionStatus(ctx, &evmpb.GetTransactionStatusRequest{TransactionId: transactionID})
 	if err != nil {
 		return types.Unknown, net.WrapRPCErr(err)
 	}
@@ -294,12 +292,12 @@ func (e *evmServer) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTr
 		return nil, err
 	}
 
-	limitAndSort, err := contractreader.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := chaincommonpb.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
 
-	conf, err := contractreader.ConfidenceFromProto(request.GetConfidenceLevel())
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
@@ -324,11 +322,11 @@ func (e *evmServer) UnregisterLogTracking(ctx context.Context, request *evmpb.Un
 	return nil, e.impl.UnregisterLogTracking(ctx, request.GetFilterName())
 }
 
-func (e *evmServer) GetTransactionStatus(ctx context.Context, request *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
 	txStatus, err := e.impl.GetTransactionStatus(ctx, request.GetTransactionId())
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetTransactionStatusReply{TransactionStatus: pb.TransactionStatus(txStatus)}, nil
+	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }

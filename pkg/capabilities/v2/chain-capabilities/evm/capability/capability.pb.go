@@ -2,13 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: loop/chain-capabilities/evm/capability/capability.proto
+// source: capabilities/v2/chain-capabilities/evm/capability/capability.proto
 
 package evmcappb
 
 import (
+	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm/chain-service"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -23,11 +23,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_loop_chain_capabilities_evm_capability_capability_proto protoreflect.FileDescriptor
+var File_capabilities_v2_chain_capabilities_evm_capability_capability_proto protoreflect.FileDescriptor
 
-const file_loop_chain_capabilities_evm_capability_capability_proto_rawDesc = "" +
+const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc = "" +
 	"\n" +
-	"7loop/chain-capabilities/evm/capability/capability.proto\x12\x1eloop.chain_capabilities.evmcap\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a3loop/chain-capabilities/evm/chain-service/evm.proto2\xab\t\n" +
+	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x11cre.sdk.v2.evmcap\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto2\xab\t\n" +
 	"\x03EVM\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
 	"\n" +
@@ -41,7 +41,7 @@ const file_loop_chain_capabilities_evm_capability_capability_proto_rawDesc = "" 
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
 	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0B\\ZZgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappbb\x06proto3"
 
-var file_loop_chain_capabilities_evm_capability_capability_proto_goTypes = []any{
+var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes = []any{
 	(*chain_service.CallContractRequest)(nil),          // 0: loop.chain_capabilities.evm.CallContractRequest
 	(*chain_service.FilterLogsRequest)(nil),            // 1: loop.chain_capabilities.evm.FilterLogsRequest
 	(*chain_service.BalanceAtRequest)(nil),             // 2: loop.chain_capabilities.evm.BalanceAtRequest
@@ -61,27 +61,27 @@ var file_loop_chain_capabilities_evm_capability_capability_proto_goTypes = []any
 	(*chain_service.LatestAndFinalizedHeadReply)(nil),  // 16: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
 	(*chain_service.QueryTrackedLogsReply)(nil),        // 17: loop.chain_capabilities.evm.QueryTrackedLogsReply
 }
-var file_loop_chain_capabilities_evm_capability_capability_proto_depIdxs = []int32{
-	0,  // 0: loop.chain_capabilities.evmcap.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	1,  // 1: loop.chain_capabilities.evmcap.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	2,  // 2: loop.chain_capabilities.evmcap.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	3,  // 3: loop.chain_capabilities.evmcap.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	4,  // 4: loop.chain_capabilities.evmcap.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
-	5,  // 5: loop.chain_capabilities.evmcap.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
-	6,  // 6: loop.chain_capabilities.evmcap.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	7,  // 7: loop.chain_capabilities.evmcap.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	8,  // 8: loop.chain_capabilities.evmcap.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	9,  // 9: loop.chain_capabilities.evmcap.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	10, // 10: loop.chain_capabilities.evmcap.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	11, // 11: loop.chain_capabilities.evmcap.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	12, // 12: loop.chain_capabilities.evmcap.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	13, // 13: loop.chain_capabilities.evmcap.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	14, // 14: loop.chain_capabilities.evmcap.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	15, // 15: loop.chain_capabilities.evmcap.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
-	16, // 16: loop.chain_capabilities.evmcap.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	17, // 17: loop.chain_capabilities.evmcap.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	6,  // 18: loop.chain_capabilities.evmcap.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 19: loop.chain_capabilities.evmcap.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs = []int32{
+	0,  // 0: cre.sdk.v2.evmcap.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
+	1,  // 1: cre.sdk.v2.evmcap.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
+	2,  // 2: cre.sdk.v2.evmcap.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
+	3,  // 3: cre.sdk.v2.evmcap.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
+	4,  // 4: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
+	5,  // 5: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
+	6,  // 6: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	7,  // 7: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	8,  // 8: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	9,  // 9: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	10, // 10: cre.sdk.v2.evmcap.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	11, // 11: cre.sdk.v2.evmcap.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	12, // 12: cre.sdk.v2.evmcap.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	13, // 13: cre.sdk.v2.evmcap.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	14, // 14: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	15, // 15: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
+	16, // 16: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	17, // 17: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	6,  // 18: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	6,  // 19: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	10, // [10:20] is the sub-list for method output_type
 	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
@@ -89,25 +89,25 @@ var file_loop_chain_capabilities_evm_capability_capability_proto_depIdxs = []int
 	0,  // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_loop_chain_capabilities_evm_capability_capability_proto_init() }
-func file_loop_chain_capabilities_evm_capability_capability_proto_init() {
-	if File_loop_chain_capabilities_evm_capability_capability_proto != nil {
+func init() { file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_init() }
+func file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_init() {
+	if File_capabilities_v2_chain_capabilities_evm_capability_capability_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_chain_capabilities_evm_capability_capability_proto_rawDesc), len(file_loop_chain_capabilities_evm_capability_capability_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_loop_chain_capabilities_evm_capability_capability_proto_goTypes,
-		DependencyIndexes: file_loop_chain_capabilities_evm_capability_capability_proto_depIdxs,
+		GoTypes:           file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes,
+		DependencyIndexes: file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs,
 	}.Build()
-	File_loop_chain_capabilities_evm_capability_capability_proto = out.File
-	file_loop_chain_capabilities_evm_capability_capability_proto_goTypes = nil
-	file_loop_chain_capabilities_evm_capability_capability_proto_depIdxs = nil
+	File_capabilities_v2_chain_capabilities_evm_capability_capability_proto = out.File
+	file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes = nil
+	file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs = nil
 }

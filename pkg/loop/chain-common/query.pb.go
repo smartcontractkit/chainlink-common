@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: loop/internal/pb/query.proto
+// source: loop/chain-common/query.proto
 
-package pb
+package chaincommonpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -63,11 +63,11 @@ func (x ComparisonOperator) String() string {
 }
 
 func (ComparisonOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_loop_internal_pb_query_proto_enumTypes[0].Descriptor()
+	return file_loop_chain_common_query_proto_enumTypes[0].Descriptor()
 }
 
 func (ComparisonOperator) Type() protoreflect.EnumType {
-	return &file_loop_internal_pb_query_proto_enumTypes[0]
+	return &file_loop_chain_common_query_proto_enumTypes[0]
 }
 
 func (x ComparisonOperator) Number() protoreflect.EnumNumber {
@@ -76,7 +76,7 @@ func (x ComparisonOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ComparisonOperator.Descriptor instead.
 func (ComparisonOperator) EnumDescriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{0}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{0}
 }
 
 type BooleanOperator int32
@@ -109,11 +109,11 @@ func (x BooleanOperator) String() string {
 }
 
 func (BooleanOperator) Descriptor() protoreflect.EnumDescriptor {
-	return file_loop_internal_pb_query_proto_enumTypes[1].Descriptor()
+	return file_loop_chain_common_query_proto_enumTypes[1].Descriptor()
 }
 
 func (BooleanOperator) Type() protoreflect.EnumType {
-	return &file_loop_internal_pb_query_proto_enumTypes[1]
+	return &file_loop_chain_common_query_proto_enumTypes[1]
 }
 
 func (x BooleanOperator) Number() protoreflect.EnumNumber {
@@ -122,7 +122,7 @@ func (x BooleanOperator) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BooleanOperator.Descriptor instead.
 func (BooleanOperator) EnumDescriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{1}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{1}
 }
 
 type Confidence int32
@@ -155,11 +155,11 @@ func (x Confidence) String() string {
 }
 
 func (Confidence) Descriptor() protoreflect.EnumDescriptor {
-	return file_loop_internal_pb_query_proto_enumTypes[2].Descriptor()
+	return file_loop_chain_common_query_proto_enumTypes[2].Descriptor()
 }
 
 func (Confidence) Type() protoreflect.EnumType {
-	return &file_loop_internal_pb_query_proto_enumTypes[2]
+	return &file_loop_chain_common_query_proto_enumTypes[2]
 }
 
 func (x Confidence) Number() protoreflect.EnumNumber {
@@ -168,7 +168,7 @@ func (x Confidence) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Confidence.Descriptor instead.
 func (Confidence) EnumDescriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{2}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{2}
 }
 
 // CursorDirection defines the direction for cursor-based data fetching.
@@ -202,11 +202,11 @@ func (x CursorDirection) String() string {
 }
 
 func (CursorDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_loop_internal_pb_query_proto_enumTypes[3].Descriptor()
+	return file_loop_chain_common_query_proto_enumTypes[3].Descriptor()
 }
 
 func (CursorDirection) Type() protoreflect.EnumType {
-	return &file_loop_internal_pb_query_proto_enumTypes[3]
+	return &file_loop_chain_common_query_proto_enumTypes[3]
 }
 
 func (x CursorDirection) Number() protoreflect.EnumNumber {
@@ -215,7 +215,7 @@ func (x CursorDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CursorDirection.Descriptor instead.
 func (CursorDirection) EnumDescriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{3}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{3}
 }
 
 type SortDirection int32
@@ -248,11 +248,11 @@ func (x SortDirection) String() string {
 }
 
 func (SortDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_loop_internal_pb_query_proto_enumTypes[4].Descriptor()
+	return file_loop_chain_common_query_proto_enumTypes[4].Descriptor()
 }
 
 func (SortDirection) Type() protoreflect.EnumType {
-	return &file_loop_internal_pb_query_proto_enumTypes[4]
+	return &file_loop_chain_common_query_proto_enumTypes[4]
 }
 
 func (x SortDirection) Number() protoreflect.EnumNumber {
@@ -261,7 +261,7 @@ func (x SortDirection) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortDirection.Descriptor instead.
 func (SortDirection) EnumDescriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{4}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{4}
 }
 
 type SortType int32
@@ -297,11 +297,11 @@ func (x SortType) String() string {
 }
 
 func (SortType) Descriptor() protoreflect.EnumDescriptor {
-	return file_loop_internal_pb_query_proto_enumTypes[5].Descriptor()
+	return file_loop_chain_common_query_proto_enumTypes[5].Descriptor()
 }
 
 func (SortType) Type() protoreflect.EnumType {
-	return &file_loop_internal_pb_query_proto_enumTypes[5]
+	return &file_loop_chain_common_query_proto_enumTypes[5]
 }
 
 func (x SortType) Number() protoreflect.EnumNumber {
@@ -310,7 +310,7 @@ func (x SortType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SortType.Descriptor instead.
 func (SortType) EnumDescriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{5}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{5}
 }
 
 // Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions.
@@ -328,7 +328,7 @@ type Expression struct {
 
 func (x *Expression) Reset() {
 	*x = Expression{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[0]
+	mi := &file_loop_chain_common_query_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +340,7 @@ func (x *Expression) String() string {
 func (*Expression) ProtoMessage() {}
 
 func (x *Expression) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[0]
+	mi := &file_loop_chain_common_query_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +353,7 @@ func (x *Expression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Expression.ProtoReflect.Descriptor instead.
 func (*Expression) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{0}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Expression) GetEvaluator() isExpression_Evaluator {
@@ -399,7 +399,7 @@ func (*Expression_BooleanExpression) isExpression_Evaluator() {}
 
 type BooleanExpression struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	BooleanOperator BooleanOperator        `protobuf:"varint,1,opt,name=boolean_operator,json=booleanOperator,proto3,enum=loop.BooleanOperator" json:"boolean_operator,omitempty"`
+	BooleanOperator BooleanOperator        `protobuf:"varint,1,opt,name=boolean_operator,json=booleanOperator,proto3,enum=loop.chain.common.BooleanOperator" json:"boolean_operator,omitempty"`
 	Expression      []*Expression          `protobuf:"bytes,2,rep,name=expression,proto3" json:"expression,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -407,7 +407,7 @@ type BooleanExpression struct {
 
 func (x *BooleanExpression) Reset() {
 	*x = BooleanExpression{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[1]
+	mi := &file_loop_chain_common_query_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -419,7 +419,7 @@ func (x *BooleanExpression) String() string {
 func (*BooleanExpression) ProtoMessage() {}
 
 func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[1]
+	mi := &file_loop_chain_common_query_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -432,7 +432,7 @@ func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BooleanExpression.ProtoReflect.Descriptor instead.
 func (*BooleanExpression) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{1}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BooleanExpression) GetBooleanOperator() BooleanOperator {
@@ -458,7 +458,7 @@ type And struct {
 
 func (x *And) Reset() {
 	*x = And{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[2]
+	mi := &file_loop_chain_common_query_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -470,7 +470,7 @@ func (x *And) String() string {
 func (*And) ProtoMessage() {}
 
 func (x *And) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[2]
+	mi := &file_loop_chain_common_query_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +483,7 @@ func (x *And) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use And.ProtoReflect.Descriptor instead.
 func (*And) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{2}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *And) GetExpr() []*Expression {
@@ -502,7 +502,7 @@ type Or struct {
 
 func (x *Or) Reset() {
 	*x = Or{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[3]
+	mi := &file_loop_chain_common_query_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -514,7 +514,7 @@ func (x *Or) String() string {
 func (*Or) ProtoMessage() {}
 
 func (x *Or) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[3]
+	mi := &file_loop_chain_common_query_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -527,7 +527,7 @@ func (x *Or) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Or.ProtoReflect.Descriptor instead.
 func (*Or) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{3}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Or) GetExpr() []*Expression {
@@ -540,14 +540,14 @@ func (x *Or) GetExpr() []*Expression {
 type ValueComparator struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Value         *VersionedBytes        `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.ComparisonOperator" json:"operator,omitempty"`
+	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ValueComparator) Reset() {
 	*x = ValueComparator{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[4]
+	mi := &file_loop_chain_common_query_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +559,7 @@ func (x *ValueComparator) String() string {
 func (*ValueComparator) ProtoMessage() {}
 
 func (x *ValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[4]
+	mi := &file_loop_chain_common_query_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,7 +572,7 @@ func (x *ValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValueComparator.ProtoReflect.Descriptor instead.
 func (*ValueComparator) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{4}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ValueComparator) GetValue() *VersionedBytes {
@@ -599,7 +599,7 @@ type Comparator struct {
 
 func (x *Comparator) Reset() {
 	*x = Comparator{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[5]
+	mi := &file_loop_chain_common_query_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -611,7 +611,7 @@ func (x *Comparator) String() string {
 func (*Comparator) ProtoMessage() {}
 
 func (x *Comparator) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[5]
+	mi := &file_loop_chain_common_query_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -624,7 +624,7 @@ func (x *Comparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Comparator.ProtoReflect.Descriptor instead.
 func (*Comparator) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{5}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Comparator) GetName() string {
@@ -644,14 +644,14 @@ func (x *Comparator) GetValueComparators() []*ValueComparator {
 type Block struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	BlockNumber   string                 `protobuf:"bytes,1,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
-	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.ComparisonOperator" json:"operator,omitempty"`
+	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Block) Reset() {
 	*x = Block{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[6]
+	mi := &file_loop_chain_common_query_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -663,7 +663,7 @@ func (x *Block) String() string {
 func (*Block) ProtoMessage() {}
 
 func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[6]
+	mi := &file_loop_chain_common_query_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -676,7 +676,7 @@ func (x *Block) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Block.ProtoReflect.Descriptor instead.
 func (*Block) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{6}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Block) GetBlockNumber() string {
@@ -696,14 +696,14 @@ func (x *Block) GetOperator() ComparisonOperator {
 type Timestamp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp     uint64                 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.ComparisonOperator" json:"operator,omitempty"`
+	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Timestamp) Reset() {
 	*x = Timestamp{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[7]
+	mi := &file_loop_chain_common_query_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -715,7 +715,7 @@ func (x *Timestamp) String() string {
 func (*Timestamp) ProtoMessage() {}
 
 func (x *Timestamp) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[7]
+	mi := &file_loop_chain_common_query_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -728,7 +728,7 @@ func (x *Timestamp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Timestamp.ProtoReflect.Descriptor instead.
 func (*Timestamp) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{7}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Timestamp) GetTimestamp() uint64 {
@@ -754,7 +754,7 @@ type TxHash struct {
 
 func (x *TxHash) Reset() {
 	*x = TxHash{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[8]
+	mi := &file_loop_chain_common_query_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +766,7 @@ func (x *TxHash) String() string {
 func (*TxHash) ProtoMessage() {}
 
 func (x *TxHash) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[8]
+	mi := &file_loop_chain_common_query_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +779,7 @@ func (x *TxHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TxHash.ProtoReflect.Descriptor instead.
 func (*TxHash) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{8}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TxHash) GetTxHash() string {
@@ -806,7 +806,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[9]
+	mi := &file_loop_chain_common_query_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -818,7 +818,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[9]
+	mi := &file_loop_chain_common_query_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -831,7 +831,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{9}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -899,7 +899,7 @@ type Primitive_Block struct {
 }
 
 type Primitive_Confidence struct {
-	Confidence Confidence `protobuf:"varint,3,opt,name=confidence,proto3,enum=loop.Confidence,oneof"`
+	Confidence Confidence `protobuf:"varint,3,opt,name=confidence,proto3,enum=loop.chain.common.Confidence,oneof"`
 }
 
 type Primitive_Timestamp struct {
@@ -924,7 +924,7 @@ func (*Primitive_TxHash) isPrimitive_Primitive() {}
 type Limit struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Cursor        *string                `protobuf:"bytes,1,opt,name=cursor,proto3,oneof" json:"cursor,omitempty"`
-	Direction     *CursorDirection       `protobuf:"varint,2,opt,name=direction,proto3,enum=loop.CursorDirection,oneof" json:"direction,omitempty"`
+	Direction     *CursorDirection       `protobuf:"varint,2,opt,name=direction,proto3,enum=loop.chain.common.CursorDirection,oneof" json:"direction,omitempty"`
 	Count         uint64                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -932,7 +932,7 @@ type Limit struct {
 
 func (x *Limit) Reset() {
 	*x = Limit{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[10]
+	mi := &file_loop_chain_common_query_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -944,7 +944,7 @@ func (x *Limit) String() string {
 func (*Limit) ProtoMessage() {}
 
 func (x *Limit) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[10]
+	mi := &file_loop_chain_common_query_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -957,7 +957,7 @@ func (x *Limit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Limit.ProtoReflect.Descriptor instead.
 func (*Limit) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{10}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Limit) GetCursor() string {
@@ -983,15 +983,15 @@ func (x *Limit) GetCount() uint64 {
 
 type SortBy struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SortType      SortType               `protobuf:"varint,1,opt,name=sort_type,json=sortType,proto3,enum=loop.SortType" json:"sort_type,omitempty"`
-	Direction     SortDirection          `protobuf:"varint,2,opt,name=direction,proto3,enum=loop.SortDirection" json:"direction,omitempty"`
+	SortType      SortType               `protobuf:"varint,1,opt,name=sort_type,json=sortType,proto3,enum=loop.chain.common.SortType" json:"sort_type,omitempty"`
+	Direction     SortDirection          `protobuf:"varint,2,opt,name=direction,proto3,enum=loop.chain.common.SortDirection" json:"direction,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SortBy) Reset() {
 	*x = SortBy{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[11]
+	mi := &file_loop_chain_common_query_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1003,7 +1003,7 @@ func (x *SortBy) String() string {
 func (*SortBy) ProtoMessage() {}
 
 func (x *SortBy) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[11]
+	mi := &file_loop_chain_common_query_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1016,7 +1016,7 @@ func (x *SortBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBy.ProtoReflect.Descriptor instead.
 func (*SortBy) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{11}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SortBy) GetSortType() SortType {
@@ -1044,7 +1044,7 @@ type LimitAndSort struct {
 
 func (x *LimitAndSort) Reset() {
 	*x = LimitAndSort{}
-	mi := &file_loop_internal_pb_query_proto_msgTypes[12]
+	mi := &file_loop_chain_common_query_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1056,7 @@ func (x *LimitAndSort) String() string {
 func (*LimitAndSort) ProtoMessage() {}
 
 func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_query_proto_msgTypes[12]
+	mi := &file_loop_chain_common_query_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1069,7 @@ func (x *LimitAndSort) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LimitAndSort.ProtoReflect.Descriptor instead.
 func (*LimitAndSort) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_query_proto_rawDescGZIP(), []int{12}
+	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *LimitAndSort) GetSortBy() []*SortBy {
@@ -1086,64 +1086,64 @@ func (x *LimitAndSort) GetLimit() *Limit {
 	return nil
 }
 
-var File_loop_internal_pb_query_proto protoreflect.FileDescriptor
+var File_loop_chain_common_query_proto protoreflect.FileDescriptor
 
-const file_loop_internal_pb_query_proto_rawDesc = "" +
+const file_loop_chain_common_query_proto_rawDesc = "" +
 	"\n" +
-	"\x1cloop/internal/pb/query.proto\x12\x04loop\x1a\x1cloop/internal/pb/codec.proto\"\x94\x01\n" +
+	"\x1dloop/chain-common/query.proto\x12\x11loop.chain.common\x1a\x1dloop/chain-common/codec.proto\"\xae\x01\n" +
 	"\n" +
-	"Expression\x12/\n" +
-	"\tprimitive\x18\x01 \x01(\v2\x0f.loop.PrimitiveH\x00R\tprimitive\x12H\n" +
-	"\x12boolean_expression\x18\x02 \x01(\v2\x17.loop.BooleanExpressionH\x00R\x11booleanExpressionB\v\n" +
-	"\tevaluator\"\x87\x01\n" +
-	"\x11BooleanExpression\x12@\n" +
-	"\x10boolean_operator\x18\x01 \x01(\x0e2\x15.loop.BooleanOperatorR\x0fbooleanOperator\x120\n" +
+	"Expression\x12<\n" +
+	"\tprimitive\x18\x01 \x01(\v2\x1c.loop.chain.common.PrimitiveH\x00R\tprimitive\x12U\n" +
+	"\x12boolean_expression\x18\x02 \x01(\v2$.loop.chain.common.BooleanExpressionH\x00R\x11booleanExpressionB\v\n" +
+	"\tevaluator\"\xa1\x01\n" +
+	"\x11BooleanExpression\x12M\n" +
+	"\x10boolean_operator\x18\x01 \x01(\x0e2\".loop.chain.common.BooleanOperatorR\x0fbooleanOperator\x12=\n" +
 	"\n" +
-	"expression\x18\x02 \x03(\v2\x10.loop.ExpressionR\n" +
-	"expression\"+\n" +
-	"\x03And\x12$\n" +
-	"\x04expr\x18\x01 \x03(\v2\x10.loop.ExpressionR\x04expr\"*\n" +
-	"\x02Or\x12$\n" +
-	"\x04expr\x18\x01 \x03(\v2\x10.loop.ExpressionR\x04expr\"s\n" +
-	"\x0fValueComparator\x12*\n" +
-	"\x05value\x18\x01 \x01(\v2\x14.loop.VersionedBytesR\x05value\x124\n" +
-	"\boperator\x18\x02 \x01(\x0e2\x18.loop.ComparisonOperatorR\boperator\"d\n" +
+	"expression\x18\x02 \x03(\v2\x1d.loop.chain.common.ExpressionR\n" +
+	"expression\"8\n" +
+	"\x03And\x121\n" +
+	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"7\n" +
+	"\x02Or\x121\n" +
+	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"\x8d\x01\n" +
+	"\x0fValueComparator\x127\n" +
+	"\x05value\x18\x01 \x01(\v2!.loop.chain.common.VersionedBytesR\x05value\x12A\n" +
+	"\boperator\x18\x02 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"q\n" +
 	"\n" +
 	"Comparator\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12B\n" +
-	"\x11value_comparators\x18\x02 \x03(\v2\x15.loop.ValueComparatorR\x10valueComparators\"`\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12O\n" +
+	"\x11value_comparators\x18\x02 \x03(\v2\".loop.chain.common.ValueComparatorR\x10valueComparators\"m\n" +
 	"\x05Block\x12!\n" +
-	"\fblock_number\x18\x01 \x01(\tR\vblockNumber\x124\n" +
-	"\boperator\x18\x02 \x01(\x0e2\x18.loop.ComparisonOperatorR\boperator\"_\n" +
+	"\fblock_number\x18\x01 \x01(\tR\vblockNumber\x12A\n" +
+	"\boperator\x18\x02 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"l\n" +
 	"\tTimestamp\x12\x1c\n" +
-	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x124\n" +
-	"\boperator\x18\x02 \x01(\x0e2\x18.loop.ComparisonOperatorR\boperator\"!\n" +
+	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x12A\n" +
+	"\boperator\x18\x02 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"!\n" +
 	"\x06TxHash\x12\x17\n" +
-	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"\xff\x01\n" +
-	"\tPrimitive\x122\n" +
+	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"\xc0\x02\n" +
+	"\tPrimitive\x12?\n" +
 	"\n" +
-	"comparator\x18\x01 \x01(\v2\x10.loop.ComparatorH\x00R\n" +
-	"comparator\x12#\n" +
-	"\x05block\x18\x02 \x01(\v2\v.loop.BlockH\x00R\x05block\x122\n" +
+	"comparator\x18\x01 \x01(\v2\x1d.loop.chain.common.ComparatorH\x00R\n" +
+	"comparator\x120\n" +
+	"\x05block\x18\x02 \x01(\v2\x18.loop.chain.common.BlockH\x00R\x05block\x12?\n" +
 	"\n" +
-	"confidence\x18\x03 \x01(\x0e2\x10.loop.ConfidenceH\x00R\n" +
-	"confidence\x12/\n" +
-	"\ttimestamp\x18\x04 \x01(\v2\x0f.loop.TimestampH\x00R\ttimestamp\x12'\n" +
-	"\atx_hash\x18\x05 \x01(\v2\f.loop.TxHashH\x00R\x06txHashB\v\n" +
-	"\tprimitive\"\x8d\x01\n" +
+	"confidence\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceH\x00R\n" +
+	"confidence\x12<\n" +
+	"\ttimestamp\x18\x04 \x01(\v2\x1c.loop.chain.common.TimestampH\x00R\ttimestamp\x124\n" +
+	"\atx_hash\x18\x05 \x01(\v2\x19.loop.chain.common.TxHashH\x00R\x06txHashB\v\n" +
+	"\tprimitive\"\x9a\x01\n" +
 	"\x05Limit\x12\x1b\n" +
-	"\x06cursor\x18\x01 \x01(\tH\x00R\x06cursor\x88\x01\x01\x128\n" +
-	"\tdirection\x18\x02 \x01(\x0e2\x15.loop.CursorDirectionH\x01R\tdirection\x88\x01\x01\x12\x14\n" +
+	"\x06cursor\x18\x01 \x01(\tH\x00R\x06cursor\x88\x01\x01\x12E\n" +
+	"\tdirection\x18\x02 \x01(\x0e2\".loop.chain.common.CursorDirectionH\x01R\tdirection\x88\x01\x01\x12\x14\n" +
 	"\x05count\x18\x03 \x01(\x04R\x05countB\t\n" +
 	"\a_cursorB\f\n" +
 	"\n" +
-	"_direction\"h\n" +
-	"\x06SortBy\x12+\n" +
-	"\tsort_type\x18\x01 \x01(\x0e2\x0e.loop.SortTypeR\bsortType\x121\n" +
-	"\tdirection\x18\x02 \x01(\x0e2\x13.loop.SortDirectionR\tdirection\"X\n" +
-	"\fLimitAndSort\x12%\n" +
-	"\asort_by\x18\x01 \x03(\v2\f.loop.SortByR\x06sortBy\x12!\n" +
-	"\x05limit\x18\x02 \x01(\v2\v.loop.LimitR\x05limit*G\n" +
+	"_direction\"\x82\x01\n" +
+	"\x06SortBy\x128\n" +
+	"\tsort_type\x18\x01 \x01(\x0e2\x1b.loop.chain.common.SortTypeR\bsortType\x12>\n" +
+	"\tdirection\x18\x02 \x01(\x0e2 .loop.chain.common.SortDirectionR\tdirection\"r\n" +
+	"\fLimitAndSort\x122\n" +
+	"\asort_by\x18\x01 \x03(\v2\x19.loop.chain.common.SortByR\x06sortBy\x12.\n" +
+	"\x05limit\x18\x02 \x01(\v2\x18.loop.chain.common.LimitR\x05limit*G\n" +
 	"\x12ComparisonOperator\x12\x06\n" +
 	"\x02Eq\x10\x00\x12\a\n" +
 	"\x03Neq\x10\x01\x12\x06\n" +
@@ -1167,66 +1167,66 @@ const file_loop_internal_pb_query_proto_rawDesc = "" +
 	"\bSortType\x12\x11\n" +
 	"\rSortTimestamp\x10\x00\x12\r\n" +
 	"\tSortBlock\x10\x01\x12\x10\n" +
-	"\fSortSequence\x10\x02BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
+	"\fSortSequence\x10\x02BRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-common;chaincommonpbb\x06proto3"
 
 var (
-	file_loop_internal_pb_query_proto_rawDescOnce sync.Once
-	file_loop_internal_pb_query_proto_rawDescData []byte
+	file_loop_chain_common_query_proto_rawDescOnce sync.Once
+	file_loop_chain_common_query_proto_rawDescData []byte
 )
 
-func file_loop_internal_pb_query_proto_rawDescGZIP() []byte {
-	file_loop_internal_pb_query_proto_rawDescOnce.Do(func() {
-		file_loop_internal_pb_query_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_query_proto_rawDesc), len(file_loop_internal_pb_query_proto_rawDesc)))
+func file_loop_chain_common_query_proto_rawDescGZIP() []byte {
+	file_loop_chain_common_query_proto_rawDescOnce.Do(func() {
+		file_loop_chain_common_query_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_chain_common_query_proto_rawDesc), len(file_loop_chain_common_query_proto_rawDesc)))
 	})
-	return file_loop_internal_pb_query_proto_rawDescData
+	return file_loop_chain_common_query_proto_rawDescData
 }
 
-var file_loop_internal_pb_query_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_loop_internal_pb_query_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
-var file_loop_internal_pb_query_proto_goTypes = []any{
-	(ComparisonOperator)(0),   // 0: loop.ComparisonOperator
-	(BooleanOperator)(0),      // 1: loop.BooleanOperator
-	(Confidence)(0),           // 2: loop.Confidence
-	(CursorDirection)(0),      // 3: loop.CursorDirection
-	(SortDirection)(0),        // 4: loop.SortDirection
-	(SortType)(0),             // 5: loop.SortType
-	(*Expression)(nil),        // 6: loop.Expression
-	(*BooleanExpression)(nil), // 7: loop.BooleanExpression
-	(*And)(nil),               // 8: loop.And
-	(*Or)(nil),                // 9: loop.Or
-	(*ValueComparator)(nil),   // 10: loop.ValueComparator
-	(*Comparator)(nil),        // 11: loop.Comparator
-	(*Block)(nil),             // 12: loop.Block
-	(*Timestamp)(nil),         // 13: loop.Timestamp
-	(*TxHash)(nil),            // 14: loop.TxHash
-	(*Primitive)(nil),         // 15: loop.Primitive
-	(*Limit)(nil),             // 16: loop.Limit
-	(*SortBy)(nil),            // 17: loop.SortBy
-	(*LimitAndSort)(nil),      // 18: loop.LimitAndSort
-	(*VersionedBytes)(nil),    // 19: loop.VersionedBytes
+var file_loop_chain_common_query_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_loop_chain_common_query_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_loop_chain_common_query_proto_goTypes = []any{
+	(ComparisonOperator)(0),   // 0: loop.chain.common.ComparisonOperator
+	(BooleanOperator)(0),      // 1: loop.chain.common.BooleanOperator
+	(Confidence)(0),           // 2: loop.chain.common.Confidence
+	(CursorDirection)(0),      // 3: loop.chain.common.CursorDirection
+	(SortDirection)(0),        // 4: loop.chain.common.SortDirection
+	(SortType)(0),             // 5: loop.chain.common.SortType
+	(*Expression)(nil),        // 6: loop.chain.common.Expression
+	(*BooleanExpression)(nil), // 7: loop.chain.common.BooleanExpression
+	(*And)(nil),               // 8: loop.chain.common.And
+	(*Or)(nil),                // 9: loop.chain.common.Or
+	(*ValueComparator)(nil),   // 10: loop.chain.common.ValueComparator
+	(*Comparator)(nil),        // 11: loop.chain.common.Comparator
+	(*Block)(nil),             // 12: loop.chain.common.Block
+	(*Timestamp)(nil),         // 13: loop.chain.common.Timestamp
+	(*TxHash)(nil),            // 14: loop.chain.common.TxHash
+	(*Primitive)(nil),         // 15: loop.chain.common.Primitive
+	(*Limit)(nil),             // 16: loop.chain.common.Limit
+	(*SortBy)(nil),            // 17: loop.chain.common.SortBy
+	(*LimitAndSort)(nil),      // 18: loop.chain.common.LimitAndSort
+	(*VersionedBytes)(nil),    // 19: loop.chain.common.VersionedBytes
 }
-var file_loop_internal_pb_query_proto_depIdxs = []int32{
-	15, // 0: loop.Expression.primitive:type_name -> loop.Primitive
-	7,  // 1: loop.Expression.boolean_expression:type_name -> loop.BooleanExpression
-	1,  // 2: loop.BooleanExpression.boolean_operator:type_name -> loop.BooleanOperator
-	6,  // 3: loop.BooleanExpression.expression:type_name -> loop.Expression
-	6,  // 4: loop.And.expr:type_name -> loop.Expression
-	6,  // 5: loop.Or.expr:type_name -> loop.Expression
-	19, // 6: loop.ValueComparator.value:type_name -> loop.VersionedBytes
-	0,  // 7: loop.ValueComparator.operator:type_name -> loop.ComparisonOperator
-	10, // 8: loop.Comparator.value_comparators:type_name -> loop.ValueComparator
-	0,  // 9: loop.Block.operator:type_name -> loop.ComparisonOperator
-	0,  // 10: loop.Timestamp.operator:type_name -> loop.ComparisonOperator
-	11, // 11: loop.Primitive.comparator:type_name -> loop.Comparator
-	12, // 12: loop.Primitive.block:type_name -> loop.Block
-	2,  // 13: loop.Primitive.confidence:type_name -> loop.Confidence
-	13, // 14: loop.Primitive.timestamp:type_name -> loop.Timestamp
-	14, // 15: loop.Primitive.tx_hash:type_name -> loop.TxHash
-	3,  // 16: loop.Limit.direction:type_name -> loop.CursorDirection
-	5,  // 17: loop.SortBy.sort_type:type_name -> loop.SortType
-	4,  // 18: loop.SortBy.direction:type_name -> loop.SortDirection
-	17, // 19: loop.LimitAndSort.sort_by:type_name -> loop.SortBy
-	16, // 20: loop.LimitAndSort.limit:type_name -> loop.Limit
+var file_loop_chain_common_query_proto_depIdxs = []int32{
+	15, // 0: loop.chain.common.Expression.primitive:type_name -> loop.chain.common.Primitive
+	7,  // 1: loop.chain.common.Expression.boolean_expression:type_name -> loop.chain.common.BooleanExpression
+	1,  // 2: loop.chain.common.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	6,  // 3: loop.chain.common.BooleanExpression.expression:type_name -> loop.chain.common.Expression
+	6,  // 4: loop.chain.common.And.expr:type_name -> loop.chain.common.Expression
+	6,  // 5: loop.chain.common.Or.expr:type_name -> loop.chain.common.Expression
+	19, // 6: loop.chain.common.ValueComparator.value:type_name -> loop.chain.common.VersionedBytes
+	0,  // 7: loop.chain.common.ValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	10, // 8: loop.chain.common.Comparator.value_comparators:type_name -> loop.chain.common.ValueComparator
+	0,  // 9: loop.chain.common.Block.operator:type_name -> loop.chain.common.ComparisonOperator
+	0,  // 10: loop.chain.common.Timestamp.operator:type_name -> loop.chain.common.ComparisonOperator
+	11, // 11: loop.chain.common.Primitive.comparator:type_name -> loop.chain.common.Comparator
+	12, // 12: loop.chain.common.Primitive.block:type_name -> loop.chain.common.Block
+	2,  // 13: loop.chain.common.Primitive.confidence:type_name -> loop.chain.common.Confidence
+	13, // 14: loop.chain.common.Primitive.timestamp:type_name -> loop.chain.common.Timestamp
+	14, // 15: loop.chain.common.Primitive.tx_hash:type_name -> loop.chain.common.TxHash
+	3,  // 16: loop.chain.common.Limit.direction:type_name -> loop.chain.common.CursorDirection
+	5,  // 17: loop.chain.common.SortBy.sort_type:type_name -> loop.chain.common.SortType
+	4,  // 18: loop.chain.common.SortBy.direction:type_name -> loop.chain.common.SortDirection
+	17, // 19: loop.chain.common.LimitAndSort.sort_by:type_name -> loop.chain.common.SortBy
+	16, // 20: loop.chain.common.LimitAndSort.limit:type_name -> loop.chain.common.Limit
 	21, // [21:21] is the sub-list for method output_type
 	21, // [21:21] is the sub-list for method input_type
 	21, // [21:21] is the sub-list for extension type_name
@@ -1234,40 +1234,40 @@ var file_loop_internal_pb_query_proto_depIdxs = []int32{
 	0,  // [0:21] is the sub-list for field type_name
 }
 
-func init() { file_loop_internal_pb_query_proto_init() }
-func file_loop_internal_pb_query_proto_init() {
-	if File_loop_internal_pb_query_proto != nil {
+func init() { file_loop_chain_common_query_proto_init() }
+func file_loop_chain_common_query_proto_init() {
+	if File_loop_chain_common_query_proto != nil {
 		return
 	}
-	file_loop_internal_pb_codec_proto_init()
-	file_loop_internal_pb_query_proto_msgTypes[0].OneofWrappers = []any{
+	file_loop_chain_common_codec_proto_init()
+	file_loop_chain_common_query_proto_msgTypes[0].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),
 	}
-	file_loop_internal_pb_query_proto_msgTypes[9].OneofWrappers = []any{
+	file_loop_chain_common_query_proto_msgTypes[9].OneofWrappers = []any{
 		(*Primitive_Comparator)(nil),
 		(*Primitive_Block)(nil),
 		(*Primitive_Confidence)(nil),
 		(*Primitive_Timestamp)(nil),
 		(*Primitive_TxHash)(nil),
 	}
-	file_loop_internal_pb_query_proto_msgTypes[10].OneofWrappers = []any{}
+	file_loop_chain_common_query_proto_msgTypes[10].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_query_proto_rawDesc), len(file_loop_internal_pb_query_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_chain_common_query_proto_rawDesc), len(file_loop_chain_common_query_proto_rawDesc)),
 			NumEnums:      6,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_loop_internal_pb_query_proto_goTypes,
-		DependencyIndexes: file_loop_internal_pb_query_proto_depIdxs,
-		EnumInfos:         file_loop_internal_pb_query_proto_enumTypes,
-		MessageInfos:      file_loop_internal_pb_query_proto_msgTypes,
+		GoTypes:           file_loop_chain_common_query_proto_goTypes,
+		DependencyIndexes: file_loop_chain_common_query_proto_depIdxs,
+		EnumInfos:         file_loop_chain_common_query_proto_enumTypes,
+		MessageInfos:      file_loop_chain_common_query_proto_msgTypes,
 	}.Build()
-	File_loop_internal_pb_query_proto = out.File
-	file_loop_internal_pb_query_proto_goTypes = nil
-	file_loop_internal_pb_query_proto_depIdxs = nil
+	File_loop_chain_common_query_proto = out.File
+	file_loop_chain_common_query_proto_goTypes = nil
+	file_loop_chain_common_query_proto_depIdxs = nil
 }

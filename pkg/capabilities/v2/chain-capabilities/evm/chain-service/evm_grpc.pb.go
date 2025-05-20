@@ -2,13 +2,12 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: loop/chain-capabilities/evm/chain-service/evm.proto
+// source: capabilities/v2/chain-capabilities/evm/chain-service/evm.proto
 
 package evmpb
 
 import (
 	context "context"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -50,7 +49,7 @@ type EVMClient interface {
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error)
+	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
 }
 
 type eVMClient struct {
@@ -171,9 +170,9 @@ func (c *eVMClient) UnregisterLogTracking(ctx context.Context, in *UnregisterLog
 	return out, nil
 }
 
-func (c *eVMClient) GetTransactionStatus(ctx context.Context, in *pb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*pb.GetTransactionStatusReply, error) {
+func (c *eVMClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(pb.GetTransactionStatusReply)
+	out := new(GetTransactionStatusReply)
 	err := c.cc.Invoke(ctx, EVM_GetTransactionStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -196,7 +195,7 @@ type EVMServer interface {
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-	GetTransactionStatus(context.Context, *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error)
+	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
 	mustEmbedUnimplementedEVMServer()
 }
 
@@ -240,7 +239,7 @@ func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *RegisterLogT
 func (UnimplementedEVMServer) UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
-func (UnimplementedEVMServer) GetTransactionStatus(context.Context, *pb.GetTransactionStatusRequest) (*pb.GetTransactionStatusReply, error) {
+func (UnimplementedEVMServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
 }
 func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
@@ -463,7 +462,7 @@ func _EVM_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _EVM_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(pb.GetTransactionStatusRequest)
+	in := new(GetTransactionStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -475,7 +474,7 @@ func _EVM_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: EVM_GetTransactionStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMServer).GetTransactionStatus(ctx, req.(*pb.GetTransactionStatusRequest))
+		return srv.(EVMServer).GetTransactionStatus(ctx, req.(*GetTransactionStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -537,5 +536,5 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/chain-capabilities/evm/chain-service/evm.proto",
+	Metadata: "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto",
 }

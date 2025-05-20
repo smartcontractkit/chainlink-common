@@ -7,7 +7,7 @@ package loop.relayerset;
 import "google/protobuf/empty.proto";
 import "loop/internal/pb/contract_reader.proto";
 import "loop/internal/pb/contract_writer.proto";
-import "loop/chain-capabilities/evm/chain-service/evm.proto";
+import "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto";
 
 message RelayerId {
   string network = 1;
@@ -134,7 +134,7 @@ service EVMRelayerSet {
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (loop.chain_capabilities.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (loop.chain_capabilities.evm.GetTransactionStatusReply);
 }
 
 message ContractReaderGetLatestValueRequest {
@@ -227,7 +227,7 @@ message UnregisterLogTrackingRequest {
 
 message GetTransactionStatusRequest {
   RelayerId relayerId = 1;
-  loop.GetTransactionStatusRequest request = 2;
+  loop.chain_capabilities.evm.GetTransactionStatusRequest request = 2;
 }
 
 

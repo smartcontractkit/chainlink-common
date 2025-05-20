@@ -8,8 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -327,7 +326,7 @@ func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives
 	for _, hvc := range hashedValueComparators {
 		protoHashedValueComparators = append(protoHashedValueComparators,
 			&HashValueComparator{
-				Operator: pb.ComparisonOperator(hvc.Operator),
+				Operator: chaincommonpb.ComparisonOperator(hvc.Operator),
 				Values:   convertHashesToProto(hvc.Values),
 			})
 	}
@@ -374,45 +373,8 @@ func ConvertExpressionsFromProto(protoExpressions []*Expression) ([]query.Expres
 func convertExpressionToProto(expression query.Expression) (*Expression, error) {
 	pbExpression := &Expression{}
 	if expression.IsPrimitive() {
-		p := &pb.Primitive{}
 		ep := &Primitive{}
 		switch primitive := expression.Primitive.(type) {
-		case *primitives.Comparator:
-			return nil, errors.New("comparator primitive is not supported for EVMService")
-		case *primitives.Block:
-			p.Primitive = &pb.Primitive_Block{
-				Block: &pb.Block{
-					BlockNumber: primitive.Block,
-					Operator:    pb.ComparisonOperator(primitive.Operator),
-				}}
-
-			putGeneralPrimitive(pbExpression, p)
-		case *primitives.Confidence:
-			pbConfidence, err := contractreader.ConvertConfidenceToProto(primitive.ConfidenceLevel)
-			if err != nil {
-				return nil, err
-			}
-
-			p.Primitive = &pb.Primitive_Confidence{
-				Confidence: pbConfidence,
-			}
-
-			putGeneralPrimitive(pbExpression, p)
-		case *primitives.Timestamp:
-			p.Primitive = &pb.Primitive_Timestamp{
-				Timestamp: &pb.Timestamp{
-					Timestamp: primitive.Timestamp,
-					Operator:  pb.ComparisonOperator(primitive.Operator),
-				}}
-
-			putGeneralPrimitive(pbExpression, p)
-		case *primitives.TxHash:
-			p.Primitive = &pb.Primitive_TxHash{
-				TxHash: &pb.TxHash{
-					TxHash: primitive.TxHash,
-				}}
-
-			putGeneralPrimitive(pbExpression, p)
 		case *evmprimitives.Address:
 			ep.Primitive = &Primitive_ContractAddress{ContractAddress: &ContractAddress{
 				Address: &Address{Address: primitive.Address[:]},
@@ -446,7 +408,13 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 
 			putEVMPrimitive(pbExpression, ep)
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
+			generalPrimitive, err := chaincommonpb.ConvertPrimitiveToProto(primitive, func(value any) (*chaincommonpb.VersionedBytes, error) {
+				return nil, fmt.Errorf("unsupported primitive type: %T", value)
+			})
+			if err != nil {
+				return nil, err
+			}
+			putGeneralPrimitive(pbExpression, generalPrimitive)
 		}
 		return pbExpression, nil
 	}
@@ -462,7 +430,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 	}
 	pbExpression.Evaluator = &Expression_BooleanExpression{
 		BooleanExpression: &BooleanExpression{
-			BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
+			BooleanOperator: chaincommonpb.BooleanOperator(expression.BoolExpression.BoolOperator),
 			Expression:      expressions,
 		}}
 
@@ -480,37 +448,22 @@ func convertExpressionFromProto(protoExpression *Expression) (query.Expression, 
 			}
 			expressions = append(expressions, convertedExpression)
 		}
-		if protoEvaluatedExpr.BooleanExpression.GetBooleanOperator() == pb.BooleanOperator_AND {
+		if protoEvaluatedExpr.BooleanExpression.GetBooleanOperator() == chaincommonpb.BooleanOperator_AND {
 			return query.And(expressions...), nil
 		}
 		return query.Or(expressions...), nil
+
 	case *Expression_Primitive:
 		switch primitive := protoEvaluatedExpr.Primitive.GetPrimitive().(type) {
 		case *Primitive_GeneralPrimitive:
-			return convertGeneralExpressionToProto(primitive.GeneralPrimitive)
+			return chaincommonpb.ConvertPrimitiveFromProto(primitive.GeneralPrimitive, func(_ string, _ bool) (any, error) {
+				return nil, fmt.Errorf("unsupported primitive type: %T", primitive)
+			})
 		default:
 			return convertEVMExpressionToProto(protoEvaluatedExpr.Primitive)
 		}
 	default:
 		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", protoExpression)
-	}
-}
-
-func convertGeneralExpressionToProto(protoPrimitive *pb.Primitive) (query.Expression, error) {
-	switch primitive := protoPrimitive.GetPrimitive().(type) {
-	case *pb.Primitive_Comparator:
-		return query.Expression{}, errors.New("comparator primitive is not supported for EVMService")
-	case *pb.Primitive_Confidence:
-		confidence, err := contractreader.ConfidenceFromProto(primitive.Confidence)
-		return query.Confidence(confidence), err
-	case *pb.Primitive_Block:
-		return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
-	case *pb.Primitive_TxHash:
-		return query.TxHash(primitive.TxHash.TxHash), nil
-	case *pb.Primitive_Timestamp:
-		return query.Timestamp(primitive.Timestamp.Timestamp, primitives.ComparisonOperator(primitive.Timestamp.Operator)), nil
-	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
 	}
 }
 
@@ -533,7 +486,7 @@ func convertEVMExpressionToProto(protoPrimitive *Primitive) (query.Expression, e
 	}
 }
 
-func putGeneralPrimitive(exp *Expression, p *pb.Primitive) {
+func putGeneralPrimitive(exp *Expression, p *chaincommonpb.Primitive) {
 	exp.Evaluator = &Expression_Primitive{Primitive: &Primitive{Primitive: &Primitive_GeneralPrimitive{GeneralPrimitive: p}}}
 }
 

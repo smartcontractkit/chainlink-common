@@ -7,6 +7,7 @@ import (
 	"iter"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/mock"
@@ -23,6 +24,7 @@ import (
 	mocks2 "github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
+	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
 )
 
 func Test_RelayerSet(t *testing.T) {
@@ -194,6 +196,29 @@ func Test_RelayerSet_ContractReader(t *testing.T) {
 	require.ErrorContains(t, err, "contract reader not found")
 }
 
+var (
+	address  = evmtypes.Address{1, 2, 3}
+	address1 = evmtypes.Address{10, 11, 14}
+	topic    = evmtypes.Hash{21, 3, 4}
+	topic2   = evmtypes.Hash{33, 1, 33}
+	topic3   = evmtypes.Hash{20, 19, 17}
+	txHash   = evmtypes.Hash{5, 3, 44}
+
+	msg = evmtypes.CallMsg{
+		From: address,
+		To:   address1,
+		Data: []byte("data"),
+	}
+
+	evmLog = evmtypes.Log{
+		Address:     address,
+		Topics:      [][32]byte{topic, topic2},
+		Data:        []byte("data"),
+		BlockNumber: big.NewInt(101),
+		TxHash:      txHash,
+	}
+)
+
 func Test_RelayerSet_EVMService(t *testing.T) {
 	ctx := t.Context()
 	stopCh := make(chan struct{})
@@ -239,10 +264,9 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		{
 			name: "CallContract",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				msg := &evmtypes.CallMsg{To: evmtypes.Address{0x1}}
 				block := big.NewInt(100)
-				mockEVM.EXPECT().CallContract(mock.Anything, msg, block).Return([]byte("ok"), nil)
-				out, err := evm.CallContract(ctx, msg, block)
+				mockEVM.EXPECT().CallContract(mock.Anything, &msg, block).Return([]byte("ok"), nil)
+				out, err := evm.CallContract(ctx, &msg, block)
 				require.NoError(t, err)
 				require.Equal(t, []byte("ok"), out)
 			},
@@ -250,18 +274,18 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		{
 			name: "FilterLogs",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				filter := evmtypes.FilterQuery{}
-				expectedLog := &evmtypes.Log{
-					Address: evmtypes.Address{0xaa},
-					Topics:  [][32]byte{},
+				filter := evmtypes.FilterQuery{
+					Addresses: []evmtypes.Address{address, address1},
+					FromBlock: big.NewInt(10),
+					ToBlock:   big.NewInt(145),
+					Topics:    [][][32]byte{{topic, topic2}, {topic3}},
 				}
-				mockEVM.EXPECT().FilterLogs(mock.Anything, mock.Anything).Return([]*evmtypes.Log{expectedLog}, nil)
+				mockEVM.EXPECT().FilterLogs(mock.Anything, filter).Return([]*evmtypes.Log{&evmLog}, nil)
 
 				out, err := evm.FilterLogs(ctx, filter)
 				require.NoError(t, err)
 				require.Len(t, out, 1)
-				require.Equal(t, expectedLog.Address, out[0].Address)
-				require.Equal(t, len(expectedLog.Topics), len(out[0].Topics))
+				require.Equal(t, &evmLog, out[0])
 			},
 		},
 		{
@@ -277,9 +301,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		{
 			name: "EstimateGas",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				msg := &evmtypes.CallMsg{}
-				mockEVM.EXPECT().EstimateGas(mock.Anything, msg).Return(uint64(42000), nil)
-				out, err := evm.EstimateGas(ctx, msg)
+				mockEVM.EXPECT().EstimateGas(mock.Anything, &msg).Return(uint64(42000), nil)
+				out, err := evm.EstimateGas(ctx, &msg)
 				require.NoError(t, err)
 				require.Equal(t, uint64(42000), out)
 			},
@@ -287,36 +310,39 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		{
 			name: "GetTransactionByHash",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				hash := evmtypes.Hash{0xcc}
-				tx := &evmtypes.Transaction{Hash: hash}
-				mockEVM.EXPECT().GetTransactionByHash(mock.Anything, hash).Return(tx, nil)
-				out, err := evm.GetTransactionByHash(ctx, hash)
+				tx := evmtypes.Transaction{
+					To:       address,
+					Data:     []byte("data"),
+					Hash:     txHash,
+					Nonce:    42,
+					Gas:      24,
+					GasPrice: big.NewInt(100),
+					Value:    big.NewInt(300),
+				}
+
+				mockEVM.EXPECT().GetTransactionByHash(mock.Anything, txHash).Return(&tx, nil)
+				out, err := evm.GetTransactionByHash(ctx, txHash)
 				require.NoError(t, err)
-				require.Equal(t, tx, out)
+				require.Equal(t, tx, *out)
 			},
 		},
 		{
 			name: "GetTransactionReceipt",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				hash := evmtypes.Hash{0xdd}
-				receipt := &evmtypes.Receipt{
-					TxHash:            hash,
-					Logs:              []*evmtypes.Log{}, // explicitly use empty slice
-					Status:            0,
-					ContractAddress:   evmtypes.Address{},
-					GasUsed:           0,
-					BlockHash:         [32]byte{},
-					BlockNumber:       nil,
-					TransactionIndex:  0,
-					EffectiveGasPrice: nil,
+				receipt := evmtypes.Receipt{
+					TxHash:            txHash,
+					Logs:              []*evmtypes.Log{&evmLog},
+					Status:            1,
+					ContractAddress:   address1,
+					GasUsed:           uint64(10),
+					BlockHash:         evmtypes.Hash{22, 33, 44},
+					BlockNumber:       big.NewInt(101),
+					TransactionIndex:  uint64(10),
+					EffectiveGasPrice: big.NewInt(12344),
 				}
-
-				mockEVM.EXPECT().GetTransactionReceipt(mock.Anything, hash).Return(receipt, nil)
-
-				out, err := evm.GetTransactionReceipt(ctx, hash)
+				mockEVM.EXPECT().GetTransactionReceipt(mock.Anything, txHash).Return(&receipt, nil)
+				out, err := evm.GetTransactionReceipt(ctx, txHash)
 				require.NoError(t, err)
-
-				// Manual comparison to avoid nil vs empty slice mismatch
 				require.Equal(t, receipt.TxHash, out.TxHash)
 				require.Equal(t, receipt.Status, out.Status)
 				require.Equal(t, receipt.ContractAddress, out.ContractAddress)
@@ -331,32 +357,20 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		{
 			name: "RegisterLogTracking",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				input := evmtypes.LPFilterQuery{
-					Name:         "logs",
-					Addresses:    [][20]byte{},
-					EventSigs:    [][32]byte{},
-					Topic2:       [][32]byte{},
-					Topic3:       [][32]byte{},
-					Topic4:       [][32]byte{},
-					Retention:    1,
-					MaxLogsKept:  2,
-					LogsPerBlock: 3,
+				lpFilterQuery := evmtypes.LPFilterQuery{
+					Name:         "f name 1",
+					Addresses:    [][20]byte{address, address1},
+					EventSigs:    [][32]byte{{14, 16, 29}},
+					Topic2:       [][32]byte{topic2},
+					Topic3:       [][32]byte{topic3},
+					Topic4:       [][32]byte{{20, 18, 14}},
+					Retention:    time.Minute,
+					MaxLogsKept:  uint64(10),
+					LogsPerBlock: uint64(20),
 				}
-				mockEVM.EXPECT().
-					RegisterLogTracking(mock.Anything, mock.MatchedBy(func(actual evmtypes.LPFilterQuery) bool {
-						return actual.Name == input.Name &&
-							len(actual.Addresses) == 0 &&
-							len(actual.EventSigs) == 0 &&
-							len(actual.Topic2) == 0 &&
-							len(actual.Topic3) == 0 &&
-							len(actual.Topic4) == 0 &&
-							actual.Retention == input.Retention &&
-							actual.MaxLogsKept == input.MaxLogsKept &&
-							actual.LogsPerBlock == input.LogsPerBlock
-					})).
-					Return(nil)
 
-				require.NoError(t, evm.RegisterLogTracking(ctx, input))
+				mockEVM.EXPECT().RegisterLogTracking(mock.Anything, lpFilterQuery).Return(nil)
+				require.NoError(t, evm.RegisterLogTracking(ctx, lpFilterQuery))
 			},
 		},
 		{
@@ -397,6 +411,18 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				out, err := evm.GetTransactionStatus(ctx, id)
 				require.NoError(t, err)
 				require.Equal(t, types.Unconfirmed, out)
+			},
+		},
+		{
+			name: "QueryTrackedLogs",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				fq := generateFixtureQuery()
+				expLimitAndSort := query.NewLimitAndSort(query.CountLimit(10), query.SortByTimestamp{})
+				expConfidence := primitives.Finalized
+				mockEVM.EXPECT().QueryTrackedLogs(mock.Anything, fq, expLimitAndSort, expConfidence).Return([]*evmtypes.Log{&evmLog}, nil)
+				out, err := evm.QueryTrackedLogs(ctx, fq, expLimitAndSort, expConfidence)
+				require.NoError(t, err)
+				require.Equal(t, &evmLog, out[0])
 			},
 		},
 	}
@@ -556,4 +582,49 @@ func (r *testRelaySetPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	rs, _ := NewRelayerSetServer(r.log, r.impl, r.brokerExt)
 	relayerset.RegisterRelayerSetServerWithDependants(server, rs)
 	return nil
+}
+
+func generateFixtureQuery() []query.Expression {
+	exprs := make([]query.Expression, 0)
+
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
+
+	primitiveExpressions := []query.Expression{query.TxHash("txHash")}
+	values := []evmtypes.Hash{topic3, topic2}
+	for _, op := range operatorValues {
+		primitiveExpressions = append(primitiveExpressions, query.Block("123", op))
+		primitiveExpressions = append(primitiveExpressions, query.Timestamp(123, op))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewAddressFilter(address))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventSigFilter(topic2))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventByWordFilter(10, []evmprimitives.HashedValueComparator{{
+			Values:   values,
+			Operator: op,
+		}}))
+		primitiveExpressions = append(primitiveExpressions, evmprimitives.NewEventByTopicFilter(10, []evmprimitives.HashedValueComparator{{
+			Values:   values,
+			Operator: op,
+		}}))
+	}
+
+	for _, conf := range confirmationsValues {
+		primitiveExpressions = append(primitiveExpressions, query.Confidence(conf))
+	}
+	exprs = append(exprs, primitiveExpressions...)
+
+	andOverPrimitivesBoolExpr := query.And(primitiveExpressions...)
+	orOverPrimitivesBoolExpr := query.Or(primitiveExpressions...)
+
+	nestedBoolExpr := query.And(
+		query.TxHash("txHash"),
+		andOverPrimitivesBoolExpr,
+		orOverPrimitivesBoolExpr,
+		query.TxHash("txHash"),
+	)
+
+	exprs = append(exprs, nestedBoolExpr)
+	exprs = append(exprs, andOverPrimitivesBoolExpr)
+	exprs = append(exprs, orOverPrimitivesBoolExpr)
+
+	return exprs
 }

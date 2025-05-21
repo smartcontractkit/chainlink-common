@@ -23,7 +23,7 @@ type runnerInternals interface {
 }
 
 func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.DonRunner {
-	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(runtimeInternals)}
+	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
 	return getRunner(
 		&subscriber[sdk.DonRuntime]{runnerInternals: runnerInternals},
 		&runner[sdk.DonRuntime]{
@@ -36,7 +36,7 @@ func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInter
 }
 
 func newNodeRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.NodeRunner {
-	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(runtimeInternals)}
+	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_Node)}
 	return getRunner(
 		&subscriber[sdk.NodeRuntime]{runnerInternals: runnerInternals},
 		&runner[sdk.NodeRuntime]{

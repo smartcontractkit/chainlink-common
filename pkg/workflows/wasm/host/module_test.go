@@ -602,23 +602,24 @@ func Test_CallAwaitRace(t *testing.T) {
 
 	exec := &execution[*wasmpb.ExecutionResult]{
 		module:              m,
-		capabilityResponses: map[string]<-chan *sdkpb.CapabilityResponse{},
+		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		ctx:                 t.Context(),
 	}
 
 	wg.Add(wantAttempts)
-	for range wantAttempts {
+	for on := range wantAttempts {
 		go func() {
 			defer wg.Done()
 			// call
-			id, err := exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{
-				Id: "test-cap-request",
+			err := exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{
+				Id:         "test-cap-request",
+				CallbackId: int32(on),
 			})
 			require.NoError(t, err)
 
 			// await with id
 			_, err = exec.awaitCapabilities(ctx, &sdkpb.AwaitCapabilitiesRequest{
-				Ids: []string{string(id[:])},
+				Ids: []int32{int32(on)},
 			})
 			require.NoError(t, err)
 		}()

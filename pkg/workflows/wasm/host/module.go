@@ -481,7 +481,7 @@ func runWasm[I, O proto.Message](
 
 	exec := &execution[O]{
 		ctx:                 ctxWithTimeout,
-		capabilityResponses: map[string]<-chan *sdkpb.CapabilityResponse{},
+		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		module:              m,
 	}
 	instance, err := linkWasm(m, store, exec)
@@ -970,8 +970,8 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 
 func createCallCapFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32, idPtr int32) int64 {
-	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32, idPtr int32) int64 {
+	exec *execution[*wasmpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
 			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
@@ -987,22 +987,14 @@ func createCallCapFn(
 			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
 		}
 
-		id, err := exec.callCapAsync(exec.ctx, req)
-		if err != nil {
+		if err := exec.callCapAsync(exec.ctx, req); err != nil {
 			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
 			logger.Error(errStr)
 			// TODO (CAPPL-846): write error to the response buffer, not the request buffer
 			return -1
 		}
 
-		writeLen := wasmWrite(caller, id[:], idPtr, sdk.IdLen)
-		if writeLen < 0 {
-			errStr := fmt.Sprintf("Response size %d is too large for wasm memory", sdk.IdLen)
-			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		return writeLen
+		return 0
 	}
 }
 

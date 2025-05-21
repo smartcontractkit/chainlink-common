@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus/consensusmock"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
@@ -50,34 +49,33 @@ func defaultSimpleConsensus(_ context.Context, input *pb.SimpleConsensusInputs) 
 	}
 }
 
-var calls = map[testing.TB]map[string]chan *pb.CapabilityResponse{}
+var calls = map[testing.TB]map[int32]chan *pb.CapabilityResponse{}
 
-func createCallCapability(tb testing.TB) func(request *pb.CapabilityRequest) ([]byte, error) {
-	return func(request *pb.CapabilityRequest) ([]byte, error) {
+func createCallCapability(tb testing.TB) func(request *pb.CapabilityRequest) error {
+	return func(request *pb.CapabilityRequest) error {
 		reg := registry.GetRegistry(tb)
 		capability, err := reg.GetCapability(request.Id)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		id := []byte(uuid.NewString())
 		respCh := make(chan *pb.CapabilityResponse, 1)
 		tbCalls, ok := calls[tb]
 		if !ok {
-			tbCalls = map[string]chan *pb.CapabilityResponse{}
+			tbCalls = map[int32]chan *pb.CapabilityResponse{}
 			calls[tb] = tbCalls
 		}
-		tbCalls[string(id)] = respCh
+		tbCalls[request.CallbackId] = respCh
 		go func() {
 			respCh <- capability.Invoke(tb.Context(), request)
 		}()
-		return id, nil
+		return nil
 	}
 }
 
 func createAwaitCapabilities(tb testing.TB) sdkimpl.AwaitCapabilitiesFn {
 	return func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
-		response := &pb.AwaitCapabilitiesResponse{Responses: map[string]*pb.CapabilityResponse{}}
+		response := &pb.AwaitCapabilitiesResponse{Responses: map[int32]*pb.CapabilityResponse{}}
 
 		testCalls, ok := calls[tb]
 		if !ok {
@@ -88,7 +86,7 @@ func createAwaitCapabilities(tb testing.TB) sdkimpl.AwaitCapabilitiesFn {
 		for _, id := range request.Ids {
 			ch, ok := testCalls[id]
 			if !ok {
-				errs = append(errs, errors.New("no call found for "+id))
+				errs = append(errs, fmt.Errorf("no call found for %d", id))
 				continue
 			}
 			select {

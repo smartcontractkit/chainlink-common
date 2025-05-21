@@ -174,7 +174,7 @@ func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInter
 func testRuntimeInternals(tb testing.TB) *runtimeInternalsTestHook {
 	return &runtimeInternalsTestHook{
 		testTb:           tb,
-		outstandingCalls: map[string]sdk.Promise[*sdkpb.CapabilityResponse]{},
+		outstandingCalls: map[int32]sdk.Promise[*sdkpb.CapabilityResponse]{},
 	}
 }
 

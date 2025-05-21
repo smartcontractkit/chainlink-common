@@ -38,6 +38,7 @@ message CapabilityRequest {
   string id = 1;
   google.protobuf.Any payload = 2;
   string method = 3;
+  int32 callbackId = 4;
 }
 
 message CapabilityResponse {
@@ -68,9 +69,9 @@ message Trigger {
 }
 
 message AwaitCapabilitiesRequest {
-  repeated string ids = 1;
+  repeated int32 ids = 1;
 }
 
 message AwaitCapabilitiesResponse {
-  map<string, cre.sdk.v2.CapabilityResponse> responses = 1;
+  map<int32, cre.sdk.v2.CapabilityResponse> responses = 1;
 }

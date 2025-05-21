@@ -350,6 +350,7 @@ type CapabilityRequest struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Payload       *anypb.Any             `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	CallbackId    int32                  `protobuf:"varint,4,opt,name=callbackId,proto3" json:"callbackId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -403,6 +404,13 @@ func (x *CapabilityRequest) GetMethod() string {
 		return x.Method
 	}
 	return ""
+}
+
+func (x *CapabilityRequest) GetCallbackId() int32 {
+	if x != nil {
+		return x.CallbackId
+	}
+	return 0
 }
 
 type CapabilityResponse struct {
@@ -645,7 +653,7 @@ func (x *Trigger) GetPayload() *anypb.Any {
 
 type AwaitCapabilitiesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ids           []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	Ids           []int32                `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -680,7 +688,7 @@ func (*AwaitCapabilitiesRequest) Descriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *AwaitCapabilitiesRequest) GetIds() []string {
+func (x *AwaitCapabilitiesRequest) GetIds() []int32 {
 	if x != nil {
 		return x.Ids
 	}
@@ -688,8 +696,8 @@ func (x *AwaitCapabilitiesRequest) GetIds() []string {
 }
 
 type AwaitCapabilitiesResponse struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	Responses     map[string]*CapabilityResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Responses     map[int32]*CapabilityResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -724,7 +732,7 @@ func (*AwaitCapabilitiesResponse) Descriptor() ([]byte, []int) {
 	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *AwaitCapabilitiesResponse) GetResponses() map[string]*CapabilityResponse {
+func (x *AwaitCapabilitiesResponse) GetResponses() map[int32]*CapabilityResponse {
 	if x != nil {
 		return x.Responses
 	}
@@ -752,11 +760,14 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\vaggregation\x18\x01 \x01(\x0e2\x1b.cre.sdk.v2.AggregationTypeH\x00R\vaggregation\x125\n" +
 	"\tfieldsMap\x18\x02 \x01(\v2\x15.cre.sdk.v2.FieldsMapH\x00R\tfieldsMapB\f\n" +
 	"\n" +
-	"descriptor\"k\n" +
+	"descriptor\"\x8b\x01\n" +
 	"\x11CapabilityRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
 	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\x12\x16\n" +
-	"\x06method\x18\x03 \x01(\tR\x06method\"j\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12\x1e\n" +
+	"\n" +
+	"callbackId\x18\x04 \x01(\x05R\n" +
+	"callbackId\"j\n" +
 	"\x12CapabilityResponse\x120\n" +
 	"\apayload\x18\x01 \x01(\v2\x14.google.protobuf.AnyH\x00R\apayload\x12\x16\n" +
 	"\x05error\x18\x02 \x01(\tH\x00R\x05errorB\n" +
@@ -772,11 +783,11 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12.\n" +
 	"\apayload\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\apayload\",\n" +
 	"\x18AwaitCapabilitiesRequest\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xcd\x01\n" +
+	"\x03ids\x18\x01 \x03(\x05R\x03ids\"\xcd\x01\n" +
 	"\x19AwaitCapabilitiesResponse\x12R\n" +
 	"\tresponses\x18\x01 \x03(\v24.cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntryR\tresponses\x1a\\\n" +
 	"\x0eResponsesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
+	"\x03key\x18\x01 \x01(\x05R\x03key\x124\n" +
 	"\x05value\x18\x02 \x01(\v2\x1e.cre.sdk.v2.CapabilityResponseR\x05value:\x028\x01*R\n" +
 	"\x0fAggregationType\x12\n" +
 	"\n" +

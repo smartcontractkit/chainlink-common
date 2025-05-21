@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: gaspriceestimator.proto
+// source: loop/internal/pb/ccip/gaspriceestimator.proto
 
 package ccippb
 
@@ -34,7 +34,7 @@ type GetGasPriceResponse struct {
 
 func (x *GetGasPriceResponse) Reset() {
 	*x = GetGasPriceResponse{}
-	mi := &file_gaspriceestimator_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *GetGasPriceResponse) String() string {
 func (*GetGasPriceResponse) ProtoMessage() {}
 
 func (x *GetGasPriceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *GetGasPriceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGasPriceResponse.ProtoReflect.Descriptor instead.
 func (*GetGasPriceResponse) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetGasPriceResponse) GetGasPrice() *pb.BigInt {
@@ -81,7 +81,7 @@ type DenoteInUSDRequest struct {
 
 func (x *DenoteInUSDRequest) Reset() {
 	*x = DenoteInUSDRequest{}
-	mi := &file_gaspriceestimator_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +93,7 @@ func (x *DenoteInUSDRequest) String() string {
 func (*DenoteInUSDRequest) ProtoMessage() {}
 
 func (x *DenoteInUSDRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +106,7 @@ func (x *DenoteInUSDRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DenoteInUSDRequest.ProtoReflect.Descriptor instead.
 func (*DenoteInUSDRequest) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *DenoteInUSDRequest) GetP() *pb.BigInt {
@@ -134,7 +134,7 @@ type DenoteInUSDResponse struct {
 
 func (x *DenoteInUSDResponse) Reset() {
 	*x = DenoteInUSDResponse{}
-	mi := &file_gaspriceestimator_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +146,7 @@ func (x *DenoteInUSDResponse) String() string {
 func (*DenoteInUSDResponse) ProtoMessage() {}
 
 func (x *DenoteInUSDResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +159,7 @@ func (x *DenoteInUSDResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DenoteInUSDResponse.ProtoReflect.Descriptor instead.
 func (*DenoteInUSDResponse) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DenoteInUSDResponse) GetUsdPrice() *pb.BigInt {
@@ -182,7 +182,7 @@ type EstimateMsgCostUSDRequest struct {
 
 func (x *EstimateMsgCostUSDRequest) Reset() {
 	*x = EstimateMsgCostUSDRequest{}
-	mi := &file_gaspriceestimator_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -194,7 +194,7 @@ func (x *EstimateMsgCostUSDRequest) String() string {
 func (*EstimateMsgCostUSDRequest) ProtoMessage() {}
 
 func (x *EstimateMsgCostUSDRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -207,7 +207,7 @@ func (x *EstimateMsgCostUSDRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateMsgCostUSDRequest.ProtoReflect.Descriptor instead.
 func (*EstimateMsgCostUSDRequest) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EstimateMsgCostUSDRequest) GetP() *pb.BigInt {
@@ -242,7 +242,7 @@ type EstimateMsgCostUSDResponse struct {
 
 func (x *EstimateMsgCostUSDResponse) Reset() {
 	*x = EstimateMsgCostUSDResponse{}
-	mi := &file_gaspriceestimator_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -254,7 +254,7 @@ func (x *EstimateMsgCostUSDResponse) String() string {
 func (*EstimateMsgCostUSDResponse) ProtoMessage() {}
 
 func (x *EstimateMsgCostUSDResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,7 +267,7 @@ func (x *EstimateMsgCostUSDResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateMsgCostUSDResponse.ProtoReflect.Descriptor instead.
 func (*EstimateMsgCostUSDResponse) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EstimateMsgCostUSDResponse) GetUsdCost() *pb.BigInt {
@@ -288,7 +288,7 @@ type MedianRequest struct {
 
 func (x *MedianRequest) Reset() {
 	*x = MedianRequest{}
-	mi := &file_gaspriceestimator_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -300,7 +300,7 @@ func (x *MedianRequest) String() string {
 func (*MedianRequest) ProtoMessage() {}
 
 func (x *MedianRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -313,7 +313,7 @@ func (x *MedianRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MedianRequest.ProtoReflect.Descriptor instead.
 func (*MedianRequest) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MedianRequest) GetGasPrices() []*pb.BigInt {
@@ -334,7 +334,7 @@ type MedianResponse struct {
 
 func (x *MedianResponse) Reset() {
 	*x = MedianResponse{}
-	mi := &file_gaspriceestimator_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -346,7 +346,7 @@ func (x *MedianResponse) String() string {
 func (*MedianResponse) ProtoMessage() {}
 
 func (x *MedianResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -359,7 +359,7 @@ func (x *MedianResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MedianResponse.ProtoReflect.Descriptor instead.
 func (*MedianResponse) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MedianResponse) GetGasPrice() *pb.BigInt {
@@ -381,7 +381,7 @@ type DeviatesRequest struct {
 
 func (x *DeviatesRequest) Reset() {
 	*x = DeviatesRequest{}
-	mi := &file_gaspriceestimator_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +393,7 @@ func (x *DeviatesRequest) String() string {
 func (*DeviatesRequest) ProtoMessage() {}
 
 func (x *DeviatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +406,7 @@ func (x *DeviatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviatesRequest.ProtoReflect.Descriptor instead.
 func (*DeviatesRequest) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *DeviatesRequest) GetP1() *pb.BigInt {
@@ -434,7 +434,7 @@ type DeviatesResponse struct {
 
 func (x *DeviatesResponse) Reset() {
 	*x = DeviatesResponse{}
-	mi := &file_gaspriceestimator_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -446,7 +446,7 @@ func (x *DeviatesResponse) String() string {
 func (*DeviatesResponse) ProtoMessage() {}
 
 func (x *DeviatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gaspriceestimator_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -459,7 +459,7 @@ func (x *DeviatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviatesResponse.ProtoReflect.Descriptor instead.
 func (*DeviatesResponse) Descriptor() ([]byte, []int) {
-	return file_gaspriceestimator_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DeviatesResponse) GetDeviates() bool {
@@ -469,11 +469,11 @@ func (x *DeviatesResponse) GetDeviates() bool {
 	return false
 }
 
-var File_gaspriceestimator_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_gaspriceestimator_proto protoreflect.FileDescriptor
 
-const file_gaspriceestimator_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDesc = "" +
 	"\n" +
-	"\x17gaspriceestimator.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\rrelayer.proto\x1a\fmodels.proto\"@\n" +
+	"-loop/internal/pb/ccip/gaspriceestimator.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\"loop/internal/pb/ccip/models.proto\"@\n" +
 	"\x13GetGasPriceResponse\x12)\n" +
 	"\tgas_price\x18\x01 \x01(\v2\f.loop.BigIntR\bgasPrice\"p\n" +
 	"\x12DenoteInUSDRequest\x12\x1a\n" +
@@ -509,19 +509,19 @@ const file_gaspriceestimator_proto_rawDesc = "" +
 	"\bDeviates\x12&.loop.internal.pb.ccip.DeviatesRequest\x1a'.loop.internal.pb.ccip.DeviatesResponseBOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_gaspriceestimator_proto_rawDescOnce sync.Once
-	file_gaspriceestimator_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescData []byte
 )
 
-func file_gaspriceestimator_proto_rawDescGZIP() []byte {
-	file_gaspriceestimator_proto_rawDescOnce.Do(func() {
-		file_gaspriceestimator_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_gaspriceestimator_proto_rawDesc), len(file_gaspriceestimator_proto_rawDesc)))
+func file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDesc), len(file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDesc)))
 	})
-	return file_gaspriceestimator_proto_rawDescData
+	return file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDescData
 }
 
-var file_gaspriceestimator_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
-var file_gaspriceestimator_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_loop_internal_pb_ccip_gaspriceestimator_proto_goTypes = []any{
 	(*GetGasPriceResponse)(nil),                    // 0: loop.internal.pb.ccip.GetGasPriceResponse
 	(*DenoteInUSDRequest)(nil),                     // 1: loop.internal.pb.ccip.DenoteInUSDRequest
 	(*DenoteInUSDResponse)(nil),                    // 2: loop.internal.pb.ccip.DenoteInUSDResponse
@@ -535,7 +535,7 @@ var file_gaspriceestimator_proto_goTypes = []any{
 	(*EVM2EVMOnRampCCIPSendRequestedWithMeta)(nil), // 10: loop.internal.pb.ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta
 	(*emptypb.Empty)(nil),                          // 11: google.protobuf.Empty
 }
-var file_gaspriceestimator_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_gaspriceestimator_proto_depIdxs = []int32{
 	9,  // 0: loop.internal.pb.ccip.GetGasPriceResponse.gas_price:type_name -> loop.BigInt
 	9,  // 1: loop.internal.pb.ccip.DenoteInUSDRequest.p:type_name -> loop.BigInt
 	9,  // 2: loop.internal.pb.ccip.DenoteInUSDRequest.wrapped_native_price:type_name -> loop.BigInt
@@ -571,27 +571,27 @@ var file_gaspriceestimator_proto_depIdxs = []int32{
 	0,  // [0:12] is the sub-list for field type_name
 }
 
-func init() { file_gaspriceestimator_proto_init() }
-func file_gaspriceestimator_proto_init() {
-	if File_gaspriceestimator_proto != nil {
+func init() { file_loop_internal_pb_ccip_gaspriceestimator_proto_init() }
+func file_loop_internal_pb_ccip_gaspriceestimator_proto_init() {
+	if File_loop_internal_pb_ccip_gaspriceestimator_proto != nil {
 		return
 	}
-	file_models_proto_init()
+	file_loop_internal_pb_ccip_models_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gaspriceestimator_proto_rawDesc), len(file_gaspriceestimator_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDesc), len(file_loop_internal_pb_ccip_gaspriceestimator_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
-		GoTypes:           file_gaspriceestimator_proto_goTypes,
-		DependencyIndexes: file_gaspriceestimator_proto_depIdxs,
-		MessageInfos:      file_gaspriceestimator_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_gaspriceestimator_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_gaspriceestimator_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_ccip_gaspriceestimator_proto_msgTypes,
 	}.Build()
-	File_gaspriceestimator_proto = out.File
-	file_gaspriceestimator_proto_goTypes = nil
-	file_gaspriceestimator_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_gaspriceestimator_proto = out.File
+	file_loop_internal_pb_ccip_gaspriceestimator_proto_goTypes = nil
+	file_loop_internal_pb_ccip_gaspriceestimator_proto_depIdxs = nil
 }

@@ -7,18 +7,19 @@ import (
 	"math/big"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var _ types.EVMService = (*evmClient)(nil)
@@ -133,12 +134,12 @@ func (e *evmClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 		return nil, err
 	}
 
-	sort, err := contractreader.ConvertLimitAndSortToProto(limitAndSort)
+	sort, err := chaincommonpb.ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, err
 	}
 
-	conf, err := contractreader.ConfidenceToProto(confidenceLevel)
+	conf, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return nil, err
 	}
@@ -304,12 +305,12 @@ func (e *evmServer) QueryTrackedLogs(ctx context.Context, req *evmpb.QueryTracke
 		return nil, err
 	}
 
-	conf, err := contractreader.ConfidenceFromProto(req.ConfidenceLevel)
+	conf, err := chaincommonpb.ConfidenceFromProto(req.ConfidenceLevel)
 	if err != nil {
 		return nil, err
 	}
 
-	limitAndSort, err := contractreader.ConvertLimitAndSortFromProto(req.LimitAndSort)
+	limitAndSort, err := chaincommonpb.ConvertLimitAndSortFromProto(req.LimitAndSort)
 
 	logs, err := e.impl.QueryTrackedLogs(ctx, exprs, limitAndSort, conf)
 	if err != nil {
@@ -640,7 +641,7 @@ func hashedValueComparersToProto(cs []evmprimitives.HashedValueComparator) []*ev
 	ret := make([]*evmpb.HashValueComparator, 0, len(cs))
 	for _, c := range cs {
 		ret = append(ret, &evmpb.HashValueComparator{
-			Operator: pb.ComparisonOperator(c.Operator),
+			Operator: chaincommonpb.ComparisonOperator(c.Operator),
 			Values:   toProtoHashes(c.Values),
 		})
 	}
@@ -676,41 +677,41 @@ func expressionsToProto(expressions []query.Expression) ([]*evmpb.Expression, er
 func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 	pbExpression := &evmpb.Expression{}
 	if expression.IsPrimitive() {
-		p := &pb.Primitive{}
+		p := &chaincommonpb.Primitive{}
 		ep := &evmpb.Primitive{}
 		switch primitive := expression.Primitive.(type) {
 		case *primitives.Comparator:
 			return nil, errors.New("comparator primitive is not supported for EVMService")
 		case *primitives.Block:
-			p.Primitive = &pb.Primitive_Block{
-				Block: &pb.Block{
+			p.Primitive = &chaincommonpb.Primitive_Block{
+				Block: &chaincommonpb.Block{
 					BlockNumber: primitive.Block,
-					Operator:    pb.ComparisonOperator(primitive.Operator),
+					Operator:    chaincommonpb.ComparisonOperator(primitive.Operator),
 				}}
 
 			putGeneralPrimitive(pbExpression, p)
 		case *primitives.Confidence:
-			pbConfidence, err := contractreader.ConfidenceToProto(primitive.ConfidenceLevel)
+			pbConfidence, err := chaincommonpb.ConvertConfidenceToProto(primitive.ConfidenceLevel)
 			if err != nil {
 				return nil, err
 			}
 
-			p.Primitive = &pb.Primitive_Confidence{
+			p.Primitive = &chaincommonpb.Primitive_Confidence{
 				Confidence: pbConfidence,
 			}
 
 			putGeneralPrimitive(pbExpression, p)
 		case *primitives.Timestamp:
-			p.Primitive = &pb.Primitive_Timestamp{
-				Timestamp: &pb.Timestamp{
+			p.Primitive = &chaincommonpb.Primitive_Timestamp{
+				Timestamp: &chaincommonpb.Timestamp{
 					Timestamp: primitive.Timestamp,
-					Operator:  pb.ComparisonOperator(primitive.Operator),
+					Operator:  chaincommonpb.ComparisonOperator(primitive.Operator),
 				}}
 
 			putGeneralPrimitive(pbExpression, p)
 		case *primitives.TxHash:
-			p.Primitive = &pb.Primitive_TxHash{
-				TxHash: &pb.TxHash{
+			p.Primitive = &chaincommonpb.Primitive_TxHash{
+				TxHash: &chaincommonpb.TxHash{
 					TxHash: primitive.TxHash,
 				}}
 
@@ -764,7 +765,7 @@ func expressionToProto(expression query.Expression) (*evmpb.Expression, error) {
 	}
 	pbExpression.Evaluator = &evmpb.Expression_BooleanExpression{
 		BooleanExpression: &evmpb.BooleanExpression{
-			BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
+			BooleanOperator: chaincommonpb.BooleanOperator(expression.BoolExpression.BoolOperator),
 			Expression:      expressions,
 		}}
 
@@ -796,7 +797,7 @@ func protoToExpression(pbExpression *evmpb.Expression) (query.Expression, error)
 			}
 			expressions = append(expressions, convertedExpression)
 		}
-		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == pb.BooleanOperator_AND {
+		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == chaincommonpb.BooleanOperator_AND {
 			return query.And(expressions...), nil
 		}
 		return query.Or(expressions...), nil
@@ -812,18 +813,18 @@ func protoToExpression(pbExpression *evmpb.Expression) (query.Expression, error)
 	}
 }
 
-func protoToGeneralExpr(pbEvaluatedExpr *pb.Primitive) (query.Expression, error) {
+func protoToGeneralExpr(pbEvaluatedExpr *chaincommonpb.Primitive) (query.Expression, error) {
 	switch primitive := pbEvaluatedExpr.GetPrimitive().(type) {
-	case *pb.Primitive_Comparator:
+	case *chaincommonpb.Primitive_Comparator:
 		return query.Expression{}, errors.New("comparator primitive is not supported for EVMService")
-	case *pb.Primitive_Confidence:
-		confidence, err := contractreader.ConfidenceFromProto(primitive.Confidence)
+	case *chaincommonpb.Primitive_Confidence:
+		confidence, err := chaincommonpb.ConfidenceFromProto(primitive.Confidence)
 		return query.Confidence(confidence), err
-	case *pb.Primitive_Block:
+	case *chaincommonpb.Primitive_Block:
 		return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
-	case *pb.Primitive_TxHash:
+	case *chaincommonpb.Primitive_TxHash:
 		return query.TxHash(primitive.TxHash.TxHash), nil
-	case *pb.Primitive_Timestamp:
+	case *chaincommonpb.Primitive_Timestamp:
 		return query.Timestamp(primitive.Timestamp.Timestamp, primitives.ComparisonOperator(primitive.Timestamp.Operator)), nil
 	default:
 		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
@@ -851,7 +852,7 @@ func protoToEVMExpr(pbEvaluatedExpr *evmpb.Primitive) (query.Expression, error) 
 	}
 }
 
-func putGeneralPrimitive(exp *evmpb.Expression, p *pb.Primitive) {
+func putGeneralPrimitive(exp *evmpb.Expression, p *chaincommonpb.Primitive) {
 	exp.Evaluator = &evmpb.Expression_Primitive{Primitive: &evmpb.Primitive{Primitive: &evmpb.Primitive_GeneralPrimitive{GeneralPrimitive: p}}}
 }
 

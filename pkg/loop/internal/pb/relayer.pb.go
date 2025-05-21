@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: relayer.proto
+// source: loop/internal/pb/relayer.proto
 
 package pb
 
@@ -34,7 +34,7 @@ type NewRelayerRequest struct {
 
 func (x *NewRelayerRequest) Reset() {
 	*x = NewRelayerRequest{}
-	mi := &file_relayer_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *NewRelayerRequest) String() string {
 func (*NewRelayerRequest) ProtoMessage() {}
 
 func (x *NewRelayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *NewRelayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewRelayerRequest.ProtoReflect.Descriptor instead.
 func (*NewRelayerRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NewRelayerRequest) GetConfig() string {
@@ -92,7 +92,7 @@ type NewRelayerReply struct {
 
 func (x *NewRelayerReply) Reset() {
 	*x = NewRelayerReply{}
-	mi := &file_relayer_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -104,7 +104,7 @@ func (x *NewRelayerReply) String() string {
 func (*NewRelayerReply) ProtoMessage() {}
 
 func (x *NewRelayerReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -117,7 +117,7 @@ func (x *NewRelayerReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewRelayerReply.ProtoReflect.Descriptor instead.
 func (*NewRelayerReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NewRelayerReply) GetRelayerID() uint32 {
@@ -136,7 +136,7 @@ type AccountsReply struct {
 
 func (x *AccountsReply) Reset() {
 	*x = AccountsReply{}
-	mi := &file_relayer_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -148,7 +148,7 @@ func (x *AccountsReply) String() string {
 func (*AccountsReply) ProtoMessage() {}
 
 func (x *AccountsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -161,7 +161,7 @@ func (x *AccountsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountsReply.ProtoReflect.Descriptor instead.
 func (*AccountsReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AccountsReply) GetAccounts() []string {
@@ -181,7 +181,7 @@ type SignRequest struct {
 
 func (x *SignRequest) Reset() {
 	*x = SignRequest{}
-	mi := &file_relayer_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +193,7 @@ func (x *SignRequest) String() string {
 func (*SignRequest) ProtoMessage() {}
 
 func (x *SignRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +206,7 @@ func (x *SignRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignRequest.ProtoReflect.Descriptor instead.
 func (*SignRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SignRequest) GetAccount() string {
@@ -232,7 +232,7 @@ type SignReply struct {
 
 func (x *SignReply) Reset() {
 	*x = SignReply{}
-	mi := &file_relayer_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -244,7 +244,7 @@ func (x *SignReply) String() string {
 func (*SignReply) ProtoMessage() {}
 
 func (x *SignReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -257,7 +257,7 @@ func (x *SignReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignReply.ProtoReflect.Descriptor instead.
 func (*SignReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SignReply) GetSignedData() []byte {
@@ -282,7 +282,7 @@ type RelayArgs struct {
 
 func (x *RelayArgs) Reset() {
 	*x = RelayArgs{}
-	mi := &file_relayer_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +294,7 @@ func (x *RelayArgs) String() string {
 func (*RelayArgs) ProtoMessage() {}
 
 func (x *RelayArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +307,7 @@ func (x *RelayArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayArgs.ProtoReflect.Descriptor instead.
 func (*RelayArgs) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RelayArgs) GetExternalJobID() []byte {
@@ -363,7 +363,7 @@ type PluginArgs struct {
 
 func (x *PluginArgs) Reset() {
 	*x = PluginArgs{}
-	mi := &file_relayer_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -375,7 +375,7 @@ func (x *PluginArgs) String() string {
 func (*PluginArgs) ProtoMessage() {}
 
 func (x *PluginArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -388,7 +388,7 @@ func (x *PluginArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginArgs.ProtoReflect.Descriptor instead.
 func (*PluginArgs) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PluginArgs) GetTransmitterID() string {
@@ -415,7 +415,7 @@ type NewContractWriterRequest struct {
 
 func (x *NewContractWriterRequest) Reset() {
 	*x = NewContractWriterRequest{}
-	mi := &file_relayer_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -427,7 +427,7 @@ func (x *NewContractWriterRequest) String() string {
 func (*NewContractWriterRequest) ProtoMessage() {}
 
 func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -440,7 +440,7 @@ func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterRequest.ProtoReflect.Descriptor instead.
 func (*NewContractWriterRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *NewContractWriterRequest) GetContractWriterConfig() []byte {
@@ -460,7 +460,7 @@ type NewContractWriterReply struct {
 
 func (x *NewContractWriterReply) Reset() {
 	*x = NewContractWriterReply{}
-	mi := &file_relayer_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +472,7 @@ func (x *NewContractWriterReply) String() string {
 func (*NewContractWriterReply) ProtoMessage() {}
 
 func (x *NewContractWriterReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +485,7 @@ func (x *NewContractWriterReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterReply.ProtoReflect.Descriptor instead.
 func (*NewContractWriterReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *NewContractWriterReply) GetContractWriterID() uint32 {
@@ -505,7 +505,7 @@ type NewContractReaderRequest struct {
 
 func (x *NewContractReaderRequest) Reset() {
 	*x = NewContractReaderRequest{}
-	mi := &file_relayer_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -517,7 +517,7 @@ func (x *NewContractReaderRequest) String() string {
 func (*NewContractReaderRequest) ProtoMessage() {}
 
 func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -530,7 +530,7 @@ func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderRequest.ProtoReflect.Descriptor instead.
 func (*NewContractReaderRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *NewContractReaderRequest) GetContractReaderConfig() []byte {
@@ -550,7 +550,7 @@ type NewContractReaderReply struct {
 
 func (x *NewContractReaderReply) Reset() {
 	*x = NewContractReaderReply{}
-	mi := &file_relayer_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -562,7 +562,7 @@ func (x *NewContractReaderReply) String() string {
 func (*NewContractReaderReply) ProtoMessage() {}
 
 func (x *NewContractReaderReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -575,7 +575,7 @@ func (x *NewContractReaderReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderReply.ProtoReflect.Descriptor instead.
 func (*NewContractReaderReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NewContractReaderReply) GetContractReaderID() uint32 {
@@ -596,7 +596,7 @@ type NewPluginProviderRequest struct {
 
 func (x *NewPluginProviderRequest) Reset() {
 	*x = NewPluginProviderRequest{}
-	mi := &file_relayer_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -608,7 +608,7 @@ func (x *NewPluginProviderRequest) String() string {
 func (*NewPluginProviderRequest) ProtoMessage() {}
 
 func (x *NewPluginProviderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -621,7 +621,7 @@ func (x *NewPluginProviderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewPluginProviderRequest.ProtoReflect.Descriptor instead.
 func (*NewPluginProviderRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NewPluginProviderRequest) GetRelayArgs() *RelayArgs {
@@ -648,7 +648,7 @@ type NewPluginProviderReply struct {
 
 func (x *NewPluginProviderReply) Reset() {
 	*x = NewPluginProviderReply{}
-	mi := &file_relayer_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -660,7 +660,7 @@ func (x *NewPluginProviderReply) String() string {
 func (*NewPluginProviderReply) ProtoMessage() {}
 
 func (x *NewPluginProviderReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -673,7 +673,7 @@ func (x *NewPluginProviderReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewPluginProviderReply.ProtoReflect.Descriptor instead.
 func (*NewPluginProviderReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NewPluginProviderReply) GetPluginProviderID() uint32 {
@@ -693,7 +693,7 @@ type NewConfigProviderRequest struct {
 
 func (x *NewConfigProviderRequest) Reset() {
 	*x = NewConfigProviderRequest{}
-	mi := &file_relayer_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -705,7 +705,7 @@ func (x *NewConfigProviderRequest) String() string {
 func (*NewConfigProviderRequest) ProtoMessage() {}
 
 func (x *NewConfigProviderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -718,7 +718,7 @@ func (x *NewConfigProviderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewConfigProviderRequest.ProtoReflect.Descriptor instead.
 func (*NewConfigProviderRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NewConfigProviderRequest) GetRelayArgs() *RelayArgs {
@@ -738,7 +738,7 @@ type NewConfigProviderReply struct {
 
 func (x *NewConfigProviderReply) Reset() {
 	*x = NewConfigProviderReply{}
-	mi := &file_relayer_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -750,7 +750,7 @@ func (x *NewConfigProviderReply) String() string {
 func (*NewConfigProviderReply) ProtoMessage() {}
 
 func (x *NewConfigProviderReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -763,7 +763,7 @@ func (x *NewConfigProviderReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewConfigProviderReply.ProtoReflect.Descriptor instead.
 func (*NewConfigProviderReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NewConfigProviderReply) GetConfigProviderID() uint32 {
@@ -781,7 +781,7 @@ type LatestHeadRequest struct {
 
 func (x *LatestHeadRequest) Reset() {
 	*x = LatestHeadRequest{}
-	mi := &file_relayer_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -793,7 +793,7 @@ func (x *LatestHeadRequest) String() string {
 func (*LatestHeadRequest) ProtoMessage() {}
 
 func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +806,7 @@ func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadRequest.ProtoReflect.Descriptor instead.
 func (*LatestHeadRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{15}
 }
 
 // LatestHeadReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.LatestHeadReply].
@@ -819,7 +819,7 @@ type LatestHeadReply struct {
 
 func (x *LatestHeadReply) Reset() {
 	*x = LatestHeadReply{}
-	mi := &file_relayer_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -831,7 +831,7 @@ func (x *LatestHeadReply) String() string {
 func (*LatestHeadReply) ProtoMessage() {}
 
 func (x *LatestHeadReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -844,7 +844,7 @@ func (x *LatestHeadReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadReply.ProtoReflect.Descriptor instead.
 func (*LatestHeadReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *LatestHeadReply) GetHead() *Head {
@@ -862,7 +862,7 @@ type GetChainStatusRequest struct {
 
 func (x *GetChainStatusRequest) Reset() {
 	*x = GetChainStatusRequest{}
-	mi := &file_relayer_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -874,7 +874,7 @@ func (x *GetChainStatusRequest) String() string {
 func (*GetChainStatusRequest) ProtoMessage() {}
 
 func (x *GetChainStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -887,7 +887,7 @@ func (x *GetChainStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetChainStatusRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{17}
 }
 
 // ChainStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.ChainStatus].
@@ -900,7 +900,7 @@ type GetChainStatusReply struct {
 
 func (x *GetChainStatusReply) Reset() {
 	*x = GetChainStatusReply{}
-	mi := &file_relayer_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -912,7 +912,7 @@ func (x *GetChainStatusReply) String() string {
 func (*GetChainStatusReply) ProtoMessage() {}
 
 func (x *GetChainStatusReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -925,7 +925,7 @@ func (x *GetChainStatusReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChainStatusReply.ProtoReflect.Descriptor instead.
 func (*GetChainStatusReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetChainStatusReply) GetChain() *ChainStatus {
@@ -947,7 +947,7 @@ type ChainStatus struct {
 
 func (x *ChainStatus) Reset() {
 	*x = ChainStatus{}
-	mi := &file_relayer_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -959,7 +959,7 @@ func (x *ChainStatus) String() string {
 func (*ChainStatus) ProtoMessage() {}
 
 func (x *ChainStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -972,7 +972,7 @@ func (x *ChainStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainStatus.ProtoReflect.Descriptor instead.
 func (*ChainStatus) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ChainStatus) GetId() string {
@@ -1007,7 +1007,7 @@ type ListNodeStatusesRequest struct {
 
 func (x *ListNodeStatusesRequest) Reset() {
 	*x = ListNodeStatusesRequest{}
-	mi := &file_relayer_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1019,7 +1019,7 @@ func (x *ListNodeStatusesRequest) String() string {
 func (*ListNodeStatusesRequest) ProtoMessage() {}
 
 func (x *ListNodeStatusesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1032,7 +1032,7 @@ func (x *ListNodeStatusesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeStatusesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodeStatusesRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListNodeStatusesRequest) GetPageSize() int32 {
@@ -1061,7 +1061,7 @@ type ListNodeStatusesReply struct {
 
 func (x *ListNodeStatusesReply) Reset() {
 	*x = ListNodeStatusesReply{}
-	mi := &file_relayer_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1073,7 +1073,7 @@ func (x *ListNodeStatusesReply) String() string {
 func (*ListNodeStatusesReply) ProtoMessage() {}
 
 func (x *ListNodeStatusesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1086,7 +1086,7 @@ func (x *ListNodeStatusesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeStatusesReply.ProtoReflect.Descriptor instead.
 func (*ListNodeStatusesReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListNodeStatusesReply) GetNodes() []*NodeStatus {
@@ -1123,7 +1123,7 @@ type NodeStatus struct {
 
 func (x *NodeStatus) Reset() {
 	*x = NodeStatus{}
-	mi := &file_relayer_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1135,7 +1135,7 @@ func (x *NodeStatus) String() string {
 func (*NodeStatus) ProtoMessage() {}
 
 func (x *NodeStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1148,7 +1148,7 @@ func (x *NodeStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeStatus.ProtoReflect.Descriptor instead.
 func (*NodeStatus) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{22}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *NodeStatus) GetChainID() string {
@@ -1189,7 +1189,7 @@ type ReplayRequest struct {
 
 func (x *ReplayRequest) Reset() {
 	*x = ReplayRequest{}
-	mi := &file_relayer_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1201,7 +1201,7 @@ func (x *ReplayRequest) String() string {
 func (*ReplayRequest) ProtoMessage() {}
 
 func (x *ReplayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1214,7 +1214,7 @@ func (x *ReplayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplayRequest.ProtoReflect.Descriptor instead.
 func (*ReplayRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{23}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ReplayRequest) GetFromBlock() string {
@@ -1244,7 +1244,7 @@ type TransactionRequest struct {
 
 func (x *TransactionRequest) Reset() {
 	*x = TransactionRequest{}
-	mi := &file_relayer_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1256,7 +1256,7 @@ func (x *TransactionRequest) String() string {
 func (*TransactionRequest) ProtoMessage() {}
 
 func (x *TransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1269,7 +1269,7 @@ func (x *TransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionRequest.ProtoReflect.Descriptor instead.
 func (*TransactionRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{24}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *TransactionRequest) GetFrom() string {
@@ -1317,7 +1317,7 @@ type ContractConfig struct {
 
 func (x *ContractConfig) Reset() {
 	*x = ContractConfig{}
-	mi := &file_relayer_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1329,7 +1329,7 @@ func (x *ContractConfig) String() string {
 func (*ContractConfig) ProtoMessage() {}
 
 func (x *ContractConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1342,7 +1342,7 @@ func (x *ContractConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractConfig.ProtoReflect.Descriptor instead.
 func (*ContractConfig) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{25}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ContractConfig) GetConfigDigest() []byte {
@@ -1411,7 +1411,7 @@ type ConfigDigestRequest struct {
 
 func (x *ConfigDigestRequest) Reset() {
 	*x = ConfigDigestRequest{}
-	mi := &file_relayer_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1423,7 +1423,7 @@ func (x *ConfigDigestRequest) String() string {
 func (*ConfigDigestRequest) ProtoMessage() {}
 
 func (x *ConfigDigestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[26]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1436,7 +1436,7 @@ func (x *ConfigDigestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestRequest.ProtoReflect.Descriptor instead.
 func (*ConfigDigestRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{26}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ConfigDigestRequest) GetContractConfig() *ContractConfig {
@@ -1456,7 +1456,7 @@ type ConfigDigestReply struct {
 
 func (x *ConfigDigestReply) Reset() {
 	*x = ConfigDigestReply{}
-	mi := &file_relayer_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1468,7 +1468,7 @@ func (x *ConfigDigestReply) String() string {
 func (*ConfigDigestReply) ProtoMessage() {}
 
 func (x *ConfigDigestReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[27]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1481,7 +1481,7 @@ func (x *ConfigDigestReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestReply.ProtoReflect.Descriptor instead.
 func (*ConfigDigestReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{27}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ConfigDigestReply) GetConfigDigest() []byte {
@@ -1499,7 +1499,7 @@ type ConfigDigestPrefixRequest struct {
 
 func (x *ConfigDigestPrefixRequest) Reset() {
 	*x = ConfigDigestPrefixRequest{}
-	mi := &file_relayer_proto_msgTypes[28]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1511,7 +1511,7 @@ func (x *ConfigDigestPrefixRequest) String() string {
 func (*ConfigDigestPrefixRequest) ProtoMessage() {}
 
 func (x *ConfigDigestPrefixRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[28]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1524,7 +1524,7 @@ func (x *ConfigDigestPrefixRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestPrefixRequest.ProtoReflect.Descriptor instead.
 func (*ConfigDigestPrefixRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{28}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{28}
 }
 
 // ConfigDigestPrefixReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.OffchainConfigDigester.ConfigDigestPrefix].
@@ -1537,7 +1537,7 @@ type ConfigDigestPrefixReply struct {
 
 func (x *ConfigDigestPrefixReply) Reset() {
 	*x = ConfigDigestPrefixReply{}
-	mi := &file_relayer_proto_msgTypes[29]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1549,7 +1549,7 @@ func (x *ConfigDigestPrefixReply) String() string {
 func (*ConfigDigestPrefixReply) ProtoMessage() {}
 
 func (x *ConfigDigestPrefixReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[29]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1562,7 +1562,7 @@ func (x *ConfigDigestPrefixReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigDigestPrefixReply.ProtoReflect.Descriptor instead.
 func (*ConfigDigestPrefixReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{29}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ConfigDigestPrefixReply) GetConfigDigestPrefix() uint32 {
@@ -1580,7 +1580,7 @@ type LatestConfigDetailsRequest struct {
 
 func (x *LatestConfigDetailsRequest) Reset() {
 	*x = LatestConfigDetailsRequest{}
-	mi := &file_relayer_proto_msgTypes[30]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1592,7 +1592,7 @@ func (x *LatestConfigDetailsRequest) String() string {
 func (*LatestConfigDetailsRequest) ProtoMessage() {}
 
 func (x *LatestConfigDetailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[30]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1605,7 +1605,7 @@ func (x *LatestConfigDetailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigDetailsRequest.ProtoReflect.Descriptor instead.
 func (*LatestConfigDetailsRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{30}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{30}
 }
 
 // LatestConfigDetailsReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ContractConfigTracker.LatestConfigDetails].
@@ -1619,7 +1619,7 @@ type LatestConfigDetailsReply struct {
 
 func (x *LatestConfigDetailsReply) Reset() {
 	*x = LatestConfigDetailsReply{}
-	mi := &file_relayer_proto_msgTypes[31]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1631,7 +1631,7 @@ func (x *LatestConfigDetailsReply) String() string {
 func (*LatestConfigDetailsReply) ProtoMessage() {}
 
 func (x *LatestConfigDetailsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[31]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1644,7 +1644,7 @@ func (x *LatestConfigDetailsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigDetailsReply.ProtoReflect.Descriptor instead.
 func (*LatestConfigDetailsReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{31}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *LatestConfigDetailsReply) GetChangedInBlock() uint64 {
@@ -1671,7 +1671,7 @@ type LatestConfigRequest struct {
 
 func (x *LatestConfigRequest) Reset() {
 	*x = LatestConfigRequest{}
-	mi := &file_relayer_proto_msgTypes[32]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1683,7 +1683,7 @@ func (x *LatestConfigRequest) String() string {
 func (*LatestConfigRequest) ProtoMessage() {}
 
 func (x *LatestConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[32]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1696,7 +1696,7 @@ func (x *LatestConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigRequest.ProtoReflect.Descriptor instead.
 func (*LatestConfigRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{32}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *LatestConfigRequest) GetChangedInBlock() uint64 {
@@ -1716,7 +1716,7 @@ type LatestConfigReply struct {
 
 func (x *LatestConfigReply) Reset() {
 	*x = LatestConfigReply{}
-	mi := &file_relayer_proto_msgTypes[33]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1728,7 +1728,7 @@ func (x *LatestConfigReply) String() string {
 func (*LatestConfigReply) ProtoMessage() {}
 
 func (x *LatestConfigReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[33]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1741,7 +1741,7 @@ func (x *LatestConfigReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigReply.ProtoReflect.Descriptor instead.
 func (*LatestConfigReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{33}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *LatestConfigReply) GetContractConfig() *ContractConfig {
@@ -1759,7 +1759,7 @@ type LatestBlockHeightRequest struct {
 
 func (x *LatestBlockHeightRequest) Reset() {
 	*x = LatestBlockHeightRequest{}
-	mi := &file_relayer_proto_msgTypes[34]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1771,7 +1771,7 @@ func (x *LatestBlockHeightRequest) String() string {
 func (*LatestBlockHeightRequest) ProtoMessage() {}
 
 func (x *LatestBlockHeightRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[34]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1784,7 +1784,7 @@ func (x *LatestBlockHeightRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestBlockHeightRequest.ProtoReflect.Descriptor instead.
 func (*LatestBlockHeightRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{34}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{34}
 }
 
 // LatestBlockHeightReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ContractConfigTracker.LatestBlockHeightReply].
@@ -1797,7 +1797,7 @@ type LatestBlockHeightReply struct {
 
 func (x *LatestBlockHeightReply) Reset() {
 	*x = LatestBlockHeightReply{}
-	mi := &file_relayer_proto_msgTypes[35]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1809,7 +1809,7 @@ func (x *LatestBlockHeightReply) String() string {
 func (*LatestBlockHeightReply) ProtoMessage() {}
 
 func (x *LatestBlockHeightReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[35]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1822,7 +1822,7 @@ func (x *LatestBlockHeightReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestBlockHeightReply.ProtoReflect.Descriptor instead.
 func (*LatestBlockHeightReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{35}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *LatestBlockHeightReply) GetBlockHeight() uint64 {
@@ -1844,7 +1844,7 @@ type ReportTimestamp struct {
 
 func (x *ReportTimestamp) Reset() {
 	*x = ReportTimestamp{}
-	mi := &file_relayer_proto_msgTypes[36]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1856,7 +1856,7 @@ func (x *ReportTimestamp) String() string {
 func (*ReportTimestamp) ProtoMessage() {}
 
 func (x *ReportTimestamp) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[36]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1869,7 +1869,7 @@ func (x *ReportTimestamp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportTimestamp.ProtoReflect.Descriptor instead.
 func (*ReportTimestamp) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{36}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ReportTimestamp) GetConfigDigest() []byte {
@@ -1904,7 +1904,7 @@ type ReportContext struct {
 
 func (x *ReportContext) Reset() {
 	*x = ReportContext{}
-	mi := &file_relayer_proto_msgTypes[37]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1916,7 +1916,7 @@ func (x *ReportContext) String() string {
 func (*ReportContext) ProtoMessage() {}
 
 func (x *ReportContext) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[37]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1929,7 +1929,7 @@ func (x *ReportContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportContext.ProtoReflect.Descriptor instead.
 func (*ReportContext) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{37}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ReportContext) GetReportTimestamp() *ReportTimestamp {
@@ -1957,7 +1957,7 @@ type AttributedOnchainSignature struct {
 
 func (x *AttributedOnchainSignature) Reset() {
 	*x = AttributedOnchainSignature{}
-	mi := &file_relayer_proto_msgTypes[38]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1969,7 +1969,7 @@ func (x *AttributedOnchainSignature) String() string {
 func (*AttributedOnchainSignature) ProtoMessage() {}
 
 func (x *AttributedOnchainSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[38]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1982,7 +1982,7 @@ func (x *AttributedOnchainSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributedOnchainSignature.ProtoReflect.Descriptor instead.
 func (*AttributedOnchainSignature) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{38}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *AttributedOnchainSignature) GetSignature() []byte {
@@ -2011,7 +2011,7 @@ type TransmitRequest struct {
 
 func (x *TransmitRequest) Reset() {
 	*x = TransmitRequest{}
-	mi := &file_relayer_proto_msgTypes[39]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2023,7 +2023,7 @@ func (x *TransmitRequest) String() string {
 func (*TransmitRequest) ProtoMessage() {}
 
 func (x *TransmitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[39]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2036,7 +2036,7 @@ func (x *TransmitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransmitRequest.ProtoReflect.Descriptor instead.
 func (*TransmitRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{39}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *TransmitRequest) GetReportContext() *ReportContext {
@@ -2068,7 +2068,7 @@ type TransmitReply struct {
 
 func (x *TransmitReply) Reset() {
 	*x = TransmitReply{}
-	mi := &file_relayer_proto_msgTypes[40]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2080,7 +2080,7 @@ func (x *TransmitReply) String() string {
 func (*TransmitReply) ProtoMessage() {}
 
 func (x *TransmitReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[40]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2093,7 +2093,7 @@ func (x *TransmitReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransmitReply.ProtoReflect.Descriptor instead.
 func (*TransmitReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{40}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{40}
 }
 
 type LatestConfigDigestAndEpochRequest struct {
@@ -2104,7 +2104,7 @@ type LatestConfigDigestAndEpochRequest struct {
 
 func (x *LatestConfigDigestAndEpochRequest) Reset() {
 	*x = LatestConfigDigestAndEpochRequest{}
-	mi := &file_relayer_proto_msgTypes[41]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2116,7 +2116,7 @@ func (x *LatestConfigDigestAndEpochRequest) String() string {
 func (*LatestConfigDigestAndEpochRequest) ProtoMessage() {}
 
 func (x *LatestConfigDigestAndEpochRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[41]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2129,7 +2129,7 @@ func (x *LatestConfigDigestAndEpochRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use LatestConfigDigestAndEpochRequest.ProtoReflect.Descriptor instead.
 func (*LatestConfigDigestAndEpochRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{41}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{41}
 }
 
 // LatestConfigDigestAndEpochReply has return arguments for [github.com/smartcontractkit/libocr/offchainreporting2plus/types.ContractTransmitter.LatestConfigDigestAndEpoch].
@@ -2143,7 +2143,7 @@ type LatestConfigDigestAndEpochReply struct {
 
 func (x *LatestConfigDigestAndEpochReply) Reset() {
 	*x = LatestConfigDigestAndEpochReply{}
-	mi := &file_relayer_proto_msgTypes[42]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2155,7 +2155,7 @@ func (x *LatestConfigDigestAndEpochReply) String() string {
 func (*LatestConfigDigestAndEpochReply) ProtoMessage() {}
 
 func (x *LatestConfigDigestAndEpochReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[42]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2168,7 +2168,7 @@ func (x *LatestConfigDigestAndEpochReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestConfigDigestAndEpochReply.ProtoReflect.Descriptor instead.
 func (*LatestConfigDigestAndEpochReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{42}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *LatestConfigDigestAndEpochReply) GetConfigDigest() []byte {
@@ -2193,7 +2193,7 @@ type FromAccountRequest struct {
 
 func (x *FromAccountRequest) Reset() {
 	*x = FromAccountRequest{}
-	mi := &file_relayer_proto_msgTypes[43]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2205,7 +2205,7 @@ func (x *FromAccountRequest) String() string {
 func (*FromAccountRequest) ProtoMessage() {}
 
 func (x *FromAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[43]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2218,7 +2218,7 @@ func (x *FromAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FromAccountRequest.ProtoReflect.Descriptor instead.
 func (*FromAccountRequest) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{43}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{43}
 }
 
 // FromAccountReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.Service.FromAccount].
@@ -2231,7 +2231,7 @@ type FromAccountReply struct {
 
 func (x *FromAccountReply) Reset() {
 	*x = FromAccountReply{}
-	mi := &file_relayer_proto_msgTypes[44]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2243,7 +2243,7 @@ func (x *FromAccountReply) String() string {
 func (*FromAccountReply) ProtoMessage() {}
 
 func (x *FromAccountReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[44]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2256,7 +2256,7 @@ func (x *FromAccountReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FromAccountReply.ProtoReflect.Descriptor instead.
 func (*FromAccountReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{44}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *FromAccountReply) GetAccount() string {
@@ -2276,7 +2276,7 @@ type NameReply struct {
 
 func (x *NameReply) Reset() {
 	*x = NameReply{}
-	mi := &file_relayer_proto_msgTypes[45]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2288,7 +2288,7 @@ func (x *NameReply) String() string {
 func (*NameReply) ProtoMessage() {}
 
 func (x *NameReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[45]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2301,7 +2301,7 @@ func (x *NameReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NameReply.ProtoReflect.Descriptor instead.
 func (*NameReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{45}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *NameReply) GetName() string {
@@ -2321,7 +2321,7 @@ type HealthReportReply struct {
 
 func (x *HealthReportReply) Reset() {
 	*x = HealthReportReply{}
-	mi := &file_relayer_proto_msgTypes[46]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2333,7 +2333,7 @@ func (x *HealthReportReply) String() string {
 func (*HealthReportReply) ProtoMessage() {}
 
 func (x *HealthReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[46]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2346,7 +2346,7 @@ func (x *HealthReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthReportReply.ProtoReflect.Descriptor instead.
 func (*HealthReportReply) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{46}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *HealthReportReply) GetHealthReport() map[string]string {
@@ -2367,7 +2367,7 @@ type BigInt struct {
 
 func (x *BigInt) Reset() {
 	*x = BigInt{}
-	mi := &file_relayer_proto_msgTypes[47]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2379,7 +2379,7 @@ func (x *BigInt) String() string {
 func (*BigInt) ProtoMessage() {}
 
 func (x *BigInt) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[47]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2392,7 +2392,7 @@ func (x *BigInt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BigInt.ProtoReflect.Descriptor instead.
 func (*BigInt) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{47}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *BigInt) GetNegative() bool {
@@ -2419,7 +2419,7 @@ type StarknetSignature struct {
 
 func (x *StarknetSignature) Reset() {
 	*x = StarknetSignature{}
-	mi := &file_relayer_proto_msgTypes[48]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2431,7 +2431,7 @@ func (x *StarknetSignature) String() string {
 func (*StarknetSignature) ProtoMessage() {}
 
 func (x *StarknetSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[48]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2444,7 +2444,7 @@ func (x *StarknetSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarknetSignature.ProtoReflect.Descriptor instead.
 func (*StarknetSignature) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{48}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *StarknetSignature) GetX() *BigInt {
@@ -2470,7 +2470,7 @@ type StarknetMessageHash struct {
 
 func (x *StarknetMessageHash) Reset() {
 	*x = StarknetMessageHash{}
-	mi := &file_relayer_proto_msgTypes[49]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2482,7 +2482,7 @@ func (x *StarknetMessageHash) String() string {
 func (*StarknetMessageHash) ProtoMessage() {}
 
 func (x *StarknetMessageHash) ProtoReflect() protoreflect.Message {
-	mi := &file_relayer_proto_msgTypes[49]
+	mi := &file_loop_internal_pb_relayer_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2495,7 +2495,7 @@ func (x *StarknetMessageHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarknetMessageHash.ProtoReflect.Descriptor instead.
 func (*StarknetMessageHash) Descriptor() ([]byte, []int) {
-	return file_relayer_proto_rawDescGZIP(), []int{49}
+	return file_loop_internal_pb_relayer_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *StarknetMessageHash) GetHash() *BigInt {
@@ -2505,11 +2505,11 @@ func (x *StarknetMessageHash) GetHash() *BigInt {
 	return nil
 }
 
-var File_relayer_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_relayer_proto protoreflect.FileDescriptor
 
-const file_relayer_proto_rawDesc = "" +
+const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\n" +
-	"\rrelayer.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x15contract_reader.proto\"\x7f\n" +
+	"\x1eloop/internal/pb/relayer.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a&loop/internal/pb/contract_reader.proto\"\x7f\n" +
 	"\x11NewRelayerRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12\x1e\n" +
 	"\n" +
@@ -2691,19 +2691,19 @@ const file_relayer_proto_rawDesc = "" +
 	"\fHealthReport\x12\x16.google.protobuf.Empty\x1a\x17.loop.HealthReportReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_relayer_proto_rawDescOnce sync.Once
-	file_relayer_proto_rawDescData []byte
+	file_loop_internal_pb_relayer_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_relayer_proto_rawDescData []byte
 )
 
-func file_relayer_proto_rawDescGZIP() []byte {
-	file_relayer_proto_rawDescOnce.Do(func() {
-		file_relayer_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_relayer_proto_rawDesc), len(file_relayer_proto_rawDesc)))
+func file_loop_internal_pb_relayer_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_relayer_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_relayer_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayer_proto_rawDesc), len(file_loop_internal_pb_relayer_proto_rawDesc)))
 	})
-	return file_relayer_proto_rawDescData
+	return file_loop_internal_pb_relayer_proto_rawDescData
 }
 
-var file_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 51)
-var file_relayer_proto_goTypes = []any{
+var file_loop_internal_pb_relayer_proto_msgTypes = make([]protoimpl.MessageInfo, 51)
+var file_loop_internal_pb_relayer_proto_goTypes = []any{
 	(*NewRelayerRequest)(nil),                 // 0: loop.NewRelayerRequest
 	(*NewRelayerReply)(nil),                   // 1: loop.NewRelayerReply
 	(*AccountsReply)(nil),                     // 2: loop.AccountsReply
@@ -2759,7 +2759,7 @@ var file_relayer_proto_goTypes = []any{
 	(*structpb.Struct)(nil),                   // 52: google.protobuf.Struct
 	(*emptypb.Empty)(nil),                     // 53: google.protobuf.Empty
 }
-var file_relayer_proto_depIdxs = []int32{
+var file_loop_internal_pb_relayer_proto_depIdxs = []int32{
 	5,  // 0: loop.NewPluginProviderRequest.relayArgs:type_name -> loop.RelayArgs
 	6,  // 1: loop.NewPluginProviderRequest.pluginArgs:type_name -> loop.PluginArgs
 	5,  // 2: loop.NewConfigProviderRequest.relayArgs:type_name -> loop.RelayArgs
@@ -2832,27 +2832,27 @@ var file_relayer_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_relayer_proto_init() }
-func file_relayer_proto_init() {
-	if File_relayer_proto != nil {
+func init() { file_loop_internal_pb_relayer_proto_init() }
+func file_loop_internal_pb_relayer_proto_init() {
+	if File_loop_internal_pb_relayer_proto != nil {
 		return
 	}
-	file_contract_reader_proto_init()
+	file_loop_internal_pb_contract_reader_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_relayer_proto_rawDesc), len(file_relayer_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayer_proto_rawDesc), len(file_loop_internal_pb_relayer_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   51,
 			NumExtensions: 0,
 			NumServices:   7,
 		},
-		GoTypes:           file_relayer_proto_goTypes,
-		DependencyIndexes: file_relayer_proto_depIdxs,
-		MessageInfos:      file_relayer_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_relayer_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_relayer_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_relayer_proto_msgTypes,
 	}.Build()
-	File_relayer_proto = out.File
-	file_relayer_proto_goTypes = nil
-	file_relayer_proto_depIdxs = nil
+	File_loop_internal_pb_relayer_proto = out.File
+	file_loop_internal_pb_relayer_proto_goTypes = nil
+	file_loop_internal_pb_relayer_proto_depIdxs = nil
 }

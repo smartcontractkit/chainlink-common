@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: codec.proto
+// source: internal/codec/codec.proto
 
-package pb
+package codec
 
 import (
 	context "context"
@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Codec_GetEncoding_FullMethodName = "/loop.Codec/GetEncoding"
-	Codec_GetDecoding_FullMethodName = "/loop.Codec/GetDecoding"
-	Codec_GetMaxSize_FullMethodName  = "/loop.Codec/GetMaxSize"
+	Codec_GetEncoding_FullMethodName = "/codec.Codec/GetEncoding"
+	Codec_GetDecoding_FullMethodName = "/codec.Codec/GetDecoding"
+	Codec_GetMaxSize_FullMethodName  = "/codec.Codec/GetMaxSize"
 )
 
 // CodecClient is the client API for Codec service.
@@ -176,7 +176,7 @@ func _Codec_GetMaxSize_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Codec_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "loop.Codec",
+	ServiceName: "codec.Codec",
 	HandlerType: (*CodecServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -193,5 +193,5 @@ var Codec_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "codec.proto",
+	Metadata: "internal/codec/codec.proto",
 }

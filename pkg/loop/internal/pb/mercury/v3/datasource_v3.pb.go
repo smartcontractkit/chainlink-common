@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: datasource_v3.proto
+// source: loop/internal/pb/mercury/v3/datasource_v3.proto
 
 package mercuryv3pb
 
@@ -33,7 +33,7 @@ type ObserveRequest struct {
 
 func (x *ObserveRequest) Reset() {
 	*x = ObserveRequest{}
-	mi := &file_datasource_v3_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *ObserveRequest) String() string {
 func (*ObserveRequest) ProtoMessage() {}
 
 func (x *ObserveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_datasource_v3_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *ObserveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveRequest.ProtoReflect.Descriptor instead.
 func (*ObserveRequest) Descriptor() ([]byte, []int) {
-	return file_datasource_v3_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ObserveRequest) GetReportTimestamp() *pb.ReportTimestamp {
@@ -87,7 +87,7 @@ type Block struct {
 
 func (x *Block) Reset() {
 	*x = Block{}
-	mi := &file_datasource_v3_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *Block) String() string {
 func (*Block) ProtoMessage() {}
 
 func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_datasource_v3_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *Block) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Block.ProtoReflect.Descriptor instead.
 func (*Block) Descriptor() ([]byte, []int) {
-	return file_datasource_v3_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Block) GetNumber() int64 {
@@ -151,7 +151,7 @@ type Observation struct {
 
 func (x *Observation) Reset() {
 	*x = Observation{}
-	mi := &file_datasource_v3_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +163,7 @@ func (x *Observation) String() string {
 func (*Observation) ProtoMessage() {}
 
 func (x *Observation) ProtoReflect() protoreflect.Message {
-	mi := &file_datasource_v3_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +176,7 @@ func (x *Observation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Observation.ProtoReflect.Descriptor instead.
 func (*Observation) Descriptor() ([]byte, []int) {
-	return file_datasource_v3_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Observation) GetBenchmarkPrice() *pb.BigInt {
@@ -231,7 +231,7 @@ type ObserveResponse struct {
 
 func (x *ObserveResponse) Reset() {
 	*x = ObserveResponse{}
-	mi := &file_datasource_v3_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -243,7 +243,7 @@ func (x *ObserveResponse) String() string {
 func (*ObserveResponse) ProtoMessage() {}
 
 func (x *ObserveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_datasource_v3_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -256,7 +256,7 @@ func (x *ObserveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveResponse.ProtoReflect.Descriptor instead.
 func (*ObserveResponse) Descriptor() ([]byte, []int) {
-	return file_datasource_v3_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ObserveResponse) GetObservation() *Observation {
@@ -266,11 +266,11 @@ func (x *ObserveResponse) GetObservation() *Observation {
 	return nil
 }
 
-var File_datasource_v3_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_mercury_v3_datasource_v3_proto protoreflect.FileDescriptor
 
-const file_datasource_v3_proto_rawDesc = "" +
+const file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDesc = "" +
 	"\n" +
-	"\x13datasource_v3.proto\x12\x1bloop.internal.pb.mercury.v3\x1a\rrelayer.proto\"\x90\x01\n" +
+	"/loop/internal/pb/mercury/v3/datasource_v3.proto\x12\x1bloop.internal.pb.mercury.v3\x1a\x1eloop/internal/pb/relayer.proto\"\x90\x01\n" +
 	"\x0eObserveRequest\x12@\n" +
 	"\x10report_timestamp\x18\x01 \x01(\v2\x15.loop.ReportTimestampR\x0freportTimestamp\x12<\n" +
 	"\x19fetchMaxFinalizedBlockNum\x18\x02 \x01(\bR\x19fetchMaxFinalizedBlockNum\"Q\n" +
@@ -292,19 +292,19 @@ const file_datasource_v3_proto_rawDesc = "" +
 	"\aObserve\x12+.loop.internal.pb.mercury.v3.ObserveRequest\x1a,.loop.internal.pb.mercury.v3.ObserveResponse\"\x00BZZXgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v3;mercuryv3pbb\x06proto3"
 
 var (
-	file_datasource_v3_proto_rawDescOnce sync.Once
-	file_datasource_v3_proto_rawDescData []byte
+	file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescData []byte
 )
 
-func file_datasource_v3_proto_rawDescGZIP() []byte {
-	file_datasource_v3_proto_rawDescOnce.Do(func() {
-		file_datasource_v3_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_datasource_v3_proto_rawDesc), len(file_datasource_v3_proto_rawDesc)))
+func file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDesc), len(file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDesc)))
 	})
-	return file_datasource_v3_proto_rawDescData
+	return file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDescData
 }
 
-var file_datasource_v3_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_datasource_v3_proto_goTypes = []any{
+var file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_loop_internal_pb_mercury_v3_datasource_v3_proto_goTypes = []any{
 	(*ObserveRequest)(nil),     // 0: loop.internal.pb.mercury.v3.ObserveRequest
 	(*Block)(nil),              // 1: loop.internal.pb.mercury.v3.Block
 	(*Observation)(nil),        // 2: loop.internal.pb.mercury.v3.Observation
@@ -312,7 +312,7 @@ var file_datasource_v3_proto_goTypes = []any{
 	(*pb.ReportTimestamp)(nil), // 4: loop.ReportTimestamp
 	(*pb.BigInt)(nil),          // 5: loop.BigInt
 }
-var file_datasource_v3_proto_depIdxs = []int32{
+var file_loop_internal_pb_mercury_v3_datasource_v3_proto_depIdxs = []int32{
 	4, // 0: loop.internal.pb.mercury.v3.ObserveRequest.report_timestamp:type_name -> loop.ReportTimestamp
 	5, // 1: loop.internal.pb.mercury.v3.Observation.benchmarkPrice:type_name -> loop.BigInt
 	5, // 2: loop.internal.pb.mercury.v3.Observation.bid:type_name -> loop.BigInt
@@ -329,26 +329,26 @@ var file_datasource_v3_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_datasource_v3_proto_init() }
-func file_datasource_v3_proto_init() {
-	if File_datasource_v3_proto != nil {
+func init() { file_loop_internal_pb_mercury_v3_datasource_v3_proto_init() }
+func file_loop_internal_pb_mercury_v3_datasource_v3_proto_init() {
+	if File_loop_internal_pb_mercury_v3_datasource_v3_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_datasource_v3_proto_rawDesc), len(file_datasource_v3_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDesc), len(file_loop_internal_pb_mercury_v3_datasource_v3_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_datasource_v3_proto_goTypes,
-		DependencyIndexes: file_datasource_v3_proto_depIdxs,
-		MessageInfos:      file_datasource_v3_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_mercury_v3_datasource_v3_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_mercury_v3_datasource_v3_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_mercury_v3_datasource_v3_proto_msgTypes,
 	}.Build()
-	File_datasource_v3_proto = out.File
-	file_datasource_v3_proto_goTypes = nil
-	file_datasource_v3_proto_depIdxs = nil
+	File_loop_internal_pb_mercury_v3_datasource_v3_proto = out.File
+	file_loop_internal_pb_mercury_v3_datasource_v3_proto_goTypes = nil
+	file_loop_internal_pb_mercury_v3_datasource_v3_proto_depIdxs = nil
 }

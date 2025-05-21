@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: reporting.proto
+// source: loop/internal/pb/reporting.proto
 
 package pb
 
@@ -119,7 +119,7 @@ var ReportingPluginFactory_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "reporting.proto",
+	Metadata: "loop/internal/pb/reporting.proto",
 }
 
 const (
@@ -411,5 +411,5 @@ var ReportingPlugin_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "reporting.proto",
+	Metadata: "loop/internal/pb/reporting.proto",
 }

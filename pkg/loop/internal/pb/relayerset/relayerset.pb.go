@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: relayerset.proto
+// source: loop/internal/pb/relayerset/relayerset.proto
 
 package relayerset
 
@@ -33,7 +33,7 @@ type RelayerId struct {
 
 func (x *RelayerId) Reset() {
 	*x = RelayerId{}
-	mi := &file_relayerset_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *RelayerId) String() string {
 func (*RelayerId) ProtoMessage() {}
 
 func (x *RelayerId) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *RelayerId) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerId.ProtoReflect.Descriptor instead.
 func (*RelayerId) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RelayerId) GetNetwork() string {
@@ -84,7 +84,7 @@ type GetRelayerRequest struct {
 
 func (x *GetRelayerRequest) Reset() {
 	*x = GetRelayerRequest{}
-	mi := &file_relayerset_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -96,7 +96,7 @@ func (x *GetRelayerRequest) String() string {
 func (*GetRelayerRequest) ProtoMessage() {}
 
 func (x *GetRelayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,7 +109,7 @@ func (x *GetRelayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRelayerRequest.ProtoReflect.Descriptor instead.
 func (*GetRelayerRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetRelayerRequest) GetId() *RelayerId {
@@ -128,7 +128,7 @@ type GetRelayerResponse struct {
 
 func (x *GetRelayerResponse) Reset() {
 	*x = GetRelayerResponse{}
-	mi := &file_relayerset_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -140,7 +140,7 @@ func (x *GetRelayerResponse) String() string {
 func (*GetRelayerResponse) ProtoMessage() {}
 
 func (x *GetRelayerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -153,7 +153,7 @@ func (x *GetRelayerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRelayerResponse.ProtoReflect.Descriptor instead.
 func (*GetRelayerResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetRelayerResponse) GetId() *RelayerId {
@@ -172,7 +172,7 @@ type ListAllRelayersRequest struct {
 
 func (x *ListAllRelayersRequest) Reset() {
 	*x = ListAllRelayersRequest{}
-	mi := &file_relayerset_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -184,7 +184,7 @@ func (x *ListAllRelayersRequest) String() string {
 func (*ListAllRelayersRequest) ProtoMessage() {}
 
 func (x *ListAllRelayersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +197,7 @@ func (x *ListAllRelayersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAllRelayersRequest.ProtoReflect.Descriptor instead.
 func (*ListAllRelayersRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListAllRelayersRequest) GetIds() []*RelayerId {
@@ -216,7 +216,7 @@ type ListAllRelayersResponse struct {
 
 func (x *ListAllRelayersResponse) Reset() {
 	*x = ListAllRelayersResponse{}
-	mi := &file_relayerset_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -228,7 +228,7 @@ func (x *ListAllRelayersResponse) String() string {
 func (*ListAllRelayersResponse) ProtoMessage() {}
 
 func (x *ListAllRelayersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -241,7 +241,7 @@ func (x *ListAllRelayersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAllRelayersResponse.ProtoReflect.Descriptor instead.
 func (*ListAllRelayersResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListAllRelayersResponse) GetIds() []*RelayerId {
@@ -264,7 +264,7 @@ type RelayArgs struct {
 
 func (x *RelayArgs) Reset() {
 	*x = RelayArgs{}
-	mi := &file_relayerset_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -276,7 +276,7 @@ func (x *RelayArgs) String() string {
 func (*RelayArgs) ProtoMessage() {}
 
 func (x *RelayArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -289,7 +289,7 @@ func (x *RelayArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayArgs.ProtoReflect.Descriptor instead.
 func (*RelayArgs) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RelayArgs) GetContractID() string {
@@ -333,7 +333,7 @@ type MercuryCredentials struct {
 
 func (x *MercuryCredentials) Reset() {
 	*x = MercuryCredentials{}
-	mi := &file_relayerset_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -345,7 +345,7 @@ func (x *MercuryCredentials) String() string {
 func (*MercuryCredentials) ProtoMessage() {}
 
 func (x *MercuryCredentials) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -358,7 +358,7 @@ func (x *MercuryCredentials) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MercuryCredentials.ProtoReflect.Descriptor instead.
 func (*MercuryCredentials) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MercuryCredentials) GetLegacyUrl() string {
@@ -399,7 +399,7 @@ type PluginArgs struct {
 
 func (x *PluginArgs) Reset() {
 	*x = PluginArgs{}
-	mi := &file_relayerset_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +411,7 @@ func (x *PluginArgs) String() string {
 func (*PluginArgs) ProtoMessage() {}
 
 func (x *PluginArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +424,7 @@ func (x *PluginArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginArgs.ProtoReflect.Descriptor instead.
 func (*PluginArgs) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PluginArgs) GetTransmitterID() string {
@@ -452,7 +452,7 @@ type NewPluginProviderRequest struct {
 
 func (x *NewPluginProviderRequest) Reset() {
 	*x = NewPluginProviderRequest{}
-	mi := &file_relayerset_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -464,7 +464,7 @@ func (x *NewPluginProviderRequest) String() string {
 func (*NewPluginProviderRequest) ProtoMessage() {}
 
 func (x *NewPluginProviderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -477,7 +477,7 @@ func (x *NewPluginProviderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewPluginProviderRequest.ProtoReflect.Descriptor instead.
 func (*NewPluginProviderRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *NewPluginProviderRequest) GetRelayerId() *RelayerId {
@@ -510,7 +510,7 @@ type NewPluginProviderResponse struct {
 
 func (x *NewPluginProviderResponse) Reset() {
 	*x = NewPluginProviderResponse{}
-	mi := &file_relayerset_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -522,7 +522,7 @@ func (x *NewPluginProviderResponse) String() string {
 func (*NewPluginProviderResponse) ProtoMessage() {}
 
 func (x *NewPluginProviderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -535,7 +535,7 @@ func (x *NewPluginProviderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewPluginProviderResponse.ProtoReflect.Descriptor instead.
 func (*NewPluginProviderResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *NewPluginProviderResponse) GetPluginProviderId() uint32 {
@@ -555,7 +555,7 @@ type NewContractReaderRequest struct {
 
 func (x *NewContractReaderRequest) Reset() {
 	*x = NewContractReaderRequest{}
-	mi := &file_relayerset_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -567,7 +567,7 @@ func (x *NewContractReaderRequest) String() string {
 func (*NewContractReaderRequest) ProtoMessage() {}
 
 func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -580,7 +580,7 @@ func (x *NewContractReaderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderRequest.ProtoReflect.Descriptor instead.
 func (*NewContractReaderRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NewContractReaderRequest) GetRelayerId() *RelayerId {
@@ -606,7 +606,7 @@ type NewContractReaderResponse struct {
 
 func (x *NewContractReaderResponse) Reset() {
 	*x = NewContractReaderResponse{}
-	mi := &file_relayerset_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -618,7 +618,7 @@ func (x *NewContractReaderResponse) String() string {
 func (*NewContractReaderResponse) ProtoMessage() {}
 
 func (x *NewContractReaderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -631,7 +631,7 @@ func (x *NewContractReaderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractReaderResponse.ProtoReflect.Descriptor instead.
 func (*NewContractReaderResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NewContractReaderResponse) GetContractReaderId() string {
@@ -651,7 +651,7 @@ type NewContractWriterRequest struct {
 
 func (x *NewContractWriterRequest) Reset() {
 	*x = NewContractWriterRequest{}
-	mi := &file_relayerset_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -663,7 +663,7 @@ func (x *NewContractWriterRequest) String() string {
 func (*NewContractWriterRequest) ProtoMessage() {}
 
 func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -676,7 +676,7 @@ func (x *NewContractWriterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterRequest.ProtoReflect.Descriptor instead.
 func (*NewContractWriterRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NewContractWriterRequest) GetRelayerId() *RelayerId {
@@ -702,7 +702,7 @@ type NewContractWriterResponse struct {
 
 func (x *NewContractWriterResponse) Reset() {
 	*x = NewContractWriterResponse{}
-	mi := &file_relayerset_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -714,7 +714,7 @@ func (x *NewContractWriterResponse) String() string {
 func (*NewContractWriterResponse) ProtoMessage() {}
 
 func (x *NewContractWriterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -727,7 +727,7 @@ func (x *NewContractWriterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewContractWriterResponse.ProtoReflect.Descriptor instead.
 func (*NewContractWriterResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NewContractWriterResponse) GetContractWriterId() uint32 {
@@ -746,7 +746,7 @@ type LatestHeadRequest struct {
 
 func (x *LatestHeadRequest) Reset() {
 	*x = LatestHeadRequest{}
-	mi := &file_relayerset_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -758,7 +758,7 @@ func (x *LatestHeadRequest) String() string {
 func (*LatestHeadRequest) ProtoMessage() {}
 
 func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -771,7 +771,7 @@ func (x *LatestHeadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadRequest.ProtoReflect.Descriptor instead.
 func (*LatestHeadRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *LatestHeadRequest) GetRelayerId() *RelayerId {
@@ -792,7 +792,7 @@ type LatestHeadResponse struct {
 
 func (x *LatestHeadResponse) Reset() {
 	*x = LatestHeadResponse{}
-	mi := &file_relayerset_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -804,7 +804,7 @@ func (x *LatestHeadResponse) String() string {
 func (*LatestHeadResponse) ProtoMessage() {}
 
 func (x *LatestHeadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -817,7 +817,7 @@ func (x *LatestHeadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestHeadResponse.ProtoReflect.Descriptor instead.
 func (*LatestHeadResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LatestHeadResponse) GetHeight() string {
@@ -850,7 +850,7 @@ type RelayerHealthReportResponse struct {
 
 func (x *RelayerHealthReportResponse) Reset() {
 	*x = RelayerHealthReportResponse{}
-	mi := &file_relayerset_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -862,7 +862,7 @@ func (x *RelayerHealthReportResponse) String() string {
 func (*RelayerHealthReportResponse) ProtoMessage() {}
 
 func (x *RelayerHealthReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[16]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -875,7 +875,7 @@ func (x *RelayerHealthReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerHealthReportResponse.ProtoReflect.Descriptor instead.
 func (*RelayerHealthReportResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{16}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RelayerHealthReportResponse) GetReport() map[string]string {
@@ -894,7 +894,7 @@ type RelayerNameResponse struct {
 
 func (x *RelayerNameResponse) Reset() {
 	*x = RelayerNameResponse{}
-	mi := &file_relayerset_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +906,7 @@ func (x *RelayerNameResponse) String() string {
 func (*RelayerNameResponse) ProtoMessage() {}
 
 func (x *RelayerNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[17]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -919,7 +919,7 @@ func (x *RelayerNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelayerNameResponse.ProtoReflect.Descriptor instead.
 func (*RelayerNameResponse) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{17}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RelayerNameResponse) GetName() string {
@@ -939,7 +939,7 @@ type ContractReaderGetLatestValueRequest struct {
 
 func (x *ContractReaderGetLatestValueRequest) Reset() {
 	*x = ContractReaderGetLatestValueRequest{}
-	mi := &file_relayerset_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +951,7 @@ func (x *ContractReaderGetLatestValueRequest) String() string {
 func (*ContractReaderGetLatestValueRequest) ProtoMessage() {}
 
 func (x *ContractReaderGetLatestValueRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[18]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +964,7 @@ func (x *ContractReaderGetLatestValueRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ContractReaderGetLatestValueRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderGetLatestValueRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{18}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ContractReaderGetLatestValueRequest) GetContractReaderId() string {
@@ -991,7 +991,7 @@ type ContractReaderBatchGetLatestValuesRequest struct {
 
 func (x *ContractReaderBatchGetLatestValuesRequest) Reset() {
 	*x = ContractReaderBatchGetLatestValuesRequest{}
-	mi := &file_relayerset_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1003,7 +1003,7 @@ func (x *ContractReaderBatchGetLatestValuesRequest) String() string {
 func (*ContractReaderBatchGetLatestValuesRequest) ProtoMessage() {}
 
 func (x *ContractReaderBatchGetLatestValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[19]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1016,7 +1016,7 @@ func (x *ContractReaderBatchGetLatestValuesRequest) ProtoReflect() protoreflect.
 
 // Deprecated: Use ContractReaderBatchGetLatestValuesRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderBatchGetLatestValuesRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{19}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ContractReaderBatchGetLatestValuesRequest) GetContractReaderId() string {
@@ -1043,7 +1043,7 @@ type ContractReaderQueryKeyRequest struct {
 
 func (x *ContractReaderQueryKeyRequest) Reset() {
 	*x = ContractReaderQueryKeyRequest{}
-	mi := &file_relayerset_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1055,7 +1055,7 @@ func (x *ContractReaderQueryKeyRequest) String() string {
 func (*ContractReaderQueryKeyRequest) ProtoMessage() {}
 
 func (x *ContractReaderQueryKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[20]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1068,7 +1068,7 @@ func (x *ContractReaderQueryKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderQueryKeyRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderQueryKeyRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{20}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ContractReaderQueryKeyRequest) GetContractReaderId() string {
@@ -1095,7 +1095,7 @@ type ContractReaderQueryKeysRequest struct {
 
 func (x *ContractReaderQueryKeysRequest) Reset() {
 	*x = ContractReaderQueryKeysRequest{}
-	mi := &file_relayerset_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1107,7 +1107,7 @@ func (x *ContractReaderQueryKeysRequest) String() string {
 func (*ContractReaderQueryKeysRequest) ProtoMessage() {}
 
 func (x *ContractReaderQueryKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[21]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1120,7 +1120,7 @@ func (x *ContractReaderQueryKeysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderQueryKeysRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderQueryKeysRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{21}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ContractReaderQueryKeysRequest) GetContractReaderId() string {
@@ -1147,7 +1147,7 @@ type ContractReaderBindRequest struct {
 
 func (x *ContractReaderBindRequest) Reset() {
 	*x = ContractReaderBindRequest{}
-	mi := &file_relayerset_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1159,7 +1159,7 @@ func (x *ContractReaderBindRequest) String() string {
 func (*ContractReaderBindRequest) ProtoMessage() {}
 
 func (x *ContractReaderBindRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[22]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1172,7 +1172,7 @@ func (x *ContractReaderBindRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderBindRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderBindRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{22}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ContractReaderBindRequest) GetContractReaderId() string {
@@ -1199,7 +1199,7 @@ type ContractReaderUnbindRequest struct {
 
 func (x *ContractReaderUnbindRequest) Reset() {
 	*x = ContractReaderUnbindRequest{}
-	mi := &file_relayerset_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1211,7 +1211,7 @@ func (x *ContractReaderUnbindRequest) String() string {
 func (*ContractReaderUnbindRequest) ProtoMessage() {}
 
 func (x *ContractReaderUnbindRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[23]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1224,7 +1224,7 @@ func (x *ContractReaderUnbindRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderUnbindRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderUnbindRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{23}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ContractReaderUnbindRequest) GetContractReaderId() string {
@@ -1250,7 +1250,7 @@ type ContractReaderStartRequest struct {
 
 func (x *ContractReaderStartRequest) Reset() {
 	*x = ContractReaderStartRequest{}
-	mi := &file_relayerset_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1262,7 +1262,7 @@ func (x *ContractReaderStartRequest) String() string {
 func (*ContractReaderStartRequest) ProtoMessage() {}
 
 func (x *ContractReaderStartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[24]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1275,7 +1275,7 @@ func (x *ContractReaderStartRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderStartRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderStartRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{24}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ContractReaderStartRequest) GetContractReaderId() string {
@@ -1294,7 +1294,7 @@ type ContractReaderCloseRequest struct {
 
 func (x *ContractReaderCloseRequest) Reset() {
 	*x = ContractReaderCloseRequest{}
-	mi := &file_relayerset_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1306,7 +1306,7 @@ func (x *ContractReaderCloseRequest) String() string {
 func (*ContractReaderCloseRequest) ProtoMessage() {}
 
 func (x *ContractReaderCloseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[25]
+	mi := &file_loop_internal_pb_relayerset_relayerset_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1319,7 +1319,7 @@ func (x *ContractReaderCloseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractReaderCloseRequest.ProtoReflect.Descriptor instead.
 func (*ContractReaderCloseRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{25}
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ContractReaderCloseRequest) GetContractReaderId() string {
@@ -1329,11 +1329,11 @@ func (x *ContractReaderCloseRequest) GetContractReaderId() string {
 	return ""
 }
 
-var File_relayerset_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_relayerset_relayerset_proto protoreflect.FileDescriptor
 
-const file_relayerset_proto_rawDesc = "" +
+const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\n" +
-	"\x10relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15contract_reader.proto\"@\n" +
+	",loop/internal/pb/relayerset/relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\"@\n" +
 	"\tRelayerId\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x19\n" +
 	"\bchain_id\x18\x02 \x01(\tR\achainId\"?\n" +
@@ -1439,19 +1439,19 @@ const file_relayerset_proto_rawDesc = "" +
 	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x00BNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
 
 var (
-	file_relayerset_proto_rawDescOnce sync.Once
-	file_relayerset_proto_rawDescData []byte
+	file_loop_internal_pb_relayerset_relayerset_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_relayerset_relayerset_proto_rawDescData []byte
 )
 
-func file_relayerset_proto_rawDescGZIP() []byte {
-	file_relayerset_proto_rawDescOnce.Do(func() {
-		file_relayerset_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_relayerset_proto_rawDesc), len(file_relayerset_proto_rawDesc)))
+func file_loop_internal_pb_relayerset_relayerset_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_relayerset_relayerset_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_relayerset_relayerset_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayerset_relayerset_proto_rawDesc), len(file_loop_internal_pb_relayerset_relayerset_proto_rawDesc)))
 	})
-	return file_relayerset_proto_rawDescData
+	return file_loop_internal_pb_relayerset_relayerset_proto_rawDescData
 }
 
-var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
-var file_relayerset_proto_goTypes = []any{
+var file_loop_internal_pb_relayerset_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*RelayerId)(nil),                                 // 0: loop.relayerset.RelayerId
 	(*GetRelayerRequest)(nil),                         // 1: loop.relayerset.GetRelayerRequest
 	(*GetRelayerResponse)(nil),                        // 2: loop.relayerset.GetRelayerResponse
@@ -1492,7 +1492,7 @@ var file_relayerset_proto_goTypes = []any{
 	(*pb.QueryKeyReply)(nil),                          // 37: loop.QueryKeyReply
 	(*pb.QueryKeysReply)(nil),                         // 38: loop.QueryKeysReply
 }
-var file_relayerset_proto_depIdxs = []int32{
+var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
 	0,  // 1: loop.relayerset.GetRelayerResponse.id:type_name -> loop.relayerset.RelayerId
 	0,  // 2: loop.relayerset.ListAllRelayersRequest.ids:type_name -> loop.relayerset.RelayerId
@@ -1558,26 +1558,26 @@ var file_relayerset_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_relayerset_proto_init() }
-func file_relayerset_proto_init() {
-	if File_relayerset_proto != nil {
+func init() { file_loop_internal_pb_relayerset_relayerset_proto_init() }
+func file_loop_internal_pb_relayerset_relayerset_proto_init() {
+	if File_loop_internal_pb_relayerset_relayerset_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_relayerset_proto_rawDesc), len(file_relayerset_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_relayerset_relayerset_proto_rawDesc), len(file_loop_internal_pb_relayerset_relayerset_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_relayerset_proto_goTypes,
-		DependencyIndexes: file_relayerset_proto_depIdxs,
-		MessageInfos:      file_relayerset_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_relayerset_relayerset_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_relayerset_relayerset_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_relayerset_relayerset_proto_msgTypes,
 	}.Build()
-	File_relayerset_proto = out.File
-	file_relayerset_proto_goTypes = nil
-	file_relayerset_proto_depIdxs = nil
+	File_loop_internal_pb_relayerset_relayerset_proto = out.File
+	file_loop_internal_pb_relayerset_relayerset_proto_goTypes = nil
+	file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = nil
 }

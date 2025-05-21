@@ -17,7 +17,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	nodeactionmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction/node_actionmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
@@ -85,10 +84,6 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestRuntime_NumericalConsensusShouldReturnErrorIfInputIsNotNumerical(t *testing.T) {
-	t.Skip("TODO https://smartcontract-it.atlassian.net/browse/CAPPL-798")
-}
-
 func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
@@ -120,7 +115,7 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
 						require.NoError(t, err)
 						return resp.OutputThing, nil
-					}, pb.AggregationType_MEDIAN)
+					}, sdk.ConsensusMedianAggregation[int32]())
 
 					consensusResult, err := consensus.Await()
 					require.NoError(t, err)
@@ -156,16 +151,12 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 			sdk.NewDonHandler(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensusType := &sdk.PrimitiveConsensusWithDefault[int32]{
-						SimpleConsensusType: pb.AggregationType_MEDIAN,
-						DefaultValue:        anyValue,
-					}
 					consensus := sdk.RunInNodeMode(
 						rt,
 						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, errors.New("no consensus")
 						},
-						consensusType)
+						sdk.ConsensusMedianAggregation[int32]().WithDefault(anyValue))
 
 					consensusResult, err := consensus.Await()
 					require.NoError(t, err)
@@ -205,7 +196,7 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, anyErr
 						},
-						pb.AggregationType_MEDIAN)
+						sdk.ConsensusMedianAggregation[int32]())
 
 					return consensus.Await()
 				},

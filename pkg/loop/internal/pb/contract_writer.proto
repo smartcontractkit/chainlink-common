@@ -4,8 +4,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "codec.proto";
-import "relayer.proto";
+import "internal/codec/codec.proto";
+import "loop/internal/pb/relayer.proto";
 import "google/protobuf/empty.proto";
 
 service ContractWriter {
@@ -18,7 +18,7 @@ service ContractWriter {
 message SubmitTransactionRequest {
     string contract_name = 1;
     string method = 2;
-    VersionedBytes params = 3;
+    codec.VersionedBytes params = 3;
     string transaction_id = 4;
     string to_address = 5;
     TransactionMeta meta = 6;
@@ -39,7 +39,7 @@ message GetTransactionStatusRequest {
 message GetEstimateFeeRequest {
     string contract_name = 1;
     string method = 2;
-    VersionedBytes params = 3;
+    codec.VersionedBytes params = 3;
     string to_address = 4;
     TransactionMeta meta = 5;
     BigInt value = 6;

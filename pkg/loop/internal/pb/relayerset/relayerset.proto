@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.relayerset;
 
 import "google/protobuf/empty.proto";
-import "contract_reader.proto";
+import "loop/internal/pb/contract_reader.proto";
 
 message RelayerId {
   string network = 1;

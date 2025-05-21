@@ -4,11 +4,10 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop.internal.pb.evm;
 
-import "relayer.proto";
-import "query.proto";
-import "contract_writer.proto";
+import "loop/internal/pb/relayer.proto";
+import "loop/internal/pb/contract_writer.proto";
+import "loop/chain-common/query.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
@@ -131,7 +130,7 @@ message Expression {
 }
 
 message BooleanExpression {
-  BooleanOperator boolean_operator = 1;
+  loop.chain.common.BooleanOperator boolean_operator = 1;
   repeated Expression expression = 2;
 }
 
@@ -145,7 +144,7 @@ message Or {
 
 message HashValueComparator {
   repeated Hash values = 1;
-  ComparisonOperator operator = 2;
+  loop.chain.common.ComparisonOperator operator = 2;
 }
 
 message ContractAddress {
@@ -170,7 +169,7 @@ message EventByTopic {
 // can be used in combination with general primnitives for querying tracked logs
 message Primitive {
   oneof primitive {
-    loop.Primitive general_primitive = 1;
+    loop.chain.common.Primitive general_primitive = 1;
     ContractAddress contract_address = 2;
     EventSig event_sig = 3;
     EventByWord event_by_word = 4;
@@ -254,8 +253,8 @@ message UnregisterLogTrackingRequest {
 
 message QueryTrackedLogsRequest {
   repeated Expression expression = 1;
-  LimitAndSort limit_and_sort = 2;
-  Confidence confidence_level = 3;
+  loop.chain.common.LimitAndSort limit_and_sort = 2;
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message QueryTrackedLogsReply {

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: models.proto
+// source: loop/internal/pb/ccip/models.proto
 
 package ccippb
 
@@ -56,11 +56,11 @@ func (x FinalityStatus) String() string {
 }
 
 func (FinalityStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_models_proto_enumTypes[0].Descriptor()
+	return file_loop_internal_pb_ccip_models_proto_enumTypes[0].Descriptor()
 }
 
 func (FinalityStatus) Type() protoreflect.EnumType {
-	return &file_models_proto_enumTypes[0]
+	return &file_loop_internal_pb_ccip_models_proto_enumTypes[0]
 }
 
 func (x FinalityStatus) Number() protoreflect.EnumNumber {
@@ -69,7 +69,7 @@ func (x FinalityStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FinalityStatus.Descriptor instead.
 func (FinalityStatus) EnumDescriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{0}
 }
 
 // TxMeta is a message that contains the metadata of a transaction. It is a gRPC adapter to
@@ -87,7 +87,7 @@ type TxMeta struct {
 
 func (x *TxMeta) Reset() {
 	*x = TxMeta{}
-	mi := &file_models_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *TxMeta) String() string {
 func (*TxMeta) ProtoMessage() {}
 
 func (x *TxMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *TxMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TxMeta.ProtoReflect.Descriptor instead.
 func (*TxMeta) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TxMeta) GetBlockTimestampUnixMilli() int64 {
@@ -173,7 +173,7 @@ type EVM2EVMMessage struct {
 
 func (x *EVM2EVMMessage) Reset() {
 	*x = EVM2EVMMessage{}
-	mi := &file_models_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -185,7 +185,7 @@ func (x *EVM2EVMMessage) String() string {
 func (*EVM2EVMMessage) ProtoMessage() {}
 
 func (x *EVM2EVMMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -198,7 +198,7 @@ func (x *EVM2EVMMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EVM2EVMMessage.ProtoReflect.Descriptor instead.
 func (*EVM2EVMMessage) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EVM2EVMMessage) GetSequenceNumber() uint64 {
@@ -314,7 +314,7 @@ type EVM2EVMOnRampCCIPSendRequestedWithMeta struct {
 
 func (x *EVM2EVMOnRampCCIPSendRequestedWithMeta) Reset() {
 	*x = EVM2EVMOnRampCCIPSendRequestedWithMeta{}
-	mi := &file_models_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -326,7 +326,7 @@ func (x *EVM2EVMOnRampCCIPSendRequestedWithMeta) String() string {
 func (*EVM2EVMOnRampCCIPSendRequestedWithMeta) ProtoMessage() {}
 
 func (x *EVM2EVMOnRampCCIPSendRequestedWithMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -339,7 +339,7 @@ func (x *EVM2EVMOnRampCCIPSendRequestedWithMeta) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use EVM2EVMOnRampCCIPSendRequestedWithMeta.ProtoReflect.Descriptor instead.
 func (*EVM2EVMOnRampCCIPSendRequestedWithMeta) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EVM2EVMOnRampCCIPSendRequestedWithMeta) GetEvmToEvmMsg() *EVM2EVMMessage {
@@ -399,7 +399,7 @@ type TokenPoolRateLimit struct {
 
 func (x *TokenPoolRateLimit) Reset() {
 	*x = TokenPoolRateLimit{}
-	mi := &file_models_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +411,7 @@ func (x *TokenPoolRateLimit) String() string {
 func (*TokenPoolRateLimit) ProtoMessage() {}
 
 func (x *TokenPoolRateLimit) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +424,7 @@ func (x *TokenPoolRateLimit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenPoolRateLimit.ProtoReflect.Descriptor instead.
 func (*TokenPoolRateLimit) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TokenPoolRateLimit) GetTokens() *pb.BigInt {
@@ -473,7 +473,7 @@ type TokenAmount struct {
 
 func (x *TokenAmount) Reset() {
 	*x = TokenAmount{}
-	mi := &file_models_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -485,7 +485,7 @@ func (x *TokenAmount) String() string {
 func (*TokenAmount) ProtoMessage() {}
 
 func (x *TokenAmount) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -498,7 +498,7 @@ func (x *TokenAmount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenAmount.ProtoReflect.Descriptor instead.
 func (*TokenAmount) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TokenAmount) GetToken() string {
@@ -528,7 +528,7 @@ type ExecutionReport struct {
 
 func (x *ExecutionReport) Reset() {
 	*x = ExecutionReport{}
-	mi := &file_models_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -540,7 +540,7 @@ func (x *ExecutionReport) String() string {
 func (*ExecutionReport) ProtoMessage() {}
 
 func (x *ExecutionReport) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -553,7 +553,7 @@ func (x *ExecutionReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionReport.ProtoReflect.Descriptor instead.
 func (*ExecutionReport) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ExecutionReport) GetEvmToEvmMessages() []*EVM2EVMMessage {
@@ -593,7 +593,7 @@ type TokenData struct {
 
 func (x *TokenData) Reset() {
 	*x = TokenData{}
-	mi := &file_models_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -605,7 +605,7 @@ func (x *TokenData) String() string {
 func (*TokenData) ProtoMessage() {}
 
 func (x *TokenData) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -618,7 +618,7 @@ func (x *TokenData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenData.ProtoReflect.Descriptor instead.
 func (*TokenData) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TokenData) GetData() [][]byte {
@@ -639,7 +639,7 @@ type TokenPrice struct {
 
 func (x *TokenPrice) Reset() {
 	*x = TokenPrice{}
-	mi := &file_models_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -651,7 +651,7 @@ func (x *TokenPrice) String() string {
 func (*TokenPrice) ProtoMessage() {}
 
 func (x *TokenPrice) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -664,7 +664,7 @@ func (x *TokenPrice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenPrice.ProtoReflect.Descriptor instead.
 func (*TokenPrice) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TokenPrice) GetToken() string {
@@ -692,7 +692,7 @@ type GasPrice struct {
 
 func (x *GasPrice) Reset() {
 	*x = GasPrice{}
-	mi := &file_models_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -704,7 +704,7 @@ func (x *GasPrice) String() string {
 func (*GasPrice) ProtoMessage() {}
 
 func (x *GasPrice) ProtoReflect() protoreflect.Message {
-	mi := &file_models_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_models_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -717,7 +717,7 @@ func (x *GasPrice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasPrice.ProtoReflect.Descriptor instead.
 func (*GasPrice) Descriptor() ([]byte, []int) {
-	return file_models_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_ccip_models_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GasPrice) GetDestChainSelector() uint64 {
@@ -734,11 +734,11 @@ func (x *GasPrice) GetValue() *pb.BigInt {
 	return nil
 }
 
-var File_models_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_models_proto protoreflect.FileDescriptor
 
-const file_models_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_models_proto_rawDesc = "" +
 	"\n" +
-	"\fmodels.proto\x12\x15loop.internal.pb.ccip\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rrelayer.proto\"\xe3\x01\n" +
+	"\"loop/internal/pb/ccip/models.proto\x12\x15loop.internal.pb.ccip\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1eloop/internal/pb/relayer.proto\"\xe3\x01\n" +
 	"\x06TxMeta\x12;\n" +
 	"\x1ablock_timestamp_unix_milli\x18\x01 \x01(\x03R\x17blockTimestampUnixMilli\x12!\n" +
 	"\fblock_number\x18\x02 \x01(\x04R\vblockNumber\x12\x17\n" +
@@ -799,20 +799,20 @@ const file_models_proto_rawDesc = "" +
 	"\fNotFinalized\x10\x02BOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_models_proto_rawDescOnce sync.Once
-	file_models_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_models_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_models_proto_rawDescData []byte
 )
 
-func file_models_proto_rawDescGZIP() []byte {
-	file_models_proto_rawDescOnce.Do(func() {
-		file_models_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_models_proto_rawDesc), len(file_models_proto_rawDesc)))
+func file_loop_internal_pb_ccip_models_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_models_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_models_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_models_proto_rawDesc), len(file_loop_internal_pb_ccip_models_proto_rawDesc)))
 	})
-	return file_models_proto_rawDescData
+	return file_loop_internal_pb_ccip_models_proto_rawDescData
 }
 
-var file_models_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_models_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
-var file_models_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_models_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_loop_internal_pb_ccip_models_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_loop_internal_pb_ccip_models_proto_goTypes = []any{
 	(FinalityStatus)(0),    // 0: loop.internal.pb.ccip.FinalityStatus
 	(*TxMeta)(nil),         // 1: loop.internal.pb.ccip.TxMeta
 	(*EVM2EVMMessage)(nil), // 2: loop.internal.pb.ccip.EVM2EVMMessage
@@ -826,7 +826,7 @@ var file_models_proto_goTypes = []any{
 	(*pb.BigInt)(nil),                              // 10: loop.BigInt
 	(*timestamppb.Timestamp)(nil),                  // 11: google.protobuf.Timestamp
 }
-var file_models_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_models_proto_depIdxs = []int32{
 	0,  // 0: loop.internal.pb.ccip.TxMeta.finalized:type_name -> loop.internal.pb.ccip.FinalityStatus
 	10, // 1: loop.internal.pb.ccip.EVM2EVMMessage.gas_limit:type_name -> loop.BigInt
 	10, // 2: loop.internal.pb.ccip.EVM2EVMMessage.fee_token_amount:type_name -> loop.BigInt
@@ -849,27 +849,27 @@ var file_models_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_models_proto_init() }
-func file_models_proto_init() {
-	if File_models_proto != nil {
+func init() { file_loop_internal_pb_ccip_models_proto_init() }
+func file_loop_internal_pb_ccip_models_proto_init() {
+	if File_loop_internal_pb_ccip_models_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_models_proto_rawDesc), len(file_models_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_models_proto_rawDesc), len(file_loop_internal_pb_ccip_models_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_models_proto_goTypes,
-		DependencyIndexes: file_models_proto_depIdxs,
-		EnumInfos:         file_models_proto_enumTypes,
-		MessageInfos:      file_models_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_models_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_models_proto_depIdxs,
+		EnumInfos:         file_loop_internal_pb_ccip_models_proto_enumTypes,
+		MessageInfos:      file_loop_internal_pb_ccip_models_proto_msgTypes,
 	}.Build()
-	File_models_proto = out.File
-	file_models_proto_goTypes = nil
-	file_models_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_models_proto = out.File
+	file_loop_internal_pb_ccip_models_proto_goTypes = nil
+	file_loop_internal_pb_ccip_models_proto_depIdxs = nil
 }

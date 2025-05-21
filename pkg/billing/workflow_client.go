@@ -127,10 +127,7 @@ func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClien
 		serverName:   cfg.serverName,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	err := wc.dialGrpc(ctx)
+	err := wc.initGrpcConn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial billing service at %s: %w", address, err)
 	}
@@ -296,7 +293,7 @@ func (wc *workflowClient) SubmitWorkflowReceipt(ctx context.Context, req *pb.Sub
 	return resp, nil
 }
 
-func (wc *workflowClient) dialGrpc(ctx context.Context, opts ...grpc.DialOption) error {
+func (wc *workflowClient) initGrpcConn(opts ...grpc.DialOption) error {
 	if wc.tlsCert != "" {
 		cp := x509.NewCertPool()
 		if !cp.AppendCertsFromPEM([]byte(wc.tlsCert)) {
@@ -309,18 +306,20 @@ func (wc *workflowClient) dialGrpc(ctx context.Context, opts ...grpc.DialOption)
 		wc.logger.Infow("Dialing with provided credentials", "address", wc.address)
 	}
 
-	conn, err := grpc.DialContext(ctx, wc.address,
+	conn, err := grpc.NewClient(
+		wc.address,
 		append(opts,
 			grpc.WithTransportCredentials(wc.creds),
-			grpc.WithBlock(),
-			grpc.WithReturnConnectionError(),
 		)...,
 	)
 	if err != nil {
-		wc.logger.Errorw("Failed to dial grpc client", "error", err, "address", wc.address)
+		wc.logger.Errorw("Failed to create grpc client", "error", err, "address", wc.address)
+
 		return fmt.Errorf("failed to dial grpc client: %w", err)
 	}
+
 	wc.conn = conn
 	wc.client = pb.NewWorkflowServiceClient(conn)
+
 	return nil
 }

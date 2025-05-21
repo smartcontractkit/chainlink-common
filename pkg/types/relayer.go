@@ -132,7 +132,6 @@ type EVMService interface {
 	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
-	// If transaction is not finalized returns error
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.

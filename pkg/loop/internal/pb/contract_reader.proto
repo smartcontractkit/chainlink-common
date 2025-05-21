@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "loop/chain-common/codec.proto";
+import "internal/codec/codec.proto";
 import "loop/chain-common/query.proto";
 import "google/protobuf/empty.proto";
 
@@ -22,7 +22,7 @@ service ContractReader {
 message GetLatestValueRequest {
   string read_identifier = 1;
   loop.chain.common.Confidence confidence = 2;
-  loop.chain.common.VersionedBytes params = 3;
+  codec.VersionedBytes params = 3;
   bool as_value_type = 4;
 }
 
@@ -63,12 +63,12 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
-  loop.chain.common.VersionedBytes ret_val = 1;
+  codec.VersionedBytes ret_val = 1;
 }
 
 // GetLatestValueWithHeadDataReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithHeadData].
 message GetLatestValueWithHeadDataReply {
-  loop.chain.common.VersionedBytes ret_val = 1;
+  codec.VersionedBytes ret_val = 1;
   Head head_data = 2;
 }
 
@@ -96,8 +96,8 @@ message ContractBatch {
 // BatchCall is gRPC adapter for the GetLatestValueRequest struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchCall].
 message BatchRead  {
   string read_name = 1;
-  loop.chain.common.VersionedBytes params = 2;
-  loop.chain.common. VersionedBytes return_val = 3;
+  codec.VersionedBytes params = 2;
+  codec. VersionedBytes return_val = 3;
 }
 
 // ContractBatchResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -109,7 +109,7 @@ message ContractBatchResult {
 // BatchCallResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
 message BatchReadResult {
   string read_name = 1;
-  loop.chain.common.VersionedBytes return_val = 2;
+  codec.VersionedBytes return_val = 2;
   string error = 3;
 }
 
@@ -124,13 +124,13 @@ message Head {
 message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
-  loop.chain.common.VersionedBytes data = 3;
+  codec.VersionedBytes data = 3;
 }
 
 message SequenceWithKey {
   string sequence_cursor = 1;
   Head head = 2;
-  loop.chain.common.VersionedBytes data = 3;
+  codec.VersionedBytes data = 3;
   string key = 4;
 }
 

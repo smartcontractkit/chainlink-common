@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common;chaincommonpb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/internal/codec;";
 
-package loop.chain.common;
+package codec;
 
 service Codec {
   rpc GetEncoding(GetEncodingRequest) returns (GetEncodingResponse);

@@ -7,6 +7,7 @@
 package chaincommonpb
 
 import (
+	codec "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -539,7 +540,7 @@ func (x *Or) GetExpr() []*Expression {
 
 type ValueComparator struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         *VersionedBytes        `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Value         *codec.VersionedBytes  `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -575,7 +576,7 @@ func (*ValueComparator) Descriptor() ([]byte, []int) {
 	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ValueComparator) GetValue() *VersionedBytes {
+func (x *ValueComparator) GetValue() *codec.VersionedBytes {
 	if x != nil {
 		return x.Value
 	}
@@ -1090,7 +1091,7 @@ var File_loop_chain_common_query_proto protoreflect.FileDescriptor
 
 const file_loop_chain_common_query_proto_rawDesc = "" +
 	"\n" +
-	"\x1dloop/chain-common/query.proto\x12\x11loop.chain.common\x1a\x1dloop/chain-common/codec.proto\"\xae\x01\n" +
+	"\x1dloop/chain-common/query.proto\x12\x11loop.chain.common\x1a\x1ainternal/codec/codec.proto\"\xae\x01\n" +
 	"\n" +
 	"Expression\x12<\n" +
 	"\tprimitive\x18\x01 \x01(\v2\x1c.loop.chain.common.PrimitiveH\x00R\tprimitive\x12U\n" +
@@ -1104,9 +1105,9 @@ const file_loop_chain_common_query_proto_rawDesc = "" +
 	"\x03And\x121\n" +
 	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"7\n" +
 	"\x02Or\x121\n" +
-	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"\x8d\x01\n" +
-	"\x0fValueComparator\x127\n" +
-	"\x05value\x18\x01 \x01(\v2!.loop.chain.common.VersionedBytesR\x05value\x12A\n" +
+	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"\x81\x01\n" +
+	"\x0fValueComparator\x12+\n" +
+	"\x05value\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x05value\x12A\n" +
 	"\boperator\x18\x02 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"q\n" +
 	"\n" +
 	"Comparator\x12\x12\n" +
@@ -1184,26 +1185,26 @@ func file_loop_chain_common_query_proto_rawDescGZIP() []byte {
 var file_loop_chain_common_query_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_loop_chain_common_query_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_loop_chain_common_query_proto_goTypes = []any{
-	(ComparisonOperator)(0),   // 0: loop.chain.common.ComparisonOperator
-	(BooleanOperator)(0),      // 1: loop.chain.common.BooleanOperator
-	(Confidence)(0),           // 2: loop.chain.common.Confidence
-	(CursorDirection)(0),      // 3: loop.chain.common.CursorDirection
-	(SortDirection)(0),        // 4: loop.chain.common.SortDirection
-	(SortType)(0),             // 5: loop.chain.common.SortType
-	(*Expression)(nil),        // 6: loop.chain.common.Expression
-	(*BooleanExpression)(nil), // 7: loop.chain.common.BooleanExpression
-	(*And)(nil),               // 8: loop.chain.common.And
-	(*Or)(nil),                // 9: loop.chain.common.Or
-	(*ValueComparator)(nil),   // 10: loop.chain.common.ValueComparator
-	(*Comparator)(nil),        // 11: loop.chain.common.Comparator
-	(*Block)(nil),             // 12: loop.chain.common.Block
-	(*Timestamp)(nil),         // 13: loop.chain.common.Timestamp
-	(*TxHash)(nil),            // 14: loop.chain.common.TxHash
-	(*Primitive)(nil),         // 15: loop.chain.common.Primitive
-	(*Limit)(nil),             // 16: loop.chain.common.Limit
-	(*SortBy)(nil),            // 17: loop.chain.common.SortBy
-	(*LimitAndSort)(nil),      // 18: loop.chain.common.LimitAndSort
-	(*VersionedBytes)(nil),    // 19: loop.chain.common.VersionedBytes
+	(ComparisonOperator)(0),      // 0: loop.chain.common.ComparisonOperator
+	(BooleanOperator)(0),         // 1: loop.chain.common.BooleanOperator
+	(Confidence)(0),              // 2: loop.chain.common.Confidence
+	(CursorDirection)(0),         // 3: loop.chain.common.CursorDirection
+	(SortDirection)(0),           // 4: loop.chain.common.SortDirection
+	(SortType)(0),                // 5: loop.chain.common.SortType
+	(*Expression)(nil),           // 6: loop.chain.common.Expression
+	(*BooleanExpression)(nil),    // 7: loop.chain.common.BooleanExpression
+	(*And)(nil),                  // 8: loop.chain.common.And
+	(*Or)(nil),                   // 9: loop.chain.common.Or
+	(*ValueComparator)(nil),      // 10: loop.chain.common.ValueComparator
+	(*Comparator)(nil),           // 11: loop.chain.common.Comparator
+	(*Block)(nil),                // 12: loop.chain.common.Block
+	(*Timestamp)(nil),            // 13: loop.chain.common.Timestamp
+	(*TxHash)(nil),               // 14: loop.chain.common.TxHash
+	(*Primitive)(nil),            // 15: loop.chain.common.Primitive
+	(*Limit)(nil),                // 16: loop.chain.common.Limit
+	(*SortBy)(nil),               // 17: loop.chain.common.SortBy
+	(*LimitAndSort)(nil),         // 18: loop.chain.common.LimitAndSort
+	(*codec.VersionedBytes)(nil), // 19: codec.VersionedBytes
 }
 var file_loop_chain_common_query_proto_depIdxs = []int32{
 	15, // 0: loop.chain.common.Expression.primitive:type_name -> loop.chain.common.Primitive
@@ -1212,7 +1213,7 @@ var file_loop_chain_common_query_proto_depIdxs = []int32{
 	6,  // 3: loop.chain.common.BooleanExpression.expression:type_name -> loop.chain.common.Expression
 	6,  // 4: loop.chain.common.And.expr:type_name -> loop.chain.common.Expression
 	6,  // 5: loop.chain.common.Or.expr:type_name -> loop.chain.common.Expression
-	19, // 6: loop.chain.common.ValueComparator.value:type_name -> loop.chain.common.VersionedBytes
+	19, // 6: loop.chain.common.ValueComparator.value:type_name -> codec.VersionedBytes
 	0,  // 7: loop.chain.common.ValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
 	10, // 8: loop.chain.common.Comparator.value_comparators:type_name -> loop.chain.common.ValueComparator
 	0,  // 9: loop.chain.common.Block.operator:type_name -> loop.chain.common.ComparisonOperator
@@ -1239,7 +1240,6 @@ func file_loop_chain_common_query_proto_init() {
 	if File_loop_chain_common_query_proto != nil {
 		return
 	}
-	file_loop_chain_common_codec_proto_init()
 	file_loop_chain_common_query_proto_msgTypes[0].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),

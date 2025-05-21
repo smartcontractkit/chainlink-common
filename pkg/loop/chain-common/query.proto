@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain
 
 package loop.chain.common;
 
-import "loop/chain-common/codec.proto";
+import "internal/codec/codec.proto";
 
 // Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
 // This allows for both simple and more complex nested expressions.
@@ -43,7 +43,7 @@ message Or {
 }
 
 message ValueComparator  {
-  VersionedBytes value = 1;
+  codec.VersionedBytes value = 1;
   ComparisonOperator operator = 2;
 }
 

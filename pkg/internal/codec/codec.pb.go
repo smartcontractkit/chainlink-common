@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: loop/chain-common/codec.proto
+// source: internal/codec/codec.proto
 
-package chaincommonpb
+package codec
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -31,7 +31,7 @@ type VersionedBytes struct {
 
 func (x *VersionedBytes) Reset() {
 	*x = VersionedBytes{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[0]
+	mi := &file_internal_codec_codec_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *VersionedBytes) String() string {
 func (*VersionedBytes) ProtoMessage() {}
 
 func (x *VersionedBytes) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[0]
+	mi := &file_internal_codec_codec_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *VersionedBytes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionedBytes.ProtoReflect.Descriptor instead.
 func (*VersionedBytes) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{0}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *VersionedBytes) GetVersion() uint32 {
@@ -83,7 +83,7 @@ type GetEncodingRequest struct {
 
 func (x *GetEncodingRequest) Reset() {
 	*x = GetEncodingRequest{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[1]
+	mi := &file_internal_codec_codec_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +95,7 @@ func (x *GetEncodingRequest) String() string {
 func (*GetEncodingRequest) ProtoMessage() {}
 
 func (x *GetEncodingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[1]
+	mi := &file_internal_codec_codec_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +108,7 @@ func (x *GetEncodingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEncodingRequest.ProtoReflect.Descriptor instead.
 func (*GetEncodingRequest) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{1}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetEncodingRequest) GetParams() *VersionedBytes {
@@ -134,7 +134,7 @@ type GetEncodingResponse struct {
 
 func (x *GetEncodingResponse) Reset() {
 	*x = GetEncodingResponse{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[2]
+	mi := &file_internal_codec_codec_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +146,7 @@ func (x *GetEncodingResponse) String() string {
 func (*GetEncodingResponse) ProtoMessage() {}
 
 func (x *GetEncodingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[2]
+	mi := &file_internal_codec_codec_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +159,7 @@ func (x *GetEncodingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEncodingResponse.ProtoReflect.Descriptor instead.
 func (*GetEncodingResponse) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{2}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetEncodingResponse) GetRetVal() []byte {
@@ -180,7 +180,7 @@ type GetDecodingRequest struct {
 
 func (x *GetDecodingRequest) Reset() {
 	*x = GetDecodingRequest{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[3]
+	mi := &file_internal_codec_codec_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -192,7 +192,7 @@ func (x *GetDecodingRequest) String() string {
 func (*GetDecodingRequest) ProtoMessage() {}
 
 func (x *GetDecodingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[3]
+	mi := &file_internal_codec_codec_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -205,7 +205,7 @@ func (x *GetDecodingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDecodingRequest.ProtoReflect.Descriptor instead.
 func (*GetDecodingRequest) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{3}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetDecodingRequest) GetEncoded() []byte {
@@ -238,7 +238,7 @@ type GetDecodingResponse struct {
 
 func (x *GetDecodingResponse) Reset() {
 	*x = GetDecodingResponse{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[4]
+	mi := &file_internal_codec_codec_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -250,7 +250,7 @@ func (x *GetDecodingResponse) String() string {
 func (*GetDecodingResponse) ProtoMessage() {}
 
 func (x *GetDecodingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[4]
+	mi := &file_internal_codec_codec_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -263,7 +263,7 @@ func (x *GetDecodingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDecodingResponse.ProtoReflect.Descriptor instead.
 func (*GetDecodingResponse) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{4}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetDecodingResponse) GetRetVal() *VersionedBytes {
@@ -284,7 +284,7 @@ type GetMaxSizeRequest struct {
 
 func (x *GetMaxSizeRequest) Reset() {
 	*x = GetMaxSizeRequest{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[5]
+	mi := &file_internal_codec_codec_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +296,7 @@ func (x *GetMaxSizeRequest) String() string {
 func (*GetMaxSizeRequest) ProtoMessage() {}
 
 func (x *GetMaxSizeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[5]
+	mi := &file_internal_codec_codec_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +309,7 @@ func (x *GetMaxSizeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMaxSizeRequest.ProtoReflect.Descriptor instead.
 func (*GetMaxSizeRequest) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{5}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetMaxSizeRequest) GetN() int32 {
@@ -342,7 +342,7 @@ type GetMaxSizeResponse struct {
 
 func (x *GetMaxSizeResponse) Reset() {
 	*x = GetMaxSizeResponse{}
-	mi := &file_loop_chain_common_codec_proto_msgTypes[6]
+	mi := &file_internal_codec_codec_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -354,7 +354,7 @@ func (x *GetMaxSizeResponse) String() string {
 func (*GetMaxSizeResponse) ProtoMessage() {}
 
 func (x *GetMaxSizeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_chain_common_codec_proto_msgTypes[6]
+	mi := &file_internal_codec_codec_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -367,7 +367,7 @@ func (x *GetMaxSizeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMaxSizeResponse.ProtoReflect.Descriptor instead.
 func (*GetMaxSizeResponse) Descriptor() ([]byte, []int) {
-	return file_loop_chain_common_codec_proto_rawDescGZIP(), []int{6}
+	return file_internal_codec_codec_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetMaxSizeResponse) GetSizeInBytes() int32 {
@@ -377,68 +377,68 @@ func (x *GetMaxSizeResponse) GetSizeInBytes() int32 {
 	return 0
 }
 
-var File_loop_chain_common_codec_proto protoreflect.FileDescriptor
+var File_internal_codec_codec_proto protoreflect.FileDescriptor
 
-const file_loop_chain_common_codec_proto_rawDesc = "" +
+const file_internal_codec_codec_proto_rawDesc = "" +
 	"\n" +
-	"\x1dloop/chain-common/codec.proto\x12\x11loop.chain.common\">\n" +
+	"\x1ainternal/codec/codec.proto\x12\x05codec\">\n" +
 	"\x0eVersionedBytes\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\rR\aversion\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"k\n" +
-	"\x12GetEncodingRequest\x129\n" +
-	"\x06params\x18\x01 \x01(\v2!.loop.chain.common.VersionedBytesR\x06params\x12\x1a\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"_\n" +
+	"\x12GetEncodingRequest\x12-\n" +
+	"\x06params\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x06params\x12\x1a\n" +
 	"\bitemType\x18\x02 \x01(\tR\bitemType\"-\n" +
 	"\x13GetEncodingResponse\x12\x16\n" +
 	"\x06retVal\x18\x01 \x01(\fR\x06retVal\"|\n" +
 	"\x12GetDecodingRequest\x12\x18\n" +
 	"\aencoded\x18\x01 \x01(\fR\aencoded\x12\x1a\n" +
 	"\bitemType\x18\x02 \x01(\tR\bitemType\x120\n" +
-	"\x13wireEncodingVersion\x18\x03 \x01(\rR\x13wireEncodingVersion\"P\n" +
-	"\x13GetDecodingResponse\x129\n" +
-	"\x06retVal\x18\x01 \x01(\v2!.loop.chain.common.VersionedBytesR\x06retVal\"_\n" +
+	"\x13wireEncodingVersion\x18\x03 \x01(\rR\x13wireEncodingVersion\"D\n" +
+	"\x13GetDecodingResponse\x12-\n" +
+	"\x06retVal\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x06retVal\"_\n" +
 	"\x11GetMaxSizeRequest\x12\f\n" +
 	"\x01n\x18\x01 \x01(\x05R\x01n\x12\x1a\n" +
 	"\bitemType\x18\x02 \x01(\tR\bitemType\x12 \n" +
 	"\vforEncoding\x18\x03 \x01(\bR\vforEncoding\"6\n" +
 	"\x12GetMaxSizeResponse\x12 \n" +
-	"\vsizeInBytes\x18\x01 \x01(\x05R\vsizeInBytes2\x9e\x02\n" +
-	"\x05Codec\x12\\\n" +
-	"\vGetEncoding\x12%.loop.chain.common.GetEncodingRequest\x1a&.loop.chain.common.GetEncodingResponse\x12\\\n" +
-	"\vGetDecoding\x12%.loop.chain.common.GetDecodingRequest\x1a&.loop.chain.common.GetDecodingResponse\x12Y\n" +
+	"\vsizeInBytes\x18\x01 \x01(\x05R\vsizeInBytes2\xd6\x01\n" +
+	"\x05Codec\x12D\n" +
+	"\vGetEncoding\x12\x19.codec.GetEncodingRequest\x1a\x1a.codec.GetEncodingResponse\x12D\n" +
+	"\vGetDecoding\x12\x19.codec.GetDecodingRequest\x1a\x1a.codec.GetDecodingResponse\x12A\n" +
 	"\n" +
-	"GetMaxSize\x12$.loop.chain.common.GetMaxSizeRequest\x1a%.loop.chain.common.GetMaxSizeResponseBRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-common;chaincommonpbb\x06proto3"
+	"GetMaxSize\x12\x18.codec.GetMaxSizeRequest\x1a\x19.codec.GetMaxSizeResponseBBZ@github.com/smartcontractkit/chainlink-common/pkg/internal/codec;b\x06proto3"
 
 var (
-	file_loop_chain_common_codec_proto_rawDescOnce sync.Once
-	file_loop_chain_common_codec_proto_rawDescData []byte
+	file_internal_codec_codec_proto_rawDescOnce sync.Once
+	file_internal_codec_codec_proto_rawDescData []byte
 )
 
-func file_loop_chain_common_codec_proto_rawDescGZIP() []byte {
-	file_loop_chain_common_codec_proto_rawDescOnce.Do(func() {
-		file_loop_chain_common_codec_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_chain_common_codec_proto_rawDesc), len(file_loop_chain_common_codec_proto_rawDesc)))
+func file_internal_codec_codec_proto_rawDescGZIP() []byte {
+	file_internal_codec_codec_proto_rawDescOnce.Do(func() {
+		file_internal_codec_codec_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_codec_codec_proto_rawDesc), len(file_internal_codec_codec_proto_rawDesc)))
 	})
-	return file_loop_chain_common_codec_proto_rawDescData
+	return file_internal_codec_codec_proto_rawDescData
 }
 
-var file_loop_chain_common_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_loop_chain_common_codec_proto_goTypes = []any{
-	(*VersionedBytes)(nil),      // 0: loop.chain.common.VersionedBytes
-	(*GetEncodingRequest)(nil),  // 1: loop.chain.common.GetEncodingRequest
-	(*GetEncodingResponse)(nil), // 2: loop.chain.common.GetEncodingResponse
-	(*GetDecodingRequest)(nil),  // 3: loop.chain.common.GetDecodingRequest
-	(*GetDecodingResponse)(nil), // 4: loop.chain.common.GetDecodingResponse
-	(*GetMaxSizeRequest)(nil),   // 5: loop.chain.common.GetMaxSizeRequest
-	(*GetMaxSizeResponse)(nil),  // 6: loop.chain.common.GetMaxSizeResponse
+var file_internal_codec_codec_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_internal_codec_codec_proto_goTypes = []any{
+	(*VersionedBytes)(nil),      // 0: codec.VersionedBytes
+	(*GetEncodingRequest)(nil),  // 1: codec.GetEncodingRequest
+	(*GetEncodingResponse)(nil), // 2: codec.GetEncodingResponse
+	(*GetDecodingRequest)(nil),  // 3: codec.GetDecodingRequest
+	(*GetDecodingResponse)(nil), // 4: codec.GetDecodingResponse
+	(*GetMaxSizeRequest)(nil),   // 5: codec.GetMaxSizeRequest
+	(*GetMaxSizeResponse)(nil),  // 6: codec.GetMaxSizeResponse
 }
-var file_loop_chain_common_codec_proto_depIdxs = []int32{
-	0, // 0: loop.chain.common.GetEncodingRequest.params:type_name -> loop.chain.common.VersionedBytes
-	0, // 1: loop.chain.common.GetDecodingResponse.retVal:type_name -> loop.chain.common.VersionedBytes
-	1, // 2: loop.chain.common.Codec.GetEncoding:input_type -> loop.chain.common.GetEncodingRequest
-	3, // 3: loop.chain.common.Codec.GetDecoding:input_type -> loop.chain.common.GetDecodingRequest
-	5, // 4: loop.chain.common.Codec.GetMaxSize:input_type -> loop.chain.common.GetMaxSizeRequest
-	2, // 5: loop.chain.common.Codec.GetEncoding:output_type -> loop.chain.common.GetEncodingResponse
-	4, // 6: loop.chain.common.Codec.GetDecoding:output_type -> loop.chain.common.GetDecodingResponse
-	6, // 7: loop.chain.common.Codec.GetMaxSize:output_type -> loop.chain.common.GetMaxSizeResponse
+var file_internal_codec_codec_proto_depIdxs = []int32{
+	0, // 0: codec.GetEncodingRequest.params:type_name -> codec.VersionedBytes
+	0, // 1: codec.GetDecodingResponse.retVal:type_name -> codec.VersionedBytes
+	1, // 2: codec.Codec.GetEncoding:input_type -> codec.GetEncodingRequest
+	3, // 3: codec.Codec.GetDecoding:input_type -> codec.GetDecodingRequest
+	5, // 4: codec.Codec.GetMaxSize:input_type -> codec.GetMaxSizeRequest
+	2, // 5: codec.Codec.GetEncoding:output_type -> codec.GetEncodingResponse
+	4, // 6: codec.Codec.GetDecoding:output_type -> codec.GetDecodingResponse
+	6, // 7: codec.Codec.GetMaxSize:output_type -> codec.GetMaxSizeResponse
 	5, // [5:8] is the sub-list for method output_type
 	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -446,26 +446,26 @@ var file_loop_chain_common_codec_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_loop_chain_common_codec_proto_init() }
-func file_loop_chain_common_codec_proto_init() {
-	if File_loop_chain_common_codec_proto != nil {
+func init() { file_internal_codec_codec_proto_init() }
+func file_internal_codec_codec_proto_init() {
+	if File_internal_codec_codec_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_chain_common_codec_proto_rawDesc), len(file_loop_chain_common_codec_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_codec_codec_proto_rawDesc), len(file_internal_codec_codec_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_loop_chain_common_codec_proto_goTypes,
-		DependencyIndexes: file_loop_chain_common_codec_proto_depIdxs,
-		MessageInfos:      file_loop_chain_common_codec_proto_msgTypes,
+		GoTypes:           file_internal_codec_codec_proto_goTypes,
+		DependencyIndexes: file_internal_codec_codec_proto_depIdxs,
+		MessageInfos:      file_internal_codec_codec_proto_msgTypes,
 	}.Build()
-	File_loop_chain_common_codec_proto = out.File
-	file_loop_chain_common_codec_proto_goTypes = nil
-	file_loop_chain_common_codec_proto_depIdxs = nil
+	File_internal_codec_codec_proto = out.File
+	file_internal_codec_codec_proto_goTypes = nil
+	file_internal_codec_codec_proto_depIdxs = nil
 }

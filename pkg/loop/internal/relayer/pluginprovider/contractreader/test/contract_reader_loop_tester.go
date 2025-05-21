@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -13,16 +13,16 @@ import (
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests" //nolint common practice to import test mods with .
 )
 
-func TestAllEncodings(t *testing.T, test func(chaincommonpb.EncodingVersion) func(t *testing.T)) {
+func TestAllEncodings(t *testing.T, test func(codecpb.EncodingVersion) func(t *testing.T)) {
 	t.Helper()
 
 	encodings := []struct {
 		Name    string
-		Version chaincommonpb.EncodingVersion
+		Version codecpb.EncodingVersion
 	}{
-		{Name: "JSONv1", Version: chaincommonpb.JSONEncodingVersion1},
-		{Name: "JSONv2", Version: chaincommonpb.JSONEncodingVersion2},
-		{Name: "CBOR", Version: chaincommonpb.CBOREncodingVersion},
+		{Name: "JSONv1", Version: codecpb.JSONEncodingVersion1},
+		{Name: "JSONv2", Version: codecpb.JSONEncodingVersion2},
+		{Name: "CBOR", Version: codecpb.CBOREncodingVersion},
 	}
 
 	for idx := range encodings {
@@ -38,7 +38,7 @@ type LoopTesterOpt func(*contractReaderLoopTester)
 func WrapContractReaderTesterForLoop(wrapped ChainComponentsInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainComponentsInterfaceTester[*testing.T] {
 	tester := &contractReaderLoopTester{
 		ChainComponentsInterfaceTester: wrapped,
-		encodeWith:                     chaincommonpb.DefaultEncodingVersion,
+		encodeWith:                     codecpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -48,7 +48,7 @@ func WrapContractReaderTesterForLoop(wrapped ChainComponentsInterfaceTester[*tes
 	return tester
 }
 
-func WithContractReaderLoopEncoding(version chaincommonpb.EncodingVersion) LoopTesterOpt {
+func WithContractReaderLoopEncoding(version codecpb.EncodingVersion) LoopTesterOpt {
 	return func(tester *contractReaderLoopTester) {
 		tester.encodeWith = version
 	}
@@ -58,7 +58,7 @@ type contractReaderLoopTester struct {
 	ChainComponentsInterfaceTester[*testing.T]
 	lst        loopServerTester
 	conn       *grpc.ClientConn
-	encodeWith chaincommonpb.EncodingVersion
+	encodeWith codecpb.EncodingVersion
 }
 
 func (c *contractReaderLoopTester) Setup(t *testing.T) {

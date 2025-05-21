@@ -7,6 +7,7 @@
 package pb
 
 import (
+	codec "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chain_common "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -25,11 +26,11 @@ const (
 
 // GetLatestValueRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 type GetLatestValueRequest struct {
-	state          protoimpl.MessageState       `protogen:"open.v1"`
-	ReadIdentifier string                       `protobuf:"bytes,1,opt,name=read_identifier,json=readIdentifier,proto3" json:"read_identifier,omitempty"`
-	Confidence     chain_common.Confidence      `protobuf:"varint,2,opt,name=confidence,proto3,enum=loop.chain.common.Confidence" json:"confidence,omitempty"`
-	Params         *chain_common.VersionedBytes `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
-	AsValueType    bool                         `protobuf:"varint,4,opt,name=as_value_type,json=asValueType,proto3" json:"as_value_type,omitempty"`
+	state          protoimpl.MessageState  `protogen:"open.v1"`
+	ReadIdentifier string                  `protobuf:"bytes,1,opt,name=read_identifier,json=readIdentifier,proto3" json:"read_identifier,omitempty"`
+	Confidence     chain_common.Confidence `protobuf:"varint,2,opt,name=confidence,proto3,enum=loop.chain.common.Confidence" json:"confidence,omitempty"`
+	Params         *codec.VersionedBytes   `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
+	AsValueType    bool                    `protobuf:"varint,4,opt,name=as_value_type,json=asValueType,proto3" json:"as_value_type,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -78,7 +79,7 @@ func (x *GetLatestValueRequest) GetConfidence() chain_common.Confidence {
 	return chain_common.Confidence(0)
 }
 
-func (x *GetLatestValueRequest) GetParams() *chain_common.VersionedBytes {
+func (x *GetLatestValueRequest) GetParams() *codec.VersionedBytes {
 	if x != nil {
 		return x.Params
 	}
@@ -411,8 +412,8 @@ func (x *UnbindRequest) GetBindings() []*BoundContract {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 type GetLatestValueReply struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	RetVal        *chain_common.VersionedBytes `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RetVal        *codec.VersionedBytes  `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -447,7 +448,7 @@ func (*GetLatestValueReply) Descriptor() ([]byte, []int) {
 	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetLatestValueReply) GetRetVal() *chain_common.VersionedBytes {
+func (x *GetLatestValueReply) GetRetVal() *codec.VersionedBytes {
 	if x != nil {
 		return x.RetVal
 	}
@@ -456,9 +457,9 @@ func (x *GetLatestValueReply) GetRetVal() *chain_common.VersionedBytes {
 
 // GetLatestValueWithHeadDataReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithHeadData].
 type GetLatestValueWithHeadDataReply struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	RetVal        *chain_common.VersionedBytes `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
-	HeadData      *Head                        `protobuf:"bytes,2,opt,name=head_data,json=headData,proto3" json:"head_data,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RetVal        *codec.VersionedBytes  `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
+	HeadData      *Head                  `protobuf:"bytes,2,opt,name=head_data,json=headData,proto3" json:"head_data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -493,7 +494,7 @@ func (*GetLatestValueWithHeadDataReply) Descriptor() ([]byte, []int) {
 	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetLatestValueWithHeadDataReply) GetRetVal() *chain_common.VersionedBytes {
+func (x *GetLatestValueWithHeadDataReply) GetRetVal() *codec.VersionedBytes {
 	if x != nil {
 		return x.RetVal
 	}
@@ -697,10 +698,10 @@ func (x *ContractBatch) GetReads() []*BatchRead {
 
 // BatchCall is gRPC adapter for the GetLatestValueRequest struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchCall].
 type BatchRead struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	ReadName      string                       `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
-	Params        *chain_common.VersionedBytes `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
-	ReturnVal     *chain_common.VersionedBytes `protobuf:"bytes,3,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReadName      string                 `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
+	Params        *codec.VersionedBytes  `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	ReturnVal     *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -742,14 +743,14 @@ func (x *BatchRead) GetReadName() string {
 	return ""
 }
 
-func (x *BatchRead) GetParams() *chain_common.VersionedBytes {
+func (x *BatchRead) GetParams() *codec.VersionedBytes {
 	if x != nil {
 		return x.Params
 	}
 	return nil
 }
 
-func (x *BatchRead) GetReturnVal() *chain_common.VersionedBytes {
+func (x *BatchRead) GetReturnVal() *codec.VersionedBytes {
 	if x != nil {
 		return x.ReturnVal
 	}
@@ -811,10 +812,10 @@ func (x *ContractBatchResult) GetResults() []*BatchReadResult {
 
 // BatchCallResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
 type BatchReadResult struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	ReadName      string                       `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
-	ReturnVal     *chain_common.VersionedBytes `protobuf:"bytes,2,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
-	Error         string                       `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReadName      string                 `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
+	ReturnVal     *codec.VersionedBytes  `protobuf:"bytes,2,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
+	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -856,7 +857,7 @@ func (x *BatchReadResult) GetReadName() string {
 	return ""
 }
 
-func (x *BatchReadResult) GetReturnVal() *chain_common.VersionedBytes {
+func (x *BatchReadResult) GetReturnVal() *codec.VersionedBytes {
 	if x != nil {
 		return x.ReturnVal
 	}
@@ -933,10 +934,10 @@ func (x *Head) GetTimestamp() uint64 {
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Sequence].
 type Sequence struct {
-	state          protoimpl.MessageState       `protogen:"open.v1"`
-	SequenceCursor string                       `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
-	Head           *Head                        `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
-	Data           *chain_common.VersionedBytes `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SequenceCursor string                 `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
+	Head           *Head                  `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
+	Data           *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -985,7 +986,7 @@ func (x *Sequence) GetHead() *Head {
 	return nil
 }
 
-func (x *Sequence) GetData() *chain_common.VersionedBytes {
+func (x *Sequence) GetData() *codec.VersionedBytes {
 	if x != nil {
 		return x.Data
 	}
@@ -993,11 +994,11 @@ func (x *Sequence) GetData() *chain_common.VersionedBytes {
 }
 
 type SequenceWithKey struct {
-	state          protoimpl.MessageState       `protogen:"open.v1"`
-	SequenceCursor string                       `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
-	Head           *Head                        `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
-	Data           *chain_common.VersionedBytes `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	Key            string                       `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SequenceCursor string                 `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
+	Head           *Head                  `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
+	Data           *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	Key            string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1046,7 +1047,7 @@ func (x *SequenceWithKey) GetHead() *Head {
 	return nil
 }
 
-func (x *SequenceWithKey) GetData() *chain_common.VersionedBytes {
+func (x *SequenceWithKey) GetData() *codec.VersionedBytes {
 	if x != nil {
 		return x.Data
 	}
@@ -1170,13 +1171,13 @@ var File_loop_internal_pb_contract_reader_proto protoreflect.FileDescriptor
 
 const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\n" +
-	"&loop/internal/pb/contract_reader.proto\x12\x04loop\x1a\x1dloop/chain-common/codec.proto\x1a\x1dloop/chain-common/query.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xde\x01\n" +
+	"&loop/internal/pb/contract_reader.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1dloop/chain-common/query.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd2\x01\n" +
 	"\x15GetLatestValueRequest\x12'\n" +
 	"\x0fread_identifier\x18\x01 \x01(\tR\x0ereadIdentifier\x12=\n" +
 	"\n" +
 	"confidence\x18\x02 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\n" +
-	"confidence\x129\n" +
-	"\x06params\x18\x03 \x01(\v2!.loop.chain.common.VersionedBytesR\x06params\x12\"\n" +
+	"confidence\x12-\n" +
+	"\x06params\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x06params\x12\"\n" +
 	"\ras_value_type\x18\x04 \x01(\bR\vasValueType\"N\n" +
 	"\x1bBatchGetLatestValuesRequest\x12/\n" +
 	"\brequests\x18\x01 \x03(\v2\x13.loop.ContractBatchR\brequests\"\xdb\x01\n" +
@@ -1195,11 +1196,11 @@ const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\vBindRequest\x12/\n" +
 	"\bbindings\x18\x01 \x03(\v2\x13.loop.BoundContractR\bbindings\"@\n" +
 	"\rUnbindRequest\x12/\n" +
-	"\bbindings\x18\x01 \x03(\v2\x13.loop.BoundContractR\bbindings\"Q\n" +
-	"\x13GetLatestValueReply\x12:\n" +
-	"\aret_val\x18\x01 \x01(\v2!.loop.chain.common.VersionedBytesR\x06retVal\"\x86\x01\n" +
-	"\x1fGetLatestValueWithHeadDataReply\x12:\n" +
-	"\aret_val\x18\x01 \x01(\v2!.loop.chain.common.VersionedBytesR\x06retVal\x12'\n" +
+	"\bbindings\x18\x01 \x03(\v2\x13.loop.BoundContractR\bbindings\"E\n" +
+	"\x13GetLatestValueReply\x12.\n" +
+	"\aret_val\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x06retVal\"z\n" +
+	"\x1fGetLatestValueWithHeadDataReply\x12.\n" +
+	"\aret_val\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x06retVal\x12'\n" +
 	"\thead_data\x18\x02 \x01(\v2\n" +
 	".loop.HeadR\bheadData\"P\n" +
 	"\x19BatchGetLatestValuesReply\x123\n" +
@@ -1210,34 +1211,34 @@ const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\tsequences\x18\x01 \x03(\v2\x15.loop.SequenceWithKeyR\tsequences\"g\n" +
 	"\rContractBatch\x12/\n" +
 	"\bcontract\x18\x01 \x01(\v2\x13.loop.BoundContractR\bcontract\x12%\n" +
-	"\x05reads\x18\x02 \x03(\v2\x0f.loop.BatchReadR\x05reads\"\xa5\x01\n" +
+	"\x05reads\x18\x02 \x03(\v2\x0f.loop.BatchReadR\x05reads\"\x8d\x01\n" +
 	"\tBatchRead\x12\x1b\n" +
-	"\tread_name\x18\x01 \x01(\tR\breadName\x129\n" +
-	"\x06params\x18\x02 \x01(\v2!.loop.chain.common.VersionedBytesR\x06params\x12@\n" +
+	"\tread_name\x18\x01 \x01(\tR\breadName\x12-\n" +
+	"\x06params\x18\x02 \x01(\v2\x15.codec.VersionedBytesR\x06params\x124\n" +
 	"\n" +
-	"return_val\x18\x03 \x01(\v2!.loop.chain.common.VersionedBytesR\treturnVal\"w\n" +
+	"return_val\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\treturnVal\"w\n" +
 	"\x13ContractBatchResult\x12/\n" +
 	"\bcontract\x18\x01 \x01(\v2\x13.loop.BoundContractR\bcontract\x12/\n" +
-	"\aresults\x18\x02 \x03(\v2\x15.loop.BatchReadResultR\aresults\"\x86\x01\n" +
+	"\aresults\x18\x02 \x03(\v2\x15.loop.BatchReadResultR\aresults\"z\n" +
 	"\x0fBatchReadResult\x12\x1b\n" +
-	"\tread_name\x18\x01 \x01(\tR\breadName\x12@\n" +
+	"\tread_name\x18\x01 \x01(\tR\breadName\x124\n" +
 	"\n" +
-	"return_val\x18\x02 \x01(\v2!.loop.chain.common.VersionedBytesR\treturnVal\x12\x14\n" +
+	"return_val\x18\x02 \x01(\v2\x15.codec.VersionedBytesR\treturnVal\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"P\n" +
 	"\x04Head\x12\x16\n" +
 	"\x06height\x18\x01 \x01(\tR\x06height\x12\x12\n" +
 	"\x04hash\x18\x02 \x01(\fR\x04hash\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x04R\ttimestamp\"\x8a\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\x04R\ttimestamp\"~\n" +
 	"\bSequence\x12'\n" +
 	"\x0fsequence_cursor\x18\x01 \x01(\tR\x0esequenceCursor\x12\x1e\n" +
 	"\x04head\x18\x02 \x01(\v2\n" +
-	".loop.HeadR\x04head\x125\n" +
-	"\x04data\x18\x03 \x01(\v2!.loop.chain.common.VersionedBytesR\x04data\"\xa3\x01\n" +
+	".loop.HeadR\x04head\x12)\n" +
+	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\"\x97\x01\n" +
 	"\x0fSequenceWithKey\x12'\n" +
 	"\x0fsequence_cursor\x18\x01 \x01(\tR\x0esequenceCursor\x12\x1e\n" +
 	"\x04head\x18\x02 \x01(\v2\n" +
-	".loop.HeadR\x04head\x125\n" +
-	"\x04data\x18\x03 \x01(\v2!.loop.chain.common.VersionedBytesR\x04data\x12\x10\n" +
+	".loop.HeadR\x04head\x12)\n" +
+	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\x12\x10\n" +
 	"\x03key\x18\x04 \x01(\tR\x03key\"=\n" +
 	"\rBoundContract\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
@@ -1292,14 +1293,14 @@ var file_loop_internal_pb_contract_reader_proto_goTypes = []any{
 	(*BoundContract)(nil),                   // 19: loop.BoundContract
 	(*QueryKeyFilter)(nil),                  // 20: loop.QueryKeyFilter
 	(chain_common.Confidence)(0),            // 21: loop.chain.common.Confidence
-	(*chain_common.VersionedBytes)(nil),     // 22: loop.chain.common.VersionedBytes
+	(*codec.VersionedBytes)(nil),            // 22: codec.VersionedBytes
 	(*chain_common.LimitAndSort)(nil),       // 23: loop.chain.common.LimitAndSort
 	(*chain_common.Expression)(nil),         // 24: loop.chain.common.Expression
 	(*emptypb.Empty)(nil),                   // 25: google.protobuf.Empty
 }
 var file_loop_internal_pb_contract_reader_proto_depIdxs = []int32{
 	21, // 0: loop.GetLatestValueRequest.confidence:type_name -> loop.chain.common.Confidence
-	22, // 1: loop.GetLatestValueRequest.params:type_name -> loop.chain.common.VersionedBytes
+	22, // 1: loop.GetLatestValueRequest.params:type_name -> codec.VersionedBytes
 	12, // 2: loop.BatchGetLatestValuesRequest.requests:type_name -> loop.ContractBatch
 	19, // 3: loop.QueryKeyRequest.contract:type_name -> loop.BoundContract
 	20, // 4: loop.QueryKeyRequest.filter:type_name -> loop.QueryKeyFilter
@@ -1310,23 +1311,23 @@ var file_loop_internal_pb_contract_reader_proto_depIdxs = []int32{
 	20, // 9: loop.ContractKeyFilter.filter:type_name -> loop.QueryKeyFilter
 	19, // 10: loop.BindRequest.bindings:type_name -> loop.BoundContract
 	19, // 11: loop.UnbindRequest.bindings:type_name -> loop.BoundContract
-	22, // 12: loop.GetLatestValueReply.ret_val:type_name -> loop.chain.common.VersionedBytes
-	22, // 13: loop.GetLatestValueWithHeadDataReply.ret_val:type_name -> loop.chain.common.VersionedBytes
+	22, // 12: loop.GetLatestValueReply.ret_val:type_name -> codec.VersionedBytes
+	22, // 13: loop.GetLatestValueWithHeadDataReply.ret_val:type_name -> codec.VersionedBytes
 	16, // 14: loop.GetLatestValueWithHeadDataReply.head_data:type_name -> loop.Head
 	14, // 15: loop.BatchGetLatestValuesReply.results:type_name -> loop.ContractBatchResult
 	17, // 16: loop.QueryKeyReply.sequences:type_name -> loop.Sequence
 	18, // 17: loop.QueryKeysReply.sequences:type_name -> loop.SequenceWithKey
 	19, // 18: loop.ContractBatch.contract:type_name -> loop.BoundContract
 	13, // 19: loop.ContractBatch.reads:type_name -> loop.BatchRead
-	22, // 20: loop.BatchRead.params:type_name -> loop.chain.common.VersionedBytes
-	22, // 21: loop.BatchRead.return_val:type_name -> loop.chain.common.VersionedBytes
+	22, // 20: loop.BatchRead.params:type_name -> codec.VersionedBytes
+	22, // 21: loop.BatchRead.return_val:type_name -> codec.VersionedBytes
 	19, // 22: loop.ContractBatchResult.contract:type_name -> loop.BoundContract
 	15, // 23: loop.ContractBatchResult.results:type_name -> loop.BatchReadResult
-	22, // 24: loop.BatchReadResult.return_val:type_name -> loop.chain.common.VersionedBytes
+	22, // 24: loop.BatchReadResult.return_val:type_name -> codec.VersionedBytes
 	16, // 25: loop.Sequence.head:type_name -> loop.Head
-	22, // 26: loop.Sequence.data:type_name -> loop.chain.common.VersionedBytes
+	22, // 26: loop.Sequence.data:type_name -> codec.VersionedBytes
 	16, // 27: loop.SequenceWithKey.head:type_name -> loop.Head
-	22, // 28: loop.SequenceWithKey.data:type_name -> loop.chain.common.VersionedBytes
+	22, // 28: loop.SequenceWithKey.data:type_name -> codec.VersionedBytes
 	24, // 29: loop.QueryKeyFilter.expression:type_name -> loop.chain.common.Expression
 	0,  // 30: loop.ContractReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
 	0,  // 31: loop.ContractReader.GetLatestValueWithHeadData:input_type -> loop.GetLatestValueRequest

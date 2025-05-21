@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -412,7 +413,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 
 			putEVMPrimitive(pbExpression, ep)
 		default:
-			generalPrimitive, err := chaincommonpb.ConvertPrimitiveToProto(primitive, func(value any) (*chaincommonpb.VersionedBytes, error) {
+			generalPrimitive, err := chaincommonpb.ConvertPrimitiveToProto(primitive, func(value any) (*codecpb.VersionedBytes, error) {
 				return nil, fmt.Errorf("unsupported primitive type: %T", value)
 			})
 			if err != nil {

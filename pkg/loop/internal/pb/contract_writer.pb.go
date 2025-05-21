@@ -8,7 +8,7 @@ package pb
 
 import (
 	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
-	chain_common "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
+	codec "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -25,14 +25,14 @@ const (
 )
 
 type SubmitTransactionRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	ContractName  string                       `protobuf:"bytes,1,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
-	Method        string                       `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Params        *chain_common.VersionedBytes `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
-	TransactionId string                       `protobuf:"bytes,4,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
-	ToAddress     string                       `protobuf:"bytes,5,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	Meta          *TransactionMeta             `protobuf:"bytes,6,opt,name=meta,proto3" json:"meta,omitempty"`
-	Value         *BigInt                      `protobuf:"bytes,7,opt,name=value,proto3" json:"value,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContractName  string                 `protobuf:"bytes,1,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
+	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Params        *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
+	TransactionId string                 `protobuf:"bytes,4,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+	ToAddress     string                 `protobuf:"bytes,5,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
+	Meta          *TransactionMeta       `protobuf:"bytes,6,opt,name=meta,proto3" json:"meta,omitempty"`
+	Value         *BigInt                `protobuf:"bytes,7,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -81,7 +81,7 @@ func (x *SubmitTransactionRequest) GetMethod() string {
 	return ""
 }
 
-func (x *SubmitTransactionRequest) GetParams() *chain_common.VersionedBytes {
+func (x *SubmitTransactionRequest) GetParams() *codec.VersionedBytes {
 	if x != nil {
 		return x.Params
 	}
@@ -170,13 +170,13 @@ func (x *TransactionMeta) GetGasLimit() *BigInt {
 
 // GetEstimateFeeReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
 type GetEstimateFeeRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	ContractName  string                       `protobuf:"bytes,1,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
-	Method        string                       `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Params        *chain_common.VersionedBytes `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
-	ToAddress     string                       `protobuf:"bytes,4,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	Meta          *TransactionMeta             `protobuf:"bytes,5,opt,name=meta,proto3" json:"meta,omitempty"`
-	Value         *BigInt                      `protobuf:"bytes,6,opt,name=value,proto3" json:"value,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContractName  string                 `protobuf:"bytes,1,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
+	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Params        *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
+	ToAddress     string                 `protobuf:"bytes,4,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
+	Meta          *TransactionMeta       `protobuf:"bytes,5,opt,name=meta,proto3" json:"meta,omitempty"`
+	Value         *BigInt                `protobuf:"bytes,6,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,7 +225,7 @@ func (x *GetEstimateFeeRequest) GetMethod() string {
 	return ""
 }
 
-func (x *GetEstimateFeeRequest) GetParams() *chain_common.VersionedBytes {
+func (x *GetEstimateFeeRequest) GetParams() *codec.VersionedBytes {
 	if x != nil {
 		return x.Params
 	}
@@ -363,11 +363,11 @@ var File_loop_internal_pb_contract_writer_proto protoreflect.FileDescriptor
 
 const file_loop_internal_pb_contract_writer_proto_rawDesc = "" +
 	"\n" +
-	"&loop/internal/pb/contract_writer.proto\x12\x04loop\x1a\x1dloop/chain-common/codec.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\"\xa7\x02\n" +
+	"&loop/internal/pb/contract_writer.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\"\x9b\x02\n" +
 	"\x18SubmitTransactionRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x129\n" +
-	"\x06params\x18\x03 \x01(\v2!.loop.chain.common.VersionedBytesR\x06params\x12%\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12-\n" +
+	"\x06params\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x06params\x12%\n" +
 	"\x0etransaction_id\x18\x04 \x01(\tR\rtransactionId\x12\x1d\n" +
 	"\n" +
 	"to_address\x18\x05 \x01(\tR\ttoAddress\x12)\n" +
@@ -375,11 +375,11 @@ const file_loop_internal_pb_contract_writer_proto_rawDesc = "" +
 	"\x05value\x18\a \x01(\v2\f.loop.BigIntR\x05value\"p\n" +
 	"\x0fTransactionMeta\x122\n" +
 	"\x15workflow_execution_id\x18\x01 \x01(\tR\x13workflowExecutionId\x12)\n" +
-	"\tgas_limit\x18\x02 \x01(\v2\f.loop.BigIntR\bgasLimit\"\xfd\x01\n" +
+	"\tgas_limit\x18\x02 \x01(\v2\f.loop.BigIntR\bgasLimit\"\xf1\x01\n" +
 	"\x15GetEstimateFeeRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x129\n" +
-	"\x06params\x18\x03 \x01(\v2!.loop.chain.common.VersionedBytesR\x06params\x12\x1d\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12-\n" +
+	"\x06params\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x06params\x12\x1d\n" +
 	"\n" +
 	"to_address\x18\x04 \x01(\tR\ttoAddress\x12)\n" +
 	"\x04meta\x18\x05 \x01(\v2\x15.loop.TransactionMetaR\x04meta\x12\"\n" +
@@ -415,18 +415,18 @@ var file_loop_internal_pb_contract_writer_proto_goTypes = []any{
 	(*GetEstimateFeeRequest)(nil),                     // 2: loop.GetEstimateFeeRequest
 	(*GetFeeComponentsReply)(nil),                     // 3: loop.GetFeeComponentsReply
 	(*GetEstimateFeeReply)(nil),                       // 4: loop.GetEstimateFeeReply
-	(*chain_common.VersionedBytes)(nil),               // 5: loop.chain.common.VersionedBytes
+	(*codec.VersionedBytes)(nil),                      // 5: codec.VersionedBytes
 	(*BigInt)(nil),                                    // 6: loop.BigInt
 	(*chain_service.GetTransactionStatusRequest)(nil), // 7: loop.chain_capabilities.evm.GetTransactionStatusRequest
 	(*emptypb.Empty)(nil),                             // 8: google.protobuf.Empty
 	(*chain_service.GetTransactionStatusReply)(nil),   // 9: loop.chain_capabilities.evm.GetTransactionStatusReply
 }
 var file_loop_internal_pb_contract_writer_proto_depIdxs = []int32{
-	5,  // 0: loop.SubmitTransactionRequest.params:type_name -> loop.chain.common.VersionedBytes
+	5,  // 0: loop.SubmitTransactionRequest.params:type_name -> codec.VersionedBytes
 	1,  // 1: loop.SubmitTransactionRequest.meta:type_name -> loop.TransactionMeta
 	6,  // 2: loop.SubmitTransactionRequest.value:type_name -> loop.BigInt
 	6,  // 3: loop.TransactionMeta.gas_limit:type_name -> loop.BigInt
-	5,  // 4: loop.GetEstimateFeeRequest.params:type_name -> loop.chain.common.VersionedBytes
+	5,  // 4: loop.GetEstimateFeeRequest.params:type_name -> codec.VersionedBytes
 	1,  // 5: loop.GetEstimateFeeRequest.meta:type_name -> loop.TransactionMeta
 	6,  // 6: loop.GetEstimateFeeRequest.value:type_name -> loop.BigInt
 	6,  // 7: loop.GetFeeComponentsReply.execution_fee:type_name -> loop.BigInt

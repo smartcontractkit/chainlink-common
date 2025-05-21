@@ -2,7 +2,6 @@ package relayerset
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -14,15 +13,15 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
-// eVMClient wraps the EVMRelayerSetClient to attach RelayerID to EVMClient request.
-type eVMClient struct {
+// evmClient wraps the EVMRelayerSetClient to attach RelayerID to EVMClient request.
+type evmClient struct {
 	relayID types.RelayID
 	client  relayerset.EVMRelayerSetClient
 }
 
-var _ evmpb.EVMClient = (*eVMClient)(nil)
+var _ evmpb.EVMClient = (*evmClient)(nil)
 
-func (e eVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
+func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
 	return e.client.GetTransactionFee(ctx, &relayerset.GetTransactionFeeRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -32,8 +31,7 @@ func (e eVMClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransacti
 		opts...)
 }
 
-func (e eVMClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
-	fmt.Println("client is ", e.client)
+func (e evmClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
 	return e.client.CallContract(ctx, &relayerset.CallContractRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -43,7 +41,7 @@ func (e eVMClient) CallContract(ctx context.Context, in *evmpb.CallContractReque
 	}, opts...)
 }
 
-func (e eVMClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
+func (e evmClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
 	return e.client.FilterLogs(ctx, &relayerset.FilterLogsRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -53,7 +51,7 @@ func (e eVMClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, 
 	}, opts...)
 }
 
-func (e eVMClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
+func (e evmClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
 	return e.client.BalanceAt(ctx, &relayerset.BalanceAtRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -63,7 +61,7 @@ func (e eVMClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, op
 	}, opts...)
 }
 
-func (e eVMClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest, opts ...grpc.CallOption) (*evmpb.EstimateGasReply, error) {
+func (e evmClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest, opts ...grpc.CallOption) (*evmpb.EstimateGasReply, error) {
 	return e.client.EstimateGas(ctx, &relayerset.EstimateGasRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -73,7 +71,7 @@ func (e eVMClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest
 	}, opts...)
 }
 
-func (e eVMClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionByHashReply, error) {
+func (e evmClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionByHashReply, error) {
 	return e.client.GetTransactionByHash(ctx, &relayerset.GetTransactionByHashRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -83,7 +81,7 @@ func (e eVMClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransa
 	}, opts...)
 }
 
-func (e eVMClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionReceiptReply, error) {
+func (e evmClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionReceiptReply, error) {
 	return e.client.GetTransactionReceipt(ctx, &relayerset.GetTransactionReceiptRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -93,7 +91,7 @@ func (e eVMClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTrans
 	}, opts...)
 }
 
-func (e eVMClient) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
+func (e evmClient) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
 	return e.client.LatestAndFinalizedHead(ctx, &relayerset.LatestHeadRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -102,7 +100,7 @@ func (e eVMClient) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty,
 	}, opts...)
 }
 
-func (e eVMClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmpb.QueryTrackedLogsReply, error) {
+func (e evmClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmpb.QueryTrackedLogsReply, error) {
 	return e.client.QueryTrackedLogs(ctx, &relayerset.QueryTrackedLogsRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -112,7 +110,7 @@ func (e eVMClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedL
 	}, opts...)
 }
 
-func (e eVMClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (e evmClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return e.client.RegisterLogTracking(ctx, &relayerset.RegisterLogTrackingRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -122,7 +120,7 @@ func (e eVMClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLo
 	}, opts...)
 }
 
-func (e eVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (e evmClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return e.client.UnregisterLogTracking(ctx, &relayerset.UnregisterLogTrackingRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,
@@ -132,7 +130,7 @@ func (e eVMClient) UnregisterLogTracking(ctx context.Context, in *evmpb.Unregist
 	}, opts...)
 }
 
-func (e eVMClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
+func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
 	return e.client.GetTransactionStatus(ctx, &relayerset.GetTransactionStatusRequest{
 		RelayerId: &relayerset.RelayerId{
 			Network: e.relayID.Network,

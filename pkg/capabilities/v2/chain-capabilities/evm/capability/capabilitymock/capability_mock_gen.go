@@ -14,16 +14,16 @@ import (
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 // avoid unused imports
-var _ = testutils.Registry{}
+var _ = registry.Registry{}
 
 func NewEVMCapability(t testing.TB) (*EVMCapability, error) {
 	c := &EVMCapability{}
-	registry := testutils.GetRegistry(t)
-	err := registry.RegisterCapability(c)
+	reg := registry.GetRegistry(t)
+	err := reg.RegisterCapability(c)
 	return c, err
 }
 

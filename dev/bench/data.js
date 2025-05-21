@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747843160932,
+  "lastUpdate": 1747845525360,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13902,6 +13902,48 @@ window.BENCHMARK_DATA = {
             "value": 28508,
             "unit": "ns/op",
             "extra": "42028 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "723cad356d858717ad07962a28c2c2561a45fd4e",
+          "message": "update description for GetTransactionFee (#1201)",
+          "timestamp": "2025-05-21T12:37:34-04:00",
+          "tree_id": "a41ca28ae56dd6b922c6b8a96e52a3bb85d60461",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/723cad356d858717ad07962a28c2c2561a45fd4e"
+        },
+        "date": 1747845524570,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.5,
+            "unit": "ns/op",
+            "extra": "3353262 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.7,
+            "unit": "ns/op",
+            "extra": "2568116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28562,
+            "unit": "ns/op",
+            "extra": "42156 times\n4 procs"
           }
         ]
       }

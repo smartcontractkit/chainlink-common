@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: reportcodec_v1.proto
+// source: loop/internal/pb/mercury/v1/reportcodec_v1.proto
 
 package mercuryv1pb
 
@@ -39,7 +39,7 @@ type ReportFields struct {
 
 func (x *ReportFields) Reset() {
 	*x = ReportFields{}
-	mi := &file_reportcodec_v1_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *ReportFields) String() string {
 func (*ReportFields) ProtoMessage() {}
 
 func (x *ReportFields) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *ReportFields) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportFields.ProtoReflect.Descriptor instead.
 func (*ReportFields) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ReportFields) GetTimestamp() uint32 {
@@ -133,7 +133,7 @@ type BuildReportRequest struct {
 
 func (x *BuildReportRequest) Reset() {
 	*x = BuildReportRequest{}
-	mi := &file_reportcodec_v1_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -145,7 +145,7 @@ func (x *BuildReportRequest) String() string {
 func (*BuildReportRequest) ProtoMessage() {}
 
 func (x *BuildReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -158,7 +158,7 @@ func (x *BuildReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildReportRequest.ProtoReflect.Descriptor instead.
 func (*BuildReportRequest) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BuildReportRequest) GetReportFields() *ReportFields {
@@ -178,7 +178,7 @@ type BuildReportReply struct {
 
 func (x *BuildReportReply) Reset() {
 	*x = BuildReportReply{}
-	mi := &file_reportcodec_v1_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +190,7 @@ func (x *BuildReportReply) String() string {
 func (*BuildReportReply) ProtoMessage() {}
 
 func (x *BuildReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +203,7 @@ func (x *BuildReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildReportReply.ProtoReflect.Descriptor instead.
 func (*BuildReportReply) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *BuildReportReply) GetReport() []byte {
@@ -223,7 +223,7 @@ type MaxReportLengthRequest struct {
 
 func (x *MaxReportLengthRequest) Reset() {
 	*x = MaxReportLengthRequest{}
-	mi := &file_reportcodec_v1_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +235,7 @@ func (x *MaxReportLengthRequest) String() string {
 func (*MaxReportLengthRequest) ProtoMessage() {}
 
 func (x *MaxReportLengthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +248,7 @@ func (x *MaxReportLengthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MaxReportLengthRequest.ProtoReflect.Descriptor instead.
 func (*MaxReportLengthRequest) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MaxReportLengthRequest) GetNumOracles() uint64 {
@@ -268,7 +268,7 @@ type MaxReportLengthReply struct {
 
 func (x *MaxReportLengthReply) Reset() {
 	*x = MaxReportLengthReply{}
-	mi := &file_reportcodec_v1_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +280,7 @@ func (x *MaxReportLengthReply) String() string {
 func (*MaxReportLengthReply) ProtoMessage() {}
 
 func (x *MaxReportLengthReply) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,7 +293,7 @@ func (x *MaxReportLengthReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MaxReportLengthReply.ProtoReflect.Descriptor instead.
 func (*MaxReportLengthReply) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MaxReportLengthReply) GetMaxReportLength() uint64 {
@@ -313,7 +313,7 @@ type CurrentBlockNumFromReportRequest struct {
 
 func (x *CurrentBlockNumFromReportRequest) Reset() {
 	*x = CurrentBlockNumFromReportRequest{}
-	mi := &file_reportcodec_v1_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -325,7 +325,7 @@ func (x *CurrentBlockNumFromReportRequest) String() string {
 func (*CurrentBlockNumFromReportRequest) ProtoMessage() {}
 
 func (x *CurrentBlockNumFromReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -338,7 +338,7 @@ func (x *CurrentBlockNumFromReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CurrentBlockNumFromReportRequest.ProtoReflect.Descriptor instead.
 func (*CurrentBlockNumFromReportRequest) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CurrentBlockNumFromReportRequest) GetReport() []byte {
@@ -358,7 +358,7 @@ type CurrentBlockNumFromReportResponse struct {
 
 func (x *CurrentBlockNumFromReportResponse) Reset() {
 	*x = CurrentBlockNumFromReportResponse{}
-	mi := &file_reportcodec_v1_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -370,7 +370,7 @@ func (x *CurrentBlockNumFromReportResponse) String() string {
 func (*CurrentBlockNumFromReportResponse) ProtoMessage() {}
 
 func (x *CurrentBlockNumFromReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_reportcodec_v1_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +383,7 @@ func (x *CurrentBlockNumFromReportResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CurrentBlockNumFromReportResponse.ProtoReflect.Descriptor instead.
 func (*CurrentBlockNumFromReportResponse) Descriptor() ([]byte, []int) {
-	return file_reportcodec_v1_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CurrentBlockNumFromReportResponse) GetCurrentBlockNum() int64 {
@@ -393,11 +393,11 @@ func (x *CurrentBlockNumFromReportResponse) GetCurrentBlockNum() int64 {
 	return 0
 }
 
-var File_reportcodec_v1_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_mercury_v1_reportcodec_v1_proto protoreflect.FileDescriptor
 
-const file_reportcodec_v1_proto_rawDesc = "" +
+const file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDesc = "" +
 	"\n" +
-	"\x14reportcodec_v1.proto\x12\x1bloop.internal.pb.mercury.v1\x1a\rrelayer.proto\"\xdc\x02\n" +
+	"0loop/internal/pb/mercury/v1/reportcodec_v1.proto\x12\x1bloop.internal.pb.mercury.v1\x1a\x1eloop/internal/pb/relayer.proto\"\xdc\x02\n" +
 	"\fReportFields\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\rR\ttimestamp\x124\n" +
 	"\x0ebenchmarkPrice\x18\x02 \x01(\v2\f.loop.BigIntR\x0ebenchmarkPrice\x12\x1e\n" +
@@ -427,19 +427,19 @@ const file_reportcodec_v1_proto_rawDesc = "" +
 	"\x19CurrentBlockNumFromReport\x12=.loop.internal.pb.mercury.v1.CurrentBlockNumFromReportRequest\x1a>.loop.internal.pb.mercury.v1.CurrentBlockNumFromReportResponse\"\x00BZZXgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v1;mercuryv1pbb\x06proto3"
 
 var (
-	file_reportcodec_v1_proto_rawDescOnce sync.Once
-	file_reportcodec_v1_proto_rawDescData []byte
+	file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescData []byte
 )
 
-func file_reportcodec_v1_proto_rawDescGZIP() []byte {
-	file_reportcodec_v1_proto_rawDescOnce.Do(func() {
-		file_reportcodec_v1_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_reportcodec_v1_proto_rawDesc), len(file_reportcodec_v1_proto_rawDesc)))
+func file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDesc), len(file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDesc)))
 	})
-	return file_reportcodec_v1_proto_rawDescData
+	return file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDescData
 }
 
-var file_reportcodec_v1_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_reportcodec_v1_proto_goTypes = []any{
+var file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_goTypes = []any{
 	(*ReportFields)(nil),                      // 0: loop.internal.pb.mercury.v1.ReportFields
 	(*BuildReportRequest)(nil),                // 1: loop.internal.pb.mercury.v1.BuildReportRequest
 	(*BuildReportReply)(nil),                  // 2: loop.internal.pb.mercury.v1.BuildReportReply
@@ -449,7 +449,7 @@ var file_reportcodec_v1_proto_goTypes = []any{
 	(*CurrentBlockNumFromReportResponse)(nil), // 6: loop.internal.pb.mercury.v1.CurrentBlockNumFromReportResponse
 	(*pb.BigInt)(nil),                         // 7: loop.BigInt
 }
-var file_reportcodec_v1_proto_depIdxs = []int32{
+var file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_depIdxs = []int32{
 	7, // 0: loop.internal.pb.mercury.v1.ReportFields.benchmarkPrice:type_name -> loop.BigInt
 	7, // 1: loop.internal.pb.mercury.v1.ReportFields.bid:type_name -> loop.BigInt
 	7, // 2: loop.internal.pb.mercury.v1.ReportFields.ask:type_name -> loop.BigInt
@@ -467,26 +467,26 @@ var file_reportcodec_v1_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_reportcodec_v1_proto_init() }
-func file_reportcodec_v1_proto_init() {
-	if File_reportcodec_v1_proto != nil {
+func init() { file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_init() }
+func file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_init() {
+	if File_loop_internal_pb_mercury_v1_reportcodec_v1_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_reportcodec_v1_proto_rawDesc), len(file_reportcodec_v1_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDesc), len(file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_reportcodec_v1_proto_goTypes,
-		DependencyIndexes: file_reportcodec_v1_proto_depIdxs,
-		MessageInfos:      file_reportcodec_v1_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_msgTypes,
 	}.Build()
-	File_reportcodec_v1_proto = out.File
-	file_reportcodec_v1_proto_goTypes = nil
-	file_reportcodec_v1_proto_depIdxs = nil
+	File_loop_internal_pb_mercury_v1_reportcodec_v1_proto = out.File
+	file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_goTypes = nil
+	file_loop_internal_pb_mercury_v1_reportcodec_v1_proto_depIdxs = nil
 }

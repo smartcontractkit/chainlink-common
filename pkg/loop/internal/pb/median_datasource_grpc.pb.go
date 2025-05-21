@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: median_datasource.proto
+// source: loop/internal/pb/median_datasource.proto
 
 package pb
 
@@ -117,5 +117,5 @@ var DataSource_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "median_datasource.proto",
+	Metadata: "loop/internal/pb/median_datasource.proto",
 }

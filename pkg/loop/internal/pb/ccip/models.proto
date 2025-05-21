@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop.internal.pb.ccip;
 import "google/protobuf/timestamp.proto";
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
 
 // This file contains message definitions for the Cross-Chain Interoperability Protocol (CCIP) that are used by
 // multiple interfaces comprising CCIP

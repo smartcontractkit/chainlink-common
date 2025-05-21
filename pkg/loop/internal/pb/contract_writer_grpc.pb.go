@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: contract_writer.proto
+// source: loop/internal/pb/contract_writer.proto
 
 package pb
 
@@ -232,5 +232,5 @@ var ContractWriter_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "contract_writer.proto",
+	Metadata: "loop/internal/pb/contract_writer.proto",
 }

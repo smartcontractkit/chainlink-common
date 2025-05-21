@@ -20,6 +20,7 @@ const (
 )
 
 var FastFillABI string
+var erc20 abi.ABI
 
 type LogRelayerConfig struct {
 	// Note this could be the tokenAdminRegistry instead
@@ -59,6 +60,22 @@ func LogRelayerWorkflow(runner sdk.DonRunner) {
 	}
 
 	// TODO: register logs
+	evmClient := evm.Client{}
+	evmClientDest := evm.Client{}
+	erc20, _ := abi.JSON(strings.NewReader(FastFillABI))
+
+	evmClient.RegisterLogTracking(nil /* add runner */, &evm.RegisterLogTrackingRequest{
+		Filter: &evm.LPFilter{
+			Addresses: []string{config.SourceTokenPoolAddress},
+			EventSigs: []string{erc20.Events[FillRequested].Sig},
+		},
+	})
+	evmClientDest.RegisterLogTracking(nil /* add runner */, &evm.RegisterLogTrackingRequest{
+		Filter: &evm.LPFilter{
+			Addresses: []string{config.DestTokenPoolAddress},
+			EventSigs: []string{erc20.Events[FillCompleted].Sig},
+		},
+	})
 
 	sdk.SubscribeToDonTrigger(
 		runner,
@@ -197,21 +214,21 @@ func doBatchFill(runtime sdk.DonRuntime, executionTime int64, config *LogRelayer
 
 	// Submit the batch transaction to chain B
 	// TODO: update to writeReport.
-	tx := evmClientDest.WriteReport(runtime, &evm.SubmitTransactionRequest{
-		ToAddress: config.DestTokenPoolAddress,
-		Calldata:  batchFillData,
+	writeReportResultPromise := evmClientDest.WriteAsReport(runtime, &evm.WriteAsReportRequest{
+		Receiver: config.DestTokenPoolAddress,
+		Data:     batchFillData,
 	})
 
 	// Note this blocks until confirmed.
 	// This prevents requests in quick succession from the log trigger
 	// from creating duplicate fills.
-	txID, err := tx.Await()
+	writeReportResult, err := writeReportResultPromise.Await()
 	if err != nil {
 		return struct{}{}, err
 	}
 
 	logger.Info("Submitted batch fill transaction",
-		"txID", txID,
+		"txID", writeReportResult.TxHash,
 		"numRequests", len(pendingRequests),
 	)
 

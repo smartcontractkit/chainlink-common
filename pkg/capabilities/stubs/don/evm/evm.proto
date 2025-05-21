@@ -7,7 +7,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 import "google/protobuf/empty.proto";
 import "crosschain.proto";
 import "metadata.proto";
-import "ocr3_types.proto";
+
 
 message TxID {
   string value = 1;
@@ -40,9 +40,16 @@ message SignedReport {
 }
 
 // Represents a request to submit a transaction
-message WriteReportRequest {
-  GasConfig gas_config = 1;
-  SignedReport report = 2; 
+message WriteAsReportRequest {
+  string receiver = 1;
+  bytes data = 2;
+  GasConfig gas_config = 3;
+}
+
+message WriteAsReportResponse {
+  TxStatus tx_status = 1;
+  ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
+  bytes tx_hash = 3;
 }
 
 message Log {
@@ -98,8 +105,10 @@ service Client {
   rpc GetTxResult (TxID) returns (don.crosschain.v1.TxResult);
   rpc ReadMethod (ReadMethodRequest) returns (don.crosschain.v1.ByteArray);
   rpc QueryLogs (QueryLogsRequest) returns (LogList);
+  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc SubmitTransaction (SubmitTransactionRequest) returns (TxID); //TODO remove
-  rpc WriteReport (WriteReportRequest) returns (TxID);
+  rpc WriteAsReport (WriteAsReportRequest) returns (WriteAsReportResponse);
   rpc LogTrigger (LogTriggerRequest) returns (Log) {
     option (cre.metadata.callType) = Trigger;
   };
@@ -117,10 +126,59 @@ message LogList {
   repeated Log logs = 1;
 }
 
+// represents filter for polling and caching logs
+message LPFilter {
+  uint64 max_logs_kept = 1; // maximum number of logs to retain ( 0 = unlimited ) 
+  int64 retention_time = 2; // maximum amount of time to retain logs in seconds
+  uint64 logs_per_block = 3; // rate limit ( maximum # of logs per block, 0 = unlimited )
+  string name = 4; // filter name, has to persist for removing filter
+  repeated string addresses = 5; // list of addresses to include
+  repeated string event_sigs = 6; // list of possible signatures (aka topic1)
+  repeated Hash topic2 = 7; // list of possible values for topic2
+  repeated Hash topic3 = 8; // list of possible values for topic3
+  repeated Hash topic4 = 9; // list of possible values for topic4
+}
+
+// ----- Message Types -----
+// represents evm-style Address
+// [20]byte fix-sized array
+message Address {
+  bytes address = 1;
+}
+
+// represents evm-style hash
+// [32]byte fix-sized array
+message Hash {
+  bytes hash = 1;
+}
+
+// represents solidity-spec abi encoded bytes
+message ABIPayload {
+  bytes abi = 1;
+}
+message RegisterLogTrackingRequest {
+  LPFilter filter = 1;
+}
+
+message UnregisterLogTrackingRequest {
+  string filter_name = 1;
+}
+
 enum ConfidenceLevel {
   CONFIDENCE_LEVEL_UNSPECIFIED = 0;
   LOW = 1;
   MEDIUM = 2;
   HIGH = 3;
   FINALITY = 4;
+}
+
+enum TxStatus {
+  CONFIRMED = 0;
+  FINALIZED = 1;
+  FAILED = 2;
+}
+
+enum ReceiverContractExecutionStatus {
+  SUCCESS = 0;
+  FAILURE = 1;
 }

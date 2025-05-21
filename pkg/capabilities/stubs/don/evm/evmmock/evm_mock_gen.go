@@ -32,9 +32,13 @@ type ClientCapability struct {
 	// TODO register if needed...
 	QueryLogs func(ctx context.Context, input *evm.QueryLogsRequest /* TODO config? */) (*evm.LogList, error)
 	// TODO register if needed...
+	RegisterLogTracking func(ctx context.Context, input *evm.RegisterLogTrackingRequest /* TODO config? */) (*emptypb.Empty, error)
+	// TODO register if needed...
+	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest /* TODO config? */) (*emptypb.Empty, error)
+	// TODO register if needed...
 	SubmitTransaction func(ctx context.Context, input *evm.SubmitTransactionRequest /* TODO config? */) (*evm.TxID, error)
 	// TODO register if needed...
-	WriteReport func(ctx context.Context, input *evm.WriteReportRequest /* TODO config? */) (*evm.TxID, error)
+	WriteAsReport func(ctx context.Context, input *evm.WriteAsReportRequest /* TODO config? */) (*evm.WriteAsReportResponse, error)
 
 	LogTrigger func(ctx context.Context, input *evm.LogTriggerRequest) (capabilities.TriggerAndId[*evm.Log], error)
 
@@ -110,6 +114,50 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *pb.CapabilityR
 				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
+	case "RegisterLogTracking":
+		input := &evm.RegisterLogTrackingRequest{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			break
+		}
+
+		if cap.RegisterLogTracking == nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for RegisterLogTracking"}
+			break
+		}
+		resp, err := cap.RegisterLogTracking(ctx, input)
+		if err != nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+		} else {
+			payload, err := anypb.New(resp)
+			if err == nil {
+				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+			} else {
+				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			}
+		}
+	case "UnregisterLogTracking":
+		input := &evm.UnregisterLogTrackingRequest{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			break
+		}
+
+		if cap.UnregisterLogTracking == nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for UnregisterLogTracking"}
+			break
+		}
+		resp, err := cap.UnregisterLogTracking(ctx, input)
+		if err != nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+		} else {
+			payload, err := anypb.New(resp)
+			if err == nil {
+				capResp.Response = &pb.CapabilityResponse_Payload{Payload: payload}
+			} else {
+				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
+			}
+		}
 	case "SubmitTransaction":
 		input := &evm.SubmitTransactionRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
@@ -132,18 +180,18 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *pb.CapabilityR
 				capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
-	case "WriteReport":
-		input := &evm.WriteReportRequest{}
+	case "WriteAsReport":
+		input := &evm.WriteAsReportRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
-		if cap.WriteReport == nil {
-			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for WriteReport"}
+		if cap.WriteAsReport == nil {
+			capResp.Response = &pb.CapabilityResponse_Error{Error: "no stub provided for WriteAsReport"}
 			break
 		}
-		resp, err := cap.WriteReport(ctx, input)
+		resp, err := cap.WriteAsReport(ctx, input)
 		if err != nil {
 			capResp.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
 		} else {

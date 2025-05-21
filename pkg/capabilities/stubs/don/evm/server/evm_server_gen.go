@@ -30,13 +30,21 @@ type ClientCapability interface {
 	RegisterQueryLogs(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterQueryLogs(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
+	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest /* TODO  config evm.RegisterLogTrackingRequest*/) (*emptypb.Empty, error)
+	RegisterRegisterLogTracking(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+	UnregisterRegisterLogTracking(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+
+	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest /* TODO  config evm.UnregisterLogTrackingRequest*/) (*emptypb.Empty, error)
+	RegisterUnregisterLogTracking(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+	UnregisterUnregisterLogTracking(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+
 	SubmitTransaction(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.SubmitTransactionRequest /* TODO  config evm.SubmitTransactionRequest*/) (*evm.TxID, error)
 	RegisterSubmitTransaction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 	UnregisterSubmitTransaction(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest /* TODO  config evm.WriteReportRequest*/) (*evm.TxID, error)
-	RegisterWriteReport(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
-	UnregisterWriteReport(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+	WriteAsReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteAsReportRequest /* TODO  config evm.WriteAsReportRequest*/) (*evm.WriteAsReportResponse, error)
+	RegisterWriteAsReport(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
+	UnregisterWriteAsReport(ctx context.Context, metadata capabilities.RegistrationMetadata /* TODO config */) error
 
 	RegisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.LogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 	UnregisterLogTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.LogTriggerRequest) error
@@ -172,14 +180,22 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.QueryLogsRequest{}
 		// TODO config
 		return capabilities.Execute(ctx, request, input, c.ClientCapability.QueryLogs)
+	case "RegisterLogTracking":
+		input := &evm.RegisterLogTrackingRequest{}
+		// TODO config
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.RegisterLogTracking)
+	case "UnregisterLogTracking":
+		input := &evm.UnregisterLogTrackingRequest{}
+		// TODO config
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.UnregisterLogTracking)
 	case "SubmitTransaction":
 		input := &evm.SubmitTransactionRequest{}
 		// TODO config
 		return capabilities.Execute(ctx, request, input, c.ClientCapability.SubmitTransaction)
-	case "WriteReport":
-		input := &evm.WriteReportRequest{}
+	case "WriteAsReport":
+		input := &evm.WriteAsReportRequest{}
 		// TODO config
-		return capabilities.Execute(ctx, request, input, c.ClientCapability.WriteReport)
+		return capabilities.Execute(ctx, request, input, c.ClientCapability.WriteAsReport)
 	default:
 		return response, fmt.Errorf("method %s not found", request.Method)
 	}

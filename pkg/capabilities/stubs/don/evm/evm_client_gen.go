@@ -88,6 +88,52 @@ func (c *Client) QueryLogs(runtime sdk.DonRuntime, input *QueryLogsRequest) sdk.
 	})
 }
 
+func (c *Client) RegisterLogTracking(runtime sdk.DonRuntime, input *RegisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
+	wrapped, err := anypb.New(input)
+	if err != nil {
+		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
+	}
+	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+		Id:      "evm@1.0.0",
+		Payload: wrapped,
+		Method:  "RegisterLogTracking",
+	}), func(i *pb.CapabilityResponse) (*emptypb.Empty, error) {
+		switch payload := i.Response.(type) {
+		case *pb.CapabilityResponse_Error:
+			return nil, errors.New(payload.Error)
+		case *pb.CapabilityResponse_Payload:
+			output := &emptypb.Empty{}
+			err = payload.Payload.UnmarshalTo(output)
+			return output, err
+		default:
+			return nil, errors.New("unexpected response type")
+		}
+	})
+}
+
+func (c *Client) UnregisterLogTracking(runtime sdk.DonRuntime, input *UnregisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
+	wrapped, err := anypb.New(input)
+	if err != nil {
+		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
+	}
+	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+		Id:      "evm@1.0.0",
+		Payload: wrapped,
+		Method:  "UnregisterLogTracking",
+	}), func(i *pb.CapabilityResponse) (*emptypb.Empty, error) {
+		switch payload := i.Response.(type) {
+		case *pb.CapabilityResponse_Error:
+			return nil, errors.New(payload.Error)
+		case *pb.CapabilityResponse_Payload:
+			output := &emptypb.Empty{}
+			err = payload.Payload.UnmarshalTo(output)
+			return output, err
+		default:
+			return nil, errors.New("unexpected response type")
+		}
+	})
+}
+
 func (c *Client) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransactionRequest) sdk.Promise[*TxID] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
@@ -111,21 +157,21 @@ func (c *Client) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransact
 	})
 }
 
-func (c *Client) WriteReport(runtime sdk.DonRuntime, input *WriteReportRequest) sdk.Promise[*TxID] {
+func (c *Client) WriteAsReport(runtime sdk.DonRuntime, input *WriteAsReportRequest) sdk.Promise[*WriteAsReportResponse] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*TxID](nil, err)
+		return sdk.PromiseFromResult[*WriteAsReportResponse](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
-		Method:  "WriteReport",
-	}), func(i *pb.CapabilityResponse) (*TxID, error) {
+		Method:  "WriteAsReport",
+	}), func(i *pb.CapabilityResponse) (*WriteAsReportResponse, error) {
 		switch payload := i.Response.(type) {
 		case *pb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *pb.CapabilityResponse_Payload:
-			output := &TxID{}
+			output := &WriteAsReportResponse{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

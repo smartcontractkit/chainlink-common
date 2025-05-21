@@ -20,7 +20,6 @@ packages:
   github.com/smartcontractkit/chainlink-common/pkg/types:
     interfaces:
       ContractReader:
-      EVMService:
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
       CapabilitiesRegistry:

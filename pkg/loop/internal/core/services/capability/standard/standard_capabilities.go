@@ -109,7 +109,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	resources = append(resources, relayerSetServerRes)
 
 	relayerSetID, relayerSetRes, err := c.ServeNew("RelayerSet", func(s *grpc.Server) {
-		relayersetpb.RegisterRelayerSetServerWithDependants(s, relayerSetServer)
+		relayersetpb.RegisterRelayerSetServer(s, relayerSetServer)
 	})
 	if err != nil {
 		c.CloseAll(resources...)

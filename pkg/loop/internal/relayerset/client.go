@@ -11,7 +11,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
-	rel "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -23,13 +22,12 @@ type Client struct {
 
 	log logger.Logger
 
-	relayerSetClient    relayerset.RelayerSetClient
-	evmRelayerSetClient relayerset.EVMRelayerSetClient
+	relayerSetClient relayerset.RelayerSetClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
-	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn), evmRelayerSetClient: relayerset.NewEVMRelayerSetClient(conn)}
+	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn)}
 }
 
 func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, error) {
@@ -112,18 +110,6 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 		Hash:      resp.Hash,
 		Timestamp: resp.Timestamp,
 	}, nil
-}
-
-// EVM creates an EVM Relayer Set client which is a wrapper over the regular EVM client that attaches the Relayer ID to every request.
-// This wrapper is then returned as a regular EVMClient .
-func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
-	if k.evmRelayerSetClient == nil {
-		return nil, errors.New("evmRelayerSetClient can't be nil")
-	}
-	return rel.NewEVMCClient(&evmClient{
-		relayID: relayID,
-		client:  k.evmRelayerSetClient,
-	}), nil
 }
 
 func (k *Client) NewPluginProvider(ctx context.Context, relayID types.RelayID, relayArgs core.RelayArgs, pluginArgs core.PluginArgs) (uint32, error) {

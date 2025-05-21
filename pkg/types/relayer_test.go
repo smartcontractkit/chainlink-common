@@ -39,7 +39,6 @@ func TestIdentifier_UnmarshalString(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Identifier.UnmarshalString() error = %v, wantErr %v", err, tt.wantErr)
 			}
-
 			assert.Equal(t, tt.want.Network, i.Network)
 			assert.Equal(t, tt.want.ChainID, i.ChainID)
 		})

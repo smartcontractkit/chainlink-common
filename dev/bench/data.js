@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747671205234,
+  "lastUpdate": 1747837812075,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13776,6 +13776,48 @@ window.BENCHMARK_DATA = {
             "value": 28164,
             "unit": "ns/op",
             "extra": "42610 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1ae98580fe03ade3297cdc94fe859ab5f4889eec",
+          "message": "Part of CAPPL-816: Use the consensus capability SDK in the runtime. A fake still needs to be used. (#1192)",
+          "timestamp": "2025-05-21T10:28:53-04:00",
+          "tree_id": "1df642979f3466aa3af1da6341829d80e2e77910",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1ae98580fe03ade3297cdc94fe859ab5f4889eec"
+        },
+        "date": 1747837811130,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.3,
+            "unit": "ns/op",
+            "extra": "3280584 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.8,
+            "unit": "ns/op",
+            "extra": "2863972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28118,
+            "unit": "ns/op",
+            "extra": "42604 times\n4 procs"
           }
         ]
       }

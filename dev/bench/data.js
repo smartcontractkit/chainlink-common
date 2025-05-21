@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747837812075,
+  "lastUpdate": 1747839842961,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13818,6 +13818,48 @@ window.BENCHMARK_DATA = {
             "value": 28118,
             "unit": "ns/op",
             "extra": "42604 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d4dd3e1d000ee5050e20c33d1a88cada73fadf1",
+          "message": "billing protos references protos repo (#1199)",
+          "timestamp": "2025-05-21T10:01:42-05:00",
+          "tree_id": "d10c765452ea5c5afa87b7eda9a8161c5940e1d2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0d4dd3e1d000ee5050e20c33d1a88cada73fadf1"
+        },
+        "date": 1747839841437,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 371.7,
+            "unit": "ns/op",
+            "extra": "3300871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 426.2,
+            "unit": "ns/op",
+            "extra": "2797413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28965,
+            "unit": "ns/op",
+            "extra": "42021 times\n4 procs"
           }
         ]
       }

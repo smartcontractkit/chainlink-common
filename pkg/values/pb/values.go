@@ -1,6 +1,7 @@
 package pb
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -82,6 +83,30 @@ func NewBigIntValue(sign int, bib []byte) *Value {
 			},
 		},
 	}
+}
+
+func NewBigIntFromInt(b *big.Int) *BigInt {
+	if b == nil {
+		return nil
+	}
+
+	return &BigInt{
+		Sign:   int64(b.Sign()),
+		AbsVal: b.Bytes(),
+	}
+}
+
+func NewIntFromBigInt(b *BigInt) *big.Int {
+	if b == nil {
+		return nil
+	}
+
+	bigInt := new(big.Int).SetBytes(b.AbsVal)
+	if b.Sign < 0 {
+		bigInt = bigInt.Neg(bigInt)
+	}
+
+	return bigInt
 }
 
 func NewTime(t time.Time) *Value {

@@ -71,15 +71,15 @@ func (ew *EventByWord) Accept(visitor primitives.Visitor) {
 }
 
 type EventByTopic struct {
-	Topic                 uint64
-	HashedValueComprarers []HashedValueComparator
+	Topic                uint64
+	HashedValueComparers []HashedValueComparator
 }
 
-func NewEventByTopicFilter(topic uint64, valueComprarer []HashedValueComparator) query.Expression {
+func NewEventByTopicFilter(topic uint64, valueComparer []HashedValueComparator) query.Expression {
 	return query.Expression{
 		Primitive: &EventByTopic{
-			Topic:                 topic,
-			HashedValueComprarers: valueComprarer,
+			Topic:                topic,
+			HashedValueComparers: valueComparer,
 		},
 	}
 }

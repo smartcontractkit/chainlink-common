@@ -118,7 +118,7 @@ func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (
 // This wrapper is then returned as a regular EVMClient .
 func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
 	if k.evmRelayerSetClient == nil {
-		return nil, fmt.Errorf("evmRelayerSetClient can't be nil")
+		return nil, errors.New("evmRelayerSetClient can't be nil")
 	}
 	return rel.NewEVMCClient(&evmClient{
 		relayID: relayID,

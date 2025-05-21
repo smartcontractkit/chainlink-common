@@ -78,6 +78,7 @@ func (c *CodecClient) Decode(ctx context.Context, raw []byte, into any, itemType
 }
 
 func (c *CodecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	//nolint: gosec // G115
 	res, err := c.grpc.GetMaxSize(ctx, &chaincommonpb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: true})
 	if err != nil {
 		return 0, net.WrapRPCErr(err)
@@ -87,6 +88,7 @@ func (c *CodecClient) GetMaxEncodingSize(ctx context.Context, n int, itemType st
 }
 
 func (c *CodecClient) GetMaxDecodingSize(ctx context.Context, n int, itemType string) (int, error) {
+	//nolint: gosec // G115
 	res, err := c.grpc.GetMaxSize(ctx, &chaincommonpb.GetMaxSizeRequest{N: int32(n), ItemType: itemType, ForEncoding: false})
 	if err != nil {
 		return 0, net.WrapRPCErr(err)
@@ -148,6 +150,7 @@ func (c *CodecServer) GetMaxSize(ctx context.Context, req *chaincommonpb.GetMaxS
 	if err != nil {
 		return nil, err
 	}
+	//nolint: gosec // G115
 	return &chaincommonpb.GetMaxSizeResponse{SizeInBytes: int32(maxSize)}, nil
 }
 

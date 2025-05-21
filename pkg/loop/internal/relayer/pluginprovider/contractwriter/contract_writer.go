@@ -167,6 +167,7 @@ func (s *Server) GetTransactionStatus(ctx context.Context, req *evmpb.GetTransac
 		return nil, err
 	}
 
+	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(status)}, nil
 }
 

@@ -328,6 +328,7 @@ func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives
 	for _, hvc := range hashedValueComparators {
 		protoHashedValueComparators = append(protoHashedValueComparators,
 			&HashValueComparator{
+				//nolint: gosec // G115
 				Operator: chaincommonpb.ComparisonOperator(hvc.Operator),
 				Values:   convertHashesToProto(hvc.Values),
 			})
@@ -364,7 +365,7 @@ func ConvertExpressionsFromProto(protoExpressions []*Expression) ([]query.Expres
 	for idx, protoExpression := range protoExpressions {
 		expr, err := convertExpressionFromProto(protoExpression)
 		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %v", idx, err)
+			return nil, fmt.Errorf("err to convert expr idx %d err: %w", idx, err)
 		}
 
 		expressions = append(expressions, expr)
@@ -395,6 +396,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 		case *evmprimitives.EventByWord:
 			ep.Primitive = &Primitive_EventByWord{
 				EventByWord: &EventByWord{
+					//nolint: gosec // G115
 					WordIndex:            uint32(primitive.WordIndex),
 					HashedValueComparers: ConvertHashedValueComparatorsToProto(primitive.HashedValueComparers),
 				},
@@ -422,7 +424,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 	}
 
 	pbExpression.Evaluator = &Expression_BooleanExpression{BooleanExpression: &BooleanExpression{}}
-	var expressions []*Expression
+	expressions := make([]*Expression, 0)
 	for _, expr := range expression.BoolExpression.Expressions {
 		pbExpr, err := convertExpressionToProto(expr)
 		if err != nil {
@@ -432,6 +434,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 	}
 	pbExpression.Evaluator = &Expression_BooleanExpression{
 		BooleanExpression: &BooleanExpression{
+			//nolint: gosec // G115
 			BooleanOperator: chaincommonpb.BooleanOperator(expression.BoolExpression.BoolOperator),
 			Expression:      expressions,
 		}}

@@ -178,7 +178,7 @@ func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEnco
 	}
 
 	pbExpression.Evaluator = &Expression_BooleanExpression{BooleanExpression: &BooleanExpression{}}
-	var expressions []*Expression
+	expressions := make([]*Expression, 0)
 	for _, expr := range expression.BoolExpression.Expressions {
 		e, err := ConvertExpressionToProto(expr, encodeValue)
 		if err != nil {
@@ -188,6 +188,7 @@ func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEnco
 	}
 	pbExpression.Evaluator = &Expression_BooleanExpression{
 		BooleanExpression: &BooleanExpression{
+			//nolint: gosec // G115
 			BooleanOperator: BooleanOperator(expression.BoolExpression.BoolOperator),
 			Expression:      expressions,
 		}}
@@ -253,7 +254,8 @@ func ConvertPrimitiveToProto(primitive primitives.Primitive, encodeValue ValueEn
 			}
 			pbValueComparators = append(pbValueComparators,
 				&ValueComparator{
-					Value:    versioned,
+					Value: versioned,
+					//nolint: gosec // G115
 					Operator: ComparisonOperator(vc.Operator),
 				})
 		}
@@ -269,7 +271,8 @@ func ConvertPrimitiveToProto(primitive primitives.Primitive, encodeValue ValueEn
 		primitiveToReturn.Primitive = &Primitive_Block{
 			Block: &Block{
 				BlockNumber: p.Block,
-				Operator:    ComparisonOperator(p.Operator),
+				//nolint: gosec // G115
+				Operator: ComparisonOperator(p.Operator),
 			}}
 	case *primitives.Confidence:
 		pbConfidence, err := ConvertConfidenceToProto(p.ConfidenceLevel)
@@ -281,7 +284,8 @@ func ConvertPrimitiveToProto(primitive primitives.Primitive, encodeValue ValueEn
 		primitiveToReturn.Primitive = &Primitive_Timestamp{
 			Timestamp: &Timestamp{
 				Timestamp: p.Timestamp,
-				Operator:  ComparisonOperator(p.Operator),
+				//nolint: gosec // G115
+				Operator: ComparisonOperator(p.Operator),
 			}}
 	case *primitives.TxHash:
 		primitiveToReturn.Primitive = &Primitive_TxHash{
@@ -342,7 +346,8 @@ func ConvertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*LimitAndSort,
 		}
 
 		sortByArr[idx] = &SortBy{
-			SortType:  tp,
+			SortType: tp,
+			//nolint: gosec // G115
 			Direction: SortDirection(sortBy.GetDirection()),
 		}
 	}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747845525360,
+  "lastUpdate": 1747854250003,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13944,6 +13944,48 @@ window.BENCHMARK_DATA = {
             "value": 28562,
             "unit": "ns/op",
             "extra": "42156 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "65a9b738252b2d2d15f0c1c83bd878124c1ec74b",
+          "message": "Plex 131 evm capability part 2 (#1202)\n\n* Change proto import paths where needed to be relative to root pkg dir\n\n* Add evm chain capability\n\n* Fix evm chain cap protos\n\n* Add evm chain cap sdk grpc gen\n\n* Fix evm cap protos\n\n* Add EVM() to Relayer in relayer set\n\n* Fix evm Relayer grpc bigint conversions\n\n* Fix proto gen\n\n* rm unused constants\n\n* fix errors\n\n* fixing imports and code-gen\n\n* Add query tracked logs grpc converter\n\n* Update proto convertors\n\n* Fix query.proto gen\n\n* Fix proto conversions in evm.go\n\n* package ref fix\n\n* Implement EVM service on the relayer set\n\n* Improve evm relayerset:\n\n- Detach EVM grpc service from RelayerSet proto\n- Refactor code and files to be more intuitive\n\n* Cleanup evm service proto conversion helpers\n\n* Resolve merge pb gen conflicts\n\n* minor fix\n\n* Restructure evm chain cap and service file structure and minor improvements\n\n* Consolidate GetTransactionByHash and GetTransactionReceipt naming\n\n* cleanup unused code\n\n* Expand and cleanup relayerset test\n\n* Move evm service to chain-cap folder so that the cap impl. can import it\n\n* Move proto helpers to chain-capabilities/evm/chain-service so that the cap impl. can import them\n\n* Reorganise query and codec proto to fix cyclical and internal package imports from the evm chain cap\n\n* Fix expressions proto convertor\n\n* Run make generate\n\n* Change evm client and evm client relayerset naming capitalisation and rm leftover print\n\n* Make linter happy\n\n* rerun CI\n\n* Move codec to internal/codec from loop/chain-common\n\n* run generate\n\n* extract changes to split PR up\n\n* Revert \"extract changes to split PR up\"\n\nThis reverts commit 94834cdd0cb5e4833c40bae7dfbd59b18b37b90d.\n\n---------\n\nCo-authored-by: Lautaro Fernandez <juan.lautarofernandez@smartcontract.com>",
+          "timestamp": "2025-05-21T21:02:41+02:00",
+          "tree_id": "cb673f1406c016d5d9e3578a5a40a5b04cc97d1d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/65a9b738252b2d2d15f0c1c83bd878124c1ec74b"
+        },
+        "date": 1747854249016,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.7,
+            "unit": "ns/op",
+            "extra": "3265058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.2,
+            "unit": "ns/op",
+            "extra": "2931909 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28253,
+            "unit": "ns/op",
+            "extra": "42661 times\n4 procs"
           }
         ]
       }

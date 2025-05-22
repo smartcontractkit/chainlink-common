@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747934963454,
+  "lastUpdate": 1747939254471,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14154,6 +14154,48 @@ window.BENCHMARK_DATA = {
             "value": 28187,
             "unit": "ns/op",
             "extra": "42632 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44d96a7ad0e552fa85bf28dfc4c49587cbcb672b",
+          "message": "CAPPL-881: Make capability call IDs deterministic (#1200)",
+          "timestamp": "2025-05-22T14:39:27-04:00",
+          "tree_id": "38c07850b136a47541d28414c0026fbb23e0fe6b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/44d96a7ad0e552fa85bf28dfc4c49587cbcb672b"
+        },
+        "date": 1747939253498,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.9,
+            "unit": "ns/op",
+            "extra": "3367711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.2,
+            "unit": "ns/op",
+            "extra": "2934360 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28205,
+            "unit": "ns/op",
+            "extra": "42492 times\n4 procs"
           }
         ]
       }

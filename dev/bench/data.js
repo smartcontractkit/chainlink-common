@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747854250003,
+  "lastUpdate": 1747916756060,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -13986,6 +13986,48 @@ window.BENCHMARK_DATA = {
             "value": 28253,
             "unit": "ns/op",
             "extra": "42661 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6309c8950e05a023899a39bdd3381f1cab089286",
+          "message": "Add ShowAllValues option to Gauge Panels (#1206)",
+          "timestamp": "2025-05-22T07:24:33-05:00",
+          "tree_id": "f65d904355d8726631086d34fb48238d832b75f7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6309c8950e05a023899a39bdd3381f1cab089286"
+        },
+        "date": 1747916755219,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.4,
+            "unit": "ns/op",
+            "extra": "3401296 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.3,
+            "unit": "ns/op",
+            "extra": "2943999 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28149,
+            "unit": "ns/op",
+            "extra": "42670 times\n4 procs"
           }
         ]
       }

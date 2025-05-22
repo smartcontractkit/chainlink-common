@@ -1,14 +1,11 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/evm;evmpb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service;evmpb";
+package loop.chain_capabilities.evm;
 
-package loop.internal.pb.evm;
-
-import "relayer.proto";
-import "query.proto";
-import "contract_writer.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
+import "loop/chain-common/query.proto";
+import "values/pb/values.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
@@ -17,7 +14,7 @@ service EVM{
   rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
   rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
-  rpc GetTransactionReceipt(GetReceiptRequest) returns (GetReceiptReply);
+  rpc GetTransactionReceipt(GetTransactionReceiptRequest) returns (GetTransactionReceiptReply);
   rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
@@ -63,7 +60,7 @@ message Log {
   Hash block_hash = 4; // hash of the block containing the log
   ABIPayload data = 5; // encoded log Data
   Hash eventSig = 6; // keccak256 of event signature
-  BigInt block_number = 7;  // block number containing the log
+  values.BigInt block_number = 7;  // block number containing the log
   uint32 tx_index = 8;  // index of transaction emmited the log
   uint32 index = 9;  // index of the Log within the intire block
   bool removed = 10;  // flag if the log was removed during reorg
@@ -72,8 +69,8 @@ message Log {
 // represents evm-style filter query
 message FilterQuery {
   Hash block_hash = 1; // exact block (cant use from/to)
-  BigInt fromBlock = 2; // start block range
-  BigInt toBlock = 3; // end block range
+  values.BigInt fromBlock = 2; // start block range
+  values.BigInt toBlock = 3; // end block range
   repeated Address addresses = 4; // contract(s) to filter logs from
   repeated Topics topics = 5;  // filter log by event signature and indexed args
 }
@@ -85,8 +82,8 @@ message Transaction {
   Address to = 3; // recipient address
   ABIPayload data = 4; // input data for function call payload
   Hash hash = 5; // derived from transaction structure hash
-  BigInt value = 6; // amount of eth sent in wei
-  BigInt gas_price = 7; // price for a signle gas unit in wei
+  values.BigInt value = 6; // amount of eth sent in wei
+  values.BigInt gas_price = 7; // price for a signle gas unit in wei
 }
 
 // represents evm-style receipt
@@ -97,8 +94,8 @@ message Receipt {
   Hash block_hash = 4; // block hash containing the transaction
   repeated Log logs = 6; // logs emmited by this transaction
   Hash tx_hash = 7; // hash of the transaction this receipt is for
-  BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
-  BigInt block_number = 9; // block number containing the transaction
+  values.BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
+  values.BigInt block_number = 9; // block number containing the transaction
   Address contract_address = 10; // address of the contract if this transaction created one
 }
 
@@ -118,7 +115,7 @@ message LPFilter {
 
 message Head {
   uint64 timestamp = 1; // unix timestamp
-  BigInt block_number = 2;
+  values.BigInt block_number = 2;
   Hash hash = 3;
   Hash parent_hash = 4;
 }
@@ -131,7 +128,7 @@ message Expression {
 }
 
 message BooleanExpression {
-  BooleanOperator boolean_operator = 1;
+  loop.chain.common.BooleanOperator boolean_operator = 1;
   repeated Expression expression = 2;
 }
 
@@ -145,7 +142,7 @@ message Or {
 
 message HashValueComparator {
   repeated Hash values = 1;
-  ComparisonOperator operator = 2;
+  loop.chain.common.ComparisonOperator operator = 2;
 }
 
 message ContractAddress {
@@ -167,10 +164,10 @@ message EventByTopic {
 }
 
 // evm-style primitives
-// can be used in combination with general primnitives for querying tracked logs
+// can be used in combination with general primitives for querying tracked logs
 message Primitive {
   oneof primitive {
-    loop.Primitive general_primitive = 1;
+    loop.chain.common.Primitive general_primitive = 1;
     ContractAddress contract_address = 2;
     EventSig event_sig = 3;
     EventByWord event_by_word = 4;
@@ -186,7 +183,7 @@ message LatestAndFinalizedHeadReply {
 
 message CallContractRequest {
   CallMsg call = 1;
-  BigInt block_number = 2;
+  values.BigInt block_number = 2;
 }
 
 message CallContractReply {
@@ -200,7 +197,7 @@ message GetTransactionFeeRequest {
 
 // GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMRElayer.GetTransactionFee].
 message GetTransactionFeeReply {
-  BigInt transation_fee = 1; // transaction fee is the cost of transaction execution in Wei
+  values.BigInt transation_fee = 1; // transaction fee is the cost of transaction execution in Wei
 }
 
 message FilterLogsRequest {
@@ -213,11 +210,11 @@ message FilterLogsReply {
 
 message BalanceAtRequest {
   Address account = 1;
-  BigInt block_number = 2;
+  values.BigInt block_number = 2;
 }
 
 message BalanceAtReply {
-  BigInt balance = 1; // Balance of the account in wei (10^-18 eth)
+  values.BigInt balance = 1; // Balance of the account in wei (10^-18 eth)
 }
 
 message EstimateGasRequest {
@@ -236,11 +233,11 @@ message GetTransactionByHashReply {
   Transaction transaction = 1;
 }
 
-message GetReceiptRequest {
+message GetTransactionReceiptRequest {
   Hash hash = 1;
 } 
 
-message GetReceiptReply {
+message GetTransactionReceiptReply {
   Receipt receipt = 1;
 }
 
@@ -254,11 +251,29 @@ message UnregisterLogTrackingRequest {
 
 message QueryTrackedLogsRequest {
   repeated Expression expression = 1;
-  LimitAndSort limit_and_sort = 2;
-  Confidence confidence_level = 3;
+  loop.chain.common.LimitAndSort limit_and_sort = 2;
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message QueryTrackedLogsReply {
   repeated Log logs = 1;
 }
 
+message GetTransactionStatusRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionStatusReply {
+  TransactionStatus transaction_status = 1;
+}
+
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNKNOWN = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_UNCONFIRMED = 2;
+  TRANSACTION_STATUS_FINALIZED = 3;
+  TRANSACTION_STATUS_FAILED = 4;
+  TRANSACTION_STATUS_FATAL = 5;
+}

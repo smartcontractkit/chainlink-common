@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: priceregistry.proto
+// source: loop/internal/pb/ccip/priceregistry.proto
 
 package ccippb
 
@@ -36,7 +36,7 @@ type GetTokenPriceUpdatesCreatedAfterRequest struct {
 
 func (x *GetTokenPriceUpdatesCreatedAfterRequest) Reset() {
 	*x = GetTokenPriceUpdatesCreatedAfterRequest{}
-	mi := &file_priceregistry_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +48,7 @@ func (x *GetTokenPriceUpdatesCreatedAfterRequest) String() string {
 func (*GetTokenPriceUpdatesCreatedAfterRequest) ProtoMessage() {}
 
 func (x *GetTokenPriceUpdatesCreatedAfterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +61,7 @@ func (x *GetTokenPriceUpdatesCreatedAfterRequest) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use GetTokenPriceUpdatesCreatedAfterRequest.ProtoReflect.Descriptor instead.
 func (*GetTokenPriceUpdatesCreatedAfterRequest) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetTokenPriceUpdatesCreatedAfterRequest) GetCreatedAfter() *timestamppb.Timestamp {
@@ -89,7 +89,7 @@ type GetTokenPriceUpdatesCreatedAfterResponse struct {
 
 func (x *GetTokenPriceUpdatesCreatedAfterResponse) Reset() {
 	*x = GetTokenPriceUpdatesCreatedAfterResponse{}
-	mi := &file_priceregistry_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -101,7 +101,7 @@ func (x *GetTokenPriceUpdatesCreatedAfterResponse) String() string {
 func (*GetTokenPriceUpdatesCreatedAfterResponse) ProtoMessage() {}
 
 func (x *GetTokenPriceUpdatesCreatedAfterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -114,7 +114,7 @@ func (x *GetTokenPriceUpdatesCreatedAfterResponse) ProtoReflect() protoreflect.M
 
 // Deprecated: Use GetTokenPriceUpdatesCreatedAfterResponse.ProtoReflect.Descriptor instead.
 func (*GetTokenPriceUpdatesCreatedAfterResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetTokenPriceUpdatesCreatedAfterResponse) GetTokenPriceUpdates() []*TokenPriceUpdateWithTxMeta {
@@ -137,7 +137,7 @@ type GetGasPriceUpdatesCreatedAfterRequest struct {
 
 func (x *GetGasPriceUpdatesCreatedAfterRequest) Reset() {
 	*x = GetGasPriceUpdatesCreatedAfterRequest{}
-	mi := &file_priceregistry_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +149,7 @@ func (x *GetGasPriceUpdatesCreatedAfterRequest) String() string {
 func (*GetGasPriceUpdatesCreatedAfterRequest) ProtoMessage() {}
 
 func (x *GetGasPriceUpdatesCreatedAfterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +162,7 @@ func (x *GetGasPriceUpdatesCreatedAfterRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetGasPriceUpdatesCreatedAfterRequest.ProtoReflect.Descriptor instead.
 func (*GetGasPriceUpdatesCreatedAfterRequest) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetGasPriceUpdatesCreatedAfterRequest) GetChainSelector() uint64 {
@@ -197,7 +197,7 @@ type GetGasPriceUpdatesCreatedAfterResponse struct {
 
 func (x *GetGasPriceUpdatesCreatedAfterResponse) Reset() {
 	*x = GetGasPriceUpdatesCreatedAfterResponse{}
-	mi := &file_priceregistry_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -209,7 +209,7 @@ func (x *GetGasPriceUpdatesCreatedAfterResponse) String() string {
 func (*GetGasPriceUpdatesCreatedAfterResponse) ProtoMessage() {}
 
 func (x *GetGasPriceUpdatesCreatedAfterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +222,7 @@ func (x *GetGasPriceUpdatesCreatedAfterResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetGasPriceUpdatesCreatedAfterResponse.ProtoReflect.Descriptor instead.
 func (*GetGasPriceUpdatesCreatedAfterResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetGasPriceUpdatesCreatedAfterResponse) GetGasPriceUpdates() []*GasPriceUpdateWithTxMeta {
@@ -244,7 +244,7 @@ type GetAllGasPriceUpdatesCreatedAfterRequest struct {
 
 func (x *GetAllGasPriceUpdatesCreatedAfterRequest) Reset() {
 	*x = GetAllGasPriceUpdatesCreatedAfterRequest{}
-	mi := &file_priceregistry_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -256,7 +256,7 @@ func (x *GetAllGasPriceUpdatesCreatedAfterRequest) String() string {
 func (*GetAllGasPriceUpdatesCreatedAfterRequest) ProtoMessage() {}
 
 func (x *GetAllGasPriceUpdatesCreatedAfterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -269,7 +269,7 @@ func (x *GetAllGasPriceUpdatesCreatedAfterRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use GetAllGasPriceUpdatesCreatedAfterRequest.ProtoReflect.Descriptor instead.
 func (*GetAllGasPriceUpdatesCreatedAfterRequest) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetAllGasPriceUpdatesCreatedAfterRequest) GetCreatedAfter() *timestamppb.Timestamp {
@@ -297,7 +297,7 @@ type GetAllGasPriceUpdatesCreatedAfterResponse struct {
 
 func (x *GetAllGasPriceUpdatesCreatedAfterResponse) Reset() {
 	*x = GetAllGasPriceUpdatesCreatedAfterResponse{}
-	mi := &file_priceregistry_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -309,7 +309,7 @@ func (x *GetAllGasPriceUpdatesCreatedAfterResponse) String() string {
 func (*GetAllGasPriceUpdatesCreatedAfterResponse) ProtoMessage() {}
 
 func (x *GetAllGasPriceUpdatesCreatedAfterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -322,7 +322,7 @@ func (x *GetAllGasPriceUpdatesCreatedAfterResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use GetAllGasPriceUpdatesCreatedAfterResponse.ProtoReflect.Descriptor instead.
 func (*GetAllGasPriceUpdatesCreatedAfterResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetAllGasPriceUpdatesCreatedAfterResponse) GetGasPriceUpdates() []*GasPriceUpdateWithTxMeta {
@@ -343,7 +343,7 @@ type GetPriceRegistryAddressResponse struct {
 
 func (x *GetPriceRegistryAddressResponse) Reset() {
 	*x = GetPriceRegistryAddressResponse{}
-	mi := &file_priceregistry_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -355,7 +355,7 @@ func (x *GetPriceRegistryAddressResponse) String() string {
 func (*GetPriceRegistryAddressResponse) ProtoMessage() {}
 
 func (x *GetPriceRegistryAddressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -368,7 +368,7 @@ func (x *GetPriceRegistryAddressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPriceRegistryAddressResponse.ProtoReflect.Descriptor instead.
 func (*GetPriceRegistryAddressResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetPriceRegistryAddressResponse) GetAddress() string {
@@ -389,7 +389,7 @@ type GetFeeTokensResponse struct {
 
 func (x *GetFeeTokensResponse) Reset() {
 	*x = GetFeeTokensResponse{}
-	mi := &file_priceregistry_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -401,7 +401,7 @@ func (x *GetFeeTokensResponse) String() string {
 func (*GetFeeTokensResponse) ProtoMessage() {}
 
 func (x *GetFeeTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,7 +414,7 @@ func (x *GetFeeTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeeTokensResponse.ProtoReflect.Descriptor instead.
 func (*GetFeeTokensResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetFeeTokensResponse) GetFeeTokenAddresses() []string {
@@ -435,7 +435,7 @@ type GetTokenPricesRequest struct {
 
 func (x *GetTokenPricesRequest) Reset() {
 	*x = GetTokenPricesRequest{}
-	mi := &file_priceregistry_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -447,7 +447,7 @@ func (x *GetTokenPricesRequest) String() string {
 func (*GetTokenPricesRequest) ProtoMessage() {}
 
 func (x *GetTokenPricesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -460,7 +460,7 @@ func (x *GetTokenPricesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTokenPricesRequest.ProtoReflect.Descriptor instead.
 func (*GetTokenPricesRequest) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetTokenPricesRequest) GetTokenAddresses() []string {
@@ -481,7 +481,7 @@ type GetTokenPricesResponse struct {
 
 func (x *GetTokenPricesResponse) Reset() {
 	*x = GetTokenPricesResponse{}
-	mi := &file_priceregistry_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +493,7 @@ func (x *GetTokenPricesResponse) String() string {
 func (*GetTokenPricesResponse) ProtoMessage() {}
 
 func (x *GetTokenPricesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +506,7 @@ func (x *GetTokenPricesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTokenPricesResponse.ProtoReflect.Descriptor instead.
 func (*GetTokenPricesResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetTokenPricesResponse) GetTokenPrices() []*TokenPriceUpdate {
@@ -527,7 +527,7 @@ type GetTokensDecimalsRequest struct {
 
 func (x *GetTokensDecimalsRequest) Reset() {
 	*x = GetTokensDecimalsRequest{}
-	mi := &file_priceregistry_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +539,7 @@ func (x *GetTokensDecimalsRequest) String() string {
 func (*GetTokensDecimalsRequest) ProtoMessage() {}
 
 func (x *GetTokensDecimalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[10]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,7 +552,7 @@ func (x *GetTokensDecimalsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTokensDecimalsRequest.ProtoReflect.Descriptor instead.
 func (*GetTokensDecimalsRequest) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{10}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetTokensDecimalsRequest) GetTokenAddresses() []string {
@@ -573,7 +573,7 @@ type GetTokensDecimalsResponse struct {
 
 func (x *GetTokensDecimalsResponse) Reset() {
 	*x = GetTokensDecimalsResponse{}
-	mi := &file_priceregistry_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -585,7 +585,7 @@ func (x *GetTokensDecimalsResponse) String() string {
 func (*GetTokensDecimalsResponse) ProtoMessage() {}
 
 func (x *GetTokensDecimalsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[11]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -598,7 +598,7 @@ func (x *GetTokensDecimalsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTokensDecimalsResponse.ProtoReflect.Descriptor instead.
 func (*GetTokensDecimalsResponse) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{11}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetTokensDecimalsResponse) GetDecimals() []uint32 {
@@ -620,7 +620,7 @@ type GasPriceUpdateWithTxMeta struct {
 
 func (x *GasPriceUpdateWithTxMeta) Reset() {
 	*x = GasPriceUpdateWithTxMeta{}
-	mi := &file_priceregistry_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -632,7 +632,7 @@ func (x *GasPriceUpdateWithTxMeta) String() string {
 func (*GasPriceUpdateWithTxMeta) ProtoMessage() {}
 
 func (x *GasPriceUpdateWithTxMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[12]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -645,7 +645,7 @@ func (x *GasPriceUpdateWithTxMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasPriceUpdateWithTxMeta.ProtoReflect.Descriptor instead.
 func (*GasPriceUpdateWithTxMeta) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{12}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GasPriceUpdateWithTxMeta) GetGasPriceUpdate() *GasPriceUpdate {
@@ -674,7 +674,7 @@ type GasPriceUpdate struct {
 
 func (x *GasPriceUpdate) Reset() {
 	*x = GasPriceUpdate{}
-	mi := &file_priceregistry_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -686,7 +686,7 @@ func (x *GasPriceUpdate) String() string {
 func (*GasPriceUpdate) ProtoMessage() {}
 
 func (x *GasPriceUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[13]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -699,7 +699,7 @@ func (x *GasPriceUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasPriceUpdate.ProtoReflect.Descriptor instead.
 func (*GasPriceUpdate) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{13}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GasPriceUpdate) GetPrice() *GasPrice {
@@ -728,7 +728,7 @@ type TokenPriceUpdateWithTxMeta struct {
 
 func (x *TokenPriceUpdateWithTxMeta) Reset() {
 	*x = TokenPriceUpdateWithTxMeta{}
-	mi := &file_priceregistry_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -740,7 +740,7 @@ func (x *TokenPriceUpdateWithTxMeta) String() string {
 func (*TokenPriceUpdateWithTxMeta) ProtoMessage() {}
 
 func (x *TokenPriceUpdateWithTxMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[14]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -753,7 +753,7 @@ func (x *TokenPriceUpdateWithTxMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenPriceUpdateWithTxMeta.ProtoReflect.Descriptor instead.
 func (*TokenPriceUpdateWithTxMeta) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{14}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *TokenPriceUpdateWithTxMeta) GetTokenPriceUpdate() *TokenPriceUpdate {
@@ -782,7 +782,7 @@ type TokenPriceUpdate struct {
 
 func (x *TokenPriceUpdate) Reset() {
 	*x = TokenPriceUpdate{}
-	mi := &file_priceregistry_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -794,7 +794,7 @@ func (x *TokenPriceUpdate) String() string {
 func (*TokenPriceUpdate) ProtoMessage() {}
 
 func (x *TokenPriceUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_priceregistry_proto_msgTypes[15]
+	mi := &file_loop_internal_pb_ccip_priceregistry_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -807,7 +807,7 @@ func (x *TokenPriceUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenPriceUpdate.ProtoReflect.Descriptor instead.
 func (*TokenPriceUpdate) Descriptor() ([]byte, []int) {
-	return file_priceregistry_proto_rawDescGZIP(), []int{15}
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *TokenPriceUpdate) GetPrice() *TokenPrice {
@@ -824,11 +824,11 @@ func (x *TokenPriceUpdate) GetUnixTimestamp() *pb.BigInt {
 	return nil
 }
 
-var File_priceregistry_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_priceregistry_proto protoreflect.FileDescriptor
 
-const file_priceregistry_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_priceregistry_proto_rawDesc = "" +
 	"\n" +
-	"\x13priceregistry.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\rrelayer.proto\x1a\fmodels.proto\"\x90\x01\n" +
+	")loop/internal/pb/ccip/priceregistry.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\"loop/internal/pb/ccip/models.proto\"\x90\x01\n" +
 	"'GetTokenPriceUpdatesCreatedAfterRequest\x12?\n" +
 	"\rcreated_after\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\fcreatedAfter\x12$\n" +
 	"\rconfirmations\x18\x02 \x01(\x04R\rconfirmations\"\x8d\x01\n" +
@@ -881,19 +881,19 @@ const file_priceregistry_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00BOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_priceregistry_proto_rawDescOnce sync.Once
-	file_priceregistry_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_priceregistry_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_priceregistry_proto_rawDescData []byte
 )
 
-func file_priceregistry_proto_rawDescGZIP() []byte {
-	file_priceregistry_proto_rawDescOnce.Do(func() {
-		file_priceregistry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_priceregistry_proto_rawDesc), len(file_priceregistry_proto_rawDesc)))
+func file_loop_internal_pb_ccip_priceregistry_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_priceregistry_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_priceregistry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_priceregistry_proto_rawDesc), len(file_loop_internal_pb_ccip_priceregistry_proto_rawDesc)))
 	})
-	return file_priceregistry_proto_rawDescData
+	return file_loop_internal_pb_ccip_priceregistry_proto_rawDescData
 }
 
-var file_priceregistry_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_priceregistry_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_priceregistry_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_loop_internal_pb_ccip_priceregistry_proto_goTypes = []any{
 	(*GetTokenPriceUpdatesCreatedAfterRequest)(nil),   // 0: loop.internal.pb.ccip.GetTokenPriceUpdatesCreatedAfterRequest
 	(*GetTokenPriceUpdatesCreatedAfterResponse)(nil),  // 1: loop.internal.pb.ccip.GetTokenPriceUpdatesCreatedAfterResponse
 	(*GetGasPriceUpdatesCreatedAfterRequest)(nil),     // 2: loop.internal.pb.ccip.GetGasPriceUpdatesCreatedAfterRequest
@@ -917,7 +917,7 @@ var file_priceregistry_proto_goTypes = []any{
 	(*TokenPrice)(nil),                                // 20: loop.internal.pb.ccip.TokenPrice
 	(*emptypb.Empty)(nil),                             // 21: google.protobuf.Empty
 }
-var file_priceregistry_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_priceregistry_proto_depIdxs = []int32{
 	16, // 0: loop.internal.pb.ccip.GetTokenPriceUpdatesCreatedAfterRequest.created_after:type_name -> google.protobuf.Timestamp
 	14, // 1: loop.internal.pb.ccip.GetTokenPriceUpdatesCreatedAfterResponse.token_price_updates:type_name -> loop.internal.pb.ccip.TokenPriceUpdateWithTxMeta
 	16, // 2: loop.internal.pb.ccip.GetGasPriceUpdatesCreatedAfterRequest.created_after:type_name -> google.protobuf.Timestamp
@@ -956,27 +956,27 @@ var file_priceregistry_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_priceregistry_proto_init() }
-func file_priceregistry_proto_init() {
-	if File_priceregistry_proto != nil {
+func init() { file_loop_internal_pb_ccip_priceregistry_proto_init() }
+func file_loop_internal_pb_ccip_priceregistry_proto_init() {
+	if File_loop_internal_pb_ccip_priceregistry_proto != nil {
 		return
 	}
-	file_models_proto_init()
+	file_loop_internal_pb_ccip_models_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_priceregistry_proto_rawDesc), len(file_priceregistry_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_priceregistry_proto_rawDesc), len(file_loop_internal_pb_ccip_priceregistry_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_priceregistry_proto_goTypes,
-		DependencyIndexes: file_priceregistry_proto_depIdxs,
-		MessageInfos:      file_priceregistry_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_priceregistry_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_priceregistry_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_ccip_priceregistry_proto_msgTypes,
 	}.Build()
-	File_priceregistry_proto = out.File
-	file_priceregistry_proto_goTypes = nil
-	file_priceregistry_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_priceregistry_proto = out.File
+	file_loop_internal_pb_ccip_priceregistry_proto_goTypes = nil
+	file_loop_internal_pb_ccip_priceregistry_proto_depIdxs = nil
 }

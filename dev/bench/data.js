@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747928573190,
+  "lastUpdate": 1747931547550,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14070,6 +14070,48 @@ window.BENCHMARK_DATA = {
             "value": 28255,
             "unit": "ns/op",
             "extra": "42450 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bb4679b11a8008b137753cc03a7fbacde624792b",
+          "message": "Add NoValue option to Gauge panel builders (#1207)",
+          "timestamp": "2025-05-22T18:31:01+02:00",
+          "tree_id": "639c7ab03e8435880ac9ff34930f4aeb51b0febb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bb4679b11a8008b137753cc03a7fbacde624792b"
+        },
+        "date": 1747931546003,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.4,
+            "unit": "ns/op",
+            "extra": "3403509 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.4,
+            "unit": "ns/op",
+            "extra": "2930274 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28534,
+            "unit": "ns/op",
+            "extra": "42712 times\n4 procs"
           }
         ]
       }

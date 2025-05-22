@@ -134,7 +134,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 		test := func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
 			drt := rt.(*sdkimpl.DonRuntime)
 			drt.Await = func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
-				return &pb.AwaitCapabilitiesResponse{Responses: map[string]*pb.CapabilityResponse{}}, nil
+				return &pb.AwaitCapabilitiesResponse{Responses: map[int32]*pb.CapabilityResponse{}}, nil
 			}
 			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 			return "", err

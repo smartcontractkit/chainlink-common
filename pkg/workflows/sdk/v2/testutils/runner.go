@@ -22,7 +22,6 @@ type runner[T any] struct {
 	result         any
 	err            error
 	workflowId     string
-	executionId    string
 	registry       *registry.Registry
 	strictTriggers bool
 	runtime        T
@@ -82,14 +81,13 @@ func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
 
 func newRunner[T any](tb testing.TB, config []byte, t T, base *sdkimpl.RuntimeBase) *runner[T] {
 	r := &runner[T]{
-		tb:          tb,
-		config:      config,
-		workflowId:  uuid.NewString(),
-		executionId: uuid.NewString(),
-		registry:    registry.GetRegistry(tb),
-		runtime:     t,
-		writer:      &testWriter{},
-		base:        base,
+		tb:         tb,
+		config:     config,
+		workflowId: uuid.NewString(),
+		registry:   registry.GetRegistry(tb),
+		runtime:    t,
+		writer:     &testWriter{},
+		base:       base,
 	}
 
 	return r
@@ -114,7 +112,6 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		request := &pb.TriggerSubscription{
-			ExecId:  r.executionId,
 			Id:      uuid.NewString(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),

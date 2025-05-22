@@ -6,9 +6,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/google/uuid"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -20,13 +18,12 @@ type runtimeInternalsTestHook struct {
 	testTb                testing.TB
 	awaitResponseOverride func() ([]byte, error)
 	callCapabilityErr     bool
-	executionId           string
-	outstandingCalls      map[string]sdk.Promise[*sdkpb.CapabilityResponse]
+	outstandingCalls      map[int32]sdk.Promise[*sdkpb.CapabilityResponse]
 }
 
 var _ runtimeInternals = (*runtimeInternalsTestHook)(nil)
 
-func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64 {
+func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int32) int64 {
 	if r.callCapabilityErr {
 		return -1
 	}
@@ -36,19 +33,16 @@ func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int
 	err := proto.Unmarshal(reqBuff, &request)
 	require.NoError(r.testTb, err)
 
-	assert.Equal(r.testTb, r.executionId, request.ExecutionId)
-
 	reg := registry.GetRegistry(r.testTb)
 	capability, err := reg.GetCapability(request.Id)
 	require.NoError(r.testTb, err)
 
-	callId := uuid.New()
 	respCh := make(chan *sdkpb.CapabilityResponse, 1)
 	go func() {
 		respCh <- capability.Invoke(r.testTb.Context(), &request)
 	}()
 
-	r.outstandingCalls[callId.String()] = sdk.NewBasicPromise(func() (*sdkpb.CapabilityResponse, error) {
+	r.outstandingCalls[request.CallbackId] = sdk.NewBasicPromise(func() (*sdkpb.CapabilityResponse, error) {
 		select {
 		case resp := <-respCh:
 			return resp, nil
@@ -56,9 +50,6 @@ func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int
 			return nil, r.testTb.Context().Err()
 		}
 	})
-
-	idBuffer := unsafe.Slice((*byte)(id), sdk.IdLen)
-	copy(idBuffer, callId.String())
 
 	return 0
 }
@@ -88,7 +79,7 @@ func (r *runtimeInternalsTestHook) awaitCapabilities(awaitRequest unsafe.Pointer
 		return readHostMessage(response, msg, true)
 	}
 
-	responsepb := &sdkpb.AwaitCapabilitiesResponse{Responses: map[string]*sdkpb.CapabilityResponse{}}
+	responsepb := &sdkpb.AwaitCapabilitiesResponse{Responses: map[int32]*sdkpb.CapabilityResponse{}}
 	for _, id := range requestpb.Ids {
 		promise := r.outstandingCalls[id]
 		result, err := promise.Await()

@@ -440,8 +440,9 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 
 type BarGaugePanelOptions struct {
 	*PanelOptions
-	ShowUnfilled bool
-	Orientation  common.VizOrientation
+	ShowUnfilled  bool
+	Orientation   common.VizOrientation
+	ShowAllValues bool
 }
 
 func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
@@ -457,7 +458,7 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 		Unit(options.Unit).
 		ReduceOptions(
 			common.NewReduceDataOptionsBuilder().
-				Calcs([]string{"lastNotNull"}).Values(false),
+				Calcs([]string{"lastNotNull"}).Values(options.ShowAllValues),
 		)
 
 	if options.Interval != "" {
@@ -515,6 +516,7 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 
 type GaugePanelOptions struct {
 	*PanelOptions
+	ShowAllValues bool
 }
 
 func NewGaugePanel(options *GaugePanelOptions) *Panel {
@@ -530,7 +532,7 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		Unit(options.Unit).
 		ReduceOptions(
 			common.NewReduceDataOptionsBuilder().
-				Calcs([]string{"lastNotNull"}).Values(false),
+				Calcs([]string{"lastNotNull"}).Values(options.ShowAllValues),
 		)
 
 	if options.Interval != "" {

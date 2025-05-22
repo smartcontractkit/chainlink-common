@@ -35,6 +35,14 @@ func TestWithRetry(t *testing.T) {
 			timeout:  100 * time.Millisecond,
 		},
 		{
+			name: "stops due to permanent error",
+			fn: func(ctx context.Context) (string, error) {
+				return "", Permanent(errors.New("permanent error"))
+			},
+			errMsg:  "permanent error",
+			timeout: 100 * time.Millisecond,
+		},
+		{
 			name: "always failing function",
 			fn: func(ctx context.Context) (string, error) {
 				return "", errors.New("permanent error")

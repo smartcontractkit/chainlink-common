@@ -86,8 +86,7 @@ type ModuleV2 interface {
 	ModuleBase
 
 	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
-	Execute(ctx context.Context, request *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error)
-	SetCapabilityExecutor(handler CapabilityExecutor) error
+	Execute(ctx context.Context, request *wasmpb.ExecuteRequest, handler CapabilityExecutor) (*wasmpb.ExecutionResult, error)
 }
 
 // Implemented by the Workflow Engine
@@ -102,10 +101,6 @@ type module struct {
 	wconfig *wasmtime.Config
 
 	cfg *ModuleConfig
-
-	// handler holds the workflow engine implementations for executing a capability
-	handlerLock sync.RWMutex
-	handler     CapabilityExecutor
 
 	wg     sync.WaitGroup
 	stopCh chan struct{}
@@ -359,32 +354,24 @@ func (m *module) IsLegacyDAG() bool {
 	return m.v2ImportName == ""
 }
 
-func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest) (*wasmpb.ExecutionResult, error) {
+func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, executor CapabilityExecutor) (*wasmpb.ExecutionResult, error) {
 	if m.IsLegacyDAG() {
 		return nil, errors.New("cannot execute a legacy dag workflow")
+	}
+
+	if executor == nil {
+		return nil, fmt.Errorf("invalid capability executor: can't be nil")
 	}
 
 	if req == nil {
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
-	switch req.GetRequest().(type) {
-	// cannot execute a trigger without the handler set
-	case *wasmpb.ExecuteRequest_Trigger:
-		m.handlerLock.RLock()
-		defer m.handlerLock.RUnlock()
-		if m.handler == nil {
-			return nil, fmt.Errorf("invalid handler (%T): call capability handler is not set", m.handler)
-		}
-	default:
-		// continue
-	}
-
 	setMaxResponseSize := func(r *wasmpb.ExecuteRequest, maxSize uint64) {
 		r.MaxResponseSize = maxSize
 	}
 
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG)
+	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor)
 }
 
 // Run is deprecated, use execute instead
@@ -410,7 +397,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		}
 	}
 
-	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG)
+	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil)
 }
 
 func instantiate(m *module, linker *wasmtime.Linker, store *wasmtime.Store) (*wasmtime.Instance, error) {
@@ -433,7 +420,8 @@ func runWasm[I, O proto.Message](
 	m *module,
 	request I,
 	setMaxResponseSize func(i I, maxSize uint64),
-	linkWasm linkFn[O]) (O, error) {
+	linkWasm linkFn[O],
+	executor CapabilityExecutor) (O, error) {
 
 	var o O
 
@@ -483,7 +471,9 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		module:              m,
+		executor:            executor,
 	}
+
 	instance, err := linkWasm(m, store, exec)
 	if err != nil {
 		return o, fmt.Errorf("error linking wasm: %w", err)
@@ -518,19 +508,6 @@ func runWasm[I, O proto.Message](
 	default:
 		return o, err
 	}
-}
-
-func (m *module) SetCapabilityExecutor(handler CapabilityExecutor) error {
-	m.handlerLock.Lock()
-	defer m.handlerLock.Unlock()
-
-	if handler == nil {
-		return fmt.Errorf("invalid handler (%T): cannot set nil call capability handler", handler)
-	}
-
-	m.handler = handler
-
-	return nil
 }
 
 func containsCode(err error, code int) bool {

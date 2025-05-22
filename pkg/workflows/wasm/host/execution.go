@@ -16,6 +16,7 @@ type execution[T any] struct {
 	lock                     sync.RWMutex
 	module                   *module
 	internalToExternalCallId map[int32]string
+	executor                 CapabilityExecutor
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -28,7 +29,7 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	e.capabilityResponses[req.CallbackId] = ch
 
 	go func() {
-		resp, err := e.module.handler.CallCapability(ctx, req)
+		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
 			resp = &sdkpb.CapabilityResponse{

@@ -47,9 +47,9 @@ func Test_NoDag_Run(t *testing.T) {
 			Request: &wasmpb.ExecuteRequest_Trigger{},
 		}
 
-		_, err = m.Execute(ctx, req)
+		_, err = m.Execute(ctx, req, nil)
 		require.Error(t, err)
-		require.ErrorContains(t, err, "invalid handler")
+		require.ErrorContains(t, err, "invalid capability executor")
 	})
 
 	t.Run("OK can subscribe without setting CapabilityExecutor", func(t *testing.T) {
@@ -60,9 +60,7 @@ func Test_NoDag_Run(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		ctx := t.Context()
-
-		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
 		require.Equal(t, len(triggers.Subscriptions), 1)
 	})
@@ -106,8 +104,6 @@ func Test_NoDag_Run(t *testing.T) {
 				Once()
 		}
 
-		require.NoError(t, m.SetCapabilityExecutor(mockCapExecutor))
-
 		// When a TriggerEvent occurs, Engine calls Execute with that Event.
 		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
 		wrapped, err := anypb.New(trigger)
@@ -122,7 +118,7 @@ func Test_NoDag_Run(t *testing.T) {
 			},
 		}
 
-		response, err := m.Execute(ctx, req)
+		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
 
 		switch output := response.Result.(type) {
@@ -147,14 +143,13 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	binary := createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
 
 	t.Run("OK subscribe to triggers with identical capability IDs", func(t *testing.T) {
-		ctx := t.Context()
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
 
 		m.Start()
 		defer m.Close()
 
-		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
 
 		expectedConfigs := []*basictrigger.Config{
@@ -219,8 +214,6 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 				Once()
 		}
 
-		require.NoError(t, m.SetCapabilityExecutor(mockCapExecutor))
-
 		// When a TriggerEvent occurs, Engine calls Execute with that Event.
 		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
 		wrapped, err := anypb.New(trigger)
@@ -234,7 +227,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 				},
 			},
 		}
-		response, err := m.Execute(ctx, req)
+		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
 
 		switch output := response.Result.(type) {
@@ -258,11 +251,11 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	}
 }
 
-func getTriggersSpec(ctx context.Context, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
-	execResult, err := m.Execute(ctx, &wasmpb.ExecuteRequest{
+func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
+	execResult, err := m.Execute(t.Context(), &wasmpb.ExecuteRequest{
 		Config:  config,
 		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
-	})
+	}, NewMockCapabilityExecutor(t))
 
 	if err != nil {
 		return nil, err

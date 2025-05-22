@@ -595,7 +595,7 @@ func Test_CallAwaitRace(t *testing.T) {
 		CallCapability(matches.AnyContext, mock.Anything).
 		Return(&sdkpb.CapabilityResponse{}, nil)
 
-	m := &module{handler: mockCapExec}
+	m := &module{}
 
 	var wg sync.WaitGroup
 	var wantAttempts = 100
@@ -604,6 +604,7 @@ func Test_CallAwaitRace(t *testing.T) {
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		ctx:                 t.Context(),
+		executor:            mockCapExec,
 	}
 
 	wg.Add(wantAttempts)

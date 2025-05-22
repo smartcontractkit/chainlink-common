@@ -56,9 +56,9 @@ func (_c *ModuleV2_Close_Call) RunAndReturn(run func()) *ModuleV2_Close_Call {
 	return _c
 }
 
-// Execute provides a mock function with given fields: ctx, request
-func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest) (*pb.ExecutionResult, error) {
-	ret := _m.Called(ctx, request)
+// Execute provides a mock function with given fields: ctx, request, handler
+func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest, handler host.CapabilityExecutor) (*pb.ExecutionResult, error) {
+	ret := _m.Called(ctx, request, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -66,19 +66,19 @@ func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest) (*p
 
 	var r0 *pb.ExecutionResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest) (*pb.ExecutionResult, error)); ok {
-		return rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) (*pb.ExecutionResult, error)); ok {
+		return rf(ctx, request, handler)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest) *pb.ExecutionResult); ok {
-		r0 = rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) *pb.ExecutionResult); ok {
+		r0 = rf(ctx, request, handler)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*pb.ExecutionResult)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *pb.ExecuteRequest) error); ok {
-		r1 = rf(ctx, request)
+	if rf, ok := ret.Get(1).(func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) error); ok {
+		r1 = rf(ctx, request, handler)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -94,13 +94,14 @@ type ModuleV2_Execute_Call struct {
 // Execute is a helper method to define mock.On call
 //   - ctx context.Context
 //   - request *pb.ExecuteRequest
-func (_e *ModuleV2_Expecter) Execute(ctx interface{}, request interface{}) *ModuleV2_Execute_Call {
-	return &ModuleV2_Execute_Call{Call: _e.mock.On("Execute", ctx, request)}
+//   - handler host.CapabilityExecutor
+func (_e *ModuleV2_Expecter) Execute(ctx interface{}, request interface{}, handler interface{}) *ModuleV2_Execute_Call {
+	return &ModuleV2_Execute_Call{Call: _e.mock.On("Execute", ctx, request, handler)}
 }
 
-func (_c *ModuleV2_Execute_Call) Run(run func(ctx context.Context, request *pb.ExecuteRequest)) *ModuleV2_Execute_Call {
+func (_c *ModuleV2_Execute_Call) Run(run func(ctx context.Context, request *pb.ExecuteRequest, handler host.CapabilityExecutor)) *ModuleV2_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*pb.ExecuteRequest))
+		run(args[0].(context.Context), args[1].(*pb.ExecuteRequest), args[2].(host.CapabilityExecutor))
 	})
 	return _c
 }
@@ -110,7 +111,7 @@ func (_c *ModuleV2_Execute_Call) Return(_a0 *pb.ExecutionResult, _a1 error) *Mod
 	return _c
 }
 
-func (_c *ModuleV2_Execute_Call) RunAndReturn(run func(context.Context, *pb.ExecuteRequest) (*pb.ExecutionResult, error)) *ModuleV2_Execute_Call {
+func (_c *ModuleV2_Execute_Call) RunAndReturn(run func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) (*pb.ExecutionResult, error)) *ModuleV2_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -156,52 +157,6 @@ func (_c *ModuleV2_IsLegacyDAG_Call) Return(_a0 bool) *ModuleV2_IsLegacyDAG_Call
 }
 
 func (_c *ModuleV2_IsLegacyDAG_Call) RunAndReturn(run func() bool) *ModuleV2_IsLegacyDAG_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// SetCapabilityExecutor provides a mock function with given fields: handler
-func (_m *ModuleV2) SetCapabilityExecutor(handler host.CapabilityExecutor) error {
-	ret := _m.Called(handler)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SetCapabilityExecutor")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(host.CapabilityExecutor) error); ok {
-		r0 = rf(handler)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ModuleV2_SetCapabilityExecutor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetCapabilityExecutor'
-type ModuleV2_SetCapabilityExecutor_Call struct {
-	*mock.Call
-}
-
-// SetCapabilityExecutor is a helper method to define mock.On call
-//   - handler host.CapabilityExecutor
-func (_e *ModuleV2_Expecter) SetCapabilityExecutor(handler interface{}) *ModuleV2_SetCapabilityExecutor_Call {
-	return &ModuleV2_SetCapabilityExecutor_Call{Call: _e.mock.On("SetCapabilityExecutor", handler)}
-}
-
-func (_c *ModuleV2_SetCapabilityExecutor_Call) Run(run func(handler host.CapabilityExecutor)) *ModuleV2_SetCapabilityExecutor_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(host.CapabilityExecutor))
-	})
-	return _c
-}
-
-func (_c *ModuleV2_SetCapabilityExecutor_Call) Return(_a0 error) *ModuleV2_SetCapabilityExecutor_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ModuleV2_SetCapabilityExecutor_Call) RunAndReturn(run func(host.CapabilityExecutor) error) *ModuleV2_SetCapabilityExecutor_Call {
 	_c.Call.Return(run)
 	return _c
 }

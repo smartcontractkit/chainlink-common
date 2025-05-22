@@ -9,14 +9,13 @@ import (
 )
 
 type execution[T any] struct {
-	fetchRequestsCounter     int
-	response                 T
-	ctx                      context.Context
-	capabilityResponses      map[int32]<-chan *sdkpb.CapabilityResponse
-	lock                     sync.RWMutex
-	module                   *module
-	internalToExternalCallId map[int32]string
-	executor                 CapabilityExecutor
+	fetchRequestsCounter int
+	response             T
+	ctx                  context.Context
+	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
+	lock                 sync.RWMutex
+	module               *module
+	executor             CapabilityExecutor
 }
 
 // callCapAsync async calls a capability by placing execution results onto a

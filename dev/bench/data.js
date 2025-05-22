@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747931547550,
+  "lastUpdate": 1747934963454,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14112,6 +14112,48 @@ window.BENCHMARK_DATA = {
             "value": 28534,
             "unit": "ns/op",
             "extra": "42712 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ac137199b9949f60c9707fab9fc6c1e01423d27",
+          "message": "Billing: Use GRPC NewClient (#1204)\n\n* Billing: Use GRPC NewClient\n\nTo avoid a blocking GRPC billing client constructor, avoid using the deprecated `Dial` function\nin favor of the `NewClient` constructor. This bakes-in reconnects.\n\n* fix tests",
+          "timestamp": "2025-05-22T12:28:03-05:00",
+          "tree_id": "5116c54ccb7b27b17b44b4f76db74513962b31a3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9ac137199b9949f60c9707fab9fc6c1e01423d27"
+        },
+        "date": 1747934962452,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3385381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.6,
+            "unit": "ns/op",
+            "extra": "2844160 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28187,
+            "unit": "ns/op",
+            "extra": "42632 times\n4 procs"
           }
         ]
       }

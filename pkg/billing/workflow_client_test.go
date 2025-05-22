@@ -18,8 +18,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 )
 
 // ---------- Test Server Implementation ----------
@@ -162,15 +162,20 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	defer grpcServer.Stop()
 
 	addr := lis.Addr().String()
-
 	lggr := logger.Test(t)
+
 	wc, err := NewWorkflowClient(addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
 		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, wc)
+
+	_, err = wc.ConsumeCredits(t.Context(), nil)
+
 	require.Error(t, err)
-	assert.Nil(t, wc)
 }
 
 // Test that CanonicalStringFromRequest returns the correct string.
@@ -275,11 +280,17 @@ func TestWorkflowClient_CustomAuthHeader(t *testing.T) {
 // Test that NewWorkflowClient fails when given an invalid address.
 func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 	lggr := logger.Test(t)
-	_, err := NewWorkflowClient("invalid-address",
+	wc, err := NewWorkflowClient("invalid-address",
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
 		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
+
+	require.NotNil(t, wc)
+	require.NoError(t, err)
+
+	_, err = wc.ConsumeCredits(t.Context(), nil)
+
 	require.Error(t, err, "Expected error when dialing an invalid address")
 }
 
@@ -337,10 +348,16 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 func TestWorkflowClient_DialUnreachable(t *testing.T) {
 	lggr := logger.Test(t)
 	unreachableAddr := "192.0.2.1:12345" // Reserved for documentation.
-	_, err := NewWorkflowClient(unreachableAddr,
+	wc, err := NewWorkflowClient(unreachableAddr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
 		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
+
+	require.NotNil(t, wc)
+	require.NoError(t, err)
+
+	_, err = wc.ConsumeCredits(t.Context(), nil)
+
 	require.Error(t, err, "Expected dialing an unreachable address to fail")
 }

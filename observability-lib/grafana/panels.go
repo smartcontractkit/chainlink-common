@@ -454,6 +454,7 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 		Description(options.Description).
 		Transparent(options.Transparent).
 		Span(options.Span).
+		NoValue(options.NoValue).
 		Height(options.Height).
 		Unit(options.Unit).
 		ReduceOptions(
@@ -528,6 +529,7 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		Description(options.Description).
 		Transparent(options.Transparent).
 		Span(options.Span).
+		NoValue(options.NoValue).
 		Height(options.Height).
 		Unit(options.Unit).
 		ReduceOptions(

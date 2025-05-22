@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747916756060,
+  "lastUpdate": 1747928573190,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14028,6 +14028,48 @@ window.BENCHMARK_DATA = {
             "value": 28149,
             "unit": "ns/op",
             "extra": "42670 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "108959691+amit-momin@users.noreply.github.com",
+            "name": "amit-momin",
+            "username": "amit-momin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "da3dec84d2cd2cafd36f9253a43f702f37efdf27",
+          "message": "Fixed typo (#1203)",
+          "timestamp": "2025-05-22T10:41:27-05:00",
+          "tree_id": "7aa1b256c7cbb584b69f408d4a322c6ba522bbac",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/da3dec84d2cd2cafd36f9253a43f702f37efdf27"
+        },
+        "date": 1747928571685,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.5,
+            "unit": "ns/op",
+            "extra": "3408226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.3,
+            "unit": "ns/op",
+            "extra": "2941088 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28255,
+            "unit": "ns/op",
+            "extra": "42450 times\n4 procs"
           }
         ]
       }

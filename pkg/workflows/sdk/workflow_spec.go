@@ -1,6 +1,9 @@
 package sdk
 
-import "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+import (
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	v2 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
+)
 
 type StepInputs struct {
 	OutputRef string
@@ -17,6 +20,7 @@ type StepDefinition struct {
 	Config map[string]any
 
 	CapabilityType capabilities.CapabilityType
+	MaxSpends      []v2.SpendLimits // Optional max spend limits for this step
 }
 
 type WorkflowSpec struct {
@@ -26,6 +30,7 @@ type WorkflowSpec struct {
 	Actions   []StepDefinition
 	Consensus []StepDefinition
 	Targets   []StepDefinition
+	MaxSpends []v2.SpendLimits // Optional max spend limits for the entire workflow
 }
 
 func (w *WorkflowSpec) Steps() []StepDefinition {

@@ -9,6 +9,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
+// RuntimeBase is not thread safe and must not be used concurrently.
 type RuntimeBase interface {
 	// CallCapability is meant to be called by generated code
 	CallCapability(request *pb.CapabilityRequest) Promise[*pb.CapabilityResponse]
@@ -16,11 +17,13 @@ type RuntimeBase interface {
 	LogWriter() io.Writer
 }
 
+// NodeRuntime is not thread safe and must not be used concurrently.
 type NodeRuntime interface {
 	RuntimeBase
 	IsNodeRuntime()
 }
 
+// DonRuntime is not thread safe and must not be used concurrently.
 type DonRuntime interface {
 	RuntimeBase
 

@@ -206,6 +206,58 @@ func (x *DonIDReply) GetDonId() string {
 	return ""
 }
 
+type AddHandlerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Methods       []string               `protobuf:"bytes,1,rep,name=methods,proto3" json:"methods,omitempty"`
+	HandlerId     uint32                 `protobuf:"varint,2,opt,name=handler_id,json=handlerId,proto3" json:"handler_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddHandlerRequest) Reset() {
+	*x = AddHandlerRequest{}
+	mi := &file_gateway_connector_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddHandlerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddHandlerRequest) ProtoMessage() {}
+
+func (x *AddHandlerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_connector_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddHandlerRequest.ProtoReflect.Descriptor instead.
+func (*AddHandlerRequest) Descriptor() ([]byte, []int) {
+	return file_gateway_connector_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AddHandlerRequest) GetMethods() []string {
+	if x != nil {
+		return x.Methods
+	}
+	return nil
+}
+
+func (x *AddHandlerRequest) GetHandlerId() uint32 {
+	if x != nil {
+		return x.HandlerId
+	}
+	return 0
+}
+
 var File_gateway_connector_proto protoreflect.FileDescriptor
 
 const file_gateway_connector_proto_rawDesc = "" +
@@ -223,8 +275,14 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"gatewayIds\"#\n" +
 	"\n" +
 	"DonIDReply\x12\x15\n" +
-	"\x06don_id\x18\x01 \x01(\tR\x05donId2\xd9\x02\n" +
-	"\x10GatewayConnector\x12A\n" +
+	"\x06don_id\x18\x01 \x01(\tR\x05donId\"L\n" +
+	"\x11AddHandlerRequest\x12\x18\n" +
+	"\amethods\x18\x01 \x03(\tR\amethods\x12\x1d\n" +
+	"\n" +
+	"handler_id\x18\x02 \x01(\rR\thandlerId2\x98\x03\n" +
+	"\x10GatewayConnector\x12=\n" +
+	"\n" +
+	"AddHandler\x12\x17.loop.AddHandlerRequest\x1a\x16.google.protobuf.Empty\x12A\n" +
 	"\rSendToGateway\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.Empty\x12O\n" +
 	"\x14SignAndSendToGateway\x12\x1f.loop.SignAndSendMessageRequest\x1a\x16.google.protobuf.Empty\x12;\n" +
 	"\n" +
@@ -244,30 +302,33 @@ func file_gateway_connector_proto_rawDescGZIP() []byte {
 	return file_gateway_connector_proto_rawDescData
 }
 
-var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_gateway_connector_proto_goTypes = []any{
 	(*GatewayIDRequest)(nil),          // 0: loop.GatewayIDRequest
 	(*SignAndSendMessageRequest)(nil), // 1: loop.SignAndSendMessageRequest
 	(*GatewayIDsReply)(nil),           // 2: loop.GatewayIDsReply
 	(*DonIDReply)(nil),                // 3: loop.DonIDReply
-	(*MessageBody)(nil),               // 4: loop.MessageBody
-	(*SendMessageRequest)(nil),        // 5: loop.SendMessageRequest
-	(*emptypb.Empty)(nil),             // 6: google.protobuf.Empty
+	(*AddHandlerRequest)(nil),         // 4: loop.AddHandlerRequest
+	(*MessageBody)(nil),               // 5: loop.MessageBody
+	(*SendMessageRequest)(nil),        // 6: loop.SendMessageRequest
+	(*emptypb.Empty)(nil),             // 7: google.protobuf.Empty
 }
 var file_gateway_connector_proto_depIdxs = []int32{
-	4, // 0: loop.SignAndSendMessageRequest.body:type_name -> loop.MessageBody
-	5, // 1: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
-	1, // 2: loop.GatewayConnector.SignAndSendToGateway:input_type -> loop.SignAndSendMessageRequest
-	6, // 3: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
-	6, // 4: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
-	0, // 5: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
-	6, // 6: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
-	6, // 7: loop.GatewayConnector.SignAndSendToGateway:output_type -> google.protobuf.Empty
-	2, // 8: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
-	3, // 9: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
-	6, // 10: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
+	5, // 0: loop.SignAndSendMessageRequest.body:type_name -> loop.MessageBody
+	4, // 1: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
+	6, // 2: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
+	1, // 3: loop.GatewayConnector.SignAndSendToGateway:input_type -> loop.SignAndSendMessageRequest
+	7, // 4: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
+	7, // 5: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
+	0, // 6: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
+	7, // 7: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
+	7, // 8: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
+	7, // 9: loop.GatewayConnector.SignAndSendToGateway:output_type -> google.protobuf.Empty
+	2, // 10: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
+	3, // 11: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
+	7, // 12: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
+	7, // [7:13] is the sub-list for method output_type
+	1, // [1:7] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -285,7 +346,7 @@ func file_gateway_connector_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gateway_connector_proto_rawDesc), len(file_gateway_connector_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

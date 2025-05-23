@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	GatewayConnector_AddHandler_FullMethodName           = "/loop.GatewayConnector/AddHandler"
 	GatewayConnector_SendToGateway_FullMethodName        = "/loop.GatewayConnector/SendToGateway"
 	GatewayConnector_SignAndSendToGateway_FullMethodName = "/loop.GatewayConnector/SignAndSendToGateway"
 	GatewayConnector_GatewayIDs_FullMethodName           = "/loop.GatewayConnector/GatewayIDs"
@@ -31,6 +32,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GatewayConnectorClient interface {
+	AddHandler(ctx context.Context, in *AddHandlerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SendToGateway(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SignAndSendToGateway(ctx context.Context, in *SignAndSendMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GatewayIDs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayIDsReply, error)
@@ -44,6 +46,16 @@ type gatewayConnectorClient struct {
 
 func NewGatewayConnectorClient(cc grpc.ClientConnInterface) GatewayConnectorClient {
 	return &gatewayConnectorClient{cc}
+}
+
+func (c *gatewayConnectorClient) AddHandler(ctx context.Context, in *AddHandlerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, GatewayConnector_AddHandler_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gatewayConnectorClient) SendToGateway(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -100,6 +112,7 @@ func (c *gatewayConnectorClient) AwaitConnection(ctx context.Context, in *Gatewa
 // All implementations must embed UnimplementedGatewayConnectorServer
 // for forward compatibility.
 type GatewayConnectorServer interface {
+	AddHandler(context.Context, *AddHandlerRequest) (*emptypb.Empty, error)
 	SendToGateway(context.Context, *SendMessageRequest) (*emptypb.Empty, error)
 	SignAndSendToGateway(context.Context, *SignAndSendMessageRequest) (*emptypb.Empty, error)
 	GatewayIDs(context.Context, *emptypb.Empty) (*GatewayIDsReply, error)
@@ -115,6 +128,9 @@ type GatewayConnectorServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGatewayConnectorServer struct{}
 
+func (UnimplementedGatewayConnectorServer) AddHandler(context.Context, *AddHandlerRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddHandler not implemented")
+}
 func (UnimplementedGatewayConnectorServer) SendToGateway(context.Context, *SendMessageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendToGateway not implemented")
 }
@@ -149,6 +165,24 @@ func RegisterGatewayConnectorServer(s grpc.ServiceRegistrar, srv GatewayConnecto
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&GatewayConnector_ServiceDesc, srv)
+}
+
+func _GatewayConnector_AddHandler_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddHandlerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GatewayConnectorServer).AddHandler(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GatewayConnector_AddHandler_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GatewayConnectorServer).AddHandler(ctx, req.(*AddHandlerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GatewayConnector_SendToGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -248,6 +282,10 @@ var GatewayConnector_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.GatewayConnector",
 	HandlerType: (*GatewayConnectorServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AddHandler",
+			Handler:    _GatewayConnector_AddHandler_Handler,
+		},
 		{
 			MethodName: "SendToGateway",
 			Handler:    _GatewayConnector_SendToGateway_Handler,

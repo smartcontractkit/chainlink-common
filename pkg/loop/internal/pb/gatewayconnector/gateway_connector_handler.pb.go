@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -21,29 +22,92 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GatewayConnectorHandlerInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewayConnectorHandlerInfo) Reset() {
+	*x = GatewayConnectorHandlerInfo{}
+	mi := &file_gateway_connector_handler_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewayConnectorHandlerInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewayConnectorHandlerInfo) ProtoMessage() {}
+
+func (x *GatewayConnectorHandlerInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_connector_handler_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewayConnectorHandlerInfo.ProtoReflect.Descriptor instead.
+func (*GatewayConnectorHandlerInfo) Descriptor() ([]byte, []int) {
+	return file_gateway_connector_handler_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GatewayConnectorHandlerInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 var File_gateway_connector_handler_proto protoreflect.FileDescriptor
 
 const file_gateway_connector_handler_proto_rawDesc = "" +
 	"\n" +
-	"\x1fgateway_connector_handler.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14gateway_common.proto2\xd5\x01\n" +
+	"\x1fgateway_connector_handler.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14gateway_common.proto\"-\n" +
+	"\x1bGatewayConnectorHandlerInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id2\x98\x02\n" +
 	"\x17GatewayConnectorHandler\x127\n" +
 	"\x05Start\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x127\n" +
-	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12H\n" +
+	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12A\n" +
+	"\x04Info\x12\x16.google.protobuf.Empty\x1a!.loop.GatewayConnectorHandlerInfo\x12H\n" +
 	"\x14HandleGatewayMessage\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnectorb\x06proto3"
 
+var (
+	file_gateway_connector_handler_proto_rawDescOnce sync.Once
+	file_gateway_connector_handler_proto_rawDescData []byte
+)
+
+func file_gateway_connector_handler_proto_rawDescGZIP() []byte {
+	file_gateway_connector_handler_proto_rawDescOnce.Do(func() {
+		file_gateway_connector_handler_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_gateway_connector_handler_proto_rawDesc), len(file_gateway_connector_handler_proto_rawDesc)))
+	})
+	return file_gateway_connector_handler_proto_rawDescData
+}
+
+var file_gateway_connector_handler_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_gateway_connector_handler_proto_goTypes = []any{
-	(*emptypb.Empty)(nil),      // 0: google.protobuf.Empty
-	(*SendMessageRequest)(nil), // 1: loop.SendMessageRequest
+	(*GatewayConnectorHandlerInfo)(nil), // 0: loop.GatewayConnectorHandlerInfo
+	(*emptypb.Empty)(nil),               // 1: google.protobuf.Empty
+	(*SendMessageRequest)(nil),          // 2: loop.SendMessageRequest
 }
 var file_gateway_connector_handler_proto_depIdxs = []int32{
-	0, // 0: loop.GatewayConnectorHandler.Start:input_type -> google.protobuf.Empty
-	0, // 1: loop.GatewayConnectorHandler.Close:input_type -> google.protobuf.Empty
-	1, // 2: loop.GatewayConnectorHandler.HandleGatewayMessage:input_type -> loop.SendMessageRequest
-	0, // 3: loop.GatewayConnectorHandler.Start:output_type -> google.protobuf.Empty
-	0, // 4: loop.GatewayConnectorHandler.Close:output_type -> google.protobuf.Empty
-	0, // 5: loop.GatewayConnectorHandler.HandleGatewayMessage:output_type -> google.protobuf.Empty
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	1, // 0: loop.GatewayConnectorHandler.Start:input_type -> google.protobuf.Empty
+	1, // 1: loop.GatewayConnectorHandler.Close:input_type -> google.protobuf.Empty
+	1, // 2: loop.GatewayConnectorHandler.Info:input_type -> google.protobuf.Empty
+	2, // 3: loop.GatewayConnectorHandler.HandleGatewayMessage:input_type -> loop.SendMessageRequest
+	1, // 4: loop.GatewayConnectorHandler.Start:output_type -> google.protobuf.Empty
+	1, // 5: loop.GatewayConnectorHandler.Close:output_type -> google.protobuf.Empty
+	0, // 6: loop.GatewayConnectorHandler.Info:output_type -> loop.GatewayConnectorHandlerInfo
+	1, // 7: loop.GatewayConnectorHandler.HandleGatewayMessage:output_type -> google.protobuf.Empty
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -61,12 +125,13 @@ func file_gateway_connector_handler_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gateway_connector_handler_proto_rawDesc), len(file_gateway_connector_handler_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_gateway_connector_handler_proto_goTypes,
 		DependencyIndexes: file_gateway_connector_handler_proto_depIdxs,
+		MessageInfos:      file_gateway_connector_handler_proto_msgTypes,
 	}.Build()
 	File_gateway_connector_handler_proto = out.File
 	file_gateway_connector_handler_proto_goTypes = nil

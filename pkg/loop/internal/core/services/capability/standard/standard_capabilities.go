@@ -12,7 +12,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/gatewayconnector"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/gateway"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oraclefactory"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
@@ -134,7 +134,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	resources = append(resources, oracleFactoryRes)
 
 	gatewayConnectorID, gatewayConnectorRes, err := c.ServeNew("GatewayConnector", func(s *grpc.Server) {
-		gatewayconnectorpb.RegisterGatewayConnectorServer(s, gatewayconnector.NewServer(gatewayConnector))
+		gatewayconnectorpb.RegisterGatewayConnectorServer(s, gateway.NewGatewayConnectorServer(c.BrokerExt, gatewayConnector))
 	})
 	if err != nil {
 		c.CloseAll(resources...)
@@ -285,7 +285,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		return nil, net.ErrConnDial{Name: "GatewayConnector", ID: request.GatewayConnectorId, Err: err}
 	}
 	resources = append(resources, net.Resource{Closer: gatewayConnectorConn, Name: "GatewayConnector"})
-	gatewayConnector := gatewayconnector.NewClient(gatewayConnectorConn)
+	gatewayConnector := gateway.NewGatewayConnectorClient(gatewayConnectorConn, s.BrokerExt)
 
 	if err = s.impl.Initialise(ctx, request.Config, telemetry, keyValueStore, capabilitiesRegistry, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
 		s.CloseAll(resources...)

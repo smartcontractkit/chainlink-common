@@ -285,7 +285,22 @@ plugins:
 		t.Fatalf("Failed to write test file: %v", writeErr2)
 	}
 
-	// Process both files
+	// Create third config file with local installPath and different ldflags
+	file3Content := `
+defaults:
+  goflags: "-custom-flag-for-local-path -X github.com/smartcontractkit/chainlink/v2/core/static.Build=test3"
+plugins:
+  test3:
+    - moduleURI: "github.com/test/module3"
+      gitRef: "v1.0.0"
+      installPath: "./cmd/localtest" # Explicitly local path
+`
+	file3Path := filepath.Join(tempDir, "config3.yaml")
+	if writeErr3 := os.WriteFile(file3Path, []byte(file3Content), 0600); writeErr3 != nil {
+		t.Fatalf("Failed to write test file: %v", writeErr3)
+	}
+
+	// Process all files
 	tasks1, err := processConfigFile(file1Path, false)
 	if err != nil {
 		t.Fatalf("Failed to process first config file: %v", err)
@@ -296,8 +311,14 @@ plugins:
 		t.Fatalf("Failed to process second config file: %v", err)
 	}
 
+	tasks3, err := processConfigFile(file3Path, false)
+	if err != nil {
+		t.Fatalf("Failed to process third config file: %v", err)
+	}
+
 	// Combine tasks
 	allTasks := append(tasks1, tasks2...)
+	allTasks = append(allTasks, tasks3...)
 
 	// Verify each task has the correct defaults from its source file
 	for _, task := range allTasks {
@@ -312,6 +333,11 @@ plugins:
 			if task.Defaults.GoFlags != expectedFlags {
 				t.Errorf("test2 plugin has incorrect goflags: %s, expected: %s", task.Defaults.GoFlags, expectedFlags)
 			}
+		case "test3":
+			expectedFlags := "-custom-flag-for-local-path -X github.com/smartcontractkit/chainlink/v2/core/static.Build=test3"
+			if task.Defaults.GoFlags != expectedFlags {
+				t.Errorf("test3 plugin has incorrect goflags: %s, expected: %s", task.Defaults.GoFlags, expectedFlags)
+			}
 		default:
 			t.Errorf("Unexpected plugin type: %s", task.PluginType)
 		}
@@ -320,16 +346,24 @@ plugins:
 	originalExecCommand := execCommand
 	defer func() { execCommand = originalExecCommand }()
 
+	// Define a struct to hold command call information
+	type commandCallInfo struct {
+		Args []string
+		Dir  string
+	}
+
 	// Mock execCommand to avoid actual command execution and provide proper JSON output
-	execCommandCalls := []string{}
+	execCommandCalls := []commandCallInfo{}
 	execCommand = func(cmd *exec.Cmd) error {
-		cmdStr := strings.Join(cmd.Args, " ")
-		execCommandCalls = append(execCommandCalls, cmdStr)
+		// Store args and dir for later verification
+		execCommandCalls = append(execCommandCalls, commandCallInfo{Args: cmd.Args, Dir: cmd.Dir})
 
 		// For the go mod download -json commands, we need to provide valid JSON output
-		if strings.Contains(cmdStr, "go mod download -json") {
+		// Reconstruct cmdStr here if needed for this specific check, or pass cmd.Args directly
+		cmdStrForModDownload := strings.Join(cmd.Args, " ")
+		if strings.Contains(cmdStrForModDownload, "go mod download -json") {
 			// Extract module path to use in the mocked directory path
-			parts := strings.Split(cmdStr, " ")
+			parts := strings.Split(cmdStrForModDownload, " ")
 			modulePath := parts[len(parts)-1]
 
 			// Create a fake module directory based on the module name
@@ -361,14 +395,26 @@ plugins:
 	// Verify commands were called with the correct flags - looking for the complex flag values
 	foundTest1 := false
 	foundTest2 := false
-	for _, cmdStr := range execCommandCalls {
-		if strings.Contains(cmdStr, "github.com/test/module1") &&
-			strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0") {
-			foundTest1 = true
-		}
-		if strings.Contains(cmdStr, "github.com/test/module2") &&
-			strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef") {
-			foundTest2 = true
+	foundTest3 := false
+	for _, call := range execCommandCalls {
+		cmdStr := strings.Join(call.Args, " ")
+		// Check for the install command specifically
+		if strings.Contains(cmdStr, "go install") {
+			if strings.Contains(call.Dir, "github.com/test/module1") && // Check against cmd.Dir
+				strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Version=1.0.0") &&
+				strings.Contains(cmdStr, " ./cmd/test") { // Corrected to expect relative path
+				foundTest1 = true
+			}
+			if strings.Contains(call.Dir, "github.com/test/module2") && // Check against cmd.Dir
+				strings.Contains(cmdStr, "-ldflags=-s -X github.com/smartcontractkit/chainlink/v2/core/static.Sha=abcdef") &&
+				strings.Contains(cmdStr, " ./cmd/test") { // Corrected to expect relative path
+				foundTest2 = true
+			}
+			if strings.Contains(call.Dir, "github.com/test/module3") && // Check against cmd.Dir for module3
+				strings.Contains(cmdStr, "-custom-flag-for-local-path -X github.com/smartcontractkit/chainlink/v2/core/static.Build=test3") && // test3's specific goflags
+				strings.Contains(cmdStr, " ./cmd/localtest") { // test3's local installPath
+				foundTest3 = true
+			}
 		}
 	}
 
@@ -377,6 +423,9 @@ plugins:
 	}
 	if !foundTest2 {
 		t.Error("Did not find command with correct flags for test2 module")
+	}
+	if !foundTest3 {
+		t.Error("Did not find command with correct flags for test3 module")
 	}
 }
 
@@ -695,8 +744,69 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 					return fmt.Errorf("install command has too few arguments")
 				}
 				lastArg := cmd.Args[len(cmd.Args)-1]
-				if !strings.HasSuffix(lastArg, "cmd/testcmd") {
-					return fmt.Errorf("environment variables not expanded correctly in install path: %s", cmdLine)
+				// Expect "./cmd/testcmd" after env var expansion and prefixing
+				expectedInstallArg := "./cmd/testcmd"
+				if lastArg != expectedInstallArg {
+					return fmt.Errorf("environment variables not expanded correctly in install path: expected %q, got %q in %s", expectedInstallArg, lastArg, cmdLine)
+				}
+				return nil
+			},
+			expectError: false,
+		},
+		{
+			name: "full import path stripping",
+			plugin: PluginDef{
+				ModuleURI:   "github.com/example/full",
+				GitRef:      "v1.0.0",
+				InstallPath: "github.com/example/full/cmd/plugin", // Full path that needs stripping
+			},
+			defaults: DefaultsConfig{},
+			mockDownload: func(cmd *exec.Cmd) error {
+				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+					// Derive moduleDir from ModuleURI for consistency
+					parts := strings.Split("github.com/example/full", "/")
+					moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				}
+				return nil
+			},
+			mockInstall: func(cmd *exec.Cmd) error {
+				if len(cmd.Args) < 2 {
+					return fmt.Errorf("install command has too few arguments: %v", cmd.Args)
+				}
+				packageArg := cmd.Args[len(cmd.Args)-1]
+				expectedPackage := "./cmd/plugin" // Expected after stripping, cleaning, and prefixing with ./
+				if packageArg != expectedPackage {
+					return fmt.Errorf("expected install package %q, got %q", expectedPackage, packageArg)
+				}
+				return nil
+			},
+			expectError: false,
+		},
+		{
+			name: "install path is module URI",
+			plugin: PluginDef{
+				ModuleURI:   "github.com/example/rootinstall",
+				GitRef:      "v1.0.0",
+				InstallPath: "github.com/example/rootinstall", // Same as ModuleURI
+			},
+			defaults: DefaultsConfig{},
+			mockDownload: func(cmd *exec.Cmd) error {
+				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+					parts := strings.Split("github.com/example/rootinstall", "/")
+					moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+				}
+				return nil
+			},
+			mockInstall: func(cmd *exec.Cmd) error {
+				if len(cmd.Args) < 2 {
+					return fmt.Errorf("install command has too few arguments: %v", cmd.Args)
+				}
+				packageArg := cmd.Args[len(cmd.Args)-1]
+				expectedPackage := "." // Expected when InstallPath is the same as ModuleURI
+				if packageArg != expectedPackage {
+					return fmt.Errorf("expected install package %q, got %q", expectedPackage, packageArg)
 				}
 				return nil
 			},
@@ -739,8 +849,10 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 								return fmt.Errorf("install command has too few arguments")
 							}
 							lastArg := cmd.Args[len(cmd.Args)-1]
-							if !strings.HasSuffix(lastArg, "cmd/testcmd") {
-								return fmt.Errorf("environment variables not expanded correctly in install path: %s", cmdLine)
+							// Expect "./cmd/testcmd" after env var expansion and prefixing
+							expectedInstallArg := "./cmd/testcmd"
+							if lastArg != expectedInstallArg {
+								return fmt.Errorf("environment variables not expanded correctly in install path: expected %q, got %q in %s", expectedInstallArg, lastArg, cmdLine)
 							}
 							return nil
 						}

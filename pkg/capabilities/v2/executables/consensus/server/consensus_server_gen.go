@@ -9,10 +9,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	pb1 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -20,7 +21,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs) (*pb.Value, error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb.SimpleConsensusInputs) (*valuespb.Value, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -31,21 +32,18 @@ type ConsensusCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
-	stopCh := make(chan struct{})
-	return &ConsensusServer{
-		consensusCapability: consensusCapability{ConsensusCapability: capability, stopCh: stopCh},
-		stopCh:              stopCh,
+func NewConsensusServer(capability ConsensusCapability) loop.StandardCapabilities {
+	return &consensusServer{
+		consensusCapability: consensusCapability{ConsensusCapability: capability},
 	}
 }
 
-type ConsensusServer struct {
+type consensusServer struct {
 	consensusCapability
 	capabilityRegistry core.CapabilitiesRegistry
-	stopCh             chan struct{}
 }
 
-func (cs *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *consensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -61,24 +59,17 @@ func (cs *ConsensusServer) Initialise(ctx context.Context, config string, teleme
 	return nil
 }
 
-func (cs *ConsensusServer) Close() error {
+func (cs *consensusServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "offchain_reporting@1.0.0"); err != nil {
-			return err
-		}
-	}
-
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if err := cs.capabilityRegistry.Remove(ctx, "consensus@1.0.0"); err != nil {
+		return err
 	}
 
 	return cs.consensusCapability.Close()
 }
 
-func (cs *ConsensusServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *consensusServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.consensusCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -88,12 +79,11 @@ func (cs *ConsensusServer) Infos(ctx context.Context) ([]capabilities.Capability
 
 type consensusCapability struct {
 	ConsensusCapability
-	stopCh chan struct{}
 }
 
 func (c *consensusCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("offchain_reporting@1.0.0", capabilities.CapabilityTypeCombined, c.ConsensusCapability.Description())
+	return capabilities.NewCapabilityInfo("consensus@1.0.0", capabilities.CapabilityTypeCombined, c.ConsensusCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*consensusCapability)(nil)
@@ -118,9 +108,9 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "Simple":
-		input := &pb1.SimpleConsensusInputs{}
+		input := &pb.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb.SimpleConsensusInputs, _ *emptypb.Empty) (*valuespb.Value, error) {
 			return c.ConsensusCapability.Simple(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

@@ -27,9 +27,9 @@ var File_capabilities_v2_consensus_consensus_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_consensus_consensus_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/consensus/consensus.proto\x12\x14cre.sdk.v2.consensus\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto2g\n" +
+	")capabilities/v2/consensus/consensus.proto\x12\x14cre.sdk.v2.consensus\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto2^\n" +
 	"\tConsensus\x12:\n" +
-	"\x06Simple\x12!.cre.sdk.v2.SimpleConsensusInputs\x1a\r.values.Value\x1a\x1e\x82\xb5\x18\x1a\x12\x18offchain_reporting@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
+	"\x06Simple\x12!.cre.sdk.v2.SimpleConsensusInputs\x1a\r.values.Value\x1a\x15\x82\xb5\x18\x11\x12\x0fconsensus@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
 
 var file_capabilities_v2_consensus_consensus_proto_goTypes = []any{
 	(*pb.SimpleConsensusInputs)(nil), // 0: cre.sdk.v2.SimpleConsensusInputs

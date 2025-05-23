@@ -10,32 +10,32 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	pb1 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 )
 
 // avoid unused imports
-var _ = registry.Registry{}
+var _ = testutils.Registry{}
 
 func NewConsensusCapability(t testing.TB) (*ConsensusCapability, error) {
 	c := &ConsensusCapability{}
-	reg := registry.GetRegistry(t)
-	err := reg.RegisterCapability(c)
+	registry := testutils.GetRegistry(t)
+	err := registry.RegisterCapability(c)
 	return c, err
 }
 
 type ConsensusCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	Simple func(ctx context.Context, input *pb1.SimpleConsensusInputs) (*pb.Value, error)
+	Simple func(ctx context.Context, input *pb.SimpleConsensusInputs) (*pb.Value, error)
 }
 
 func (cap *ConsensusCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
 	case "Simple":
-		input := &pb1.SimpleConsensusInputs{}
+		input := &pb.SimpleConsensusInputs{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -67,5 +67,5 @@ func (cap *ConsensusCapability) InvokeTrigger(ctx context.Context, request *sdkp
 }
 
 func (cap *ConsensusCapability) ID() string {
-	return "offchain_reporting@1.0.0"
+	return "consensus@1.0.0"
 }

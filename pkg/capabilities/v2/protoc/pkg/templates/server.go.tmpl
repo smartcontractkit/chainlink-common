@@ -129,11 +129,19 @@ func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, 
         {{- if (isTrigger .) }}
             case "{{.GoName}}":
                 input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
+                _, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+                if err != nil {
+                    return nil, err
+                }
                 return capabilities.RegisterTrigger(ctx, c.stopCh, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- if (MapToUntypedAPI .) }}
             case "":
-                input := &{{name .Input.GoIdent ""}}{}
+                input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
+                _, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+                if err != nil {
+                    return nil, err
+                }
                 return capabilities.RegisterTrigger(ctx, c.stopCh, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- end }}

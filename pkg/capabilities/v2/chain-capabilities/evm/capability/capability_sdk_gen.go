@@ -247,3 +247,32 @@ func (c *EVM) UnregisterLogTracking(runtime sdk.DonRuntime, input *evmpb.Unregis
 		}
 	})
 }
+
+func (c EVM) LogTrigger(config *FilterLogTriggerRequest) sdk.DonTrigger[*evmpb.FilterLogsReply] {
+	configAny, _ := anypb.New(config)
+	return &eVMLogTrigger{
+		config: configAny,
+	}
+}
+
+type eVMLogTrigger struct {
+	config *anypb.Any
+}
+
+func (*eVMLogTrigger) IsDonTrigger() {}
+
+func (*eVMLogTrigger) NewT() *evmpb.FilterLogsReply {
+	return &evmpb.FilterLogsReply{}
+}
+
+func (*eVMLogTrigger) CapabilityID() string {
+	return "mainnet-evm@1.0.0"
+}
+
+func (*eVMLogTrigger) Method() string {
+	return "LogTrigger"
+}
+
+func (t *eVMLogTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
+}

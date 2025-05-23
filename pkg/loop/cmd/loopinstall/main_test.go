@@ -13,58 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TestExpandEnvVars tests the expansion of environment variables in strings
-func TestExpandEnvVars(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		env      map[string]string
-		expected string
-	}{
-		{
-			name:     "no variables",
-			input:    "hello world",
-			env:      nil,
-			expected: "hello world",
-		},
-		{
-			name:     "single variable",
-			input:    "hello ${USER}",
-			env:      map[string]string{"USER": "alice"},
-			expected: "hello alice",
-		},
-		{
-			name:     "multiple variables",
-			input:    "${GREETING} ${USER}!",
-			env:      map[string]string{"GREETING": "hello", "USER": "bob"},
-			expected: "hello bob!",
-		},
-		{
-			name:     "undefined variable",
-			input:    "hello ${UNDEFINED}",
-			env:      map[string]string{},
-			expected: "hello ${UNDEFINED}",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup environment
-			if tt.env != nil {
-				for k, v := range tt.env {
-					os.Setenv(k, v)
-					defer os.Unsetenv(k)
-				}
-			}
-
-			got := expandEnvVars(tt.input)
-			if got != tt.expected {
-				t.Errorf("expandEnvVars(%q) = %q, want %q", tt.input, got, tt.expected)
-			}
-		})
-	}
-}
-
 // TestIsPluginEnabled tests the enabled state of plugins
 func TestIsPluginEnabled(t *testing.T) {
 	trueBool := true
@@ -720,40 +668,6 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "with environment variable expansion",
-			plugin: PluginDef{
-				ModuleURI:   "github.com/${TEST_ORG}/test",
-				GitRef:      "${TEST_REF}",
-				InstallPath: "./cmd/${TEST_CMD}",
-			},
-			defaults: DefaultsConfig{},
-			mockDownload: func(cmd *exec.Cmd) error {
-				cmdLine := strings.Join(cmd.Args, " ")
-				if !strings.Contains(cmdLine, "github.com/testorg/test@testref") {
-					return fmt.Errorf("environment variables not expanded correctly: %s", cmdLine)
-				}
-				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
-					moduleDir := filepath.Join(tempDir, "modules", "github.com", "testorg", "test")
-					stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
-				}
-				return nil
-			},
-			mockInstall: func(cmd *exec.Cmd) error {
-				cmdLine := strings.Join(cmd.Args, " ")
-				if len(cmd.Args) < 2 {
-					return fmt.Errorf("install command has too few arguments")
-				}
-				lastArg := cmd.Args[len(cmd.Args)-1]
-				// Expect "./cmd/testcmd" after env var expansion and prefixing
-				expectedInstallArg := "./cmd/testcmd"
-				if lastArg != expectedInstallArg {
-					return fmt.Errorf("environment variables not expanded correctly in install path: expected %q, got %q in %s", expectedInstallArg, lastArg, cmdLine)
-				}
-				return nil
-			},
-			expectError: false,
-		},
-		{
 			name: "full import path stripping",
 			plugin: PluginDef{
 				ModuleURI:   "github.com/example/full",
@@ -816,18 +730,6 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Set environment variables for the test with env var expansion
-			if tc.name == "with environment variable expansion" {
-				os.Setenv("TEST_ORG", "testorg")
-				os.Setenv("TEST_REF", "testref")
-				os.Setenv("TEST_CMD", "testcmd")
-				defer func() {
-					os.Unsetenv("TEST_ORG")
-					os.Unsetenv("TEST_REF")
-					os.Unsetenv("TEST_CMD")
-				}()
-			}
-
 			// Mock the command execution
 			var downloadCalled, installCalled bool
 			execCommand = func(cmd *exec.Cmd) error {
@@ -841,21 +743,6 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				} else if strings.Contains(cmdLine, "go install") {
 					installCalled = true
 					if tc.mockInstall != nil {
-						// For the environment variable test case, check the install path differently
-						if tc.name == "with environment variable expansion" {
-							// The actual install command will have the full installPath, not just cmd/testcmd
-							// Fix the check by examining the last argument instead
-							if len(cmd.Args) < 2 {
-								return fmt.Errorf("install command has too few arguments")
-							}
-							lastArg := cmd.Args[len(cmd.Args)-1]
-							// Expect "./cmd/testcmd" after env var expansion and prefixing
-							expectedInstallArg := "./cmd/testcmd"
-							if lastArg != expectedInstallArg {
-								return fmt.Errorf("environment variables not expanded correctly in install path: expected %q, got %q in %s", expectedInstallArg, lastArg, cmdLine)
-							}
-							return nil
-						}
 						return tc.mockInstall(cmd)
 					}
 				}

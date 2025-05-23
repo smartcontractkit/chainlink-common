@@ -26,10 +26,9 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		return nil
 	}
 
-	// Expand environment variables
-	moduleURI := expandEnvVars(plugin.ModuleURI)
-	gitRef := expandEnvVars(plugin.GitRef)
-	installPath := expandEnvVars(plugin.InstallPath)
+	moduleURI := plugin.ModuleURI
+	gitRef := plugin.GitRef
+	installPath := plugin.InstallPath
 
 	// Validate inputs
 	if err := validateModuleURI(moduleURI); err != nil {
@@ -45,36 +44,6 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 	if err := validateInstallPath(installPath); err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}
-
-	// Clean the install path from YAML. This resolves ., .., normalizes slashes,
-	// and removes leading "./" if present (e.g., "./cmd/app" -> "cmd/app").
-	// This cleaned path is the initial candidate for packageToInstall.
-	packageToInstall := filepath.Clean(installPath)
-
-	// If the packageToInstall (which is the cleaned YAML installPath) starts with the moduleURI
-	// (e.g., moduleURI is "github.com/org/repo" and packageToInstall is "github.com/org/repo/cmd/app"),
-	// then the user provided a full import path. We need to strip the moduleURI prefix
-	// to get the path relative to the module root (e.g., "cmd/app").
-	if strings.HasPrefix(packageToInstall, moduleURI) {
-		if packageToInstall == moduleURI {
-			// If installPath is identical to moduleURI, it means install the module root.
-			packageToInstall = "."
-		} else if strings.HasPrefix(packageToInstall, moduleURI+"/") {
-			// Otherwise, if it's a sub-package, trim the moduleURI prefix.
-			// The result (e.g., "cmd/app") will be clean as it's derived from a clean path.
-			packageToInstall = strings.TrimPrefix(packageToInstall, moduleURI+"/")
-		}
-		// If packageToInstall starts with moduleURI but isn't moduleURI itself or a sub-package
-		// (e.g. moduleURI="github.com/org/repo", installPath="github.com/org/repoXYZ/cmd"),
-		// it's left as is. This scenario implies installing a package from a different module,
-		// which is unusual but possible. The go command will handle it.
-		// In this case, packageToInstall is already clean from the initial filepath.Clean.
-	}
-	// At this point, packageToInstall is either:
-	// 1. ".", if installing the module root.
-	// 2. A path relative to the module root (e.g., "cmd/plugin").
-	// 3. A full import path if it was different from moduleURI but not a sub-package,
-	//    or if it was already a relative path not starting with moduleURI.
 
 	// Full module path with git reference
 	fullModulePath := moduleURI
@@ -148,25 +117,48 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 
 	// Install the plugin
 	{
+		// Determine the actual argument for 'go install' based on installPath and moduleURI.
+		// installPath is the user-provided path from YAML (no environment variable expansion).
+		// moduleURI is the URI of the module being downloaded and installed (no environment variable expansion).
+		// The 'go install' command will be run with cmd.Dir set to the root of the downloaded moduleURI.
+		// Therefore, installArg must be "." or a path starting with "./" relative to the module root.
+		var installArg string
+		if installPath == moduleURI {
+			// Case 1: installPath is the moduleURI itself. Install the module root.
+			installArg = "."
+		} else if strings.HasPrefix(installPath, moduleURI+"/") {
+			// Case 2: installPath is a sub-package of moduleURI (e.g., "moduleURI/cmd/plugin").
+			// Extract the relative path and prefix with "./".
+			relativePath := strings.TrimPrefix(installPath, moduleURI+"/")
+			cleanedRelativePath := strings.TrimLeft(relativePath, "/") // Handles "moduleURI///subpath"
+			if cleanedRelativePath == "" || cleanedRelativePath == "." { // Handles "moduleURI/" or "moduleURI/."
+				installArg = "."
+			} else {
+				// cleanedRelativePath is like "cmd/plugin" or "sub/../pkg". Prepend "./".
+				installArg = "./" + cleanedRelativePath
+			}
+		} else {
+			// Case 3: installPath is not moduleURI and not a sub-package of moduleURI.
+			// Assumed to be:
+			//  a) A path already relative to the module root (e.g., "cmd/plugin", "./cmd/plugin", ".").
+			//  b) A full path to a different module (e.g., "github.com/other/mod").
+			//     For (b), prefixing with "./" when cmd.Dir is set is problematic but replicates prior behavior if any.
+			if installPath == "." {
+				installArg = "."
+			} else if strings.HasPrefix(installPath, "./") {
+				// Already correctly formatted (e.g., "./cmd/plugin", "./sub/../pkg")
+				installArg = installPath
+			} else {
+				// Needs "./" prefix. Handles "cmd/plugin", "/cmd/plugin", "github.com/other/mod".
+				installArg = "./" + strings.TrimLeft(installPath, "/")
+			}
+		}
+
 		args := []string{"install"}
 		if goflags != "" {
 			args = append(args, strings.Fields(goflags)...)
 		}
-
-		// Prepare the package argument for 'go install'.
-		// If packageToInstall is a relative path (e.g., "cmd/plugin"),
-		// it should be prefixed with "./" for 'go install' when cmd.Dir is set.
-		// If packageToInstall is ".", it means install the package in the current directory (moduleDir).
-		installArg := packageToInstall
-		if installArg != "." && !strings.HasPrefix(installArg, "./") {
-			// This ensures paths like "cmd/plugin" become "./cmd/plugin"
-			// while "." remains "." 
-			// Leading ./ prefix is meaningful with go. When it is trimmed,
-			// the path is interpreted as part of the standard library instead
-			// of the relative to the working directory in the current module.
-			installArg = "./" + installArg
-		}
-		// Add the install path, which is now relative to the module root.
+		// Add the install path, which is now relative to the module root or ".".
 		args = append(args, installArg)
 
 		cmd := exec.Command("go", args...)

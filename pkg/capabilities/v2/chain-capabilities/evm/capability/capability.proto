@@ -7,6 +7,26 @@ package cre.sdk.v2.evmcap;
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto";
+import "values/pb/values.proto";
+
+
+enum Tag {
+  FINALIZED = 0;
+  UNFINALIZED = 1;
+  //TODO in logpoller there's ConfidenceLevel: Finalized or Unconfirmed
+  //TODO pablos comment: LATEST should be used, but is LATEST the same as unconfirmed?
+}
+
+message FilterLogTriggerRequest {
+  repeated loop.chain_capabilities.evm.Address addresses = 1; // contract(s) to filter logs from, at least one address is required
+  repeated loop.chain_capabilities.evm.Hash topics0 = 2;  // filter log by event signature and indexed args, at least one topic is required
+  repeated loop.chain_capabilities.evm.Hash topics1 = 3;  // filter log by event signature and indexed args
+  repeated loop.chain_capabilities.evm.Hash topics2 = 4;  // filter log by event signature and indexed args
+  repeated loop.chain_capabilities.evm.Hash topics3 = 5;  // filter log by event signature and indexed args
+  values.BigInt FromBlock = 6; // block number to start filtering from
+  Tag FromTag = 7; // defaults to "finalized"
+  //  int ConfirmationBlock TODO check with Pablo/Prashant if this makes sense (does it map with EvmFinalityDepth in logPoller?)
+}
 
 service EVM {
   option (cre.metadata.capability) = {
@@ -23,6 +43,7 @@ service EVM {
   rpc QueryTrackedLogs(loop.chain_capabilities.evm.QueryTrackedLogsRequest) returns (loop.chain_capabilities.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.chain_capabilities.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.chain_capabilities.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.chain_capabilities.evm.FilterLogsReply);
 }
 
 

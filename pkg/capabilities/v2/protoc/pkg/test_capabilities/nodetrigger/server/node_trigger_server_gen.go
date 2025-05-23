@@ -102,6 +102,10 @@ func (c *nodeEventCapability) RegisterTrigger(ctx context.Context, request capab
 	switch request.Method {
 	case "Trigger":
 		input := &nodetrigger.Config{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+		if err != nil {
+			return nil, err
+		}
 		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-node-trigger@1.0.0", request, input, c.NodeEventCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)

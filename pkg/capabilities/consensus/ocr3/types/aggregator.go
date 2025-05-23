@@ -176,11 +176,7 @@ func Decode(raw []byte) (Metadata, []byte, error) {
 }
 
 func (m Metadata) Length() int {
-	b, err := m.Encode()
-	if err != nil {
-		return 0
-	}
-	return len(b)
+	return MetadataLen
 }
 
 // Aggregator is the interface that enables a hook to the Outcome() phase of OCR reporting.

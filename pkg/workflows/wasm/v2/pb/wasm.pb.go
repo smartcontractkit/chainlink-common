@@ -27,14 +27,13 @@ const (
 
 type ExecuteRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
-	Id     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Config []byte                 `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+	Config []byte                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	// Types that are valid to be assigned to Request:
 	//
 	//	*ExecuteRequest_Subscribe
 	//	*ExecuteRequest_Trigger
 	Request         isExecuteRequest_Request `protobuf_oneof:"request"`
-	MaxResponseSize uint64                   `protobuf:"varint,5,opt,name=max_response_size,json=maxResponseSize,proto3" json:"max_response_size,omitempty"`
+	MaxResponseSize uint64                   `protobuf:"varint,4,opt,name=max_response_size,json=maxResponseSize,proto3" json:"max_response_size,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -67,13 +66,6 @@ func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ExecuteRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteRequest) Descriptor() ([]byte, []int) {
 	return file_workflows_wasm_v2_pb_wasm_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *ExecuteRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
 }
 
 func (x *ExecuteRequest) GetConfig() []byte {
@@ -120,11 +112,11 @@ type isExecuteRequest_Request interface {
 }
 
 type ExecuteRequest_Subscribe struct {
-	Subscribe *emptypb.Empty `protobuf:"bytes,3,opt,name=subscribe,proto3,oneof"`
+	Subscribe *emptypb.Empty `protobuf:"bytes,2,opt,name=subscribe,proto3,oneof"`
 }
 
 type ExecuteRequest_Trigger struct {
-	Trigger *pb.Trigger `protobuf:"bytes,4,opt,name=trigger,proto3,oneof"`
+	Trigger *pb.Trigger `protobuf:"bytes,3,opt,name=trigger,proto3,oneof"`
 }
 
 func (*ExecuteRequest_Subscribe) isExecuteRequest_Request() {}
@@ -133,7 +125,6 @@ func (*ExecuteRequest_Trigger) isExecuteRequest_Request() {}
 
 type ExecutionResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to Result:
 	//
 	//	*ExecutionResult_Value
@@ -172,13 +163,6 @@ func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ExecutionResult.ProtoReflect.Descriptor instead.
 func (*ExecutionResult) Descriptor() ([]byte, []int) {
 	return file_workflows_wasm_v2_pb_wasm_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *ExecutionResult) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
 }
 
 func (x *ExecutionResult) GetResult() isExecutionResult_Result {
@@ -220,15 +204,15 @@ type isExecutionResult_Result interface {
 }
 
 type ExecutionResult_Value struct {
-	Value *pb1.Value `protobuf:"bytes,2,opt,name=value,proto3,oneof"`
+	Value *pb1.Value `protobuf:"bytes,1,opt,name=value,proto3,oneof"`
 }
 
 type ExecutionResult_Error struct {
-	Error string `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
 }
 
 type ExecutionResult_TriggerSubscriptions struct {
-	TriggerSubscriptions *pb.TriggerSubscriptionRequest `protobuf:"bytes,4,opt,name=triggerSubscriptions,proto3,oneof"`
+	TriggerSubscriptions *pb.TriggerSubscriptionRequest `protobuf:"bytes,3,opt,name=triggerSubscriptions,proto3,oneof"`
 }
 
 func (*ExecutionResult_Value) isExecutionResult_Result() {}
@@ -241,19 +225,17 @@ var File_workflows_wasm_v2_pb_wasm_proto protoreflect.FileDescriptor
 
 const file_workflows_wasm_v2_pb_wasm_proto_rawDesc = "" +
 	"\n" +
-	"\x1fworkflows/wasm/v2/pb/wasm.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19google/protobuf/any.proto\x1a\x16values/pb/values.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xd8\x01\n" +
-	"\x0eExecuteRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06config\x18\x02 \x01(\fR\x06config\x126\n" +
-	"\tsubscribe\x18\x03 \x01(\v2\x16.google.protobuf.EmptyH\x00R\tsubscribe\x12/\n" +
-	"\atrigger\x18\x04 \x01(\v2\x13.cre.sdk.v2.TriggerH\x00R\atrigger\x12*\n" +
-	"\x11max_response_size\x18\x05 \x01(\x04R\x0fmaxResponseSizeB\t\n" +
-	"\arequest\"\xc8\x01\n" +
-	"\x0fExecutionResult\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
-	"\x05value\x18\x02 \x01(\v2\r.values.ValueH\x00R\x05value\x12\x16\n" +
-	"\x05error\x18\x03 \x01(\tH\x00R\x05error\x12\\\n" +
-	"\x14triggerSubscriptions\x18\x04 \x01(\v2&.cre.sdk.v2.TriggerSubscriptionRequestH\x00R\x14triggerSubscriptionsB\b\n" +
+	"\x1fworkflows/wasm/v2/pb/wasm.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19google/protobuf/any.proto\x1a\x16values/pb/values.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xc8\x01\n" +
+	"\x0eExecuteRequest\x12\x16\n" +
+	"\x06config\x18\x01 \x01(\fR\x06config\x126\n" +
+	"\tsubscribe\x18\x02 \x01(\v2\x16.google.protobuf.EmptyH\x00R\tsubscribe\x12/\n" +
+	"\atrigger\x18\x03 \x01(\v2\x13.cre.sdk.v2.TriggerH\x00R\atrigger\x12*\n" +
+	"\x11max_response_size\x18\x04 \x01(\x04R\x0fmaxResponseSizeB\t\n" +
+	"\arequest\"\xb8\x01\n" +
+	"\x0fExecutionResult\x12%\n" +
+	"\x05value\x18\x01 \x01(\v2\r.values.ValueH\x00R\x05value\x12\x16\n" +
+	"\x05error\x18\x02 \x01(\tH\x00R\x05error\x12\\\n" +
+	"\x14triggerSubscriptions\x18\x03 \x01(\v2&.cre.sdk.v2.TriggerSubscriptionRequestH\x00R\x14triggerSubscriptionsB\b\n" +
 	"\x06resultBGZEgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pbb\x06proto3"
 
 var (

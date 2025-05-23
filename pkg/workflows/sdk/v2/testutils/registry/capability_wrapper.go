@@ -1,4 +1,4 @@
-package testutils
+package registry
 
 import (
 	"context"
@@ -19,7 +19,6 @@ var _ capabilities.ExecutableAndTriggerCapability = (*CapabilityWrapper)(nil)
 func (c *CapabilityWrapper) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	ch := make(chan capabilities.TriggerResponse, 1)
 	trigger, err := c.InvokeTrigger(ctx, &pb.TriggerSubscription{
-		ExecId:  request.Metadata.WorkflowExecutionID,
 		Id:      request.TriggerID,
 		Payload: request.Payload,
 		Method:  request.Method,
@@ -57,10 +56,9 @@ func (c *CapabilityWrapper) UnregisterFromWorkflow(_ context.Context, _ capabili
 func (c *CapabilityWrapper) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	v1Request := capabilitesbp.CapabilityRequestToProto(request)
 	v2Request := &pb.CapabilityRequest{
-		ExecutionId: v1Request.Metadata.WorkflowExecutionId,
-		Id:          v1Request.Metadata.ReferenceId,
-		Payload:     v1Request.Payload,
-		Method:      v1Request.Method,
+		Id:      v1Request.Metadata.ReferenceId,
+		Payload: v1Request.Payload,
+		Method:  v1Request.Method,
 	}
 
 	v2Response := c.Invoke(ctx, v2Request)

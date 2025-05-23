@@ -1,9 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common;chaincommonpb";
 
-package loop;
-import "codec.proto";
+package loop.chain.common;
+
+import "internal/codec/codec.proto";
 
 // Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
 // This allows for both simple and more complex nested expressions.
@@ -42,7 +43,7 @@ message Or {
 }
 
 message ValueComparator  {
-  VersionedBytes value = 1;
+  codec.VersionedBytes value = 1;
   ComparisonOperator operator = 2;
 }
 
@@ -115,6 +116,3 @@ message LimitAndSort {
   repeated SortBy sort_by = 1; // A list of sorting criteria.
   Limit limit = 2; // Pagination limit and direction.
 }
-
-
-

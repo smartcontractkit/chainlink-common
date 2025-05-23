@@ -14,16 +14,16 @@ import (
 	mismatchedpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/mismatched"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 // avoid unused imports
-var _ = testutils.Registry{}
+var _ = registry.Registry{}
 
 func NewMismatchedCapability(t testing.TB) (*MismatchedCapability, error) {
 	c := &MismatchedCapability{}
-	registry := testutils.GetRegistry(t)
-	err := registry.RegisterCapability(c)
+	reg := registry.GetRegistry(t)
+	err := reg.RegisterCapability(c)
 	return c, err
 }
 

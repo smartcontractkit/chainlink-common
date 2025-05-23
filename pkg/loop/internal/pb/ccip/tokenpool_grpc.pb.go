@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: tokenpool.proto
+// source: loop/internal/pb/ccip/tokenpool.proto
 
 package ccippb
 
@@ -163,5 +163,5 @@ var TokenPoolBatcherReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "tokenpool.proto",
+	Metadata: "loop/internal/pb/ccip/tokenpool.proto",
 }

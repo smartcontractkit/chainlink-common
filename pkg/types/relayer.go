@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
@@ -104,8 +105,8 @@ type GethClient interface {
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	TransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	TransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 }
 
 type EVMService interface {
@@ -132,7 +133,6 @@ type EVMService interface {
 	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
-	// If transaction is not finalized returns error
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
@@ -143,7 +143,7 @@ type EVMService interface {
 type Relayer interface {
 	ChainService
 
-	// Returns EVMService that provides access to evm-family specific functionalities
+	// EVM returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.

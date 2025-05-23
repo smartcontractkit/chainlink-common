@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -21,8 +22,7 @@ type runner[T any] struct {
 	result         any
 	err            error
 	workflowId     string
-	executionId    string
-	registry       *Registry
+	registry       *registry.Registry
 	strictTriggers bool
 	runtime        T
 	writer         *testWriter
@@ -81,14 +81,13 @@ func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
 
 func newRunner[T any](tb testing.TB, config []byte, t T, base *sdkimpl.RuntimeBase) *runner[T] {
 	r := &runner[T]{
-		tb:          tb,
-		config:      config,
-		workflowId:  uuid.NewString(),
-		executionId: uuid.NewString(),
-		registry:    GetRegistry(tb),
-		runtime:     t,
-		writer:      &testWriter{},
-		base:        base,
+		tb:         tb,
+		config:     config,
+		workflowId: uuid.NewString(),
+		registry:   registry.GetRegistry(tb),
+		runtime:    t,
+		writer:     &testWriter{},
+		base:       base,
 	}
 
 	return r
@@ -113,7 +112,6 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		request := &pb.TriggerSubscription{
-			ExecId:  r.executionId,
 			Id:      uuid.NewString(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),
@@ -121,7 +119,7 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 
 		response, err := trigger.InvokeTrigger(r.tb.Context(), request)
 
-		var nostub ErrNoTriggerStub
+		var nostub registry.ErrNoTriggerStub
 		if err != nil && (r.strictTriggers || !errors.As(err, &nostub)) {
 			r.err = err
 			return

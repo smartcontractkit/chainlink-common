@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: pricegetter.proto
+// source: loop/internal/pb/ccip/pricegetter.proto
 
 package ccippb
 
@@ -200,5 +200,5 @@ var PriceGetter_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pricegetter.proto",
+	Metadata: "loop/internal/pb/ccip/pricegetter.proto",
 }

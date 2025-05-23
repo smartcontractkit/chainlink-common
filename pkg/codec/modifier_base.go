@@ -117,13 +117,13 @@ func (m *modifierBase[T]) RetypeToOffChain(onChainType reflect.Type, itemType st
 }
 
 func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, error) {
-	filedLocations, err := getFieldIndices(outputType)
+	fieldLocations, err := getFieldIndices(outputType)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, key := range m.subkeysFirst() {
-		curLocations := filedLocations
+		curLocations := fieldLocations
 		parts := strings.Split(key, ".")
 		fieldName := parts[len(parts)-1]
 
@@ -148,7 +148,7 @@ func (m *modifierBase[T]) getStructType(outputType reflect.Type) (reflect.Type, 
 		}
 	}
 
-	return filedLocations.makeNewType(), nil
+	return fieldLocations.makeNewType(), nil
 }
 
 // subkeysFirst returns a list of keys that will always have a sub-key before the key if both are present

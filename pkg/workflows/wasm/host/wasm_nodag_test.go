@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -27,8 +26,6 @@ const (
 	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
 	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
 )
-
-const anyNoDagExecId = "executionId"
 
 var wordList = []string{"Hello, ", "world", "!"}
 
@@ -50,9 +47,9 @@ func Test_NoDag_Run(t *testing.T) {
 			Request: &wasmpb.ExecuteRequest_Trigger{},
 		}
 
-		_, err = m.Execute(ctx, req)
+		_, err = m.Execute(ctx, req, nil)
 		require.Error(t, err)
-		require.ErrorContains(t, err, "invalid handler")
+		require.ErrorContains(t, err, "invalid capability executor")
 	})
 
 	t.Run("OK can subscribe without setting CapabilityExecutor", func(t *testing.T) {
@@ -63,9 +60,7 @@ func Test_NoDag_Run(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		ctx := t.Context()
-
-		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
 		require.Equal(t, len(triggers.Subscriptions), 1)
 	})
@@ -102,7 +97,6 @@ func Test_NoDag_Run(t *testing.T) {
 			mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).
 				Run(
 					func(ctx context.Context, request *sdkpb.CapabilityRequest) {
-						require.Equal(t, anyNoDagExecId, request.ExecutionId)
 						require.Equal(t, "basic-test-action@1.0.0", request.Id)
 					},
 				).
@@ -110,15 +104,12 @@ func Test_NoDag_Run(t *testing.T) {
 				Once()
 		}
 
-		require.NoError(t, m.SetCapabilityExecutor(mockCapExecutor))
-
 		// When a TriggerEvent occurs, Engine calls Execute with that Event.
 		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
 		wrapped, err := anypb.New(trigger)
 		require.NoError(t, err)
 
 		req := &wasmpb.ExecuteRequest{
-			Id: anyNoDagExecId,
 			Request: &wasmpb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
 					Id:      uint64(0),
@@ -127,9 +118,8 @@ func Test_NoDag_Run(t *testing.T) {
 			},
 		}
 
-		response, err := m.Execute(ctx, req)
+		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
-		require.Equal(t, anyNoDagExecId, response.Id)
 
 		switch output := response.Result.(type) {
 		case *wasmpb.ExecutionResult_Value:
@@ -153,14 +143,13 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	binary := createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
 
 	t.Run("OK subscribe to triggers with identical capability IDs", func(t *testing.T) {
-		ctx := t.Context()
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
 
 		m.Start()
 		defer m.Close()
 
-		triggers, err := getTriggersSpec(ctx, m, []byte(""))
+		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
 
 		expectedConfigs := []*basictrigger.Config{
@@ -218,7 +207,6 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 			mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).
 				Run(
 					func(ctx context.Context, request *sdkpb.CapabilityRequest) {
-						require.Equal(t, anyNoDagExecId, request.ExecutionId)
 						require.Equal(t, "basic-test-action@1.0.0", request.Id)
 					},
 				).
@@ -226,15 +214,12 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 				Once()
 		}
 
-		require.NoError(t, m.SetCapabilityExecutor(mockCapExecutor))
-
 		// When a TriggerEvent occurs, Engine calls Execute with that Event.
 		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
 		wrapped, err := anypb.New(trigger)
 		require.NoError(t, err)
 
 		req := &wasmpb.ExecuteRequest{
-			Id: anyNoDagExecId,
 			Request: &wasmpb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
 					Id:      uint64(1),
@@ -242,10 +227,9 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 				},
 			},
 		}
-		response, err := m.Execute(ctx, req)
+		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
 
-		require.Equal(t, anyNoDagExecId, response.Id)
 		switch output := response.Result.(type) {
 		case *wasmpb.ExecutionResult_Value:
 			valuePb := output.Value
@@ -260,19 +244,18 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	})
 }
 
-func defaultNoDAGModCfg(t *testing.T) *ModuleConfig {
+func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	return &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
 	}
 }
 
-func getTriggersSpec(ctx context.Context, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
-	execResult, err := m.Execute(ctx, &wasmpb.ExecuteRequest{
-		Id:      uuid.New().String(),
+func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
+	execResult, err := m.Execute(t.Context(), &wasmpb.ExecuteRequest{
 		Config:  config,
 		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
-	})
+	}, NewMockCapabilityExecutor(t))
 
 	if err != nil {
 		return nil, err

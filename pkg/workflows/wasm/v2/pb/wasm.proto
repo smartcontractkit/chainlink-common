@@ -8,20 +8,18 @@ import "values/pb/values.proto";
 import "workflows/sdk/v2/pb/sdk.proto";
 
 message ExecuteRequest {
-  string id = 1;
-  bytes config = 2;
+  bytes config = 1;
   oneof request {
-    google.protobuf.Empty subscribe = 3;
-    cre.sdk.v2.Trigger trigger = 4;
+    google.protobuf.Empty subscribe = 2;
+    cre.sdk.v2.Trigger trigger = 3;
   }
-  uint64 max_response_size = 5;
+  uint64 max_response_size = 4;
 }
 
 message ExecutionResult {
-  string id = 1;
   oneof result {
-    values.Value value = 2;
-    string error = 3;
-    cre.sdk.v2.TriggerSubscriptionRequest triggerSubscriptions = 4;
+    values.Value value = 1;
+    string error = 2;
+    cre.sdk.v2.TriggerSubscriptionRequest triggerSubscriptions = 3;
   }
 }

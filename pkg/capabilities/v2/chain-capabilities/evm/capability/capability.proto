@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmcappb";
 
-package cre.sdk.v2.evmcap;
+package cre.sdk.v2.evmcappb;
 
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";

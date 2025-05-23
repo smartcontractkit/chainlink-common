@@ -73,13 +73,13 @@ func (Tag) EnumDescriptor() ([]byte, []int) {
 
 type FilterLogTriggerRequest struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Addresses     []*chain_service.Address `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`                         // contract(s) to filter logs from, at least one address is required
-	Topics0       []*chain_service.Hash    `protobuf:"bytes,2,rep,name=topics0,proto3" json:"topics0,omitempty"`                             // filter log by event signature and indexed args, at least one topic is required
-	Topics1       []*chain_service.Hash    `protobuf:"bytes,3,rep,name=topics1,proto3" json:"topics1,omitempty"`                             // filter log by event signature and indexed args
-	Topics2       []*chain_service.Hash    `protobuf:"bytes,4,rep,name=topics2,proto3" json:"topics2,omitempty"`                             // filter log by event signature and indexed args
-	Topics3       []*chain_service.Hash    `protobuf:"bytes,5,rep,name=topics3,proto3" json:"topics3,omitempty"`                             // filter log by event signature and indexed args
-	FromBlock     *pb.BigInt               `protobuf:"bytes,6,opt,name=FromBlock,proto3" json:"FromBlock,omitempty"`                         // block number to start filtering from
-	FromTag       Tag                      `protobuf:"varint,7,opt,name=FromTag,proto3,enum=cre.sdk.v2.evmcap.Tag" json:"FromTag,omitempty"` // defaults to "finalized"
+	Addresses     []*chain_service.Address `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`                           // contract(s) to filter logs from, at least one address is required
+	Topics0       []*chain_service.Hash    `protobuf:"bytes,2,rep,name=topics0,proto3" json:"topics0,omitempty"`                               // filter log by event signature and indexed args, at least one topic is required
+	Topics1       []*chain_service.Hash    `protobuf:"bytes,3,rep,name=topics1,proto3" json:"topics1,omitempty"`                               // filter log by event signature and indexed args
+	Topics2       []*chain_service.Hash    `protobuf:"bytes,4,rep,name=topics2,proto3" json:"topics2,omitempty"`                               // filter log by event signature and indexed args
+	Topics3       []*chain_service.Hash    `protobuf:"bytes,5,rep,name=topics3,proto3" json:"topics3,omitempty"`                               // filter log by event signature and indexed args
+	FromBlock     *pb.BigInt               `protobuf:"bytes,6,opt,name=FromBlock,proto3" json:"FromBlock,omitempty"`                           // block number to start filtering from
+	FromTag       Tag                      `protobuf:"varint,7,opt,name=FromTag,proto3,enum=cre.sdk.v2.evmcappb.Tag" json:"FromTag,omitempty"` // defaults to "finalized"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -167,18 +167,18 @@ var File_capabilities_v2_chain_capabilities_evm_capability_capability_proto prot
 
 const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc = "" +
 	"\n" +
-	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x11cre.sdk.v2.evmcap\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\x1a\x16values/pb/values.proto\"\xb1\x03\n" +
+	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x13cre.sdk.v2.evmcappb\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\x1a\x16values/pb/values.proto\"\xb3\x03\n" +
 	"\x17FilterLogTriggerRequest\x12B\n" +
 	"\taddresses\x18\x01 \x03(\v2$.loop.chain_capabilities.evm.AddressR\taddresses\x12;\n" +
 	"\atopics0\x18\x02 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics0\x12;\n" +
 	"\atopics1\x18\x03 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics1\x12;\n" +
 	"\atopics2\x18\x04 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics2\x12;\n" +
 	"\atopics3\x18\x05 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics3\x12,\n" +
-	"\tFromBlock\x18\x06 \x01(\v2\x0e.values.BigIntR\tFromBlock\x120\n" +
-	"\aFromTag\x18\a \x01(\x0e2\x16.cre.sdk.v2.evmcap.TagR\aFromTag*%\n" +
+	"\tFromBlock\x18\x06 \x01(\v2\x0e.values.BigIntR\tFromBlock\x122\n" +
+	"\aFromTag\x18\a \x01(\x0e2\x18.cre.sdk.v2.evmcappb.TagR\aFromTag*%\n" +
 	"\x03Tag\x12\r\n" +
 	"\tFINALIZED\x10\x00\x12\x0f\n" +
-	"\vUNFINALIZED\x10\x012\x95\n" +
+	"\vUNFINALIZED\x10\x012\x97\n" +
 	"\n" +
 	"\x03EVM\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
@@ -191,9 +191,9 @@ const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_ra
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12|\n" +
 	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
-	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12h\n" +
+	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
 	"\n" +
-	"LogTrigger\x12*.cre.sdk.v2.evmcap.FilterLogTriggerRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply0\x01\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0B\\ZZgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappbb\x06proto3"
+	"LogTrigger\x12,.cre.sdk.v2.evmcappb.FilterLogTriggerRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply0\x01\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BbZ`github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmcappbb\x06proto3"
 
 var (
 	file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDescOnce sync.Once
@@ -210,8 +210,8 @@ func file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_raw
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes = []any{
-	(Tag)(0),                                           // 0: cre.sdk.v2.evmcap.Tag
-	(*FilterLogTriggerRequest)(nil),                    // 1: cre.sdk.v2.evmcap.FilterLogTriggerRequest
+	(Tag)(0),                                           // 0: cre.sdk.v2.evmcappb.Tag
+	(*FilterLogTriggerRequest)(nil),                    // 1: cre.sdk.v2.evmcappb.FilterLogTriggerRequest
 	(*chain_service.Address)(nil),                      // 2: loop.chain_capabilities.evm.Address
 	(*chain_service.Hash)(nil),                         // 3: loop.chain_capabilities.evm.Hash
 	(*pb.BigInt)(nil),                                  // 4: values.BigInt
@@ -235,35 +235,35 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTy
 	(*chain_service.QueryTrackedLogsReply)(nil),        // 22: loop.chain_capabilities.evm.QueryTrackedLogsReply
 }
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs = []int32{
-	2,  // 0: cre.sdk.v2.evmcap.FilterLogTriggerRequest.addresses:type_name -> loop.chain_capabilities.evm.Address
-	3,  // 1: cre.sdk.v2.evmcap.FilterLogTriggerRequest.topics0:type_name -> loop.chain_capabilities.evm.Hash
-	3,  // 2: cre.sdk.v2.evmcap.FilterLogTriggerRequest.topics1:type_name -> loop.chain_capabilities.evm.Hash
-	3,  // 3: cre.sdk.v2.evmcap.FilterLogTriggerRequest.topics2:type_name -> loop.chain_capabilities.evm.Hash
-	3,  // 4: cre.sdk.v2.evmcap.FilterLogTriggerRequest.topics3:type_name -> loop.chain_capabilities.evm.Hash
-	4,  // 5: cre.sdk.v2.evmcap.FilterLogTriggerRequest.FromBlock:type_name -> values.BigInt
-	0,  // 6: cre.sdk.v2.evmcap.FilterLogTriggerRequest.FromTag:type_name -> cre.sdk.v2.evmcap.Tag
-	5,  // 7: cre.sdk.v2.evmcap.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	6,  // 8: cre.sdk.v2.evmcap.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	7,  // 9: cre.sdk.v2.evmcap.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	8,  // 10: cre.sdk.v2.evmcap.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	9,  // 11: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
-	10, // 12: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
-	11, // 13: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	12, // 14: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	13, // 15: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	14, // 16: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	1,  // 17: cre.sdk.v2.evmcap.EVM.LogTrigger:input_type -> cre.sdk.v2.evmcap.FilterLogTriggerRequest
-	15, // 18: cre.sdk.v2.evmcap.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	16, // 19: cre.sdk.v2.evmcap.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	17, // 20: cre.sdk.v2.evmcap.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	18, // 21: cre.sdk.v2.evmcap.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	19, // 22: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	20, // 23: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
-	21, // 24: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	22, // 25: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	11, // 26: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	11, // 27: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	16, // 28: cre.sdk.v2.evmcap.EVM.LogTrigger:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	2,  // 0: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.addresses:type_name -> loop.chain_capabilities.evm.Address
+	3,  // 1: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.topics0:type_name -> loop.chain_capabilities.evm.Hash
+	3,  // 2: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.topics1:type_name -> loop.chain_capabilities.evm.Hash
+	3,  // 3: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.topics2:type_name -> loop.chain_capabilities.evm.Hash
+	3,  // 4: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.topics3:type_name -> loop.chain_capabilities.evm.Hash
+	4,  // 5: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.FromBlock:type_name -> values.BigInt
+	0,  // 6: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.FromTag:type_name -> cre.sdk.v2.evmcappb.Tag
+	5,  // 7: cre.sdk.v2.evmcappb.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
+	6,  // 8: cre.sdk.v2.evmcappb.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
+	7,  // 9: cre.sdk.v2.evmcappb.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
+	8,  // 10: cre.sdk.v2.evmcappb.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
+	9,  // 11: cre.sdk.v2.evmcappb.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
+	10, // 12: cre.sdk.v2.evmcappb.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
+	11, // 13: cre.sdk.v2.evmcappb.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	12, // 14: cre.sdk.v2.evmcappb.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	13, // 15: cre.sdk.v2.evmcappb.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	14, // 16: cre.sdk.v2.evmcappb.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	1,  // 17: cre.sdk.v2.evmcappb.EVM.LogTrigger:input_type -> cre.sdk.v2.evmcappb.FilterLogTriggerRequest
+	15, // 18: cre.sdk.v2.evmcappb.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	16, // 19: cre.sdk.v2.evmcappb.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	17, // 20: cre.sdk.v2.evmcappb.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	18, // 21: cre.sdk.v2.evmcappb.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	19, // 22: cre.sdk.v2.evmcappb.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	20, // 23: cre.sdk.v2.evmcappb.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
+	21, // 24: cre.sdk.v2.evmcappb.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	22, // 25: cre.sdk.v2.evmcappb.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	11, // 26: cre.sdk.v2.evmcappb.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	11, // 27: cre.sdk.v2.evmcappb.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	16, // 28: cre.sdk.v2.evmcappb.EVM.LogTrigger:output_type -> loop.chain_capabilities.evm.FilterLogsReply
 	18, // [18:29] is the sub-list for method output_type
 	7,  // [7:18] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name

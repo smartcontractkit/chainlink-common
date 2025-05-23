@@ -21,17 +21,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EVM_CallContract_FullMethodName           = "/cre.sdk.v2.evmcap.EVM/CallContract"
-	EVM_FilterLogs_FullMethodName             = "/cre.sdk.v2.evmcap.EVM/FilterLogs"
-	EVM_BalanceAt_FullMethodName              = "/cre.sdk.v2.evmcap.EVM/BalanceAt"
-	EVM_EstimateGas_FullMethodName            = "/cre.sdk.v2.evmcap.EVM/EstimateGas"
-	EVM_GetTransactionByHash_FullMethodName   = "/cre.sdk.v2.evmcap.EVM/GetTransactionByHash"
-	EVM_GetTransactionReceipt_FullMethodName  = "/cre.sdk.v2.evmcap.EVM/GetTransactionReceipt"
-	EVM_LatestAndFinalizedHead_FullMethodName = "/cre.sdk.v2.evmcap.EVM/LatestAndFinalizedHead"
-	EVM_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evmcap.EVM/QueryTrackedLogs"
-	EVM_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evmcap.EVM/RegisterLogTracking"
-	EVM_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evmcap.EVM/UnregisterLogTracking"
-	EVM_LogTrigger_FullMethodName             = "/cre.sdk.v2.evmcap.EVM/LogTrigger"
+	EVM_CallContract_FullMethodName           = "/cre.sdk.v2.evmcappb.EVM/CallContract"
+	EVM_FilterLogs_FullMethodName             = "/cre.sdk.v2.evmcappb.EVM/FilterLogs"
+	EVM_BalanceAt_FullMethodName              = "/cre.sdk.v2.evmcappb.EVM/BalanceAt"
+	EVM_EstimateGas_FullMethodName            = "/cre.sdk.v2.evmcappb.EVM/EstimateGas"
+	EVM_GetTransactionByHash_FullMethodName   = "/cre.sdk.v2.evmcappb.EVM/GetTransactionByHash"
+	EVM_GetTransactionReceipt_FullMethodName  = "/cre.sdk.v2.evmcappb.EVM/GetTransactionReceipt"
+	EVM_LatestAndFinalizedHead_FullMethodName = "/cre.sdk.v2.evmcappb.EVM/LatestAndFinalizedHead"
+	EVM_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evmcappb.EVM/QueryTrackedLogs"
+	EVM_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evmcappb.EVM/RegisterLogTracking"
+	EVM_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evmcappb.EVM/UnregisterLogTracking"
+	EVM_LogTrigger_FullMethodName             = "/cre.sdk.v2.evmcappb.EVM/LogTrigger"
 )
 
 // EVMClient is the client API for EVM service.
@@ -452,7 +452,7 @@ type EVM_LogTriggerServer = grpc.ServerStreamingServer[chain_service.FilterLogsR
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EVM_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cre.sdk.v2.evmcap.EVM",
+	ServiceName: "cre.sdk.v2.evmcappb.EVM",
 	HandlerType: (*EVMServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

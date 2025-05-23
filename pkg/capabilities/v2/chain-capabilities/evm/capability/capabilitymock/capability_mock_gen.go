@@ -11,20 +11,20 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 // avoid unused imports
-var _ = testutils.Registry{}
+var _ = registry.Registry{}
 
 func NewEVMCapability(t testing.TB) (*EVMCapability, error) {
 	c := &EVMCapability{}
-	registry := testutils.GetRegistry(t)
-	err := registry.RegisterCapability(c)
+	reg := registry.GetRegistry(t)
+	err := reg.RegisterCapability(c)
 	return c, err
 }
 
@@ -292,7 +292,7 @@ func (cap *EVMCapability) InvokeTrigger(ctx context.Context, request *sdkpb.Trig
 		}
 
 		if cap.LogTrigger == nil {
-			return nil, testutils.ErrNoTriggerStub("LogTrigger")
+			return nil, registry.ErrNoTriggerStub("LogTrigger")
 		}
 
 		resp, err := cap.LogTrigger(ctx, input)

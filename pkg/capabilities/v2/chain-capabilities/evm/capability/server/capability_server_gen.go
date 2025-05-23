@@ -9,10 +9,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
-	//TODO ask ilija why the following import generation was broken
-	//"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb"
-	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"

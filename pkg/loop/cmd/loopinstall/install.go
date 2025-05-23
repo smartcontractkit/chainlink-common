@@ -46,9 +46,6 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		return fmt.Errorf("validation failed: %w", err)
 	}
 
-	// Clean the install path
-	cleanInstallPath := filepath.Clean(installPath)
-
 	// Full module path with git reference
 	fullModulePath := moduleURI
 	if gitRef != "" {
@@ -127,7 +124,7 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		}
 
 		// Add the install path
-		args = append(args, filepath.Join(cleanInstallPath))
+		args = append(args, installPath)
 
 		cmd := exec.Command("go", args...)
 		cmd.Dir = moduleDir

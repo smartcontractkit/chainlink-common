@@ -28,16 +28,16 @@ func (c GatewayConnectorClient) Start(ctx context.Context) error {
 	return nil
 }
 
-func (c GatewayConnectorClient) Close(ctx context.Context) error {
-	_, err := c.grpc.Close(ctx, &emptypb.Empty{})
+func (c GatewayConnectorClient) Close() error {
+	_, err := c.grpc.Close(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return fmt.Errorf("failed to close gateway connector: %w", err)
 	}
 	return nil
 }
 
-func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string, handler core.GatewayConnectorHandler) error {
-	info, err := handler.Info(ctx)
+func (c GatewayConnectorClient) AddHandler(methods []string, handler core.GatewayConnectorHandler) error {
+	info, err := handler.Info()
 	if err != nil {
 		return fmt.Errorf("failed to get handler info: %w", err)
 	}
@@ -51,7 +51,7 @@ func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string
 		return fmt.Errorf("failed to serve handler: %s: %w", info.ID, err)
 	}
 
-	_, err = c.grpc.AddHandler(ctx, &pb.AddHandlerRequest{
+	_, err = c.grpc.AddHandler(context.Background(), &pb.AddHandlerRequest{
 		HandlerId: id,
 		Methods:   methods,
 	})
@@ -62,8 +62,8 @@ func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string
 	return nil
 }
 
-func (c GatewayConnectorClient) GatewayIDs(ctx context.Context) ([]string, error) {
-	resp, err := c.grpc.GatewayIDs(ctx, &emptypb.Empty{})
+func (c GatewayConnectorClient) GatewayIDs() ([]string, error) {
+	resp, err := c.grpc.GatewayIDs(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get gateway IDs: %w", err)
 	}
@@ -74,8 +74,8 @@ func (c GatewayConnectorClient) GatewayIDs(ctx context.Context) ([]string, error
 	return gatewayIDs, nil
 }
 
-func (c GatewayConnectorClient) DonID(ctx context.Context) (string, error) {
-	resp, err := c.grpc.DonID(ctx, &emptypb.Empty{})
+func (c GatewayConnectorClient) DonID() (string, error) {
+	resp, err := c.grpc.DonID(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get DON ID: %w", err)
 	}
@@ -149,7 +149,7 @@ func (s GatewayConnectorServer) AddHandler(ctx context.Context, req *pb.AddHandl
 		return nil, fmt.Errorf("failed to dial handler: %s: %w", req.HandlerId, err)
 	}
 	client := NewGatewayConnectorHandlerClient(conn)
-	err = s.impl.AddHandler(ctx, req.Methods, client)
+	err = s.impl.AddHandler(req.Methods, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add handler: %s: %w", req.HandlerId, err)
 	}
@@ -169,7 +169,7 @@ func (s GatewayConnectorServer) SignAndSendToGateway(ctx context.Context, req *p
 	return &emptypb.Empty{}, nil
 }
 func (s GatewayConnectorServer) GatewayIDs(ctx context.Context, _ *emptypb.Empty) (*pb.GatewayIDsReply, error) {
-	gatewayIDs, err := s.impl.GatewayIDs(ctx)
+	gatewayIDs, err := s.impl.GatewayIDs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get gateway IDs: %w", err)
 	}
@@ -177,7 +177,7 @@ func (s GatewayConnectorServer) GatewayIDs(ctx context.Context, _ *emptypb.Empty
 }
 
 func (s GatewayConnectorServer) DonID(ctx context.Context, _ *emptypb.Empty) (*pb.DonIDReply, error) {
-	donID, err := s.impl.DonID(ctx)
+	donID, err := s.impl.DonID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DON ID: %w", err)
 	}

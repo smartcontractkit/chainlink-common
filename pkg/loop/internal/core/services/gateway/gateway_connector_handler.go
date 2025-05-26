@@ -24,13 +24,13 @@ func (c GatewayConnectorHandlerClient) Start(ctx context.Context) error {
 	return err
 }
 
-func (c GatewayConnectorHandlerClient) Close(ctx context.Context) error {
-	_, err := c.grpc.Close(ctx, &emptypb.Empty{})
+func (c GatewayConnectorHandlerClient) Close() error {
+	_, err := c.grpc.Close(context.Background(), &emptypb.Empty{})
 	return err
 }
 
-func (c GatewayConnectorHandlerClient) Info(ctx context.Context) (core.GatewayConnectorHandlerInfo, error) {
-	resp, err := c.grpc.Info(ctx, &emptypb.Empty{})
+func (c GatewayConnectorHandlerClient) Info() (core.GatewayConnectorHandlerInfo, error) {
+	resp, err := c.grpc.Info(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return core.GatewayConnectorHandlerInfo{}, fmt.Errorf("failed to get handler info: %w", err)
 	}
@@ -71,7 +71,7 @@ func (s GatewayConnectorHandlerServer) Start(ctx context.Context, _ *emptypb.Emp
 }
 
 func (s GatewayConnectorHandlerServer) Close(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	if err := s.impl.Close(ctx); err != nil {
+	if err := s.impl.Close(); err != nil {
 		return nil, fmt.Errorf("failed to close handler: %w", err)
 	}
 	return &emptypb.Empty{}, nil

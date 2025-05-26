@@ -20,6 +20,22 @@ type GatewayConnectorClient struct {
 	grpc pb.GatewayConnectorClient
 }
 
+func (c GatewayConnectorClient) Start(ctx context.Context) error {
+	_, err := c.grpc.Start(ctx, &emptypb.Empty{})
+	if err != nil {
+		return fmt.Errorf("failed to start gateway connector: %w", err)
+	}
+	return nil
+}
+
+func (c GatewayConnectorClient) Close(ctx context.Context) error {
+	_, err := c.grpc.Close(ctx, &emptypb.Empty{})
+	if err != nil {
+		return fmt.Errorf("failed to close gateway connector: %w", err)
+	}
+	return nil
+}
+
 func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string, handler core.GatewayConnectorHandler) error {
 	info, err := handler.Info(ctx)
 	if err != nil {

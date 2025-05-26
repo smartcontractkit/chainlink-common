@@ -279,8 +279,10 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\x11AddHandlerRequest\x12\x18\n" +
 	"\amethods\x18\x01 \x03(\tR\amethods\x12\x1d\n" +
 	"\n" +
-	"handler_id\x18\x02 \x01(\rR\thandlerId2\x98\x03\n" +
-	"\x10GatewayConnector\x12=\n" +
+	"handler_id\x18\x02 \x01(\rR\thandlerId2\x8a\x04\n" +
+	"\x10GatewayConnector\x127\n" +
+	"\x05Start\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x127\n" +
+	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12=\n" +
 	"\n" +
 	"AddHandler\x12\x17.loop.AddHandlerRequest\x1a\x16.google.protobuf.Empty\x12A\n" +
 	"\rSendToGateway\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.Empty\x12O\n" +
@@ -310,25 +312,29 @@ var file_gateway_connector_proto_goTypes = []any{
 	(*DonIDReply)(nil),                // 3: loop.DonIDReply
 	(*AddHandlerRequest)(nil),         // 4: loop.AddHandlerRequest
 	(*MessageBody)(nil),               // 5: loop.MessageBody
-	(*SendMessageRequest)(nil),        // 6: loop.SendMessageRequest
-	(*emptypb.Empty)(nil),             // 7: google.protobuf.Empty
+	(*emptypb.Empty)(nil),             // 6: google.protobuf.Empty
+	(*SendMessageRequest)(nil),        // 7: loop.SendMessageRequest
 }
 var file_gateway_connector_proto_depIdxs = []int32{
 	5, // 0: loop.SignAndSendMessageRequest.body:type_name -> loop.MessageBody
-	4, // 1: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
-	6, // 2: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
-	1, // 3: loop.GatewayConnector.SignAndSendToGateway:input_type -> loop.SignAndSendMessageRequest
-	7, // 4: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
-	7, // 5: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
-	0, // 6: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
-	7, // 7: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
-	7, // 8: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
-	7, // 9: loop.GatewayConnector.SignAndSendToGateway:output_type -> google.protobuf.Empty
-	2, // 10: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
-	3, // 11: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
-	7, // 12: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
-	7, // [7:13] is the sub-list for method output_type
-	1, // [1:7] is the sub-list for method input_type
+	6, // 1: loop.GatewayConnector.Start:input_type -> google.protobuf.Empty
+	6, // 2: loop.GatewayConnector.Close:input_type -> google.protobuf.Empty
+	4, // 3: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
+	7, // 4: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
+	1, // 5: loop.GatewayConnector.SignAndSendToGateway:input_type -> loop.SignAndSendMessageRequest
+	6, // 6: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
+	6, // 7: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
+	0, // 8: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
+	6, // 9: loop.GatewayConnector.Start:output_type -> google.protobuf.Empty
+	6, // 10: loop.GatewayConnector.Close:output_type -> google.protobuf.Empty
+	6, // 11: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
+	6, // 12: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
+	6, // 13: loop.GatewayConnector.SignAndSendToGateway:output_type -> google.protobuf.Empty
+	2, // 14: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
+	3, // 15: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
+	6, // 16: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
+	9, // [9:17] is the sub-list for method output_type
+	1, // [1:9] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name

@@ -30,6 +30,8 @@ message AddHandlerRequest {
 }
 
 service GatewayConnector {
+  rpc Start(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc AddHandler(AddHandlerRequest) returns (google.protobuf.Empty);
   rpc SendToGateway(SendMessageRequest) returns (google.protobuf.Empty);
   rpc SignAndSendToGateway(SignAndSendMessageRequest) returns (google.protobuf.Empty);

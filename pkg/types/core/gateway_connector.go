@@ -8,6 +8,10 @@ import (
 
 // GatewayConnector is a component run by Nodes to connect to a set of Gateways.
 type GatewayConnector interface {
+	// Start starts the GatewayConnector
+	Start(context.Context) error
+	// Close closes the GatewayConnector
+	Close(context.Context) error
 	// AddHandler adds a handler to the GatewayConnector
 	AddHandler(ctx context.Context, methods []string, handler GatewayConnectorHandler) error
 	// SendToGateway takes a signed message as argument and sends it to the specified gateway
@@ -23,7 +27,9 @@ type GatewayConnector interface {
 
 // GatewayConnector user (node) implements application logic in the Handler interface.
 type GatewayConnectorHandler interface {
+	// Start starts the GatewayConnectorHandler
 	Start(context.Context) error
+	// Close closes the GatewayConnectorHandler
 	Close(context.Context) error
 	// TODO: revisit interface
 	Info(ctx context.Context) (GatewayConnectorHandlerInfo, error)

@@ -25,61 +25,61 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Tag int32
+type ConfidenceLevel int32
 
 const (
-	Tag_FINALIZED   Tag = 0
-	Tag_UNFINALIZED Tag = 1
+	ConfidenceLevel_FINALIZED   ConfidenceLevel = 0
+	ConfidenceLevel_UNFINALIZED ConfidenceLevel = 1
 )
 
-// Enum value maps for Tag.
+// Enum value maps for ConfidenceLevel.
 var (
-	Tag_name = map[int32]string{
+	ConfidenceLevel_name = map[int32]string{
 		0: "FINALIZED",
 		1: "UNFINALIZED",
 	}
-	Tag_value = map[string]int32{
+	ConfidenceLevel_value = map[string]int32{
 		"FINALIZED":   0,
 		"UNFINALIZED": 1,
 	}
 )
 
-func (x Tag) Enum() *Tag {
-	p := new(Tag)
+func (x ConfidenceLevel) Enum() *ConfidenceLevel {
+	p := new(ConfidenceLevel)
 	*p = x
 	return p
 }
 
-func (x Tag) String() string {
+func (x ConfidenceLevel) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Tag) Descriptor() protoreflect.EnumDescriptor {
+func (ConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
 	return file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_enumTypes[0].Descriptor()
 }
 
-func (Tag) Type() protoreflect.EnumType {
+func (ConfidenceLevel) Type() protoreflect.EnumType {
 	return &file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_enumTypes[0]
 }
 
-func (x Tag) Number() protoreflect.EnumNumber {
+func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Tag.Descriptor instead.
-func (Tag) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ConfidenceLevel.Descriptor instead.
+func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
 	return file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDescGZIP(), []int{0}
 }
 
 type FilterLogTriggerRequest struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Addresses     []*chain_service.Address `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`                           // contract(s) to filter logs from, at least one address is required
-	Topics0       []*chain_service.Hash    `protobuf:"bytes,2,rep,name=topics0,proto3" json:"topics0,omitempty"`                               // filter log by event signature and indexed args, at least one topic is required
-	Topics1       []*chain_service.Hash    `protobuf:"bytes,3,rep,name=topics1,proto3" json:"topics1,omitempty"`                               // filter log by event signature and indexed args
-	Topics2       []*chain_service.Hash    `protobuf:"bytes,4,rep,name=topics2,proto3" json:"topics2,omitempty"`                               // filter log by event signature and indexed args
-	Topics3       []*chain_service.Hash    `protobuf:"bytes,5,rep,name=topics3,proto3" json:"topics3,omitempty"`                               // filter log by event signature and indexed args
-	FromBlock     *pb.BigInt               `protobuf:"bytes,6,opt,name=FromBlock,proto3" json:"FromBlock,omitempty"`                           // block number to start filtering from
-	FromTag       Tag                      `protobuf:"varint,7,opt,name=FromTag,proto3,enum=cre.sdk.v2.evmcappb.Tag" json:"FromTag,omitempty"` // defaults to "finalized"
+	Addresses     []*chain_service.Address `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`                                       // contract(s) to filter logs from, at least one address is required
+	Topics0       []*chain_service.Hash    `protobuf:"bytes,2,rep,name=topics0,proto3" json:"topics0,omitempty"`                                           // list of topics0/eventSigs to filter, at least one topic is required
+	Topics1       []*chain_service.Hash    `protobuf:"bytes,3,rep,name=topics1,proto3" json:"topics1,omitempty"`                                           // list of topics1 to filter, optional, can be empty
+	Topics2       []*chain_service.Hash    `protobuf:"bytes,4,rep,name=topics2,proto3" json:"topics2,omitempty"`                                           // list of topics1 to filter, optional, can be empty
+	Topics3       []*chain_service.Hash    `protobuf:"bytes,5,rep,name=topics3,proto3" json:"topics3,omitempty"`                                           // list of topics1 to filter, optional, can be empty
+	FromBlock     *pb.BigInt               `protobuf:"bytes,6,opt,name=FromBlock,proto3" json:"FromBlock,omitempty"`                                       // block number to start filtering from, optional
+	FromTag       ConfidenceLevel          `protobuf:"varint,7,opt,name=FromTag,proto3,enum=cre.sdk.v2.evmcappb.ConfidenceLevel" json:"FromTag,omitempty"` // optional, defaults to "finalized"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -156,27 +156,27 @@ func (x *FilterLogTriggerRequest) GetFromBlock() *pb.BigInt {
 	return nil
 }
 
-func (x *FilterLogTriggerRequest) GetFromTag() Tag {
+func (x *FilterLogTriggerRequest) GetFromTag() ConfidenceLevel {
 	if x != nil {
 		return x.FromTag
 	}
-	return Tag_FINALIZED
+	return ConfidenceLevel_FINALIZED
 }
 
 var File_capabilities_v2_chain_capabilities_evm_capability_capability_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc = "" +
 	"\n" +
-	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x13cre.sdk.v2.evmcappb\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\x1a\x16values/pb/values.proto\"\xb3\x03\n" +
+	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x13cre.sdk.v2.evmcappb\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\x1a\x16values/pb/values.proto\"\xbf\x03\n" +
 	"\x17FilterLogTriggerRequest\x12B\n" +
 	"\taddresses\x18\x01 \x03(\v2$.loop.chain_capabilities.evm.AddressR\taddresses\x12;\n" +
 	"\atopics0\x18\x02 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics0\x12;\n" +
 	"\atopics1\x18\x03 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics1\x12;\n" +
 	"\atopics2\x18\x04 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics2\x12;\n" +
 	"\atopics3\x18\x05 \x03(\v2!.loop.chain_capabilities.evm.HashR\atopics3\x12,\n" +
-	"\tFromBlock\x18\x06 \x01(\v2\x0e.values.BigIntR\tFromBlock\x122\n" +
-	"\aFromTag\x18\a \x01(\x0e2\x18.cre.sdk.v2.evmcappb.TagR\aFromTag*%\n" +
-	"\x03Tag\x12\r\n" +
+	"\tFromBlock\x18\x06 \x01(\v2\x0e.values.BigIntR\tFromBlock\x12>\n" +
+	"\aFromTag\x18\a \x01(\x0e2$.cre.sdk.v2.evmcappb.ConfidenceLevelR\aFromTag*1\n" +
+	"\x0fConfidenceLevel\x12\r\n" +
 	"\tFINALIZED\x10\x00\x12\x0f\n" +
 	"\vUNFINALIZED\x10\x012\x97\n" +
 	"\n" +
@@ -210,7 +210,7 @@ func file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_raw
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes = []any{
-	(Tag)(0),                                           // 0: cre.sdk.v2.evmcappb.Tag
+	(ConfidenceLevel)(0),                               // 0: cre.sdk.v2.evmcappb.ConfidenceLevel
 	(*FilterLogTriggerRequest)(nil),                    // 1: cre.sdk.v2.evmcappb.FilterLogTriggerRequest
 	(*chain_service.Address)(nil),                      // 2: loop.chain_capabilities.evm.Address
 	(*chain_service.Hash)(nil),                         // 3: loop.chain_capabilities.evm.Hash
@@ -241,7 +241,7 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depI
 	3,  // 3: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.topics2:type_name -> loop.chain_capabilities.evm.Hash
 	3,  // 4: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.topics3:type_name -> loop.chain_capabilities.evm.Hash
 	4,  // 5: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.FromBlock:type_name -> values.BigInt
-	0,  // 6: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.FromTag:type_name -> cre.sdk.v2.evmcappb.Tag
+	0,  // 6: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.FromTag:type_name -> cre.sdk.v2.evmcappb.ConfidenceLevel
 	5,  // 7: cre.sdk.v2.evmcappb.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
 	6,  // 8: cre.sdk.v2.evmcappb.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
 	7,  // 9: cre.sdk.v2.evmcappb.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest

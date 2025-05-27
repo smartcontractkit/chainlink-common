@@ -31,6 +31,7 @@ const (
 	EVM_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evmcap.EVM/QueryTrackedLogs"
 	EVM_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evmcap.EVM/RegisterLogTracking"
 	EVM_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evmcap.EVM/UnregisterLogTracking"
+	EVM_WriteReport_FullMethodName            = "/cre.sdk.v2.evmcap.EVM/WriteReport"
 )
 
 // EVMClient is the client API for EVM service.
@@ -47,6 +48,7 @@ type EVMClient interface {
 	QueryTrackedLogs(ctx context.Context, in *chain_service.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*chain_service.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *chain_service.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *chain_service.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	WriteReport(ctx context.Context, in *chain_service.WriteReportRequest, opts ...grpc.CallOption) (*chain_service.WriteReportReply, error)
 }
 
 type eVMClient struct {
@@ -157,6 +159,16 @@ func (c *eVMClient) UnregisterLogTracking(ctx context.Context, in *chain_service
 	return out, nil
 }
 
+func (c *eVMClient) WriteReport(ctx context.Context, in *chain_service.WriteReportRequest, opts ...grpc.CallOption) (*chain_service.WriteReportReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(chain_service.WriteReportReply)
+	err := c.cc.Invoke(ctx, EVM_WriteReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EVMServer is the server API for EVM service.
 // All implementations must embed UnimplementedEVMServer
 // for forward compatibility.
@@ -171,6 +183,7 @@ type EVMServer interface {
 	QueryTrackedLogs(context.Context, *chain_service.QueryTrackedLogsRequest) (*chain_service.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *chain_service.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *chain_service.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	WriteReport(context.Context, *chain_service.WriteReportRequest) (*chain_service.WriteReportReply, error)
 	mustEmbedUnimplementedEVMServer()
 }
 
@@ -210,6 +223,9 @@ func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *chain_servic
 }
 func (UnimplementedEVMServer) UnregisterLogTracking(context.Context, *chain_service.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+func (UnimplementedEVMServer) WriteReport(context.Context, *chain_service.WriteReportRequest) (*chain_service.WriteReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WriteReport not implemented")
 }
 func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
 func (UnimplementedEVMServer) testEmbeddedByValue()             {}
@@ -412,6 +428,24 @@ func _EVM_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVM_WriteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(chain_service.WriteReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMServer).WriteReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVM_WriteReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMServer).WriteReport(ctx, req.(*chain_service.WriteReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EVM_ServiceDesc is the grpc.ServiceDesc for EVM service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -458,6 +492,10 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnregisterLogTracking",
 			Handler:    _EVM_UnregisterLogTracking_Handler,
+		},
+		{
+			MethodName: "WriteReport",
+			Handler:    _EVM_WriteReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

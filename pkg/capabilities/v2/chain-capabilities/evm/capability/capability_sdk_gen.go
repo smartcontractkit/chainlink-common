@@ -247,3 +247,26 @@ func (c *EVM) UnregisterLogTracking(runtime sdk.DonRuntime, input *evmpb.Unregis
 		}
 	})
 }
+
+func (c *EVM) WriteReport(runtime sdk.DonRuntime, input *evmpb.WriteReportRequest) sdk.Promise[*evmpb.WriteReportReply] {
+	wrapped, err := anypb.New(input)
+	if err != nil {
+		return sdk.PromiseFromResult[*evmpb.WriteReportReply](nil, err)
+	}
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
+		Id:      "mainnet-evm@1.0.0",
+		Payload: wrapped,
+		Method:  "WriteReport",
+	}), func(i *sdkpb.CapabilityResponse) (*evmpb.WriteReportReply, error) {
+		switch payload := i.Response.(type) {
+		case *sdkpb.CapabilityResponse_Error:
+			return nil, errors.New(payload.Error)
+		case *sdkpb.CapabilityResponse_Payload:
+			output := &evmpb.WriteReportReply{}
+			err = payload.Payload.UnmarshalTo(output)
+			return output, err
+		default:
+			return nil, errors.New("unexpected response type")
+		}
+	})
+}

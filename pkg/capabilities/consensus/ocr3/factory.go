@@ -24,7 +24,7 @@ const (
 )
 
 type factory struct {
-	store                   *requests.Store[*requests.ReportRequest]
+	store                   *requests.Store[*requests.ReportRequest, requests.Response]
 	capability              *capability
 	batchSize               int
 	outcomePruningThreshold uint64
@@ -33,7 +33,7 @@ type factory struct {
 	services.StateMachine
 }
 
-func newFactory(s *requests.Store[*requests.ReportRequest], c *capability, lggr logger.Logger) (*factory, error) {
+func newFactory(s *requests.Store[*requests.ReportRequest, requests.Response], c *capability, lggr logger.Logger) (*factory, error) {
 	return &factory{
 		store:      s,
 		capability: c,

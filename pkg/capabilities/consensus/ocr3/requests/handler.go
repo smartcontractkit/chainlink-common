@@ -2,7 +2,6 @@ package requests
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jonboulle/clockwork"
@@ -11,34 +10,46 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-type responseCacheEntry struct {
-	response  Response
+type responseCacheEntry[R ConsensusResponse] struct {
+	response  R
 	entryTime time.Time
 }
 
-type Handler[T ConsensusRequest[T]] struct {
+type ConsensusRequest[T any, R ConsensusResponse] interface {
+	ID() string
+	Copy() T
+	ExpiryTime() time.Time
+	SendResponse(ctx context.Context, response R)
+	SendTimeout(ctx context.Context)
+}
+
+type ConsensusResponse interface {
+	RequestID() string
+}
+
+type Handler[T ConsensusRequest[T, R], R ConsensusResponse] struct {
 	services.Service
 	eng *services.Engine
 
-	store *Store[T]
+	store *Store[T, R]
 
 	pendingRequests map[string]T
 
-	responseCache   map[string]*responseCacheEntry
+	responseCache   map[string]*responseCacheEntry[R]
 	cacheExpiryTime time.Duration
 
-	responseCh chan Response
+	responseCh chan R
 	requestCh  chan T
 
 	clock clockwork.Clock
 }
 
-func NewHandler[T ConsensusRequest[T]](lggr logger.Logger, s *Store[T], clock clockwork.Clock, responseExpiryTime time.Duration) *Handler[T] {
-	h := &Handler[T]{
+func NewHandler[T ConsensusRequest[T, R], R ConsensusResponse](lggr logger.Logger, s *Store[T, R], clock clockwork.Clock, responseExpiryTime time.Duration) *Handler[T, R] {
+	h := &Handler[T, R]{
 		store:           s,
 		pendingRequests: map[string]T{},
-		responseCache:   map[string]*responseCacheEntry{},
-		responseCh:      make(chan Response),
+		responseCache:   map[string]*responseCacheEntry[R]{},
+		responseCh:      make(chan R),
 		requestCh:       make(chan T),
 		clock:           clock,
 		cacheExpiryTime: responseExpiryTime,
@@ -50,7 +61,7 @@ func NewHandler[T ConsensusRequest[T]](lggr logger.Logger, s *Store[T], clock cl
 	return h
 }
 
-func (h *Handler[T]) SendResponse(ctx context.Context, resp Response) {
+func (h *Handler[T, R]) SendResponse(ctx context.Context, resp R) {
 	select {
 	case <-ctx.Done():
 		return
@@ -58,7 +69,7 @@ func (h *Handler[T]) SendResponse(ctx context.Context, resp Response) {
 	}
 }
 
-func (h *Handler[T]) SendRequest(ctx context.Context, r T) {
+func (h *Handler[T, R]) SendRequest(ctx context.Context, r T) {
 	select {
 	case <-ctx.Done():
 		return
@@ -66,12 +77,12 @@ func (h *Handler[T]) SendRequest(ctx context.Context, r T) {
 	}
 }
 
-func (h *Handler[T]) start(_ context.Context) error {
+func (h *Handler[T, R]) start(_ context.Context) error {
 	h.eng.Go(h.worker)
 	return nil
 }
 
-func (h *Handler[T]) worker(ctx context.Context) {
+func (h *Handler[T, R]) worker(ctx context.Context) {
 	responseCacheExpiryTicker := h.clock.NewTicker(h.cacheExpiryTime)
 	defer responseCacheExpiryTicker.Stop()
 
@@ -103,13 +114,13 @@ func (h *Handler[T]) worker(ctx context.Context) {
 			}
 
 		case resp := <-h.responseCh:
-			req, wasPresent := h.store.evict(resp.WorkflowExecutionID)
+			req, wasPresent := h.store.evict(resp.RequestID())
 			if !wasPresent {
-				h.responseCache[resp.WorkflowExecutionID] = &responseCacheEntry{
+				h.responseCache[resp.RequestID()] = &responseCacheEntry[R]{
 					response:  resp,
 					entryTime: h.clock.Now(),
 				}
-				h.eng.Debugw("Caching response without request", "workflowExecutionID", resp.WorkflowExecutionID)
+				h.eng.Debugw("Caching response without request", "requestID", resp.RequestID())
 				continue
 			}
 
@@ -118,27 +129,28 @@ func (h *Handler[T]) worker(ctx context.Context) {
 	}
 }
 
-func (h *Handler[T]) sendResponse(ctx context.Context, req T, resp Response) {
+func (h *Handler[T, R]) sendResponse(ctx context.Context, req T, resp R) {
 	req.SendResponse(ctx, resp)
 	delete(h.pendingRequests, req.ID())
 }
 
-func (h *Handler[T]) expirePendingRequests(ctx context.Context) {
+func (h *Handler[T, R]) sendTimeout(ctx context.Context, req T) {
+	req.SendTimeout(ctx)
+	delete(h.pendingRequests, req.ID())
+}
+
+func (h *Handler[T, R]) expirePendingRequests(ctx context.Context) {
 	now := h.clock.Now()
 
 	for _, req := range h.pendingRequests {
 		if now.After(req.ExpiryTime()) {
-			resp := Response{
-				WorkflowExecutionID: req.ID(),
-				Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, request ID %s", req.ID()),
-			}
 			h.store.evict(req.ID())
-			h.sendResponse(ctx, req, resp)
+			h.sendTimeout(ctx, req)
 		}
 	}
 }
 
-func (h *Handler[T]) expireCachedResponses() {
+func (h *Handler[T, R]) expireCachedResponses() {
 	for k, v := range h.responseCache {
 		if h.clock.Since(v.entryTime) > h.cacheExpiryTime {
 			delete(h.responseCache, k)

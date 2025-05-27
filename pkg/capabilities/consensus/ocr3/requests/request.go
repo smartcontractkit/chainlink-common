@@ -2,6 +2,7 @@ package requests
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -47,6 +48,14 @@ func (r *ReportRequest) SendResponse(ctx context.Context, resp Response) {
 	}
 }
 
+func (r *ReportRequest) SendTimeout(ctx context.Context) {
+	timeoutResponse := Response{
+		WorkflowExecutionID: r.WorkflowExecutionID,
+		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
+	}
+	r.SendResponse(ctx, timeoutResponse)
+}
+
 func (r *ReportRequest) Copy() *ReportRequest {
 	return &ReportRequest{
 		Observations:            r.Observations.CopyList(),
@@ -74,4 +83,8 @@ type Response struct {
 	WorkflowExecutionID string
 	Value               *values.Map
 	Err                 error
+}
+
+func (r Response) RequestID() string {
+	return r.WorkflowExecutionID
 }

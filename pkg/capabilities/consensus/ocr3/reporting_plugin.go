@@ -39,14 +39,14 @@ type CapabilityIface interface {
 
 type reportingPlugin struct {
 	batchSize               int
-	s                       *requests.Store[*requests.ReportRequest]
+	s                       *requests.Store[*requests.ReportRequest, requests.Response]
 	r                       CapabilityIface
 	config                  ocr3types.ReportingPluginConfig
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
 }
 
-func NewReportingPlugin(s *requests.Store[*requests.ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
+func NewReportingPlugin(s *requests.Store[*requests.ReportRequest, requests.Response], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
 	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
 		s:                       s,

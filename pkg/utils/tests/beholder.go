@@ -38,11 +38,11 @@ func (b BeholderTester) Len(t *testing.T, attrKVs ...any) int {
 // Messages returns messages matching the provided keys and values.
 func (b BeholderTester) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
-	
+
 	if attrKVs == nil {
-	    return b.emitter.msgs
+		return b.emitter.msgs
 	}
-	
+
 	return b.msgsForKVs(t, attrKVs...)
 }
 func (b BeholderTester) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
@@ -86,7 +86,7 @@ func (b BeholderTester) BaseMessagesForLabels(t *testing.T, labels map[string]st
 
 messageLoop:
 	for _, eMsg := range b.emitter.msgs {
-		dataSchema, ok := eMsg.Attrs["beholder_entity"].(string)
+		dataSchema, ok := eMsg.Attrs[beholder.AttrKeyBeholderEntity].(string)
 		if !ok {
 			continue
 		}

@@ -11,12 +11,6 @@ import (
 	"google.golang.org/protobuf/runtime/protoimpl"
 )
 
-const (
-	AttrKeyBeholderDataSchema = "beholder_data_schema"
-	AttrKeyBeholderEntity     = "beholder_entity"
-	AttrKeyBeholderDomain     = "beholder_domain"
-)
-
 // patternSnake is a regular expression to match CamelCase words
 // Notice: we use the Unicode property 'Lu' (uppercase letter) to match
 // the first letter of the word, and 'P{Lu}' (not uppercase letter) to match

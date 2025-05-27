@@ -32,11 +32,6 @@ type GatewayConnectorHandler interface {
 	// Close closes the GatewayConnectorHandler
 	Close() error
 	// TODO: revisit interface
-	ID() (GatewayConnectorHandlerInfo, error)
+	ID() (string, error)
 	HandleGatewayMessage(ctx context.Context, gatewayID string, msg *gateway.Message) error
-}
-
-type GatewayConnectorHandlerInfo struct {
-	// ID is the unique identifier of the handler
-	ID string
 }

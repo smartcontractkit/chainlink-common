@@ -29,14 +29,12 @@ func (c GatewayConnectorHandlerClient) Close() error {
 	return err
 }
 
-func (c GatewayConnectorHandlerClient) ID() (core.GatewayConnectorHandlerInfo, error) {
+func (c GatewayConnectorHandlerClient) ID() (string, error) {
 	resp, err := c.grpc.Id(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		return core.GatewayConnectorHandlerInfo{}, fmt.Errorf("failed to get handler info: %w", err)
+		return "", fmt.Errorf("failed to get handler info: %w", err)
 	}
-	return core.GatewayConnectorHandlerInfo{
-		ID: resp.Id,
-	}, nil
+	return resp.Id, nil
 }
 
 func (c GatewayConnectorHandlerClient) HandleGatewayMessage(ctx context.Context, gatewayID string, msg *gateway.Message) error {

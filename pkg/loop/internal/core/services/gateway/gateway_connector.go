@@ -37,18 +37,18 @@ func (c GatewayConnectorClient) Close() error {
 }
 
 func (c GatewayConnectorClient) AddHandler(methods []string, handler core.GatewayConnectorHandler) error {
-	info, err := handler.Info()
+	handlerID, err := handler.ID()
 	if err != nil {
 		return fmt.Errorf("failed to get handler info: %w", err)
 	}
 	gatewayConnectorServer := NewGatewayConnectorHandlerServer(handler)
 
 	var cRes net.Resource
-	id, cRes, err := c.ServeNew(info.ID, func(s *grpc.Server) {
+	id, cRes, err := c.ServeNew(handlerID, func(s *grpc.Server) {
 		pb.RegisterGatewayConnectorHandlerServer(s, gatewayConnectorServer)
 	})
 	if err != nil {
-		return fmt.Errorf("failed to serve handler: %s: %w", info.ID, err)
+		return fmt.Errorf("failed to serve handler: %s: %w", handlerID, err)
 	}
 
 	_, err = c.grpc.AddHandler(context.Background(), &pb.AddHandlerRequest{
@@ -68,9 +68,7 @@ func (c GatewayConnectorClient) GatewayIDs() ([]string, error) {
 		return nil, fmt.Errorf("failed to get gateway IDs: %w", err)
 	}
 	gatewayIDs := make([]string, len(resp.GatewayIds))
-	for i, id := range resp.GatewayIds {
-		gatewayIDs[i] = id
-	}
+	copy(gatewayIDs, resp.GatewayIds)
 	return gatewayIDs, nil
 }
 

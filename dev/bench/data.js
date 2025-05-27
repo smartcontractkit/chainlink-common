@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748354552255,
+  "lastUpdate": 1748364136321,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14238,6 +14238,48 @@ window.BENCHMARK_DATA = {
             "value": 28205,
             "unit": "ns/op",
             "extra": "42619 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5a4fb8e255ffd85c9d1da659aa0b0cc453862424",
+          "message": "use insecure credentials as the default fallback for local testing (#1212)",
+          "timestamp": "2025-05-27T11:40:52-05:00",
+          "tree_id": "bbc0c2ecf8805e8132e5ce104f31dfea44a0e6b1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5a4fb8e255ffd85c9d1da659aa0b0cc453862424"
+        },
+        "date": 1748364134762,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.7,
+            "unit": "ns/op",
+            "extra": "3166165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.8,
+            "unit": "ns/op",
+            "extra": "2860609 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28115,
+            "unit": "ns/op",
+            "extra": "42651 times\n4 procs"
           }
         ]
       }

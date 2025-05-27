@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -37,16 +38,18 @@ func (e *EVMClient) GetTransactionFee(ctx context.Context, transactionID string)
 	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransationFee())}, nil
 }
 
-func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, readAt string) ([]byte, error) {
 	protoCallMsg, err := evmpb.ConvertCallMsgToProto(msg)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	reply, err := e.grpcClient.CallContract(ctx, &evmpb.CallContractRequest{
-		Call:        protoCallMsg,
-		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
-	})
+	protoReadAt, err := evmpb.ConvertBlockOrConfidenceToProto(readAt)
+	if err != nil {
+		return nil, net.WrapRPCErr(fmt.Errorf("%w, err: %w", types.ErrInvalidReadAt, err))
+	}
+
+	reply, err := e.grpcClient.CallContract(ctx, &evmpb.CallContractRequest{Call: protoCallMsg, ReadAt: protoReadAt})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -203,7 +206,12 @@ func (e *evmServer) CallContract(ctx context.Context, request *evmpb.CallContrac
 		return nil, err
 	}
 
-	data, err := e.impl.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.GetBlockNumber()))
+	readAt, err := evmpb.ConvertBlockOrConfidenceFromProto(request.GetReadAt())
+	if err != nil {
+		return nil, fmt.Errorf("%w, err: %w", types.ErrInvalidReadAt, err)
+	}
+
+	data, err := e.impl.CallContract(ctx, callMsg, readAt)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +305,7 @@ func (e *evmServer) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTr
 		return nil, err
 	}
 
-	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	conf, err := chaincommonpb.ConvertConfidenceFromProto(request.GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}

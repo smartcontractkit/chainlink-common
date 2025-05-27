@@ -101,13 +101,18 @@ type ChainService interface {
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
 type GethClient interface {
-	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
+	// CallContract executes a contract call and returns the result, readAt can be a block number or a primitives.ConfidenceLevel (finalized or unconfirmed).
+	CallContract(ctx context.Context, msg *evm.CallMsg, readAt string) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 }
+
+const (
+	ErrInvalidReadAt = InvalidArgumentError("invalid readAt argument")
+)
 
 type EVMService interface {
 	GethClient

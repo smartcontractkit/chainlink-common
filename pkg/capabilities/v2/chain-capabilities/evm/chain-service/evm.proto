@@ -183,7 +183,7 @@ message LatestAndFinalizedHeadReply {
 
 message CallContractRequest {
   CallMsg call = 1;
-  values.BigInt block_number = 2;
+  BlockOrConfidence read_at = 2;
 }
 
 message CallContractReply {
@@ -276,4 +276,11 @@ enum TransactionStatus {
   TRANSACTION_STATUS_FINALIZED = 3;
   TRANSACTION_STATUS_FAILED = 4;
   TRANSACTION_STATUS_FATAL = 5;
+}
+
+message BlockOrConfidence {
+  oneof kind {
+    values.BigInt blockNumber = 1;
+    loop.chain.common.Confidence confidence = 2;  
+  }
 }

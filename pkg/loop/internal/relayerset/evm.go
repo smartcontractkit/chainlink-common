@@ -2,6 +2,7 @@ package relayerset
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -165,7 +166,12 @@ func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContr
 		return nil, err
 	}
 
-	reply, err := evmService.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.Request.BlockNumber))
+	readAt, err := evmpb.ConvertBlockOrConfidenceFromProto(request.GetRequest().GetReadAt())
+	if err != nil {
+		return nil, fmt.Errorf("%w, err: %w", types.ErrInvalidReadAt, err)
+	}
+
+	reply, err := evmService.CallContract(ctx, callMsg, readAt)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +308,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *relayerset.Query
 		return nil, err
 	}
 
-	conf, err := chaincommonpb.ConfidenceFromProto(request.GetRequest().GetConfidenceLevel())
+	conf, err := chaincommonpb.ConvertConfidenceFromProto(request.GetRequest().GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}

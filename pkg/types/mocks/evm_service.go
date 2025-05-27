@@ -89,9 +89,9 @@ func (_c *EVMService_BalanceAt_Call) RunAndReturn(run func(context.Context, [20]
 	return _c
 }
 
-// CallContract provides a mock function with given fields: ctx, msg, blockNumber
-func (_m *EVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	ret := _m.Called(ctx, msg, blockNumber)
+// CallContract provides a mock function with given fields: ctx, msg, readAt
+func (_m *EVMService) CallContract(ctx context.Context, msg *evm.CallMsg, readAt string) ([]byte, error) {
+	ret := _m.Called(ctx, msg, readAt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CallContract")
@@ -99,19 +99,19 @@ func (_m *EVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockN
 
 	var r0 []byte
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *evm.CallMsg, *big.Int) ([]byte, error)); ok {
-		return rf(ctx, msg, blockNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, *evm.CallMsg, string) ([]byte, error)); ok {
+		return rf(ctx, msg, readAt)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *evm.CallMsg, *big.Int) []byte); ok {
-		r0 = rf(ctx, msg, blockNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, *evm.CallMsg, string) []byte); ok {
+		r0 = rf(ctx, msg, readAt)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]byte)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *evm.CallMsg, *big.Int) error); ok {
-		r1 = rf(ctx, msg, blockNumber)
+	if rf, ok := ret.Get(1).(func(context.Context, *evm.CallMsg, string) error); ok {
+		r1 = rf(ctx, msg, readAt)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -127,14 +127,14 @@ type EVMService_CallContract_Call struct {
 // CallContract is a helper method to define mock.On call
 //   - ctx context.Context
 //   - msg *evm.CallMsg
-//   - blockNumber *big.Int
-func (_e *EVMService_Expecter) CallContract(ctx interface{}, msg interface{}, blockNumber interface{}) *EVMService_CallContract_Call {
-	return &EVMService_CallContract_Call{Call: _e.mock.On("CallContract", ctx, msg, blockNumber)}
+//   - readAt string
+func (_e *EVMService_Expecter) CallContract(ctx interface{}, msg interface{}, readAt interface{}) *EVMService_CallContract_Call {
+	return &EVMService_CallContract_Call{Call: _e.mock.On("CallContract", ctx, msg, readAt)}
 }
 
-func (_c *EVMService_CallContract_Call) Run(run func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int)) *EVMService_CallContract_Call {
+func (_c *EVMService_CallContract_Call) Run(run func(ctx context.Context, msg *evm.CallMsg, readAt string)) *EVMService_CallContract_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*evm.CallMsg), args[2].(*big.Int))
+		run(args[0].(context.Context), args[1].(*evm.CallMsg), args[2].(string))
 	})
 	return _c
 }
@@ -144,7 +144,7 @@ func (_c *EVMService_CallContract_Call) Return(_a0 []byte, _a1 error) *EVMServic
 	return _c
 }
 
-func (_c *EVMService_CallContract_Call) RunAndReturn(run func(context.Context, *evm.CallMsg, *big.Int) ([]byte, error)) *EVMService_CallContract_Call {
+func (_c *EVMService_CallContract_Call) RunAndReturn(run func(context.Context, *evm.CallMsg, string) ([]byte, error)) *EVMService_CallContract_Call {
 	_c.Call.Return(run)
 	return _c
 }

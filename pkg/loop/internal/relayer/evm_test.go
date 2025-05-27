@@ -22,28 +22,30 @@ import (
 )
 
 var (
-	txId         = "txid1"
-	txIndex      = 10
-	txFee        = big.NewInt(12345)
-	balance      = big.NewInt(1222345)
-	gasPrice     = big.NewInt(12344)
-	abi          = []byte("data")
-	respAbi      = []byte("response")
-	address      = evm.Address{1, 2, 3}
-	address1     = evm.Address{10, 11, 14}
-	blockHash    = evm.Hash{22, 33, 44}
-	parentHash   = evm.Hash{01, 33, 44}
-	fromBlock    = big.NewInt(10)
-	blockNum     = big.NewInt(101)
-	toBlock      = big.NewInt(145)
-	topic        = evm.Hash{21, 3, 4}
-	topic2       = evm.Hash{33, 1, 33}
-	topic3       = evm.Hash{20, 19, 17}
-	gas          = uint64(10)
-	txHash       = evm.Hash{5, 3, 44}
-	eventSigHash = evm.Hash{14, 16, 29}
-	filterName   = "f name 1"
-	retention    = time.Second
+	txId            = "txid1"
+	txIndex         = 10
+	txFee           = big.NewInt(12345)
+	balance         = big.NewInt(1222345)
+	gasPrice        = big.NewInt(12344)
+	abi             = []byte("data")
+	respAbi         = []byte("response")
+	respUnconfirmed = []byte("unconfirmed response")
+	respFinalized   = []byte("unconfirmed response")
+	address         = evm.Address{1, 2, 3}
+	address1        = evm.Address{10, 11, 14}
+	blockHash       = evm.Hash{22, 33, 44}
+	parentHash      = evm.Hash{01, 33, 44}
+	fromBlock       = big.NewInt(10)
+	blockNum        = big.NewInt(101)
+	toBlock         = big.NewInt(145)
+	topic           = evm.Hash{21, 3, 4}
+	topic2          = evm.Hash{33, 1, 33}
+	topic3          = evm.Hash{20, 19, 17}
+	gas             = uint64(10)
+	txHash          = evm.Hash{5, 3, 44}
+	eventSigHash    = evm.Hash{14, 16, 29}
+	filterName      = "f name 1"
+	retention       = time.Second
 )
 
 func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
@@ -88,20 +90,58 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, resp, balance)
 	})
 
-	t.Run("CallContract", func(t *testing.T) {
+	t.Run("CallContract with block", func(t *testing.T) {
 		expMsg := &evm.CallMsg{
 			To:   address,
 			From: address1,
 			Data: abi,
 		}
-		evmService.staticCallContract = func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
+		evmService.staticCallContract = func(ctx context.Context, msg *evm.CallMsg, readAt string) ([]byte, error) {
 			require.Equal(t, expMsg, msg)
+			require.Equal(t, blockNum.String(), readAt)
 			return respAbi, nil
 		}
 
-		resp, err := client.CallContract(ctx, expMsg, blockNum)
+		resp, err := client.CallContract(ctx, expMsg, blockNum.String())
 		require.NoError(t, err)
 		require.Equal(t, respAbi, resp)
+	})
+
+	t.Run("CallContract with confidence level", func(t *testing.T) {
+		expMsg := &evm.CallMsg{
+			To:   address,
+			From: address1,
+			Data: abi,
+		}
+
+		evmService.staticCallContract = func(ctx context.Context, msg *evm.CallMsg, readAt string) ([]byte, error) {
+			require.Equal(t, expMsg, msg)
+
+			if readAt == blockNum.String() {
+				return respAbi, nil
+			}
+
+			if readAt == string(primitives.Finalized) {
+				return respFinalized, nil
+			}
+
+			if readAt == string(primitives.Unconfirmed) {
+				return respUnconfirmed, nil
+			}
+
+			return nil, types.ErrInvalidType
+		}
+
+		resp, err := client.CallContract(ctx, expMsg, string(primitives.Finalized))
+		require.NoError(t, err)
+		require.Equal(t, respFinalized, resp)
+
+		resp, err = client.CallContract(ctx, expMsg, string(primitives.Unconfirmed))
+		require.NoError(t, err)
+		require.Equal(t, respUnconfirmed, resp)
+
+		_, err = client.CallContract(ctx, expMsg, "random string")
+		require.Error(t, err)
 	})
 
 	t.Run("RegisterLogTracking", func(t *testing.T) {
@@ -308,7 +348,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 }
 
 type staticEVMService struct {
-	staticCallContract           func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
+	staticCallContract           func(ctx context.Context, msg *evm.CallMsg, readAt string) ([]byte, error)
 	staticFilterLogs             func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	staticBalanceAt              func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	staticEstimateGas            func(ctx context.Context, call *evm.CallMsg) (uint64, error)
@@ -322,8 +362,8 @@ type staticEVMService struct {
 	staticGetTransactionStatus   func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
 }
 
-func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return s.staticCallContract(ctx, msg, blockNumber)
+func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, readAt string) ([]byte, error) {
+	return s.staticCallContract(ctx, msg, readAt)
 }
 
 func (s *staticEVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {

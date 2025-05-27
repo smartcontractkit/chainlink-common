@@ -3,6 +3,7 @@ package evmpb
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -139,6 +140,38 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 		Data: protoMsg.GetData().GetAbi(),
 		To:   ConvertAddressFromProto(protoMsg.GetTo()),
 	}, nil
+}
+
+func ConvertBlockOrConfidenceFromProto(protoBlockOrConfidence *BlockOrConfidence) (string, error) {
+	if protoBlockOrConfidence == nil {
+		return "", errors.New("block confidence proto is nil")
+	}
+
+	if protoBlockOrConfidence.Kind == nil {
+		return "", errors.New("block confidence proto kind is nil")
+	}
+
+	switch kind := protoBlockOrConfidence.Kind.(type) {
+	case *BlockOrConfidence_BlockNumber:
+		return valuespb.NewIntFromBigInt(kind.BlockNumber).String(), nil
+	case *BlockOrConfidence_Confidence:
+		confidence, err := chaincommonpb.ConvertConfidenceFromProto(kind.Confidence)
+		return string(confidence), err
+	default:
+		return "", fmt.Errorf("invalid kind %T; want block number or confidence level", kind)
+	}
+}
+
+func ConvertBlockOrConfidenceToProto(blockOrConfidence string) (*BlockOrConfidence, error) {
+	if block, ok := new(big.Int).SetString(blockOrConfidence, 10); ok {
+		return &BlockOrConfidence{Kind: &BlockOrConfidence_BlockNumber{BlockNumber: valuespb.NewBigIntFromInt(block)}}, nil
+	}
+
+	confidence, err := chaincommonpb.ConvertConfidenceToProto(primitives.ConfidenceLevel(blockOrConfidence))
+	if err != nil {
+		return nil, fmt.Errorf("invalid block or confidence %q: %w", blockOrConfidence, err)
+	}
+	return &BlockOrConfidence{Kind: &BlockOrConfidence_Confidence{Confidence: confidence}}, nil
 }
 
 var errEmptyFilter = errors.New("filter can't be nil")

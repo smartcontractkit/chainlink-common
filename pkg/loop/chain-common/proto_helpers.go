@@ -98,7 +98,7 @@ func ConvertPrimitiveFromProto(protoPrimitive *Primitive, encodedTypeGetter func
 		return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
 
 	case *Primitive_Confidence:
-		confidence, err := ConfidenceFromProto(primitive.Confidence)
+		confidence, err := ConvertConfidenceFromProto(primitive.Confidence)
 		return query.Confidence(confidence), err
 
 	case *Primitive_Block:
@@ -248,7 +248,7 @@ func ConvertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*LimitAndSort,
 	return pbLimitAndSort, nil
 }
 
-func ConfidenceFromProto(pbConfidence Confidence) (primitives.ConfidenceLevel, error) {
+func ConvertConfidenceFromProto(pbConfidence Confidence) (primitives.ConfidenceLevel, error) {
 	switch pbConfidence {
 	case Confidence_Finalized:
 		return primitives.Finalized, nil

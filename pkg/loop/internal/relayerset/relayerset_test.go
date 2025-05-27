@@ -265,10 +265,24 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			name: "CallContract",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				block := big.NewInt(100)
-				mockEVM.EXPECT().CallContract(mock.Anything, &msg, block).Return([]byte("ok"), nil)
-				out, err := evm.CallContract(ctx, &msg, block)
+				mockEVM.On("CallContract", mock.Anything, &msg, block.String()).Return([]byte("ok"), nil)
+				out, err := evm.CallContract(ctx, &msg, block.String())
 				require.NoError(t, err)
 				require.Equal(t, []byte("ok"), out)
+
+				mockEVM.EXPECT().CallContract(mock.Anything, &msg, string(primitives.Finalized)).Return([]byte("ok"), nil)
+				out, err = evm.CallContract(ctx, &msg, string(primitives.Finalized))
+				require.NoError(t, err)
+				require.Equal(t, []byte("ok"), out)
+
+				mockEVM.EXPECT().CallContract(mock.Anything, &msg, string(primitives.Unconfirmed)).Return([]byte("ok"), nil)
+				out, err = evm.CallContract(ctx, &msg, string(primitives.Unconfirmed))
+				require.NoError(t, err)
+				require.Equal(t, []byte("ok"), out)
+
+				mockEVM.EXPECT().CallContract(mock.Anything, mock.Anything, mock.Anything).Return([]byte("ok"), nil)
+				_, err = evm.CallContract(ctx, &msg, "should fail")
+				require.Error(t, err)
 			},
 		},
 		{
@@ -431,7 +445,7 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockEVM := mocks2.NewEVMService(t)
 			evm := TestEVM{mockedContractReader: mockEVM}
-			relayer1.On("EVM", mock.Anything, mock.Anything).Return(evm, nil).Once()
+			relayer1.On("EVM", mock.Anything, mock.Anything).Return(evm, nil)
 
 			fetchedEVM, err := retrievedRelayer.EVM()
 			require.NoError(t, err)
@@ -497,8 +511,8 @@ type TestEVM struct {
 	mockedContractReader *mocks2.EVMService
 }
 
-func (t TestEVM) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return t.mockedContractReader.CallContract(ctx, msg, blockNumber)
+func (t TestEVM) CallContract(ctx context.Context, msg *evmtypes.CallMsg, readAt string) ([]byte, error) {
+	return t.mockedContractReader.CallContract(ctx, msg, readAt)
 }
 
 func (t TestEVM) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQuery) ([]*evmtypes.Log, error) {

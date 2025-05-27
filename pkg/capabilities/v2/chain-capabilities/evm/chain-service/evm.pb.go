@@ -1554,7 +1554,7 @@ func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
 type CallContractRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Call          *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
-	BlockNumber   *pb.BigInt             `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	ReadAt        *BlockOrConfidence     `protobuf:"bytes,2,opt,name=read_at,json=readAt,proto3" json:"read_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1596,9 +1596,9 @@ func (x *CallContractRequest) GetCall() *CallMsg {
 	return nil
 }
 
-func (x *CallContractRequest) GetBlockNumber() *pb.BigInt {
+func (x *CallContractRequest) GetReadAt() *BlockOrConfidence {
 	if x != nil {
-		return x.BlockNumber
+		return x.ReadAt
 	}
 	return nil
 }
@@ -2465,6 +2465,88 @@ func (x *GetTransactionStatusReply) GetTransactionStatus() TransactionStatus {
 	return TransactionStatus_TRANSACTION_STATUS_UNKNOWN
 }
 
+type BlockOrConfidence struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Kind:
+	//
+	//	*BlockOrConfidence_BlockNumber
+	//	*BlockOrConfidence_Confidence
+	Kind          isBlockOrConfidence_Kind `protobuf_oneof:"kind"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BlockOrConfidence) Reset() {
+	*x = BlockOrConfidence{}
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlockOrConfidence) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlockOrConfidence) ProtoMessage() {}
+
+func (x *BlockOrConfidence) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlockOrConfidence.ProtoReflect.Descriptor instead.
+func (*BlockOrConfidence) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *BlockOrConfidence) GetKind() isBlockOrConfidence_Kind {
+	if x != nil {
+		return x.Kind
+	}
+	return nil
+}
+
+func (x *BlockOrConfidence) GetBlockNumber() *pb.BigInt {
+	if x != nil {
+		if x, ok := x.Kind.(*BlockOrConfidence_BlockNumber); ok {
+			return x.BlockNumber
+		}
+	}
+	return nil
+}
+
+func (x *BlockOrConfidence) GetConfidence() chain_common.Confidence {
+	if x != nil {
+		if x, ok := x.Kind.(*BlockOrConfidence_Confidence); ok {
+			return x.Confidence
+		}
+	}
+	return chain_common.Confidence(0)
+}
+
+type isBlockOrConfidence_Kind interface {
+	isBlockOrConfidence_Kind()
+}
+
+type BlockOrConfidence_BlockNumber struct {
+	BlockNumber *pb.BigInt `protobuf:"bytes,1,opt,name=blockNumber,proto3,oneof"`
+}
+
+type BlockOrConfidence_Confidence struct {
+	Confidence chain_common.Confidence `protobuf:"varint,2,opt,name=confidence,proto3,enum=loop.chain.common.Confidence,oneof"`
+}
+
+func (*BlockOrConfidence_BlockNumber) isBlockOrConfidence_Kind() {}
+
+func (*BlockOrConfidence_Confidence) isBlockOrConfidence_Kind() {}
+
 var File_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc = "" +
@@ -2577,10 +2659,10 @@ const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDes
 	"\tprimitive\"\x99\x01\n" +
 	"\x1bLatestAndFinalizedHeadReply\x129\n" +
 	"\x06latest\x18\x01 \x01(\v2!.loop.chain_capabilities.evm.HeadR\x06latest\x12?\n" +
-	"\tfinalized\x18\x02 \x01(\v2!.loop.chain_capabilities.evm.HeadR\tfinalized\"\x82\x01\n" +
+	"\tfinalized\x18\x02 \x01(\v2!.loop.chain_capabilities.evm.HeadR\tfinalized\"\x98\x01\n" +
 	"\x13CallContractRequest\x128\n" +
-	"\x04call\x18\x01 \x01(\v2$.loop.chain_capabilities.evm.CallMsgR\x04call\x121\n" +
-	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\"P\n" +
+	"\x04call\x18\x01 \x01(\v2$.loop.chain_capabilities.evm.CallMsgR\x04call\x12G\n" +
+	"\aread_at\x18\x02 \x01(\v2..loop.chain_capabilities.evm.BlockOrConfidenceR\x06readAt\"P\n" +
 	"\x11CallContractReply\x12;\n" +
 	"\x04data\x18\x01 \x01(\v2'.loop.chain_capabilities.evm.ABIPayloadR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
@@ -2624,7 +2706,13 @@ const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDes
 	"\x1bGetTransactionStatusRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"z\n" +
 	"\x19GetTransactionStatusReply\x12]\n" +
-	"\x12transaction_status\x18\x01 \x01(\x0e2..loop.chain_capabilities.evm.TransactionStatusR\x11transactionStatus*\xd6\x01\n" +
+	"\x12transaction_status\x18\x01 \x01(\x0e2..loop.chain_capabilities.evm.TransactionStatusR\x11transactionStatus\"\x90\x01\n" +
+	"\x11BlockOrConfidence\x122\n" +
+	"\vblockNumber\x18\x01 \x01(\v2\x0e.values.BigIntH\x00R\vblockNumber\x12?\n" +
+	"\n" +
+	"confidence\x18\x02 \x01(\x0e2\x1d.loop.chain.common.ConfidenceH\x00R\n" +
+	"confidenceB\x06\n" +
+	"\x04kind*\xd6\x01\n" +
 	"\x11TransactionStatus\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_UNKNOWN\x10\x00\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12\"\n" +
@@ -2660,7 +2748,7 @@ func file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc
 }
 
 var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_goTypes = []any{
 	(TransactionStatus)(0),               // 0: loop.chain_capabilities.evm.TransactionStatus
 	(*Address)(nil),                      // 1: loop.chain_capabilities.evm.Address
@@ -2705,13 +2793,14 @@ var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_goTypes 
 	(*QueryTrackedLogsReply)(nil),        // 40: loop.chain_capabilities.evm.QueryTrackedLogsReply
 	(*GetTransactionStatusRequest)(nil),  // 41: loop.chain_capabilities.evm.GetTransactionStatusRequest
 	(*GetTransactionStatusReply)(nil),    // 42: loop.chain_capabilities.evm.GetTransactionStatusReply
-	(*pb.BigInt)(nil),                    // 43: values.BigInt
-	(chain_common.BooleanOperator)(0),    // 44: loop.chain.common.BooleanOperator
-	(chain_common.ComparisonOperator)(0), // 45: loop.chain.common.ComparisonOperator
-	(*chain_common.Primitive)(nil),       // 46: loop.chain.common.Primitive
-	(*chain_common.LimitAndSort)(nil),    // 47: loop.chain.common.LimitAndSort
-	(chain_common.Confidence)(0),         // 48: loop.chain.common.Confidence
-	(*emptypb.Empty)(nil),                // 49: google.protobuf.Empty
+	(*BlockOrConfidence)(nil),            // 43: loop.chain_capabilities.evm.BlockOrConfidence
+	(*pb.BigInt)(nil),                    // 44: values.BigInt
+	(chain_common.BooleanOperator)(0),    // 45: loop.chain.common.BooleanOperator
+	(chain_common.ComparisonOperator)(0), // 46: loop.chain.common.ComparisonOperator
+	(*chain_common.Primitive)(nil),       // 47: loop.chain.common.Primitive
+	(*chain_common.LimitAndSort)(nil),    // 48: loop.chain.common.LimitAndSort
+	(chain_common.Confidence)(0),         // 49: loop.chain.common.Confidence
+	(*emptypb.Empty)(nil),                // 50: google.protobuf.Empty
 }
 var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_depIdxs = []int32{
 	1,  // 0: loop.chain_capabilities.evm.CallMsg.from:type_name -> loop.chain_capabilities.evm.Address
@@ -2724,44 +2813,44 @@ var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_depIdxs 
 	2,  // 7: loop.chain_capabilities.evm.Log.block_hash:type_name -> loop.chain_capabilities.evm.Hash
 	3,  // 8: loop.chain_capabilities.evm.Log.data:type_name -> loop.chain_capabilities.evm.ABIPayload
 	2,  // 9: loop.chain_capabilities.evm.Log.eventSig:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 10: loop.chain_capabilities.evm.Log.block_number:type_name -> values.BigInt
+	44, // 10: loop.chain_capabilities.evm.Log.block_number:type_name -> values.BigInt
 	2,  // 11: loop.chain_capabilities.evm.FilterQuery.block_hash:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 12: loop.chain_capabilities.evm.FilterQuery.fromBlock:type_name -> values.BigInt
-	43, // 13: loop.chain_capabilities.evm.FilterQuery.toBlock:type_name -> values.BigInt
+	44, // 12: loop.chain_capabilities.evm.FilterQuery.fromBlock:type_name -> values.BigInt
+	44, // 13: loop.chain_capabilities.evm.FilterQuery.toBlock:type_name -> values.BigInt
 	1,  // 14: loop.chain_capabilities.evm.FilterQuery.addresses:type_name -> loop.chain_capabilities.evm.Address
 	5,  // 15: loop.chain_capabilities.evm.FilterQuery.topics:type_name -> loop.chain_capabilities.evm.Topics
 	1,  // 16: loop.chain_capabilities.evm.Transaction.to:type_name -> loop.chain_capabilities.evm.Address
 	3,  // 17: loop.chain_capabilities.evm.Transaction.data:type_name -> loop.chain_capabilities.evm.ABIPayload
 	2,  // 18: loop.chain_capabilities.evm.Transaction.hash:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 19: loop.chain_capabilities.evm.Transaction.value:type_name -> values.BigInt
-	43, // 20: loop.chain_capabilities.evm.Transaction.gas_price:type_name -> values.BigInt
+	44, // 19: loop.chain_capabilities.evm.Transaction.value:type_name -> values.BigInt
+	44, // 20: loop.chain_capabilities.evm.Transaction.gas_price:type_name -> values.BigInt
 	2,  // 21: loop.chain_capabilities.evm.Receipt.block_hash:type_name -> loop.chain_capabilities.evm.Hash
 	6,  // 22: loop.chain_capabilities.evm.Receipt.logs:type_name -> loop.chain_capabilities.evm.Log
 	2,  // 23: loop.chain_capabilities.evm.Receipt.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 24: loop.chain_capabilities.evm.Receipt.effective_gas_price:type_name -> values.BigInt
-	43, // 25: loop.chain_capabilities.evm.Receipt.block_number:type_name -> values.BigInt
+	44, // 24: loop.chain_capabilities.evm.Receipt.effective_gas_price:type_name -> values.BigInt
+	44, // 25: loop.chain_capabilities.evm.Receipt.block_number:type_name -> values.BigInt
 	1,  // 26: loop.chain_capabilities.evm.Receipt.contract_address:type_name -> loop.chain_capabilities.evm.Address
 	1,  // 27: loop.chain_capabilities.evm.LPFilter.addresses:type_name -> loop.chain_capabilities.evm.Address
 	2,  // 28: loop.chain_capabilities.evm.LPFilter.event_sigs:type_name -> loop.chain_capabilities.evm.Hash
 	2,  // 29: loop.chain_capabilities.evm.LPFilter.topic2:type_name -> loop.chain_capabilities.evm.Hash
 	2,  // 30: loop.chain_capabilities.evm.LPFilter.topic3:type_name -> loop.chain_capabilities.evm.Hash
 	2,  // 31: loop.chain_capabilities.evm.LPFilter.topic4:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 32: loop.chain_capabilities.evm.Head.block_number:type_name -> values.BigInt
+	44, // 32: loop.chain_capabilities.evm.Head.block_number:type_name -> values.BigInt
 	2,  // 33: loop.chain_capabilities.evm.Head.hash:type_name -> loop.chain_capabilities.evm.Hash
 	2,  // 34: loop.chain_capabilities.evm.Head.parent_hash:type_name -> loop.chain_capabilities.evm.Hash
 	21, // 35: loop.chain_capabilities.evm.Expression.primitive:type_name -> loop.chain_capabilities.evm.Primitive
 	13, // 36: loop.chain_capabilities.evm.Expression.boolean_expression:type_name -> loop.chain_capabilities.evm.BooleanExpression
-	44, // 37: loop.chain_capabilities.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	45, // 37: loop.chain_capabilities.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
 	12, // 38: loop.chain_capabilities.evm.BooleanExpression.expression:type_name -> loop.chain_capabilities.evm.Expression
 	12, // 39: loop.chain_capabilities.evm.And.expr:type_name -> loop.chain_capabilities.evm.Expression
 	12, // 40: loop.chain_capabilities.evm.Or.expr:type_name -> loop.chain_capabilities.evm.Expression
 	2,  // 41: loop.chain_capabilities.evm.HashValueComparator.values:type_name -> loop.chain_capabilities.evm.Hash
-	45, // 42: loop.chain_capabilities.evm.HashValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	46, // 42: loop.chain_capabilities.evm.HashValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
 	1,  // 43: loop.chain_capabilities.evm.ContractAddress.address:type_name -> loop.chain_capabilities.evm.Address
 	2,  // 44: loop.chain_capabilities.evm.EventSig.eventSig:type_name -> loop.chain_capabilities.evm.Hash
 	16, // 45: loop.chain_capabilities.evm.EventByWord.hashed_value_comparers:type_name -> loop.chain_capabilities.evm.HashValueComparator
 	16, // 46: loop.chain_capabilities.evm.EventByTopic.hashed_value_comparers:type_name -> loop.chain_capabilities.evm.HashValueComparator
-	46, // 47: loop.chain_capabilities.evm.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
+	47, // 47: loop.chain_capabilities.evm.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
 	17, // 48: loop.chain_capabilities.evm.Primitive.contract_address:type_name -> loop.chain_capabilities.evm.ContractAddress
 	18, // 49: loop.chain_capabilities.evm.Primitive.event_sig:type_name -> loop.chain_capabilities.evm.EventSig
 	19, // 50: loop.chain_capabilities.evm.Primitive.event_by_word:type_name -> loop.chain_capabilities.evm.EventByWord
@@ -2769,14 +2858,14 @@ var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_depIdxs 
 	11, // 52: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.chain_capabilities.evm.Head
 	11, // 53: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.chain_capabilities.evm.Head
 	4,  // 54: loop.chain_capabilities.evm.CallContractRequest.call:type_name -> loop.chain_capabilities.evm.CallMsg
-	43, // 55: loop.chain_capabilities.evm.CallContractRequest.block_number:type_name -> values.BigInt
+	43, // 55: loop.chain_capabilities.evm.CallContractRequest.read_at:type_name -> loop.chain_capabilities.evm.BlockOrConfidence
 	3,  // 56: loop.chain_capabilities.evm.CallContractReply.data:type_name -> loop.chain_capabilities.evm.ABIPayload
-	43, // 57: loop.chain_capabilities.evm.GetTransactionFeeReply.transation_fee:type_name -> values.BigInt
+	44, // 57: loop.chain_capabilities.evm.GetTransactionFeeReply.transation_fee:type_name -> values.BigInt
 	7,  // 58: loop.chain_capabilities.evm.FilterLogsRequest.filter_query:type_name -> loop.chain_capabilities.evm.FilterQuery
 	6,  // 59: loop.chain_capabilities.evm.FilterLogsReply.logs:type_name -> loop.chain_capabilities.evm.Log
 	1,  // 60: loop.chain_capabilities.evm.BalanceAtRequest.account:type_name -> loop.chain_capabilities.evm.Address
-	43, // 61: loop.chain_capabilities.evm.BalanceAtRequest.block_number:type_name -> values.BigInt
-	43, // 62: loop.chain_capabilities.evm.BalanceAtReply.balance:type_name -> values.BigInt
+	44, // 61: loop.chain_capabilities.evm.BalanceAtRequest.block_number:type_name -> values.BigInt
+	44, // 62: loop.chain_capabilities.evm.BalanceAtReply.balance:type_name -> values.BigInt
 	4,  // 63: loop.chain_capabilities.evm.EstimateGasRequest.msg:type_name -> loop.chain_capabilities.evm.CallMsg
 	2,  // 64: loop.chain_capabilities.evm.GetTransactionByHashRequest.hash:type_name -> loop.chain_capabilities.evm.Hash
 	8,  // 65: loop.chain_capabilities.evm.GetTransactionByHashReply.transaction:type_name -> loop.chain_capabilities.evm.Transaction
@@ -2784,39 +2873,41 @@ var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_depIdxs 
 	9,  // 67: loop.chain_capabilities.evm.GetTransactionReceiptReply.receipt:type_name -> loop.chain_capabilities.evm.Receipt
 	10, // 68: loop.chain_capabilities.evm.RegisterLogTrackingRequest.filter:type_name -> loop.chain_capabilities.evm.LPFilter
 	12, // 69: loop.chain_capabilities.evm.QueryTrackedLogsRequest.expression:type_name -> loop.chain_capabilities.evm.Expression
-	47, // 70: loop.chain_capabilities.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	48, // 71: loop.chain_capabilities.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.chain.common.Confidence
+	48, // 70: loop.chain_capabilities.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	49, // 71: loop.chain_capabilities.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.chain.common.Confidence
 	6,  // 72: loop.chain_capabilities.evm.QueryTrackedLogsReply.logs:type_name -> loop.chain_capabilities.evm.Log
 	0,  // 73: loop.chain_capabilities.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.chain_capabilities.evm.TransactionStatus
-	25, // 74: loop.chain_capabilities.evm.EVM.GetTransactionFee:input_type -> loop.chain_capabilities.evm.GetTransactionFeeRequest
-	23, // 75: loop.chain_capabilities.evm.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	27, // 76: loop.chain_capabilities.evm.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	29, // 77: loop.chain_capabilities.evm.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	31, // 78: loop.chain_capabilities.evm.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	33, // 79: loop.chain_capabilities.evm.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
-	35, // 80: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
-	49, // 81: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	39, // 82: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	37, // 83: loop.chain_capabilities.evm.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	38, // 84: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	41, // 85: loop.chain_capabilities.evm.EVM.GetTransactionStatus:input_type -> loop.chain_capabilities.evm.GetTransactionStatusRequest
-	26, // 86: loop.chain_capabilities.evm.EVM.GetTransactionFee:output_type -> loop.chain_capabilities.evm.GetTransactionFeeReply
-	24, // 87: loop.chain_capabilities.evm.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	28, // 88: loop.chain_capabilities.evm.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	30, // 89: loop.chain_capabilities.evm.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	32, // 90: loop.chain_capabilities.evm.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	34, // 91: loop.chain_capabilities.evm.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	36, // 92: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
-	22, // 93: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	40, // 94: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	49, // 95: loop.chain_capabilities.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	49, // 96: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	42, // 97: loop.chain_capabilities.evm.EVM.GetTransactionStatus:output_type -> loop.chain_capabilities.evm.GetTransactionStatusReply
-	86, // [86:98] is the sub-list for method output_type
-	74, // [74:86] is the sub-list for method input_type
-	74, // [74:74] is the sub-list for extension type_name
-	74, // [74:74] is the sub-list for extension extendee
-	0,  // [0:74] is the sub-list for field type_name
+	44, // 74: loop.chain_capabilities.evm.BlockOrConfidence.blockNumber:type_name -> values.BigInt
+	49, // 75: loop.chain_capabilities.evm.BlockOrConfidence.confidence:type_name -> loop.chain.common.Confidence
+	25, // 76: loop.chain_capabilities.evm.EVM.GetTransactionFee:input_type -> loop.chain_capabilities.evm.GetTransactionFeeRequest
+	23, // 77: loop.chain_capabilities.evm.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
+	27, // 78: loop.chain_capabilities.evm.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
+	29, // 79: loop.chain_capabilities.evm.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
+	31, // 80: loop.chain_capabilities.evm.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
+	33, // 81: loop.chain_capabilities.evm.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
+	35, // 82: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
+	50, // 83: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	39, // 84: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	37, // 85: loop.chain_capabilities.evm.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	38, // 86: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	41, // 87: loop.chain_capabilities.evm.EVM.GetTransactionStatus:input_type -> loop.chain_capabilities.evm.GetTransactionStatusRequest
+	26, // 88: loop.chain_capabilities.evm.EVM.GetTransactionFee:output_type -> loop.chain_capabilities.evm.GetTransactionFeeReply
+	24, // 89: loop.chain_capabilities.evm.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	28, // 90: loop.chain_capabilities.evm.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	30, // 91: loop.chain_capabilities.evm.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	32, // 92: loop.chain_capabilities.evm.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	34, // 93: loop.chain_capabilities.evm.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	36, // 94: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
+	22, // 95: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	40, // 96: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	50, // 97: loop.chain_capabilities.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	50, // 98: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	42, // 99: loop.chain_capabilities.evm.EVM.GetTransactionStatus:output_type -> loop.chain_capabilities.evm.GetTransactionStatusReply
+	88, // [88:100] is the sub-list for method output_type
+	76, // [76:88] is the sub-list for method input_type
+	76, // [76:76] is the sub-list for extension type_name
+	76, // [76:76] is the sub-list for extension extendee
+	0,  // [0:76] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_init() }
@@ -2835,13 +2926,17 @@ func file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_init() 
 		(*Primitive_EventByWord)(nil),
 		(*Primitive_EventByTopic)(nil),
 	}
+	file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[42].OneofWrappers = []any{
+		(*BlockOrConfidence_BlockNumber)(nil),
+		(*BlockOrConfidence_Confidence)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   42,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

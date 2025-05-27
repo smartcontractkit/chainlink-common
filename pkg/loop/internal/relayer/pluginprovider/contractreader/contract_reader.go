@@ -306,7 +306,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	confidenceLevel, err := chaincommonpb.ConfidenceFromProto(request.Confidence)
+	confidenceLevel, err := chaincommonpb.ConvertConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 
-	confidenceLevel, err := chaincommonpb.ConfidenceFromProto(request.Confidence)
+	confidenceLevel, err := chaincommonpb.ConvertConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}

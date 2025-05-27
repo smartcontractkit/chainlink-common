@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -19,10 +20,13 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+
+	evm "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 )
 
 //go:embed solc/bin/IERC20.abi
@@ -35,8 +39,9 @@ const TotalSupplyMethod = "totalSupply"
 const UpdateReservesMethod = "updateReserves"
 
 type Config struct {
-	EvmTokenAddress string
-	EvmPorAddress   string
+	EvmTokenAddress []byte
+	EvmPorAddress   []byte
+	EvmPorUpdateGasLimit uint64
 	PublicKey       string
 	Schedule        string
 	Url             string
@@ -93,28 +98,35 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 	if err != nil {
 		return err
 	}
-	evmClient := &evm.Client{}
+	// evmClient := &evm.Client{}
+
+	evmClient := evm.NewEVMClient(nil)
 
 	supplyPayload, err := erc20.Pack(TotalSupplyMethod)
 	if err != nil {
 		return err
 	}
 
-	evmPromise := evmClient.ReadMethod(runtime, &evm.ReadMethodRequest{
-		Address:         config.EvmTokenAddress,
-		Calldata:        supplyPayload,
-		ConfidenceLevel: evm.ConfidenceLevel_FINALITY,
-	})
 	// TODO other blockchains in parallel
+	callReplay, err := evmClient.CallContract(context.Background(), &evmpb.CallContractRequest{
+		Call: &evmpb.CallMsg{
+			To: &evmpb.Address{
+				Address: config.EvmTokenAddress,
+			},
+			Data: &evmpb.ABIPayload{
+				Abi: supplyPayload,
+			},
+		},
+		ConfidenceLevel: *chaincommonpb.Confidence_Finalized.Enum(),
+	})
 
-	evmRead, err := evmPromise.Await()
 	if err != nil {
 		// TODO specify which EVM
 		logger.Error("Could not read from evm", "err", err.Error())
 		return err
 	}
 
-	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, evmRead.Value)
+	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, callReplay.Data.Abi)
 	if err != nil {
 		// TODO specify which EVM
 		logger.Error("Could not unpack evm", "err", err.Error())
@@ -144,21 +156,80 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 		return err
 	}
 
-	evmTx := evmClient.SubmitTransaction(runtime, &evm.SubmitTransactionRequest{
-		ToAddress: config.EvmPorAddress,
-		Calldata:  evmSupplyCallData,
+	evmClient.CallContract(context.Background(), &evmpb.CallContractRequest{
+		Call: &evmpb.CallMsg{
+			To: &evmpb.Address{
+				Address: config.EvmPorAddress,
+			},
+			Data: &evmpb.ABIPayload{
+				Abi: evmSupplyCallData,
+			},
+		},
 	})
-
+	
+	targetChainID := 100
+	report := GenerateReport(targetChainID, evmSupplyCallData)
+	
+	updateSupplyReply, err :=  evmClient.WriteReport(context.Background(), &evmpb.WriteReportRequest{
+		Receiver: &evmpb.Address{
+			Address: config.EvmPorAddress,
+		},
+		Report: &evmpb.SignedReport{
+			RawReport: report.RawReport,
+			ReportContext: report.ReportContext,
+			Signatures: report.Signatures,
+			Id: report.ID,
+		},
+		GasConfig: &evmpb.GasConfig{
+			GasLimit: config.EvmPorUpdateGasLimit,
+		},
+	})
+	
 	var writeErrors []error
-	txId, err := evmTx.Await()
 	if err == nil {
-		logger.Debug("Submitted transaction", "txId", txId)
+		logger.Debug("Submitted transaction", "txHash", updateSupplyReply.TxHash)
+		if updateSupplyReply.TxStatus == evm.TransactionStatus_TRANSACTION_STATUS_FATAL {
+			//TODO missing error message from reply. We need to add an error message.
+			writeErrors = append(writeErrors, errors.New("Failed to submit TX on chain"))	
+		} else if updateSupplyReply.ReceiverContractExecutionStatus == evm.ReceiverContractExecutionStatus_FAILURE {
+			//TODO missing error message from reply. We need to add an error message.
+			writeErrors = append(writeErrors, errors.New("Failed executing POR smart contract update. POR contract failed to execute"))	
+		} else {
+			// TODO Super ugly. We need to improve this.
+			time.Sleep(13 * time.Minute) //aprox. time it takes EVM to reach finality.
+			for i := 0; i < 5; i++ {
+				txStatusReply, err := evmClient.GetTransactionStatus(context.Background(), &evmpb.GetTransactionStatusRequest{
+					TxHash: updateSupplyReply.TxHash,		
+				})
+				if err != nil {
+					writeErrors = append(writeErrors, err)
+					break
+				}
+				if txStatusReply.TransactionStatus == evm.TransactionStatus_TRANSACTION_STATUS_FINALIZED {
+					return nil;
+				}
+				time.Sleep(5 * time.Second)
+			}
+			writeErrors = append(writeErrors, errors.New("Failed to reach finality for tx hash: " + updateSupplyReply.TxStatus.String()))
+		}
 	} else {
 		logger.Error("failed to submit transaction", "err", err)
 		writeErrors = append(writeErrors, err)
 	}
 
 	return errors.Join(writeErrors...)
+}
+
+type CommonReport struct {
+	RawReport []byte
+	ReportContext []byte
+	Signatures [][]byte
+	ID []byte
+}
+
+//TODO we need to define and implement this function
+func GenerateReport(targetChainID int, evmSupplyCallData []byte) CommonReport {
+	panic("unimplemented")
 }
 
 func fetchPor(runtime sdk.NodeRuntime) (*ReserveInfo, error) {

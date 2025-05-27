@@ -39,6 +39,8 @@ type EVMCapability interface {
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evmpb.WriteReportRequest) (*evmpb.WriteReportReply, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -202,6 +204,13 @@ func (c *eVMCapability) Execute(ctx context.Context, request capabilities.Capabi
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evmpb.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
 			return c.EVMCapability.UnregisterLogTracking(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "WriteReport":
+		input := &evmpb.WriteReportRequest{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evmpb.WriteReportRequest, _ *emptypb.Empty) (*evmpb.WriteReportReply, error) {
+			return c.EVMCapability.WriteReport(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

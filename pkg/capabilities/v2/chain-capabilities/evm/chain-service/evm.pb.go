@@ -24,36 +24,73 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ReceiverContractExecutionStatus int32
+
+const (
+	ReceiverContractExecutionStatus_SUCCESS ReceiverContractExecutionStatus = 0
+	ReceiverContractExecutionStatus_FAILURE ReceiverContractExecutionStatus = 1
+)
+
+// Enum value maps for ReceiverContractExecutionStatus.
+var (
+	ReceiverContractExecutionStatus_name = map[int32]string{
+		0: "SUCCESS",
+		1: "FAILURE",
+	}
+	ReceiverContractExecutionStatus_value = map[string]int32{
+		"SUCCESS": 0,
+		"FAILURE": 1,
+	}
+)
+
+func (x ReceiverContractExecutionStatus) Enum() *ReceiverContractExecutionStatus {
+	p := new(ReceiverContractExecutionStatus)
+	*p = x
+	return p
+}
+
+func (x ReceiverContractExecutionStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ReceiverContractExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes[0].Descriptor()
+}
+
+func (ReceiverContractExecutionStatus) Type() protoreflect.EnumType {
+	return &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes[0]
+}
+
+func (x ReceiverContractExecutionStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ReceiverContractExecutionStatus.Descriptor instead.
+func (ReceiverContractExecutionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{0}
+}
+
 // TransactionStatus is an enum for the status of a transaction.
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
 type TransactionStatus int32
 
 const (
-	TransactionStatus_TRANSACTION_STATUS_UNKNOWN     TransactionStatus = 0
-	TransactionStatus_TRANSACTION_STATUS_PENDING     TransactionStatus = 1
-	TransactionStatus_TRANSACTION_STATUS_UNCONFIRMED TransactionStatus = 2
-	TransactionStatus_TRANSACTION_STATUS_FINALIZED   TransactionStatus = 3
-	TransactionStatus_TRANSACTION_STATUS_FAILED      TransactionStatus = 4
-	TransactionStatus_TRANSACTION_STATUS_FATAL       TransactionStatus = 5
+	TransactionStatus_TRANSACTION_STATUS_CONFIRMED TransactionStatus = 0
+	TransactionStatus_TRANSACTION_STATUS_FINALIZED TransactionStatus = 1
+	TransactionStatus_TRANSACTION_STATUS_FATAL     TransactionStatus = 2
 )
 
 // Enum value maps for TransactionStatus.
 var (
 	TransactionStatus_name = map[int32]string{
-		0: "TRANSACTION_STATUS_UNKNOWN",
-		1: "TRANSACTION_STATUS_PENDING",
-		2: "TRANSACTION_STATUS_UNCONFIRMED",
-		3: "TRANSACTION_STATUS_FINALIZED",
-		4: "TRANSACTION_STATUS_FAILED",
-		5: "TRANSACTION_STATUS_FATAL",
+		0: "TRANSACTION_STATUS_CONFIRMED",
+		1: "TRANSACTION_STATUS_FINALIZED",
+		2: "TRANSACTION_STATUS_FATAL",
 	}
 	TransactionStatus_value = map[string]int32{
-		"TRANSACTION_STATUS_UNKNOWN":     0,
-		"TRANSACTION_STATUS_PENDING":     1,
-		"TRANSACTION_STATUS_UNCONFIRMED": 2,
-		"TRANSACTION_STATUS_FINALIZED":   3,
-		"TRANSACTION_STATUS_FAILED":      4,
-		"TRANSACTION_STATUS_FATAL":       5,
+		"TRANSACTION_STATUS_CONFIRMED": 0,
+		"TRANSACTION_STATUS_FINALIZED": 1,
+		"TRANSACTION_STATUS_FATAL":     2,
 	}
 )
 
@@ -68,11 +105,11 @@ func (x TransactionStatus) String() string {
 }
 
 func (TransactionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes[0].Descriptor()
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes[1].Descriptor()
 }
 
 func (TransactionStatus) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes[0]
+	return &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes[1]
 }
 
 func (x TransactionStatus) Number() protoreflect.EnumNumber {
@@ -81,7 +118,247 @@ func (x TransactionStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TransactionStatus.Descriptor instead.
 func (TransactionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{1}
+}
+
+type SignedReport struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RawReport     []byte                 `protobuf:"bytes,1,opt,name=raw_report,json=rawReport,proto3" json:"raw_report,omitempty"`
+	ReportContext []byte                 `protobuf:"bytes,2,opt,name=report_context,json=reportContext,proto3" json:"report_context,omitempty"`
+	Signatures    [][]byte               `protobuf:"bytes,3,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	Id            []byte                 `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignedReport) Reset() {
+	*x = SignedReport{}
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignedReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignedReport) ProtoMessage() {}
+
+func (x *SignedReport) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignedReport.ProtoReflect.Descriptor instead.
+func (*SignedReport) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SignedReport) GetRawReport() []byte {
+	if x != nil {
+		return x.RawReport
+	}
+	return nil
+}
+
+func (x *SignedReport) GetReportContext() []byte {
+	if x != nil {
+		return x.ReportContext
+	}
+	return nil
+}
+
+func (x *SignedReport) GetSignatures() [][]byte {
+	if x != nil {
+		return x.Signatures
+	}
+	return nil
+}
+
+func (x *SignedReport) GetId() []byte {
+	if x != nil {
+		return x.Id
+	}
+	return nil
+}
+
+type GasConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GasLimit      uint64                 `protobuf:"varint,1,opt,name=gas_limit,json=gasLimit,proto3" json:"gas_limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GasConfig) Reset() {
+	*x = GasConfig{}
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GasConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GasConfig) ProtoMessage() {}
+
+func (x *GasConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
+func (*GasConfig) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GasConfig) GetGasLimit() uint64 {
+	if x != nil {
+		return x.GasLimit
+	}
+	return 0
+}
+
+type WriteReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Receiver      *Address               `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`
+	Report        *SignedReport          `protobuf:"bytes,2,opt,name=report,proto3" json:"report,omitempty"`
+	GasConfig     *GasConfig             `protobuf:"bytes,3,opt,name=gas_config,json=gasConfig,proto3" json:"gas_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteReportRequest) Reset() {
+	*x = WriteReportRequest{}
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteReportRequest) ProtoMessage() {}
+
+func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
+func (*WriteReportRequest) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *WriteReportRequest) GetReceiver() *Address {
+	if x != nil {
+		return x.Receiver
+	}
+	return nil
+}
+
+func (x *WriteReportRequest) GetReport() *SignedReport {
+	if x != nil {
+		return x.Report
+	}
+	return nil
+}
+
+func (x *WriteReportRequest) GetGasConfig() *GasConfig {
+	if x != nil {
+		return x.GasConfig
+	}
+	return nil
+}
+
+type WriteReportReply struct {
+	state                           protoimpl.MessageState          `protogen:"open.v1"`
+	TxStatus                        TransactionStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.chain_capabilities.evm.TransactionStatus" json:"tx_status,omitempty"`
+	ReceiverContractExecutionStatus ReceiverContractExecutionStatus `protobuf:"varint,2,opt,name=receiver_contract_execution_status,json=receiverContractExecutionStatus,proto3,enum=loop.chain_capabilities.evm.ReceiverContractExecutionStatus" json:"receiver_contract_execution_status,omitempty"`
+	TxHash                          *Hash                           `protobuf:"bytes,3,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
+	TransactionFee                  *pb.BigInt                      `protobuf:"bytes,4,opt,name=transaction_fee,json=transactionFee,proto3" json:"transaction_fee,omitempty"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
+}
+
+func (x *WriteReportReply) Reset() {
+	*x = WriteReportReply{}
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteReportReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteReportReply) ProtoMessage() {}
+
+func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
+func (*WriteReportReply) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *WriteReportReply) GetTxStatus() TransactionStatus {
+	if x != nil {
+		return x.TxStatus
+	}
+	return TransactionStatus_TRANSACTION_STATUS_CONFIRMED
+}
+
+func (x *WriteReportReply) GetReceiverContractExecutionStatus() ReceiverContractExecutionStatus {
+	if x != nil {
+		return x.ReceiverContractExecutionStatus
+	}
+	return ReceiverContractExecutionStatus_SUCCESS
+}
+
+func (x *WriteReportReply) GetTxHash() *Hash {
+	if x != nil {
+		return x.TxHash
+	}
+	return nil
+}
+
+func (x *WriteReportReply) GetTransactionFee() *pb.BigInt {
+	if x != nil {
+		return x.TransactionFee
+	}
+	return nil
 }
 
 // ----- Message Types -----
@@ -96,7 +373,7 @@ type Address struct {
 
 func (x *Address) Reset() {
 	*x = Address{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[0]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -108,7 +385,7 @@ func (x *Address) String() string {
 func (*Address) ProtoMessage() {}
 
 func (x *Address) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[0]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -121,7 +398,7 @@ func (x *Address) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Address.ProtoReflect.Descriptor instead.
 func (*Address) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Address) GetAddress() []byte {
@@ -142,7 +419,7 @@ type Hash struct {
 
 func (x *Hash) Reset() {
 	*x = Hash{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[1]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -154,7 +431,7 @@ func (x *Hash) String() string {
 func (*Hash) ProtoMessage() {}
 
 func (x *Hash) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[1]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -167,7 +444,7 @@ func (x *Hash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Hash.ProtoReflect.Descriptor instead.
 func (*Hash) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Hash) GetHash() []byte {
@@ -187,7 +464,7 @@ type ABIPayload struct {
 
 func (x *ABIPayload) Reset() {
 	*x = ABIPayload{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[2]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -199,7 +476,7 @@ func (x *ABIPayload) String() string {
 func (*ABIPayload) ProtoMessage() {}
 
 func (x *ABIPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[2]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -212,7 +489,7 @@ func (x *ABIPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ABIPayload.ProtoReflect.Descriptor instead.
 func (*ABIPayload) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ABIPayload) GetAbi() []byte {
@@ -234,7 +511,7 @@ type CallMsg struct {
 
 func (x *CallMsg) Reset() {
 	*x = CallMsg{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[3]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -246,7 +523,7 @@ func (x *CallMsg) String() string {
 func (*CallMsg) ProtoMessage() {}
 
 func (x *CallMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[3]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +536,7 @@ func (x *CallMsg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallMsg.ProtoReflect.Descriptor instead.
 func (*CallMsg) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CallMsg) GetFrom() *Address {
@@ -292,7 +569,7 @@ type Topics struct {
 
 func (x *Topics) Reset() {
 	*x = Topics{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[4]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -304,7 +581,7 @@ func (x *Topics) String() string {
 func (*Topics) ProtoMessage() {}
 
 func (x *Topics) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[4]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -317,7 +594,7 @@ func (x *Topics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Topics.ProtoReflect.Descriptor instead.
 func (*Topics) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{4}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Topics) GetTopic() []*Hash {
@@ -346,7 +623,7 @@ type Log struct {
 
 func (x *Log) Reset() {
 	*x = Log{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[5]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +635,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[5]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +648,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{5}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Log) GetAddress() *Address {
@@ -458,7 +735,7 @@ type FilterQuery struct {
 
 func (x *FilterQuery) Reset() {
 	*x = FilterQuery{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[6]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -470,7 +747,7 @@ func (x *FilterQuery) String() string {
 func (*FilterQuery) ProtoMessage() {}
 
 func (x *FilterQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[6]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +760,7 @@ func (x *FilterQuery) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilterQuery.ProtoReflect.Descriptor instead.
 func (*FilterQuery) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{6}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *FilterQuery) GetBlockHash() *Hash {
@@ -537,7 +814,7 @@ type Transaction struct {
 
 func (x *Transaction) Reset() {
 	*x = Transaction{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[7]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -549,7 +826,7 @@ func (x *Transaction) String() string {
 func (*Transaction) ProtoMessage() {}
 
 func (x *Transaction) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[7]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -562,7 +839,7 @@ func (x *Transaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{7}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Transaction) GetNonce() uint64 {
@@ -632,7 +909,7 @@ type Receipt struct {
 
 func (x *Receipt) Reset() {
 	*x = Receipt{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[8]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -644,7 +921,7 @@ func (x *Receipt) String() string {
 func (*Receipt) ProtoMessage() {}
 
 func (x *Receipt) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[8]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -657,7 +934,7 @@ func (x *Receipt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Receipt.ProtoReflect.Descriptor instead.
 func (*Receipt) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{8}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Receipt) GetStatus() uint64 {
@@ -741,7 +1018,7 @@ type LPFilter struct {
 
 func (x *LPFilter) Reset() {
 	*x = LPFilter{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[9]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -753,7 +1030,7 @@ func (x *LPFilter) String() string {
 func (*LPFilter) ProtoMessage() {}
 
 func (x *LPFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[9]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -766,7 +1043,7 @@ func (x *LPFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LPFilter.ProtoReflect.Descriptor instead.
 func (*LPFilter) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{9}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *LPFilter) GetMaxLogsKept() uint64 {
@@ -844,7 +1121,7 @@ type Head struct {
 
 func (x *Head) Reset() {
 	*x = Head{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[10]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -856,7 +1133,7 @@ func (x *Head) String() string {
 func (*Head) ProtoMessage() {}
 
 func (x *Head) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[10]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -869,7 +1146,7 @@ func (x *Head) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Head.ProtoReflect.Descriptor instead.
 func (*Head) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{10}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Head) GetTimestamp() uint64 {
@@ -913,7 +1190,7 @@ type Expression struct {
 
 func (x *Expression) Reset() {
 	*x = Expression{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[11]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +1202,7 @@ func (x *Expression) String() string {
 func (*Expression) ProtoMessage() {}
 
 func (x *Expression) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[11]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1215,7 @@ func (x *Expression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Expression.ProtoReflect.Descriptor instead.
 func (*Expression) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{11}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Expression) GetEvaluator() isExpression_Evaluator {
@@ -992,7 +1269,7 @@ type BooleanExpression struct {
 
 func (x *BooleanExpression) Reset() {
 	*x = BooleanExpression{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[12]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1004,7 +1281,7 @@ func (x *BooleanExpression) String() string {
 func (*BooleanExpression) ProtoMessage() {}
 
 func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[12]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1017,7 +1294,7 @@ func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BooleanExpression.ProtoReflect.Descriptor instead.
 func (*BooleanExpression) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{12}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *BooleanExpression) GetBooleanOperator() chain_common.BooleanOperator {
@@ -1043,7 +1320,7 @@ type And struct {
 
 func (x *And) Reset() {
 	*x = And{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[13]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1055,7 +1332,7 @@ func (x *And) String() string {
 func (*And) ProtoMessage() {}
 
 func (x *And) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[13]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1068,7 +1345,7 @@ func (x *And) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use And.ProtoReflect.Descriptor instead.
 func (*And) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{13}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *And) GetExpr() []*Expression {
@@ -1087,7 +1364,7 @@ type Or struct {
 
 func (x *Or) Reset() {
 	*x = Or{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[14]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1099,7 +1376,7 @@ func (x *Or) String() string {
 func (*Or) ProtoMessage() {}
 
 func (x *Or) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[14]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1112,7 +1389,7 @@ func (x *Or) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Or.ProtoReflect.Descriptor instead.
 func (*Or) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{14}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *Or) GetExpr() []*Expression {
@@ -1132,7 +1409,7 @@ type HashValueComparator struct {
 
 func (x *HashValueComparator) Reset() {
 	*x = HashValueComparator{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[15]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1144,7 +1421,7 @@ func (x *HashValueComparator) String() string {
 func (*HashValueComparator) ProtoMessage() {}
 
 func (x *HashValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[15]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1157,7 +1434,7 @@ func (x *HashValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HashValueComparator.ProtoReflect.Descriptor instead.
 func (*HashValueComparator) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{15}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *HashValueComparator) GetValues() []*Hash {
@@ -1183,7 +1460,7 @@ type ContractAddress struct {
 
 func (x *ContractAddress) Reset() {
 	*x = ContractAddress{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[16]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1195,7 +1472,7 @@ func (x *ContractAddress) String() string {
 func (*ContractAddress) ProtoMessage() {}
 
 func (x *ContractAddress) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[16]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1208,7 +1485,7 @@ func (x *ContractAddress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContractAddress.ProtoReflect.Descriptor instead.
 func (*ContractAddress) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{16}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ContractAddress) GetAddress() *Address {
@@ -1227,7 +1504,7 @@ type EventSig struct {
 
 func (x *EventSig) Reset() {
 	*x = EventSig{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[17]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1239,7 +1516,7 @@ func (x *EventSig) String() string {
 func (*EventSig) ProtoMessage() {}
 
 func (x *EventSig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[17]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1252,7 +1529,7 @@ func (x *EventSig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventSig.ProtoReflect.Descriptor instead.
 func (*EventSig) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{17}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *EventSig) GetEventSig() *Hash {
@@ -1272,7 +1549,7 @@ type EventByWord struct {
 
 func (x *EventByWord) Reset() {
 	*x = EventByWord{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[18]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +1561,7 @@ func (x *EventByWord) String() string {
 func (*EventByWord) ProtoMessage() {}
 
 func (x *EventByWord) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[18]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1574,7 @@ func (x *EventByWord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventByWord.ProtoReflect.Descriptor instead.
 func (*EventByWord) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{18}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *EventByWord) GetWordIndex() uint32 {
@@ -1324,7 +1601,7 @@ type EventByTopic struct {
 
 func (x *EventByTopic) Reset() {
 	*x = EventByTopic{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[19]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1336,7 +1613,7 @@ func (x *EventByTopic) String() string {
 func (*EventByTopic) ProtoMessage() {}
 
 func (x *EventByTopic) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[19]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1349,7 +1626,7 @@ func (x *EventByTopic) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventByTopic.ProtoReflect.Descriptor instead.
 func (*EventByTopic) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{19}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *EventByTopic) GetTopic() uint64 {
@@ -1384,7 +1661,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[20]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1396,7 +1673,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[20]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1409,7 +1686,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{20}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -1509,7 +1786,7 @@ type LatestAndFinalizedHeadReply struct {
 
 func (x *LatestAndFinalizedHeadReply) Reset() {
 	*x = LatestAndFinalizedHeadReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[21]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1521,7 +1798,7 @@ func (x *LatestAndFinalizedHeadReply) String() string {
 func (*LatestAndFinalizedHeadReply) ProtoMessage() {}
 
 func (x *LatestAndFinalizedHeadReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[21]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1534,7 +1811,7 @@ func (x *LatestAndFinalizedHeadReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LatestAndFinalizedHeadReply.ProtoReflect.Descriptor instead.
 func (*LatestAndFinalizedHeadReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{21}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *LatestAndFinalizedHeadReply) GetLatest() *Head {
@@ -1552,16 +1829,17 @@ func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
 }
 
 type CallContractRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Call          *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
-	BlockNumber   *pb.BigInt             `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState  `protogen:"open.v1"`
+	Call            *CallMsg                `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
+	BlockNumber     *pb.BigInt              `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	ConfidenceLevel chain_common.Confidence `protobuf:"varint,3,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CallContractRequest) Reset() {
 	*x = CallContractRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[22]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1573,7 +1851,7 @@ func (x *CallContractRequest) String() string {
 func (*CallContractRequest) ProtoMessage() {}
 
 func (x *CallContractRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[22]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1586,7 +1864,7 @@ func (x *CallContractRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallContractRequest.ProtoReflect.Descriptor instead.
 func (*CallContractRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{22}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CallContractRequest) GetCall() *CallMsg {
@@ -1603,6 +1881,13 @@ func (x *CallContractRequest) GetBlockNumber() *pb.BigInt {
 	return nil
 }
 
+func (x *CallContractRequest) GetConfidenceLevel() chain_common.Confidence {
+	if x != nil {
+		return x.ConfidenceLevel
+	}
+	return chain_common.Confidence(0)
+}
+
 type CallContractReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          *ABIPayload            `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
@@ -1612,7 +1897,7 @@ type CallContractReply struct {
 
 func (x *CallContractReply) Reset() {
 	*x = CallContractReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[23]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1624,7 +1909,7 @@ func (x *CallContractReply) String() string {
 func (*CallContractReply) ProtoMessage() {}
 
 func (x *CallContractReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[23]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1637,7 +1922,7 @@ func (x *CallContractReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallContractReply.ProtoReflect.Descriptor instead.
 func (*CallContractReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{23}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CallContractReply) GetData() *ABIPayload {
@@ -1657,7 +1942,7 @@ type GetTransactionFeeRequest struct {
 
 func (x *GetTransactionFeeRequest) Reset() {
 	*x = GetTransactionFeeRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[24]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1669,7 +1954,7 @@ func (x *GetTransactionFeeRequest) String() string {
 func (*GetTransactionFeeRequest) ProtoMessage() {}
 
 func (x *GetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[24]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1682,7 +1967,7 @@ func (x *GetTransactionFeeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionFeeRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionFeeRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{24}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetTransactionFeeRequest) GetTransactionId() string {
@@ -1702,7 +1987,7 @@ type GetTransactionFeeReply struct {
 
 func (x *GetTransactionFeeReply) Reset() {
 	*x = GetTransactionFeeReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[25]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1714,7 +1999,7 @@ func (x *GetTransactionFeeReply) String() string {
 func (*GetTransactionFeeReply) ProtoMessage() {}
 
 func (x *GetTransactionFeeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[25]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1727,7 +2012,7 @@ func (x *GetTransactionFeeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionFeeReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionFeeReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{25}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetTransactionFeeReply) GetTransationFee() *pb.BigInt {
@@ -1746,7 +2031,7 @@ type FilterLogsRequest struct {
 
 func (x *FilterLogsRequest) Reset() {
 	*x = FilterLogsRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[26]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1758,7 +2043,7 @@ func (x *FilterLogsRequest) String() string {
 func (*FilterLogsRequest) ProtoMessage() {}
 
 func (x *FilterLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[26]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1771,7 +2056,7 @@ func (x *FilterLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilterLogsRequest.ProtoReflect.Descriptor instead.
 func (*FilterLogsRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{26}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *FilterLogsRequest) GetFilterQuery() *FilterQuery {
@@ -1790,7 +2075,7 @@ type FilterLogsReply struct {
 
 func (x *FilterLogsReply) Reset() {
 	*x = FilterLogsReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[27]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1802,7 +2087,7 @@ func (x *FilterLogsReply) String() string {
 func (*FilterLogsReply) ProtoMessage() {}
 
 func (x *FilterLogsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[27]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1815,7 +2100,7 @@ func (x *FilterLogsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilterLogsReply.ProtoReflect.Descriptor instead.
 func (*FilterLogsReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{27}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *FilterLogsReply) GetLogs() []*Log {
@@ -1835,7 +2120,7 @@ type BalanceAtRequest struct {
 
 func (x *BalanceAtRequest) Reset() {
 	*x = BalanceAtRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[28]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1847,7 +2132,7 @@ func (x *BalanceAtRequest) String() string {
 func (*BalanceAtRequest) ProtoMessage() {}
 
 func (x *BalanceAtRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[28]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1860,7 +2145,7 @@ func (x *BalanceAtRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BalanceAtRequest.ProtoReflect.Descriptor instead.
 func (*BalanceAtRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{28}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *BalanceAtRequest) GetAccount() *Address {
@@ -1886,7 +2171,7 @@ type BalanceAtReply struct {
 
 func (x *BalanceAtReply) Reset() {
 	*x = BalanceAtReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[29]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1898,7 +2183,7 @@ func (x *BalanceAtReply) String() string {
 func (*BalanceAtReply) ProtoMessage() {}
 
 func (x *BalanceAtReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[29]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1911,7 +2196,7 @@ func (x *BalanceAtReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BalanceAtReply.ProtoReflect.Descriptor instead.
 func (*BalanceAtReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{29}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *BalanceAtReply) GetBalance() *pb.BigInt {
@@ -1930,7 +2215,7 @@ type EstimateGasRequest struct {
 
 func (x *EstimateGasRequest) Reset() {
 	*x = EstimateGasRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[30]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1942,7 +2227,7 @@ func (x *EstimateGasRequest) String() string {
 func (*EstimateGasRequest) ProtoMessage() {}
 
 func (x *EstimateGasRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[30]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1955,7 +2240,7 @@ func (x *EstimateGasRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateGasRequest.ProtoReflect.Descriptor instead.
 func (*EstimateGasRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{30}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *EstimateGasRequest) GetMsg() *CallMsg {
@@ -1974,7 +2259,7 @@ type EstimateGasReply struct {
 
 func (x *EstimateGasReply) Reset() {
 	*x = EstimateGasReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[31]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1986,7 +2271,7 @@ func (x *EstimateGasReply) String() string {
 func (*EstimateGasReply) ProtoMessage() {}
 
 func (x *EstimateGasReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[31]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1999,7 +2284,7 @@ func (x *EstimateGasReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateGasReply.ProtoReflect.Descriptor instead.
 func (*EstimateGasReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{31}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *EstimateGasReply) GetGas() uint64 {
@@ -2018,7 +2303,7 @@ type GetTransactionByHashRequest struct {
 
 func (x *GetTransactionByHashRequest) Reset() {
 	*x = GetTransactionByHashRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[32]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2030,7 +2315,7 @@ func (x *GetTransactionByHashRequest) String() string {
 func (*GetTransactionByHashRequest) ProtoMessage() {}
 
 func (x *GetTransactionByHashRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[32]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2043,7 +2328,7 @@ func (x *GetTransactionByHashRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionByHashRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionByHashRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{32}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetTransactionByHashRequest) GetHash() *Hash {
@@ -2062,7 +2347,7 @@ type GetTransactionByHashReply struct {
 
 func (x *GetTransactionByHashReply) Reset() {
 	*x = GetTransactionByHashReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[33]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2074,7 +2359,7 @@ func (x *GetTransactionByHashReply) String() string {
 func (*GetTransactionByHashReply) ProtoMessage() {}
 
 func (x *GetTransactionByHashReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[33]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2087,7 +2372,7 @@ func (x *GetTransactionByHashReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionByHashReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionByHashReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{33}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *GetTransactionByHashReply) GetTransaction() *Transaction {
@@ -2106,7 +2391,7 @@ type GetTransactionReceiptRequest struct {
 
 func (x *GetTransactionReceiptRequest) Reset() {
 	*x = GetTransactionReceiptRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[34]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2118,7 +2403,7 @@ func (x *GetTransactionReceiptRequest) String() string {
 func (*GetTransactionReceiptRequest) ProtoMessage() {}
 
 func (x *GetTransactionReceiptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[34]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2131,7 +2416,7 @@ func (x *GetTransactionReceiptRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionReceiptRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionReceiptRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{34}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *GetTransactionReceiptRequest) GetHash() *Hash {
@@ -2150,7 +2435,7 @@ type GetTransactionReceiptReply struct {
 
 func (x *GetTransactionReceiptReply) Reset() {
 	*x = GetTransactionReceiptReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[35]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2162,7 +2447,7 @@ func (x *GetTransactionReceiptReply) String() string {
 func (*GetTransactionReceiptReply) ProtoMessage() {}
 
 func (x *GetTransactionReceiptReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[35]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2175,7 +2460,7 @@ func (x *GetTransactionReceiptReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionReceiptReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionReceiptReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{35}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *GetTransactionReceiptReply) GetReceipt() *Receipt {
@@ -2194,7 +2479,7 @@ type RegisterLogTrackingRequest struct {
 
 func (x *RegisterLogTrackingRequest) Reset() {
 	*x = RegisterLogTrackingRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[36]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2206,7 +2491,7 @@ func (x *RegisterLogTrackingRequest) String() string {
 func (*RegisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[36]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2219,7 +2504,7 @@ func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{36}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *RegisterLogTrackingRequest) GetFilter() *LPFilter {
@@ -2238,7 +2523,7 @@ type UnregisterLogTrackingRequest struct {
 
 func (x *UnregisterLogTrackingRequest) Reset() {
 	*x = UnregisterLogTrackingRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[37]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2250,7 +2535,7 @@ func (x *UnregisterLogTrackingRequest) String() string {
 func (*UnregisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[37]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2263,7 +2548,7 @@ func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{37}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *UnregisterLogTrackingRequest) GetFilterName() string {
@@ -2284,7 +2569,7 @@ type QueryTrackedLogsRequest struct {
 
 func (x *QueryTrackedLogsRequest) Reset() {
 	*x = QueryTrackedLogsRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[38]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2296,7 +2581,7 @@ func (x *QueryTrackedLogsRequest) String() string {
 func (*QueryTrackedLogsRequest) ProtoMessage() {}
 
 func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[38]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2309,7 +2594,7 @@ func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTrackedLogsRequest.ProtoReflect.Descriptor instead.
 func (*QueryTrackedLogsRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{38}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *QueryTrackedLogsRequest) GetExpression() []*Expression {
@@ -2342,7 +2627,7 @@ type QueryTrackedLogsReply struct {
 
 func (x *QueryTrackedLogsReply) Reset() {
 	*x = QueryTrackedLogsReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[39]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2354,7 +2639,7 @@ func (x *QueryTrackedLogsReply) String() string {
 func (*QueryTrackedLogsReply) ProtoMessage() {}
 
 func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[39]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2367,7 +2652,7 @@ func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTrackedLogsReply.ProtoReflect.Descriptor instead.
 func (*QueryTrackedLogsReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{39}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *QueryTrackedLogsReply) GetLogs() []*Log {
@@ -2379,14 +2664,14 @@ func (x *QueryTrackedLogsReply) GetLogs() []*Log {
 
 type GetTransactionStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
+	TxHash        *Hash                  `protobuf:"bytes,1,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetTransactionStatusRequest) Reset() {
 	*x = GetTransactionStatusRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[40]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2398,7 +2683,7 @@ func (x *GetTransactionStatusRequest) String() string {
 func (*GetTransactionStatusRequest) ProtoMessage() {}
 
 func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[40]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2411,14 +2696,14 @@ func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionStatusRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{40}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{44}
 }
 
-func (x *GetTransactionStatusRequest) GetTransactionId() string {
+func (x *GetTransactionStatusRequest) GetTxHash() *Hash {
 	if x != nil {
-		return x.TransactionId
+		return x.TxHash
 	}
-	return ""
+	return nil
 }
 
 type GetTransactionStatusReply struct {
@@ -2430,7 +2715,7 @@ type GetTransactionStatusReply struct {
 
 func (x *GetTransactionStatusReply) Reset() {
 	*x = GetTransactionStatusReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[41]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2442,7 +2727,7 @@ func (x *GetTransactionStatusReply) String() string {
 func (*GetTransactionStatusReply) ProtoMessage() {}
 
 func (x *GetTransactionStatusReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[41]
+	mi := &file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2455,21 +2740,41 @@ func (x *GetTransactionStatusReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionStatusReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionStatusReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{41}
+	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GetTransactionStatusReply) GetTransactionStatus() TransactionStatus {
 	if x != nil {
 		return x.TransactionStatus
 	}
-	return TransactionStatus_TRANSACTION_STATUS_UNKNOWN
+	return TransactionStatus_TRANSACTION_STATUS_CONFIRMED
 }
 
 var File_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc = "" +
 	"\n" +
-	">capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\x12\x1bloop.chain_capabilities.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\"#\n" +
+	">capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\x12\x1bloop.chain_capabilities.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\"\x84\x01\n" +
+	"\fSignedReport\x12\x1d\n" +
+	"\n" +
+	"raw_report\x18\x01 \x01(\fR\trawReport\x12%\n" +
+	"\x0ereport_context\x18\x02 \x01(\fR\rreportContext\x12\x1e\n" +
+	"\n" +
+	"signatures\x18\x03 \x03(\fR\n" +
+	"signatures\x12\x0e\n" +
+	"\x02id\x18\x04 \x01(\fR\x02id\"(\n" +
+	"\tGasConfig\x12\x1b\n" +
+	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"\xe0\x01\n" +
+	"\x12WriteReportRequest\x12@\n" +
+	"\breceiver\x18\x01 \x01(\v2$.loop.chain_capabilities.evm.AddressR\breceiver\x12A\n" +
+	"\x06report\x18\x02 \x01(\v2).loop.chain_capabilities.evm.SignedReportR\x06report\x12E\n" +
+	"\n" +
+	"gas_config\x18\x03 \x01(\v2&.loop.chain_capabilities.evm.GasConfigR\tgasConfig\"\xe0\x02\n" +
+	"\x10WriteReportReply\x12K\n" +
+	"\ttx_status\x18\x01 \x01(\x0e2..loop.chain_capabilities.evm.TransactionStatusR\btxStatus\x12\x89\x01\n" +
+	"\"receiver_contract_execution_status\x18\x02 \x01(\x0e2<.loop.chain_capabilities.evm.ReceiverContractExecutionStatusR\x1freceiverContractExecutionStatus\x12:\n" +
+	"\atx_hash\x18\x03 \x01(\v2!.loop.chain_capabilities.evm.HashR\x06txHash\x127\n" +
+	"\x0ftransaction_fee\x18\x04 \x01(\v2\x0e.values.BigIntR\x0etransactionFee\"#\n" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\"\x1a\n" +
 	"\x04Hash\x12\x12\n" +
@@ -2577,10 +2882,11 @@ const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDes
 	"\tprimitive\"\x99\x01\n" +
 	"\x1bLatestAndFinalizedHeadReply\x129\n" +
 	"\x06latest\x18\x01 \x01(\v2!.loop.chain_capabilities.evm.HeadR\x06latest\x12?\n" +
-	"\tfinalized\x18\x02 \x01(\v2!.loop.chain_capabilities.evm.HeadR\tfinalized\"\x82\x01\n" +
+	"\tfinalized\x18\x02 \x01(\v2!.loop.chain_capabilities.evm.HeadR\tfinalized\"\xcc\x01\n" +
 	"\x13CallContractRequest\x128\n" +
 	"\x04call\x18\x01 \x01(\v2$.loop.chain_capabilities.evm.CallMsgR\x04call\x121\n" +
-	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\"P\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\x12H\n" +
+	"\x10confidence_level\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\"P\n" +
 	"\x11CallContractReply\x12;\n" +
 	"\x04data\x18\x01 \x01(\v2'.loop.chain_capabilities.evm.ABIPayloadR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
@@ -2620,18 +2926,18 @@ const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDes
 	"\x0elimit_and_sort\x18\x02 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\x12H\n" +
 	"\x10confidence_level\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\"M\n" +
 	"\x15QueryTrackedLogsReply\x124\n" +
-	"\x04logs\x18\x01 \x03(\v2 .loop.chain_capabilities.evm.LogR\x04logs\"D\n" +
-	"\x1bGetTransactionStatusRequest\x12%\n" +
-	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"z\n" +
+	"\x04logs\x18\x01 \x03(\v2 .loop.chain_capabilities.evm.LogR\x04logs\"Y\n" +
+	"\x1bGetTransactionStatusRequest\x12:\n" +
+	"\atx_hash\x18\x01 \x01(\v2!.loop.chain_capabilities.evm.HashR\x06txHash\"z\n" +
 	"\x19GetTransactionStatusReply\x12]\n" +
-	"\x12transaction_status\x18\x01 \x01(\x0e2..loop.chain_capabilities.evm.TransactionStatusR\x11transactionStatus*\xd6\x01\n" +
-	"\x11TransactionStatus\x12\x1e\n" +
-	"\x1aTRANSACTION_STATUS_UNKNOWN\x10\x00\x12\x1e\n" +
-	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12\"\n" +
-	"\x1eTRANSACTION_STATUS_UNCONFIRMED\x10\x02\x12 \n" +
-	"\x1cTRANSACTION_STATUS_FINALIZED\x10\x03\x12\x1d\n" +
-	"\x19TRANSACTION_STATUS_FAILED\x10\x04\x12\x1c\n" +
-	"\x18TRANSACTION_STATUS_FATAL\x10\x052\xa1\v\n" +
+	"\x12transaction_status\x18\x01 \x01(\x0e2..loop.chain_capabilities.evm.TransactionStatusR\x11transactionStatus*;\n" +
+	"\x1fReceiverContractExecutionStatus\x12\v\n" +
+	"\aSUCCESS\x10\x00\x12\v\n" +
+	"\aFAILURE\x10\x01*u\n" +
+	"\x11TransactionStatus\x12 \n" +
+	"\x1cTRANSACTION_STATUS_CONFIRMED\x10\x00\x12 \n" +
+	"\x1cTRANSACTION_STATUS_FINALIZED\x10\x01\x12\x1c\n" +
+	"\x18TRANSACTION_STATUS_FATAL\x10\x022\x90\f\n" +
 	"\x03EVM\x12\x81\x01\n" +
 	"\x11GetTransactionFee\x125.loop.chain_capabilities.evm.GetTransactionFeeRequest\x1a3.loop.chain_capabilities.evm.GetTransactionFeeReply\"\x00\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
@@ -2645,7 +2951,8 @@ const file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDes
 	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
 	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12\x88\x01\n" +
-	"\x14GetTransactionStatus\x128.loop.chain_capabilities.evm.GetTransactionStatusRequest\x1a6.loop.chain_capabilities.evm.GetTransactionStatusReplyBmZkgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service;evmpbb\x06proto3"
+	"\x14GetTransactionStatus\x128.loop.chain_capabilities.evm.GetTransactionStatusRequest\x1a6.loop.chain_capabilities.evm.GetTransactionStatusReply\x12m\n" +
+	"\vWriteReport\x12/.loop.chain_capabilities.evm.WriteReportRequest\x1a-.loop.chain_capabilities.evm.WriteReportReplyBmZkgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service;evmpbb\x06proto3"
 
 var (
 	file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescOnce sync.Once
@@ -2659,164 +2966,180 @@ func file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc
 	return file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDescData
 }
 
-var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_goTypes = []any{
-	(TransactionStatus)(0),               // 0: loop.chain_capabilities.evm.TransactionStatus
-	(*Address)(nil),                      // 1: loop.chain_capabilities.evm.Address
-	(*Hash)(nil),                         // 2: loop.chain_capabilities.evm.Hash
-	(*ABIPayload)(nil),                   // 3: loop.chain_capabilities.evm.ABIPayload
-	(*CallMsg)(nil),                      // 4: loop.chain_capabilities.evm.CallMsg
-	(*Topics)(nil),                       // 5: loop.chain_capabilities.evm.Topics
-	(*Log)(nil),                          // 6: loop.chain_capabilities.evm.Log
-	(*FilterQuery)(nil),                  // 7: loop.chain_capabilities.evm.FilterQuery
-	(*Transaction)(nil),                  // 8: loop.chain_capabilities.evm.Transaction
-	(*Receipt)(nil),                      // 9: loop.chain_capabilities.evm.Receipt
-	(*LPFilter)(nil),                     // 10: loop.chain_capabilities.evm.LPFilter
-	(*Head)(nil),                         // 11: loop.chain_capabilities.evm.Head
-	(*Expression)(nil),                   // 12: loop.chain_capabilities.evm.Expression
-	(*BooleanExpression)(nil),            // 13: loop.chain_capabilities.evm.BooleanExpression
-	(*And)(nil),                          // 14: loop.chain_capabilities.evm.And
-	(*Or)(nil),                           // 15: loop.chain_capabilities.evm.Or
-	(*HashValueComparator)(nil),          // 16: loop.chain_capabilities.evm.HashValueComparator
-	(*ContractAddress)(nil),              // 17: loop.chain_capabilities.evm.ContractAddress
-	(*EventSig)(nil),                     // 18: loop.chain_capabilities.evm.EventSig
-	(*EventByWord)(nil),                  // 19: loop.chain_capabilities.evm.EventByWord
-	(*EventByTopic)(nil),                 // 20: loop.chain_capabilities.evm.EventByTopic
-	(*Primitive)(nil),                    // 21: loop.chain_capabilities.evm.Primitive
-	(*LatestAndFinalizedHeadReply)(nil),  // 22: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	(*CallContractRequest)(nil),          // 23: loop.chain_capabilities.evm.CallContractRequest
-	(*CallContractReply)(nil),            // 24: loop.chain_capabilities.evm.CallContractReply
-	(*GetTransactionFeeRequest)(nil),     // 25: loop.chain_capabilities.evm.GetTransactionFeeRequest
-	(*GetTransactionFeeReply)(nil),       // 26: loop.chain_capabilities.evm.GetTransactionFeeReply
-	(*FilterLogsRequest)(nil),            // 27: loop.chain_capabilities.evm.FilterLogsRequest
-	(*FilterLogsReply)(nil),              // 28: loop.chain_capabilities.evm.FilterLogsReply
-	(*BalanceAtRequest)(nil),             // 29: loop.chain_capabilities.evm.BalanceAtRequest
-	(*BalanceAtReply)(nil),               // 30: loop.chain_capabilities.evm.BalanceAtReply
-	(*EstimateGasRequest)(nil),           // 31: loop.chain_capabilities.evm.EstimateGasRequest
-	(*EstimateGasReply)(nil),             // 32: loop.chain_capabilities.evm.EstimateGasReply
-	(*GetTransactionByHashRequest)(nil),  // 33: loop.chain_capabilities.evm.GetTransactionByHashRequest
-	(*GetTransactionByHashReply)(nil),    // 34: loop.chain_capabilities.evm.GetTransactionByHashReply
-	(*GetTransactionReceiptRequest)(nil), // 35: loop.chain_capabilities.evm.GetTransactionReceiptRequest
-	(*GetTransactionReceiptReply)(nil),   // 36: loop.chain_capabilities.evm.GetTransactionReceiptReply
-	(*RegisterLogTrackingRequest)(nil),   // 37: loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil), // 38: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	(*QueryTrackedLogsRequest)(nil),      // 39: loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	(*QueryTrackedLogsReply)(nil),        // 40: loop.chain_capabilities.evm.QueryTrackedLogsReply
-	(*GetTransactionStatusRequest)(nil),  // 41: loop.chain_capabilities.evm.GetTransactionStatusRequest
-	(*GetTransactionStatusReply)(nil),    // 42: loop.chain_capabilities.evm.GetTransactionStatusReply
-	(*pb.BigInt)(nil),                    // 43: values.BigInt
-	(chain_common.BooleanOperator)(0),    // 44: loop.chain.common.BooleanOperator
-	(chain_common.ComparisonOperator)(0), // 45: loop.chain.common.ComparisonOperator
-	(*chain_common.Primitive)(nil),       // 46: loop.chain.common.Primitive
-	(*chain_common.LimitAndSort)(nil),    // 47: loop.chain.common.LimitAndSort
-	(chain_common.Confidence)(0),         // 48: loop.chain.common.Confidence
-	(*emptypb.Empty)(nil),                // 49: google.protobuf.Empty
+	(ReceiverContractExecutionStatus)(0), // 0: loop.chain_capabilities.evm.ReceiverContractExecutionStatus
+	(TransactionStatus)(0),               // 1: loop.chain_capabilities.evm.TransactionStatus
+	(*SignedReport)(nil),                 // 2: loop.chain_capabilities.evm.SignedReport
+	(*GasConfig)(nil),                    // 3: loop.chain_capabilities.evm.GasConfig
+	(*WriteReportRequest)(nil),           // 4: loop.chain_capabilities.evm.WriteReportRequest
+	(*WriteReportReply)(nil),             // 5: loop.chain_capabilities.evm.WriteReportReply
+	(*Address)(nil),                      // 6: loop.chain_capabilities.evm.Address
+	(*Hash)(nil),                         // 7: loop.chain_capabilities.evm.Hash
+	(*ABIPayload)(nil),                   // 8: loop.chain_capabilities.evm.ABIPayload
+	(*CallMsg)(nil),                      // 9: loop.chain_capabilities.evm.CallMsg
+	(*Topics)(nil),                       // 10: loop.chain_capabilities.evm.Topics
+	(*Log)(nil),                          // 11: loop.chain_capabilities.evm.Log
+	(*FilterQuery)(nil),                  // 12: loop.chain_capabilities.evm.FilterQuery
+	(*Transaction)(nil),                  // 13: loop.chain_capabilities.evm.Transaction
+	(*Receipt)(nil),                      // 14: loop.chain_capabilities.evm.Receipt
+	(*LPFilter)(nil),                     // 15: loop.chain_capabilities.evm.LPFilter
+	(*Head)(nil),                         // 16: loop.chain_capabilities.evm.Head
+	(*Expression)(nil),                   // 17: loop.chain_capabilities.evm.Expression
+	(*BooleanExpression)(nil),            // 18: loop.chain_capabilities.evm.BooleanExpression
+	(*And)(nil),                          // 19: loop.chain_capabilities.evm.And
+	(*Or)(nil),                           // 20: loop.chain_capabilities.evm.Or
+	(*HashValueComparator)(nil),          // 21: loop.chain_capabilities.evm.HashValueComparator
+	(*ContractAddress)(nil),              // 22: loop.chain_capabilities.evm.ContractAddress
+	(*EventSig)(nil),                     // 23: loop.chain_capabilities.evm.EventSig
+	(*EventByWord)(nil),                  // 24: loop.chain_capabilities.evm.EventByWord
+	(*EventByTopic)(nil),                 // 25: loop.chain_capabilities.evm.EventByTopic
+	(*Primitive)(nil),                    // 26: loop.chain_capabilities.evm.Primitive
+	(*LatestAndFinalizedHeadReply)(nil),  // 27: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	(*CallContractRequest)(nil),          // 28: loop.chain_capabilities.evm.CallContractRequest
+	(*CallContractReply)(nil),            // 29: loop.chain_capabilities.evm.CallContractReply
+	(*GetTransactionFeeRequest)(nil),     // 30: loop.chain_capabilities.evm.GetTransactionFeeRequest
+	(*GetTransactionFeeReply)(nil),       // 31: loop.chain_capabilities.evm.GetTransactionFeeReply
+	(*FilterLogsRequest)(nil),            // 32: loop.chain_capabilities.evm.FilterLogsRequest
+	(*FilterLogsReply)(nil),              // 33: loop.chain_capabilities.evm.FilterLogsReply
+	(*BalanceAtRequest)(nil),             // 34: loop.chain_capabilities.evm.BalanceAtRequest
+	(*BalanceAtReply)(nil),               // 35: loop.chain_capabilities.evm.BalanceAtReply
+	(*EstimateGasRequest)(nil),           // 36: loop.chain_capabilities.evm.EstimateGasRequest
+	(*EstimateGasReply)(nil),             // 37: loop.chain_capabilities.evm.EstimateGasReply
+	(*GetTransactionByHashRequest)(nil),  // 38: loop.chain_capabilities.evm.GetTransactionByHashRequest
+	(*GetTransactionByHashReply)(nil),    // 39: loop.chain_capabilities.evm.GetTransactionByHashReply
+	(*GetTransactionReceiptRequest)(nil), // 40: loop.chain_capabilities.evm.GetTransactionReceiptRequest
+	(*GetTransactionReceiptReply)(nil),   // 41: loop.chain_capabilities.evm.GetTransactionReceiptReply
+	(*RegisterLogTrackingRequest)(nil),   // 42: loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	(*UnregisterLogTrackingRequest)(nil), // 43: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	(*QueryTrackedLogsRequest)(nil),      // 44: loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),        // 45: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*GetTransactionStatusRequest)(nil),  // 46: loop.chain_capabilities.evm.GetTransactionStatusRequest
+	(*GetTransactionStatusReply)(nil),    // 47: loop.chain_capabilities.evm.GetTransactionStatusReply
+	(*pb.BigInt)(nil),                    // 48: values.BigInt
+	(chain_common.BooleanOperator)(0),    // 49: loop.chain.common.BooleanOperator
+	(chain_common.ComparisonOperator)(0), // 50: loop.chain.common.ComparisonOperator
+	(*chain_common.Primitive)(nil),       // 51: loop.chain.common.Primitive
+	(chain_common.Confidence)(0),         // 52: loop.chain.common.Confidence
+	(*chain_common.LimitAndSort)(nil),    // 53: loop.chain.common.LimitAndSort
+	(*emptypb.Empty)(nil),                // 54: google.protobuf.Empty
 }
 var file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_depIdxs = []int32{
-	1,  // 0: loop.chain_capabilities.evm.CallMsg.from:type_name -> loop.chain_capabilities.evm.Address
-	1,  // 1: loop.chain_capabilities.evm.CallMsg.to:type_name -> loop.chain_capabilities.evm.Address
-	3,  // 2: loop.chain_capabilities.evm.CallMsg.data:type_name -> loop.chain_capabilities.evm.ABIPayload
-	2,  // 3: loop.chain_capabilities.evm.Topics.topic:type_name -> loop.chain_capabilities.evm.Hash
-	1,  // 4: loop.chain_capabilities.evm.Log.address:type_name -> loop.chain_capabilities.evm.Address
-	2,  // 5: loop.chain_capabilities.evm.Log.topics:type_name -> loop.chain_capabilities.evm.Hash
-	2,  // 6: loop.chain_capabilities.evm.Log.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
-	2,  // 7: loop.chain_capabilities.evm.Log.block_hash:type_name -> loop.chain_capabilities.evm.Hash
-	3,  // 8: loop.chain_capabilities.evm.Log.data:type_name -> loop.chain_capabilities.evm.ABIPayload
-	2,  // 9: loop.chain_capabilities.evm.Log.eventSig:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 10: loop.chain_capabilities.evm.Log.block_number:type_name -> values.BigInt
-	2,  // 11: loop.chain_capabilities.evm.FilterQuery.block_hash:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 12: loop.chain_capabilities.evm.FilterQuery.fromBlock:type_name -> values.BigInt
-	43, // 13: loop.chain_capabilities.evm.FilterQuery.toBlock:type_name -> values.BigInt
-	1,  // 14: loop.chain_capabilities.evm.FilterQuery.addresses:type_name -> loop.chain_capabilities.evm.Address
-	5,  // 15: loop.chain_capabilities.evm.FilterQuery.topics:type_name -> loop.chain_capabilities.evm.Topics
-	1,  // 16: loop.chain_capabilities.evm.Transaction.to:type_name -> loop.chain_capabilities.evm.Address
-	3,  // 17: loop.chain_capabilities.evm.Transaction.data:type_name -> loop.chain_capabilities.evm.ABIPayload
-	2,  // 18: loop.chain_capabilities.evm.Transaction.hash:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 19: loop.chain_capabilities.evm.Transaction.value:type_name -> values.BigInt
-	43, // 20: loop.chain_capabilities.evm.Transaction.gas_price:type_name -> values.BigInt
-	2,  // 21: loop.chain_capabilities.evm.Receipt.block_hash:type_name -> loop.chain_capabilities.evm.Hash
-	6,  // 22: loop.chain_capabilities.evm.Receipt.logs:type_name -> loop.chain_capabilities.evm.Log
-	2,  // 23: loop.chain_capabilities.evm.Receipt.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 24: loop.chain_capabilities.evm.Receipt.effective_gas_price:type_name -> values.BigInt
-	43, // 25: loop.chain_capabilities.evm.Receipt.block_number:type_name -> values.BigInt
-	1,  // 26: loop.chain_capabilities.evm.Receipt.contract_address:type_name -> loop.chain_capabilities.evm.Address
-	1,  // 27: loop.chain_capabilities.evm.LPFilter.addresses:type_name -> loop.chain_capabilities.evm.Address
-	2,  // 28: loop.chain_capabilities.evm.LPFilter.event_sigs:type_name -> loop.chain_capabilities.evm.Hash
-	2,  // 29: loop.chain_capabilities.evm.LPFilter.topic2:type_name -> loop.chain_capabilities.evm.Hash
-	2,  // 30: loop.chain_capabilities.evm.LPFilter.topic3:type_name -> loop.chain_capabilities.evm.Hash
-	2,  // 31: loop.chain_capabilities.evm.LPFilter.topic4:type_name -> loop.chain_capabilities.evm.Hash
-	43, // 32: loop.chain_capabilities.evm.Head.block_number:type_name -> values.BigInt
-	2,  // 33: loop.chain_capabilities.evm.Head.hash:type_name -> loop.chain_capabilities.evm.Hash
-	2,  // 34: loop.chain_capabilities.evm.Head.parent_hash:type_name -> loop.chain_capabilities.evm.Hash
-	21, // 35: loop.chain_capabilities.evm.Expression.primitive:type_name -> loop.chain_capabilities.evm.Primitive
-	13, // 36: loop.chain_capabilities.evm.Expression.boolean_expression:type_name -> loop.chain_capabilities.evm.BooleanExpression
-	44, // 37: loop.chain_capabilities.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
-	12, // 38: loop.chain_capabilities.evm.BooleanExpression.expression:type_name -> loop.chain_capabilities.evm.Expression
-	12, // 39: loop.chain_capabilities.evm.And.expr:type_name -> loop.chain_capabilities.evm.Expression
-	12, // 40: loop.chain_capabilities.evm.Or.expr:type_name -> loop.chain_capabilities.evm.Expression
-	2,  // 41: loop.chain_capabilities.evm.HashValueComparator.values:type_name -> loop.chain_capabilities.evm.Hash
-	45, // 42: loop.chain_capabilities.evm.HashValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
-	1,  // 43: loop.chain_capabilities.evm.ContractAddress.address:type_name -> loop.chain_capabilities.evm.Address
-	2,  // 44: loop.chain_capabilities.evm.EventSig.eventSig:type_name -> loop.chain_capabilities.evm.Hash
-	16, // 45: loop.chain_capabilities.evm.EventByWord.hashed_value_comparers:type_name -> loop.chain_capabilities.evm.HashValueComparator
-	16, // 46: loop.chain_capabilities.evm.EventByTopic.hashed_value_comparers:type_name -> loop.chain_capabilities.evm.HashValueComparator
-	46, // 47: loop.chain_capabilities.evm.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
-	17, // 48: loop.chain_capabilities.evm.Primitive.contract_address:type_name -> loop.chain_capabilities.evm.ContractAddress
-	18, // 49: loop.chain_capabilities.evm.Primitive.event_sig:type_name -> loop.chain_capabilities.evm.EventSig
-	19, // 50: loop.chain_capabilities.evm.Primitive.event_by_word:type_name -> loop.chain_capabilities.evm.EventByWord
-	20, // 51: loop.chain_capabilities.evm.Primitive.event_by_topic:type_name -> loop.chain_capabilities.evm.EventByTopic
-	11, // 52: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.chain_capabilities.evm.Head
-	11, // 53: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.chain_capabilities.evm.Head
-	4,  // 54: loop.chain_capabilities.evm.CallContractRequest.call:type_name -> loop.chain_capabilities.evm.CallMsg
-	43, // 55: loop.chain_capabilities.evm.CallContractRequest.block_number:type_name -> values.BigInt
-	3,  // 56: loop.chain_capabilities.evm.CallContractReply.data:type_name -> loop.chain_capabilities.evm.ABIPayload
-	43, // 57: loop.chain_capabilities.evm.GetTransactionFeeReply.transation_fee:type_name -> values.BigInt
-	7,  // 58: loop.chain_capabilities.evm.FilterLogsRequest.filter_query:type_name -> loop.chain_capabilities.evm.FilterQuery
-	6,  // 59: loop.chain_capabilities.evm.FilterLogsReply.logs:type_name -> loop.chain_capabilities.evm.Log
-	1,  // 60: loop.chain_capabilities.evm.BalanceAtRequest.account:type_name -> loop.chain_capabilities.evm.Address
-	43, // 61: loop.chain_capabilities.evm.BalanceAtRequest.block_number:type_name -> values.BigInt
-	43, // 62: loop.chain_capabilities.evm.BalanceAtReply.balance:type_name -> values.BigInt
-	4,  // 63: loop.chain_capabilities.evm.EstimateGasRequest.msg:type_name -> loop.chain_capabilities.evm.CallMsg
-	2,  // 64: loop.chain_capabilities.evm.GetTransactionByHashRequest.hash:type_name -> loop.chain_capabilities.evm.Hash
-	8,  // 65: loop.chain_capabilities.evm.GetTransactionByHashReply.transaction:type_name -> loop.chain_capabilities.evm.Transaction
-	2,  // 66: loop.chain_capabilities.evm.GetTransactionReceiptRequest.hash:type_name -> loop.chain_capabilities.evm.Hash
-	9,  // 67: loop.chain_capabilities.evm.GetTransactionReceiptReply.receipt:type_name -> loop.chain_capabilities.evm.Receipt
-	10, // 68: loop.chain_capabilities.evm.RegisterLogTrackingRequest.filter:type_name -> loop.chain_capabilities.evm.LPFilter
-	12, // 69: loop.chain_capabilities.evm.QueryTrackedLogsRequest.expression:type_name -> loop.chain_capabilities.evm.Expression
-	47, // 70: loop.chain_capabilities.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	48, // 71: loop.chain_capabilities.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.chain.common.Confidence
-	6,  // 72: loop.chain_capabilities.evm.QueryTrackedLogsReply.logs:type_name -> loop.chain_capabilities.evm.Log
-	0,  // 73: loop.chain_capabilities.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.chain_capabilities.evm.TransactionStatus
-	25, // 74: loop.chain_capabilities.evm.EVM.GetTransactionFee:input_type -> loop.chain_capabilities.evm.GetTransactionFeeRequest
-	23, // 75: loop.chain_capabilities.evm.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	27, // 76: loop.chain_capabilities.evm.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	29, // 77: loop.chain_capabilities.evm.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	31, // 78: loop.chain_capabilities.evm.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	33, // 79: loop.chain_capabilities.evm.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
-	35, // 80: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
-	49, // 81: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	39, // 82: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	37, // 83: loop.chain_capabilities.evm.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	38, // 84: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	41, // 85: loop.chain_capabilities.evm.EVM.GetTransactionStatus:input_type -> loop.chain_capabilities.evm.GetTransactionStatusRequest
-	26, // 86: loop.chain_capabilities.evm.EVM.GetTransactionFee:output_type -> loop.chain_capabilities.evm.GetTransactionFeeReply
-	24, // 87: loop.chain_capabilities.evm.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	28, // 88: loop.chain_capabilities.evm.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	30, // 89: loop.chain_capabilities.evm.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	32, // 90: loop.chain_capabilities.evm.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	34, // 91: loop.chain_capabilities.evm.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	36, // 92: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
-	22, // 93: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	40, // 94: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	49, // 95: loop.chain_capabilities.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	49, // 96: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	42, // 97: loop.chain_capabilities.evm.EVM.GetTransactionStatus:output_type -> loop.chain_capabilities.evm.GetTransactionStatusReply
-	86, // [86:98] is the sub-list for method output_type
-	74, // [74:86] is the sub-list for method input_type
-	74, // [74:74] is the sub-list for extension type_name
-	74, // [74:74] is the sub-list for extension extendee
-	0,  // [0:74] is the sub-list for field type_name
+	6,  // 0: loop.chain_capabilities.evm.WriteReportRequest.receiver:type_name -> loop.chain_capabilities.evm.Address
+	2,  // 1: loop.chain_capabilities.evm.WriteReportRequest.report:type_name -> loop.chain_capabilities.evm.SignedReport
+	3,  // 2: loop.chain_capabilities.evm.WriteReportRequest.gas_config:type_name -> loop.chain_capabilities.evm.GasConfig
+	1,  // 3: loop.chain_capabilities.evm.WriteReportReply.tx_status:type_name -> loop.chain_capabilities.evm.TransactionStatus
+	0,  // 4: loop.chain_capabilities.evm.WriteReportReply.receiver_contract_execution_status:type_name -> loop.chain_capabilities.evm.ReceiverContractExecutionStatus
+	7,  // 5: loop.chain_capabilities.evm.WriteReportReply.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
+	48, // 6: loop.chain_capabilities.evm.WriteReportReply.transaction_fee:type_name -> values.BigInt
+	6,  // 7: loop.chain_capabilities.evm.CallMsg.from:type_name -> loop.chain_capabilities.evm.Address
+	6,  // 8: loop.chain_capabilities.evm.CallMsg.to:type_name -> loop.chain_capabilities.evm.Address
+	8,  // 9: loop.chain_capabilities.evm.CallMsg.data:type_name -> loop.chain_capabilities.evm.ABIPayload
+	7,  // 10: loop.chain_capabilities.evm.Topics.topic:type_name -> loop.chain_capabilities.evm.Hash
+	6,  // 11: loop.chain_capabilities.evm.Log.address:type_name -> loop.chain_capabilities.evm.Address
+	7,  // 12: loop.chain_capabilities.evm.Log.topics:type_name -> loop.chain_capabilities.evm.Hash
+	7,  // 13: loop.chain_capabilities.evm.Log.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
+	7,  // 14: loop.chain_capabilities.evm.Log.block_hash:type_name -> loop.chain_capabilities.evm.Hash
+	8,  // 15: loop.chain_capabilities.evm.Log.data:type_name -> loop.chain_capabilities.evm.ABIPayload
+	7,  // 16: loop.chain_capabilities.evm.Log.eventSig:type_name -> loop.chain_capabilities.evm.Hash
+	48, // 17: loop.chain_capabilities.evm.Log.block_number:type_name -> values.BigInt
+	7,  // 18: loop.chain_capabilities.evm.FilterQuery.block_hash:type_name -> loop.chain_capabilities.evm.Hash
+	48, // 19: loop.chain_capabilities.evm.FilterQuery.fromBlock:type_name -> values.BigInt
+	48, // 20: loop.chain_capabilities.evm.FilterQuery.toBlock:type_name -> values.BigInt
+	6,  // 21: loop.chain_capabilities.evm.FilterQuery.addresses:type_name -> loop.chain_capabilities.evm.Address
+	10, // 22: loop.chain_capabilities.evm.FilterQuery.topics:type_name -> loop.chain_capabilities.evm.Topics
+	6,  // 23: loop.chain_capabilities.evm.Transaction.to:type_name -> loop.chain_capabilities.evm.Address
+	8,  // 24: loop.chain_capabilities.evm.Transaction.data:type_name -> loop.chain_capabilities.evm.ABIPayload
+	7,  // 25: loop.chain_capabilities.evm.Transaction.hash:type_name -> loop.chain_capabilities.evm.Hash
+	48, // 26: loop.chain_capabilities.evm.Transaction.value:type_name -> values.BigInt
+	48, // 27: loop.chain_capabilities.evm.Transaction.gas_price:type_name -> values.BigInt
+	7,  // 28: loop.chain_capabilities.evm.Receipt.block_hash:type_name -> loop.chain_capabilities.evm.Hash
+	11, // 29: loop.chain_capabilities.evm.Receipt.logs:type_name -> loop.chain_capabilities.evm.Log
+	7,  // 30: loop.chain_capabilities.evm.Receipt.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
+	48, // 31: loop.chain_capabilities.evm.Receipt.effective_gas_price:type_name -> values.BigInt
+	48, // 32: loop.chain_capabilities.evm.Receipt.block_number:type_name -> values.BigInt
+	6,  // 33: loop.chain_capabilities.evm.Receipt.contract_address:type_name -> loop.chain_capabilities.evm.Address
+	6,  // 34: loop.chain_capabilities.evm.LPFilter.addresses:type_name -> loop.chain_capabilities.evm.Address
+	7,  // 35: loop.chain_capabilities.evm.LPFilter.event_sigs:type_name -> loop.chain_capabilities.evm.Hash
+	7,  // 36: loop.chain_capabilities.evm.LPFilter.topic2:type_name -> loop.chain_capabilities.evm.Hash
+	7,  // 37: loop.chain_capabilities.evm.LPFilter.topic3:type_name -> loop.chain_capabilities.evm.Hash
+	7,  // 38: loop.chain_capabilities.evm.LPFilter.topic4:type_name -> loop.chain_capabilities.evm.Hash
+	48, // 39: loop.chain_capabilities.evm.Head.block_number:type_name -> values.BigInt
+	7,  // 40: loop.chain_capabilities.evm.Head.hash:type_name -> loop.chain_capabilities.evm.Hash
+	7,  // 41: loop.chain_capabilities.evm.Head.parent_hash:type_name -> loop.chain_capabilities.evm.Hash
+	26, // 42: loop.chain_capabilities.evm.Expression.primitive:type_name -> loop.chain_capabilities.evm.Primitive
+	18, // 43: loop.chain_capabilities.evm.Expression.boolean_expression:type_name -> loop.chain_capabilities.evm.BooleanExpression
+	49, // 44: loop.chain_capabilities.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	17, // 45: loop.chain_capabilities.evm.BooleanExpression.expression:type_name -> loop.chain_capabilities.evm.Expression
+	17, // 46: loop.chain_capabilities.evm.And.expr:type_name -> loop.chain_capabilities.evm.Expression
+	17, // 47: loop.chain_capabilities.evm.Or.expr:type_name -> loop.chain_capabilities.evm.Expression
+	7,  // 48: loop.chain_capabilities.evm.HashValueComparator.values:type_name -> loop.chain_capabilities.evm.Hash
+	50, // 49: loop.chain_capabilities.evm.HashValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	6,  // 50: loop.chain_capabilities.evm.ContractAddress.address:type_name -> loop.chain_capabilities.evm.Address
+	7,  // 51: loop.chain_capabilities.evm.EventSig.eventSig:type_name -> loop.chain_capabilities.evm.Hash
+	21, // 52: loop.chain_capabilities.evm.EventByWord.hashed_value_comparers:type_name -> loop.chain_capabilities.evm.HashValueComparator
+	21, // 53: loop.chain_capabilities.evm.EventByTopic.hashed_value_comparers:type_name -> loop.chain_capabilities.evm.HashValueComparator
+	51, // 54: loop.chain_capabilities.evm.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
+	22, // 55: loop.chain_capabilities.evm.Primitive.contract_address:type_name -> loop.chain_capabilities.evm.ContractAddress
+	23, // 56: loop.chain_capabilities.evm.Primitive.event_sig:type_name -> loop.chain_capabilities.evm.EventSig
+	24, // 57: loop.chain_capabilities.evm.Primitive.event_by_word:type_name -> loop.chain_capabilities.evm.EventByWord
+	25, // 58: loop.chain_capabilities.evm.Primitive.event_by_topic:type_name -> loop.chain_capabilities.evm.EventByTopic
+	16, // 59: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.chain_capabilities.evm.Head
+	16, // 60: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.chain_capabilities.evm.Head
+	9,  // 61: loop.chain_capabilities.evm.CallContractRequest.call:type_name -> loop.chain_capabilities.evm.CallMsg
+	48, // 62: loop.chain_capabilities.evm.CallContractRequest.block_number:type_name -> values.BigInt
+	52, // 63: loop.chain_capabilities.evm.CallContractRequest.confidence_level:type_name -> loop.chain.common.Confidence
+	8,  // 64: loop.chain_capabilities.evm.CallContractReply.data:type_name -> loop.chain_capabilities.evm.ABIPayload
+	48, // 65: loop.chain_capabilities.evm.GetTransactionFeeReply.transation_fee:type_name -> values.BigInt
+	12, // 66: loop.chain_capabilities.evm.FilterLogsRequest.filter_query:type_name -> loop.chain_capabilities.evm.FilterQuery
+	11, // 67: loop.chain_capabilities.evm.FilterLogsReply.logs:type_name -> loop.chain_capabilities.evm.Log
+	6,  // 68: loop.chain_capabilities.evm.BalanceAtRequest.account:type_name -> loop.chain_capabilities.evm.Address
+	48, // 69: loop.chain_capabilities.evm.BalanceAtRequest.block_number:type_name -> values.BigInt
+	48, // 70: loop.chain_capabilities.evm.BalanceAtReply.balance:type_name -> values.BigInt
+	9,  // 71: loop.chain_capabilities.evm.EstimateGasRequest.msg:type_name -> loop.chain_capabilities.evm.CallMsg
+	7,  // 72: loop.chain_capabilities.evm.GetTransactionByHashRequest.hash:type_name -> loop.chain_capabilities.evm.Hash
+	13, // 73: loop.chain_capabilities.evm.GetTransactionByHashReply.transaction:type_name -> loop.chain_capabilities.evm.Transaction
+	7,  // 74: loop.chain_capabilities.evm.GetTransactionReceiptRequest.hash:type_name -> loop.chain_capabilities.evm.Hash
+	14, // 75: loop.chain_capabilities.evm.GetTransactionReceiptReply.receipt:type_name -> loop.chain_capabilities.evm.Receipt
+	15, // 76: loop.chain_capabilities.evm.RegisterLogTrackingRequest.filter:type_name -> loop.chain_capabilities.evm.LPFilter
+	17, // 77: loop.chain_capabilities.evm.QueryTrackedLogsRequest.expression:type_name -> loop.chain_capabilities.evm.Expression
+	53, // 78: loop.chain_capabilities.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	52, // 79: loop.chain_capabilities.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.chain.common.Confidence
+	11, // 80: loop.chain_capabilities.evm.QueryTrackedLogsReply.logs:type_name -> loop.chain_capabilities.evm.Log
+	7,  // 81: loop.chain_capabilities.evm.GetTransactionStatusRequest.tx_hash:type_name -> loop.chain_capabilities.evm.Hash
+	1,  // 82: loop.chain_capabilities.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.chain_capabilities.evm.TransactionStatus
+	30, // 83: loop.chain_capabilities.evm.EVM.GetTransactionFee:input_type -> loop.chain_capabilities.evm.GetTransactionFeeRequest
+	28, // 84: loop.chain_capabilities.evm.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
+	32, // 85: loop.chain_capabilities.evm.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
+	34, // 86: loop.chain_capabilities.evm.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
+	36, // 87: loop.chain_capabilities.evm.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
+	38, // 88: loop.chain_capabilities.evm.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
+	40, // 89: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
+	54, // 90: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	44, // 91: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	42, // 92: loop.chain_capabilities.evm.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	43, // 93: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	46, // 94: loop.chain_capabilities.evm.EVM.GetTransactionStatus:input_type -> loop.chain_capabilities.evm.GetTransactionStatusRequest
+	4,  // 95: loop.chain_capabilities.evm.EVM.WriteReport:input_type -> loop.chain_capabilities.evm.WriteReportRequest
+	31, // 96: loop.chain_capabilities.evm.EVM.GetTransactionFee:output_type -> loop.chain_capabilities.evm.GetTransactionFeeReply
+	29, // 97: loop.chain_capabilities.evm.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	33, // 98: loop.chain_capabilities.evm.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	35, // 99: loop.chain_capabilities.evm.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	37, // 100: loop.chain_capabilities.evm.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	39, // 101: loop.chain_capabilities.evm.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	41, // 102: loop.chain_capabilities.evm.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
+	27, // 103: loop.chain_capabilities.evm.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	45, // 104: loop.chain_capabilities.evm.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	54, // 105: loop.chain_capabilities.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	54, // 106: loop.chain_capabilities.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	47, // 107: loop.chain_capabilities.evm.EVM.GetTransactionStatus:output_type -> loop.chain_capabilities.evm.GetTransactionStatusReply
+	5,  // 108: loop.chain_capabilities.evm.EVM.WriteReport:output_type -> loop.chain_capabilities.evm.WriteReportReply
+	96, // [96:109] is the sub-list for method output_type
+	83, // [83:96] is the sub-list for method input_type
+	83, // [83:83] is the sub-list for extension type_name
+	83, // [83:83] is the sub-list for extension extendee
+	0,  // [0:83] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_init() }
@@ -2824,11 +3147,11 @@ func file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_init() 
 	if File_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto != nil {
 		return
 	}
-	file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[11].OneofWrappers = []any{
+	file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[15].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),
 	}
-	file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[20].OneofWrappers = []any{
+	file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_msgTypes[24].OneofWrappers = []any{
 		(*Primitive_GeneralPrimitive)(nil),
 		(*Primitive_ContractAddress)(nil),
 		(*Primitive_EventSig)(nil),
@@ -2840,8 +3163,8 @@ func file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_init() 
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_chain_service_evm_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   42,
+			NumEnums:      2,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

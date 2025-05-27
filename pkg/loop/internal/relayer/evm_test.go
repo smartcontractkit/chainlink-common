@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	txId            = "txid1"
+	txID            = "txid1"
 	txIndex         = 10
 	txFee           = big.NewInt(12345)
 	balance         = big.NewInt(1222345)
@@ -175,24 +175,24 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 
 	t.Run("GetTransactionFee", func(t *testing.T) {
 		evmService.staticGetTransactionFee = func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error) {
-			require.Equal(t, txId, transactionID)
+			require.Equal(t, txID, transactionID)
 			return &evm.TransactionFee{
 				TransactionFee: txFee,
 			}, nil
 		}
 
-		fee, err := client.GetTransactionFee(ctx, txId)
+		fee, err := client.GetTransactionFee(ctx, txID)
 		require.NoError(t, err)
 		require.Equal(t, txFee, fee.TransactionFee)
 	})
 
 	t.Run("GetTransactionStatus", func(t *testing.T) {
 		evmService.staticGetTransactionStatus = func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-			require.Equal(t, txId, transactionID)
+			require.Equal(t, txID, transactionID)
 			return types.Finalized, nil
 		}
 
-		got, err := client.GetTransactionStatus(ctx, txId)
+		got, err := client.GetTransactionStatus(ctx, txID)
 		require.NoError(t, err)
 		require.Equal(t, got, types.Finalized)
 	})

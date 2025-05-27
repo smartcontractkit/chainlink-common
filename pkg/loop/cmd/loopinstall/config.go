@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -66,21 +65,3 @@ func isPluginEnabled(plugin PluginDef) bool {
 	return plugin.Enabled == nil || *plugin.Enabled
 }
 
-// expandEnvVars replaces environment variables in a string
-func expandEnvVars(s string) string {
-	if !strings.Contains(s, "${") {
-		return s
-	}
-
-	// Simple environment variable expansion
-	result := s
-	for _, env := range os.Environ() {
-		parts := strings.SplitN(env, "=", 2)
-		if len(parts) == 2 {
-			key, val := parts[0], parts[1]
-			placeholder := "${" + key + "}"
-			result = strings.ReplaceAll(result, placeholder, val)
-		}
-	}
-	return result
-}

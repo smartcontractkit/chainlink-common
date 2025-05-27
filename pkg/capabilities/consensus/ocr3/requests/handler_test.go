@@ -18,11 +18,11 @@ func Test_Handler_SendsResponse(t *testing.T) {
 	lggr := logger.Test(t)
 	ctx := t.Context()
 
-	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
+	h := requests.NewHandler(lggr, requests.NewStore[*requests.ReportRequest](), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
 	responseCh := make(chan requests.Response, 10)
-	h.SendRequest(ctx, &requests.Request{
+	h.SendRequest(ctx, &requests.ReportRequest{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
 		ExpiresAt:           time.Now().Add(1 * time.Hour),
@@ -45,7 +45,7 @@ func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 	lggr := logger.Test(t)
 	ctx := t.Context()
 
-	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
+	h := requests.NewHandler(lggr, requests.NewStore[*requests.ReportRequest](), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
 	testVal, err := values.NewMap(map[string]any{"result": "testval"})
@@ -57,7 +57,7 @@ func Test_Handler_SendsResponseToLateRequest(t *testing.T) {
 	})
 
 	responseCh := make(chan requests.Response, 10)
-	h.SendRequest(ctx, &requests.Request{
+	h.SendRequest(ctx, &requests.ReportRequest{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
 		ExpiresAt:           time.Now().Add(1 * time.Hour),
@@ -71,7 +71,7 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	lggr := logger.Test(t)
 	ctx := t.Context()
 
-	h := requests.NewHandler(lggr, requests.NewStore(), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
+	h := requests.NewHandler(lggr, requests.NewStore[*requests.ReportRequest](), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
 	testVal, err := values.NewMap(map[string]any{"result": "testval"})
@@ -84,7 +84,7 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	})
 
 	responseCh := make(chan requests.Response, 10)
-	h.SendRequest(ctx, &requests.Request{
+	h.SendRequest(ctx, &requests.ReportRequest{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
 		ExpiresAt:           time.Now().Add(1 * time.Hour),
@@ -96,7 +96,7 @@ func Test_Handler_SendsResponseToLateRequestOnlyOnce(t *testing.T) {
 	require.Equal(t, testVal, resp.Value)
 
 	responseCh = make(chan requests.Response, 10)
-	h.SendRequest(ctx, &requests.Request{
+	h.SendRequest(ctx, &requests.ReportRequest{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
 		ExpiresAt:           time.Now().Add(1 * time.Hour),
@@ -114,11 +114,11 @@ func Test_Handler_PendingRequestsExpiry(t *testing.T) {
 
 	lggr := logger.Test(t)
 	clock := clockwork.NewFakeClockAt(time.Now())
-	h := requests.NewHandler(lggr, requests.NewStore(), clock, 1*time.Second)
+	h := requests.NewHandler(lggr, requests.NewStore[*requests.ReportRequest](), clock, 1*time.Second)
 	servicetest.Run(t, h)
 
 	responseCh := make(chan requests.Response, 10)
-	h.SendRequest(ctx, &requests.Request{
+	h.SendRequest(ctx, &requests.ReportRequest{
 		WorkflowExecutionID: "test",
 		CallbackCh:          responseCh,
 		ExpiresAt:           time.Now().Add(1 * time.Second),

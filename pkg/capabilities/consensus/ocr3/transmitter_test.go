@@ -31,7 +31,7 @@ func TestTransmitter(t *testing.T) {
 	repID := []byte{0xf0, 0xe0}
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 
 	weid := uuid.New().String()
 
@@ -120,7 +120,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	wowner := "foo-owner"
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 
 	weid := uuid.New().String()
 

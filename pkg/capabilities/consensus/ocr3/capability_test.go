@@ -48,7 +48,7 @@ func TestOCR3Capability_Schema(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Nop()
 
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 
 	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	schema, err := cp.Schema()
@@ -88,7 +88,7 @@ func TestOCR3Capability(t *testing.T) {
 
 			ctx := t.Context()
 
-			s := requests.NewStore()
+			s := requests.NewStore[*requests.ReportRequest]()
 
 			cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 			require.NoError(t, cp.Start(ctx))
@@ -155,7 +155,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	defer cancel()
 
 	rea := time.Second
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 	cp := NewCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
@@ -223,7 +223,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	defer cancel()
 	// This is the default expired at
 	rea := time.Hour
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 	cp := NewCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
@@ -290,7 +290,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	lggr := logger.Test(t)
 
 	ctx := t.Context()
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
@@ -336,7 +336,7 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 
 	o := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 
@@ -411,7 +411,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 
 	ctx := t.Context()
 
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 
 	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
@@ -471,7 +471,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 
 	ctx := t.Context()
 
-	s := requests.NewStore()
+	s := requests.NewStore[*requests.ReportRequest]()
 
 	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 0)
 	require.NoError(t, cp.Start(ctx))

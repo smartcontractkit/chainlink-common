@@ -16,9 +16,9 @@ import (
 func TestOCR3Store(t *testing.T) {
 	n := time.Now()
 
-	s := NewStore()
+	s := NewStore[*ReportRequest]()
 	rid := uuid.New().String()
-	req := &Request{
+	req := &ReportRequest{
 		WorkflowExecutionID: rid,
 		ExpiresAt:           n.Add(10 * time.Second),
 	}
@@ -52,7 +52,7 @@ func TestOCR3Store(t *testing.T) {
 
 	t.Run("firstN, batchSize larger than queue", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			err := s.Add(&Request{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
+			err := s.Add(&ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}
 		items, err := s.FirstN(100)
@@ -70,9 +70,9 @@ func TestOCR3Store(t *testing.T) {
 }
 
 func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
-	s := NewStore()
+	s := NewStore[*ReportRequest]()
 	rid := uuid.New().String()
-	req := &Request{
+	req := &ReportRequest{
 		WorkflowExecutionID: rid,
 	}
 
@@ -97,7 +97,7 @@ func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
 }
 
 func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
-	s := NewStore()
+	s := NewStore[*ReportRequest]()
 	rid := uuid.New().String()
 	cb := make(chan Response, 1)
 	stopCh := make(chan struct{}, 1)
@@ -105,7 +105,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		[]any{"hello", 1},
 	)
 	require.NoError(t, err)
-	req := &Request{
+	req := &ReportRequest{
 		WorkflowExecutionID:      rid,
 		WorkflowID:               "wid",
 		WorkflowName:             "name",
@@ -124,17 +124,17 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		get  func(ctx context.Context, rid string) *Request
+		get  func(ctx context.Context, rid string) *ReportRequest
 	}{
 		{
 			name: "get",
-			get: func(ctx context.Context, rid string) *Request {
+			get: func(ctx context.Context, rid string) *ReportRequest {
 				return s.Get(rid)
 			},
 		},
 		{
 			name: "firstN",
-			get: func(ctx context.Context, rid string) *Request {
+			get: func(ctx context.Context, rid string) *ReportRequest {
 				rs, err2 := s.FirstN(1)
 				require.NoError(t, err2)
 				assert.Len(t, rs, 1)
@@ -143,7 +143,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		},
 		{
 			name: "getByIDs",
-			get: func(ctx context.Context, rid string) *Request {
+			get: func(ctx context.Context, rid string) *ReportRequest {
 				rs := s.GetByIDs([]string{rid})
 				assert.Len(t, rs, 1)
 				return rs[0]

@@ -8,9 +8,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/smartcontractkit/libocr/quorumhelper"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/smartcontractkit/libocr/quorumhelper"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
@@ -38,14 +39,14 @@ type CapabilityIface interface {
 
 type reportingPlugin struct {
 	batchSize               int
-	s                       *requests.Store
+	s                       *requests.Store[*requests.ReportRequest]
 	r                       CapabilityIface
 	config                  ocr3types.ReportingPluginConfig
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
 }
 
-func NewReportingPlugin(s *requests.Store, r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
+func NewReportingPlugin(s *requests.Store[*requests.ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
 	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
 		s:                       s,
@@ -103,7 +104,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	}
 
 	reqs := r.s.GetByIDs(weids)
-	reqMap := map[string]*requests.Request{}
+	reqMap := map[string]*requests.ReportRequest{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req
 	}

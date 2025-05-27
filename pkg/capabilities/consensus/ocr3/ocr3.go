@@ -32,7 +32,7 @@ type Config struct {
 	EncoderFactory    types.EncoderFactory
 	SendBufferSize    int
 
-	store      *requests.Store
+	store      *requests.Store[*requests.ReportRequest]
 	capability *capability
 	clock      clockwork.Clock
 }
@@ -56,7 +56,7 @@ func NewOCR3(config Config) *Capability {
 	}
 
 	if config.store == nil {
-		config.store = requests.NewStore()
+		config.store = requests.NewStore[*requests.ReportRequest]()
 	}
 
 	if config.capability == nil {

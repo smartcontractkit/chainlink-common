@@ -1,13 +1,14 @@
 package requests
 
 import (
+	"context"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type Request struct {
+type ReportRequest struct {
 	Observations            *values.List `mapstructure:"-"`
 	OverriddenEncoderName   string
 	OverriddenEncoderConfig *values.Map
@@ -29,8 +30,25 @@ type Request struct {
 	KeyID string
 }
 
-func (r *Request) Copy() *Request {
-	return &Request{
+func (r *ReportRequest) ID() string {
+	return r.WorkflowExecutionID
+}
+
+func (r *ReportRequest) ExpiryTime() time.Time {
+	return r.ExpiresAt
+}
+
+func (r *ReportRequest) SendResponse(ctx context.Context, resp Response) {
+	select {
+	case <-ctx.Done():
+		return
+	case r.CallbackCh <- resp:
+		close(r.CallbackCh)
+	}
+}
+
+func (r *ReportRequest) Copy() *ReportRequest {
+	return &ReportRequest{
 		Observations:            r.Observations.CopyList(),
 		OverriddenEncoderConfig: r.OverriddenEncoderConfig.CopyMap(),
 

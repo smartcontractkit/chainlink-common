@@ -41,7 +41,7 @@ type capability struct {
 	capabilities.CapabilityInfo
 	capabilities.Validator[config, inputs, requests.Response]
 
-	reqHandler *requests.Handler
+	reqHandler *requests.Handler[*requests.ReportRequest]
 
 	requestTimeout     time.Duration
 	requestTimeoutLock sync.RWMutex
@@ -63,7 +63,7 @@ type capability struct {
 var _ CapabilityIface = (*capability)(nil)
 var _ capabilities.ExecutableCapability = (*capability)(nil)
 
-func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
+func NewCapability(s *requests.Store[*requests.ReportRequest], clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
@@ -267,7 +267,7 @@ func (o *capability) queueRequestForProcessing(
 	}
 	o.requestTimeoutLock.RUnlock()
 
-	r := &requests.Request{
+	r := &requests.ReportRequest{
 		StopCh:                   make(chan struct{}),
 		CallbackCh:               callbackCh,
 		WorkflowExecutionID:      metadata.WorkflowExecutionID,

@@ -37,6 +37,19 @@ func TestClient(t *testing.T) {
 		assert.ErrorContains(t, err, "is empty")
 	})
 
+	t.Run("invalid address format", func(t *testing.T) {
+		// Address without port will cause net.SplitHostPort to fail
+		client, err := NewChipIngressClient("invalid-address-format")
+		assert.Nil(t, client)
+		assert.ErrorContains(t, err, "address is invalid, it must contain a port")
+	})
+
+	t.Run("valid address with port", func(t *testing.T) {
+		client, err := NewChipIngressClient("localhost:8080")
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+	})
+
 	t.Run("Publish", func(t *testing.T) {
 
 		mockClient := &mocks.ChipIngressClient{}
@@ -74,7 +87,6 @@ func TestClient(t *testing.T) {
 		_, err := client.Publish(context.Background(), event)
 		assert.ErrorContains(t, err, "validation failed")
 	})
-
 }
 
 func TestValidateEvents(t *testing.T) {
@@ -220,6 +232,7 @@ func TestPublishBatch(t *testing.T) {
 		// Publish events in batch
 		_, err = client.PublishBatch(context.Background(), events)
 		assert.NoError(t, err)
+
 	})
 
 	t.Run("errors when validation fails", func(t *testing.T) {
@@ -310,4 +323,24 @@ type mockHeaderProvider struct {
 
 func (m *mockHeaderProvider) GetHeaders() map[string]string {
 	return m.headers
+}
+
+func TestGetHostFromAddress(t *testing.T) {
+	t.Run("valid address with port", func(t *testing.T) {
+		host, err := getHost("localhost:8080")
+		assert.NoError(t, err)
+		assert.Equal(t, "localhost", host)
+	})
+
+	t.Run("valid address without port", func(t *testing.T) {
+		host, err := getHost("localhost")
+		assert.Error(t, err)
+		assert.Empty(t, host)
+	})
+
+	t.Run("invalid address format", func(t *testing.T) {
+		host, err := getHost("invalid-address-format")
+		assert.Error(t, err)
+		assert.Empty(t, host)
+	})
 }

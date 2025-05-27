@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: capabilities/v2/chain-capabilities/evm/capability/capability.proto
 
-package evmcappb
+package evm
 
 import (
 	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
@@ -27,8 +27,8 @@ var File_capabilities_v2_chain_capabilities_evm_capability_capability_proto prot
 
 const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc = "" +
 	"\n" +
-	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x11cre.sdk.v2.evmcap\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto2\xab\t\n" +
-	"\x03EVM\x12p\n" +
+	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x17cre.sdk.v2.chaincap.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto2\xa6\t\n" +
+	"\x06Client\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
 	"\n" +
 	"FilterLogs\x12..loop.chain_capabilities.evm.FilterLogsRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply\x12g\n" +
@@ -39,7 +39,7 @@ const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_ra
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12|\n" +
 	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
-	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0B\\ZZgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappbb\x06proto3"
+	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0BRZPgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evmb\x06proto3"
 
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes = []any{
 	(*chain_service.CallContractRequest)(nil),          // 0: loop.chain_capabilities.evm.CallContractRequest
@@ -62,26 +62,26 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTy
 	(*chain_service.QueryTrackedLogsReply)(nil),        // 17: loop.chain_capabilities.evm.QueryTrackedLogsReply
 }
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs = []int32{
-	0,  // 0: cre.sdk.v2.evmcap.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
-	1,  // 1: cre.sdk.v2.evmcap.EVM.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
-	2,  // 2: cre.sdk.v2.evmcap.EVM.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
-	3,  // 3: cre.sdk.v2.evmcap.EVM.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
-	4,  // 4: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
-	5,  // 5: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
-	6,  // 6: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	7,  // 7: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
-	8,  // 8: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
-	9,  // 9: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	10, // 10: cre.sdk.v2.evmcap.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	11, // 11: cre.sdk.v2.evmcap.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	12, // 12: cre.sdk.v2.evmcap.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	13, // 13: cre.sdk.v2.evmcap.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	14, // 14: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	15, // 15: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
-	16, // 16: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	17, // 17: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	6,  // 18: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 19: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	0,  // 0: cre.sdk.v2.chaincap.evm.Client.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
+	1,  // 1: cre.sdk.v2.chaincap.evm.Client.FilterLogs:input_type -> loop.chain_capabilities.evm.FilterLogsRequest
+	2,  // 2: cre.sdk.v2.chaincap.evm.Client.BalanceAt:input_type -> loop.chain_capabilities.evm.BalanceAtRequest
+	3,  // 3: cre.sdk.v2.chaincap.evm.Client.EstimateGas:input_type -> loop.chain_capabilities.evm.EstimateGasRequest
+	4,  // 4: cre.sdk.v2.chaincap.evm.Client.GetTransactionByHash:input_type -> loop.chain_capabilities.evm.GetTransactionByHashRequest
+	5,  // 5: cre.sdk.v2.chaincap.evm.Client.GetTransactionReceipt:input_type -> loop.chain_capabilities.evm.GetTransactionReceiptRequest
+	6,  // 6: cre.sdk.v2.chaincap.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	7,  // 7: cre.sdk.v2.chaincap.evm.Client.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
+	8,  // 8: cre.sdk.v2.chaincap.evm.Client.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
+	9,  // 9: cre.sdk.v2.chaincap.evm.Client.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
+	10, // 10: cre.sdk.v2.chaincap.evm.Client.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	11, // 11: cre.sdk.v2.chaincap.evm.Client.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	12, // 12: cre.sdk.v2.chaincap.evm.Client.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	13, // 13: cre.sdk.v2.chaincap.evm.Client.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	14, // 14: cre.sdk.v2.chaincap.evm.Client.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	15, // 15: cre.sdk.v2.chaincap.evm.Client.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
+	16, // 16: cre.sdk.v2.chaincap.evm.Client.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	17, // 17: cre.sdk.v2.chaincap.evm.Client.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	6,  // 18: cre.sdk.v2.chaincap.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	6,  // 19: cre.sdk.v2.chaincap.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	10, // [10:20] is the sub-list for method output_type
 	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name

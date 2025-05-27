@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evm;evm";
 
-package cre.sdk.v2.evmcap;
+package cre.sdk.v2.chaincap.evm;
 
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto";
 
-service EVM {
+service Client {
   option (cre.metadata.capability) = {
     mode: DON
-    capability_id: "mainnet-evm@1.0.0"
+    capability_id: "evm@1.0.0"
   };
   rpc CallContract(loop.chain_capabilities.evm.CallContractRequest) returns (loop.chain_capabilities.evm.CallContractReply);
   rpc FilterLogs(loop.chain_capabilities.evm.FilterLogsRequest) returns (loop.chain_capabilities.evm.FilterLogsReply);

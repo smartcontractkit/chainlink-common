@@ -262,27 +262,39 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		run  func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService)
 	}{
 		{
-			name: "CallContract",
+			name: "CallContract at block",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				block := big.NewInt(100)
-				mockEVM.On("CallContract", mock.Anything, &msg, block.String()).Return([]byte("ok"), nil)
+				mockEVM.EXPECT().CallContract(mock.Anything, &msg, block.String()).Return([]byte("ok"), nil)
 				out, err := evm.CallContract(ctx, &msg, block.String())
 				require.NoError(t, err)
 				require.Equal(t, []byte("ok"), out)
-
+			},
+		},
+		{
+			name: "CallContract at finalized confidence",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				mockEVM.EXPECT().CallContract(mock.Anything, &msg, string(primitives.Finalized)).Return([]byte("ok"), nil)
-				out, err = evm.CallContract(ctx, &msg, string(primitives.Finalized))
+				out, err := evm.CallContract(ctx, &msg, string(primitives.Finalized))
 				require.NoError(t, err)
 				require.Equal(t, []byte("ok"), out)
-
+			},
+		},
+		{
+			name: "CallContract at unconfirmed confidence",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				mockEVM.EXPECT().CallContract(mock.Anything, &msg, string(primitives.Unconfirmed)).Return([]byte("ok"), nil)
-				out, err = evm.CallContract(ctx, &msg, string(primitives.Unconfirmed))
+				out, err := evm.CallContract(ctx, &msg, string(primitives.Unconfirmed))
 				require.NoError(t, err)
 				require.Equal(t, []byte("ok"), out)
-
-				mockEVM.EXPECT().CallContract(mock.Anything, mock.Anything, mock.Anything).Return([]byte("ok"), nil)
+			},
+		},
+		{
+			name: "CallContract at invalid block string",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				_, err = evm.CallContract(ctx, &msg, "should fail")
 				require.Error(t, err)
+				relayer1.ExpectedCalls = nil
 			},
 		},
 		{
@@ -445,7 +457,7 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockEVM := mocks2.NewEVMService(t)
 			evm := TestEVM{mockedContractReader: mockEVM}
-			relayer1.On("EVM", mock.Anything, mock.Anything).Return(evm, nil)
+			relayer1.On("EVM", mock.Anything, mock.Anything).Return(evm, nil).Once()
 
 			fetchedEVM, err := retrievedRelayer.EVM()
 			require.NoError(t, err)

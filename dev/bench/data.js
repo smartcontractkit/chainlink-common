@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747939254471,
+  "lastUpdate": 1748354552255,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14196,6 +14196,48 @@ window.BENCHMARK_DATA = {
             "value": 28205,
             "unit": "ns/op",
             "extra": "42492 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "96362174+chainchad@users.noreply.github.com",
+            "name": "chainchad",
+            "username": "chainchad"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "191131ef4d110a96a01e07d8cadb63fa1a4cd8f5",
+          "message": "Fix loopinstall to install via local relative path (#1210)\n\n* Fix loopinstall to install via local relative path\n\n* Avoid filepath.Clean() and remove env var expansion in yaml inputs to simplify\n\n* Remove outdated docs",
+          "timestamp": "2025-05-27T10:01:10-04:00",
+          "tree_id": "72477b60320b0a4e963f32044b3ce1e3360c6541",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/191131ef4d110a96a01e07d8cadb63fa1a4cd8f5"
+        },
+        "date": 1748354551168,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.7,
+            "unit": "ns/op",
+            "extra": "3416635 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.9,
+            "unit": "ns/op",
+            "extra": "2932110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28205,
+            "unit": "ns/op",
+            "extra": "42619 times\n4 procs"
           }
         ]
       }

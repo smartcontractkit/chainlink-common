@@ -75,6 +75,50 @@ func (x *CapabilityMetadata) GetCapabilityId() string {
 	return ""
 }
 
+type CapabilityMethodMetadata struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MapToUntypedApi bool                   `protobuf:"varint,1,opt,name=map_to_untyped_api,json=mapToUntypedApi,proto3" json:"map_to_untyped_api,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CapabilityMethodMetadata) Reset() {
+	*x = CapabilityMethodMetadata{}
+	mi := &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CapabilityMethodMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CapabilityMethodMetadata) ProtoMessage() {}
+
+func (x *CapabilityMethodMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CapabilityMethodMetadata.ProtoReflect.Descriptor instead.
+func (*CapabilityMethodMetadata) Descriptor() ([]byte, []int) {
+	return file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CapabilityMethodMetadata) GetMapToUntypedApi() bool {
+	if x != nil {
+		return x.MapToUntypedApi
+	}
+	return false
+}
+
 var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
 		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
@@ -82,6 +126,14 @@ var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes = []protoimpl
 		Field:         50000,
 		Name:          "cre.metadata.capability",
 		Tag:           "bytes,50000,opt,name=capability",
+		Filename:      "capabilities/v2/protoc/pkg/pb/cre_metadata.proto",
+	},
+	{
+		ExtendedType:  (*descriptorpb.MethodOptions)(nil),
+		ExtensionType: (*CapabilityMethodMetadata)(nil),
+		Field:         50001,
+		Name:          "cre.metadata.method",
+		Tag:           "bytes,50001,opt,name=method",
 		Filename:      "capabilities/v2/protoc/pkg/pb/cre_metadata.proto",
 	},
 }
@@ -92,6 +144,12 @@ var (
 	E_Capability = &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes[0] // 50000-99999 is the range for custom options.
 )
 
+// Extension fields to descriptorpb.MethodOptions.
+var (
+	// optional cre.metadata.CapabilityMethodMetadata method = 50001;
+	E_Method = &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes[1] // 50000-99999 is the range for custom options.
+)
+
 var File_capabilities_v2_protoc_pkg_pb_cre_metadata_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc = "" +
@@ -99,10 +157,13 @@ const file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc = "" +
 	"0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x12\fcre.metadata\x1a google/protobuf/descriptor.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"_\n" +
 	"\x12CapabilityMetadata\x12$\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x10.cre.sdk.v2.ModeR\x04mode\x12#\n" +
-	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId:c\n" +
+	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId\"G\n" +
+	"\x18CapabilityMethodMetadata\x12+\n" +
+	"\x12map_to_untyped_api\x18\x01 \x01(\bR\x0fmapToUntypedApi:c\n" +
 	"\n" +
 	"capability\x12\x1f.google.protobuf.ServiceOptions\x18І\x03 \x01(\v2 .cre.metadata.CapabilityMetadataR\n" +
-	"capabilityBPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pbb\x06proto3"
+	"capability:`\n" +
+	"\x06method\x12\x1e.google.protobuf.MethodOptions\x18ц\x03 \x01(\v2&.cre.metadata.CapabilityMethodMetadataR\x06methodBPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pbb\x06proto3"
 
 var (
 	file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescOnce sync.Once
@@ -116,20 +177,24 @@ func file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescGZIP() []byte 
 	return file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescData
 }
 
-var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_goTypes = []any{
 	(*CapabilityMetadata)(nil),          // 0: cre.metadata.CapabilityMetadata
-	(pb.Mode)(0),                        // 1: cre.sdk.v2.Mode
-	(*descriptorpb.ServiceOptions)(nil), // 2: google.protobuf.ServiceOptions
+	(*CapabilityMethodMetadata)(nil),    // 1: cre.metadata.CapabilityMethodMetadata
+	(pb.Mode)(0),                        // 2: cre.sdk.v2.Mode
+	(*descriptorpb.ServiceOptions)(nil), // 3: google.protobuf.ServiceOptions
+	(*descriptorpb.MethodOptions)(nil),  // 4: google.protobuf.MethodOptions
 }
 var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_depIdxs = []int32{
-	1, // 0: cre.metadata.CapabilityMetadata.mode:type_name -> cre.sdk.v2.Mode
-	2, // 1: cre.metadata.capability:extendee -> google.protobuf.ServiceOptions
-	0, // 2: cre.metadata.capability:type_name -> cre.metadata.CapabilityMetadata
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	2, // [2:3] is the sub-list for extension type_name
-	1, // [1:2] is the sub-list for extension extendee
+	2, // 0: cre.metadata.CapabilityMetadata.mode:type_name -> cre.sdk.v2.Mode
+	3, // 1: cre.metadata.capability:extendee -> google.protobuf.ServiceOptions
+	4, // 2: cre.metadata.method:extendee -> google.protobuf.MethodOptions
+	0, // 3: cre.metadata.capability:type_name -> cre.metadata.CapabilityMetadata
+	1, // 4: cre.metadata.method:type_name -> cre.metadata.CapabilityMethodMetadata
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	3, // [3:5] is the sub-list for extension type_name
+	1, // [1:3] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
 }
 
@@ -144,8 +209,8 @@ func file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
-			NumExtensions: 1,
+			NumMessages:   2,
+			NumExtensions: 2,
 			NumServices:   0,
 		},
 		GoTypes:           file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_goTypes,

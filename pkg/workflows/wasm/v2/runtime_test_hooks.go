@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -15,57 +16,44 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-var awaitResponseOverride func() ([]byte, error)
-var callCapabilityErr bool
-
-func overrideCapabilityResponseForTest(t *testing.T, awaitResponse func() ([]byte, error)) {
-	lock.Lock()
-	defer lock.Unlock()
-	awaitResponseOverride = awaitResponse
-	t.Cleanup(func() {
-		lock.Lock()
-		defer lock.Unlock()
-		awaitResponseOverride = nil
-	})
+type runtimeInternalsTestHook struct {
+	testTb                testing.TB
+	awaitResponseOverride func() ([]byte, error)
+	callCapabilityErr     bool
+	executionId           string
+	outstandingCalls      map[string]sdk.Promise[*sdkpb.CapabilityResponse]
 }
 
-func callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64 {
-	lock.Lock()
-	defer lock.Unlock()
+var _ runtimeInternals = (*runtimeInternalsTestHook)(nil)
 
-	if callCapabilityErr {
+func (r *runtimeInternalsTestHook) callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64 {
+	if r.callCapabilityErr {
 		return -1
 	}
 
 	reqBuff := unsafe.Slice((*byte)(req), reqLen)
 	request := sdkpb.CapabilityRequest{}
 	err := proto.Unmarshal(reqBuff, &request)
-	require.NoError(testTb, err)
+	require.NoError(r.testTb, err)
 
-	assert.Equal(testTb, executionId, request.ExecutionId)
+	assert.Equal(r.testTb, r.executionId, request.ExecutionId)
 
-	capability, err := registry.GetCapability(request.Id)
-	require.NoError(testTb, err)
+	reg := registry.GetRegistry(r.testTb)
+	capability, err := reg.GetCapability(request.Id)
+	require.NoError(r.testTb, err)
 
 	callId := uuid.New()
 	respCh := make(chan *sdkpb.CapabilityResponse, 1)
 	go func() {
-		lock.Lock()
-		defer lock.Unlock()
-		// Test ended before the capability was called
-		tmp := testTb
-		if tmp == nil {
-			return
-		}
-		respCh <- capability.Invoke(tmp.Context(), &request)
+		respCh <- capability.Invoke(r.testTb.Context(), &request)
 	}()
 
-	outstandingCalls[callId.String()] = sdk.NewBasicPromise(func() (*sdkpb.CapabilityResponse, error) {
+	r.outstandingCalls[callId.String()] = sdk.NewBasicPromise(func() (*sdkpb.CapabilityResponse, error) {
 		select {
 		case resp := <-respCh:
 			return resp, nil
-		case <-testTb.Context().Done():
-			return nil, testTb.Context().Err()
+		case <-r.testTb.Context().Done():
+			return nil, r.testTb.Context().Err()
 		}
 	})
 
@@ -75,12 +63,9 @@ func callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64 {
 	return 0
 }
 
-func awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64 {
-	lock.Lock()
-	defer lock.Unlock()
-
-	if awaitResponseOverride != nil {
-		awaitResponse, err := awaitResponseOverride()
+func (r *runtimeInternalsTestHook) awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64 {
+	if r.awaitResponseOverride != nil {
+		awaitResponse, err := r.awaitResponseOverride()
 		if err != nil {
 			awaitResponse = []byte(err.Error())
 		}
@@ -105,7 +90,7 @@ func awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, respo
 
 	responsepb := &sdkpb.AwaitCapabilitiesResponse{Responses: map[string]*sdkpb.CapabilityResponse{}}
 	for _, id := range requestpb.Ids {
-		promise, _ := outstandingCalls[id]
+		promise := r.outstandingCalls[id]
 		result, err := promise.Await()
 		if err != nil {
 			result = &sdkpb.CapabilityResponse{

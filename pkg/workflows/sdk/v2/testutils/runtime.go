@@ -7,20 +7,24 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus/consensusmock"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func newRuntime(tb testing.TB, configBytes []byte) sdkimpl.RuntimeBase {
 	tb.Cleanup(func() { delete(calls, tb) })
-	registry := GetRegistry(tb)
 
-	// If the user wants to mock consensus before creating a runtime, it's not harmful
-	_ = registry.RegisterCapability(&consensusCapability{})
+	defaultConsensus, err := consensusmock.NewConsensusCapability(tb)
+
+	// Do not override if the user provided their own consensus method
+	if err == nil {
+		defaultConsensus.Simple = defaultSimpleConsensus
+	}
 
 	return sdkimpl.RuntimeBase{
 		ExecId:          tb.Name(),
@@ -32,12 +36,27 @@ func newRuntime(tb testing.TB, configBytes []byte) sdkimpl.RuntimeBase {
 	}
 }
 
+func defaultSimpleConsensus(_ context.Context, input *pb.SimpleConsensusInputs) (*valuespb.Value, error) {
+	switch o := input.Observation.(type) {
+	case *pb.SimpleConsensusInputs_Value:
+		return o.Value, nil
+	case *pb.SimpleConsensusInputs_Error:
+		if input.Default.Value == nil {
+			return nil, errors.New(o.Error)
+		}
+
+		return input.Default, nil
+	default:
+		return nil, fmt.Errorf("unknown observation type %T", o)
+	}
+}
+
 var calls = map[testing.TB]map[string]chan *pb.CapabilityResponse{}
 
 func createCallCapability(tb testing.TB) func(request *pb.CapabilityRequest) ([]byte, error) {
 	return func(request *pb.CapabilityRequest) ([]byte, error) {
-		registry := GetRegistry(tb)
-		capability, err := registry.GetCapability(request.Id)
+		reg := registry.GetRegistry(tb)
+		capability, err := reg.GetCapability(request.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -83,53 +102,9 @@ func createAwaitCapabilities(tb testing.TB) sdkimpl.AwaitCapabilitiesFn {
 
 		bytes, _ := proto.Marshal(response)
 		if len(bytes) > int(maxResponseSize) {
-			return nil, errors.New(sdk.ResponseBufferToSmall)
+			return nil, errors.New(sdk.ResponseBufferTooSmall)
 		}
 
 		return response, errors.Join(errs...)
 	}
-}
-
-// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-816
-type consensusCapability struct{}
-
-func (c consensusCapability) Invoke(_ context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-	response := &pb.CapabilityResponse{}
-	consensusRequest := &pb.BuiltInConsensusRequest{}
-	if err := request.Payload.UnmarshalTo(consensusRequest); err != nil {
-		response.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
-	}
-
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-798 determine what to do if values don't line up with consensus request
-	switch o := consensusRequest.Observation.(type) {
-	case *pb.BuiltInConsensusRequest_Value:
-		return addValueToResponse(o.Value, response)
-	case *pb.BuiltInConsensusRequest_Error:
-		if consensusRequest.DefaultValue.Value != nil {
-			return addValueToResponse(consensusRequest.DefaultValue, response)
-		}
-		response.Response = &pb.CapabilityResponse_Error{Error: o.Error}
-	default:
-		response.Response = &pb.CapabilityResponse_Error{Error: "unknown observation type"}
-
-	}
-	return response
-}
-
-func addValueToResponse(v *valuespb.Value, response *pb.CapabilityResponse) *pb.CapabilityResponse {
-	a, err := anypb.New(v)
-	if err == nil {
-		response.Response = &pb.CapabilityResponse_Payload{Payload: a}
-	} else {
-		response.Response = &pb.CapabilityResponse_Error{Error: err.Error()}
-	}
-	return response
-}
-
-func (c consensusCapability) InvokeTrigger(_ context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
-	return nil, errors.New(fmt.Sprintf("Trigger %s not found", request.Method))
-}
-
-func (c consensusCapability) ID() string {
-	return "consensus@1.0.0"
 }

@@ -98,7 +98,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		relayerSetServer, relayerSetServerRes := relayerset.NewRelayerSetServer(o.Logger, relayerSet, o.BrokerExt)
 
 		relayerSetID, relayerSetRes, err := o.ServeNew("RelayerSet", func(s *grpc.Server) {
-			relayersetpb.RegisterRelayerSetServer(s, relayerSetServer)
+			relayersetpb.RegisterRelayerSetServerWithDependants(s, relayerSetServer)
 		})
 
 		if err != nil {

@@ -4,16 +4,14 @@ import (
 	"errors"
 	"io"
 
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
-
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type CallCapabilityFn func(request *pb.CapabilityRequest) ([]byte, error)
+type CallCapabilityFn func(request *pb.CapabilityRequest) (id []byte, err error)
 type AwaitCapabilitiesFn func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error)
 
 type RuntimeBase struct {
@@ -69,33 +67,15 @@ type DonRuntime struct {
 	RuntimeBase
 }
 
-func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.BuiltInConsensusRequest) sdk.Promise[values.Value] {
+func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	nrt := &NodeRuntime{RuntimeBase: d.RuntimeBase}
 	d.modeErr = sdk.DonModeCallInNodeMode()
 	observation := fn(nrt)
 	nrt.modeErr = sdk.NodeModeCallInDonMode()
 	d.modeErr = nil
-	wrapped, _ := anypb.New(observation)
-
-	// TODO https: //smartcontract-it.atlassian.net/browse/CAPPL-816 use the generated consensus code
-	capabilityRequest := &pb.CapabilityRequest{
-		ExecutionId: d.ExecId,
-		Id:          "consensus@1.0.0",
-		Payload:     wrapped,
-		Method:      "BuiltIn",
-	}
-	response := d.CallCapability(capabilityRequest)
-	return sdk.Then(response, func(resp *pb.CapabilityResponse) (values.Value, error) {
-		if p := resp.GetPayload(); p != nil {
-			pbVal := valuespb.Value{}
-			if err := proto.Unmarshal(p.Value, &pbVal); err != nil {
-				return nil, err
-			}
-
-			return values.FromProto(&pbVal)
-		}
-
-		return nil, errors.New(resp.GetError())
+	c := &consensus.Consensus{}
+	return sdk.Then(c.Simple(d, observation), func(result *valuespb.Value) (values.Value, error) {
+		return values.FromProto(result)
 	})
 }
 

@@ -4,20 +4,22 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "codec.proto";
-import "relayer.proto";
+import "internal/codec/codec.proto";
+import "loop/internal/pb/relayer.proto";
 import "google/protobuf/empty.proto";
+import "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto";
 
 service ContractWriter {
     rpc SubmitTransaction(SubmitTransactionRequest) returns (google.protobuf.Empty) {}
-    rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply) {}
+    rpc GetTransactionStatus(loop.chain_capabilities.evm.GetTransactionStatusRequest) returns (loop.chain_capabilities.evm.GetTransactionStatusReply) {}
     rpc GetFeeComponents(google.protobuf.Empty) returns (GetFeeComponentsReply) {}
+    rpc GetEstimateFee(GetEstimateFeeRequest) returns (GetEstimateFeeReply) {}
 }
 
 message SubmitTransactionRequest {
     string contract_name = 1;
     string method = 2;
-    VersionedBytes params = 3;
+    codec.VersionedBytes params = 3;
     string transaction_id = 4;
     string to_address = 5;
     TransactionMeta meta = 6;
@@ -29,29 +31,24 @@ message TransactionMeta {
     BigInt gas_limit = 2;
 }
 
-// GetTransactionStatusRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionStatus].
-message GetTransactionStatusRequest {
-    string transaction_id = 1;
-}
-
-// TransactionStatus is an enum for the status of a transaction.
-// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
-enum TransactionStatus {
-    TRANSACTION_STATUS_UNKNOWN = 0;
-    TRANSACTION_STATUS_PENDING = 1;
-    TRANSACTION_STATUS_UNCONFIRMED = 2;
-    TRANSACTION_STATUS_FINALIZED = 3;
-    TRANSACTION_STATUS_FAILED = 4;
-    TRANSACTION_STATUS_FATAL = 5;
-}
-
-// GetTransactionStatusReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionStatus].
-message GetTransactionStatusReply {
-    TransactionStatus transaction_status = 1;
+// GetEstimateFeeReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
+message GetEstimateFeeRequest {
+    string contract_name = 1;
+    string method = 2;
+    codec.VersionedBytes params = 3;
+    string to_address = 4;
+    TransactionMeta meta = 5;
+    BigInt value = 6;
 }
 
 // GetFeeComponentsReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetFeeComponents].
 message GetFeeComponentsReply {
     BigInt execution_fee = 1;
     BigInt data_availability_fee = 2;
+}
+
+// GetEstimateFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetEstimateFee].
+message GetEstimateFeeReply {
+    BigInt fee = 1;
+    uint32 decimals = 2;
 }

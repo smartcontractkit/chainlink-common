@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: contract_reader.proto
+// source: loop/internal/pb/contract_reader.proto
 
 package pb
 
@@ -346,5 +346,5 @@ var ContractReader_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "contract_reader.proto",
+	Metadata: "loop/internal/pb/contract_reader.proto",
 }

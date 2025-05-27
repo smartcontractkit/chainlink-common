@@ -11,17 +11,17 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 // avoid unused imports
-var _ = testutils.Registry{}
+var _ = registry.Registry{}
 
 func NewBasicCapability(t testing.TB) (*BasicCapability, error) {
 	c := &BasicCapability{}
-	registry := testutils.GetRegistry(t)
-	err := registry.RegisterCapability(c)
+	reg := registry.GetRegistry(t)
+	err := reg.RegisterCapability(c)
 	return c, err
 }
 
@@ -29,14 +29,14 @@ type BasicCapability struct {
 	Trigger func(ctx context.Context, input *basictrigger.Config) (*basictrigger.Outputs, error)
 }
 
-func (cap *BasicCapability) Invoke(ctx context.Context, request *pb.CapabilityRequest) *pb.CapabilityResponse {
-	capResp := &pb.CapabilityResponse{}
-	capResp.Response = &pb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
+func (cap *BasicCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
+	capResp := &sdkpb.CapabilityResponse{}
+	capResp.Response = &sdkpb.CapabilityResponse_Error{Error: fmt.Sprintf("method %s not found", request.Method)}
 	return capResp
 }
 
-func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.TriggerSubscription) (*pb.Trigger, error) {
-	trigger := &pb.Trigger{}
+func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
+	trigger := &sdkpb.Trigger{}
 	switch request.Method {
 	case "Trigger":
 		input := &basictrigger.Config{}
@@ -45,7 +45,7 @@ func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.Trigg
 		}
 
 		if cap.Trigger == nil {
-			return nil, testutils.ErrNoTriggerStub("Trigger")
+			return nil, registry.ErrNoTriggerStub("Trigger")
 		}
 
 		resp, err := cap.Trigger(ctx, input)
@@ -61,7 +61,6 @@ func (cap *BasicCapability) InvokeTrigger(ctx context.Context, request *pb.Trigg
 				return nil, err
 			}
 			trigger.Payload = payload
-			trigger.Id = "mock"
 		}
 	default:
 		return nil, fmt.Errorf("method %s not found", request.Method)

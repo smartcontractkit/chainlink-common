@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -8,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -21,7 +23,7 @@ type runner[T any] struct {
 	err            error
 	workflowId     string
 	executionId    string
-	registry       *Registry
+	registry       *registry.Registry
 	strictTriggers bool
 	runtime        T
 	writer         *testWriter
@@ -84,7 +86,7 @@ func newRunner[T any](tb testing.TB, config []byte, t T, base *sdkimpl.RuntimeBa
 		config:      config,
 		workflowId:  uuid.NewString(),
 		executionId: uuid.NewString(),
-		registry:    GetRegistry(tb),
+		registry:    registry.GetRegistry(tb),
 		runtime:     t,
 		writer:      &testWriter{},
 		base:        base,
@@ -103,7 +105,7 @@ func (r *runner[T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
 
 func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	for _, handler := range args.Handlers {
-		trigger, err := r.registry.GetCapability(handler.Id())
+		trigger, err := r.registry.GetCapability(handler.CapabilityID())
 		if err != nil {
 			if r.strictTriggers {
 				r.err = err
@@ -119,7 +121,9 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		response, err := trigger.InvokeTrigger(r.tb.Context(), request)
-		if err != nil {
+
+		var nostub registry.ErrNoTriggerStub
+		if err != nil && (r.strictTriggers || !errors.As(err, &nostub)) {
 			r.err = err
 			return
 		}

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package importclash.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash";
+
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "capabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb/import.proto";
+import "capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb/import.proto";
+
+service BasicAction {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "import-clash@1.0.0"
+  };
+  rpc PerformAction (importclash.p1.v1.Inputs) returns (importclash.p2.v1.Outputs) {
+    option (cre.metadata.method) = {
+      map_to_untyped_api: true
+    };
+  }
+}

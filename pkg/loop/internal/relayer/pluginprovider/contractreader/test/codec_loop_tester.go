@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
@@ -27,7 +27,7 @@ func (c *codecReaderLoopTester) Setup(t *testing.T) {
 	c.lst.registerHook = func(server *grpc.Server) {
 		if codec != nil {
 			impl := contractreader.NewCodecServer(codec)
-			pb.RegisterCodecServer(server, impl)
+			codecpb.RegisterCodecServer(server, impl)
 		}
 	}
 	c.lst.Setup(t)

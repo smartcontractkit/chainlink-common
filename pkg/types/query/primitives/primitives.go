@@ -1,6 +1,8 @@
 package primitives
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Visitor should have a per chain per db type implementation that converts primitives to db queries.
 type Visitor interface {

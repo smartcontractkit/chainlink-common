@@ -8,12 +8,11 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type BasicAction struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
 }
 
 func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.Promise[*Outputs] {
@@ -21,15 +20,15 @@ func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.P
 	if err != nil {
 		return sdk.PromiseFromResult[*Outputs](nil, err)
 	}
-	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "basic-test-action@1.0.0",
 		Payload: wrapped,
 		Method:  "PerformAction",
-	}), func(i *pb.CapabilityResponse) (*Outputs, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*Outputs, error) {
 		switch payload := i.Response.(type) {
-		case *pb.CapabilityResponse_Error:
+		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
-		case *pb.CapabilityResponse_Payload:
+		case *sdkpb.CapabilityResponse_Payload:
 			output := &Outputs{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err

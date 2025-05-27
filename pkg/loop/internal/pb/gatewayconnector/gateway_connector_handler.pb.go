@@ -72,11 +72,11 @@ const file_gateway_connector_handler_proto_rawDesc = "" +
 	"\n" +
 	"\x1fgateway_connector_handler.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14gateway_common.proto\"-\n" +
 	"\x1bGatewayConnectorHandlerInfo\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id2\x98\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id2\x96\x02\n" +
 	"\x17GatewayConnectorHandler\x127\n" +
 	"\x05Start\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x127\n" +
-	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12A\n" +
-	"\x04Info\x12\x16.google.protobuf.Empty\x1a!.loop.GatewayConnectorHandlerInfo\x12H\n" +
+	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12?\n" +
+	"\x02Id\x12\x16.google.protobuf.Empty\x1a!.loop.GatewayConnectorHandlerInfo\x12H\n" +
 	"\x14HandleGatewayMessage\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnectorb\x06proto3"
 
 var (
@@ -100,11 +100,11 @@ var file_gateway_connector_handler_proto_goTypes = []any{
 var file_gateway_connector_handler_proto_depIdxs = []int32{
 	1, // 0: loop.GatewayConnectorHandler.Start:input_type -> google.protobuf.Empty
 	1, // 1: loop.GatewayConnectorHandler.Close:input_type -> google.protobuf.Empty
-	1, // 2: loop.GatewayConnectorHandler.Info:input_type -> google.protobuf.Empty
+	1, // 2: loop.GatewayConnectorHandler.Id:input_type -> google.protobuf.Empty
 	2, // 3: loop.GatewayConnectorHandler.HandleGatewayMessage:input_type -> loop.SendMessageRequest
 	1, // 4: loop.GatewayConnectorHandler.Start:output_type -> google.protobuf.Empty
 	1, // 5: loop.GatewayConnectorHandler.Close:output_type -> google.protobuf.Empty
-	0, // 6: loop.GatewayConnectorHandler.Info:output_type -> loop.GatewayConnectorHandlerInfo
+	0, // 6: loop.GatewayConnectorHandler.Id:output_type -> loop.GatewayConnectorHandlerInfo
 	1, // 7: loop.GatewayConnectorHandler.HandleGatewayMessage:output_type -> google.protobuf.Empty
 	4, // [4:8] is the sub-list for method output_type
 	0, // [0:4] is the sub-list for method input_type

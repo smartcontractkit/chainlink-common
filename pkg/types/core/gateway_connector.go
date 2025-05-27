@@ -32,7 +32,7 @@ type GatewayConnectorHandler interface {
 	// Close closes the GatewayConnectorHandler
 	Close() error
 	// TODO: revisit interface
-	Info() (GatewayConnectorHandlerInfo, error)
+	ID() (GatewayConnectorHandlerInfo, error)
 	HandleGatewayMessage(ctx context.Context, gatewayID string, msg *gateway.Message) error
 }
 

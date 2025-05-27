@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	GatewayConnectorHandler_Start_FullMethodName                = "/loop.GatewayConnectorHandler/Start"
 	GatewayConnectorHandler_Close_FullMethodName                = "/loop.GatewayConnectorHandler/Close"
-	GatewayConnectorHandler_Info_FullMethodName                 = "/loop.GatewayConnectorHandler/Info"
+	GatewayConnectorHandler_Id_FullMethodName                   = "/loop.GatewayConnectorHandler/Id"
 	GatewayConnectorHandler_HandleGatewayMessage_FullMethodName = "/loop.GatewayConnectorHandler/HandleGatewayMessage"
 )
 
@@ -32,7 +32,7 @@ const (
 type GatewayConnectorHandlerClient interface {
 	Start(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Close(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayConnectorHandlerInfo, error)
+	Id(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayConnectorHandlerInfo, error)
 	HandleGatewayMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -64,10 +64,10 @@ func (c *gatewayConnectorHandlerClient) Close(ctx context.Context, in *emptypb.E
 	return out, nil
 }
 
-func (c *gatewayConnectorHandlerClient) Info(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayConnectorHandlerInfo, error) {
+func (c *gatewayConnectorHandlerClient) Id(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayConnectorHandlerInfo, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GatewayConnectorHandlerInfo)
-	err := c.cc.Invoke(ctx, GatewayConnectorHandler_Info_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, GatewayConnectorHandler_Id_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (c *gatewayConnectorHandlerClient) HandleGatewayMessage(ctx context.Context
 type GatewayConnectorHandlerServer interface {
 	Start(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
-	Info(context.Context, *emptypb.Empty) (*GatewayConnectorHandlerInfo, error)
+	Id(context.Context, *emptypb.Empty) (*GatewayConnectorHandlerInfo, error)
 	HandleGatewayMessage(context.Context, *SendMessageRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedGatewayConnectorHandlerServer()
 }
@@ -108,8 +108,8 @@ func (UnimplementedGatewayConnectorHandlerServer) Start(context.Context, *emptyp
 func (UnimplementedGatewayConnectorHandlerServer) Close(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
 }
-func (UnimplementedGatewayConnectorHandlerServer) Info(context.Context, *emptypb.Empty) (*GatewayConnectorHandlerInfo, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
+func (UnimplementedGatewayConnectorHandlerServer) Id(context.Context, *emptypb.Empty) (*GatewayConnectorHandlerInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Id not implemented")
 }
 func (UnimplementedGatewayConnectorHandlerServer) HandleGatewayMessage(context.Context, *SendMessageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleGatewayMessage not implemented")
@@ -172,20 +172,20 @@ func _GatewayConnectorHandler_Close_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GatewayConnectorHandler_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GatewayConnectorHandler_Id_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GatewayConnectorHandlerServer).Info(ctx, in)
+		return srv.(GatewayConnectorHandlerServer).Id(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GatewayConnectorHandler_Info_FullMethodName,
+		FullMethod: GatewayConnectorHandler_Id_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GatewayConnectorHandlerServer).Info(ctx, req.(*emptypb.Empty))
+		return srv.(GatewayConnectorHandlerServer).Id(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -224,8 +224,8 @@ var GatewayConnectorHandler_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GatewayConnectorHandler_Close_Handler,
 		},
 		{
-			MethodName: "Info",
-			Handler:    _GatewayConnectorHandler_Info_Handler,
+			MethodName: "Id",
+			Handler:    _GatewayConnectorHandler_Id_Handler,
 		},
 		{
 			MethodName: "HandleGatewayMessage",

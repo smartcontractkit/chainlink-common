@@ -29,8 +29,8 @@ func (c GatewayConnectorHandlerClient) Close() error {
 	return err
 }
 
-func (c GatewayConnectorHandlerClient) Info() (core.GatewayConnectorHandlerInfo, error) {
-	resp, err := c.grpc.Info(context.Background(), &emptypb.Empty{})
+func (c GatewayConnectorHandlerClient) ID() (core.GatewayConnectorHandlerInfo, error) {
+	resp, err := c.grpc.Id(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return core.GatewayConnectorHandlerInfo{}, fmt.Errorf("failed to get handler info: %w", err)
 	}

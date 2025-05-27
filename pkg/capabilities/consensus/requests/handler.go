@@ -114,7 +114,7 @@ func (h *Handler[T, R]) worker(ctx context.Context) {
 			}
 
 		case resp := <-h.responseCh:
-			req, wasPresent := h.store.evict(resp.RequestID())
+			req, wasPresent := h.store.Evict(resp.RequestID())
 			if !wasPresent {
 				h.responseCache[resp.RequestID()] = &responseCacheEntry[R]{
 					response:  resp,
@@ -144,7 +144,7 @@ func (h *Handler[T, R]) expirePendingRequests(ctx context.Context) {
 
 	for _, req := range h.pendingRequests {
 		if now.After(req.ExpiryTime()) {
-			h.store.evict(req.ID())
+			h.store.Evict(req.ID())
 			h.sendTimeout(ctx, req)
 		}
 	}

@@ -1,4 +1,4 @@
-package requests
+package ocr3
 
 import (
 	"context"
@@ -17,7 +17,7 @@ type ReportRequest struct {
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
-	CallbackCh chan Response
+	CallbackCh chan ReportResponse
 	StopCh     services.StopChan
 
 	WorkflowExecutionID      string
@@ -39,7 +39,7 @@ func (r *ReportRequest) ExpiryTime() time.Time {
 	return r.ExpiresAt
 }
 
-func (r *ReportRequest) SendResponse(ctx context.Context, resp Response) {
+func (r *ReportRequest) SendResponse(ctx context.Context, resp ReportResponse) {
 	select {
 	case <-ctx.Done():
 		return
@@ -49,7 +49,7 @@ func (r *ReportRequest) SendResponse(ctx context.Context, resp Response) {
 }
 
 func (r *ReportRequest) SendTimeout(ctx context.Context) {
-	timeoutResponse := Response{
+	timeoutResponse := ReportResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
 	}
@@ -79,12 +79,12 @@ func (r *ReportRequest) Copy() *ReportRequest {
 	}
 }
 
-type Response struct {
+type ReportResponse struct {
 	WorkflowExecutionID string
 	Value               *values.Map
 	Err                 error
 }
 
-func (r Response) RequestID() string {
+func (r ReportResponse) RequestID() string {
 	return r.WorkflowExecutionID
 }

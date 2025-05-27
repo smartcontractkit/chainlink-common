@@ -17,7 +17,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -39,14 +39,14 @@ type CapabilityIface interface {
 
 type reportingPlugin struct {
 	batchSize               int
-	s                       *requests.Store[*requests.ReportRequest, requests.Response]
+	s                       *requests.Store[*ReportRequest, ReportResponse]
 	r                       CapabilityIface
 	config                  ocr3types.ReportingPluginConfig
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
 }
 
-func NewReportingPlugin(s *requests.Store[*requests.ReportRequest, requests.Response], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
+func NewReportingPlugin(s *requests.Store[*ReportRequest, ReportResponse], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
 	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
 		s:                       s,
@@ -104,7 +104,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 	}
 
 	reqs := r.s.GetByIDs(weids)
-	reqMap := map[string]*requests.ReportRequest{}
+	reqMap := map[string]*ReportRequest{}
 	for _, req := range reqs {
 		reqMap[req.WorkflowExecutionID] = req
 	}

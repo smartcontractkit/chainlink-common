@@ -93,8 +93,8 @@ func (s *Store[T, R]) Get(requestID string) T {
 	return zero
 }
 
-// evict removes a request from the store by its ID.
-func (s *Store[T, R]) evict(requestID string) (T, bool) {
+// Evict removes a request from the store by its ID.
+func (s *Store[T, R]) Evict(requestID string) (T, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

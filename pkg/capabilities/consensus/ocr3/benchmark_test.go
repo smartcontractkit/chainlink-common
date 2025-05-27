@@ -19,8 +19,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -109,7 +109,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 	)
 
 	// Create request store with requests for each workflow
-	store := requests.NewStore[*requests.ReportRequest]()
+	store := requests.NewStore[*ocr3.ReportRequest, ocr3.ReportResponse]()
 
 	// Create capability with LLO aggregators for each workflow
 	mockCap := &mockCapability{
@@ -136,7 +136,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 		require.NoError(b, err)
 
 		// Create and add request to store
-		req := &requests.ReportRequest{
+		req := &ocr3.ReportRequest{
 			WorkflowID:               workflowID,
 			WorkflowExecutionID:      executionID,
 			WorkflowName:             fmt.Sprintf("Workflow %d", i),
@@ -230,7 +230,7 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 	)
 
 	// Create request store
-	store := requests.NewStore[*requests.ReportRequest]()
+	store := requests.NewStore[*ocr3.ReportRequest]()
 
 	// Create capability with LLO aggregators for each workflow
 	mockCap := &mockCapability{

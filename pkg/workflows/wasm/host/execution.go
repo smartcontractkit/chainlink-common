@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bytecodealliance/wasmtime-go/v28"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
@@ -71,4 +72,15 @@ func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCa
 	return &sdkpb.AwaitCapabilitiesResponse{
 		Responses: responses,
 	}, nil
+}
+
+func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+	lggr := e.module.cfg.Logger
+	b, innerErr := wasmRead(caller, ptr, ptrlen)
+	if innerErr != nil {
+		lggr.Errorf("error calling log: %s", innerErr)
+		return
+	}
+	
+	lggr.Info(string(b))
 }

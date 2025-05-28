@@ -155,6 +155,8 @@ func (r *runner[T]) Result() (bool, any, error) {
 }
 
 func (r *runner[T]) SetDefaultLogger() {
+	current := slog.Default()
+	r.tb.Cleanup(func() { slog.SetDefault(current) })
 	slog.SetDefault(slog.New(slog.NewTextHandler(r.LogWriter(), nil)))
 }
 

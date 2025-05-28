@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748439462009,
+  "lastUpdate": 1748457125621,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14322,6 +14322,48 @@ window.BENCHMARK_DATA = {
             "value": 28149,
             "unit": "ns/op",
             "extra": "42624 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "54820a58edd1e6a58918179c4213e9999c23a3bf",
+          "message": "chip-ingress: set Authority header for gRPC connection (#1215)\n\n* chip-ingress: require port in address, set Authority header\n\n* chip-ingress: fix test\n\n* fix(lint): correctly set LOCAL_VERSION\n\n* beholder: fix test",
+          "timestamp": "2025-05-28T13:30:47-05:00",
+          "tree_id": "3ca534576ec7ace434daa0d41e04cec6a793fb51",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/54820a58edd1e6a58918179c4213e9999c23a3bf"
+        },
+        "date": 1748457124755,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.4,
+            "unit": "ns/op",
+            "extra": "3316093 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.5,
+            "unit": "ns/op",
+            "extra": "2749249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28140,
+            "unit": "ns/op",
+            "extra": "41700 times\n4 procs"
           }
         ]
       }

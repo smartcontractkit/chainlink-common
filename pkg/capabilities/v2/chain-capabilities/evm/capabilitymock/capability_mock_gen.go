@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
@@ -29,32 +29,32 @@ func NewClientCapability(t testing.TB) (*ClientCapability, error) {
 
 type ClientCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	CallContract func(ctx context.Context, input *evmpb.CallContractRequest) (*evmpb.CallContractReply, error)
+	CallContract func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	FilterLogs func(ctx context.Context, input *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error)
+	FilterLogs func(ctx context.Context, input *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	BalanceAt func(ctx context.Context, input *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error)
+	BalanceAt func(ctx context.Context, input *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	EstimateGas func(ctx context.Context, input *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error)
+	EstimateGas func(ctx context.Context, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	GetTransactionByHash func(ctx context.Context, input *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error)
+	GetTransactionByHash func(ctx context.Context, input *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	GetTransactionReceipt func(ctx context.Context, input *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error)
+	GetTransactionReceipt func(ctx context.Context, input *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	LatestAndFinalizedHead func(ctx context.Context, input *emptypb.Empty) (*evmpb.LatestAndFinalizedHeadReply, error)
+	LatestAndFinalizedHead func(ctx context.Context, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	QueryTrackedLogs func(ctx context.Context, input *evmpb.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error)
+	QueryTrackedLogs func(ctx context.Context, input *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	RegisterLogTracking func(ctx context.Context, input *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+	RegisterLogTracking func(ctx context.Context, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	UnregisterLogTracking func(ctx context.Context, input *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
 	case "CallContract":
-		input := &evmpb.CallContractRequest{}
+		input := &evm.CallContractRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -76,7 +76,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "FilterLogs":
-		input := &evmpb.FilterLogsRequest{}
+		input := &evm.FilterLogsRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -98,7 +98,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "BalanceAt":
-		input := &evmpb.BalanceAtRequest{}
+		input := &evm.BalanceAtRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -120,7 +120,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "EstimateGas":
-		input := &evmpb.EstimateGasRequest{}
+		input := &evm.EstimateGasRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -142,7 +142,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "GetTransactionByHash":
-		input := &evmpb.GetTransactionByHashRequest{}
+		input := &evm.GetTransactionByHashRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -164,7 +164,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "GetTransactionReceipt":
-		input := &evmpb.GetTransactionReceiptRequest{}
+		input := &evm.GetTransactionReceiptRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -208,7 +208,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "QueryTrackedLogs":
-		input := &evmpb.QueryTrackedLogsRequest{}
+		input := &evm.QueryTrackedLogsRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -230,7 +230,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "RegisterLogTracking":
-		input := &evmpb.RegisterLogTrackingRequest{}
+		input := &evm.RegisterLogTrackingRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -252,7 +252,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "UnregisterLogTracking":
-		input := &evmpb.UnregisterLogTrackingRequest{}
+		input := &evm.UnregisterLogTrackingRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break

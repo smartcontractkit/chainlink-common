@@ -8,7 +8,7 @@ package pb
 
 import (
 	context "context"
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -32,7 +32,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ContractWriterClient interface {
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetTransactionStatus(ctx context.Context, in *chain_service.GetTransactionStatusRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionStatusReply, error)
+	GetTransactionStatus(ctx context.Context, in *evm.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evm.GetTransactionStatusReply, error)
 	GetFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFeeComponentsReply, error)
 	GetEstimateFee(ctx context.Context, in *GetEstimateFeeRequest, opts ...grpc.CallOption) (*GetEstimateFeeReply, error)
 }
@@ -55,9 +55,9 @@ func (c *contractWriterClient) SubmitTransaction(ctx context.Context, in *Submit
 	return out, nil
 }
 
-func (c *contractWriterClient) GetTransactionStatus(ctx context.Context, in *chain_service.GetTransactionStatusRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionStatusReply, error) {
+func (c *contractWriterClient) GetTransactionStatus(ctx context.Context, in *evm.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evm.GetTransactionStatusReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.GetTransactionStatusReply)
+	out := new(evm.GetTransactionStatusReply)
 	err := c.cc.Invoke(ctx, ContractWriter_GetTransactionStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (c *contractWriterClient) GetEstimateFee(ctx context.Context, in *GetEstima
 // for forward compatibility.
 type ContractWriterServer interface {
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*emptypb.Empty, error)
-	GetTransactionStatus(context.Context, *chain_service.GetTransactionStatusRequest) (*chain_service.GetTransactionStatusReply, error)
+	GetTransactionStatus(context.Context, *evm.GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error)
 	GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error)
 	GetEstimateFee(context.Context, *GetEstimateFeeRequest) (*GetEstimateFeeReply, error)
 	mustEmbedUnimplementedContractWriterServer()
@@ -106,7 +106,7 @@ type UnimplementedContractWriterServer struct{}
 func (UnimplementedContractWriterServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }
-func (UnimplementedContractWriterServer) GetTransactionStatus(context.Context, *chain_service.GetTransactionStatusRequest) (*chain_service.GetTransactionStatusReply, error) {
+func (UnimplementedContractWriterServer) GetTransactionStatus(context.Context, *evm.GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
 }
 func (UnimplementedContractWriterServer) GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error) {
@@ -155,7 +155,7 @@ func _ContractWriter_SubmitTransaction_Handler(srv interface{}, ctx context.Cont
 }
 
 func _ContractWriter_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.GetTransactionStatusRequest)
+	in := new(evm.GetTransactionStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func _ContractWriter_GetTransactionStatus_Handler(srv interface{}, ctx context.C
 		FullMethod: ContractWriter_GetTransactionStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContractWriterServer).GetTransactionStatus(ctx, req.(*chain_service.GetTransactionStatusRequest))
+		return srv.(ContractWriterServer).GetTransactionStatus(ctx, req.(*evm.GetTransactionStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

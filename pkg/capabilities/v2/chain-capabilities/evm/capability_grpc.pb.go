@@ -2,13 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: capabilities/v2/chain-capabilities/evm/capability/capability.proto
+// source: capabilities/v2/chain-capabilities/evm/capability.proto
 
 package evm
 
 import (
 	context "context"
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -37,16 +37,16 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ClientClient interface {
-	CallContract(ctx context.Context, in *chain_service.CallContractRequest, opts ...grpc.CallOption) (*chain_service.CallContractReply, error)
-	FilterLogs(ctx context.Context, in *chain_service.FilterLogsRequest, opts ...grpc.CallOption) (*chain_service.FilterLogsReply, error)
-	BalanceAt(ctx context.Context, in *chain_service.BalanceAtRequest, opts ...grpc.CallOption) (*chain_service.BalanceAtReply, error)
-	EstimateGas(ctx context.Context, in *chain_service.EstimateGasRequest, opts ...grpc.CallOption) (*chain_service.EstimateGasReply, error)
-	GetTransactionByHash(ctx context.Context, in *chain_service.GetTransactionByHashRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionByHashReply, error)
-	GetTransactionReceipt(ctx context.Context, in *chain_service.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionReceiptReply, error)
-	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*chain_service.LatestAndFinalizedHeadReply, error)
-	QueryTrackedLogs(ctx context.Context, in *chain_service.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*chain_service.QueryTrackedLogsReply, error)
-	RegisterLogTracking(ctx context.Context, in *chain_service.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UnregisterLogTracking(ctx context.Context, in *chain_service.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CallContract(ctx context.Context, in *evm.CallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error)
+	FilterLogs(ctx context.Context, in *evm.FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error)
+	BalanceAt(ctx context.Context, in *evm.BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error)
+	EstimateGas(ctx context.Context, in *evm.EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error)
+	GetTransactionByHash(ctx context.Context, in *evm.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evm.GetTransactionByHashReply, error)
+	GetTransactionReceipt(ctx context.Context, in *evm.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evm.GetTransactionReceiptReply, error)
+	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error)
+	QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
+	RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type clientClient struct {
@@ -57,9 +57,9 @@ func NewClientClient(cc grpc.ClientConnInterface) ClientClient {
 	return &clientClient{cc}
 }
 
-func (c *clientClient) CallContract(ctx context.Context, in *chain_service.CallContractRequest, opts ...grpc.CallOption) (*chain_service.CallContractReply, error) {
+func (c *clientClient) CallContract(ctx context.Context, in *evm.CallContractRequest, opts ...grpc.CallOption) (*evm.CallContractReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.CallContractReply)
+	out := new(evm.CallContractReply)
 	err := c.cc.Invoke(ctx, Client_CallContract_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -67,9 +67,9 @@ func (c *clientClient) CallContract(ctx context.Context, in *chain_service.CallC
 	return out, nil
 }
 
-func (c *clientClient) FilterLogs(ctx context.Context, in *chain_service.FilterLogsRequest, opts ...grpc.CallOption) (*chain_service.FilterLogsReply, error) {
+func (c *clientClient) FilterLogs(ctx context.Context, in *evm.FilterLogsRequest, opts ...grpc.CallOption) (*evm.FilterLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.FilterLogsReply)
+	out := new(evm.FilterLogsReply)
 	err := c.cc.Invoke(ctx, Client_FilterLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -77,9 +77,9 @@ func (c *clientClient) FilterLogs(ctx context.Context, in *chain_service.FilterL
 	return out, nil
 }
 
-func (c *clientClient) BalanceAt(ctx context.Context, in *chain_service.BalanceAtRequest, opts ...grpc.CallOption) (*chain_service.BalanceAtReply, error) {
+func (c *clientClient) BalanceAt(ctx context.Context, in *evm.BalanceAtRequest, opts ...grpc.CallOption) (*evm.BalanceAtReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.BalanceAtReply)
+	out := new(evm.BalanceAtReply)
 	err := c.cc.Invoke(ctx, Client_BalanceAt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -87,9 +87,9 @@ func (c *clientClient) BalanceAt(ctx context.Context, in *chain_service.BalanceA
 	return out, nil
 }
 
-func (c *clientClient) EstimateGas(ctx context.Context, in *chain_service.EstimateGasRequest, opts ...grpc.CallOption) (*chain_service.EstimateGasReply, error) {
+func (c *clientClient) EstimateGas(ctx context.Context, in *evm.EstimateGasRequest, opts ...grpc.CallOption) (*evm.EstimateGasReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.EstimateGasReply)
+	out := new(evm.EstimateGasReply)
 	err := c.cc.Invoke(ctx, Client_EstimateGas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -97,9 +97,9 @@ func (c *clientClient) EstimateGas(ctx context.Context, in *chain_service.Estima
 	return out, nil
 }
 
-func (c *clientClient) GetTransactionByHash(ctx context.Context, in *chain_service.GetTransactionByHashRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionByHashReply, error) {
+func (c *clientClient) GetTransactionByHash(ctx context.Context, in *evm.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evm.GetTransactionByHashReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.GetTransactionByHashReply)
+	out := new(evm.GetTransactionByHashReply)
 	err := c.cc.Invoke(ctx, Client_GetTransactionByHash_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -107,9 +107,9 @@ func (c *clientClient) GetTransactionByHash(ctx context.Context, in *chain_servi
 	return out, nil
 }
 
-func (c *clientClient) GetTransactionReceipt(ctx context.Context, in *chain_service.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionReceiptReply, error) {
+func (c *clientClient) GetTransactionReceipt(ctx context.Context, in *evm.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evm.GetTransactionReceiptReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.GetTransactionReceiptReply)
+	out := new(evm.GetTransactionReceiptReply)
 	err := c.cc.Invoke(ctx, Client_GetTransactionReceipt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -117,9 +117,9 @@ func (c *clientClient) GetTransactionReceipt(ctx context.Context, in *chain_serv
 	return out, nil
 }
 
-func (c *clientClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*chain_service.LatestAndFinalizedHeadReply, error) {
+func (c *clientClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evm.LatestAndFinalizedHeadReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.LatestAndFinalizedHeadReply)
+	out := new(evm.LatestAndFinalizedHeadReply)
 	err := c.cc.Invoke(ctx, Client_LatestAndFinalizedHead_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -127,9 +127,9 @@ func (c *clientClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.E
 	return out, nil
 }
 
-func (c *clientClient) QueryTrackedLogs(ctx context.Context, in *chain_service.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*chain_service.QueryTrackedLogsReply, error) {
+func (c *clientClient) QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(chain_service.QueryTrackedLogsReply)
+	out := new(evm.QueryTrackedLogsReply)
 	err := c.cc.Invoke(ctx, Client_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (c *clientClient) QueryTrackedLogs(ctx context.Context, in *chain_service.Q
 	return out, nil
 }
 
-func (c *clientClient) RegisterLogTracking(ctx context.Context, in *chain_service.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *clientClient) RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Client_RegisterLogTracking_FullMethodName, in, out, cOpts...)
@@ -147,7 +147,7 @@ func (c *clientClient) RegisterLogTracking(ctx context.Context, in *chain_servic
 	return out, nil
 }
 
-func (c *clientClient) UnregisterLogTracking(ctx context.Context, in *chain_service.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *clientClient) UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Client_UnregisterLogTracking_FullMethodName, in, out, cOpts...)
@@ -161,16 +161,16 @@ func (c *clientClient) UnregisterLogTracking(ctx context.Context, in *chain_serv
 // All implementations must embed UnimplementedClientServer
 // for forward compatibility.
 type ClientServer interface {
-	CallContract(context.Context, *chain_service.CallContractRequest) (*chain_service.CallContractReply, error)
-	FilterLogs(context.Context, *chain_service.FilterLogsRequest) (*chain_service.FilterLogsReply, error)
-	BalanceAt(context.Context, *chain_service.BalanceAtRequest) (*chain_service.BalanceAtReply, error)
-	EstimateGas(context.Context, *chain_service.EstimateGasRequest) (*chain_service.EstimateGasReply, error)
-	GetTransactionByHash(context.Context, *chain_service.GetTransactionByHashRequest) (*chain_service.GetTransactionByHashReply, error)
-	GetTransactionReceipt(context.Context, *chain_service.GetTransactionReceiptRequest) (*chain_service.GetTransactionReceiptReply, error)
-	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*chain_service.LatestAndFinalizedHeadReply, error)
-	QueryTrackedLogs(context.Context, *chain_service.QueryTrackedLogsRequest) (*chain_service.QueryTrackedLogsReply, error)
-	RegisterLogTracking(context.Context, *chain_service.RegisterLogTrackingRequest) (*emptypb.Empty, error)
-	UnregisterLogTracking(context.Context, *chain_service.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	CallContract(context.Context, *evm.CallContractRequest) (*evm.CallContractReply, error)
+	FilterLogs(context.Context, *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+	BalanceAt(context.Context, *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+	EstimateGas(context.Context, *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
+	GetTransactionByHash(context.Context, *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+	GetTransactionReceipt(context.Context, *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
+	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
+	QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
+	RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+	UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedClientServer()
 }
 
@@ -181,34 +181,34 @@ type ClientServer interface {
 // pointer dereference when methods are called.
 type UnimplementedClientServer struct{}
 
-func (UnimplementedClientServer) CallContract(context.Context, *chain_service.CallContractRequest) (*chain_service.CallContractReply, error) {
+func (UnimplementedClientServer) CallContract(context.Context, *evm.CallContractRequest) (*evm.CallContractReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallContract not implemented")
 }
-func (UnimplementedClientServer) FilterLogs(context.Context, *chain_service.FilterLogsRequest) (*chain_service.FilterLogsReply, error) {
+func (UnimplementedClientServer) FilterLogs(context.Context, *evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FilterLogs not implemented")
 }
-func (UnimplementedClientServer) BalanceAt(context.Context, *chain_service.BalanceAtRequest) (*chain_service.BalanceAtReply, error) {
+func (UnimplementedClientServer) BalanceAt(context.Context, *evm.BalanceAtRequest) (*evm.BalanceAtReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BalanceAt not implemented")
 }
-func (UnimplementedClientServer) EstimateGas(context.Context, *chain_service.EstimateGasRequest) (*chain_service.EstimateGasReply, error) {
+func (UnimplementedClientServer) EstimateGas(context.Context, *evm.EstimateGasRequest) (*evm.EstimateGasReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
 }
-func (UnimplementedClientServer) GetTransactionByHash(context.Context, *chain_service.GetTransactionByHashRequest) (*chain_service.GetTransactionByHashReply, error) {
+func (UnimplementedClientServer) GetTransactionByHash(context.Context, *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
 }
-func (UnimplementedClientServer) GetTransactionReceipt(context.Context, *chain_service.GetTransactionReceiptRequest) (*chain_service.GetTransactionReceiptReply, error) {
+func (UnimplementedClientServer) GetTransactionReceipt(context.Context, *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
-func (UnimplementedClientServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*chain_service.LatestAndFinalizedHeadReply, error) {
+func (UnimplementedClientServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LatestAndFinalizedHead not implemented")
 }
-func (UnimplementedClientServer) QueryTrackedLogs(context.Context, *chain_service.QueryTrackedLogsRequest) (*chain_service.QueryTrackedLogsReply, error) {
+func (UnimplementedClientServer) QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
 }
-func (UnimplementedClientServer) RegisterLogTracking(context.Context, *chain_service.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
+func (UnimplementedClientServer) RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
 }
-func (UnimplementedClientServer) UnregisterLogTracking(context.Context, *chain_service.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
+func (UnimplementedClientServer) UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
 func (UnimplementedClientServer) mustEmbedUnimplementedClientServer() {}
@@ -233,7 +233,7 @@ func RegisterClientServer(s grpc.ServiceRegistrar, srv ClientServer) {
 }
 
 func _Client_CallContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.CallContractRequest)
+	in := new(evm.CallContractRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -245,13 +245,13 @@ func _Client_CallContract_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: Client_CallContract_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).CallContract(ctx, req.(*chain_service.CallContractRequest))
+		return srv.(ClientServer).CallContract(ctx, req.(*evm.CallContractRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_FilterLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.FilterLogsRequest)
+	in := new(evm.FilterLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -263,13 +263,13 @@ func _Client_FilterLogs_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: Client_FilterLogs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).FilterLogs(ctx, req.(*chain_service.FilterLogsRequest))
+		return srv.(ClientServer).FilterLogs(ctx, req.(*evm.FilterLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_BalanceAt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.BalanceAtRequest)
+	in := new(evm.BalanceAtRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -281,13 +281,13 @@ func _Client_BalanceAt_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: Client_BalanceAt_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).BalanceAt(ctx, req.(*chain_service.BalanceAtRequest))
+		return srv.(ClientServer).BalanceAt(ctx, req.(*evm.BalanceAtRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_EstimateGas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.EstimateGasRequest)
+	in := new(evm.EstimateGasRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -299,13 +299,13 @@ func _Client_EstimateGas_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Client_EstimateGas_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).EstimateGas(ctx, req.(*chain_service.EstimateGasRequest))
+		return srv.(ClientServer).EstimateGas(ctx, req.(*evm.EstimateGasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_GetTransactionByHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.GetTransactionByHashRequest)
+	in := new(evm.GetTransactionByHashRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -317,13 +317,13 @@ func _Client_GetTransactionByHash_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: Client_GetTransactionByHash_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).GetTransactionByHash(ctx, req.(*chain_service.GetTransactionByHashRequest))
+		return srv.(ClientServer).GetTransactionByHash(ctx, req.(*evm.GetTransactionByHashRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.GetTransactionReceiptRequest)
+	in := new(evm.GetTransactionReceiptRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func _Client_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context,
 		FullMethod: Client_GetTransactionReceipt_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).GetTransactionReceipt(ctx, req.(*chain_service.GetTransactionReceiptRequest))
+		return srv.(ClientServer).GetTransactionReceipt(ctx, req.(*evm.GetTransactionReceiptRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -359,7 +359,7 @@ func _Client_LatestAndFinalizedHead_Handler(srv interface{}, ctx context.Context
 }
 
 func _Client_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.QueryTrackedLogsRequest)
+	in := new(evm.QueryTrackedLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -371,13 +371,13 @@ func _Client_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: Client_QueryTrackedLogs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).QueryTrackedLogs(ctx, req.(*chain_service.QueryTrackedLogsRequest))
+		return srv.(ClientServer).QueryTrackedLogs(ctx, req.(*evm.QueryTrackedLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_RegisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.RegisterLogTrackingRequest)
+	in := new(evm.RegisterLogTrackingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -389,13 +389,13 @@ func _Client_RegisterLogTracking_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: Client_RegisterLogTracking_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).RegisterLogTracking(ctx, req.(*chain_service.RegisterLogTrackingRequest))
+		return srv.(ClientServer).RegisterLogTracking(ctx, req.(*evm.RegisterLogTrackingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Client_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chain_service.UnregisterLogTrackingRequest)
+	in := new(evm.UnregisterLogTrackingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -407,7 +407,7 @@ func _Client_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context,
 		FullMethod: Client_UnregisterLogTracking_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).UnregisterLogTracking(ctx, req.(*chain_service.UnregisterLogTrackingRequest))
+		return srv.(ClientServer).UnregisterLogTracking(ctx, req.(*evm.UnregisterLogTrackingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -461,5 +461,5 @@ var Client_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "capabilities/v2/chain-capabilities/evm/capability/capability.proto",
+	Metadata: "capabilities/v2/chain-capabilities/evm/capability.proto",
 }

@@ -1,22 +1,17 @@
 package contractreader
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"iter"
 	"reflect"
 
-	"github.com/fxamacker/cbor/v2"
-	jsonv2 "github.com/go-json-experiment/json"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -24,26 +19,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 var _ types.ContractReader = (*Client)(nil)
-
-type EncodingVersion uint32
-
-func (v EncodingVersion) Uint32() uint32 {
-	return uint32(v)
-}
-
-// enum of all known encoding formats for versioned data.
-const (
-	JSONEncodingVersion1 EncodingVersion = iota
-	JSONEncodingVersion2
-	CBOREncodingVersion
-	ValuesEncodingVersion
-)
-
-const DefaultEncodingVersion = CBOREncodingVersion
 
 type serviceClient interface {
 	ClientConn() grpc.ClientConnInterface
@@ -60,14 +38,14 @@ type Client struct {
 	types.UnimplementedContractReader
 	serviceClient serviceClient
 	grpc          pb.ContractReaderClient
-	encodeWith    EncodingVersion
+	encodeWith    codecpb.EncodingVersion
 }
 
 func NewClient(serviceClient serviceClient, grpc pb.ContractReaderClient, opts ...ClientOpt) *Client {
 	client := &Client{
 		serviceClient: serviceClient,
 		grpc:          grpc,
-		encodeWith:    DefaultEncodingVersion,
+		encodeWith:    codecpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -77,119 +55,21 @@ func NewClient(serviceClient serviceClient, grpc pb.ContractReaderClient, opts .
 	return client
 }
 
-func WithClientEncoding(version EncodingVersion) ClientOpt {
+func WithClientEncoding(version codecpb.EncodingVersion) ClientOpt {
 	return func(client *Client) {
 		client.encodeWith = version
 	}
 }
 
-func EncodeVersionedBytes(data any, version EncodingVersion) (*pb.VersionedBytes, error) {
-	var bytes []byte
-	var err error
-
-	switch version {
-	case JSONEncodingVersion1:
-		bytes, err = json.Marshal(data)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-	case JSONEncodingVersion2:
-		bytes, err = jsonv2.Marshal(data, jsonv2.StringifyNumbers(true))
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-	case CBOREncodingVersion:
-		enco := cbor.CoreDetEncOptions()
-		enco.Time = cbor.TimeRFC3339Nano
-		var enc cbor.EncMode
-		enc, err = enco.EncMode()
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInternal, err)
-		}
-		bytes, err = enc.Marshal(data)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-	case ValuesEncodingVersion:
-		val, err := values.Wrap(data)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-		bytes, err = proto.Marshal(values.Proto(val))
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-	default:
-		return nil, fmt.Errorf("%w: unsupported encoding version %d for data %v", types.ErrInvalidEncoding, version, data)
-	}
-
-	return &pb.VersionedBytes{Version: version.Uint32(), Data: bytes}, nil
-}
-
-func DecodeVersionedBytes(res any, vData *pb.VersionedBytes) error {
-	if vData == nil {
-		return errors.New("cannot decode nil versioned bytes")
-	}
-
-	var err error
-	switch EncodingVersion(vData.Version) {
-	case JSONEncodingVersion1:
-		decoder := json.NewDecoder(bytes.NewBuffer(vData.Data))
-		decoder.UseNumber()
-
-		err = decoder.Decode(res)
-	case JSONEncodingVersion2:
-		err = jsonv2.Unmarshal(vData.Data, res, jsonv2.StringifyNumbers(true))
-	case CBOREncodingVersion:
-		decopt := cbor.DecOptions{UTF8: cbor.UTF8DecodeInvalid}
-		var dec cbor.DecMode
-		dec, err = decopt.DecMode()
-		if err != nil {
-			return fmt.Errorf("%w: %w", types.ErrInternal, err)
-		}
-		err = dec.Unmarshal(vData.Data, res)
-	case ValuesEncodingVersion:
-		protoValue := &valuespb.Value{}
-		err = proto.Unmarshal(vData.Data, protoValue)
-		if err != nil {
-			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-
-		var value values.Value
-		value, err = values.FromProto(protoValue)
-		if err != nil {
-			return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-		}
-
-		valuePtr, ok := res.(*values.Value)
-		if ok {
-			*valuePtr = value
-		} else {
-			err = value.UnwrapTo(res)
-			if err != nil {
-				return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-			}
-		}
-	default:
-		return fmt.Errorf("unsupported encoding version %d for versionedData %v", vData.Version, vData.Data)
-	}
-
-	if err != nil {
-		return fmt.Errorf("%w: %w", types.ErrInvalidType, err)
-	}
-
-	return nil
-}
-
 func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) error {
 	_, asValueType := retVal.(*values.Value)
 
-	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
+	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
 	}
 
-	pbConfidence, err := confidenceToProto(confidenceLevel)
+	pbConfidence, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return err
 	}
@@ -207,18 +87,18 @@ func (c *Client) GetLatestValue(ctx context.Context, readIdentifier string, conf
 		return net.WrapRPCErr(err)
 	}
 
-	return DecodeVersionedBytes(retVal, reply.RetVal)
+	return codecpb.DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
 func (c *Client) GetLatestValueWithHeadData(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) (*types.Head, error) {
 	_, asValueType := retVal.(*values.Value)
 
-	versionedParams, err := EncodeVersionedBytes(params, c.encodeWith)
+	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return nil, err
 	}
 
-	pbConfidence, err := confidenceToProto(confidenceLevel)
+	pbConfidence, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +125,7 @@ func (c *Client) GetLatestValueWithHeadData(ctx context.Context, readIdentifier 
 		}
 	}
 
-	return headData, DecodeVersionedBytes(retVal, reply.RetVal)
+	return headData, codecpb.DecodeVersionedBytes(retVal, reply.RetVal)
 }
 
 func (c *Client) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
@@ -270,7 +150,7 @@ func (c *Client) QueryKey(ctx context.Context, contract types.BoundContract, fil
 		return nil, err
 	}
 
-	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
+	pbLimitAndSort, err := chaincommonpb.ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +192,7 @@ func (c *Client) QueryKeys(ctx context.Context, keyQueries []types.ContractKeyFi
 		})
 	}
 
-	pbLimitAndSort, err := convertLimitAndSortToProto(limitAndSort)
+	pbLimitAndSort, err := chaincommonpb.ConvertLimitAndSortToProto(limitAndSort)
 	if err != nil {
 		return nil, err
 	}
@@ -389,13 +269,13 @@ type ServerOpt func(*Server)
 type Server struct {
 	pb.UnimplementedContractReaderServer
 	impl       types.ContractReader
-	encodeWith EncodingVersion
+	encodeWith codecpb.EncodingVersion
 }
 
 func NewServer(impl types.ContractReader, opts ...ServerOpt) pb.ContractReaderServer {
 	server := &Server{
 		impl:       impl,
-		encodeWith: DefaultEncodingVersion,
+		encodeWith: codecpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -405,7 +285,7 @@ func NewServer(impl types.ContractReader, opts ...ServerOpt) pb.ContractReaderSe
 	return server
 }
 
-func WithServerEncoding(version EncodingVersion) ServerOpt {
+func WithServerEncoding(version codecpb.EncodingVersion) ServerOpt {
 	return func(server *Server) {
 		server.encodeWith = version
 	}
@@ -417,7 +297,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	if err = DecodeVersionedBytes(params, request.Params); err != nil {
+	if err = codecpb.DecodeVersionedBytes(params, request.Params); err != nil {
 		return nil, err
 	}
 
@@ -426,7 +306,7 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	confidenceLevel, err := chaincommonpb.ConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -436,12 +316,12 @@ func (c *Server) GetLatestValue(ctx context.Context, request *pb.GetLatestValueR
 		return nil, err
 	}
 
-	encodeWith := EncodingVersion(request.Params.Version)
+	encodeWith := codecpb.EncodingVersion(request.Params.Version)
 	if request.AsValueType {
-		encodeWith = ValuesEncodingVersion
+		encodeWith = codecpb.ValuesEncodingVersion
 	}
 
-	versionedBytes, err := EncodeVersionedBytes(retVal, encodeWith)
+	versionedBytes, err := codecpb.EncodeVersionedBytes(retVal, encodeWith)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +335,7 @@ func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 
-	if err = DecodeVersionedBytes(params, request.Params); err != nil {
+	if err = codecpb.DecodeVersionedBytes(params, request.Params); err != nil {
 		return nil, err
 	}
 
@@ -464,7 +344,7 @@ func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 
-	confidenceLevel, err := confidenceFromProto(request.Confidence)
+	confidenceLevel, err := chaincommonpb.ConfidenceFromProto(request.Confidence)
 	if err != nil {
 		return nil, err
 	}
@@ -474,12 +354,12 @@ func (c *Server) GetLatestValueWithHeadData(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 
-	encodeWith := EncodingVersion(request.Params.Version)
+	encodeWith := codecpb.EncodingVersion(request.Params.Version)
 	if request.AsValueType {
-		encodeWith = ValuesEncodingVersion
+		encodeWith = codecpb.ValuesEncodingVersion
 	}
 
-	versionedBytes, err := EncodeVersionedBytes(retVal, encodeWith)
+	versionedBytes, err := codecpb.EncodeVersionedBytes(retVal, encodeWith)
 	if err != nil {
 		return nil, err
 	}
@@ -523,7 +403,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 		return nil, err
 	}
 
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := chaincommonpb.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +415,7 @@ func (c *Server) QueryKey(ctx context.Context, request *pb.QueryKeyRequest) (*pb
 
 	encodeWith := c.encodeWith
 	if request.AsValueType {
-		encodeWith = ValuesEncodingVersion
+		encodeWith = codecpb.ValuesEncodingVersion
 	}
 
 	pbSequences, err := convertSequencesToVersionedBytesProto(sequences, encodeWith)
@@ -568,7 +448,7 @@ func (c *Server) QueryKeys(ctx context.Context, request *pb.QueryKeysRequest) (*
 		})
 	}
 
-	limitAndSort, err := convertLimitAndSortFromProto(request.GetLimitAndSort())
+	limitAndSort, err := chaincommonpb.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
 	if err != nil {
 		return nil, err
 	}
@@ -618,7 +498,7 @@ func getContractEncodedType(readIdentifier string, possibleTypeProvider any, for
 	return &map[string]any{}, nil
 }
 
-func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, encodeWith EncodingVersion) (*pb.BatchGetLatestValuesReply, error) {
+func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, encodeWith codecpb.EncodingVersion) (*pb.BatchGetLatestValuesReply, error) {
 	resultLookup := make(map[types.BoundContract]*pb.ContractBatchResult)
 	results := make([]*pb.ContractBatchResult, 0)
 
@@ -641,7 +521,7 @@ func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, enc
 				replyErr = err.Error()
 			}
 
-			encodedRetVal, err := EncodeVersionedBytes(returnVal, encodeWith)
+			encodedRetVal, err := codecpb.EncodeVersionedBytes(returnVal, encodeWith)
 			if err != nil {
 				return nil, err
 			}
@@ -657,7 +537,7 @@ func newPbBatchGetLatestValuesReply(result types.BatchGetLatestValuesResult, enc
 	return &pb.BatchGetLatestValuesReply{Results: results}, nil
 }
 
-func convertBatchGetLatestValuesRequestToProto(request types.BatchGetLatestValuesRequest, encodeWith EncodingVersion) (*pb.BatchGetLatestValuesRequest, error) {
+func convertBatchGetLatestValuesRequestToProto(request types.BatchGetLatestValuesRequest, encodeWith codecpb.EncodingVersion) (*pb.BatchGetLatestValuesRequest, error) {
 	requests := make([]*pb.ContractBatch, len(request))
 
 	var requestIdx int
@@ -669,7 +549,7 @@ func convertBatchGetLatestValuesRequestToProto(request types.BatchGetLatestValue
 		}
 
 		for readIdx, batchCall := range nextBatch {
-			versionedParams, err := EncodeVersionedBytes(batchCall.Params, encodeWith)
+			versionedParams, err := codecpb.EncodeVersionedBytes(batchCall.Params, encodeWith)
 			if err != nil {
 				return nil, err
 			}
@@ -693,145 +573,26 @@ func convertBoundContractToProto(contract types.BoundContract) *pb.BoundContract
 	}
 }
 
-func convertQueryFilterToProto(filter query.KeyFilter, encodeWith EncodingVersion) (*pb.QueryKeyFilter, error) {
+func convertQueryFilterToProto(filter query.KeyFilter, encodeWith codecpb.EncodingVersion) (*pb.QueryKeyFilter, error) {
 	pbQueryFilter := &pb.QueryKeyFilter{Key: filter.Key}
 	for _, expression := range filter.Expressions {
-		pbExpression, err := convertExpressionToProto(expression, encodeWith)
+		pbExpression, err := chaincommonpb.ConvertExpressionToProto(expression, func(value any) (*codecpb.VersionedBytes, error) {
+			return codecpb.EncodeVersionedBytes(value, encodeWith)
+		})
 		if err != nil {
 			return nil, err
 		}
+
 		pbQueryFilter.Expression = append(pbQueryFilter.Expression, pbExpression)
 	}
 
 	return pbQueryFilter, nil
 }
 
-func convertExpressionToProto(expression query.Expression, encodeWith EncodingVersion) (*pb.Expression, error) {
-	pbExpression := &pb.Expression{}
-	if expression.IsPrimitive() {
-		pbExpression.Evaluator = &pb.Expression_Primitive{Primitive: &pb.Primitive{}}
-		switch primitive := expression.Primitive.(type) {
-		case *primitives.Comparator:
-			var pbValueComparators []*pb.ValueComparator
-			for _, valueComparator := range primitive.ValueComparators {
-				versionedValue, err := EncodeVersionedBytes(valueComparator.Value, encodeWith)
-				if err != nil {
-					return nil, err
-				}
-
-				pbValueComparators = append(pbValueComparators, &pb.ValueComparator{Value: versionedValue, Operator: pb.ComparisonOperator(valueComparator.Operator)})
-			}
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Comparator{
-				Comparator: &pb.Comparator{
-					Name:             primitive.Name,
-					ValueComparators: pbValueComparators,
-				}}
-
-		case *primitives.Block:
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Block{
-				Block: &pb.Block{
-					BlockNumber: primitive.Block,
-					Operator:    pb.ComparisonOperator(primitive.Operator),
-				}}
-		case *primitives.Confidence:
-			pbConfidence, err := confidenceToProto(primitive.ConfidenceLevel)
-			if err != nil {
-				return nil, err
-			}
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Confidence{
-				Confidence: pbConfidence,
-			}
-		case *primitives.Timestamp:
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_Timestamp{
-				Timestamp: &pb.Timestamp{
-					Timestamp: primitive.Timestamp,
-					Operator:  pb.ComparisonOperator(primitive.Operator),
-				}}
-		case *primitives.TxHash:
-			pbExpression.GetPrimitive().Primitive = &pb.Primitive_TxHash{
-				TxHash: &pb.TxHash{
-					TxHash: primitive.TxHash,
-				}}
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
-		}
-		return pbExpression, nil
-	}
-
-	pbExpression.Evaluator = &pb.Expression_BooleanExpression{BooleanExpression: &pb.BooleanExpression{}}
-	var expressions []*pb.Expression
-	for _, expr := range expression.BoolExpression.Expressions {
-		pbExpr, err := convertExpressionToProto(expr, encodeWith)
-		if err != nil {
-			return nil, err
-		}
-		expressions = append(expressions, pbExpr)
-	}
-	pbExpression.Evaluator = &pb.Expression_BooleanExpression{
-		BooleanExpression: &pb.BooleanExpression{
-			BooleanOperator: pb.BooleanOperator(expression.BoolExpression.BoolOperator),
-			Expression:      expressions,
-		}}
-
-	return pbExpression, nil
-}
-
-func confidenceToProto(confidenceLevel primitives.ConfidenceLevel) (pb.Confidence, error) {
-	switch confidenceLevel {
-	case primitives.Finalized:
-		return pb.Confidence_Finalized, nil
-	case primitives.Unconfirmed:
-		return pb.Confidence_Unconfirmed, nil
-	default:
-		return -1, fmt.Errorf("invalid confidence level %s", confidenceLevel)
-	}
-}
-
-func convertLimitAndSortToProto(limitAndSort query.LimitAndSort) (*pb.LimitAndSort, error) {
-	sortByArr := make([]*pb.SortBy, len(limitAndSort.SortBy))
-
-	for idx, sortBy := range limitAndSort.SortBy {
-		var tp pb.SortType
-
-		switch sort := sortBy.(type) {
-		case query.SortByBlock, *query.SortByBlock:
-			tp = pb.SortType_SortBlock
-		case query.SortByTimestamp, *query.SortByTimestamp:
-			tp = pb.SortType_SortTimestamp
-		case query.SortBySequence, *query.SortBySequence:
-			tp = pb.SortType_SortSequence
-		default:
-			return &pb.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sort)
-		}
-
-		sortByArr[idx] = &pb.SortBy{
-			SortType:  tp,
-			Direction: pb.SortDirection(sortBy.GetDirection()),
-		}
-	}
-
-	pbLimitAndSort := &pb.LimitAndSort{
-		SortBy: sortByArr,
-		Limit:  &pb.Limit{Count: limitAndSort.Limit.Count},
-	}
-
-	cursorDefined := limitAndSort.Limit.Cursor != ""
-	cursorDirectionDefined := limitAndSort.Limit.CursorDirection != 0
-
-	if limitAndSort.HasCursorLimit() {
-		pbLimitAndSort.Limit.Cursor = &limitAndSort.Limit.Cursor
-		pbLimitAndSort.Limit.Direction = (*pb.CursorDirection)(&limitAndSort.Limit.CursorDirection)
-	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
-		return nil, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
-	}
-
-	return pbLimitAndSort, nil
-}
-
-func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version EncodingVersion) ([]*pb.Sequence, error) {
+func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version codecpb.EncodingVersion) ([]*pb.Sequence, error) {
 	var pbSequences []*pb.Sequence
 	for _, sequence := range sequences {
-		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, version)
+		versionedSequenceDataType, err := codecpb.EncodeVersionedBytes(sequence.Data, version)
 		if err != nil {
 			return nil, err
 		}
@@ -849,11 +610,11 @@ func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version E
 	return pbSequences, nil
 }
 
-func convertSequencesWithKeyToVersionedBytesProto(sequences iter.Seq2[string, types.Sequence], filters []*pb.ContractKeyFilter, encodeWith EncodingVersion) ([]*pb.SequenceWithKey, error) {
-	keyToEncodingVersion := make(map[string]EncodingVersion)
+func convertSequencesWithKeyToVersionedBytesProto(sequences iter.Seq2[string, types.Sequence], filters []*pb.ContractKeyFilter, encodeWith codecpb.EncodingVersion) ([]*pb.SequenceWithKey, error) {
+	keyToEncodingVersion := make(map[string]codecpb.EncodingVersion)
 	for _, filter := range filters {
 		if filter.AsValueType {
-			keyToEncodingVersion[filter.Filter.Key] = ValuesEncodingVersion
+			keyToEncodingVersion[filter.Filter.Key] = codecpb.ValuesEncodingVersion
 		} else {
 			keyToEncodingVersion[filter.Filter.Key] = encodeWith
 		}
@@ -866,7 +627,7 @@ func convertSequencesWithKeyToVersionedBytesProto(sequences iter.Seq2[string, ty
 			return nil, fmt.Errorf("missing encoding version for key %s", key)
 		}
 
-		versionedSequenceDataType, err := EncodeVersionedBytes(sequence.Data, version)
+		versionedSequenceDataType, err := codecpb.EncodeVersionedBytes(sequence.Data, version)
 		if err != nil {
 			return nil, err
 		}
@@ -908,7 +669,7 @@ func parseBatchGetLatestValuesReply(request types.BatchGetLatestValuesRequest, r
 		for i := 0; i < len(resultsContractBatch); i++ {
 			// type lives in the request, so we can use it for result
 			res, req := resultsContractBatch[i], requestContractBatch[i]
-			if err := DecodeVersionedBytes(req.ReturnVal, res.ReturnVal); err != nil {
+			if err := codecpb.DecodeVersionedBytes(req.ReturnVal, res.ReturnVal); err != nil {
 				return nil, err
 			}
 
@@ -946,7 +707,7 @@ func convertBatchGetLatestValuesRequestFromProto(pbRequest *pb.BatchGetLatestVal
 				return nil, err
 			}
 
-			if err = DecodeVersionedBytes(params, pbReadCall.Params); err != nil {
+			if err = codecpb.DecodeVersionedBytes(params, pbReadCall.Params); err != nil {
 				return nil, err
 			}
 
@@ -973,103 +734,19 @@ func convertBoundContractFromProto(contract *pb.BoundContract) types.BoundContra
 
 func convertQueryFiltersFromProto(pbQueryFilters *pb.QueryKeyFilter, contract types.BoundContract, impl types.ContractReader) (query.KeyFilter, error) {
 	queryFilter := query.KeyFilter{Key: pbQueryFilters.Key}
-	for _, pbQueryFilter := range pbQueryFilters.Expression {
-		expression, err := convertExpressionFromProto(pbQueryFilter, contract, queryFilter.Key, impl)
+	for _, pbExpr := range pbQueryFilters.Expression {
+		expression, err := chaincommonpb.ConvertExpressionFromProto(pbExpr, func(comparatorName string, forEncoding bool) (any, error) {
+			if ctp, ok := impl.(types.ContractTypeProvider); ok {
+				return ctp.CreateContractType(contract.ReadIdentifier(pbQueryFilters.Key+"."+comparatorName), forEncoding)
+			}
+			return &map[string]any{}, nil
+		})
 		if err != nil {
 			return query.KeyFilter{}, err
 		}
 		queryFilter.Expressions = append(queryFilter.Expressions, expression)
 	}
 	return queryFilter, nil
-}
-
-func convertExpressionFromProto(pbExpression *pb.Expression, contract types.BoundContract, key string, impl types.ContractReader) (query.Expression, error) {
-	switch pbEvaluatedExpr := pbExpression.Evaluator.(type) {
-	case *pb.Expression_BooleanExpression:
-		var expressions []query.Expression
-		for _, expression := range pbEvaluatedExpr.BooleanExpression.Expression {
-			convertedExpression, err := convertExpressionFromProto(expression, contract, key, impl)
-			if err != nil {
-				return query.Expression{}, err
-			}
-			expressions = append(expressions, convertedExpression)
-		}
-		if pbEvaluatedExpr.BooleanExpression.BooleanOperator == pb.BooleanOperator_AND {
-			return query.And(expressions...), nil
-		}
-		return query.Or(expressions...), nil
-	case *pb.Expression_Primitive:
-		switch primitive := pbEvaluatedExpr.Primitive.GetPrimitive().(type) {
-		case *pb.Primitive_Comparator:
-			var valueComparators []primitives.ValueComparator
-			for _, pbValueComparator := range primitive.Comparator.ValueComparators {
-				val, err := getContractEncodedType(contract.ReadIdentifier(key+"."+primitive.Comparator.Name), impl, true)
-				if err != nil {
-					return query.Expression{}, err
-				}
-
-				if err = DecodeVersionedBytes(val, pbValueComparator.Value); err != nil {
-					return query.Expression{}, err
-				}
-
-				valueComparators = append(valueComparators, primitives.ValueComparator{Value: val, Operator: primitives.ComparisonOperator(pbValueComparator.Operator)})
-			}
-			return query.Comparator(primitive.Comparator.Name, valueComparators...), nil
-		case *pb.Primitive_Confidence:
-			confidence, err := confidenceFromProto(primitive.Confidence)
-			return query.Confidence(confidence), err
-		case *pb.Primitive_Block:
-			return query.Block(primitive.Block.BlockNumber, primitives.ComparisonOperator(primitive.Block.Operator)), nil
-		case *pb.Primitive_TxHash:
-			return query.TxHash(primitive.TxHash.TxHash), nil
-		case *pb.Primitive_Timestamp:
-			return query.Timestamp(primitive.Timestamp.Timestamp, primitives.ComparisonOperator(primitive.Timestamp.Operator)), nil
-		default:
-			return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
-		}
-	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", pbEvaluatedExpr)
-	}
-}
-
-func confidenceFromProto(pbConfidence pb.Confidence) (primitives.ConfidenceLevel, error) {
-	switch pbConfidence {
-	case pb.Confidence_Finalized:
-		return primitives.Finalized, nil
-	case pb.Confidence_Unconfirmed:
-		return primitives.Unconfirmed, nil
-	default:
-		return "", fmt.Errorf("invalid pb confidence level: %d", pbConfidence)
-	}
-}
-
-func convertLimitAndSortFromProto(limitAndSort *pb.LimitAndSort) (query.LimitAndSort, error) {
-	sortByArr := make([]query.SortBy, len(limitAndSort.SortBy))
-
-	for idx, sortBy := range limitAndSort.SortBy {
-		switch sortBy.SortType {
-		case pb.SortType_SortTimestamp:
-			sortByArr[idx] = query.NewSortByTimestamp(query.SortDirection(sortBy.GetDirection()))
-		case pb.SortType_SortBlock:
-			sortByArr[idx] = query.NewSortByBlock(query.SortDirection(sortBy.GetDirection()))
-		case pb.SortType_SortSequence:
-			sortByArr[idx] = query.NewSortBySequence(query.SortDirection(sortBy.GetDirection()))
-		default:
-			return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Unknown sort by type: %T", sortBy)
-		}
-	}
-
-	limit := limitAndSort.Limit
-	cursorDefined := limit.Cursor != nil
-	cursorDirectionDefined := limit.Direction != nil
-
-	if cursorDefined && cursorDirectionDefined {
-		return query.NewLimitAndSort(query.CursorLimit(*limit.Cursor, (query.CursorDirection)(*limit.Direction), limit.Count)), nil
-	} else if (!cursorDefined && cursorDirectionDefined) || (cursorDefined && !cursorDirectionDefined) {
-		return query.LimitAndSort{}, status.Errorf(codes.InvalidArgument, "Limit cursor and cursor direction must both be defined or undefined")
-	}
-
-	return query.NewLimitAndSort(query.CountLimit(limit.Count), sortByArr...), nil
 }
 
 func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any) ([]types.Sequence, error) {
@@ -1082,7 +759,7 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 
 	for idx, pbSequence := range pbSequences {
 		cpy := reflect.New(nonPointerType).Interface()
-		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
+		if err = codecpb.DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
 			return nil, err
 		}
 
@@ -1145,7 +822,7 @@ func convertSequencesWithKeyFromProto(pbSequences []*pb.SequenceWithKey, keyQuer
 		seqTypeOf, nonPointerType := keyToSeqTypeOf[pbSequence.Key], keyToNonPointerType[pbSequence.Key]
 
 		cpy := reflect.New(nonPointerType).Interface()
-		if err := DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
+		if err := codecpb.DecodeVersionedBytes(cpy, pbSequence.Data); err != nil {
 			return nil, err
 		}
 

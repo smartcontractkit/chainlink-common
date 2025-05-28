@@ -16,7 +16,7 @@ func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) NewT() *{{name .Outpu
     return &{{name .OutputType .GoPackageName}}{}
 }
 
-func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) Id() string {
+func (*{{.Service.GoName | LowerFirst}}{{.Method.GoName}}) CapabilityID() string {
     return "{{.CapabilityId}}"
 }
 

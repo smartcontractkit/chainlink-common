@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -20,8 +19,9 @@ import (
 var _ = emptypb.Empty{}
 
 type BasicCapability interface {
-	RegisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
-	UnregisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -31,18 +31,21 @@ type BasicCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewBasicServer(capability BasicCapability) loop.StandardCapabilities {
-	return &basicServer{
-		basicCapability: basicCapability{BasicCapability: capability},
+func NewBasicServer(capability BasicCapability) *BasicServer {
+	stopCh := make(chan struct{})
+	return &BasicServer{
+		basicCapability: basicCapability{BasicCapability: capability, stopCh: stopCh},
+		stopCh:          stopCh,
 	}
 }
 
-type basicServer struct {
+type BasicServer struct {
 	basicCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
-func (cs *basicServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *BasicServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.BasicCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -58,17 +61,24 @@ func (cs *basicServer) Initialise(ctx context.Context, config string, telemetryS
 	return nil
 }
 
-func (cs *basicServer) Close() error {
+func (cs *BasicServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-trigger@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-trigger@1.0.0"); err != nil {
+			return err
+		}
+	}
+
+	if cs.stopCh != nil {
+		close(cs.stopCh)
 	}
 
 	return cs.basicCapability.Close()
 }
 
-func (cs *basicServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *BasicServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.basicCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -78,6 +88,7 @@ func (cs *basicServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo
 
 type basicCapability struct {
 	BasicCapability
+	stopCh chan struct{}
 }
 
 func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -91,7 +102,7 @@ func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilit
 	switch request.Method {
 	case "Trigger":
 		input := &basictrigger.Config{}
-		return capabilities.RegisterTrigger(ctx, "basic-test-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-trigger@1.0.0", request, input, c.BasicCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}
@@ -105,7 +116,7 @@ func (c *basicCapability) UnregisterTrigger(ctx context.Context, request capabil
 		if err != nil {
 			return err
 		}
-		return c.BasicCapability.UnregisterTrigger(ctx, request.Metadata, input)
+		return c.BasicCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

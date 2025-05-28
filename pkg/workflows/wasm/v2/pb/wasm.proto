@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "values/pb/values.proto";
+import "workflows/sdk/v2/pb/sdk.proto";
+
+message ExecuteRequest {
+  bytes config = 1;
+  oneof request {
+    google.protobuf.Empty subscribe = 2;
+    cre.sdk.v2.Trigger trigger = 3;
+  }
+  uint64 max_response_size = 4;
+}
+
+message ExecutionResult {
+  oneof result {
+    values.Value value = 1;
+    string error = 2;
+    cre.sdk.v2.TriggerSubscriptionRequest triggerSubscriptions = 3;
+  }
+}

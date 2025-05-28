@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodetrigger"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -20,8 +19,9 @@ import (
 var _ = emptypb.Empty{}
 
 type NodeEventCapability interface {
-	RegisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *nodetrigger.Config) (<-chan capabilities.TriggerAndId[*nodetrigger.Outputs], error)
-	UnregisterTrigger(ctx context.Context, metadata capabilities.RequestMetadata, input *nodetrigger.Config) error
+	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *nodetrigger.Config) (<-chan capabilities.TriggerAndId[*nodetrigger.Outputs], error)
+	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *nodetrigger.Config) error
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -31,18 +31,21 @@ type NodeEventCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
-func NewNodeEventServer(capability NodeEventCapability) loop.StandardCapabilities {
-	return &nodeEventServer{
-		nodeEventCapability: nodeEventCapability{NodeEventCapability: capability},
+func NewNodeEventServer(capability NodeEventCapability) *NodeEventServer {
+	stopCh := make(chan struct{})
+	return &NodeEventServer{
+		nodeEventCapability: nodeEventCapability{NodeEventCapability: capability, stopCh: stopCh},
+		stopCh:              stopCh,
 	}
 }
 
-type nodeEventServer struct {
+type NodeEventServer struct {
 	nodeEventCapability
 	capabilityRegistry core.CapabilitiesRegistry
+	stopCh             chan struct{}
 }
 
-func (cs *nodeEventServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+func (cs *NodeEventServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	if err := cs.NodeEventCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
@@ -58,17 +61,24 @@ func (cs *nodeEventServer) Initialise(ctx context.Context, config string, teleme
 	return nil
 }
 
-func (cs *nodeEventServer) Close() error {
+func (cs *NodeEventServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := cs.capabilityRegistry.Remove(ctx, "basic-test-node-trigger@1.0.0"); err != nil {
-		return err
+
+	if cs.capabilityRegistry != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-node-trigger@1.0.0"); err != nil {
+			return err
+		}
+	}
+
+	if cs.stopCh != nil {
+		close(cs.stopCh)
 	}
 
 	return cs.nodeEventCapability.Close()
 }
 
-func (cs *nodeEventServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+func (cs *NodeEventServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
 	info, err := cs.nodeEventCapability.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -78,6 +88,7 @@ func (cs *nodeEventServer) Infos(ctx context.Context) ([]capabilities.Capability
 
 type nodeEventCapability struct {
 	NodeEventCapability
+	stopCh chan struct{}
 }
 
 func (c *nodeEventCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -91,7 +102,7 @@ func (c *nodeEventCapability) RegisterTrigger(ctx context.Context, request capab
 	switch request.Method {
 	case "Trigger":
 		input := &nodetrigger.Config{}
-		return capabilities.RegisterTrigger(ctx, "basic-test-node-trigger@1.0.0", request, input, c.NodeEventCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "basic-test-node-trigger@1.0.0", request, input, c.NodeEventCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}
@@ -105,7 +116,7 @@ func (c *nodeEventCapability) UnregisterTrigger(ctx context.Context, request cap
 		if err != nil {
 			return err
 		}
-		return c.NodeEventCapability.UnregisterTrigger(ctx, request.Metadata, input)
+		return c.NodeEventCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

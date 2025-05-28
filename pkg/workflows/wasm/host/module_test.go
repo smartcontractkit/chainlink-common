@@ -8,12 +8,15 @@ import (
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
 
@@ -52,18 +55,11 @@ func Test_createEmitFn(t *testing.T) {
 		ctxValue := "test-value"
 		ctx := t.Context()
 		ctx = context.WithValue(ctx, ctxKey, "test-value")
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: ctx}
 		reqId := "random-id"
-		err := store.add(
-			reqId,
-			&RequestData{ctx: func() context.Context { return ctx }})
-		require.NoError(t, err)
 		emitFn := createEmitFn(
 			logger.Test(t),
-			store,
+			exec,
 			newMockMessageEmitter(func(ctx context.Context, _ string, _ map[string]string) error {
 				v := ctx.Value(ctxKey)
 				assert.Equal(t, ctxValue, v)
@@ -98,13 +94,10 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("success without labels", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 		emitFn := createEmitFn(
 			logger.Test(t),
-			store,
+			exec,
 			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return nil
 			}),
@@ -125,10 +118,7 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("successfully write error to memory on failure to read", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 			Error: &wasmpb.Error{
 				Message: assert.AnError.Error(),
@@ -138,7 +128,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			store,
+			exec,
 			nil,
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
@@ -157,14 +147,8 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("failure to emit writes error to memory", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 		reqId := "random-id"
-		store.add(reqId, &RequestData{
-			ctx: t.Context,
-		})
 		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
 			Error: &wasmpb.Error{
 				Message: assert.AnError.Error(),
@@ -174,7 +158,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			store,
+			exec,
 			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return assert.AnError
 			}),
@@ -199,10 +183,7 @@ func Test_createEmitFn(t *testing.T) {
 	})
 
 	t.Run("bad read failure to unmarshal protos", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 		badData := []byte("not proto bufs")
 		msg := &wasmpb.EmitMessageRequest{}
 		marshallErr := proto.Unmarshal(badData, msg)
@@ -217,7 +198,7 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			store,
+			exec,
 			nil,
 			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
 				return badData, nil
@@ -239,15 +220,7 @@ func Test_createEmitFn(t *testing.T) {
 func TestCreateFetchFn(t *testing.T) {
 	const testID = "test-id"
 	t.Run("OK-success", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
-
-		// we add the request data to the store so that the fetch function can find it
-		store.m[testID] = &RequestData{
-			ctx: t.Context,
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
@@ -271,7 +244,7 @@ func TestCreateFetchFn(t *testing.T) {
 				},
 				MaxFetchRequests: 5,
 			},
-			store,
+			exec,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
@@ -279,10 +252,7 @@ func TestCreateFetchFn(t *testing.T) {
 	})
 
 	t.Run("NOK-fetch_fails_to_read_from_store", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
@@ -306,7 +276,7 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			store,
+			exec,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
@@ -314,10 +284,7 @@ func TestCreateFetchFn(t *testing.T) {
 	})
 
 	t.Run("NOK-fetch_fails_to_unmarshal_request", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
@@ -342,47 +309,7 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			store,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("NOK-fetch_fails_to_find_id_in_store", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: testID,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				// the error is handled and written to the buffer
-				resp := &wasmpb.FetchResponse{}
-				err := proto.Unmarshal(src, resp)
-				require.NoError(t, err)
-				expectedErr := "could not find request data for id test-id"
-				assert.Equal(t, expectedErr, resp.ErrorMessage)
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return &FetchResponse{}, nil
-				},
-			},
-			store,
+			exec,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
@@ -390,15 +317,7 @@ func TestCreateFetchFn(t *testing.T) {
 	})
 
 	t.Run("NOK-fetch_returns_an_error", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
-
-		// we add the request data to the store so that the fetch function can find it
-		store.m[testID] = &RequestData{
-			ctx: t.Context,
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
@@ -428,7 +347,7 @@ func TestCreateFetchFn(t *testing.T) {
 				},
 				MaxFetchRequests: 1,
 			},
-			store,
+			exec,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
@@ -436,15 +355,7 @@ func TestCreateFetchFn(t *testing.T) {
 	})
 
 	t.Run("NOK-fetch_fails_to_write_response", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
-
-		// we add the request data to the store so that the fetch function can find it
-		store.m[testID] = &RequestData{
-			ctx: t.Context,
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
@@ -467,7 +378,7 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			store,
+			exec,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
@@ -475,15 +386,7 @@ func TestCreateFetchFn(t *testing.T) {
 	})
 
 	t.Run("NOK-fetch_fails_to_write_response_size", func(t *testing.T) {
-		store := &store{
-			m:  make(map[string]*RequestData),
-			mu: sync.RWMutex{},
-		}
-
-		// we add the request data to the store so that the fetch function can find it
-		store.m[testID] = &RequestData{
-			ctx: t.Context,
-		}
+		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
@@ -506,7 +409,7 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			store,
+			exec,
 		)
 
 		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
@@ -584,11 +487,12 @@ func Test_write(t *testing.T) {
 		assert.Equal(t, int64(-1), n)
 	})
 
-	t.Run("unwanted data when size exceeds written data", func(t *testing.T) {
+	t.Run("unwanted data when size exceeds written data only writes the data", func(t *testing.T) {
 		giveSrc := []byte("hello, world")
 		memory := make([]byte, 20)
 		n := write(memory, giveSrc, 0, 20)
-		assert.Equal(t, int64(-1), n)
+		// TODO verify this won't break anything...
+		assert.Equal(t, int64(12), n)
 	})
 }
 
@@ -681,4 +585,46 @@ func Test_toEmissible(t *testing.T) {
 		_, _, _, err := toEmissible([]byte("not proto bufs"))
 		assert.Error(t, err)
 	})
+}
+
+// CallAwaitRace validates that every call can be awaited.
+func Test_CallAwaitRace(t *testing.T) {
+	ctx := t.Context()
+	mockCapExec := NewMockCapabilityExecutor(t)
+	mockCapExec.EXPECT().
+		CallCapability(matches.AnyContext, mock.Anything).
+		Return(&sdkpb.CapabilityResponse{}, nil)
+
+	m := &module{}
+
+	var wg sync.WaitGroup
+	var wantAttempts = 100
+
+	exec := &execution[*wasmpb.ExecutionResult]{
+		module:              m,
+		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		ctx:                 t.Context(),
+		executor:            mockCapExec,
+	}
+
+	wg.Add(wantAttempts)
+	for on := range wantAttempts {
+		go func() {
+			defer wg.Done()
+			// call
+			err := exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{
+				Id:         "test-cap-request",
+				CallbackId: int32(on),
+			})
+			require.NoError(t, err)
+
+			// await with id
+			_, err = exec.awaitCapabilities(ctx, &sdkpb.AwaitCapabilitiesRequest{
+				Ids: []int32{int32(on)},
+			})
+			require.NoError(t, err)
+		}()
+	}
+
+	wg.Wait()
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippb";
 package loop.internal.pb.ccip;
-import "models.proto";
+import "loop/internal/pb/ccip/models.proto";
 import "google/protobuf/empty.proto";
 
 // TokenPoolBatcherReader is a gRPC service adapter for the interface

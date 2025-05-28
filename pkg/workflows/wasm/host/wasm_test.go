@@ -22,7 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )
@@ -60,9 +59,9 @@ const (
 	buildErrorBinaryCmd        = "test/builderr/cmd"
 )
 
-func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) []byte {
+func createTestBinary(outputPath, path string, uncompressed bool, t testing.TB) []byte {
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
-	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
+	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
@@ -474,7 +473,7 @@ func Test_Compute_Fetch(t *testing.T) {
 
 	t.Run("OK: custom runtime cfg", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),

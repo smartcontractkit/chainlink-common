@@ -90,6 +90,7 @@ type CapabilityInfoReply struct {
 	Description    string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Version        string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
 	IsLocal        bool                   `protobuf:"varint,5,opt,name=isLocal,proto3" json:"isLocal,omitempty"`
+	Resources      []string               `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -157,6 +158,13 @@ func (x *CapabilityInfoReply) GetIsLocal() bool {
 		return x.IsLocal
 	}
 	return false
+}
+
+func (x *CapabilityInfoReply) GetResources() []string {
+	if x != nil {
+		return x.Resources
+	}
+	return nil
 }
 
 type ResourceLimit struct {
@@ -1134,13 +1142,14 @@ var File_capabilities_pb_capabilities_proto protoreflect.FileDescriptor
 
 const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\n" +
-	"\"capabilities/pb/capabilities.proto\x12\fcapabilities\x1a\x16values/pb/values.proto\x1a metering/pb/meteringdetail.proto\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc2\x01\n" +
+	"\"capabilities/pb/capabilities.proto\x12\fcapabilities\x1a\x16values/pb/values.proto\x1a metering/pb/meteringdetail.proto\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe0\x01\n" +
 	"\x13CapabilityInfoReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12E\n" +
 	"\x0fcapability_type\x18\x02 \x01(\x0e2\x1c.capabilities.CapabilityTypeR\x0ecapabilityType\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x18\n" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x12\x18\n" +
-	"\aisLocal\x18\x05 \x01(\bR\aisLocal\"U\n" +
+	"\aisLocal\x18\x05 \x01(\bR\aisLocal\x12\x1c\n" +
+	"\tresources\x18\x06 \x03(\tR\tresources\"U\n" +
 	"\rResourceLimit\x12#\n" +
 	"\rresource_type\x18\x01 \x01(\tR\fresourceType\x12\x1f\n" +
 	"\vlimit_value\x18\x02 \x01(\tR\n" +

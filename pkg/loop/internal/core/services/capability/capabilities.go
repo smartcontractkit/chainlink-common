@@ -126,6 +126,7 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		CapabilityType: ct,
 		Description:    info.Description,
 		IsLocal:        info.IsLocal,
+		Resources:      info.Resources,
 	}
 }
 
@@ -171,6 +172,7 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		CapabilityType: ct,
 		Description:    resp.Description,
 		IsLocal:        resp.IsLocal,
+		Resources:      resp.Resources,
 	}, nil
 }
 

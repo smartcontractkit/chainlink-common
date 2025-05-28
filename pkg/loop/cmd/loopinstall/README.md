@@ -44,10 +44,12 @@ plugins:
     - name: "default"
       moduleURI: "github.com/smartcontractkit/chainlink-cosmos"
       gitRef: "f740e9ae54e79762991bdaf8ad6b50363261c056"
-      installPath: "github.com/smartcontractkit/chainlink-cosmos/pkg/cosmos/cmd/chainlink-cosmos"
+      installPath: "./pkg/cosmos/cmd/chainlink-cosmos"
       libs:
         - "/go/pkg/mod/github.com/!cosm!wasm/wasmvm@v*/internal/api/libwasmvm.*.so"
 ```
+
+The `installPath` is relative to the root of the downloaded module but it can also be an absolute path like: `github.com/smartcontractkit/chainlink-cosmos/pkg/cosmos/cmd/chainlink-cosmos`. The absolute path will be stripped to the relative path (it is supported for backwards compatibility).
 
 The `libs` field is an array of strings representing directory paths, which can include glob patterns for library files that need to be included with the plugin. Docker build will use these paths to copy the libraries into the final container image.
 

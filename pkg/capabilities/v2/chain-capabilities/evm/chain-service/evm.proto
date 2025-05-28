@@ -181,6 +181,12 @@ message LatestAndFinalizedHeadReply {
   Head finalized = 2;
 }
 
+// CallContractRequest has arguments for reading a contract as specified in the call message at a block height defined by blockNumber where:
+// blockNumber :
+//	nil (default) or (-2) → use the latest mined block (“latest”)
+//	FinalizedBlockNumber(-3) → last finalized block (“finalized”)
+//
+// Any positive value is treated as an explicit block height.
 message CallContractRequest {
   CallMsg call = 1;
   values.BigInt block_number = 2;

@@ -1551,6 +1551,13 @@ func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
 	return nil
 }
 
+// CallContractRequest has arguments for reading a contract as specified in the call message at a block height defined by blockNumber where:
+// blockNumber :
+//
+//	nil (default) or (-2) → use the latest mined block (“latest”)
+//	FinalizedBlockNumber(-3) → last finalized block (“finalized”)
+//
+// Any positive value is treated as an explicit block height.
 type CallContractRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Call          *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`

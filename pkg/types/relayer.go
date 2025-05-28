@@ -100,17 +100,6 @@ type ChainService interface {
 }
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
-
-type BlockNumber int64
-
-const (
-	EarliestBlockNumber  = BlockNumber(-5)
-	SafeBlockNumber      = BlockNumber(-4)
-	FinalizedBlockNumber = BlockNumber(-3)
-	LatestBlockNumber    = BlockNumber(-2)
-	PendingBlockNumber   = BlockNumber(-1)
-)
-
 type GethClient interface {
 	// CallContract reads a contract as specified in the call message at a block height defined by blockNumber where:
 	// blockNumber :

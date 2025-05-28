@@ -143,8 +143,10 @@ func TestPing(t *testing.T) {
 			On("Ping", mock.Anything, &pb.EmptyRequest{}).
 			Return(nil, assert.AnError)
 
-		chipIngressClient, err := NewChipIngressClient("test")
-		assert.NoError(t, err)
+		chipIngressClient := &chipIngressClient{
+			log:    zap.NewNop(),
+			client: clientMock,
+		}
 
 		resp, err := chipIngressClient.Ping(t.Context())
 		assert.Error(t, err)

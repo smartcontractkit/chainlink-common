@@ -100,6 +100,8 @@ func (m Metadata) Encode() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// 1B Version, 32B ExecutionID, 4B Timestamp, 4B DONID, 4B DONConfigVersion,
+// 32B WorkflowID, 10B WorkflowName, 20B WorkflowOwner, 2B ReportID
 const MetadataLen = 1 + 32 + 4 + 4 + 4 + 32 + 10 + 20 + 2 // =109
 
 // Decode parses exactly MetadataLen bytes from raw, returns a Metadata struct

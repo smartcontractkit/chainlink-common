@@ -57,42 +57,31 @@ func toSchemaPath(m proto.Message, basePath string) string {
 }
 
 // appendRequiredAttrDataSchema adds the message schema path as an attribute (required)
-func appendRequiredAttrDataSchema(m proto.Message, attrKVs []any, basePath string) []any {
-	key := AttrKeyBeholderDataSchema
-	for i := 0; i < len(attrKVs); i += 2 {
-		if attrKVs[i] == key {
-			return attrKVs
-		}
+func appendRequiredAttrDataSchema(attrKVs []any, val string) []any {
+	if containsKey(attrKVs, AttrKeyBeholderDataSchema) {
+		return attrKVs
 	}
 
-	attrKVs = append(attrKVs, key)
-	// Needs to be an URI (Beholder requirement)
-	val := toSchemaPath(m, basePath)
+	attrKVs = append(attrKVs, AttrKeyBeholderDataSchema)
 	attrKVs = append(attrKVs, val)
 	return attrKVs
 }
 
 // appendRequiredAttrEntity adds the message entity type as an attribute (required)
-func appendRequiredAttrEntity(m proto.Message, attrKVs []any) []any {
-	key := AttrKeyBeholderEntity
-	for i := 0; i < len(attrKVs); i += 2 {
-		if attrKVs[i] == key {
-			return attrKVs
-		}
+func appendRequiredAttrEntity(attrKVs []any, m proto.Message) []any {
+	if containsKey(attrKVs, AttrKeyBeholderEntity) {
+		return attrKVs
 	}
 
-	attrKVs = append(attrKVs, key)
+	attrKVs = append(attrKVs, AttrKeyBeholderEntity)
 	attrKVs = append(attrKVs, toSchemaName(m))
 	return attrKVs
 }
 
 // appendRequiredAttrDomain adds the message domain as an attribute (required)
-func appendRequiredAttrDomain(m proto.Message, attrKVs []any) []any {
-	key := AttrKeyBeholderDomain
-	for i := 0; i < len(attrKVs); i += 2 {
-		if attrKVs[i] == key {
-			return attrKVs
-		}
+func appendRequiredAttrDomain(attrKVs []any, m proto.Message) []any {
+	if containsKey(attrKVs, AttrKeyBeholderDomain) {
+		return attrKVs
 	}
 
 	// Notice: a name like 'platform.on_chain.forwarder.ReportProcessed'
@@ -104,7 +93,16 @@ func appendRequiredAttrDomain(m proto.Message, attrKVs []any) []any {
 		domain = strings.Split(protoName, ".")[0]
 	}
 
-	attrKVs = append(attrKVs, key)
+	attrKVs = append(attrKVs, AttrKeyBeholderDomain)
 	attrKVs = append(attrKVs, domain)
 	return attrKVs
+}
+
+func containsKey(attrKVs []any, key string) bool {
+	for i := 0; i < len(attrKVs); i += 2 {
+		if attrKVs[i] == key {
+			return true
+		}
+	}
+	return false
 }

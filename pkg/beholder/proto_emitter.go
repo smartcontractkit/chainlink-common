@@ -56,7 +56,7 @@ func (e *protoEmitter) Emit(ctx context.Context, m proto.Message, attrKVs ...any
 
 	// Skip appending attributes if the context says it's already done that
 	if skip, ok := ctx.Value(CtxKeySkipAppendAttrs).(bool); !ok || !skip {
-		attrKVs = e.appendAttrsRequired(ctx, m, attrKVs)
+		attrKVs = e.appendAttrsRequired(attrKVs, m)
 	}
 
 	// Emit the message with attributes
@@ -72,7 +72,7 @@ func (e *protoEmitter) Emit(ctx context.Context, m proto.Message, attrKVs ...any
 
 // EmitWithLog emits a protobuf message with attributes and logs the emitted message
 func (e *protoEmitter) EmitWithLog(ctx context.Context, m proto.Message, attrKVs ...any) error {
-	attrKVs = e.appendAttrsRequired(ctx, m, attrKVs)
+	attrKVs = e.appendAttrsRequired(attrKVs, m)
 	// attach a bool switch to ctx to avoid duplicating common attrs
 	ctx = context.WithValue(ctx, CtxKeySkipAppendAttrs, true)
 
@@ -88,9 +88,9 @@ func (e *protoEmitter) EmitWithLog(ctx context.Context, m proto.Message, attrKVs
 }
 
 // appendAttrsRequired appends required attributes to the attribute key-value list
-func (e *protoEmitter) appendAttrsRequired(ctx context.Context, m proto.Message, attrKVs []any) []any {
-	attrKVs = appendRequiredAttrDataSchema(m, attrKVs, e.schemaBasePath)
-	attrKVs = appendRequiredAttrEntity(m, attrKVs)
-	attrKVs = appendRequiredAttrDomain(m, attrKVs)
+func (e *protoEmitter) appendAttrsRequired(attrKVs []any, m proto.Message) []any {
+	attrKVs = appendRequiredAttrDataSchema(attrKVs, toSchemaPath(m, e.schemaBasePath))
+	attrKVs = appendRequiredAttrEntity(attrKVs, m)
+	attrKVs = appendRequiredAttrDomain(attrKVs, m)
 	return attrKVs
 }

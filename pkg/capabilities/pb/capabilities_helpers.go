@@ -53,6 +53,20 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	if req.Config != nil {
 		config = req.Config
 	}
+
+	limits := make([]*ResourceLimit, len(req.Metadata.ResourceLimits))
+
+	for idx, resource := range req.Metadata.ResourceLimits {
+		if len(resource) != 2 {
+			continue
+		}
+
+		limits[idx] = &ResourceLimit{
+			ResourceType: resource[0],
+			LimitValue:   resource[1],
+		}
+	}
+
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
@@ -63,6 +77,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
+			ResourceLimits:           limits,
 		},
 		Inputs:        values.ProtoMap(inputs),
 		Config:        values.ProtoMap(config),

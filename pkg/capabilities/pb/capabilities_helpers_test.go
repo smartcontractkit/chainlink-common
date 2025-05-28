@@ -93,6 +93,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowDonConfigVersion: 1,
 			ReferenceID:              anyReferenceID,
 			DecodedWorkflowName:      "test-workflow-name",
+			ResourceLimits:           [][]string{{"COMPUTE", "1000"}, {"GAS", "1000000"}},
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

@@ -30,6 +30,11 @@ message CapabilityInfoReply {
   bool isLocal = 5;
 }
 
+message ResourceLimit {
+  string resource_type = 1;
+  string limit_value = 2;
+}
+
 message RequestMetadata {
   reserved 5;
   string workflow_id = 1;
@@ -40,6 +45,7 @@ message RequestMetadata {
   uint32 workflow_don_config_version = 7;
   string reference_id = 8;
   string decoded_workflow_name = 9;
+  repeated ResourceLimit resource_limits = 10;
 }
 
 message CapabilityRequest {

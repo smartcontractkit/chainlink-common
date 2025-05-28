@@ -127,6 +127,11 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		return capabilities.CapabilityRequest{}, err
 	}
 
+	limits := make([][]string, len(pr.Metadata.ResourceLimits))
+	for idx, resource := range pr.Metadata.ResourceLimits {
+		limits[idx] = []string{resource.GetResourceType(), resource.GetLimitValue()}
+	}
+
 	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:               md.WorkflowId,
@@ -137,6 +142,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 			ReferenceID:              md.ReferenceId,
 			DecodedWorkflowName:      md.DecodedWorkflowName,
+			ResourceLimits:           limits,
 		},
 		Config:        config,
 		Inputs:        inputs,

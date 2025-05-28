@@ -59,7 +59,7 @@ const (
 	buildErrorBinaryCmd        = "test/builderr/cmd"
 )
 
-func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) []byte {
+func createTestBinary(outputPath, path string, uncompressed bool, t testing.TB) []byte {
 	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
 

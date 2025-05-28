@@ -21,8 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chainreader"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	contractreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -34,45 +33,45 @@ import (
 
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
-	t.Run("contractreader.EncodeVersionedBytes unsupported type", func(t *testing.T) {
+	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
 		invalidData := make(chan int)
 
-		_, err := contractreader.EncodeVersionedBytes(invalidData, contractreader.JSONEncodingVersion2)
+		_, err := codecpb.EncodeVersionedBytes(invalidData, codecpb.JSONEncodingVersion2)
 
 		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 
-	t.Run("contractreader.EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
+	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
 		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
 		data := map[string]interface{}{
 			"key": "value",
 		}
 
-		_, err := contractreader.EncodeVersionedBytes(data, unsupportedVer)
+		_, err := codecpb.EncodeVersionedBytes(data, unsupportedVer)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
 
-	t.Run("contractreader.DecodeVersionedBytes", func(t *testing.T) {
+	t.Run("DecodeVersionedBytes", func(t *testing.T) {
 		var decodedData map[string]interface{}
 		expected := fmt.Errorf("unsupported encoding version %d for versionedData [97 98 99 100 102]", unsupportedVer)
-		versionedBytes := &pb.VersionedBytes{
+		versionedBytes := &codecpb.VersionedBytes{
 			Version: unsupportedVer, // Unsupported version
 			Data:    []byte("abcdf"),
 		}
 
-		err := contractreader.DecodeVersionedBytes(&decodedData, versionedBytes)
+		err := codecpb.DecodeVersionedBytes(&decodedData, versionedBytes)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
 
-	t.Run("contractreader.DecodeVersionedBytes if nil returns error", func(t *testing.T) {
+	t.Run("DecodeVersionedBytes if nil returns error", func(t *testing.T) {
 		var decodedData map[string]interface{}
 		expected := errors.New("cannot decode nil versioned bytes")
 
-		err := contractreader.DecodeVersionedBytes(&decodedData, nil)
+		err := codecpb.DecodeVersionedBytes(&decodedData, nil)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
@@ -82,7 +81,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 func TestContractReaderInterfaceTests(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -110,7 +109,7 @@ func TestContractReaderByIDWrapper(t *testing.T) {
 func TestBind(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -144,7 +143,7 @@ func TestBind(t *testing.T) {
 func TestGetLatestValue(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -193,7 +192,7 @@ func TestGetLatestValue(t *testing.T) {
 func TestBatchGetLatestValues(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -250,7 +249,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 func TestQueryKey(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 

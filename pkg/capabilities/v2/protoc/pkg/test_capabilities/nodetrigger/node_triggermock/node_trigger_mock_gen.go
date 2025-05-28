@@ -12,16 +12,16 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodetrigger"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
 )
 
 // avoid unused imports
-var _ = testutils.Registry{}
+var _ = registry.Registry{}
 
 func NewNodeEventCapability(t testing.TB) (*NodeEventCapability, error) {
 	c := &NodeEventCapability{}
-	registry := testutils.GetRegistry(t)
-	err := registry.RegisterCapability(c)
+	reg := registry.GetRegistry(t)
+	err := reg.RegisterCapability(c)
 	return c, err
 }
 
@@ -45,7 +45,7 @@ func (cap *NodeEventCapability) InvokeTrigger(ctx context.Context, request *sdkp
 		}
 
 		if cap.Trigger == nil {
-			return nil, testutils.ErrNoTriggerStub("Trigger")
+			return nil, registry.ErrNoTriggerStub("Trigger")
 		}
 
 		resp, err := cap.Trigger(ctx, input)

@@ -9,6 +9,7 @@ import (
 	basicactionmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction/basic_actionmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -82,11 +83,9 @@ func TestRuntimeBase_LogWriter(t *testing.T) {
 
 func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride func() ([]byte, error)) sdkimpl.RuntimeBase {
 	internals := testRuntimeInternals(t)
-	internals.executionId = anyExecutionId
 	internals.callCapabilityErr = callCapabilityErr
 	internals.awaitResponseOverride = awaitResponseOverride
-	runtime := newRuntime(internals)
-	runtime.ExecId = anyExecutionId
+	runtime := newRuntime(internals, sdkpb.Mode_DON)
 	runtime.ConfigBytes = anyConfig
 	runtime.MaxResponseSize = sdk.DefaultMaxResponseSizeBytes
 	return runtime

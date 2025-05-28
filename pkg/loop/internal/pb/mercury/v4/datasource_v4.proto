@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.internal.pb.mercury.v4;
 
 // note: the generate.go file in this dir specifies the import path of the relative proto files
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
 
 // DataSource is a gRPC adapter for [pkg/types/mercury/v1/DataSource]
 service DataSource {

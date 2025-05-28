@@ -3,9 +3,9 @@ package beholder
 import (
 	"time"
 
-	otelattr "go.opentelemetry.io/otel/attribute"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Config struct {
@@ -15,7 +15,7 @@ type Config struct {
 	OtelExporterHTTPEndpoint string
 
 	// OTel Resource
-	ResourceAttributes []otelattr.KeyValue
+	ResourceAttributes []attribute.KeyValue
 	// Message Emitter
 	EmitterExportTimeout      time.Duration
 	EmitterExportInterval     time.Duration
@@ -26,13 +26,13 @@ type Config struct {
 	// OTel Trace
 	TraceSampleRatio  float64
 	TraceBatchTimeout time.Duration
-	TraceSpanExporter sdktrace.SpanExporter // optional additional exporter
+	TraceSpanExporter trace.SpanExporter // optional additional exporter
 	TraceRetryConfig  *RetryConfig
 
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
-	MetricViews          []sdkmetric.View
+	MetricViews          []metric.View
 
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool
@@ -78,8 +78,8 @@ const (
 	defaultPackageName = "beholder"
 )
 
-var defaultOtelAttributes = []otelattr.KeyValue{
-	otelattr.String("package_name", "beholder"),
+var defaultOtelAttributes = []attribute.KeyValue{
+	attribute.String("package_name", "beholder"),
 }
 
 func DefaultConfig() Config {
@@ -170,4 +170,13 @@ func (c *RetryConfig) GetMaxElapsedTime() time.Duration {
 		return 0
 	}
 	return c.MaxElapsedTime
+}
+
+type OtelAttributes map[string]string
+
+func (a OtelAttributes) AsStringAttributes() (attributes []attribute.KeyValue) {
+	for k, v := range a {
+		attributes = append(attributes, attribute.String(k, v))
+	}
+	return attributes
 }

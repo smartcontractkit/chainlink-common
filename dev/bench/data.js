@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748364136321,
+  "lastUpdate": 1748439462009,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14280,6 +14280,48 @@ window.BENCHMARK_DATA = {
             "value": 28115,
             "unit": "ns/op",
             "extra": "42651 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "89eb1ce3d76f150c9d7f7cf80d8e3dd63ac5f90d",
+          "message": "pkg/beholder: move loop.OtelAttributes here (#1208)",
+          "timestamp": "2025-05-28T08:36:21-05:00",
+          "tree_id": "19410d114318a221f6513459902dc4dfb98124b2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/89eb1ce3d76f150c9d7f7cf80d8e3dd63ac5f90d"
+        },
+        "date": 1748439460982,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.5,
+            "unit": "ns/op",
+            "extra": "3321808 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.8,
+            "unit": "ns/op",
+            "extra": "2952025 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28149,
+            "unit": "ns/op",
+            "extra": "42624 times\n4 procs"
           }
         ]
       }

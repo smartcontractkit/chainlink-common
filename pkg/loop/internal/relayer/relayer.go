@@ -566,6 +566,12 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 			return nil, err
 		}
 		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
+	case string(types.SecureMint):
+		id, err := r.newMedianProvider(ctx, relayArgs, pluginArgs) // TODO(gg): update to a SecureMintProvider if needed
+		if err != nil {
+			return nil, err
+		}
+		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
 	}
 	return nil, fmt.Errorf("provider type not supported: %s", relayArgs.ProviderType)
 }

@@ -19,7 +19,44 @@ service EVM{
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
+  rpc WriteReport(WriteReportRequest) returns (WriteReportReply);
+}
+
+message SignedReport {
+  bytes raw_report = 1;
+  bytes report_context = 2;
+  repeated bytes signatures = 3;
+  bytes id = 4;
+}
+
+message GasConfig {
+  uint64 gas_limit = 1;
+}
+
+message WriteReportRequest {
+    bytes receiver = 1;
+    SignedReport report = 2;
+    GasConfig gas_config = 3; 
+}
+
+message WriteReportReply {
+  TransactionStatus tx_status = 1;
+  ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
+  bytes tx_hash = 3;
+  values.BigInt transaction_fee = 4;
+}
+
+enum ReceiverContractExecutionStatus {
+  SUCCESS = 0;
+  FAILURE = 1;
+}
+
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
+enum TransactionStatus {
+  TRANSACTION_STATUS_CONFIRMED = 0;
+  TRANSACTION_STATUS_FINALIZED = 1;
+  TRANSACTION_STATUS_FATAL = 2;
 }
 
 // ----- Message Types -----
@@ -43,9 +80,9 @@ message ABIPayload {
 
 // represents simplified evm-style CallMsg
 message CallMsg {
-  Address from = 1;  // sender address, important for reads relied on msg.sender
-  Address to = 2; // contract address
-  ABIPayload data = 3; // abi encoded payload 
+  bytes from = 1;  // sender address, important for reads relied on msg.sender
+  bytes to = 2; // contract address
+  bytes data = 3; // abi encoded payload 
 }
 
 message Topics {
@@ -184,10 +221,11 @@ message LatestAndFinalizedHeadReply {
 message CallContractRequest {
   CallMsg call = 1;
   values.BigInt block_number = 2;
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message CallContractReply {
-  ABIPayload data = 1;
+  bytes data = 1;
 }
 
 // GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMRElayer.GetTransactionFee].
@@ -209,7 +247,7 @@ message FilterLogsReply {
 }
 
 message BalanceAtRequest {
-  Address account = 1;
+  bytes account = 1;
   values.BigInt block_number = 2;
 }
 
@@ -265,15 +303,4 @@ message GetTransactionStatusRequest {
 
 message GetTransactionStatusReply {
   TransactionStatus transaction_status = 1;
-}
-
-// TransactionStatus is an enum for the status of a transaction.
-// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
-enum TransactionStatus {
-  TRANSACTION_STATUS_UNKNOWN = 0;
-  TRANSACTION_STATUS_PENDING = 1;
-  TRANSACTION_STATUS_UNCONFIRMED = 2;
-  TRANSACTION_STATUS_FINALIZED = 3;
-  TRANSACTION_STATUS_FAILED = 4;
-  TRANSACTION_STATUS_FATAL = 5;
 }

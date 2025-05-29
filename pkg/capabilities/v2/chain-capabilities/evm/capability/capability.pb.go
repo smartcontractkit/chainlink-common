@@ -27,7 +27,8 @@ var File_capabilities_v2_chain_capabilities_evm_capability_capability_proto prot
 
 const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDesc = "" +
 	"\n" +
-	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x11cre.sdk.v2.evmcap\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto2\xab\t\n" +
+	"Bcapabilities/v2/chain-capabilities/evm/capability/capability.proto\x12\x11cre.sdk.v2.evmcap\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto2\x9a\n" +
+	"\n" +
 	"\x03EVM\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
 	"\n" +
@@ -39,7 +40,8 @@ const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_ra
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12|\n" +
 	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
-	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0B\\ZZgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappbb\x06proto3"
+	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12m\n" +
+	"\vWriteReport\x12/.loop.chain_capabilities.evm.WriteReportRequest\x1a-.loop.chain_capabilities.evm.WriteReportReply\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0B\\ZZgithub.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb;evmcappbb\x06proto3"
 
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTypes = []any{
 	(*chain_service.CallContractRequest)(nil),          // 0: loop.chain_capabilities.evm.CallContractRequest
@@ -52,14 +54,16 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTy
 	(*chain_service.QueryTrackedLogsRequest)(nil),      // 7: loop.chain_capabilities.evm.QueryTrackedLogsRequest
 	(*chain_service.RegisterLogTrackingRequest)(nil),   // 8: loop.chain_capabilities.evm.RegisterLogTrackingRequest
 	(*chain_service.UnregisterLogTrackingRequest)(nil), // 9: loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	(*chain_service.CallContractReply)(nil),            // 10: loop.chain_capabilities.evm.CallContractReply
-	(*chain_service.FilterLogsReply)(nil),              // 11: loop.chain_capabilities.evm.FilterLogsReply
-	(*chain_service.BalanceAtReply)(nil),               // 12: loop.chain_capabilities.evm.BalanceAtReply
-	(*chain_service.EstimateGasReply)(nil),             // 13: loop.chain_capabilities.evm.EstimateGasReply
-	(*chain_service.GetTransactionByHashReply)(nil),    // 14: loop.chain_capabilities.evm.GetTransactionByHashReply
-	(*chain_service.GetTransactionReceiptReply)(nil),   // 15: loop.chain_capabilities.evm.GetTransactionReceiptReply
-	(*chain_service.LatestAndFinalizedHeadReply)(nil),  // 16: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	(*chain_service.QueryTrackedLogsReply)(nil),        // 17: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*chain_service.WriteReportRequest)(nil),           // 10: loop.chain_capabilities.evm.WriteReportRequest
+	(*chain_service.CallContractReply)(nil),            // 11: loop.chain_capabilities.evm.CallContractReply
+	(*chain_service.FilterLogsReply)(nil),              // 12: loop.chain_capabilities.evm.FilterLogsReply
+	(*chain_service.BalanceAtReply)(nil),               // 13: loop.chain_capabilities.evm.BalanceAtReply
+	(*chain_service.EstimateGasReply)(nil),             // 14: loop.chain_capabilities.evm.EstimateGasReply
+	(*chain_service.GetTransactionByHashReply)(nil),    // 15: loop.chain_capabilities.evm.GetTransactionByHashReply
+	(*chain_service.GetTransactionReceiptReply)(nil),   // 16: loop.chain_capabilities.evm.GetTransactionReceiptReply
+	(*chain_service.LatestAndFinalizedHeadReply)(nil),  // 17: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	(*chain_service.QueryTrackedLogsReply)(nil),        // 18: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*chain_service.WriteReportReply)(nil),             // 19: loop.chain_capabilities.evm.WriteReportReply
 }
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs = []int32{
 	0,  // 0: cre.sdk.v2.evmcap.EVM.CallContract:input_type -> loop.chain_capabilities.evm.CallContractRequest
@@ -72,18 +76,20 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depI
 	7,  // 7: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:input_type -> loop.chain_capabilities.evm.QueryTrackedLogsRequest
 	8,  // 8: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:input_type -> loop.chain_capabilities.evm.RegisterLogTrackingRequest
 	9,  // 9: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:input_type -> loop.chain_capabilities.evm.UnregisterLogTrackingRequest
-	10, // 10: cre.sdk.v2.evmcap.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
-	11, // 11: cre.sdk.v2.evmcap.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
-	12, // 12: cre.sdk.v2.evmcap.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
-	13, // 13: cre.sdk.v2.evmcap.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
-	14, // 14: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
-	15, // 15: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
-	16, // 16: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
-	17, // 17: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
-	6,  // 18: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 19: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	10, // [10:20] is the sub-list for method output_type
-	0,  // [0:10] is the sub-list for method input_type
+	10, // 10: cre.sdk.v2.evmcap.EVM.WriteReport:input_type -> loop.chain_capabilities.evm.WriteReportRequest
+	11, // 11: cre.sdk.v2.evmcap.EVM.CallContract:output_type -> loop.chain_capabilities.evm.CallContractReply
+	12, // 12: cre.sdk.v2.evmcap.EVM.FilterLogs:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	13, // 13: cre.sdk.v2.evmcap.EVM.BalanceAt:output_type -> loop.chain_capabilities.evm.BalanceAtReply
+	14, // 14: cre.sdk.v2.evmcap.EVM.EstimateGas:output_type -> loop.chain_capabilities.evm.EstimateGasReply
+	15, // 15: cre.sdk.v2.evmcap.EVM.GetTransactionByHash:output_type -> loop.chain_capabilities.evm.GetTransactionByHashReply
+	16, // 16: cre.sdk.v2.evmcap.EVM.GetTransactionReceipt:output_type -> loop.chain_capabilities.evm.GetTransactionReceiptReply
+	17, // 17: cre.sdk.v2.evmcap.EVM.LatestAndFinalizedHead:output_type -> loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
+	18, // 18: cre.sdk.v2.evmcap.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
+	6,  // 19: cre.sdk.v2.evmcap.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	6,  // 20: cre.sdk.v2.evmcap.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	19, // 21: cre.sdk.v2.evmcap.EVM.WriteReport:output_type -> loop.chain_capabilities.evm.WriteReportReply
+	11, // [11:22] is the sub-list for method output_type
+	0,  // [0:11] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

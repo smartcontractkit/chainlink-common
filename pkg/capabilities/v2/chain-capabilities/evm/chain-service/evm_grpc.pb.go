@@ -31,7 +31,7 @@ const (
 	EVM_QueryTrackedLogs_FullMethodName       = "/loop.chain_capabilities.evm.EVM/QueryTrackedLogs"
 	EVM_RegisterLogTracking_FullMethodName    = "/loop.chain_capabilities.evm.EVM/RegisterLogTracking"
 	EVM_UnregisterLogTracking_FullMethodName  = "/loop.chain_capabilities.evm.EVM/UnregisterLogTracking"
-	EVM_GetTransactionStatus_FullMethodName   = "/loop.chain_capabilities.evm.EVM/GetTransactionStatus"
+	EVM_WriteReport_FullMethodName            = "/loop.chain_capabilities.evm.EVM/WriteReport"
 )
 
 // EVMClient is the client API for EVM service.
@@ -49,7 +49,7 @@ type EVMClient interface {
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
+	WriteReport(ctx context.Context, in *WriteReportRequest, opts ...grpc.CallOption) (*WriteReportReply, error)
 }
 
 type eVMClient struct {
@@ -170,10 +170,10 @@ func (c *eVMClient) UnregisterLogTracking(ctx context.Context, in *UnregisterLog
 	return out, nil
 }
 
-func (c *eVMClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error) {
+func (c *eVMClient) WriteReport(ctx context.Context, in *WriteReportRequest, opts ...grpc.CallOption) (*WriteReportReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTransactionStatusReply)
-	err := c.cc.Invoke(ctx, EVM_GetTransactionStatus_FullMethodName, in, out, cOpts...)
+	out := new(WriteReportReply)
+	err := c.cc.Invoke(ctx, EVM_WriteReport_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ type EVMServer interface {
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
+	WriteReport(context.Context, *WriteReportRequest) (*WriteReportReply, error)
 	mustEmbedUnimplementedEVMServer()
 }
 
@@ -239,8 +239,8 @@ func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *RegisterLogT
 func (UnimplementedEVMServer) UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
-func (UnimplementedEVMServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+func (UnimplementedEVMServer) WriteReport(context.Context, *WriteReportRequest) (*WriteReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WriteReport not implemented")
 }
 func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
 func (UnimplementedEVMServer) testEmbeddedByValue()             {}
@@ -461,20 +461,20 @@ func _EVM_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVM_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTransactionStatusRequest)
+func _EVM_WriteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WriteReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMServer).GetTransactionStatus(ctx, in)
+		return srv.(EVMServer).WriteReport(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVM_GetTransactionStatus_FullMethodName,
+		FullMethod: EVM_WriteReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMServer).GetTransactionStatus(ctx, req.(*GetTransactionStatusRequest))
+		return srv.(EVMServer).WriteReport(ctx, req.(*WriteReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -531,8 +531,8 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVM_UnregisterLogTracking_Handler,
 		},
 		{
-			MethodName: "GetTransactionStatus",
-			Handler:    _EVM_GetTransactionStatus_Handler,
+			MethodName: "WriteReport",
+			Handler:    _EVM_WriteReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

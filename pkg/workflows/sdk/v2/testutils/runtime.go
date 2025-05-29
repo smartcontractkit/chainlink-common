@@ -39,7 +39,7 @@ func defaultSimpleConsensus(_ context.Context, input *pb.SimpleConsensusInputs) 
 	case *pb.SimpleConsensusInputs_Value:
 		return o.Value, nil
 	case *pb.SimpleConsensusInputs_Error:
-		if input.Default.Value == nil {
+		if input.Default == nil || input.Default.Value == nil {
 			return nil, errors.New(o.Error)
 		}
 

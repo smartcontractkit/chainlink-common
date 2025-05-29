@@ -1,0 +1,1 @@
+[{"inputs":[{"internalType":"uint256","name":"totalMinted","type":"uint256"},{"internalType":"uint256","name":"totalReserve","type":"uint256"}],"name":"updateReserves","outputs":[],"stateMutability":"nonpayable","type":"function"}]

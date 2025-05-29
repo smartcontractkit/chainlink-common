@@ -69,8 +69,7 @@ func (e *Engine) Go(fn func(context.Context)) {
 	e.wg.Add(1)
 	go func() {
 		defer e.wg.Done()
-		ctx, cancel := e.StopChan.NewCtx()
-		defer cancel()
+		ctx, _ := e.StopChan.NewCtx()
 		fn(ctx)
 	}()
 }

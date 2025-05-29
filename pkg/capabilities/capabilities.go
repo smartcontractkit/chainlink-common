@@ -89,8 +89,8 @@ type RequestMetadata struct {
 	ReferenceID string
 	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
 	DecodedWorkflowName string
-	// ResourceLimits is expected to be an array of tuples of resource type and limit. i.e. CONSENSUS -> 100_000
-	ResourceLimits [][]string
+	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
+	SpendLimits [][]string
 }
 
 type RegistrationMetadata struct {
@@ -319,8 +319,8 @@ type CapabilityInfo struct {
 	Description    string
 	DON            *DON
 	IsLocal        bool
-	// Resources denotes the resource types a capability expects to use during an invocation.
-	Resources []string
+	// SpendTypes denotes the spend types a capability expects to use during an invocation.
+	SpendTypes []string
 }
 
 // Parse out the version from the ID.
@@ -359,7 +359,7 @@ func newCapabilityInfo(
 	description string,
 	don *DON,
 	isLocal bool,
-	resources ...string,
+	spendTypes ...string,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -378,7 +378,7 @@ func newCapabilityInfo(
 		Description:    description,
 		DON:            don,
 		IsLocal:        isLocal,
-		Resources:      resources,
+		SpendTypes:     spendTypes,
 	}, nil
 }
 
@@ -387,9 +387,9 @@ func NewCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	resources ...string,
+	spendTypes ...string,
 ) (CapabilityInfo, error) {
-	return newCapabilityInfo(id, capabilityType, description, nil, true, resources...)
+	return newCapabilityInfo(id, capabilityType, description, nil, true, spendTypes...)
 }
 
 // NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
@@ -401,9 +401,9 @@ func NewRemoteCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
-	resources ...string,
+	spendTypes ...string,
 ) (CapabilityInfo, error) {
-	return newCapabilityInfo(id, capabilityType, description, don, false, resources...)
+	return newCapabilityInfo(id, capabilityType, description, don, false, spendTypes...)
 }
 
 // MustNewCapabilityInfo returns a new CapabilityInfo,
@@ -412,9 +412,9 @@ func MustNewCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
-	resources ...string,
+	spendTypes ...string,
 ) CapabilityInfo {
-	c, err := NewCapabilityInfo(id, capabilityType, description, resources...)
+	c, err := NewCapabilityInfo(id, capabilityType, description, spendTypes...)
 	if err != nil {
 		panic(err)
 	}
@@ -429,9 +429,9 @@ func MustNewRemoteCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
-	resources ...string,
+	spendTypes ...string,
 ) CapabilityInfo {
-	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, don, resources...)
+	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, don, spendTypes...)
 	if err != nil {
 		panic(err)
 	}

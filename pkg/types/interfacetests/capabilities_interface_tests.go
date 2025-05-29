@@ -15,9 +15,9 @@ import (
 var (
 	// It takes the form of `{name}:{label1_key}_{labe1_value}:{label2_key}_{label2_value}@{version}`
 	validCapabilityID = regexp.MustCompile(`(?P<name>.+):(?P<label1_key>.+)_(?P<label1_value>.+):(?P<label2_key>.+)_(?P<label2_value>.+)@(?P<version>.+)`)
-	// gas resource regexp: must contain GAS followed by a chainId or chain name
-	validGasResource = regexp.MustCompile(`^GAS_[0-9a-zA-Z]+$`)
-	validResources   = []string{"COMPUTE", "CONSENSUS"}
+	// gas spend type regexp: must contain GAS followed by a chainId or chain name
+	validGasSpendType = regexp.MustCompile(`^GAS_[0-9a-zA-Z]+$`)
+	validSpendTypes   = []string{"COMPUTE", "CONSENSUS"}
 )
 
 type CapabilityTestID string
@@ -135,17 +135,17 @@ func runBaseCapabilityInterfaceTests(t *testing.T, tester CapabilitiesInterfaceT
 					info, err := capability.Info(t.Context())
 					require.NoError(t, err)
 
-					if len(info.Resources) > 0 {
-						for _, res := range info.Resources {
+					if len(info.SpendTypes) > 0 {
+						for _, res := range info.SpendTypes {
 							// GAS is a special case that requires a chainId modifier
 							if strings.Contains(res, "GAS") {
-								assert.True(t, validGasResource.MatchString(res))
+								assert.True(t, validGasSpendType.MatchString(res))
 
 								continue
 							}
 
 							// other resource types are a direct comparison
-							assert.True(t, slices.Contains(validResources, res))
+							assert.True(t, slices.Contains(validSpendTypes, res))
 						}
 					}
 				},

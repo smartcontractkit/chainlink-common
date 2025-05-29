@@ -54,16 +54,16 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 		config = req.Config
 	}
 
-	limits := make([]*ResourceLimit, len(req.Metadata.ResourceLimits))
+	limits := make([]*SpendLimit, len(req.Metadata.SpendLimits))
 
-	for idx, resource := range req.Metadata.ResourceLimits {
+	for idx, resource := range req.Metadata.SpendLimits {
 		if len(resource) != 2 {
 			continue
 		}
 
-		limits[idx] = &ResourceLimit{
-			ResourceType: resource[0],
-			LimitValue:   resource[1],
+		limits[idx] = &SpendLimit{
+			SpendType: resource[0],
+			Limit:     resource[1],
 		}
 	}
 
@@ -77,7 +77,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
-			ResourceLimits:           limits,
+			SpendLimits:              limits,
 		},
 		Inputs:        values.ProtoMap(inputs),
 		Config:        values.ProtoMap(config),
@@ -127,9 +127,9 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		return capabilities.CapabilityRequest{}, err
 	}
 
-	limits := make([][]string, len(pr.Metadata.ResourceLimits))
-	for idx, resource := range pr.Metadata.ResourceLimits {
-		limits[idx] = []string{resource.GetResourceType(), resource.GetLimitValue()}
+	limits := make([][]string, len(pr.Metadata.SpendLimits))
+	for idx, resource := range pr.Metadata.SpendLimits {
+		limits[idx] = []string{resource.GetSpendType(), resource.GetLimit()}
 	}
 
 	req := capabilities.CapabilityRequest{
@@ -142,7 +142,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 			ReferenceID:              md.ReferenceId,
 			DecodedWorkflowName:      md.DecodedWorkflowName,
-			ResourceLimits:           limits,
+			SpendLimits:              limits,
 		},
 		Config:        config,
 		Inputs:        inputs,

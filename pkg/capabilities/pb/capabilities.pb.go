@@ -90,7 +90,7 @@ type CapabilityInfoReply struct {
 	Description    string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Version        string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
 	IsLocal        bool                   `protobuf:"varint,5,opt,name=isLocal,proto3" json:"isLocal,omitempty"`
-	Resources      []string               `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty"`
+	SpendTypes     []string               `protobuf:"bytes,6,rep,name=spend_types,json=spendTypes,proto3" json:"spend_types,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -160,35 +160,35 @@ func (x *CapabilityInfoReply) GetIsLocal() bool {
 	return false
 }
 
-func (x *CapabilityInfoReply) GetResources() []string {
+func (x *CapabilityInfoReply) GetSpendTypes() []string {
 	if x != nil {
-		return x.Resources
+		return x.SpendTypes
 	}
 	return nil
 }
 
-type ResourceLimit struct {
+type SpendLimit struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ResourceType  string                 `protobuf:"bytes,1,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
-	LimitValue    string                 `protobuf:"bytes,2,opt,name=limit_value,json=limitValue,proto3" json:"limit_value,omitempty"`
+	SpendType     string                 `protobuf:"bytes,1,opt,name=spend_type,json=spendType,proto3" json:"spend_type,omitempty"`
+	Limit         string                 `protobuf:"bytes,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResourceLimit) Reset() {
-	*x = ResourceLimit{}
+func (x *SpendLimit) Reset() {
+	*x = SpendLimit{}
 	mi := &file_capabilities_pb_capabilities_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResourceLimit) String() string {
+func (x *SpendLimit) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResourceLimit) ProtoMessage() {}
+func (*SpendLimit) ProtoMessage() {}
 
-func (x *ResourceLimit) ProtoReflect() protoreflect.Message {
+func (x *SpendLimit) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_pb_capabilities_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -200,21 +200,21 @@ func (x *ResourceLimit) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResourceLimit.ProtoReflect.Descriptor instead.
-func (*ResourceLimit) Descriptor() ([]byte, []int) {
+// Deprecated: Use SpendLimit.ProtoReflect.Descriptor instead.
+func (*SpendLimit) Descriptor() ([]byte, []int) {
 	return file_capabilities_pb_capabilities_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ResourceLimit) GetResourceType() string {
+func (x *SpendLimit) GetSpendType() string {
 	if x != nil {
-		return x.ResourceType
+		return x.SpendType
 	}
 	return ""
 }
 
-func (x *ResourceLimit) GetLimitValue() string {
+func (x *SpendLimit) GetLimit() string {
 	if x != nil {
-		return x.LimitValue
+		return x.Limit
 	}
 	return ""
 }
@@ -229,7 +229,7 @@ type RequestMetadata struct {
 	WorkflowDonConfigVersion uint32                 `protobuf:"varint,7,opt,name=workflow_don_config_version,json=workflowDonConfigVersion,proto3" json:"workflow_don_config_version,omitempty"`
 	ReferenceId              string                 `protobuf:"bytes,8,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
 	DecodedWorkflowName      string                 `protobuf:"bytes,9,opt,name=decoded_workflow_name,json=decodedWorkflowName,proto3" json:"decoded_workflow_name,omitempty"`
-	ResourceLimits           []*ResourceLimit       `protobuf:"bytes,10,rep,name=resource_limits,json=resourceLimits,proto3" json:"resource_limits,omitempty"`
+	SpendLimits              []*SpendLimit          `protobuf:"bytes,10,rep,name=spend_limits,json=spendLimits,proto3" json:"spend_limits,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -320,9 +320,9 @@ func (x *RequestMetadata) GetDecodedWorkflowName() string {
 	return ""
 }
 
-func (x *RequestMetadata) GetResourceLimits() []*ResourceLimit {
+func (x *RequestMetadata) GetSpendLimits() []*SpendLimit {
 	if x != nil {
-		return x.ResourceLimits
+		return x.SpendLimits
 	}
 	return nil
 }
@@ -1142,18 +1142,20 @@ var File_capabilities_pb_capabilities_proto protoreflect.FileDescriptor
 
 const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\n" +
-	"\"capabilities/pb/capabilities.proto\x12\fcapabilities\x1a\x16values/pb/values.proto\x1a metering/pb/meteringdetail.proto\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe0\x01\n" +
+	"\"capabilities/pb/capabilities.proto\x12\fcapabilities\x1a\x16values/pb/values.proto\x1a metering/pb/meteringdetail.proto\x1a\x19google/protobuf/any.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe3\x01\n" +
 	"\x13CapabilityInfoReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12E\n" +
 	"\x0fcapability_type\x18\x02 \x01(\x0e2\x1c.capabilities.CapabilityTypeR\x0ecapabilityType\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x18\n" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x12\x18\n" +
-	"\aisLocal\x18\x05 \x01(\bR\aisLocal\x12\x1c\n" +
-	"\tresources\x18\x06 \x03(\tR\tresources\"U\n" +
-	"\rResourceLimit\x12#\n" +
-	"\rresource_type\x18\x01 \x01(\tR\fresourceType\x12\x1f\n" +
-	"\vlimit_value\x18\x02 \x01(\tR\n" +
-	"limitValue\"\xbc\x03\n" +
+	"\aisLocal\x18\x05 \x01(\bR\aisLocal\x12\x1f\n" +
+	"\vspend_types\x18\x06 \x03(\tR\n" +
+	"spendTypes\"A\n" +
+	"\n" +
+	"SpendLimit\x12\x1d\n" +
+	"\n" +
+	"spend_type\x18\x01 \x01(\tR\tspendType\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xb3\x03\n" +
 	"\x0fRequestMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x122\n" +
@@ -1163,9 +1165,9 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x0fworkflow_don_id\x18\x06 \x01(\rR\rworkflowDonId\x12=\n" +
 	"\x1bworkflow_don_config_version\x18\a \x01(\rR\x18workflowDonConfigVersion\x12!\n" +
 	"\freference_id\x18\b \x01(\tR\vreferenceId\x122\n" +
-	"\x15decoded_workflow_name\x18\t \x01(\tR\x13decodedWorkflowName\x12D\n" +
-	"\x0fresource_limits\x18\n" +
-	" \x03(\v2\x1b.capabilities.ResourceLimitR\x0eresourceLimitsJ\x04\b\x05\x10\x06\"\xc0\x02\n" +
+	"\x15decoded_workflow_name\x18\t \x01(\tR\x13decodedWorkflowName\x12;\n" +
+	"\fspend_limits\x18\n" +
+	" \x03(\v2\x18.capabilities.SpendLimitR\vspendLimitsJ\x04\b\x05\x10\x06\"\xc0\x02\n" +
 	"\x11CapabilityRequest\x129\n" +
 	"\bmetadata\x18\x01 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12#\n" +
 	"\x06config\x18\x02 \x01(\v2\v.values.MapR\x06config\x12#\n" +
@@ -1261,7 +1263,7 @@ var file_capabilities_pb_capabilities_proto_msgTypes = make([]protoimpl.MessageI
 var file_capabilities_pb_capabilities_proto_goTypes = []any{
 	(CapabilityType)(0),                   // 0: capabilities.CapabilityType
 	(*CapabilityInfoReply)(nil),           // 1: capabilities.CapabilityInfoReply
-	(*ResourceLimit)(nil),                 // 2: capabilities.ResourceLimit
+	(*SpendLimit)(nil),                    // 2: capabilities.SpendLimit
 	(*RequestMetadata)(nil),               // 3: capabilities.RequestMetadata
 	(*CapabilityRequest)(nil),             // 4: capabilities.CapabilityRequest
 	(*TriggerRegistrationRequest)(nil),    // 5: capabilities.TriggerRegistrationRequest
@@ -1282,7 +1284,7 @@ var file_capabilities_pb_capabilities_proto_goTypes = []any{
 }
 var file_capabilities_pb_capabilities_proto_depIdxs = []int32{
 	0,  // 0: capabilities.CapabilityInfoReply.capability_type:type_name -> capabilities.CapabilityType
-	2,  // 1: capabilities.RequestMetadata.resource_limits:type_name -> capabilities.ResourceLimit
+	2,  // 1: capabilities.RequestMetadata.spend_limits:type_name -> capabilities.SpendLimit
 	3,  // 2: capabilities.CapabilityRequest.metadata:type_name -> capabilities.RequestMetadata
 	16, // 3: capabilities.CapabilityRequest.config:type_name -> values.Map
 	16, // 4: capabilities.CapabilityRequest.inputs:type_name -> values.Map

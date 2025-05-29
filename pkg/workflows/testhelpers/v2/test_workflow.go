@@ -11,7 +11,7 @@ import (
 
 func RunTestWorkflow(runner sdk.DonRunner) {
 	basic := &basictrigger.Basic{}
-	slog.Log(context.Background(), slog.LevelInfo, "Hi")
+	runner.Logger().Log(context.Background(), slog.LevelInfo, "Hi")
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(

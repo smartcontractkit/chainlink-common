@@ -48,10 +48,6 @@ type TestRunner interface {
 	// this is useful for testing the workflow registrations.
 	SetStrictTriggers(strict bool)
 
-	// SetDefaultLogger sets the default logger to write to logs.
-	// This allows workflows that use the logger to behave as-if they were a WASM.
-	SetDefaultLogger()
-
 	// SetMaxResponseSizeBytes sets the maximum response size for the runtime.
 	// Do not change unless you are working with a non-standard configuration.
 	SetMaxResponseSizeBytes(maxResponseSizebytes uint64)
@@ -70,23 +66,25 @@ type NodeRunner interface {
 }
 
 func NewDonRunner(tb testing.TB, config []byte) DonRunner {
-	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(tb, config)}
-	return newRunner[sdk.DonRuntime](tb, config, drt, &drt.RuntimeBase)
+	writer := &testWriter{}
+	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(tb, config, writer)}
+	return newRunner[sdk.DonRuntime](tb, config, writer, drt, &drt.RuntimeBase)
 }
 
 func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
-	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(tb, config)}
-	return newRunner[sdk.NodeRuntime](tb, config, nrt, &nrt.RuntimeBase)
+	writer := &testWriter{}
+	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(tb, config, writer)}
+	return newRunner[sdk.NodeRuntime](tb, config, writer, nrt, &nrt.RuntimeBase)
 }
 
-func newRunner[T any](tb testing.TB, config []byte, t T, base *sdkimpl.RuntimeBase) *runner[T] {
+func newRunner[T any](tb testing.TB, config []byte, writer *testWriter, t T, base *sdkimpl.RuntimeBase) *runner[T] {
 	r := &runner[T]{
 		tb:         tb,
 		config:     config,
 		workflowId: uuid.NewString(),
 		registry:   registry.GetRegistry(tb),
 		runtime:    t,
-		writer:     &testWriter{},
+		writer:     writer,
 		base:       base,
 	}
 
@@ -154,10 +152,8 @@ func (r *runner[T]) Result() (bool, any, error) {
 	return r.ran, r.result, r.err
 }
 
-func (r *runner[T]) SetDefaultLogger() {
-	current := slog.Default()
-	r.tb.Cleanup(func() { slog.SetDefault(current) })
-	slog.SetDefault(slog.New(slog.NewTextHandler(r.LogWriter(), nil)))
+func (r *runner[T]) Logger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(r.LogWriter(), nil))
 }
 
 var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}

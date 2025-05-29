@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evm";
+
+package cre.sdk.v2.evm;
+
+import "google/protobuf/empty.proto";
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "chains/evm/evm.proto";
+
+service Client {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "evm@1.0.0"
+  };
+  rpc CallContract(loop.evm.CallContractRequest) returns (loop.evm.CallContractReply);
+  rpc FilterLogs(loop.evm.FilterLogsRequest) returns (loop.evm.FilterLogsReply);
+  rpc BalanceAt(loop.evm.BalanceAtRequest) returns (loop.evm.BalanceAtReply);
+  rpc EstimateGas(loop.evm.EstimateGasRequest) returns (loop.evm.EstimateGasReply);
+  rpc GetTransactionByHash(loop.evm.GetTransactionByHashRequest) returns (loop.evm.GetTransactionByHashReply);
+  rpc GetTransactionReceipt(loop.evm.GetTransactionReceiptRequest) returns (loop.evm.GetTransactionReceiptReply);
+  rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (loop.evm.LatestAndFinalizedHeadReply);
+  rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
+  rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+}
+
+

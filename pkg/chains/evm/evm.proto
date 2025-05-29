@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service;evmpb";
-package loop.chain_capabilities.evm;
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/evm";
+package loop.evm;
 
 import "google/protobuf/empty.proto";
 import "loop/chain-common/query.proto";
@@ -181,6 +181,12 @@ message LatestAndFinalizedHeadReply {
   Head finalized = 2;
 }
 
+// CallContractRequest has arguments for reading a contract as specified in the call message at a block height defined by blockNumber where:
+// blockNumber :
+//	nil (default) or (-2) → use the latest mined block (“latest”)
+//	FinalizedBlockNumber(-3) → last finalized block (“finalized”)
+//
+// Any positive value is treated as an explicit block height.
 message CallContractRequest {
   CallMsg call = 1;
   values.BigInt block_number = 2;

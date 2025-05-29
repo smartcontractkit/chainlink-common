@@ -7,11 +7,11 @@ package loop;
 import "internal/codec/codec.proto";
 import "loop/internal/pb/relayer.proto";
 import "google/protobuf/empty.proto";
-import "capabilities/v2/chain-capabilities/evm/chain-service/evm.proto";
+import "chains/evm/evm.proto";
 
 service ContractWriter {
     rpc SubmitTransaction(SubmitTransactionRequest) returns (google.protobuf.Empty) {}
-    rpc GetTransactionStatus(loop.chain_capabilities.evm.GetTransactionStatusRequest) returns (loop.chain_capabilities.evm.GetTransactionStatusReply) {}
+    rpc GetTransactionStatus(loop.evm.GetTransactionStatusRequest) returns (loop.evm.GetTransactionStatusReply) {}
     rpc GetFeeComponents(google.protobuf.Empty) returns (GetFeeComponentsReply) {}
     rpc GetEstimateFee(GetEstimateFeeRequest) returns (GetEstimateFeeReply) {}
 }

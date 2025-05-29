@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "loop/internal/pb/relayer.proto";
+
+service PluginSecureMint {
+  rpc NewSecureMintFactory (NewSecureMintFactoryRequest) returns (NewSecureMintFactoryReply) {}
+}
+
+// NewSecureMintFactoryRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/securemint/securemint.NewSecureMintFactory].
+message NewSecureMintFactoryRequest {
+  uint32 secureMintProviderID = 1;
+  uint32 errorLogID = 2;
+  // TODO(gg): add params here
+}
+
+// NewSecureMintFactoryRequest has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/securemint/securemint.NewSecureMintFactory].
+message NewSecureMintFactoryReply {
+  uint32 reportingPluginFactoryID = 1;
+  // TODO(gg): add other return values here
+}
+
+service ErrorLog {
+  rpc SaveError(SaveErrorRequest) returns (google.protobuf.Empty) {}
+}
+
+// SaveErrorRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.ErrorLog.SaveErrorRequest].
+message SaveErrorRequest {
+  string message = 1;
+}
+
+service SecureMintContract {
+  // TODO(gg): fill in contract methods if needed
+//  rpc LatestTransmissionDetails (LatestTransmissionDetailsRequest) returns (LatestTransmissionDetailsReply) {}
+//  rpc LatestRoundRequested (LatestRoundRequestedRequest) returns (LatestRoundRequestedReply) {}
+}

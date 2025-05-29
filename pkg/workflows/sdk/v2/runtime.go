@@ -3,6 +3,7 @@ package sdk
 import (
 	"errors"
 	"io"
+	"log/slog"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -15,6 +16,7 @@ type RuntimeBase interface {
 	CallCapability(request *pb.CapabilityRequest) Promise[*pb.CapabilityResponse]
 	Config() []byte
 	LogWriter() io.Writer
+	Logger() *slog.Logger
 }
 
 // NodeRuntime is not thread safe and must not be used concurrently.

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -263,6 +264,10 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 type triggerExecutableClient struct {
 	grpc capabilitiespb.TriggerExecutableClient
 	*net.BrokerExt
+
+	// manage cleanup of forwarding response from stream
+	mu           sync.Mutex
+	cleanupFuncs map[string]func()
 }
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
@@ -282,16 +287,41 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
-	return forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
+	ch, cleanup, err := forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cleanupFuncs[req.TriggerID] = cleanup
+
+	return ch, nil
 }
 
 func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) error {
 	_, err := t.grpc.UnregisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
-	return err
+	if err != nil {
+		return err
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	cleanup, ok := t.cleanupFuncs[req.TriggerID]
+	if !ok {
+		t.Logger.Warnw("attempted cleanup of not found trigger", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+		return nil
+	}
+	cleanup()
+	return nil
 }
 
 func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
-	return &triggerExecutableClient{grpc: capabilitiespb.NewTriggerExecutableClient(conn), BrokerExt: brokerExt}
+	return &triggerExecutableClient{
+		grpc:         capabilitiespb.NewTriggerExecutableClient(conn),
+		BrokerExt:    brokerExt,
+		cleanupFuncs: make(map[string]func()),
+	}
 }
 
 type executableServer struct {
@@ -450,11 +480,28 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 	return err
 }
 
-func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.TriggerRegistrationRequest, receive func() (*capabilitiespb.TriggerResponseMessage, error)) (<-chan capabilities.TriggerResponse, error) {
+func forwardTriggerResponsesToChannel(
+	ctx context.Context,
+	lggr logger.Logger, req capabilities.TriggerRegistrationRequest,
+	receive func() (*capabilitiespb.TriggerResponseMessage, error),
+) (<-chan capabilities.TriggerResponse, func(), error) {
 	responseCh := make(chan capabilities.TriggerResponse)
 
-	go func() {
+	cleanup := sync.OnceFunc(func() {
 		defer close(responseCh)
+		lggr.Debugw("stopped forwarding trigger responses", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+	})
+
+	send := func(resp capabilities.TriggerResponse) {
+		select {
+		case responseCh <- resp:
+		case <-ctx.Done():
+		}
+	}
+
+	go func() {
+		defer cleanup()
+
 		for {
 			message, err := receive()
 			if errors.Is(err, io.EOF) {
@@ -465,10 +512,7 @@ func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger,
 				resp := capabilities.TriggerResponse{
 					Err: err,
 				}
-				select {
-				case responseCh <- resp:
-				case <-ctx.Done():
-				}
+				send(resp)
 				return
 			}
 
@@ -477,10 +521,7 @@ func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger,
 				resp := capabilities.TriggerResponse{
 					Err: errors.New("unexpected message type when receiving response: expected response"),
 				}
-				select {
-				case responseCh <- resp:
-				case <-ctx.Done():
-				}
+				send(resp)
 				return
 			}
 
@@ -490,14 +531,9 @@ func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger,
 					Err: err,
 				}
 			}
-
-			select {
-			case responseCh <- r:
-			case <-ctx.Done():
-				return
-			}
+			send(r)
 		}
 	}()
 
-	return responseCh, nil
+	return responseCh, cleanup, nil
 }

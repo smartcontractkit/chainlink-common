@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	_ "embed"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -19,8 +20,10 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
@@ -34,11 +37,13 @@ const TotalSupplyMethod = "totalSupply"
 const UpdateReservesMethod = "updateReserves"
 
 type Config struct {
-	EvmTokenAddress string
-	EvmPorAddress   string
-	PublicKey       string
-	Schedule        string
-	Url             string
+	EvmTokenAddress  string
+	EvmPorAddress    string
+	PublicKey        string
+	Schedule         string
+	Url              string
+	EvmChainSelector uint
+	GasLimit         uint64
 }
 
 func Workflow(runner sdk.DonRunner) {
@@ -92,28 +97,31 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 	if err != nil {
 		return err
 	}
-	evmClient := &evm.Client{}
 
 	supplyPayload, err := erc20.Pack(TotalSupplyMethod)
 	if err != nil {
 		return err
 	}
 
-	evmPromise := evmClient.ReadMethod(runtime, &evm.ReadMethodRequest{
-		Address:         config.EvmTokenAddress,
-		Calldata:        supplyPayload,
-		ConfidenceLevel: evm.ConfidenceLevel_FINALITY,
-	})
-	// TODO other blockchains in parallel
+	evmClient := evmcappb.EVM{ /* ChainSelector: config.EvmChainSelector */ }
 
-	evmRead, err := evmPromise.Await()
+	totalSupplyCallPromise := evmClient.CallContract(runtime, &evm.CallContractRequest{
+		Call: &evm.CallMsg{
+			To:   hexToBytes(config.EvmTokenAddress),
+			Data: supplyPayload,
+		},
+		ConfidenceLevel: chaincommonpb.Confidence_Finalized,
+	})
+
+	// TODO other blockchains in parallel
+	evmRead, err := totalSupplyCallPromise.Await()
 	if err != nil {
 		// TODO specify which EVM
 		logger.Error("Could not read from evm", "err", err.Error())
 		return err
 	}
 
-	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, evmRead.Value)
+	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, evmRead.Data)
 	if err != nil {
 		// TODO specify which EVM
 		logger.Error("Could not unpack evm", "err", err.Error())
@@ -143,15 +151,25 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 		return err
 	}
 
-	evmTx := evmClient.SubmitTransaction(runtime, &evm.SubmitTransactionRequest{
-		ToAddress: config.EvmPorAddress,
-		Calldata:  evmSupplyCallData,
+	report := GenerateReport(config.EvmChainSelector, evmSupplyCallData)
+
+	writeReportReplyPromise := evmClient.WriteReport(runtime, &evm.WriteReportRequest{
+		Receiver: hexToBytes(config.EvmPorAddress),
+		Report: &evm.SignedReport{
+			RawReport:     report.RawReport,
+			ReportContext: report.ReportContext,
+			Signatures:    report.Signatures,
+			Id:            report.ID,
+		},
+		GasConfig: &evm.GasConfig{
+			GasLimit: config.GasLimit,
+		},
 	})
 
 	var writeErrors []error
-	txId, err := evmTx.Await()
+	txHash, err := writeReportReplyPromise.Await()
 	if err == nil {
-		logger.Debug("Submitted transaction", "txId", txId)
+		logger.Debug("Submitted transaction", "tx hash", txHash)
 	} else {
 		logger.Error("failed to submit transaction", "err", err)
 		writeErrors = append(writeErrors, err)
@@ -231,4 +249,23 @@ func verifySignature(porResponse *PorResponse, publicKey string) error {
 		return fmt.Errorf("signature verification failed: %w", err)
 	}
 	return nil
+}
+
+// HexToBytes converts a hex string to a byte array.
+// It returns the byte array and any error encountered.
+func hexToBytes(hexStr string) []byte {
+	bytes, _ := hex.DecodeString(hexStr)
+	return bytes
+}
+
+type CommonReport struct {
+	RawReport     []byte
+	ReportContext []byte
+	Signatures    [][]byte
+	ID            []byte
+}
+
+// TODO we need to define and implement this function
+func GenerateReport(targetChainID uint, evmSupplyCallData []byte) CommonReport {
+	panic("unimplemented")
 }

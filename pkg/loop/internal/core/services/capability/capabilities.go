@@ -287,7 +287,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
-	ch, cleanup, err := forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
+	ch, cleanup, err := forwardTriggerResponsesToChannel(t.Logger, req, responseStream.Recv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
 	}
@@ -481,28 +481,34 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 }
 
 func forwardTriggerResponsesToChannel(
-	ctx context.Context,
 	lggr logger.Logger, req capabilities.TriggerRegistrationRequest,
 	receive func() (*capabilitiespb.TriggerResponseMessage, error),
 ) (<-chan capabilities.TriggerResponse, func(), error) {
+	stop := make(chan struct{})
 	responseCh := make(chan capabilities.TriggerResponse)
 
 	cleanup := sync.OnceFunc(func() {
-		defer close(responseCh)
+		defer close(stop)
 		lggr.Debugw("stopped forwarding trigger responses", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
 	})
 
 	send := func(resp capabilities.TriggerResponse) {
 		select {
 		case responseCh <- resp:
-		case <-ctx.Done():
+		case <-stop:
 		}
 	}
 
 	go func() {
-		defer cleanup()
+		defer close(responseCh)
 
 		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+
 			message, err := receive()
 			if errors.Is(err, io.EOF) {
 				return

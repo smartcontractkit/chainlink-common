@@ -6,7 +6,7 @@ package loop;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
-import "contract_reader.proto";
+import "loop/internal/pb/contract_reader.proto";
 
 service PluginRelayer {
   rpc NewRelayer (NewRelayerRequest) returns (NewRelayerReply) {}
@@ -53,20 +53,6 @@ service Relayer {
   rpc ListNodeStatuses (ListNodeStatusesRequest) returns (ListNodeStatusesReply) {}
   rpc Transact (TransactionRequest) returns (google.protobuf.Empty) {}
   rpc Replay (ReplayRequest) returns (google.protobuf.Empty) {}
-}
-
-service EVM {
-  rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
-}
-
-// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
-message GetTransactionFeeRequest {
-    string transaction_id = 1; // idempotency key used when transaction was submitted
-}
-
-// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetTransactionFee].
-message GetTransactionFeeReply {
-    BigInt transation_fee = 2; // transaction fee is the cost of transaction execution in wei
 }
 
 

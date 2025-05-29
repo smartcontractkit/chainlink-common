@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -18,8 +18,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
-const anyExecutionId = "execId"
-
 var (
 	anyConfig          = []byte("config")
 	anyMaxResponseSize = uint64(2048)
@@ -29,14 +27,12 @@ var (
 	capID               = defaultBasicTrigger.CapabilityID()
 
 	subscribeRequest = &pb.ExecuteRequest{
-		Id:              anyExecutionId,
 		Config:          anyConfig,
 		MaxResponseSize: anyMaxResponseSize,
 		Request:         &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
 	}
 
 	anyExecuteRequest = &pb.ExecuteRequest{
-		Id:              anyExecutionId,
 		Config:          anyConfig,
 		MaxResponseSize: anyMaxResponseSize,
 		Request: &pb.ExecuteRequest_Trigger{
@@ -87,14 +83,12 @@ func TestRunner_Run(t *testing.T) {
 		actual := &pb.ExecutionResult{}
 		sentResponse := dr.(*subscriber[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
-		assert.Equal(t, anyExecutionId, actual.Id)
 
 		switch result := actual.Result.(type) {
 		case *pb.ExecutionResult_TriggerSubscriptions:
 			subscriptions := result.TriggerSubscriptions.Subscriptions
 			require.Len(t, subscriptions, 1)
 			subscription := subscriptions[triggerIndex]
-			assert.Equal(t, anyExecutionId, subscription.ExecId)
 			assert.Equal(t, capID, subscription.Id)
 			assert.Equal(t, "Trigger", subscription.Method)
 			payload := &basictrigger.Config{}
@@ -113,7 +107,6 @@ func TestRunner_Run(t *testing.T) {
 		actual := &pb.ExecutionResult{}
 		sentResponse := dr.(*runner[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
-		assert.Equal(t, anyExecutionId, actual.Id)
 
 		switch result := actual.Result.(type) {
 		case *pb.ExecutionResult_Value:
@@ -129,7 +122,6 @@ func TestRunner_Run(t *testing.T) {
 
 	t.Run("makes callback with correct runner and multiple handlers", func(t *testing.T) {
 		secondTriggerReq := &pb.ExecuteRequest{
-			Id:              anyExecutionId,
 			Config:          anyConfig,
 			MaxResponseSize: anyMaxResponseSize,
 			Request: &pb.ExecuteRequest_Trigger{
@@ -146,7 +138,6 @@ func TestRunner_Run(t *testing.T) {
 		actual := &pb.ExecutionResult{}
 		sentResponse := dr.(*runner[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
-		assert.Equal(t, anyExecutionId, actual.Id)
 
 		switch result := actual.Result.(type) {
 		case *pb.ExecutionResult_Value:
@@ -176,7 +167,6 @@ func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInter
 
 	return &runnerInternalsTestHook{
 		testTb:    tb,
-		execId:    anyExecutionId,
 		arguments: []string{"wasm", encoded},
 	}
 }
@@ -184,8 +174,7 @@ func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInter
 func testRuntimeInternals(tb testing.TB) *runtimeInternalsTestHook {
 	return &runtimeInternalsTestHook{
 		testTb:           tb,
-		executionId:      anyExecutionId,
-		outstandingCalls: map[string]sdk.Promise[*sdkpb.CapabilityResponse]{},
+		outstandingCalls: map[int32]sdk.Promise[*sdkpb.CapabilityResponse]{},
 	}
 }
 

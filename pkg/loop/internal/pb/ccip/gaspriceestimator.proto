@@ -4,8 +4,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop.internal.pb.ccip;
 import "google/protobuf/empty.proto";
-import "relayer.proto";
-import "models.proto";
+import "loop/internal/pb/relayer.proto";
+import "loop/internal/pb/ccip/models.proto";
 
 // GasPriceEstimatorExec is a gRPC service adapter for the interface
 // [github.com/smartcontractkit/chainlink-common/pkg/types/ccip.GasPriceEstimatorExec]

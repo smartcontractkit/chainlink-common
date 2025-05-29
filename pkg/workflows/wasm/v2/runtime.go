@@ -5,43 +5,43 @@ import (
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/proto"
 )
 
 type runtimeInternals interface {
-	callCapability(req unsafe.Pointer, reqLen int32, id unsafe.Pointer) int64
+	callCapability(req unsafe.Pointer, reqLen int32) int64
 	awaitCapabilities(awaitRequest unsafe.Pointer, awaitRequestLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64
 }
 
-func newRuntime(internals runtimeInternals) sdkimpl.RuntimeBase {
+func newRuntime(internals runtimeInternals, mode sdkpb.Mode) sdkimpl.RuntimeBase {
 	return sdkimpl.RuntimeBase{
 		Call:   callCapabilityWasmWrapper(internals),
 		Await:  awaitCapabilitiesWasmWrapper(internals),
 		Writer: &writer{},
+		Mode:   mode,
 	}
 }
 
-func callCapabilityWasmWrapper(internals runtimeInternals) func(request *sdkpb.CapabilityRequest) ([]byte, error) {
-	return func(request *sdkpb.CapabilityRequest) ([]byte, error) {
+func callCapabilityWasmWrapper(internals runtimeInternals) func(request *sdkpb.CapabilityRequest) error {
+	return func(request *sdkpb.CapabilityRequest) error {
 		marshalled, err := proto.Marshal(request)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		id := make([]byte, sdk.IdLen)
 		marshalledPtr, marshalledLen, err := bufferToPointerLen(marshalled)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		result := internals.callCapability(marshalledPtr, marshalledLen, unsafe.Pointer(&id[0]))
+		// TODO (CAPPL-846): callCapability should also have a response pointer and response pointer buffer
+		result := internals.callCapability(marshalledPtr, marshalledLen)
 		if result < 0 {
-			return nil, errors.New("cannot find capability " + request.Id)
+			return errors.New("cannot find capability " + request.Id)
 		}
 
-		return id, nil
+		return nil
 	}
 }
 

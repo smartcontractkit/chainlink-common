@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: onramp.proto
+// source: loop/internal/pb/ccip/onramp.proto
 
 package ccippb
 
@@ -35,7 +35,7 @@ type GetSendRequestsBetweenSeqNumsRequest struct {
 
 func (x *GetSendRequestsBetweenSeqNumsRequest) Reset() {
 	*x = GetSendRequestsBetweenSeqNumsRequest{}
-	mi := &file_onramp_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *GetSendRequestsBetweenSeqNumsRequest) String() string {
 func (*GetSendRequestsBetweenSeqNumsRequest) ProtoMessage() {}
 
 func (x *GetSendRequestsBetweenSeqNumsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[0]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *GetSendRequestsBetweenSeqNumsRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetSendRequestsBetweenSeqNumsRequest.ProtoReflect.Descriptor instead.
 func (*GetSendRequestsBetweenSeqNumsRequest) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{0}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetSendRequestsBetweenSeqNumsRequest) GetSeqNumMin() uint64 {
@@ -97,7 +97,7 @@ type GetSendRequestsBetweenSeqNumsResponse struct {
 
 func (x *GetSendRequestsBetweenSeqNumsResponse) Reset() {
 	*x = GetSendRequestsBetweenSeqNumsResponse{}
-	mi := &file_onramp_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -109,7 +109,7 @@ func (x *GetSendRequestsBetweenSeqNumsResponse) String() string {
 func (*GetSendRequestsBetweenSeqNumsResponse) ProtoMessage() {}
 
 func (x *GetSendRequestsBetweenSeqNumsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[1]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -122,7 +122,7 @@ func (x *GetSendRequestsBetweenSeqNumsResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetSendRequestsBetweenSeqNumsResponse.ProtoReflect.Descriptor instead.
 func (*GetSendRequestsBetweenSeqNumsResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{1}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetSendRequestsBetweenSeqNumsResponse) GetSendRequests() []*EVM2EVMMessageWithTxMeta {
@@ -143,7 +143,7 @@ type RouterAddressResponse struct {
 
 func (x *RouterAddressResponse) Reset() {
 	*x = RouterAddressResponse{}
-	mi := &file_onramp_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -155,7 +155,7 @@ func (x *RouterAddressResponse) String() string {
 func (*RouterAddressResponse) ProtoMessage() {}
 
 func (x *RouterAddressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[2]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -168,7 +168,7 @@ func (x *RouterAddressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RouterAddressResponse.ProtoReflect.Descriptor instead.
 func (*RouterAddressResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{2}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RouterAddressResponse) GetRouterAddress() string {
@@ -189,7 +189,7 @@ type OnrampAddressResponse struct {
 
 func (x *OnrampAddressResponse) Reset() {
 	*x = OnrampAddressResponse{}
-	mi := &file_onramp_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +201,7 @@ func (x *OnrampAddressResponse) String() string {
 func (*OnrampAddressResponse) ProtoMessage() {}
 
 func (x *OnrampAddressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[3]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +214,7 @@ func (x *OnrampAddressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnrampAddressResponse.ProtoReflect.Descriptor instead.
 func (*OnrampAddressResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{3}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *OnrampAddressResponse) GetAddress() string {
@@ -235,7 +235,7 @@ type GetDynamicConfigResponse struct {
 
 func (x *GetDynamicConfigResponse) Reset() {
 	*x = GetDynamicConfigResponse{}
-	mi := &file_onramp_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -247,7 +247,7 @@ func (x *GetDynamicConfigResponse) String() string {
 func (*GetDynamicConfigResponse) ProtoMessage() {}
 
 func (x *GetDynamicConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[4]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +260,7 @@ func (x *GetDynamicConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDynamicConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetDynamicConfigResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{4}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetDynamicConfigResponse) GetDynamicConfig() *OnRampDynamicConfig {
@@ -290,7 +290,7 @@ type OnRampDynamicConfig struct {
 
 func (x *OnRampDynamicConfig) Reset() {
 	*x = OnRampDynamicConfig{}
-	mi := &file_onramp_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -302,7 +302,7 @@ func (x *OnRampDynamicConfig) String() string {
 func (*OnRampDynamicConfig) ProtoMessage() {}
 
 func (x *OnRampDynamicConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[5]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,7 +315,7 @@ func (x *OnRampDynamicConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnRampDynamicConfig.ProtoReflect.Descriptor instead.
 func (*OnRampDynamicConfig) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{5}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *OnRampDynamicConfig) GetRouter() string {
@@ -400,7 +400,7 @@ type EVM2EVMMessageWithTxMeta struct {
 
 func (x *EVM2EVMMessageWithTxMeta) Reset() {
 	*x = EVM2EVMMessageWithTxMeta{}
-	mi := &file_onramp_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -412,7 +412,7 @@ func (x *EVM2EVMMessageWithTxMeta) String() string {
 func (*EVM2EVMMessageWithTxMeta) ProtoMessage() {}
 
 func (x *EVM2EVMMessageWithTxMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[6]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -425,7 +425,7 @@ func (x *EVM2EVMMessageWithTxMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EVM2EVMMessageWithTxMeta.ProtoReflect.Descriptor instead.
 func (*EVM2EVMMessageWithTxMeta) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{6}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EVM2EVMMessageWithTxMeta) GetMessage() *EVM2EVMMessage {
@@ -451,7 +451,7 @@ type IsSourceChainHealthyResponse struct {
 
 func (x *IsSourceChainHealthyResponse) Reset() {
 	*x = IsSourceChainHealthyResponse{}
-	mi := &file_onramp_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -463,7 +463,7 @@ func (x *IsSourceChainHealthyResponse) String() string {
 func (*IsSourceChainHealthyResponse) ProtoMessage() {}
 
 func (x *IsSourceChainHealthyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[7]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -476,7 +476,7 @@ func (x *IsSourceChainHealthyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsSourceChainHealthyResponse.ProtoReflect.Descriptor instead.
 func (*IsSourceChainHealthyResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{7}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *IsSourceChainHealthyResponse) GetIsHealthy() bool {
@@ -495,7 +495,7 @@ type IsSourceCursedResponse struct {
 
 func (x *IsSourceCursedResponse) Reset() {
 	*x = IsSourceCursedResponse{}
-	mi := &file_onramp_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -507,7 +507,7 @@ func (x *IsSourceCursedResponse) String() string {
 func (*IsSourceCursedResponse) ProtoMessage() {}
 
 func (x *IsSourceCursedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[8]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -520,7 +520,7 @@ func (x *IsSourceCursedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsSourceCursedResponse.ProtoReflect.Descriptor instead.
 func (*IsSourceCursedResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{8}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *IsSourceCursedResponse) GetIsCursed() bool {
@@ -539,7 +539,7 @@ type SourcePriceRegistryAddressResponse struct {
 
 func (x *SourcePriceRegistryAddressResponse) Reset() {
 	*x = SourcePriceRegistryAddressResponse{}
-	mi := &file_onramp_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +551,7 @@ func (x *SourcePriceRegistryAddressResponse) String() string {
 func (*SourcePriceRegistryAddressResponse) ProtoMessage() {}
 
 func (x *SourcePriceRegistryAddressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_onramp_proto_msgTypes[9]
+	mi := &file_loop_internal_pb_ccip_onramp_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +564,7 @@ func (x *SourcePriceRegistryAddressResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use SourcePriceRegistryAddressResponse.ProtoReflect.Descriptor instead.
 func (*SourcePriceRegistryAddressResponse) Descriptor() ([]byte, []int) {
-	return file_onramp_proto_rawDescGZIP(), []int{9}
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SourcePriceRegistryAddressResponse) GetPriceRegistryAddress() string {
@@ -574,11 +574,11 @@ func (x *SourcePriceRegistryAddressResponse) GetPriceRegistryAddress() string {
 	return ""
 }
 
-var File_onramp_proto protoreflect.FileDescriptor
+var File_loop_internal_pb_ccip_onramp_proto protoreflect.FileDescriptor
 
-const file_onramp_proto_rawDesc = "" +
+const file_loop_internal_pb_ccip_onramp_proto_rawDesc = "" +
 	"\n" +
-	"\fonramp.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\fmodels.proto\"\x84\x01\n" +
+	"\"loop/internal/pb/ccip/onramp.proto\x12\x15loop.internal.pb.ccip\x1a\x1bgoogle/protobuf/empty.proto\x1a\"loop/internal/pb/ccip/models.proto\"\x84\x01\n" +
 	"$GetSendRequestsBetweenSeqNumsRequest\x12\x1e\n" +
 	"\vseq_num_min\x18\x01 \x01(\x04R\tseqNumMin\x12\x1e\n" +
 	"\vseq_num_max\x18\x02 \x01(\x04R\tseqNumMax\x12\x1c\n" +
@@ -624,19 +624,19 @@ const file_onramp_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00BOZMgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip;ccippbb\x06proto3"
 
 var (
-	file_onramp_proto_rawDescOnce sync.Once
-	file_onramp_proto_rawDescData []byte
+	file_loop_internal_pb_ccip_onramp_proto_rawDescOnce sync.Once
+	file_loop_internal_pb_ccip_onramp_proto_rawDescData []byte
 )
 
-func file_onramp_proto_rawDescGZIP() []byte {
-	file_onramp_proto_rawDescOnce.Do(func() {
-		file_onramp_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_onramp_proto_rawDesc), len(file_onramp_proto_rawDesc)))
+func file_loop_internal_pb_ccip_onramp_proto_rawDescGZIP() []byte {
+	file_loop_internal_pb_ccip_onramp_proto_rawDescOnce.Do(func() {
+		file_loop_internal_pb_ccip_onramp_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_onramp_proto_rawDesc), len(file_loop_internal_pb_ccip_onramp_proto_rawDesc)))
 	})
-	return file_onramp_proto_rawDescData
+	return file_loop_internal_pb_ccip_onramp_proto_rawDescData
 }
 
-var file_onramp_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_onramp_proto_goTypes = []any{
+var file_loop_internal_pb_ccip_onramp_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_loop_internal_pb_ccip_onramp_proto_goTypes = []any{
 	(*GetSendRequestsBetweenSeqNumsRequest)(nil),  // 0: loop.internal.pb.ccip.GetSendRequestsBetweenSeqNumsRequest
 	(*GetSendRequestsBetweenSeqNumsResponse)(nil), // 1: loop.internal.pb.ccip.GetSendRequestsBetweenSeqNumsResponse
 	(*RouterAddressResponse)(nil),                 // 2: loop.internal.pb.ccip.RouterAddressResponse
@@ -651,7 +651,7 @@ var file_onramp_proto_goTypes = []any{
 	(*TxMeta)(nil),                                // 11: loop.internal.pb.ccip.TxMeta
 	(*emptypb.Empty)(nil),                         // 12: google.protobuf.Empty
 }
-var file_onramp_proto_depIdxs = []int32{
+var file_loop_internal_pb_ccip_onramp_proto_depIdxs = []int32{
 	6,  // 0: loop.internal.pb.ccip.GetSendRequestsBetweenSeqNumsResponse.send_requests:type_name -> loop.internal.pb.ccip.EVM2EVMMessageWithTxMeta
 	5,  // 1: loop.internal.pb.ccip.GetDynamicConfigResponse.dynamic_config:type_name -> loop.internal.pb.ccip.OnRampDynamicConfig
 	10, // 2: loop.internal.pb.ccip.EVM2EVMMessageWithTxMeta.message:type_name -> loop.internal.pb.ccip.EVM2EVMMessage
@@ -679,27 +679,27 @@ var file_onramp_proto_depIdxs = []int32{
 	0,  // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_onramp_proto_init() }
-func file_onramp_proto_init() {
-	if File_onramp_proto != nil {
+func init() { file_loop_internal_pb_ccip_onramp_proto_init() }
+func file_loop_internal_pb_ccip_onramp_proto_init() {
+	if File_loop_internal_pb_ccip_onramp_proto != nil {
 		return
 	}
-	file_models_proto_init()
+	file_loop_internal_pb_ccip_models_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_onramp_proto_rawDesc), len(file_onramp_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_ccip_onramp_proto_rawDesc), len(file_loop_internal_pb_ccip_onramp_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_onramp_proto_goTypes,
-		DependencyIndexes: file_onramp_proto_depIdxs,
-		MessageInfos:      file_onramp_proto_msgTypes,
+		GoTypes:           file_loop_internal_pb_ccip_onramp_proto_goTypes,
+		DependencyIndexes: file_loop_internal_pb_ccip_onramp_proto_depIdxs,
+		MessageInfos:      file_loop_internal_pb_ccip_onramp_proto_msgTypes,
 	}.Build()
-	File_onramp_proto = out.File
-	file_onramp_proto_goTypes = nil
-	file_onramp_proto_depIdxs = nil
+	File_loop_internal_pb_ccip_onramp_proto = out.File
+	file_loop_internal_pb_ccip_onramp_proto_goTypes = nil
+	file_loop_internal_pb_ccip_onramp_proto_depIdxs = nil
 }

@@ -30,6 +30,8 @@ type Server struct {
 	log logger.Logger
 
 	relayerset.UnimplementedRelayerSetServer
+	relayerset.UnimplementedEVMRelayerSetServer
+
 	impl   core.RelayerSet
 	broker *net.BrokerExt
 
@@ -41,6 +43,9 @@ type Server struct {
 
 	readersMux sync.Mutex
 }
+
+var _ relayerset.RelayerSetServer = (*Server)(nil)
+var _ relayerset.EVMRelayerSetServer = (*Server)(nil)
 
 func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *net.BrokerExt) (*Server, net.Resource) {
 	pluginProviderServers := make(net.Resources, 0)
@@ -159,88 +164,6 @@ func (s *Server) NewContractReader(ctx context.Context, req *relayerset.NewContr
 	})
 
 	return &relayerset.NewContractReaderResponse{ContractReaderId: readerID}, nil
-}
-
-func (s *Server) ContractReaderStart(ctx context.Context, req *relayerset.ContractReaderStartRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &emptypb.Empty{}, reader.reader.Start(ctx)
-}
-
-func (s *Server) ContractReaderClose(ctx context.Context, req *relayerset.ContractReaderCloseRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	s.removeReader(req.ContractReaderId)
-	return &emptypb.Empty{}, reader.reader.Close()
-}
-
-func (s *Server) ContractReaderGetLatestValue(ctx context.Context, req *relayerset.ContractReaderGetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.GetLatestValue(ctx, req.GetRequest())
-}
-
-func (s *Server) ContractReaderGetLatestValueWithHeadData(ctx context.Context, req *relayerset.ContractReaderGetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.GetLatestValueWithHeadData(ctx, req.GetRequest())
-}
-
-func (s *Server) ContractReaderBatchGetLatestValues(ctx context.Context, req *relayerset.ContractReaderBatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.BatchGetLatestValues(ctx, req.GetRequest())
-}
-
-func (s *Server) ContractReaderQueryKeys(ctx context.Context, req *relayerset.ContractReaderQueryKeysRequest) (*pb.QueryKeysReply, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.QueryKeys(ctx, req.GetRequest())
-}
-
-func (s *Server) ContractReaderQueryKey(ctx context.Context, req *relayerset.ContractReaderQueryKeyRequest) (*pb.QueryKeyReply, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.QueryKey(ctx, req.GetRequest())
-}
-
-func (s *Server) ContractReaderBind(ctx context.Context, req *relayerset.ContractReaderBindRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.Bind(ctx, req.GetRequest())
-}
-
-func (s *Server) ContractReaderUnbind(ctx context.Context, req *relayerset.ContractReaderUnbindRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(req.ContractReaderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return reader.server.Unbind(ctx, req.GetRequest())
 }
 
 // RelayerSet is supposed to serve relayers, which then hold a ContractReader and ContractWriter. Serving NewContractWriter

@@ -2,12 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: contract_writer.proto
+// source: loop/internal/pb/contract_writer.proto
 
 package pb
 
 import (
 	context "context"
+	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,6 +24,7 @@ const (
 	ContractWriter_SubmitTransaction_FullMethodName    = "/loop.ContractWriter/SubmitTransaction"
 	ContractWriter_GetTransactionStatus_FullMethodName = "/loop.ContractWriter/GetTransactionStatus"
 	ContractWriter_GetFeeComponents_FullMethodName     = "/loop.ContractWriter/GetFeeComponents"
+	ContractWriter_GetEstimateFee_FullMethodName       = "/loop.ContractWriter/GetEstimateFee"
 )
 
 // ContractWriterClient is the client API for ContractWriter service.
@@ -30,8 +32,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ContractWriterClient interface {
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
+	GetTransactionStatus(ctx context.Context, in *chain_service.GetTransactionStatusRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionStatusReply, error)
 	GetFeeComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFeeComponentsReply, error)
+	GetEstimateFee(ctx context.Context, in *GetEstimateFeeRequest, opts ...grpc.CallOption) (*GetEstimateFeeReply, error)
 }
 
 type contractWriterClient struct {
@@ -52,9 +55,9 @@ func (c *contractWriterClient) SubmitTransaction(ctx context.Context, in *Submit
 	return out, nil
 }
 
-func (c *contractWriterClient) GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error) {
+func (c *contractWriterClient) GetTransactionStatus(ctx context.Context, in *chain_service.GetTransactionStatusRequest, opts ...grpc.CallOption) (*chain_service.GetTransactionStatusReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTransactionStatusReply)
+	out := new(chain_service.GetTransactionStatusReply)
 	err := c.cc.Invoke(ctx, ContractWriter_GetTransactionStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -72,13 +75,24 @@ func (c *contractWriterClient) GetFeeComponents(ctx context.Context, in *emptypb
 	return out, nil
 }
 
+func (c *contractWriterClient) GetEstimateFee(ctx context.Context, in *GetEstimateFeeRequest, opts ...grpc.CallOption) (*GetEstimateFeeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetEstimateFeeReply)
+	err := c.cc.Invoke(ctx, ContractWriter_GetEstimateFee_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ContractWriterServer is the server API for ContractWriter service.
 // All implementations must embed UnimplementedContractWriterServer
 // for forward compatibility.
 type ContractWriterServer interface {
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*emptypb.Empty, error)
-	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
+	GetTransactionStatus(context.Context, *chain_service.GetTransactionStatusRequest) (*chain_service.GetTransactionStatusReply, error)
 	GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error)
+	GetEstimateFee(context.Context, *GetEstimateFeeRequest) (*GetEstimateFeeReply, error)
 	mustEmbedUnimplementedContractWriterServer()
 }
 
@@ -92,11 +106,14 @@ type UnimplementedContractWriterServer struct{}
 func (UnimplementedContractWriterServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }
-func (UnimplementedContractWriterServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error) {
+func (UnimplementedContractWriterServer) GetTransactionStatus(context.Context, *chain_service.GetTransactionStatusRequest) (*chain_service.GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
 }
 func (UnimplementedContractWriterServer) GetFeeComponents(context.Context, *emptypb.Empty) (*GetFeeComponentsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeeComponents not implemented")
+}
+func (UnimplementedContractWriterServer) GetEstimateFee(context.Context, *GetEstimateFeeRequest) (*GetEstimateFeeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEstimateFee not implemented")
 }
 func (UnimplementedContractWriterServer) mustEmbedUnimplementedContractWriterServer() {}
 func (UnimplementedContractWriterServer) testEmbeddedByValue()                        {}
@@ -138,7 +155,7 @@ func _ContractWriter_SubmitTransaction_Handler(srv interface{}, ctx context.Cont
 }
 
 func _ContractWriter_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTransactionStatusRequest)
+	in := new(chain_service.GetTransactionStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -150,7 +167,7 @@ func _ContractWriter_GetTransactionStatus_Handler(srv interface{}, ctx context.C
 		FullMethod: ContractWriter_GetTransactionStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContractWriterServer).GetTransactionStatus(ctx, req.(*GetTransactionStatusRequest))
+		return srv.(ContractWriterServer).GetTransactionStatus(ctx, req.(*chain_service.GetTransactionStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -169,6 +186,24 @@ func _ContractWriter_GetFeeComponents_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ContractWriterServer).GetFeeComponents(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ContractWriter_GetEstimateFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEstimateFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ContractWriterServer).GetEstimateFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ContractWriter_GetEstimateFee_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ContractWriterServer).GetEstimateFee(ctx, req.(*GetEstimateFeeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,7 +227,11 @@ var ContractWriter_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetFeeComponents",
 			Handler:    _ContractWriter_GetFeeComponents_Handler,
 		},
+		{
+			MethodName: "GetEstimateFee",
+			Handler:    _ContractWriter_GetEstimateFee_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "contract_writer.proto",
+	Metadata: "loop/internal/pb/contract_writer.proto",
 }

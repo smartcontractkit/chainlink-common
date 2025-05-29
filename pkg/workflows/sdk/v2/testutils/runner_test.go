@@ -3,11 +3,10 @@ package testutils_test
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"strings"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/testhelpers"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -168,6 +167,46 @@ func TestRunner_MissingTriggersAreNotRequired(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRunner_MissingTriggerStubsAreNotRequired(t *testing.T) {
+	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+	anyConfig2 := &actionandtrigger.Config{Name: "b"}
+	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
+
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return anyTrigger, nil
+	}
+
+	_, err = actionandtriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+
+	runner := testutils.NewDonRunner(t, nil)
+	require.NoError(t, err)
+
+	anyResult := "ok"
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					return anyResult, nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(anyConfig2),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
+					assert.Fail(t, "This trigger shouldn'tb fire")
+					return nil, nil
+				},
+			),
+		},
+	})
+
+	_, _, err = runner.Result()
+	require.NoError(t, err)
+}
+
 func TestRunner_FiringTwoTriggersReturnsAnError(t *testing.T) {
 	anyConfig1 := &basictrigger.Config{Name: "a", Number: 1}
 	anyConfig2 := &actionandtrigger.Config{Name: "b"}
@@ -254,6 +293,47 @@ func TestRunner_StrictTriggers_FailsIfTriggerIsNotRegistered(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestRunner_StrictTriggers_FailsIfTriggerIsNotStubbed(t *testing.T) {
+	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+	anyConfig2 := &actionandtrigger.Config{Name: "b"}
+	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
+
+	trigger, err := basictriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+		return anyTrigger, nil
+	}
+
+	_, err = actionandtriggermock.NewBasicCapability(t)
+	require.NoError(t, err)
+
+	runner := testutils.NewDonRunner(t, nil)
+	require.NoError(t, err)
+	runner.SetStrictTriggers(true)
+
+	anyResult := "ok"
+	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
+		Handlers: []sdk.Handler[sdk.DonRuntime]{
+			sdk.NewDonHandler(
+				basictrigger.Basic{}.Trigger(anyConfig),
+				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
+					return anyResult, nil
+				},
+			),
+			sdk.NewDonHandler(
+				actionandtrigger.Basic{}.Trigger(anyConfig2),
+				func(rt sdk.DonRuntime, in *actionandtrigger.TriggerEvent) (*string, error) {
+					assert.Fail(t, "This trigger shouldn'tb fire")
+					return nil, nil
+				},
+			),
+		},
+	})
+
+	_, _, err = runner.Result()
+	assert.Error(t, err)
+}
+
 func TestRunner_CanStartInNodeMode(t *testing.T) {
 	anyConfig := &nodetrigger.Config{Name: "name", Number: 123}
 	anyTrigger := &nodetrigger.Outputs{CoolOutput: "cool"}
@@ -299,15 +379,13 @@ func TestRunner_Logs(t *testing.T) {
 	runner := testutils.NewDonRunner(t, nil)
 	require.NoError(t, err)
 
-	runner.SetDefaultLogger()
-
 	anyResult := "ok"
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-					logger := slog.Default()
+					logger := rt.Logger()
 					logger.Info(anyResult)
 					logger.Warn(anyResult + "2")
 					return anyResult, nil
@@ -388,4 +466,7 @@ func TestRunner_FullWorkflow(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ran)
 	assert.Equal(t, testhelpers.TestWorkflowExpectedResult(), result)
+	logs := runner.Logs()
+	assert.Len(t, logs, 1)
+	assert.True(t, strings.Contains(logs[0], "Hi"))
 }

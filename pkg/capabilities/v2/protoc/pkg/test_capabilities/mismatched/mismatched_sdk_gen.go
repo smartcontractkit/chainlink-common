@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type Mismatched struct {
@@ -22,15 +22,15 @@ func (c *Mismatched) ExampleMethod(runtime sdk.DonRuntime, input *Input) sdk.Pro
 	if err != nil {
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
 	}
-	return sdk.Then(runtime.CallCapability(&pb.CapabilityRequest{
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "example@1.0.0",
 		Payload: wrapped,
 		Method:  "ExampleMethod",
-	}), func(i *pb.CapabilityResponse) (*emptypb.Empty, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*emptypb.Empty, error) {
 		switch payload := i.Response.(type) {
-		case *pb.CapabilityResponse_Error:
+		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
-		case *pb.CapabilityResponse_Payload:
+		case *sdkpb.CapabilityResponse_Payload:
 			output := &emptypb.Empty{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err

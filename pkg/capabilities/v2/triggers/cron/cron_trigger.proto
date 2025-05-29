@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package cron_trigger.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron";
+
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+
+message Config {
+  string schedule = 1; // Cron schedule string
+}
+
+message Payload {
+  string scheduled_execution_time = 1; // Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)
+}
+
+service Cron {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "cron-trigger@1.0.0"
+  };
+
+  rpc Trigger(Config) returns (stream Payload) {
+    option (cre.metadata.method) = {
+      map_to_untyped_api: true
+    };
+  }
+}

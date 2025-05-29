@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log/slog"
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
@@ -140,8 +139,6 @@ type genericRunner[T any] interface {
 }
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
-	slog.SetDefault(slog.New(slog.NewTextHandler(&writer{}, nil)))
-
 	args := run.args()
 
 	// We expect exactly 2 args, i.e. `wasm <blob>`,

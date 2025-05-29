@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log/slog"
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
@@ -91,6 +92,10 @@ func (d *runner[T]) LogWriter() io.Writer {
 	return &writer{}
 }
 
+func (d *runner[T]) Logger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(d.LogWriter(), nil))
+}
+
 type subscriber[T any] struct {
 	runnerInternals
 	id     string
@@ -132,10 +137,15 @@ func (d *subscriber[T]) LogWriter() io.Writer {
 	return &writer{}
 }
 
+func (d *subscriber[T]) Logger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(d.LogWriter(), nil))
+}
+
 type genericRunner[T any] interface {
 	Run(args *sdk.WorkflowArgs[T])
 	Config() []byte
 	LogWriter() io.Writer
+	Logger() *slog.Logger
 }
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {

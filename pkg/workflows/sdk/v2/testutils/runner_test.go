@@ -3,7 +3,6 @@ package testutils_test
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"strings"
 	"testing"
 
@@ -380,15 +379,13 @@ func TestRunner_Logs(t *testing.T) {
 	runner := testutils.NewDonRunner(t, nil)
 	require.NoError(t, err)
 
-	runner.SetDefaultLogger()
-
 	anyResult := "ok"
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-					logger := slog.Default()
+					logger := rt.Logger()
 					logger.Info(anyResult)
 					logger.Warn(anyResult + "2")
 					return anyResult, nil
@@ -464,7 +461,6 @@ func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
 func TestRunner_FullWorkflow(t *testing.T) {
 	testhelpers.SetupExpectedCalls(t)
 	runner := testutils.NewDonRunner(t, nil)
-	runner.SetDefaultLogger()
 	testhelpers.RunTestWorkflow(runner)
 	ran, result, err := runner.Result()
 	require.NoError(t, err)

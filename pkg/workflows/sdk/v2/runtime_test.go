@@ -3,6 +3,7 @@ package sdk_test
 import (
 	"errors"
 	"io"
+	"log/slog"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -106,6 +107,10 @@ func (m mockNodeRuntime) LogWriter() io.Writer {
 	panic("unused in tests")
 }
 
+func (m mockNodeRuntime) Logger() *slog.Logger {
+	panic("unused in tests")
+}
+
 func (m mockNodeRuntime) IsNodeRuntime() {}
 
 type mockDonRuntime struct{}
@@ -129,6 +134,7 @@ func (m *mockDonRuntime) CallCapability(*pb.CapabilityRequest) sdk.Promise[*pb.C
 }
 func (m *mockDonRuntime) Config() []byte       { return nil }
 func (m *mockDonRuntime) LogWriter() io.Writer { return nil }
+func (m *mockDonRuntime) Logger() *slog.Logger { return nil }
 
 type medianTestFieldDescription[T any] struct {
 	T T

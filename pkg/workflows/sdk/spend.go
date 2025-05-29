@@ -27,12 +27,6 @@ func (m *MaxSpendLimits) WithMaxSpendCRE(value int64) *MaxSpendLimits {
 	return m
 }
 
-// WithMaxSpendGas adds a gas credit limit to the collection
-func (m *MaxSpendLimits) WithMaxSpendGas(value int64) *MaxSpendLimits {
-	m.limits.WithMaxSpendGas(value)
-	return m
-}
-
 // GetLimit returns the limit for a specific credit type, if it exists
 func (m *MaxSpendLimits) GetLimit(credit string) (*v2.SpendLimit, bool) {
 	return m.limits.GetLimit(credit)

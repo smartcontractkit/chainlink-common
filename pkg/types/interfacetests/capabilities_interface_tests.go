@@ -138,14 +138,14 @@ func runBaseCapabilityInterfaceTests(t *testing.T, tester CapabilitiesInterfaceT
 					if len(info.SpendTypes) > 0 {
 						for _, res := range info.SpendTypes {
 							// GAS is a special case that requires a chainId modifier
-							if strings.Contains(res, "GAS") {
-								assert.True(t, validGasSpendType.MatchString(res))
+							if strings.Contains(string(res), "GAS") {
+								assert.True(t, validGasSpendType.MatchString(string(res)))
 
 								continue
 							}
 
 							// other resource types are a direct comparison
-							assert.True(t, slices.Contains(validSpendTypes, res))
+							assert.True(t, slices.Contains(validSpendTypes, string(res)))
 						}
 					}
 				},

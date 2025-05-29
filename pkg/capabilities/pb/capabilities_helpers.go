@@ -57,13 +57,9 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	limits := make([]*SpendLimit, len(req.Metadata.SpendLimits))
 
 	for idx, resource := range req.Metadata.SpendLimits {
-		if len(resource) != 2 {
-			continue
-		}
-
 		limits[idx] = &SpendLimit{
-			SpendType: resource[0],
-			Limit:     resource[1],
+			SpendType: string(resource.SpendType),
+			Limit:     resource.Limit,
 		}
 	}
 
@@ -127,9 +123,12 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		return capabilities.CapabilityRequest{}, err
 	}
 
-	limits := make([][]string, len(pr.Metadata.SpendLimits))
+	limits := make([]capabilities.SpendLimit, len(pr.Metadata.SpendLimits))
 	for idx, resource := range pr.Metadata.SpendLimits {
-		limits[idx] = []string{resource.GetSpendType(), resource.GetLimit()}
+		limits[idx] = capabilities.SpendLimit{
+			SpendType: capabilities.CapabilitySpendType(resource.GetSpendType()),
+			Limit:     resource.GetLimit(),
+		}
 	}
 
 	req := capabilities.CapabilityRequest{

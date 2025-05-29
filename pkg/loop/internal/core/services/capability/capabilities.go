@@ -121,12 +121,17 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
 	}
 
+	types := make([]string, len(info.SpendTypes))
+	for idx, sType := range info.SpendTypes {
+		types[idx] = string(sType)
+	}
+
 	return &capabilitiespb.CapabilityInfoReply{
 		Id:             info.ID,
 		CapabilityType: ct,
 		Description:    info.Description,
 		IsLocal:        info.IsLocal,
-		SpendTypes:     info.SpendTypes,
+		SpendTypes:     types,
 	}
 }
 
@@ -167,12 +172,17 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}
 
+	types := make([]capabilities.CapabilitySpendType, len(resp.SpendTypes))
+	for idx, sType := range resp.SpendTypes {
+		types[idx] = capabilities.CapabilitySpendType(sType)
+	}
+
 	return capabilities.CapabilityInfo{
 		ID:             resp.Id,
 		CapabilityType: ct,
 		Description:    resp.Description,
 		IsLocal:        resp.IsLocal,
-		SpendTypes:     resp.SpendTypes,
+		SpendTypes:     types,
 	}, nil
 }
 

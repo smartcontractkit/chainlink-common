@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748552949476,
+  "lastUpdate": 1748559160413,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14490,6 +14490,48 @@ window.BENCHMARK_DATA = {
             "value": 28480,
             "unit": "ns/op",
             "extra": "42111 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b40f30ddfef17db95b39bcca445be76df9eab2b8",
+          "message": "fix(capabilities): internally stop forwarding responses on unregister (#1221)",
+          "timestamp": "2025-05-29T18:51:14-04:00",
+          "tree_id": "c77b2ec177f828b91f66777b163f93f6e6713906",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b40f30ddfef17db95b39bcca445be76df9eab2b8"
+        },
+        "date": 1748559158874,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.2,
+            "unit": "ns/op",
+            "extra": "3394626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.7,
+            "unit": "ns/op",
+            "extra": "2967541 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28488,
+            "unit": "ns/op",
+            "extra": "42141 times\n4 procs"
           }
         ]
       }

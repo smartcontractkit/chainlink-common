@@ -13,6 +13,7 @@ type Handler[T any] interface {
 	Method() string
 	TriggerCfg() *anypb.Any
 	Callback() func(runtime T, payload *anypb.Any) (any, error)
+	Spend() *SpendLimits
 }
 
 // NewDonHandler creates a new Handler for a DonTrigger with a return value for the workflow
@@ -63,7 +64,8 @@ func newEmptyDonHandler[R any, M proto.Message, T Trigger[M]](trigger T, callbac
 
 type handler[R any, T proto.Message] struct {
 	Trigger[T]
-	fn func(runtime R, trigger *anypb.Any) (any, error)
+	fn    func(runtime R, trigger *anypb.Any) (any, error)
+	spend *SpendLimits
 }
 
 func (h *handler[R, T]) TriggerCfg() *anypb.Any {
@@ -72,6 +74,16 @@ func (h *handler[R, T]) TriggerCfg() *anypb.Any {
 
 func (h *handler[R, T]) Callback() func(runtime R, payload *anypb.Any) (any, error) {
 	return h.fn
+}
+
+func (h *handler[R, T]) Spend() *SpendLimits {
+	return h.spend
+}
+
+// WithMaxSpend sets the spend limits for this handler
+func (h *handler[R, T]) WithMaxSpend(limits *SpendLimits) *handler[R, T] {
+	h.spend = limits
+	return h
 }
 
 var _ Handler[any] = (*handler[any, proto.Message])(nil)

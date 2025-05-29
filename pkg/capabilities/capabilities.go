@@ -319,7 +319,7 @@ type CapabilityInfo struct {
 	Description    string
 	DON            *DON
 	IsLocal        bool
-	// Resources denotest the resource types a capability expects to use during an invocation.
+	// Resources denotes the resource types a capability expects to use during an invocation.
 	Resources []string
 }
 

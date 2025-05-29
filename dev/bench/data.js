@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748535304707,
+  "lastUpdate": 1748544094736,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14406,6 +14406,48 @@ window.BENCHMARK_DATA = {
             "value": 28245,
             "unit": "ns/op",
             "extra": "42230 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be9c134785d7ffd052bfa90eaf916db73fb04a70",
+          "message": "pkg/utils: add CL_RUN_FLAKEY to run skipped flakey tests (#1137)",
+          "timestamp": "2025-05-29T13:40:17-05:00",
+          "tree_id": "cc9c6502b9cfa276849c91bd49bcacca02c695f8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/be9c134785d7ffd052bfa90eaf916db73fb04a70"
+        },
+        "date": 1748544093877,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.8,
+            "unit": "ns/op",
+            "extra": "3398186 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.8,
+            "unit": "ns/op",
+            "extra": "2800786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28756,
+            "unit": "ns/op",
+            "extra": "41924 times\n4 procs"
           }
         ]
       }

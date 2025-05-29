@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748544094736,
+  "lastUpdate": 1748552949476,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14448,6 +14448,48 @@ window.BENCHMARK_DATA = {
             "value": 28756,
             "unit": "ns/op",
             "extra": "41924 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fc2f55458d617222b348d0fb86e432fcc486727b",
+          "message": "Remove default logger in wasm to keep testing the same as normal execution. (#1222)",
+          "timestamp": "2025-05-29T17:07:44-04:00",
+          "tree_id": "0d1d72cc7d777cfb227864469fe88efe7c37cb8a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fc2f55458d617222b348d0fb86e432fcc486727b"
+        },
+        "date": 1748552948482,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.2,
+            "unit": "ns/op",
+            "extra": "3358417 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.5,
+            "unit": "ns/op",
+            "extra": "2989242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28480,
+            "unit": "ns/op",
+            "extra": "42111 times\n4 procs"
           }
         ]
       }

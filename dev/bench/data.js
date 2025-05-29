@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748457125621,
+  "lastUpdate": 1748535304707,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14364,6 +14364,48 @@ window.BENCHMARK_DATA = {
             "value": 28140,
             "unit": "ns/op",
             "extra": "41700 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "446fdc904af9c2f6909e023a546d0afb123df1f0",
+          "message": "Fix a bug in logging, we expect raw bytes but try to be too fancy in the log function. (#1219)",
+          "timestamp": "2025-05-29T12:13:39-04:00",
+          "tree_id": "7f53253e0f2ae1b150ff0968b0a1ddb42471a369",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/446fdc904af9c2f6909e023a546d0afb123df1f0"
+        },
+        "date": 1748535303051,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 350.8,
+            "unit": "ns/op",
+            "extra": "3391430 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.2,
+            "unit": "ns/op",
+            "extra": "2953242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28245,
+            "unit": "ns/op",
+            "extra": "42230 times\n4 procs"
           }
         ]
       }

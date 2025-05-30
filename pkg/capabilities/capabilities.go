@@ -379,6 +379,10 @@ func newCapabilityInfo(
 		return CapabilityInfo{}, err
 	}
 
+	if spendTypes == nil {
+		spendTypes = make([]CapabilitySpendType, 0)
+	}
+
 	return CapabilityInfo{
 		ID:             id,
 		CapabilityType: capabilityType,

@@ -27,9 +27,7 @@ const (
 type ConfidenceLevel int32
 
 const (
-	// EARLY = 0;        // early, blocks that have a good level of confidence, but not guaranteed to be included in the chain
-	// UNFINALIZED = 1;  // unfinalized, not guaranteed to be included in the chain
-	ConfidenceLevel_EARLY       ConfidenceLevel = 0 // blocks that have a good level of confidence defined by chain, but not guaranteed to be included in the chain
+	ConfidenceLevel_EARLY       ConfidenceLevel = 0 // default, blocks that have a good level of confidence defined by chain, but not guaranteed to be included in the chain
 	ConfidenceLevel_BLOCK_DEPTH ConfidenceLevel = 1 // blocks that are lower than the BlockDepth parameter defined by user, which is a number of blocks to wait for confirmation
 	ConfidenceLevel_FINALIZED   ConfidenceLevel = 2 // guaranteed to be included in the chain
 )

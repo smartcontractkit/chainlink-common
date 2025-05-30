@@ -14,15 +14,20 @@ import (
 )
 
 const (
-	envDatabaseURL                    = "CL_DATABASE_URL"
-	envDatabaseIdleInTxSessionTimeout = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
-	envDatabaseLockTimeout            = "CL_DATABASE_LOCK_TIMEOUT"
-	envDatabaseQueryTimeout           = "CL_DATABASE_QUERY_TIMEOUT"
-	envDatabaseLogSQL                 = "CL_DATABASE_LOG_SQL"
-	envDatabaseMaxOpenConns           = "CL_DATABASE_MAX_OPEN_CONNS"
-	envDatabaseMaxIdleConns           = "CL_DATABASE_MAX_IDLE_CONNS"
+	envAppID = "CL_APP_ID"
+
+	envDatabaseURL                          = "CL_DATABASE_URL"
+	envDatabaseIdleInTxSessionTimeout       = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
+	envDatabaseLockTimeout                  = "CL_DATABASE_LOCK_TIMEOUT"
+	envDatabaseQueryTimeout                 = "CL_DATABASE_QUERY_TIMEOUT"
+	envDatabaseListenerFallbackPollInterval = "CL_DATABASE_LISTNER_FALLBACK_POLL_INTERVAL"
+	envDatabaseLogSQL                       = "CL_DATABASE_LOG_SQL"
+	envDatabaseMaxOpenConns                 = "CL_DATABASE_MAX_OPEN_CONNS"
+	envDatabaseMaxIdleConns                 = "CL_DATABASE_MAX_IDLE_CONNS"
 
 	envPromPort = "CL_PROMETHEUS_PORT"
+
+	envFeatureLogPoller = "CL_FEATURE_LOG_POLLER"
 
 	envTracingEnabled         = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
@@ -50,13 +55,18 @@ const (
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	DatabaseURL                    *config.SecretURL
-	DatabaseIdleInTxSessionTimeout time.Duration
-	DatabaseLockTimeout            time.Duration
-	DatabaseQueryTimeout           time.Duration
-	DatabaseLogSQL                 bool
-	DatabaseMaxOpenConns           int
-	DatabaseMaxIdleConns           int
+	AppID string
+
+	DatabaseURL                          *config.SecretURL
+	DatabaseIdleInTxSessionTimeout       time.Duration
+	DatabaseLockTimeout                  time.Duration
+	DatabaseQueryTimeout                 time.Duration
+	DatabaseListenerFallbackPollInterval time.Duration
+	DatabaseLogSQL                       bool
+	DatabaseMaxOpenConns                 int
+	DatabaseMaxIdleConns                 int
+
+	FeatureLogPoller bool
 
 	PrometheusPort int
 
@@ -89,15 +99,20 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		env = append(env, k+"="+v)
 	}
 
+	add(envAppID, e.AppID)
+
 	if e.DatabaseURL != nil { // optional
 		add(envDatabaseURL, e.DatabaseURL.URL().String())
 		add(envDatabaseIdleInTxSessionTimeout, e.DatabaseIdleInTxSessionTimeout.String())
 		add(envDatabaseLockTimeout, e.DatabaseLockTimeout.String())
 		add(envDatabaseQueryTimeout, e.DatabaseQueryTimeout.String())
+		add(envDatabaseListenerFallbackPollInterval, e.DatabaseListenerFallbackPollInterval.String())
 		add(envDatabaseLogSQL, strconv.FormatBool(e.DatabaseLogSQL))
 		add(envDatabaseMaxOpenConns, strconv.Itoa(e.DatabaseMaxOpenConns))
 		add(envDatabaseMaxIdleConns, strconv.Itoa(e.DatabaseMaxIdleConns))
 	}
+
+	add(envFeatureLogPoller, strconv.FormatBool(e.FeatureLogPoller))
 
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
@@ -136,6 +151,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
+	e.AppID = os.Getenv(envAppID)
 	var err error
 	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*config.SecretURL, error) {
 		if s == "" { // DatabaseURL is optional
@@ -163,6 +179,10 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
+		e.DatabaseListenerFallbackPollInterval, err = getEnv(envDatabaseListenerFallbackPollInterval, time.ParseDuration)
+		if err != nil {
+			return err
+		}
 		e.DatabaseLogSQL, err = getEnv(envDatabaseLogSQL, strconv.ParseBool)
 		if err != nil {
 			return err
@@ -175,6 +195,11 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	e.FeatureLogPoller, err = getBool(envFeatureLogPoller)
+	if err != nil {
+		return err
 	}
 
 	promPortStr := os.Getenv(envPromPort)

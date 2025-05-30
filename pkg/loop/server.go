@@ -51,6 +51,7 @@ func MustNewStartedServer(loggerName string) *Server {
 
 // Server holds common plugin server fields.
 type Server struct {
+	EnvConfig       EnvConfig
 	GRPCOpts        GRPCOpts
 	Logger          logger.SugaredLogger
 	db              *sqlx.DB           // optional
@@ -81,21 +82,20 @@ func (s *Server) start() error {
 	stopAfter := context.AfterFunc(ctx, stopSig)
 	defer stopAfter()
 
-	var envCfg EnvConfig
-	if err := envCfg.parse(); err != nil {
+	if err := s.EnvConfig.parse(); err != nil {
 		return fmt.Errorf("error getting environment configuration: %w", err)
 	}
 
 	tracingConfig := TracingConfig{
-		Enabled:         envCfg.TracingEnabled,
-		CollectorTarget: envCfg.TracingCollectorTarget,
-		SamplingRatio:   envCfg.TracingSamplingRatio,
-		TLSCertPath:     envCfg.TracingTLSCertPath,
-		NodeAttributes:  envCfg.TracingAttributes,
+		Enabled:         s.EnvConfig.TracingEnabled,
+		CollectorTarget: s.EnvConfig.TracingCollectorTarget,
+		SamplingRatio:   s.EnvConfig.TracingSamplingRatio,
+		TLSCertPath:     s.EnvConfig.TracingTLSCertPath,
+		NodeAttributes:  s.EnvConfig.TracingAttributes,
 		OnDialError:     func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
 	}
 
-	if envCfg.TelemetryEndpoint == "" {
+	if s.EnvConfig.TelemetryEndpoint == "" {
 		err := SetupTracing(tracingConfig)
 		if err != nil {
 			return fmt.Errorf("failed to setup tracing: %w", err)
@@ -106,20 +106,20 @@ func (s *Server) start() error {
 			attributes = tracingConfig.Attributes()
 		}
 		beholderCfg := beholder.Config{
-			InsecureConnection:             envCfg.TelemetryInsecureConnection,
-			CACertFile:                     envCfg.TelemetryCACertFile,
-			OtelExporterGRPCEndpoint:       envCfg.TelemetryEndpoint,
-			ResourceAttributes:             append(attributes, envCfg.TelemetryAttributes.AsStringAttributes()...),
-			TraceSampleRatio:               envCfg.TelemetryTraceSampleRatio,
-			AuthHeaders:                    envCfg.TelemetryAuthHeaders,
-			AuthPublicKeyHex:               envCfg.TelemetryAuthPubKeyHex,
-			EmitterBatchProcessor:          envCfg.TelemetryEmitterBatchProcessor,
-			EmitterExportTimeout:           envCfg.TelemetryEmitterExportTimeout,
-			EmitterExportInterval:          envCfg.TelemetryEmitterExportInterval,
-			EmitterExportMaxBatchSize:      envCfg.TelemetryEmitterExportMaxBatchSize,
-			EmitterMaxQueueSize:            envCfg.TelemetryEmitterMaxQueueSize,
-			ChipIngressEmitterEnabled:      envCfg.ChipIngressEndpoint != "",
-			ChipIngressEmitterGRPCEndpoint: envCfg.ChipIngressEndpoint,
+			InsecureConnection:             s.EnvConfig.TelemetryInsecureConnection,
+			CACertFile:                     s.EnvConfig.TelemetryCACertFile,
+			OtelExporterGRPCEndpoint:       s.EnvConfig.TelemetryEndpoint,
+			ResourceAttributes:             append(attributes, s.EnvConfig.TelemetryAttributes.AsStringAttributes()...),
+			TraceSampleRatio:               s.EnvConfig.TelemetryTraceSampleRatio,
+			AuthHeaders:                    s.EnvConfig.TelemetryAuthHeaders,
+			AuthPublicKeyHex:               s.EnvConfig.TelemetryAuthPubKeyHex,
+			EmitterBatchProcessor:          s.EnvConfig.TelemetryEmitterBatchProcessor,
+			EmitterExportTimeout:           s.EnvConfig.TelemetryEmitterExportTimeout,
+			EmitterExportInterval:          s.EnvConfig.TelemetryEmitterExportInterval,
+			EmitterExportMaxBatchSize:      s.EnvConfig.TelemetryEmitterExportMaxBatchSize,
+			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
+			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
+			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 		}
 
 		if tracingConfig.Enabled {
@@ -141,7 +141,7 @@ func (s *Server) start() error {
 		beholder.SetGlobalOtelProviders()
 	}
 
-	s.promServer = NewPromServer(envCfg.PrometheusPort, s.Logger)
+	s.promServer = NewPromServer(s.EnvConfig.PrometheusPort, s.Logger)
 	if err := s.promServer.Start(); err != nil {
 		return fmt.Errorf("error starting prometheus server: %w", err)
 	}
@@ -151,22 +151,22 @@ func (s *Server) start() error {
 		return fmt.Errorf("error starting health checker: %w", err)
 	}
 
-	if envCfg.DatabaseURL != nil {
-		pg.SetApplicationName(envCfg.DatabaseURL.URL(), build.Program)
-		dbURL := envCfg.DatabaseURL.URL().String()
+	if s.EnvConfig.DatabaseURL != nil {
+		pg.SetApplicationName(s.EnvConfig.DatabaseURL.URL(), build.Program)
+		dbURL := s.EnvConfig.DatabaseURL.URL().String()
 		var err error
 		s.db, err = pg.DBConfig{
-			IdleInTxSessionTimeout: envCfg.DatabaseIdleInTxSessionTimeout,
-			LockTimeout:            envCfg.DatabaseLockTimeout,
-			MaxOpenConns:           envCfg.DatabaseMaxOpenConns,
-			MaxIdleConns:           envCfg.DatabaseMaxIdleConns,
+			IdleInTxSessionTimeout: s.EnvConfig.DatabaseIdleInTxSessionTimeout,
+			LockTimeout:            s.EnvConfig.DatabaseLockTimeout,
+			MaxOpenConns:           s.EnvConfig.DatabaseMaxOpenConns,
+			MaxIdleConns:           s.EnvConfig.DatabaseMaxIdleConns,
 		}.New(ctx, dbURL, pg.DriverPostgres)
 		if err != nil {
 			return fmt.Errorf("error connecting to DataBase: %w", err)
 		}
 		s.DataSource = sqlutil.WrapDataSource(s.db, s.Logger,
-			sqlutil.TimeoutHook(func() time.Duration { return envCfg.DatabaseQueryTimeout }),
-			sqlutil.MonitorHook(func() bool { return envCfg.DatabaseLogSQL }))
+			sqlutil.TimeoutHook(func() time.Duration { return s.EnvConfig.DatabaseQueryTimeout }),
+			sqlutil.MonitorHook(func() bool { return s.EnvConfig.DatabaseLogSQL }))
 
 		s.dbStatsReporter = pg.NewStatsReporter(s.db.Stats, s.Logger)
 		s.dbStatsReporter.Start()

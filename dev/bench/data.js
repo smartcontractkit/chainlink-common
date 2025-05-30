@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748559160413,
+  "lastUpdate": 1748629847080,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14532,6 +14532,48 @@ window.BENCHMARK_DATA = {
             "value": 28488,
             "unit": "ns/op",
             "extra": "42141 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "athughlett@gmail.com",
+            "name": "Awbrey Hughlett",
+            "username": "EasterTheBunny"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be37bd03a5670652b047fd668d41dc3bd7003384",
+          "message": "added expected resources to info and requested limits to request (#1217)\n\n* added expected resources to info and requested limits to request\n\n* add resources to proto\n\n* fix request from proto test\n\n* add resource test to interface tests\n\n* rename properties to spend types\n\n* stronger types for spend types",
+          "timestamp": "2025-05-30T13:29:28-05:00",
+          "tree_id": "4bcc65014d49361d7cc37c4ad854ef42036e9860",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/be37bd03a5670652b047fd668d41dc3bd7003384"
+        },
+        "date": 1748629846227,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.7,
+            "unit": "ns/op",
+            "extra": "3420469 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.8,
+            "unit": "ns/op",
+            "extra": "2949956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28455,
+            "unit": "ns/op",
+            "extra": "41486 times\n4 procs"
           }
         ]
       }

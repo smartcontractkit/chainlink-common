@@ -3,6 +3,7 @@ package chipingress
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
 	"google.golang.org/grpc/credentials/insecure"
@@ -69,6 +70,9 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 	if address == "" {
 		return nil, fmt.Errorf("address for chip ingress service is empty")
 	}
+	if !strings.Contains(address, ":") {
+		return nil, fmt.Errorf("address is invalid, it must contain a port")
+	}
 
 	cfg := defaultConfig()
 
@@ -76,8 +80,13 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 		opt(&cfg)
 	}
 
+	host, err := getHost(address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract host from address '%s': %w", address, err)
+	}
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
+		grpc.WithAuthority(host),
 	}
 
 	// Add headers as a unary interceptor
@@ -103,6 +112,14 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 	}
 
 	return client, nil
+}
+
+func getHost(address string) (string, error) {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", err
+	}
+	return host, nil
 }
 
 // Ping sends a request to the ChipIngress service to check if it is alive.

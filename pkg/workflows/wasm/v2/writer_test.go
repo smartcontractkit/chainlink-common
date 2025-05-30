@@ -7,6 +7,7 @@ import (
 )
 
 func TestSyncer(t *testing.T) {
+	logs = make([][]byte, 0)
 	w := &writer{}
 
 	n, err := w.Write([]byte("Hello, World!"))

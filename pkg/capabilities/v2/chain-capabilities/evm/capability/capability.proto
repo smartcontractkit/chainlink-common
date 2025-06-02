@@ -38,7 +38,7 @@ service EVM {
   rpc QueryTrackedLogs(loop.chain_capabilities.evm.QueryTrackedLogsRequest) returns (loop.chain_capabilities.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.chain_capabilities.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.chain_capabilities.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.chain_capabilities.evm.FilterLogsReply);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.chain_capabilities.evm.Log);
 }
 
 

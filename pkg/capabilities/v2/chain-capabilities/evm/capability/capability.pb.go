@@ -185,7 +185,7 @@ const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_ra
 	"\x0fConfidenceLevel\x12\t\n" +
 	"\x05EARLY\x10\x00\x12\x0f\n" +
 	"\vBLOCK_DEPTH\x10\x01\x12\r\n" +
-	"\tFINALIZED\x10\x022\x97\n" +
+	"\tFINALIZED\x10\x022\x8b\n" +
 	"\n" +
 	"\x03EVM\x12p\n" +
 	"\fCallContract\x120.loop.chain_capabilities.evm.CallContractRequest\x1a..loop.chain_capabilities.evm.CallContractReply\x12j\n" +
@@ -198,9 +198,9 @@ const file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_ra
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a8.loop.chain_capabilities.evm.LatestAndFinalizedHeadReply\x12|\n" +
 	"\x10QueryTrackedLogs\x124.loop.chain_capabilities.evm.QueryTrackedLogsRequest\x1a2.loop.chain_capabilities.evm.QueryTrackedLogsReply\x12f\n" +
 	"\x13RegisterLogTracking\x127.loop.chain_capabilities.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
-	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
+	"\x15UnregisterLogTracking\x129.loop.chain_capabilities.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12^\n" +
 	"\n" +
-	"LogTrigger\x12,.cre.sdk.v2.evmcappb.FilterLogTriggerRequest\x1a,.loop.chain_capabilities.evm.FilterLogsReply0\x01\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BmZkgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evmcappbb\x06proto3"
+	"LogTrigger\x12,.cre.sdk.v2.evmcappb.FilterLogTriggerRequest\x1a .loop.chain_capabilities.evm.Log0\x01\x1a\x17\x82\xb5\x18\x13\x12\x11mainnet-evm@1.0.0BmZkgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evmcappbb\x06proto3"
 
 var (
 	file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_rawDescOnce sync.Once
@@ -239,6 +239,7 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_goTy
 	(*chain_service.GetTransactionReceiptReply)(nil),   // 19: loop.chain_capabilities.evm.GetTransactionReceiptReply
 	(*chain_service.LatestAndFinalizedHeadReply)(nil),  // 20: loop.chain_capabilities.evm.LatestAndFinalizedHeadReply
 	(*chain_service.QueryTrackedLogsReply)(nil),        // 21: loop.chain_capabilities.evm.QueryTrackedLogsReply
+	(*chain_service.Log)(nil),                          // 22: loop.chain_capabilities.evm.Log
 }
 var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depIdxs = []int32{
 	2,  // 0: cre.sdk.v2.evmcappb.FilterLogTriggerRequest.addresses:type_name -> loop.chain_capabilities.evm.Address
@@ -268,7 +269,7 @@ var file_capabilities_v2_chain_capabilities_evm_capability_capability_proto_depI
 	21, // 24: cre.sdk.v2.evmcappb.EVM.QueryTrackedLogs:output_type -> loop.chain_capabilities.evm.QueryTrackedLogsReply
 	10, // 25: cre.sdk.v2.evmcappb.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
 	10, // 26: cre.sdk.v2.evmcappb.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	15, // 27: cre.sdk.v2.evmcappb.EVM.LogTrigger:output_type -> loop.chain_capabilities.evm.FilterLogsReply
+	22, // 27: cre.sdk.v2.evmcappb.EVM.LogTrigger:output_type -> loop.chain_capabilities.evm.Log
 	17, // [17:28] is the sub-list for method output_type
 	6,  // [6:17] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

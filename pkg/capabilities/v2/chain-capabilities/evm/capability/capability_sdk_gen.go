@@ -248,7 +248,7 @@ func (c *EVM) UnregisterLogTracking(runtime sdk.DonRuntime, input *evmpb.Unregis
 	})
 }
 
-func (c EVM) LogTrigger(config *FilterLogTriggerRequest) sdk.DonTrigger[*evmpb.FilterLogsReply] {
+func (c EVM) LogTrigger(config *FilterLogTriggerRequest) sdk.DonTrigger[*evmpb.Log] {
 	configAny, _ := anypb.New(config)
 	return &eVMLogTrigger{
 		config: configAny,
@@ -261,8 +261,8 @@ type eVMLogTrigger struct {
 
 func (*eVMLogTrigger) IsDonTrigger() {}
 
-func (*eVMLogTrigger) NewT() *evmpb.FilterLogsReply {
-	return &evmpb.FilterLogsReply{}
+func (*eVMLogTrigger) NewT() *evmpb.Log {
+	return &evmpb.Log{}
 }
 
 func (*eVMLogTrigger) CapabilityID() string {

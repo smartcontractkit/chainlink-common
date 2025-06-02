@@ -50,7 +50,7 @@ type EVMCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	UnregisterLogTracking func(ctx context.Context, input *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
-	LogTrigger func(ctx context.Context, input *evmcappb.FilterLogTriggerRequest) (*evmpb.FilterLogsReply, error)
+	LogTrigger func(ctx context.Context, input *evmcappb.FilterLogTriggerRequest) (*evmpb.Log, error)
 }
 
 func (cap *EVMCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {

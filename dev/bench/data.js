@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748874057946,
+  "lastUpdate": 1748879136474,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14658,6 +14658,48 @@ window.BENCHMARK_DATA = {
             "value": 28500,
             "unit": "ns/op",
             "extra": "42076 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8aa3f7dc56eaf05a74000464f73a38f82e9fa8cd",
+          "message": "Plex 1458 part-3 - Remove wrappers in EVM service because of  evm capability sdk UX (#1223)\n\n* Update evm service CallContract comment\n\n* Fix evm capability service and package name\n\n* Change evm capability and service naming and rearrange packages\n\n* lint\n\n* Update evm service to not use proto wrappers for evm types\n\n* run generate",
+          "timestamp": "2025-06-02T17:44:15+02:00",
+          "tree_id": "3c6b4ccd3de035db37cc3051e16f2f40f15f7cd9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8aa3f7dc56eaf05a74000464f73a38f82e9fa8cd"
+        },
+        "date": 1748879135407,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3355270 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 430.4,
+            "unit": "ns/op",
+            "extra": "2939703 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28152,
+            "unit": "ns/op",
+            "extra": "42625 times\n4 procs"
           }
         ]
       }

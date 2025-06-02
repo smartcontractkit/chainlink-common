@@ -23,6 +23,8 @@ type LOOPPService struct {
 	goplugin.PluginService[*GRPCService[types.PluginProvider], core.OCR3ReportingPluginFactory]
 }
 
+// TODO(gg): consider using this for the secure mint plugin
+
 func NewLOOPPService(
 	lggr logger.Logger,
 	grpcOpts loop.GRPCOpts,

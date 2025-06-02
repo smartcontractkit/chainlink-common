@@ -14,3 +14,5 @@ type PluginMedian interface {
 	// NewMedianFactory returns a new ReportingPluginFactory. If provider implements GRPCClientConn, it can be forwarded efficiently via proxy.
 	NewMedianFactory(ctx context.Context, provider types.MedianProvider, contractID string, dataSource, juelsPerFeeCoin, gasPriceSubunits median.DataSource, errorLog ErrorLog, deviationFuncDefinition map[string]any) (types.ReportingPluginFactory, error)
 }
+
+// TODO(gg): duplicate this for securemint?

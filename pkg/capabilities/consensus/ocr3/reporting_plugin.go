@@ -57,15 +57,81 @@ func NewReportingPlugin(s *requests.Store, r CapabilityIface, batchSize int, con
 	}, nil
 }
 
-func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
-	batch, err := r.s.FirstN(r.batchSize)
+// packToSizeLimit function maximizes the number of requests from Storage being included in a Query batch.
+// It finds the best utilization of space with the protobuf-marshalled structures using logarithmic (binary search)
+// approach to identify the optimal number of Requests that can be serialized without exceeding
+// the limit (defaultBatchSizeMiB).
+func (r *reportingPlugin) packToSizeLimit() ([]string, types.Query, error) {
+	all, err := r.s.All()
 	if err != nil {
-		r.lggr.Errorw("could not retrieve batch", "error", err)
-		return nil, err
+		return nil, nil, err
 	}
 
-	ids := []*pbtypes.Id{}
-	allExecutionIDs := []string{}
+	var best []byte
+	var bestRequests []*requests.Request
+	var bestExecutionIDs []string
+
+	low, high := 0, len(all)
+
+	optRound := 0
+
+	for low < high {
+		mid := (low + high) / 2
+		if mid == 0 {
+			mid = 1 // poor man's ceil
+		}
+		candidate := all[:mid]
+		executionIDs, serialized, err := r.serializeQueries(candidate)
+		if err != nil {
+			return nil, nil, err
+		}
+		size := len(serialized)
+
+		r.lggr.Debugw(
+			"packToSizeLimit: optimizing batch size",
+			"optRound",
+			optRound,
+			"low",
+			low,
+			"mid",
+			mid,
+			"high",
+			high,
+			"size",
+			size,
+		)
+
+		if size <= defaultBatchSizeMiB {
+			best = serialized
+			bestRequests = candidate
+			bestExecutionIDs = executionIDs
+			low = mid + 1 // try more Requests
+		} else {
+			high = mid - 1 // try fewer Requests
+		}
+
+		optRound++
+	}
+
+	r.lggr.Debugw(
+		"packToSizeLimit: best batch size",
+		"len",
+		len(bestRequests),
+		"size",
+		len(best),
+		"maxSize",
+		defaultBatchSizeMiB,
+		"optRound",
+		optRound,
+	)
+
+	return bestExecutionIDs, best, nil
+}
+
+// serializeQueries marshals batch of Requests into a protobuf.
+func (r *reportingPlugin) serializeQueries(batch []*requests.Request) ([]string, types.Query, error) {
+	ids := make([]*pbtypes.Id, 0)
+	allExecutionIDs := make([]string, 0)
 	for _, rq := range batch {
 		ids = append(ids, &pbtypes.Id{
 			WorkflowExecutionId:      rq.WorkflowExecutionID,
@@ -80,10 +146,22 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
 	}
 
-	r.lggr.Debugw("Query complete", "len", len(ids), "allExecutionIDs", allExecutionIDs)
-	return proto.MarshalOptions{Deterministic: true}.Marshal(&pbtypes.Query{
+	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(&pbtypes.Query{
 		Ids: ids,
 	})
+	return allExecutionIDs, serialized, err
+}
+
+func (r *reportingPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Query, error) {
+	allExecutionIDs, serializedBatch, err := r.packToSizeLimit()
+	if err != nil {
+		r.lggr.Errorw("could not retrieve batch", "error", err)
+		return nil, err
+	}
+
+	r.lggr.Debugw("Query complete", "len", len(serializedBatch), "allExecutionIDs", allExecutionIDs)
+
+	return serializedBatch, nil
 }
 
 func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {

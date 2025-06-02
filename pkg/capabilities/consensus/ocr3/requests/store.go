@@ -42,6 +42,18 @@ func (s *Store) GetByIDs(requestIDs []string) []*Request {
 	return o
 }
 
+func (s *Store) Count() int {
+	return len(s.requestIDs)
+}
+
+func (s *Store) All() ([]*Request, error) {
+	all, err := s.FirstN(len(s.requestIDs))
+	if err != nil {
+		return nil, err
+	}
+	return all, err
+}
+
 // FirstN returns up to `bathSize` requests.
 // The method deep-copies requests before returning them.
 func (s *Store) FirstN(batchSize int) ([]*Request, error) {

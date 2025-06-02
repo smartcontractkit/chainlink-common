@@ -7,7 +7,7 @@
 package pb
 
 import (
-	chain_service "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	codec "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -363,7 +363,7 @@ var File_loop_internal_pb_contract_writer_proto protoreflect.FileDescriptor
 
 const file_loop_internal_pb_contract_writer_proto_rawDesc = "" +
 	"\n" +
-	"&loop/internal/pb/contract_writer.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a>capabilities/v2/chain-capabilities/evm/chain-service/evm.proto\"\x9b\x02\n" +
+	"&loop/internal/pb/contract_writer.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14chains/evm/evm.proto\"\x9b\x02\n" +
 	"\x18SubmitTransactionRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12-\n" +
@@ -389,10 +389,10 @@ const file_loop_internal_pb_contract_writer_proto_rawDesc = "" +
 	"\x15data_availability_fee\x18\x02 \x01(\v2\f.loop.BigIntR\x13dataAvailabilityFee\"Q\n" +
 	"\x13GetEstimateFeeReply\x12\x1e\n" +
 	"\x03fee\x18\x01 \x01(\v2\f.loop.BigIntR\x03fee\x12\x1a\n" +
-	"\bdecimals\x18\x02 \x01(\rR\bdecimals2\x83\x03\n" +
+	"\bdecimals\x18\x02 \x01(\rR\bdecimals2\xdc\x02\n" +
 	"\x0eContractWriter\x12M\n" +
-	"\x11SubmitTransaction\x12\x1e.loop.SubmitTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\x8a\x01\n" +
-	"\x14GetTransactionStatus\x128.loop.chain_capabilities.evm.GetTransactionStatusRequest\x1a6.loop.chain_capabilities.evm.GetTransactionStatusReply\"\x00\x12I\n" +
+	"\x11SubmitTransaction\x12\x1e.loop.SubmitTransactionRequest\x1a\x16.google.protobuf.Empty\"\x00\x12d\n" +
+	"\x14GetTransactionStatus\x12%.loop.evm.GetTransactionStatusRequest\x1a#.loop.evm.GetTransactionStatusReply\"\x00\x12I\n" +
 	"\x10GetFeeComponents\x12\x16.google.protobuf.Empty\x1a\x1b.loop.GetFeeComponentsReply\"\x00\x12J\n" +
 	"\x0eGetEstimateFee\x12\x1b.loop.GetEstimateFeeRequest\x1a\x19.loop.GetEstimateFeeReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
@@ -410,16 +410,16 @@ func file_loop_internal_pb_contract_writer_proto_rawDescGZIP() []byte {
 
 var file_loop_internal_pb_contract_writer_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_loop_internal_pb_contract_writer_proto_goTypes = []any{
-	(*SubmitTransactionRequest)(nil),                  // 0: loop.SubmitTransactionRequest
-	(*TransactionMeta)(nil),                           // 1: loop.TransactionMeta
-	(*GetEstimateFeeRequest)(nil),                     // 2: loop.GetEstimateFeeRequest
-	(*GetFeeComponentsReply)(nil),                     // 3: loop.GetFeeComponentsReply
-	(*GetEstimateFeeReply)(nil),                       // 4: loop.GetEstimateFeeReply
-	(*codec.VersionedBytes)(nil),                      // 5: codec.VersionedBytes
-	(*BigInt)(nil),                                    // 6: loop.BigInt
-	(*chain_service.GetTransactionStatusRequest)(nil), // 7: loop.chain_capabilities.evm.GetTransactionStatusRequest
-	(*emptypb.Empty)(nil),                             // 8: google.protobuf.Empty
-	(*chain_service.GetTransactionStatusReply)(nil),   // 9: loop.chain_capabilities.evm.GetTransactionStatusReply
+	(*SubmitTransactionRequest)(nil),        // 0: loop.SubmitTransactionRequest
+	(*TransactionMeta)(nil),                 // 1: loop.TransactionMeta
+	(*GetEstimateFeeRequest)(nil),           // 2: loop.GetEstimateFeeRequest
+	(*GetFeeComponentsReply)(nil),           // 3: loop.GetFeeComponentsReply
+	(*GetEstimateFeeReply)(nil),             // 4: loop.GetEstimateFeeReply
+	(*codec.VersionedBytes)(nil),            // 5: codec.VersionedBytes
+	(*BigInt)(nil),                          // 6: loop.BigInt
+	(*evm.GetTransactionStatusRequest)(nil), // 7: loop.evm.GetTransactionStatusRequest
+	(*emptypb.Empty)(nil),                   // 8: google.protobuf.Empty
+	(*evm.GetTransactionStatusReply)(nil),   // 9: loop.evm.GetTransactionStatusReply
 }
 var file_loop_internal_pb_contract_writer_proto_depIdxs = []int32{
 	5,  // 0: loop.SubmitTransactionRequest.params:type_name -> codec.VersionedBytes
@@ -433,11 +433,11 @@ var file_loop_internal_pb_contract_writer_proto_depIdxs = []int32{
 	6,  // 8: loop.GetFeeComponentsReply.data_availability_fee:type_name -> loop.BigInt
 	6,  // 9: loop.GetEstimateFeeReply.fee:type_name -> loop.BigInt
 	0,  // 10: loop.ContractWriter.SubmitTransaction:input_type -> loop.SubmitTransactionRequest
-	7,  // 11: loop.ContractWriter.GetTransactionStatus:input_type -> loop.chain_capabilities.evm.GetTransactionStatusRequest
+	7,  // 11: loop.ContractWriter.GetTransactionStatus:input_type -> loop.evm.GetTransactionStatusRequest
 	8,  // 12: loop.ContractWriter.GetFeeComponents:input_type -> google.protobuf.Empty
 	2,  // 13: loop.ContractWriter.GetEstimateFee:input_type -> loop.GetEstimateFeeRequest
 	8,  // 14: loop.ContractWriter.SubmitTransaction:output_type -> google.protobuf.Empty
-	9,  // 15: loop.ContractWriter.GetTransactionStatus:output_type -> loop.chain_capabilities.evm.GetTransactionStatusReply
+	9,  // 15: loop.ContractWriter.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
 	3,  // 16: loop.ContractWriter.GetFeeComponents:output_type -> loop.GetFeeComponentsReply
 	4,  // 17: loop.ContractWriter.GetEstimateFee:output_type -> loop.GetEstimateFeeReply
 	14, // [14:18] is the sub-list for method output_type

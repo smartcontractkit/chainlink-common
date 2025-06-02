@@ -1,4 +1,4 @@
-package evmpb
+package evm
 
 import (
 	"errors"

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
@@ -50,6 +51,8 @@ type EVMCapability struct {
 	UnregisterLogTracking func(ctx context.Context, input *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	WriteReport func(ctx context.Context, input *evmpb.WriteReportRequest) (*evmpb.WriteReportReply, error)
+
+	LogTrigger func(ctx context.Context, input *evmcappb.FilterLogTriggerRequest) (*evmpb.FilterLogsReply, error)
 }
 
 func (cap *EVMCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
@@ -304,7 +307,36 @@ func (cap *EVMCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityR
 }
 
 func (cap *EVMCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
-	return nil, fmt.Errorf("method %s not found", request.Method)
+	trigger := &sdkpb.Trigger{}
+	switch request.Method {
+	case "LogTrigger":
+		input := &evmcappb.FilterLogTriggerRequest{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			return nil, err
+		}
+
+		if cap.LogTrigger == nil {
+			return nil, registry.ErrNoTriggerStub("LogTrigger")
+		}
+
+		resp, err := cap.LogTrigger(ctx, input)
+		if err != nil {
+			return nil, err
+		} else {
+			if resp == nil {
+				return nil, nil
+			}
+
+			payload, err := anypb.New(resp)
+			if err != nil {
+				return nil, err
+			}
+			trigger.Payload = payload
+		}
+	default:
+		return nil, fmt.Errorf("method %s not found", request.Method)
+	}
+	return trigger, nil
 }
 
 func (cap *EVMCapability) ID() string {

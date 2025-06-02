@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/chain-capabilities/evmcappb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -40,6 +41,9 @@ type EVMCapability interface {
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evmpb.WriteReportRequest) (*evmpb.WriteReportReply, error)
+
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evmcappb.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evmpb.FilterLogsReply], error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evmcappb.FilterLogTriggerRequest) error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -118,11 +122,27 @@ func (c *eVMCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, 
 var _ capabilities.ExecutableAndTriggerCapability = (*eVMCapability)(nil)
 
 func (c *eVMCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	return nil, fmt.Errorf("trigger %s not found", request.Method)
+	switch request.Method {
+	case "LogTrigger":
+		input := &evmcappb.FilterLogTriggerRequest{}
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "mainnet-evm@1.0.0", request, input, c.EVMCapability.RegisterLogTrigger)
+	default:
+		return nil, fmt.Errorf("trigger %s not found", request.Method)
+	}
 }
 
 func (c *eVMCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	return fmt.Errorf("trigger %s not found", request.Method)
+	switch request.Method {
+	case "LogTrigger":
+		input := &evmcappb.FilterLogTriggerRequest{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+		if err != nil {
+			return err
+		}
+		return c.EVMCapability.UnregisterLogTrigger(ctx, request.TriggerID, request.Metadata, input)
+	default:
+		return fmt.Errorf("method %s not found", request.Method)
+	}
 }
 
 func (c *eVMCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

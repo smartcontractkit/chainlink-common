@@ -295,9 +295,10 @@ message GetTransactionStatusReply {
 // TransactionStatus is an enum for the status of a transaction.
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
 enum TransactionStatus {
-  TRANSACTION_STATUS_CONFIRMED = 0;
-  TRANSACTION_STATUS_FINALIZED = 1;
-  TRANSACTION_STATUS_FATAL = 2;
+  //TODO weird issue makes this enums to collide with ReceiverContractExecutionStatus enum values
+  TX_SUCCESS = 0; //Successfully executed and within a block - Not finalized
+  TX_REVERTED = 1; //Successfully call to the RPC and TX processing but reverted
+  TX_FAILURE = 2; //Was not executed at all by an RPC for some reason
 }
 
 enum ReceiverContractExecutionStatus {

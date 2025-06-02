@@ -32,6 +32,7 @@ const (
 	EVM_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evmcap.EVM/RegisterLogTracking"
 	EVM_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evmcap.EVM/UnregisterLogTracking"
 	EVM_WriteReport_FullMethodName            = "/cre.sdk.v2.evmcap.EVM/WriteReport"
+	EVM_LogTrigger_FullMethodName             = "/cre.sdk.v2.evmcap.EVM/LogTrigger"
 )
 
 // EVMClient is the client API for EVM service.
@@ -49,6 +50,7 @@ type EVMClient interface {
 	RegisterLogTracking(ctx context.Context, in *chain_service.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *chain_service.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	WriteReport(ctx context.Context, in *chain_service.WriteReportRequest, opts ...grpc.CallOption) (*chain_service.WriteReportReply, error)
+	LogTrigger(ctx context.Context, in *FilterLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[chain_service.FilterLogsReply], error)
 }
 
 type eVMClient struct {
@@ -169,6 +171,25 @@ func (c *eVMClient) WriteReport(ctx context.Context, in *chain_service.WriteRepo
 	return out, nil
 }
 
+func (c *eVMClient) LogTrigger(ctx context.Context, in *FilterLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[chain_service.FilterLogsReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EVM_ServiceDesc.Streams[0], EVM_LogTrigger_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FilterLogTriggerRequest, chain_service.FilterLogsReply]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EVM_LogTriggerClient = grpc.ServerStreamingClient[chain_service.FilterLogsReply]
+
 // EVMServer is the server API for EVM service.
 // All implementations must embed UnimplementedEVMServer
 // for forward compatibility.
@@ -184,6 +205,7 @@ type EVMServer interface {
 	RegisterLogTracking(context.Context, *chain_service.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *chain_service.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	WriteReport(context.Context, *chain_service.WriteReportRequest) (*chain_service.WriteReportReply, error)
+	LogTrigger(*FilterLogTriggerRequest, grpc.ServerStreamingServer[chain_service.FilterLogsReply]) error
 	mustEmbedUnimplementedEVMServer()
 }
 
@@ -226,6 +248,9 @@ func (UnimplementedEVMServer) UnregisterLogTracking(context.Context, *chain_serv
 }
 func (UnimplementedEVMServer) WriteReport(context.Context, *chain_service.WriteReportRequest) (*chain_service.WriteReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteReport not implemented")
+}
+func (UnimplementedEVMServer) LogTrigger(*FilterLogTriggerRequest, grpc.ServerStreamingServer[chain_service.FilterLogsReply]) error {
+	return status.Errorf(codes.Unimplemented, "method LogTrigger not implemented")
 }
 func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
 func (UnimplementedEVMServer) testEmbeddedByValue()             {}
@@ -446,6 +471,17 @@ func _EVM_WriteReport_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVM_LogTrigger_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FilterLogTriggerRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EVMServer).LogTrigger(m, &grpc.GenericServerStream[FilterLogTriggerRequest, chain_service.FilterLogsReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EVM_LogTriggerServer = grpc.ServerStreamingServer[chain_service.FilterLogsReply]
+
 // EVM_ServiceDesc is the grpc.ServiceDesc for EVM service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -498,6 +534,12 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVM_WriteReport_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "LogTrigger",
+			Handler:       _EVM_LogTrigger_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "capabilities/v2/chain-capabilities/evm/capability/capability.proto",
 }

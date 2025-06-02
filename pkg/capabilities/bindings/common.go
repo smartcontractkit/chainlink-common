@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability"
 	evm "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
 	chain_common "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
@@ -16,7 +17,6 @@ type commonReport struct {
 	Signatures    [][]byte
 	ID            []byte
 }
-
 
 // Define a custom error type
 type TxFatalError struct {
@@ -43,8 +43,8 @@ type ContractInitOptions struct {
 	GasConfig *evm.GasConfig
 }
 
-type ContractInitInputs struct {
-	ChainID uint32
+type ContractInputs struct {
+	EVM evmcappb.EVM
 	Address evm.Address
 	Options *ContractInitOptions
 }

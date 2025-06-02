@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748868562377,
+  "lastUpdate": 1748874057946,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14616,6 +14616,48 @@ window.BENCHMARK_DATA = {
             "value": 28523,
             "unit": "ns/op",
             "extra": "42056 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c15a42d826633473c0ca0bbaf60e869e9f34c70",
+          "message": "Plex 1458 Rearrange evm relayer service and chain capability packages and add a comment to callContract (#1218)\n\n* Update evm service CallContract comment\n\n* Fix evm capability service and package name\n\n* Change evm capability and service naming and rearrange packages\n\n* lint",
+          "timestamp": "2025-06-02T16:19:24+02:00",
+          "tree_id": "bc652bc3617147b431acb63a2e1ee168fe5a4dd5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3c15a42d826633473c0ca0bbaf60e869e9f34c70"
+        },
+        "date": 1748874057065,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354,
+            "unit": "ns/op",
+            "extra": "3400707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.1,
+            "unit": "ns/op",
+            "extra": "2916122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28500,
+            "unit": "ns/op",
+            "extra": "42076 times\n4 procs"
           }
         ]
       }

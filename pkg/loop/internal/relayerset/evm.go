@@ -6,10 +6,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
@@ -151,7 +152,7 @@ func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetT
 		return nil, err
 	}
 
-	return &evmpb.GetTransactionFeeReply{TransationFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
+	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
 }
 
 func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContractRequest) (*evmpb.CallContractReply, error) {
@@ -171,7 +172,7 @@ func (s *Server) CallContract(ctx context.Context, request *relayerset.CallContr
 	}
 
 	return &evmpb.CallContractReply{
-		Data: &evmpb.ABIPayload{Abi: reply},
+		Data: reply,
 	}, nil
 }
 
@@ -200,7 +201,7 @@ func (s *Server) BalanceAt(ctx context.Context, request *relayerset.BalanceAtReq
 		return nil, err
 	}
 
-	balance, err := evmService.BalanceAt(ctx, evmpb.ConvertAddressFromProto(request.GetRequest().GetAccount()), valuespb.NewIntFromBigInt(request.Request.BlockNumber))
+	balance, err := evmService.BalanceAt(ctx, evm.Address(request.GetRequest().GetAccount()), valuespb.NewIntFromBigInt(request.Request.BlockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +234,7 @@ func (s *Server) GetTransactionByHash(ctx context.Context, request *relayerset.G
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionByHash(ctx, evmpb.ConvertHashFromProto(request.Request.GetHash()))
+	reply, err := evmService.GetTransactionByHash(ctx, evm.Hash(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +255,7 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *relayerset.
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionReceipt(ctx, evmpb.ConvertHashFromProto(request.Request.GetHash()))
+	reply, err := evmService.GetTransactionReceipt(ctx, evm.Hash(request.Request.GetHash()))
 	if err != nil {
 		return nil, err
 	}

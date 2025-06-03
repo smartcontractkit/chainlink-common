@@ -1,4 +1,4 @@
-package evmpb
+package evm
 
 import (
 	"errors"
@@ -17,12 +17,58 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
+func convertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
+	evmAddresses := make([]evmtypes.Address, 0, len(addresses))
+	for _, address := range addresses {
+		if len(address) != 20 {
+			continue // Invalid address length
+		}
+		evmAddresses = append(evmAddresses, evmtypes.Address(address))
+	}
+	return evmAddresses
+}
+
+func convertAddressesToProto(addresses []evmtypes.Address) [][]byte {
+	protoAddresses := make([][]byte, 0, len(addresses))
+	for _, address := range addresses {
+		protoAddresses = append(protoAddresses, address[:])
+	}
+	return protoAddresses
+}
+
+func convertHashesFromProto(hashes [][]byte) []evmtypes.Hash {
+	hashesList := make([]evmtypes.Hash, 0, len(hashes))
+	for _, hash := range hashes {
+		if len(hash) != 32 {
+			continue // Invalid hash length
+		}
+		hashesList = append(hashesList, evmtypes.Hash(hash))
+	}
+	return hashesList
+}
+func convertHashesToProto(hashes []evmtypes.Hash) [][]byte {
+	protoHashes := make([][]byte, 0, len(hashes))
+	for _, hash := range hashes {
+		protoHashes = append(protoHashes, hash[:])
+	}
+	return protoHashes
+}
+
+func convertTopicsToProto(topics [][]evmtypes.Hash) []*Topics {
+	protoTopics := make([]*Topics, 0, len(topics))
+	for _, topic := range topics {
+		topicProto := &Topics{Topic: convertHashesToProto(topic)}
+		protoTopics = append(protoTopics, topicProto)
+	}
+	return protoTopics
+}
+
 func ConvertHeadToProto(h evmtypes.Head) *Head {
 	return &Head{
 		Timestamp:   h.Timestamp,
 		BlockNumber: valuespb.NewBigIntFromInt(h.Number),
-		Hash:        convertHashToProto(h.Hash),
-		ParentHash:  convertHashToProto(h.ParentHash),
+		Hash:        h.Hash[:],
+		ParentHash:  h.ParentHash[:],
 	}
 }
 
@@ -34,8 +80,8 @@ func ConvertHeadFromProto(head *Head) (evmtypes.Head, error) {
 	}
 	return evmtypes.Head{
 		Timestamp:  head.GetTimestamp(),
-		Hash:       ConvertHashFromProto(head.GetHash()),
-		ParentHash: ConvertHashFromProto(head.GetParentHash()),
+		Hash:       evmtypes.Hash(head.GetHash()[:]),
+		ParentHash: evmtypes.Hash(head.GetParentHash()[:]),
 		Number:     valuespb.NewIntFromBigInt(head.GetBlockNumber()),
 	}, nil
 }
@@ -50,10 +96,10 @@ func ConvertReceiptToProto(receipt *evmtypes.Receipt) (*Receipt, error) {
 	return &Receipt{
 		Status:            receipt.Status,
 		Logs:              ConvertLogsToProto(receipt.Logs),
-		TxHash:            convertHashToProto(receipt.TxHash),
-		ContractAddress:   convertAddressToProto(receipt.ContractAddress),
+		TxHash:            receipt.TxHash[:],
+		ContractAddress:   receipt.ContractAddress[:],
 		GasUsed:           receipt.GasUsed,
-		BlockHash:         convertHashToProto(receipt.BlockHash),
+		BlockHash:         receipt.BlockHash[:],
 		BlockNumber:       valuespb.NewBigIntFromInt(receipt.BlockNumber),
 		TxIndex:           receipt.TransactionIndex,
 		EffectiveGasPrice: valuespb.NewBigIntFromInt(receipt.EffectiveGasPrice),
@@ -67,10 +113,10 @@ func ConvertReceiptFromProto(protoReceipt *Receipt) (*evmtypes.Receipt, error) {
 	return &evmtypes.Receipt{
 		Status:            protoReceipt.GetStatus(),
 		Logs:              ConvertLogsFromProto(protoReceipt.GetLogs()),
-		TxHash:            ConvertHashFromProto(protoReceipt.GetTxHash()),
-		ContractAddress:   ConvertAddressFromProto(protoReceipt.GetContractAddress()),
+		TxHash:            evmtypes.Hash(protoReceipt.GetTxHash()),
+		ContractAddress:   evmtypes.Address(protoReceipt.GetContractAddress()),
 		GasUsed:           protoReceipt.GetGasUsed(),
-		BlockHash:         ConvertHashFromProto(protoReceipt.GetBlockHash()),
+		BlockHash:         evmtypes.Hash(protoReceipt.GetBlockHash()),
 		BlockNumber:       valuespb.NewIntFromBigInt(protoReceipt.GetBlockNumber()),
 		TransactionIndex:  protoReceipt.GetTxIndex(),
 		EffectiveGasPrice: valuespb.NewIntFromBigInt(protoReceipt.GetEffectiveGasPrice()),
@@ -84,9 +130,9 @@ func ConvertTransactionToProto(tx *evmtypes.Transaction) (*Transaction, error) {
 		return nil, errEmptyTx
 	}
 	return &Transaction{
-		To:       convertAddressToProto(tx.To),
-		Data:     convertABIPayloadToProto(tx.Data),
-		Hash:     convertHashToProto(tx.Hash),
+		To:       tx.To[:],
+		Data:     tx.Data,
+		Hash:     tx.Hash[:],
 		Nonce:    tx.Nonce,
 		Gas:      tx.Gas,
 		GasPrice: valuespb.NewBigIntFromInt(tx.GasPrice),
@@ -101,13 +147,13 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 
 	var data []byte
 	if protoTx.GetData() != nil {
-		data = protoTx.GetData().GetAbi()
+		data = protoTx.GetData()
 	}
 
 	return &evmtypes.Transaction{
-		To:       ConvertAddressFromProto(protoTx.GetTo()),
+		To:       evmtypes.Address(protoTx.GetTo()),
 		Data:     data,
-		Hash:     ConvertHashFromProto(protoTx.GetHash()),
+		Hash:     evmtypes.Hash(protoTx.GetHash()),
 		Nonce:    protoTx.GetNonce(),
 		Gas:      protoTx.GetGas(),
 		GasPrice: valuespb.NewIntFromBigInt(protoTx.GetGasPrice()),
@@ -123,9 +169,9 @@ func ConvertCallMsgToProto(msg *evmtypes.CallMsg) (*CallMsg, error) {
 	}
 
 	return &CallMsg{
-		From: convertAddressToProto(msg.From),
-		To:   convertAddressToProto(msg.To),
-		Data: convertABIPayloadToProto(msg.Data),
+		From: msg.From[:],
+		To:   msg.To[:],
+		Data: msg.Data,
 	}, nil
 }
 
@@ -135,15 +181,22 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 	}
 
 	return &evmtypes.CallMsg{
-		From: ConvertAddressFromProto(protoMsg.GetFrom()),
-		Data: protoMsg.GetData().GetAbi(),
-		To:   ConvertAddressFromProto(protoMsg.GetTo()),
+		From: evmtypes.Address(protoMsg.GetFrom()),
+		Data: protoMsg.GetData(),
+		To:   evmtypes.Address(protoMsg.GetTo()),
 	}, nil
 }
 
 var errEmptyFilter = errors.New("filter can't be nil")
 
 func ConvertLPFilterToProto(filter evmtypes.LPFilterQuery) *LPFilter {
+	convertAddressesToProto := func(addresses []evmtypes.Address) [][]byte {
+		protoAddresses := make([][]byte, 0, len(addresses))
+		for _, address := range addresses {
+			protoAddresses = append(protoAddresses, address[:])
+		}
+		return protoAddresses
+	}
 	return &LPFilter{
 		Name:          filter.Name,
 		RetentionTime: int64(filter.Retention),
@@ -165,7 +218,7 @@ func ConvertLPFilterFromProto(protoFilter *LPFilter) (evmtypes.LPFilterQuery, er
 	return evmtypes.LPFilterQuery{
 		Name:         protoFilter.GetName(),
 		Retention:    time.Duration(protoFilter.GetRetentionTime()),
-		Addresses:    ConvertAddressesFromProto(protoFilter.GetAddresses()),
+		Addresses:    convertAddressesFromProto(protoFilter.GetAddresses()),
 		EventSigs:    convertHashesFromProto(protoFilter.GetEventSigs()),
 		Topic2:       convertHashesFromProto(protoFilter.GetTopic2()),
 		Topic3:       convertHashesFromProto(protoFilter.GetTopic3()),
@@ -177,7 +230,7 @@ func ConvertLPFilterFromProto(protoFilter *LPFilter) (evmtypes.LPFilterQuery, er
 
 func ConvertFilterToProto(filter evmtypes.FilterQuery) *FilterQuery {
 	return &FilterQuery{
-		BlockHash: convertHashToProto(filter.BlockHash),
+		BlockHash: filter.BlockHash[:],
 		FromBlock: valuespb.NewBigIntFromInt(filter.FromBlock),
 		ToBlock:   valuespb.NewBigIntFromInt(filter.ToBlock),
 		Addresses: convertAddressesToProto(filter.Addresses),
@@ -198,10 +251,10 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 		return evmtypes.FilterQuery{}, errEmptyFilter
 	}
 	return evmtypes.FilterQuery{
-		BlockHash: ConvertHashFromProto(protoFilter.GetBlockHash()),
+		BlockHash: evmtypes.Hash(protoFilter.GetBlockHash()),
 		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
 		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
-		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),
+		Addresses: convertAddressesFromProto(protoFilter.GetAddresses()),
 		Topics:    ConvertTopicsFromProto(protoFilter.GetTopics()),
 	}, nil
 }
@@ -215,123 +268,64 @@ func ConvertLogsFromProto(protoLogs []*Log) []*evmtypes.Log {
 }
 
 func convertLogFromProto(protoLog *Log) *evmtypes.Log {
-	var data []byte
-	if protoLog.GetData() != nil {
-		data = protoLog.GetData().GetAbi()
-	}
-
 	return &evmtypes.Log{
 		LogIndex:    protoLog.GetIndex(),
-		BlockHash:   ConvertHashFromProto(protoLog.GetBlockHash()),
+		BlockHash:   evmtypes.Hash(protoLog.GetBlockHash()),
 		BlockNumber: valuespb.NewIntFromBigInt(protoLog.GetBlockNumber()),
 		Topics:      convertHashesFromProto(protoLog.GetTopics()),
-		EventSig:    ConvertHashFromProto(protoLog.GetEventSig()),
-		Address:     ConvertAddressFromProto(protoLog.GetAddress()),
-		TxHash:      ConvertHashFromProto(protoLog.GetTxHash()),
-		Data:        data,
+		EventSig:    evmtypes.Hash(protoLog.GetEventSig()),
+		Address:     evmtypes.Address(protoLog.GetAddress()),
+		TxHash:      evmtypes.Hash(protoLog.GetTxHash()),
+		Data:        protoLog.GetData(),
 		Removed:     protoLog.GetRemoved(),
 	}
-}
-
-func convertHashesFromProto(protoHashes []*Hash) []evmtypes.Hash {
-	hashes := make([]evmtypes.Hash, 0, len(protoHashes))
-	for _, h := range protoHashes {
-		hashes = append(hashes, ConvertHashFromProto(h))
-	}
-	return hashes
-}
-
-func ConvertHashFromProto(protoHash *Hash) evmtypes.Hash {
-	var hash evmtypes.Hash
-	if protoHash != nil {
-		copy(hash[:], protoHash.GetHash())
-	}
-	return hash
 }
 
 func ConvertTopicsFromProto(protoTopics []*Topics) [][]evmtypes.Hash {
 	topics := make([][]evmtypes.Hash, 0, len(protoTopics))
 	for _, topic := range protoTopics {
-		topics = append(topics, convertHashesFromProto(topic.GetTopic()))
+		hash := make([]evmtypes.Hash, 0, len(topic.GetTopic()))
+		for _, t := range topic.GetTopic() {
+			hash = append(hash, evmtypes.Hash(t))
+		}
+		topics = append(topics, hash)
 	}
 	return topics
 }
-func ConvertAddressesFromProto(protoAddresses []*Address) []evmtypes.Address {
-	addresses := make([]evmtypes.Address, 0, len(protoAddresses))
-	for _, protoAddress := range protoAddresses {
-		addresses = append(addresses, ConvertAddressFromProto(protoAddress))
-	}
-
-	return addresses
-}
 
 func ConvertLogToProto(log *evmtypes.Log) *Log {
+	var topics [][]byte
+	for _, topic := range log.Topics {
+		topics = append(topics, topic[:])
+	}
+
 	return &Log{
 		Index:       log.LogIndex,
-		BlockHash:   convertHashToProto(log.BlockHash),
+		BlockHash:   log.BlockHash[:],
 		BlockNumber: valuespb.NewBigIntFromInt(log.BlockNumber),
-		Topics:      convertHashesToProto(log.Topics),
-		EventSig:    convertHashToProto(log.EventSig),
-		Address:     convertAddressToProto(log.Address),
-		TxHash:      convertHashToProto(log.TxHash),
-		Data:        convertABIPayloadToProto(log.Data),
+		Topics:      topics,
+		EventSig:    log.EventSig[:],
+		Address:     log.Address[:],
+		TxHash:      log.TxHash[:],
+		Data:        log.Data[:],
 		// TODO tx index
 		//TxIndex: log.TxIndex
 		Removed: log.Removed,
 	}
 }
 
-func convertHashesToProto(hashes []evmtypes.Hash) []*Hash {
-	protoHash := make([]*Hash, 0, len(hashes))
-	for _, hash := range hashes {
-		protoHash = append(protoHash, convertHashToProto(hash))
-	}
-	return protoHash
-}
-
-func convertHashToProto(hash evmtypes.Hash) *Hash {
-	return &Hash{Hash: hash[:]}
-}
-
-func convertTopicsToProto(topics [][]evmtypes.Hash) []*Topics {
-	protoTopics := make([]*Topics, 0, len(topics))
-	for _, topic := range topics {
-		protoTopics = append(protoTopics, &Topics{Topic: convertHashesToProto(topic)})
-	}
-	return protoTopics
-}
-
-func convertAddressesToProto(addresses []evmtypes.Address) []*Address {
-	protoAddresses := make([]*Address, 0, len(addresses))
-	for _, s := range addresses {
-		protoAddresses = append(protoAddresses, convertAddressToProto(s))
-	}
-	return protoAddresses
-}
-
-func convertAddressToProto(address evmtypes.Address) *Address {
-	return &Address{Address: address[:]}
-}
-
-func ConvertAddressFromProto(protoAddress *Address) evmtypes.Address {
-	if protoAddress != nil {
-		return evmtypes.Address(protoAddress.GetAddress()[:])
-	}
-	return evmtypes.Address{}
-}
-
-func convertABIPayloadToProto(payload []byte) *ABIPayload {
-	return &ABIPayload{Abi: payload}
-}
-
 func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives.HashedValueComparator) []*HashValueComparator {
 	protoHashedValueComparators := make([]*HashValueComparator, 0, len(hashedValueComparators))
 	for _, hvc := range hashedValueComparators {
+		var values [][]byte
+		for _, value := range hvc.Values {
+			values = append(values, value[:])
+		}
 		protoHashedValueComparators = append(protoHashedValueComparators,
 			&HashValueComparator{
 				//nolint: gosec // G115
 				Operator: chaincommonpb.ComparisonOperator(hvc.Operator),
-				Values:   convertHashesToProto(hvc.Values),
+				Values:   values,
 			})
 	}
 	return protoHashedValueComparators
@@ -340,9 +334,13 @@ func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives
 func ConvertHashedValueComparatorsFromProto(protoHashedValueComparators []*HashValueComparator) []evmprimitives.HashedValueComparator {
 	hashedValueComparators := make([]evmprimitives.HashedValueComparator, 0, len(protoHashedValueComparators))
 	for _, protoHvc := range protoHashedValueComparators {
+		values := make([]evmtypes.Hash, 0, len(protoHvc.GetValues()))
+		for _, value := range protoHvc.GetValues() {
+			values = append(values, evmtypes.Hash(value))
+		}
 		hashedValueComparators = append(hashedValueComparators,
 			evmprimitives.HashedValueComparator{
-				Values:   convertHashesFromProto(protoHvc.GetValues()),
+				Values:   values,
 				Operator: primitives.ComparisonOperator(protoHvc.GetOperator()),
 			})
 	}
@@ -380,9 +378,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 		ep := &Primitive{}
 		switch primitive := expression.Primitive.(type) {
 		case *evmprimitives.Address:
-			ep.Primitive = &Primitive_ContractAddress{ContractAddress: &ContractAddress{
-				Address: &Address{Address: primitive.Address[:]},
-			}}
+			ep.Primitive = &Primitive_ContractAddress{ContractAddress: primitive.Address[:]}
 
 			putEVMPrimitive(pbExpression, ep)
 		case *evmprimitives.EventByTopic:
@@ -406,9 +402,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 			putEVMPrimitive(pbExpression, ep)
 		case *evmprimitives.EventSig:
 			ep.Primitive = &Primitive_EventSig{
-				EventSig: &EventSig{
-					EventSig: &Hash{Hash: primitive.EventSig[:]},
-				},
+				EventSig: primitive.EventSig[:],
 			}
 
 			putEVMPrimitive(pbExpression, ep)
@@ -476,11 +470,10 @@ func convertExpressionFromProto(protoExpression *Expression) (query.Expression, 
 func convertEVMExpressionToProto(protoPrimitive *Primitive) (query.Expression, error) {
 	switch primitive := protoPrimitive.GetPrimitive().(type) {
 	case *Primitive_ContractAddress:
-		address := ConvertAddressFromProto(primitive.ContractAddress.GetAddress())
+		address := evmtypes.Address(primitive.ContractAddress)
 		return evmprimitives.NewAddressFilter(address), nil
 	case *Primitive_EventSig:
-		hash := ConvertHashFromProto(primitive.EventSig.GetEventSig())
-		return evmprimitives.NewEventSigFilter(hash), nil
+		return evmprimitives.NewEventSigFilter(evmtypes.Hash(primitive.EventSig)), nil
 	case *Primitive_EventByTopic:
 		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(),
 			ConvertHashedValueComparatorsFromProto(primitive.EventByTopic.GetHashedValueComparers())), nil

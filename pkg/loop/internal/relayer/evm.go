@@ -6,7 +6,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -34,7 +34,7 @@ func (e *EVMClient) GetTransactionFee(ctx context.Context, transactionID string)
 		return nil, net.WrapRPCErr(err)
 	}
 
-	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransationFee())}, nil
+	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransactionFee())}, nil
 }
 
 func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -51,7 +51,7 @@ func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blo
 		return nil, net.WrapRPCErr(err)
 	}
 
-	return reply.GetData().GetAbi(), nil
+	return reply.GetData(), nil
 }
 
 func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQuery) ([]*evmtypes.Log, error) {
@@ -65,7 +65,7 @@ func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQ
 
 func (e *EVMClient) BalanceAt(ctx context.Context, account evmtypes.Address, blockNumber *big.Int) (*big.Int, error) {
 	reply, err := e.grpcClient.BalanceAt(ctx, &evmpb.BalanceAtRequest{
-		Account:     &evmpb.Address{Address: account[:]},
+		Account:     account[:],
 		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func (e *EVMClient) EstimateGas(ctx context.Context, msg *evmtypes.CallMsg) (uin
 }
 
 func (e *EVMClient) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
-	reply, err := e.grpcClient.GetTransactionByHash(ctx, &evmpb.GetTransactionByHashRequest{Hash: &evmpb.Hash{Hash: hash[:]}})
+	reply, err := e.grpcClient.GetTransactionByHash(ctx, &evmpb.GetTransactionByHashRequest{Hash: hash[:]})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -99,7 +99,7 @@ func (e *EVMClient) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash
 }
 
 func (e *EVMClient) GetTransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
-	reply, err := e.grpcClient.GetTransactionReceipt(ctx, &evmpb.GetTransactionReceiptRequest{Hash: &evmpb.Hash{Hash: txHash[:]}})
+	reply, err := e.grpcClient.GetTransactionReceipt(ctx, &evmpb.GetTransactionReceiptRequest{Hash: txHash[:]})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -194,7 +194,7 @@ func (e *evmServer) GetTransactionFee(ctx context.Context, request *evmpb.GetTra
 		return nil, err
 	}
 
-	return &evmpb.GetTransactionFeeReply{TransationFee: valuespb.NewBigIntFromInt(txFee.TransactionFee)}, nil
+	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(txFee.TransactionFee)}, nil
 }
 
 func (e *evmServer) CallContract(ctx context.Context, request *evmpb.CallContractRequest) (*evmpb.CallContractReply, error) {
@@ -208,7 +208,7 @@ func (e *evmServer) CallContract(ctx context.Context, request *evmpb.CallContrac
 		return nil, err
 	}
 
-	return &evmpb.CallContractReply{Data: &evmpb.ABIPayload{Abi: data}}, nil
+	return &evmpb.CallContractReply{Data: data}, nil
 }
 func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
 	filter, err := evmpb.ConvertFilterFromProto(request.GetFilterQuery())
@@ -224,7 +224,7 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
 }
 func (e *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
-	balance, err := e.impl.BalanceAt(ctx, evmpb.ConvertAddressFromProto(request.GetAccount()), valuespb.NewIntFromBigInt(request.GetBlockNumber()))
+	balance, err := e.impl.BalanceAt(ctx, evmtypes.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.GetBlockNumber()))
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (e *evmServer) EstimateGas(ctx context.Context, request *evmpb.EstimateGasR
 }
 
 func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
-	tx, err := e.impl.GetTransactionByHash(ctx, evmpb.ConvertHashFromProto(request.GetHash()))
+	tx, err := e.impl.GetTransactionByHash(ctx, evmtypes.Hash(request.GetHash()))
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (e *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.Get
 }
 
 func (e *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
-	receipt, err := e.impl.GetTransactionReceipt(ctx, evmpb.ConvertHashFromProto(request.GetHash()))
+	receipt, err := e.impl.GetTransactionReceipt(ctx, evmtypes.Hash(request.GetHash()))
 	if err != nil {
 		return nil, err
 	}

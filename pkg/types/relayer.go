@@ -101,6 +101,12 @@ type ChainService interface {
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
 type GethClient interface {
+	// CallContract reads a contract as specified in the call message at a block height defined by blockNumber where:
+	// blockNumber :
+	//   nil (default) or (-2) → use the latest mined block (“latest”)
+	//   FinalizedBlockNumber(-3) → last finalized block (“finalized”)
+	//
+	// Any positive value is treated as an explicit block height.
 	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)

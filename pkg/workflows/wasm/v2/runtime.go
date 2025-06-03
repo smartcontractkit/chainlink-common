@@ -16,10 +16,9 @@ type runtimeInternals interface {
 
 func newRuntime(internals runtimeInternals, mode sdkpb.Mode) sdkimpl.RuntimeBase {
 	return sdkimpl.RuntimeBase{
-		Call:   callCapabilityWasmWrapper(internals),
-		Await:  awaitCapabilitiesWasmWrapper(internals),
-		Writer: &writer{},
-		Mode:   mode,
+		Call:  callCapabilityWasmWrapper(internals),
+		Await: awaitCapabilitiesWasmWrapper(internals),
+		Mode:  mode,
 	}
 }
 

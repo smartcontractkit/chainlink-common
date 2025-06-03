@@ -15,7 +15,7 @@ type Basic struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Basic) Action(runtime sdk.DonRuntime, input *Input) sdk.Promise[*Output] {
+func (c *Basic) Action(runtime sdk.Runtime, input *Input) sdk.Promise[*Output] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*Output](nil, err)
@@ -38,7 +38,7 @@ func (c *Basic) Action(runtime sdk.DonRuntime, input *Input) sdk.Promise[*Output
 	})
 }
 
-func (c Basic) Trigger(config *Config) sdk.DonTrigger[*TriggerEvent] {
+func (c Basic) Trigger(config *Config) sdk.Trigger[*TriggerEvent] {
 	configAny, _ := anypb.New(config)
 	return &basicTrigger{
 		config: configAny,
@@ -49,7 +49,7 @@ type basicTrigger struct {
 	config *anypb.Any
 }
 
-func (*basicTrigger) IsDonTrigger() {}
+func (*basicTrigger) IsTrigger() {}
 
 func (*basicTrigger) NewT() *TriggerEvent {
 	return &TriggerEvent{}

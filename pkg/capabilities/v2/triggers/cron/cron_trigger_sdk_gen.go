@@ -12,7 +12,7 @@ type Cron struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c Cron) Trigger(config *Config) sdk.DonTrigger[*Payload] {
+func (c Cron) Trigger(config *Config) sdk.Trigger[*Payload] {
 	configAny, _ := anypb.New(config)
 	return &cronTrigger{
 		config: configAny,
@@ -23,7 +23,7 @@ type cronTrigger struct {
 	config *anypb.Any
 }
 
-func (*cronTrigger) IsDonTrigger() {}
+func (*cronTrigger) IsTrigger() {}
 
 func (*cronTrigger) NewT() *Payload {
 	return &Payload{}

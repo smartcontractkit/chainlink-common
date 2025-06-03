@@ -2,8 +2,6 @@ package sdkimpl
 
 import (
 	"fmt"
-	"io"
-	"log/slog"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -16,11 +14,9 @@ type CallCapabilityFn func(request *pb.CapabilityRequest) error
 type AwaitCapabilitiesFn func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error)
 
 type RuntimeBase struct {
-	ConfigBytes     []byte
 	MaxResponseSize uint64
 	Call            CallCapabilityFn
 	Await           AwaitCapabilitiesFn
-	Writer          io.Writer
 
 	modeErr    error
 	Mode       pb.Mode
@@ -63,24 +59,12 @@ func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[
 	})
 }
 
-func (r *RuntimeBase) Config() []byte {
-	return r.ConfigBytes
-}
-
-func (r *RuntimeBase) LogWriter() io.Writer {
-	return r.Writer
-}
-
-func (r *RuntimeBase) Logger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(r.LogWriter(), nil))
-}
-
-type DonRuntime struct {
+type Runtime struct {
 	RuntimeBase
 	nextNodeCallId int32
 }
 
-func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
+func (d *Runtime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	nrt := &NodeRuntime{RuntimeBase: d.RuntimeBase}
 	nrt.nextCallId = d.nextNodeCallId
 	nrt.Mode = pb.Mode_Node
@@ -95,7 +79,7 @@ func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.Simp
 	})
 }
 
-var _ sdk.DonRuntime = &DonRuntime{}
+var _ sdk.Runtime = &Runtime{}
 
 type NodeRuntime struct {
 	RuntimeBase

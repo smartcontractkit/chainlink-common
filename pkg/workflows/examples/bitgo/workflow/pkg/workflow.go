@@ -17,12 +17,13 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/core/vm/runtime"
 	"github.com/shopspring/decimal"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
-	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability"
-	evm "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service"
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
@@ -46,33 +47,24 @@ type Config struct {
 	GasLimit         uint64
 }
 
-func Workflow(runner sdk.DonRunner) {
-	logger := slog.Default()
-	config := &Config{}
-	if err := json.Unmarshal(runner.Config(), config); err != nil {
-		logger.Error("error unmarshalling config", "err", err)
-		return
-	}
-
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewEmptyDonHandler(
-				cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
-				onCronTrigger,
-			),
-		},
-	})
+func InitWorkflow(cfg *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], error) {
+	config := cfg.Config
+	return sdk.Workflows[*Config]{
+		sdk.On(
+			cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
+			onCronTrigger,
+		),
+	}, nil
 }
 
-func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
-	logger := slog.Default()
-	config := &Config{}
-	if err := json.Unmarshal(runtime.Config(), config); err != nil {
-		logger.Error("error unmarshalling config", "err", err)
-	}
-
-	reserveInfo, err := sdk.RunInNodeMode(
+func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.CronTrigger) error {
+	logger := wcx.Logger
+	config := wcx.Config
+	client := &http.Client{}
+	reserveInfo, err := http.ConsensusFetch(
+		wcx,
 		runtime,
+		client,
 		fetchPor,
 		sdk.ConsensusAggregationFromTags[*ReserveInfo]()).
 		Await()
@@ -178,15 +170,11 @@ func onCronTrigger(runtime sdk.DonRuntime, trigger *cron.CronTrigger) error {
 	return errors.Join(writeErrors...)
 }
 
-func fetchPor(runtime sdk.NodeRuntime) (*ReserveInfo, error) {
-	config := &Config{}
-	if err := json.Unmarshal(runtime.Config(), config); err != nil {
-		return nil, fmt.Errorf("error unmarshalling config: %w", err)
-	}
+func fetchPor(wcx *sdk.WorkflowContext[*Config], fetcher *http.Fetcher) (*ReserveInfo, error) {
+	config := wcx.Config
 
 	request := &http.HttpFetchRequest{Url: config.Url}
-	client := &http.Client{}
-	response, err := client.Fetch(runtime, request).Await()
+	response, err := fetcher.Fetch(request).Await()
 	if err != nil {
 		return nil, err
 	}

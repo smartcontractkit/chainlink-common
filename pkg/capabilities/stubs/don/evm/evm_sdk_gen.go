@@ -18,7 +18,7 @@ type Client struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Client) GetTxResult(runtime sdk.DonRuntime, input *TxID) sdk.Promise[*crosschain.TxResult] {
+func (c *Client) GetTxResult(runtime sdk.Runtime, input *TxID) sdk.Promise[*crosschain.TxResult] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*crosschain.TxResult](nil, err)
@@ -41,7 +41,7 @@ func (c *Client) GetTxResult(runtime sdk.DonRuntime, input *TxID) sdk.Promise[*c
 	})
 }
 
-func (c *Client) ReadMethod(runtime sdk.DonRuntime, input *ReadMethodRequest) sdk.Promise[*crosschain.ByteArray] {
+func (c *Client) ReadMethod(runtime sdk.Runtime, input *ReadMethodRequest) sdk.Promise[*crosschain.ByteArray] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*crosschain.ByteArray](nil, err)
@@ -64,7 +64,7 @@ func (c *Client) ReadMethod(runtime sdk.DonRuntime, input *ReadMethodRequest) sd
 	})
 }
 
-func (c *Client) QueryLogs(runtime sdk.DonRuntime, input *QueryLogsRequest) sdk.Promise[*LogList] {
+func (c *Client) QueryLogs(runtime sdk.Runtime, input *QueryLogsRequest) sdk.Promise[*LogList] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*LogList](nil, err)
@@ -87,7 +87,7 @@ func (c *Client) QueryLogs(runtime sdk.DonRuntime, input *QueryLogsRequest) sdk.
 	})
 }
 
-func (c *Client) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransactionRequest) sdk.Promise[*TxID] {
+func (c *Client) SubmitTransaction(runtime sdk.Runtime, input *SubmitTransactionRequest) sdk.Promise[*TxID] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*TxID](nil, err)
@@ -110,7 +110,7 @@ func (c *Client) SubmitTransaction(runtime sdk.DonRuntime, input *SubmitTransact
 	})
 }
 
-func (c Client) OnFinalityViolation(config *emptypb.Empty) sdk.DonTrigger[*crosschain.BlockRange] {
+func (c Client) OnFinalityViolation(config *emptypb.Empty) sdk.Trigger[*crosschain.BlockRange] {
 	configAny, _ := anypb.New(config)
 	return &clientOnFinalityViolation{
 		config: configAny,
@@ -121,7 +121,7 @@ type clientOnFinalityViolation struct {
 	config *anypb.Any
 }
 
-func (*clientOnFinalityViolation) IsDonTrigger() {}
+func (*clientOnFinalityViolation) IsTrigger() {}
 
 func (*clientOnFinalityViolation) NewT() *crosschain.BlockRange {
 	return &crosschain.BlockRange{}

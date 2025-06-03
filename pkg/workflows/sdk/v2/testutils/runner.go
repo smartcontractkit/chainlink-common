@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"errors"
-	"io"
 	"log/slog"
 	"testing"
 
@@ -15,10 +14,29 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type runner[T any] struct {
+type runner[C any] struct {
+	baseRunner[C, sdk.Runtime]
+}
+
+func (r *runner[C]) Run(initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflows[C], error)) {
+	wfc := &sdk.WorkflowContext[C]{
+		Config:    r.config,
+		LogWriter: r.writer,
+		Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+	}
+	wfs, err := initFn(wfc)
+	if err != nil {
+		r.err = err
+		return
+	}
+
+	r.baseRunner.run(wfs)
+}
+
+type baseRunner[C, T any] struct {
 	tb             testing.TB
 	ran            bool
-	config         []byte
+	config         C
 	result         any
 	err            error
 	workflowId     string
@@ -29,16 +47,12 @@ type runner[T any] struct {
 	base           *sdkimpl.RuntimeBase
 }
 
-func (r *runner[T]) Logs() []string {
+func (r *baseRunner[C, T]) Logs() []string {
 	logs := make([]string, len(r.writer.logs))
 	for i, log := range r.writer.logs {
 		logs[i] = string(log)
 	}
 	return logs
-}
-
-func (r *runner[T]) LogWriter() io.Writer {
-	return r.writer
 }
 
 type TestRunner interface {
@@ -55,30 +69,19 @@ type TestRunner interface {
 	Logs() []string
 }
 
-type DonRunner interface {
-	sdk.DonRunner
+type Runner[C any] interface {
+	sdk.Runner[C]
 	TestRunner
 }
 
-type NodeRunner interface {
-	sdk.NodeRunner
-	TestRunner
-}
-
-func NewDonRunner(tb testing.TB, config []byte) DonRunner {
+func NewRunner[C any](tb testing.TB, config C) Runner[C] {
 	writer := &testWriter{}
-	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(tb, config, writer)}
-	return newRunner[sdk.DonRuntime](tb, config, writer, drt, &drt.RuntimeBase)
+	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(tb, writer)}
+	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, writer, drt, &drt.RuntimeBase)}
 }
 
-func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
-	writer := &testWriter{}
-	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(tb, config, writer)}
-	return newRunner[sdk.NodeRuntime](tb, config, writer, nrt, &nrt.RuntimeBase)
-}
-
-func newRunner[T any](tb testing.TB, config []byte, writer *testWriter, t T, base *sdkimpl.RuntimeBase) *runner[T] {
-	r := &runner[T]{
+func newBaseRunner[C, T any](tb testing.TB, config C, writer *testWriter, t T, base *sdkimpl.RuntimeBase) baseRunner[C, T] {
+	r := baseRunner[C, T]{
 		tb:         tb,
 		config:     config,
 		workflowId: uuid.NewString(),
@@ -91,16 +94,16 @@ func newRunner[T any](tb testing.TB, config []byte, writer *testWriter, t T, bas
 	return r
 }
 
-func (r *runner[T]) SetStrictTriggers(strict bool) {
+func (r *baseRunner[C, T]) SetStrictTriggers(strict bool) {
 	r.strictTriggers = strict
 }
 
-func (r *runner[T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
+func (r *baseRunner[C, T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
 	r.base.MaxResponseSize = maxResponseSizeBytes
 }
 
-func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
-	for _, handler := range args.Handlers {
+func (r *baseRunner[C, T]) run(workflows []sdk.BaseWorkflow[C, T]) {
+	for _, handler := range workflows {
 		trigger, err := r.registry.GetCapability(handler.CapabilityID())
 		if err != nil {
 			if r.strictTriggers {
@@ -134,7 +137,12 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		r.ran = true
-		r.result, r.err = handler.Callback()(r.runtime, response.Payload)
+		wcx := &sdk.WorkflowContext[C]{
+			Config:    r.config,
+			LogWriter: r.writer,
+			Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+		}
+		r.result, r.err = handler.Callback()(wcx, r.runtime, response.Payload)
 		_, err = values.Wrap(r.result)
 		if err != nil {
 			r.result = nil
@@ -144,20 +152,11 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	}
 }
 
-func (r *runner[T]) Config() []byte {
-	return r.config
-}
-
-func (r *runner[T]) Result() (bool, any, error) {
+func (r *baseRunner[C, T]) Result() (bool, any, error) {
 	return r.ran, r.result, r.err
 }
 
-func (r *runner[T]) Logger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(r.LogWriter(), nil))
-}
-
-var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
-var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
+var _ sdk.Runner[any] = &runner[any]{}
 
 type TooManyTriggers struct{}
 

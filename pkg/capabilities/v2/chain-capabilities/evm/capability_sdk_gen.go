@@ -248,31 +248,31 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 	})
 }
 
-func (c EVM) LogTrigger(config *FilterLogTriggerRequest) sdk.DonTrigger[*evmpb.Log] {
+func (c Client) LogTrigger(config *FilterLogTriggerRequest) sdk.DonTrigger[*evm.Log] {
 	configAny, _ := anypb.New(config)
-	return &eVMLogTrigger{
+	return &clientLogTrigger{
 		config: configAny,
 	}
 }
 
-type eVMLogTrigger struct {
+type clientLogTrigger struct {
 	config *anypb.Any
 }
 
-func (*eVMLogTrigger) IsDonTrigger() {}
+func (*clientLogTrigger) IsDonTrigger() {}
 
-func (*eVMLogTrigger) NewT() *evmpb.Log {
-	return &evmpb.Log{}
+func (*clientLogTrigger) NewT() *evm.Log {
+	return &evm.Log{}
 }
 
-func (*eVMLogTrigger) CapabilityID() string {
-	return "mainnet-evm@1.0.0"
+func (*clientLogTrigger) CapabilityID() string {
+	return "evm@1.0.0"
 }
 
-func (*eVMLogTrigger) Method() string {
+func (*clientLogTrigger) Method() string {
 	return "LogTrigger"
 }
 
-func (t *eVMLogTrigger) ConfigAsAny() *anypb.Any {
+func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
 	return t.config
 }

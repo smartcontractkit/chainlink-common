@@ -283,6 +283,9 @@ type triggerExecutableClient struct {
 }
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	// the stream will outlive this context
+	var cancelStream context.CancelFunc
+	ctx, cancelStream = context.WithCancel(context.WithoutCancel(ctx))
 	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
 	if err != nil {
 		return nil, fmt.Errorf("error registering trigger: %w", err)
@@ -299,7 +302,7 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
-	ch, cleanup, err := forwardTriggerResponsesToChannel(t.Logger, req, responseStream.Recv)
+	ch, cleanup, err := forwardTriggerResponsesToChannel(t.Logger, req, responseStream.Recv, cancelStream)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
 	}
@@ -495,12 +498,14 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 func forwardTriggerResponsesToChannel(
 	lggr logger.Logger, req capabilities.TriggerRegistrationRequest,
 	receive func() (*capabilitiespb.TriggerResponseMessage, error),
+	cancelStream context.CancelFunc,
 ) (<-chan capabilities.TriggerResponse, func(), error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	responseCh := make(chan capabilities.TriggerResponse)
 
 	cleanup := func() {
 		defer lggr.Debugw("stopped forwarding trigger responses", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+		cancelStream()
 		cancel()
 		close(responseCh)
 	}

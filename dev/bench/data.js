@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748947279938,
+  "lastUpdate": 1748977686936,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14742,6 +14742,48 @@ window.BENCHMARK_DATA = {
             "value": 28375,
             "unit": "ns/op",
             "extra": "42537 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0dcaa6d2cc86ceec1ee38a681a31d41572a1bc04",
+          "message": "Fix labels in Beholder Logger (#1232)",
+          "timestamp": "2025-06-03T12:06:44-07:00",
+          "tree_id": "3386dbd6b087cbb3f00e2dd983e20ec8662baf85",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0dcaa6d2cc86ceec1ee38a681a31d41572a1bc04"
+        },
+        "date": 1748977686084,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.9,
+            "unit": "ns/op",
+            "extra": "3382779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410,
+            "unit": "ns/op",
+            "extra": "2910066 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28148,
+            "unit": "ns/op",
+            "extra": "42675 times\n4 procs"
           }
         ]
       }

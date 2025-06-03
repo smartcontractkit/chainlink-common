@@ -133,7 +133,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
 	}
 	loggerAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "zap_log_message"),
+		attribute.String(AttrKeyBeholderDataType, "zap_log_message"),
 	}
 	loggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(loggerAttributes...),
@@ -187,7 +187,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 
 	messageAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "custom_message"),
+		attribute.String(AttrKeyBeholderDataType, "custom_message"),
 	}
 	messageLoggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(messageAttributes...),

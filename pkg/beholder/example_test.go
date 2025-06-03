@@ -47,7 +47,7 @@ func ExampleNewClient() {
 			beholder.AttrKeyBeholderDataSchema, "/custom-message/versions/1", // required
 			beholder.AttrKeyBeholderDomain, "ExampleDomain", // required
 			beholder.AttrKeyBeholderEntity, "ExampleEntity", // required
-			"beholder_data_type", "custom_message",
+			beholder.AttrKeyBeholderDataType, "custom_message",
 			"foo", "bar",
 		)
 		if err != nil {

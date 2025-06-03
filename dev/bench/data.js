@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748879136474,
+  "lastUpdate": 1748947279938,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14700,6 +14700,48 @@ window.BENCHMARK_DATA = {
             "value": 28152,
             "unit": "ns/op",
             "extra": "42625 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0a15f29b33ebdbe554ed6259ae9ae05e88055544",
+          "message": "[CAPPL-736] Beholder Logger (#1229)\n\nA new logger object that combines logging and sending events to Beholder Client, following the existing custmsg methods.",
+          "timestamp": "2025-06-03T05:39:58-05:00",
+          "tree_id": "fa063913991c8a8bf03915913dbe87d5f12e8c91",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0a15f29b33ebdbe554ed6259ae9ae05e88055544"
+        },
+        "date": 1748947278847,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.2,
+            "unit": "ns/op",
+            "extra": "3113136 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.5,
+            "unit": "ns/op",
+            "extra": "2842263 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28375,
+            "unit": "ns/op",
+            "extra": "42537 times\n4 procs"
           }
         ]
       }

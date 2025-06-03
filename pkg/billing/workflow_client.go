@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
@@ -66,7 +67,7 @@ func defaultWorkflowConfig() workflowConfig {
 	loggerInst, _ := logger.New()
 	// By default, no signing key is set and we fallback to insecure creds.
 	return workflowConfig{
-		transportCredentials: credentials.NewTLS(nil),
+		transportCredentials: insecure.NewCredentials(),
 		log:                  loggerInst,
 		tlsCert:              "",
 		// Default to "localhost" if not overridden.

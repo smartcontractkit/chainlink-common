@@ -44,3 +44,11 @@ packages:
           filename: "mock_{{.InterfaceName | snakecase}}_test.go"
           mockname: "Mock{{.InterfaceName}}"
           dir: "{{.InterfaceDir}}"
+  github.com/smartcontractkit/chainlink-common/pkg/custmsg:
+    interfaces:
+      MessageEmitter:
+        config:
+          inpackage: true
+          filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+          mockname: "mock{{.InterfaceName}}"
+          dir: "{{.InterfaceDir}}"

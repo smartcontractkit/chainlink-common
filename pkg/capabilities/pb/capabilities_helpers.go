@@ -53,6 +53,16 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	if req.Config != nil {
 		config = req.Config
 	}
+
+	limits := make([]*SpendLimit, len(req.Metadata.SpendLimits))
+
+	for idx, resource := range req.Metadata.SpendLimits {
+		limits[idx] = &SpendLimit{
+			SpendType: string(resource.SpendType),
+			Limit:     resource.Limit,
+		}
+	}
+
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
@@ -63,6 +73,7 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 			ReferenceId:              req.Metadata.ReferenceID,
 			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
+			SpendLimits:              limits,
 		},
 		Inputs:        values.ProtoMap(inputs),
 		Config:        values.ProtoMap(config),
@@ -112,6 +123,14 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 		return capabilities.CapabilityRequest{}, err
 	}
 
+	limits := make([]capabilities.SpendLimit, len(pr.Metadata.SpendLimits))
+	for idx, resource := range pr.Metadata.SpendLimits {
+		limits[idx] = capabilities.SpendLimit{
+			SpendType: capabilities.CapabilitySpendType(resource.GetSpendType()),
+			Limit:     resource.GetLimit(),
+		}
+	}
+
 	req := capabilities.CapabilityRequest{
 		Metadata: capabilities.RequestMetadata{
 			WorkflowID:               md.WorkflowId,
@@ -122,6 +141,7 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 			ReferenceID:              md.ReferenceId,
 			DecodedWorkflowName:      md.DecodedWorkflowName,
+			SpendLimits:              limits,
 		},
 		Config:        config,
 		Inputs:        inputs,

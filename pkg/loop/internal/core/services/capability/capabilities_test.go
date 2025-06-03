@@ -341,7 +341,7 @@ func Test_Capabilities(t *testing.T) {
 		assert.False(t, isOpen)
 	})
 
-	t.Run("fetching a trigger capability and cancelling context should unregister trigger and close client channel", func(t *testing.T) {
+	t.Run("fetching a trigger capability and cancelling context does not close client channel", func(t *testing.T) {
 		mtr := mustMockTrigger(t)
 		tr, _, _, err := newCapabilityPlugin(t, mtr)
 		require.NoError(t, err)
@@ -361,10 +361,19 @@ func Test_Capabilities(t *testing.T) {
 
 		cancel()
 
+		// canceling the context does not unregister trigger
+		_, isOpen := <-ch
+		assert.True(t, isOpen)
+
+		// call unregister to unregister trigger
+		err = ctr.UnregisterTrigger(t.Context(), capabilities.TriggerRegistrationRequest{})
+		require.NoError(t, err)
+
 		<-mtr.unregisterCalls
 
-		_, isOpen := <-ch
+		_, isOpen = <-ch
 		assert.False(t, isOpen)
+		assert.Nil(t, mtr.callback)
 	})
 
 	t.Run("fetching a trigger capability and calling Info", func(t *testing.T) {

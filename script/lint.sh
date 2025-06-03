@@ -15,7 +15,7 @@ mkdir -p "$DIRECTORY"
 DOCKER_CMD="docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v$GOLANGCI_LINT_VERSION golangci-lint run $COMMON_OPTS $EXTRA_OPTS"
 
 if command -v golangci-lint >/dev/null 2>&1; then
-    LOCAL_VERSION=$(golangci-lint version 2>&1 | grep -oE "version .[{0-9}.]+" |  sed "s|version .||")
+    LOCAL_VERSION=$(golangci-lint version 2>&1 | grep -oE "version [0-9.]+" |  sed "s|version ||")
 
     if [ "$LOCAL_VERSION" = "$GOLANGCI_LINT_VERSION" ]; then
         echo "Local golangci-lint version ($LOCAL_VERSION) matches desired version ($GOLANGCI_LINT_VERSION). Using local version."
@@ -33,4 +33,3 @@ else
 fi
 
 echo "Linting complete. Results saved to $OUTPUT_FILE"
- 

@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/chain-service;evmpb";
-package loop.chain_capabilities.evm;
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/evm";
+package loop.evm;
 
 import "google/protobuf/empty.proto";
 import "loop/chain-common/query.proto";
@@ -22,44 +22,25 @@ service EVM{
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
 }
 
-// ----- Message Types -----
-// represents evm-style Address
-// [20]byte fix-sized array
-message Address {
-  bytes address = 1;
-}
-
-// represents evm-style hash
-// [32]byte fix-sized array
-message Hash {
-  bytes hash = 1;
-}
-
-// represents solidity-spec abi encoded bytes
-message ABIPayload {
-  bytes abi = 1;
-}
-
-
 // represents simplified evm-style CallMsg
 message CallMsg {
-  Address from = 1;  // sender address, important for reads relied on msg.sender
-  Address to = 2; // contract address
-  ABIPayload data = 3; // abi encoded payload 
+  bytes from = 1; // sender address in evm address [20]byte fix-sized array format
+  bytes to = 2; // contract address in evm address [20]byte fix-sized array format
+  bytes data = 3; // solidity-spec abi encoded bytes
 }
 
 message Topics {
-  repeated Hash topic = 1;
+  repeated bytes topic = 1; // in [32]byte fix-sized array format
 }
 
 // represents evm-style log
 message Log {
-  Address address = 1; // address of the contract emitted the log
-  repeated Hash  topics = 2; // indexed log fields 
-  Hash tx_hash = 3; // hash of the transaction emmited the log 
-  Hash block_hash = 4; // hash of the block containing the log
-  ABIPayload data = 5; // encoded log Data
-  Hash eventSig = 6; // keccak256 of event signature
+  bytes address = 1; // address of the contract emitted the log in evm address [20]byte fix-sized array format
+  repeated bytes topics = 2; // indexed log fields, in [32]byte fix-sized array format
+  bytes tx_hash = 3; // hash of the transaction containing the log, in [32]byte fix-sized array format
+  bytes block_hash = 4; // hash of the block containing the log, in [32]byte fix-sized array format
+  bytes data = 5; // solidity-spec abi encoded log Data 
+  bytes eventSig = 6; // keccak256 of event signature, in [32]byte fix-sized array format
   values.BigInt block_number = 7;  // block number containing the log
   uint32 tx_index = 8;  // index of transaction emmited the log
   uint32 index = 9;  // index of the Log within the intire block
@@ -68,10 +49,10 @@ message Log {
 
 // represents evm-style filter query
 message FilterQuery {
-  Hash block_hash = 1; // exact block (cant use from/to)
+  bytes block_hash = 1; // exact block (cant use from/to), in [32]byte fix-sized array format
   values.BigInt fromBlock = 2; // start block range
   values.BigInt toBlock = 3; // end block range
-  repeated Address addresses = 4; // contract(s) to filter logs from
+  repeated bytes addresses = 4; // contract(s) to filter logs from in evm address [20]byte fix-sized array format
   repeated Topics topics = 5;  // filter log by event signature and indexed args
 }
 
@@ -79,11 +60,11 @@ message FilterQuery {
 message Transaction {
   uint64 nonce = 1; // number of txs sent from sender 
   uint64 gas = 2; // max gas allowed per execution (in gas units)
-  Address to = 3; // recipient address
-  ABIPayload data = 4; // input data for function call payload
-  Hash hash = 5; // derived from transaction structure hash
+  bytes to = 3; // recipient address in evm address [20]byte fix-sized array format
+  bytes data = 4; // solidity-spec abi encoded input data for function call payload
+  bytes hash = 5; // transaction hash, in [32]byte fix-sized array format
   values.BigInt value = 6; // amount of eth sent in wei
-  values.BigInt gas_price = 7; // price for a signle gas unit in wei
+  values.BigInt gas_price = 7; // price for a single gas unit in wei
 }
 
 // represents evm-style receipt
@@ -91,12 +72,12 @@ message Receipt {
   uint64 status = 1; // 1 for success 0 for failure
   uint64 gas_used = 2; // gas used by this transaction (in gas units)
   uint64 tx_index = 3; // index of the transaction inside of the block
-  Hash block_hash = 4; // block hash containing the transaction
-  repeated Log logs = 6; // logs emmited by this transaction
-  Hash tx_hash = 7; // hash of the transaction this receipt is for
+  bytes block_hash = 4; // block hash containing the transaction
+  repeated Log logs = 6; // logs emitted by this transaction
+  bytes tx_hash = 7; // hash of the transaction this receipt is for, in [32]byte fix-sized array format
   values.BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
   values.BigInt block_number = 9; // block number containing the transaction
-  Address contract_address = 10; // address of the contract if this transaction created one
+  bytes contract_address = 10; // address of the contract if this transaction created one in evm address [20]byte fix-sized array format
 }
 
 
@@ -105,19 +86,19 @@ message LPFilter {
   uint64 max_logs_kept = 1; // maximum number of logs to retain ( 0 = unlimited ) 
   int64 retention_time = 2; // maximum amount of time to retain logs in seconds
   uint64 logs_per_block = 3; // rate limit ( maximum # of logs per block, 0 = unlimited )
-  string name = 4; // filter name, has to persist for removing filter
-  repeated Address addresses = 5; // list of addresses to include
-  repeated Hash event_sigs = 6; // list of possible signatures (aka topic1)
-  repeated Hash topic2 = 7; // list of possible values for topic2
-  repeated Hash topic3 = 8; // list of possible values for topic3
-  repeated Hash topic4 = 9; // list of possible values for topic4
+  string name = 4; // filter name, has to persist for removing filter 
+  repeated bytes addresses = 5; // list of addresses to include in evm address [20]byte fix-sized array format
+  repeated bytes event_sigs = 6; // list of possible signatures (aka topic1), in [32]byte fix-sized array format
+  repeated bytes topic2 = 7; // list of possible values for topic2, in [32]byte fix-sized array format
+  repeated bytes topic3 = 8; // list of possible values for topic3, in [32]byte fix-sized array format
+  repeated bytes topic4 = 9; // list of possible values for topic4, in [32]byte fix-sized array format
 }
 
 message Head {
   uint64 timestamp = 1; // unix timestamp
   values.BigInt block_number = 2;
-  Hash hash = 3;
-  Hash parent_hash = 4;
+  bytes hash = 3; // in [32]byte fix-sized array format
+  bytes parent_hash = 4; // in [32]byte fix-sized array format
 }
 
 message Expression {
@@ -141,16 +122,8 @@ message Or {
 }
 
 message HashValueComparator {
-  repeated Hash values = 1;
+  repeated bytes values = 1; // in [32]byte fix-sized array format
   loop.chain.common.ComparisonOperator operator = 2;
-}
-
-message ContractAddress {
-  Address address = 1;
-}
-
-message EventSig {
-  Hash eventSig = 1;
 }
 
 message EventByWord {
@@ -168,8 +141,8 @@ message EventByTopic {
 message Primitive {
   oneof primitive {
     loop.chain.common.Primitive general_primitive = 1;
-    ContractAddress contract_address = 2;
-    EventSig event_sig = 3;
+    bytes contract_address = 2; // in evm address [20]byte fix-sized array format
+    bytes event_sig = 3; // // in [32]byte fix-sized array format
     EventByWord event_by_word = 4;
     EventByTopic event_by_topic = 5;
   }
@@ -181,23 +154,29 @@ message LatestAndFinalizedHeadReply {
   Head finalized = 2;
 }
 
+// CallContractRequest has arguments for reading a contract as specified in the call message at a block height defined by blockNumber where:
+// blockNumber :
+//	nil (default) or (-2) → use the latest mined block (“latest”)
+//	FinalizedBlockNumber(-3) → last finalized block (“finalized”)
+//
+// Any positive value is treated as an explicit block height.
 message CallContractRequest {
   CallMsg call = 1;
   values.BigInt block_number = 2;
 }
 
 message CallContractReply {
-  ABIPayload data = 1;
+  bytes data = 1; // solidity-spec abi encoded bytes
 }
 
-// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMRElayer.GetTransactionFee].
+// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMService.GetTransactionFee].
 message GetTransactionFeeRequest {
   string transaction_id = 1; // idempotency key used when transaction was submitted
 }
 
-// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMRElayer.GetTransactionFee].
+// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMService.GetTransactionFee].
 message GetTransactionFeeReply {
-  values.BigInt transation_fee = 1; // transaction fee is the cost of transaction execution in Wei
+  values.BigInt transaction_fee = 1; // transaction fee is the cost of transaction execution in Wei
 }
 
 message FilterLogsRequest {
@@ -209,7 +188,7 @@ message FilterLogsReply {
 }
 
 message BalanceAtRequest {
-  Address account = 1;
+  bytes account = 1; // in evm address [20]byte fix-sized array format
   values.BigInt block_number = 2;
 }
 
@@ -226,7 +205,7 @@ message EstimateGasReply {
 }
 
 message GetTransactionByHashRequest {
-  Hash hash = 1;
+  bytes hash = 1; // in [32]byte fix-sized array format
 }
 
 message GetTransactionByHashReply {
@@ -234,7 +213,7 @@ message GetTransactionByHashReply {
 }
 
 message GetTransactionReceiptRequest {
-  Hash hash = 1;
+  bytes hash = 1; // in [32]byte fix-sized array format
 } 
 
 message GetTransactionReceiptReply {

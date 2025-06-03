@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -120,11 +121,17 @@ func InfoToReply(info capabilities.CapabilityInfo) *capabilitiespb.CapabilityInf
 		ct = capabilitiespb.CapabilityType_CAPABILITY_TYPE_UNKNOWN
 	}
 
+	types := make([]string, len(info.SpendTypes))
+	for idx, sType := range info.SpendTypes {
+		types[idx] = string(sType)
+	}
+
 	return &capabilitiespb.CapabilityInfoReply{
 		Id:             info.ID,
 		CapabilityType: ct,
 		Description:    info.Description,
 		IsLocal:        info.IsLocal,
+		SpendTypes:     types,
 	}
 }
 
@@ -165,11 +172,17 @@ func InfoReplyToInfo(resp *capabilitiespb.CapabilityInfoReply) (capabilities.Cap
 		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
 	}
 
+	types := make([]capabilities.CapabilitySpendType, len(resp.SpendTypes))
+	for idx, sType := range resp.SpendTypes {
+		types[idx] = capabilities.CapabilitySpendType(sType)
+	}
+
 	return capabilities.CapabilityInfo{
 		ID:             resp.Id,
 		CapabilityType: ct,
 		Description:    resp.Description,
 		IsLocal:        resp.IsLocal,
+		SpendTypes:     types,
 	}, nil
 }
 
@@ -263,6 +276,10 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 type triggerExecutableClient struct {
 	grpc capabilitiespb.TriggerExecutableClient
 	*net.BrokerExt
+
+	// manage cleanup of forwarding response from stream
+	mu          sync.Mutex
+	cancelFuncs map[string]func()
 }
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
@@ -282,16 +299,41 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
-	return forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
+	ch, cleanup, err := forwardTriggerResponsesToChannel(t.Logger, req, responseStream.Recv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cancelFuncs[req.TriggerID] = cleanup
+
+	return ch, nil
 }
 
 func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) error {
 	_, err := t.grpc.UnregisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
-	return err
+	if err != nil {
+		return err
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	cleanup, ok := t.cancelFuncs[req.TriggerID]
+	if !ok {
+		t.Logger.Warnw("attempted cleanup of not found trigger", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+		return nil
+	}
+	cleanup()
+	return nil
 }
 
 func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *triggerExecutableClient {
-	return &triggerExecutableClient{grpc: capabilitiespb.NewTriggerExecutableClient(conn), BrokerExt: brokerExt}
+	return &triggerExecutableClient{
+		grpc:        capabilitiespb.NewTriggerExecutableClient(conn),
+		BrokerExt:   brokerExt,
+		cancelFuncs: make(map[string]func()),
+	}
 }
 
 type executableServer struct {
@@ -450,12 +492,36 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 	return err
 }
 
-func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger, req capabilities.TriggerRegistrationRequest, receive func() (*capabilitiespb.TriggerResponseMessage, error)) (<-chan capabilities.TriggerResponse, error) {
+func forwardTriggerResponsesToChannel(
+	lggr logger.Logger, req capabilities.TriggerRegistrationRequest,
+	receive func() (*capabilitiespb.TriggerResponseMessage, error),
+) (<-chan capabilities.TriggerResponse, func(), error) {
+	ctx, cancel := context.WithCancel(context.Background())
 	responseCh := make(chan capabilities.TriggerResponse)
 
+	cleanup := func() {
+		defer lggr.Debugw("stopped forwarding trigger responses", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+		cancel()
+		close(responseCh)
+	}
+
+	send := func(resp capabilities.TriggerResponse) {
+		select {
+		case responseCh <- resp:
+		case <-ctx.Done():
+		}
+	}
+
 	go func() {
-		defer close(responseCh)
+		defer cleanup()
+
 		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			message, err := receive()
 			if errors.Is(err, io.EOF) {
 				return
@@ -465,10 +531,7 @@ func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger,
 				resp := capabilities.TriggerResponse{
 					Err: err,
 				}
-				select {
-				case responseCh <- resp:
-				case <-ctx.Done():
-				}
+				send(resp)
 				return
 			}
 
@@ -477,10 +540,7 @@ func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger,
 				resp := capabilities.TriggerResponse{
 					Err: errors.New("unexpected message type when receiving response: expected response"),
 				}
-				select {
-				case responseCh <- resp:
-				case <-ctx.Done():
-				}
+				send(resp)
 				return
 			}
 
@@ -490,14 +550,9 @@ func forwardTriggerResponsesToChannel(ctx context.Context, logger logger.Logger,
 					Err: err,
 				}
 			}
-
-			select {
-			case responseCh <- r:
-			case <-ctx.Done():
-				return
-			}
+			send(r)
 		}
 	}()
 
-	return responseCh, nil
+	return responseCh, cancel, nil
 }

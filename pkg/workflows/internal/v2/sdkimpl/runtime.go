@@ -3,6 +3,7 @@ package sdkimpl
 import (
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -68,6 +69,10 @@ func (r *RuntimeBase) Config() []byte {
 
 func (r *RuntimeBase) LogWriter() io.Writer {
 	return r.Writer
+}
+
+func (r *RuntimeBase) Logger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(r.LogWriter(), nil))
 }
 
 type DonRuntime struct {

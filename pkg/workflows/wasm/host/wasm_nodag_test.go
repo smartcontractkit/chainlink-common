@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -68,8 +70,9 @@ func Test_NoDag_Run(t *testing.T) {
 	t.Run("OK executes happy path with two awaits", func(t *testing.T) {
 		ctx := t.Context()
 		wantResponse := strings.Join(wordList, "")
+		lggr, observer := logger.TestObserved(t, zapcore.InfoLevel)
 		mc := &ModuleConfig{
-			Logger:         logger.Test(t),
+			Logger:         lggr,
 			IsUncompressed: true,
 		}
 		m, err := NewModule(mc, binary)
@@ -120,6 +123,10 @@ func Test_NoDag_Run(t *testing.T) {
 
 		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
+
+		logs := observer.TakeAll()
+		require.Len(t, logs, 1)
+		assert.True(t, strings.Contains(logs[0].Message, "Hi"))
 
 		switch output := response.Result.(type) {
 		case *wasmpb.ExecutionResult_Value:

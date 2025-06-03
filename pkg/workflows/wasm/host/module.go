@@ -282,7 +282,15 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.Executi
 		return nil, fmt.Errorf("error wrapping awaitcaps func: %w", err)
 	}
 
-	return instantiate(m, linker, store)
+	if err := linker.FuncWrap(
+		"env",
+		"log",
+		exec.log,
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
+	return linker.Instantiate(store, m.module)
 }
 
 func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
@@ -321,7 +329,15 @@ func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.
 		return nil, fmt.Errorf("error wrapping emit func: %w", err)
 	}
 
-	return instantiate(m, linker, store)
+	if err := linker.FuncWrap(
+		"env",
+		"log",
+		createLogFn(logger),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping log func: %w", err)
+	}
+
+	return linker.Instantiate(store, m.module)
 }
 
 func (m *module) Start() {
@@ -398,21 +414,6 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 	}
 
 	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil)
-}
-
-func instantiate(m *module, linker *wasmtime.Linker, store *wasmtime.Store) (*wasmtime.Instance, error) {
-	modCfg := m.cfg
-	logger := modCfg.Logger
-
-	if err := linker.FuncWrap(
-		"env",
-		"log",
-		createLogFn(logger),
-	); err != nil {
-		return nil, fmt.Errorf("error wrapping log func: %w", err)
-	}
-
-	return linker.Instantiate(store, m.module)
 }
 
 func runWasm[I, O proto.Message](

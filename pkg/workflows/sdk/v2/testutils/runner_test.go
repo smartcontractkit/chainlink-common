@@ -3,11 +3,10 @@ package testutils_test
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"strings"
 	"testing"
 
-	testhelpers "github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -380,15 +379,13 @@ func TestRunner_Logs(t *testing.T) {
 	runner := testutils.NewDonRunner(t, nil)
 	require.NoError(t, err)
 
-	runner.SetDefaultLogger()
-
 	anyResult := "ok"
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (string, error) {
-					logger := slog.Default()
+					logger := rt.Logger()
 					logger.Info(anyResult)
 					logger.Warn(anyResult + "2")
 					return anyResult, nil
@@ -469,4 +466,7 @@ func TestRunner_FullWorkflow(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ran)
 	assert.Equal(t, testhelpers.TestWorkflowExpectedResult(), result)
+	logs := runner.Logs()
+	assert.Len(t, logs, 1)
+	assert.True(t, strings.Contains(logs[0], "Hi"))
 }

@@ -1,6 +1,9 @@
 package testhelpers
 
 import (
+	"context"
+	"log/slog"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
@@ -8,6 +11,7 @@ import (
 
 func RunTestWorkflow(runner sdk.DonRunner) {
 	basic := &basictrigger.Basic{}
+	runner.Logger().Log(context.Background(), slog.LevelInfo, "Hi")
 	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
 		Handlers: []sdk.Handler[sdk.DonRuntime]{
 			sdk.NewDonHandler(

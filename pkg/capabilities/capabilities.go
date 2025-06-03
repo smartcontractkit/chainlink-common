@@ -58,6 +58,8 @@ func (c CapabilityType) IsValid() error {
 	return fmt.Errorf("invalid capability type: %s", c)
 }
 
+type CapabilitySpendType string
+
 // CapabilityResponse is a struct for the Execute response of a capability.
 type CapabilityResponse struct {
 	// Value is used for DAG workflows
@@ -78,6 +80,11 @@ type MeteringNodeDetail struct {
 	SpendValue  string
 }
 
+type SpendLimit struct {
+	SpendType CapabilitySpendType
+	Limit     string
+}
+
 type RequestMetadata struct {
 	WorkflowID               string
 	WorkflowOwner            string
@@ -89,6 +96,8 @@ type RequestMetadata struct {
 	ReferenceID string
 	// Use DecodedWorkflowName if the human readable name needs to be exposed, such as for logging purposes.
 	DecodedWorkflowName string
+	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
+	SpendLimits []SpendLimit
 }
 
 type RegistrationMetadata struct {
@@ -317,6 +326,8 @@ type CapabilityInfo struct {
 	Description    string
 	DON            *DON
 	IsLocal        bool
+	// SpendTypes denotes the spend types a capability expects to use during an invocation.
+	SpendTypes []CapabilitySpendType
 }
 
 // Parse out the version from the ID.
@@ -355,6 +366,7 @@ func newCapabilityInfo(
 	description string,
 	don *DON,
 	isLocal bool,
+	spendTypes ...CapabilitySpendType,
 ) (CapabilityInfo, error) {
 	if len(id) > idMaxLength {
 		return CapabilityInfo{}, fmt.Errorf("invalid id: %s exceeds max length %d", id, idMaxLength)
@@ -367,12 +379,17 @@ func newCapabilityInfo(
 		return CapabilityInfo{}, err
 	}
 
+	if spendTypes == nil {
+		spendTypes = make([]CapabilitySpendType, 0)
+	}
+
 	return CapabilityInfo{
 		ID:             id,
 		CapabilityType: capabilityType,
 		Description:    description,
 		DON:            don,
 		IsLocal:        isLocal,
+		SpendTypes:     spendTypes,
 	}, nil
 }
 
@@ -381,8 +398,9 @@ func NewCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
+	spendTypes ...CapabilitySpendType,
 ) (CapabilityInfo, error) {
-	return newCapabilityInfo(id, capabilityType, description, nil, true)
+	return newCapabilityInfo(id, capabilityType, description, nil, true, spendTypes...)
 }
 
 // NewRemoteCapabilityInfo returns a new CapabilityInfo for remote capabilities.
@@ -394,8 +412,9 @@ func NewRemoteCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
+	spendTypes ...CapabilitySpendType,
 ) (CapabilityInfo, error) {
-	return newCapabilityInfo(id, capabilityType, description, don, false)
+	return newCapabilityInfo(id, capabilityType, description, don, false, spendTypes...)
 }
 
 // MustNewCapabilityInfo returns a new CapabilityInfo,
@@ -404,8 +423,9 @@ func MustNewCapabilityInfo(
 	id string,
 	capabilityType CapabilityType,
 	description string,
+	spendTypes ...CapabilitySpendType,
 ) CapabilityInfo {
-	c, err := NewCapabilityInfo(id, capabilityType, description)
+	c, err := NewCapabilityInfo(id, capabilityType, description, spendTypes...)
 	if err != nil {
 		panic(err)
 	}
@@ -420,8 +440,9 @@ func MustNewRemoteCapabilityInfo(
 	capabilityType CapabilityType,
 	description string,
 	don *DON,
+	spendTypes ...CapabilitySpendType,
 ) CapabilityInfo {
-	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, don)
+	c, err := NewRemoteCapabilityInfo(id, capabilityType, description, don, spendTypes...)
 	if err != nil {
 		panic(err)
 	}

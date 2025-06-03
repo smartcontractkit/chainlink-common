@@ -259,7 +259,7 @@ func TestNewClient(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "grpc-endpoint",
 			ChipIngressEmitterEnabled:      true,
-			ChipIngressEmitterGRPCEndpoint: "chip-ingress-endpoint",
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress-endpoint:9090",
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)

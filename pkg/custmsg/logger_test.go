@@ -23,4 +23,7 @@ func TestBeholderLogger(t *testing.T) {
 	emitter.EXPECT().WithMapLabels(map[string]string{"keyX": "valueX"}).Return(emitter).Once()
 	emitter.EXPECT().Emit(matches.AnyContext, "message").Return(nil).Once()
 	lggr.Debugw("message", "keyX", "valueX")
+
+	emitter.EXPECT().WithMapLabels(map[string]string{"keyY": "valueY"}).Return(emitter).Once()
+	_ = lggr.With("keyY", "valueY")
 }

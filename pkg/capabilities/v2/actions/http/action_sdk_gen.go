@@ -15,21 +15,21 @@ type Client struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Client) SendRequest(runtime sdk.NodeRuntime, input *Inputs) sdk.Promise[*Outputs] {
+func (c *Client) SendRequest(runtime sdk.NodeRuntime, input *Request) sdk.Promise[*Response] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*Outputs](nil, err)
+		return sdk.PromiseFromResult[*Response](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "http-actions@1.0.0",
+		Id:      "http-actions@0.1.0",
 		Payload: wrapped,
 		Method:  "SendRequest",
-	}), func(i *sdkpb.CapabilityResponse) (*Outputs, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*Response, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &Outputs{}
+			output := &Response{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

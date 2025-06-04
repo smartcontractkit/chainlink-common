@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -315,7 +314,7 @@ func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capab
 		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
-	ch, err := forwardTriggerResponsesToChannel(ctx, t.Logger, req, responseStream.Recv)
+	ch, err := forwardTriggerResponsesToChannel(ctx, responseStream.Recv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
 	}
@@ -506,15 +505,9 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 
 func forwardTriggerResponsesToChannel(
 	ctx context.Context,
-	lggr logger.Logger, req capabilities.TriggerRegistrationRequest,
 	receive func() (*capabilitiespb.TriggerResponseMessage, error),
 ) (<-chan capabilities.TriggerResponse, error) {
 	responseCh := make(chan capabilities.TriggerResponse)
-
-	cleanup := func() {
-		defer lggr.Debugw("stopped forwarding trigger responses", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
-		close(responseCh)
-	}
 
 	send := func(resp capabilities.TriggerResponse) {
 		select {
@@ -524,7 +517,7 @@ func forwardTriggerResponsesToChannel(
 	}
 
 	go func() {
-		defer cleanup()
+		defer close(responseCh)
 
 		for {
 			select {

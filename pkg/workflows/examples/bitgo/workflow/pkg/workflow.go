@@ -21,6 +21,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
+		evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
+
 )
 
 //go:embed solc/bin/IERC20.abi
@@ -75,8 +77,10 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 	totalSupply := big.NewInt(0)
 
-	token := bindings.NewIERC20(config.EvmChainSelector, hexToBytes(config.EvmTokenAddress), nil)
-	reserveManager := bindings.NewIReserveManager(config.EvmChainSelector, hexToBytes(config.EvmPorAddress), &evm.GasConfig{
+	evmClient := evmcappb.Client{}
+
+	token := bindings.NewIERC20(&evmClient, hexToBytes(config.EvmTokenAddress), nil)
+	reserveManager := bindings.NewIReserveManager(&evmClient, hexToBytes(config.EvmPorAddress), &evm.GasConfig{
 		GasLimit: config.GasLimit,
 	})
 
@@ -93,10 +97,10 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 	totalReserveScaled := reserveInfo.TotalReserve.Mul(decimal.NewFromUint64(10e18)).BigInt()
 
-	writeReportReplyPromise := reserveManager.Structs.UpdateReserves.WriteReport(bindings.UpdateReserves{
+	writeReportReplyPromise := reserveManager.Structs.UpdateReserves.WriteReport(runtime, bindings.UpdateReservesStruct{
 		TotalMinted:  *totalSupply,
 		TotalReserve: *totalReserveScaled,
-	})
+	}, nil)
 
 	writeReportReply, err := writeReportReplyPromise.Await()
 

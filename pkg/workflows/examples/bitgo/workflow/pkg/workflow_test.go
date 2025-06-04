@@ -25,8 +25,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron/cronmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/crosschain"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm/evmmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http/httpmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"

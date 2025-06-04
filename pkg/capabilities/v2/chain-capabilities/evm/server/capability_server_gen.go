@@ -39,6 +39,8 @@ type ClientCapability interface {
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -202,6 +204,13 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
 			return c.ClientCapability.UnregisterLogTracking(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "WriteReport":
+		input := &evm.WriteReportRequest{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, error) {
+			return c.ClientCapability.WriteReport(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

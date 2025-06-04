@@ -11,20 +11,15 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math/big"
-	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/core/vm/runtime"
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
-	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
-	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
@@ -80,56 +75,16 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 	totalSupply := big.NewInt(0)
 
-	erc20, err := abi.JSON(strings.NewReader(Erc20Abi))
-	if err != nil {
-		return err
-	}
-
-	reserveManager, err := abi.JSON(strings.NewReader(ReserveManagerAbi))
-	if err != nil {
-		return err
-	}
-
-	supplyPayload, err := erc20.Pack(TotalSupplyMethod)
-	if err != nil {
-		return err
-	}
-
-	evmClient := evmcappb.Client{ /* ChainSelector: config.EvmChainSelector */ }
-
-	totalSupplyCallPromise := evmClient.CallContract(runtime, &evm.CallContractRequest{
-		Call: &evm.CallMsg{
-			To:   hexToBytes(config.EvmTokenAddress),
-			Data: supplyPayload,
-		},
-		ConfidenceLevel: chaincommonpb.Confidence_Finalized,
+	token := bindings.NewIERC20(config.EvmChainSelector, hexToBytes(config.EvmTokenAddress), nil)
+	reserveManager := bindings.NewIReserveManager(config.EvmChainSelector, hexToBytes(config.EvmPorAddress), &evm.GasConfig{
+		GasLimit: config.GasLimit,
 	})
 
-	// TODO other blockchains in parallel
-	evmRead, err := totalSupplyCallPromise.Await()
+	evmTotalSupplyPromise := token.Methods.TotalSupply.Call(runtime, nil)
+	evmSupply, err := evmTotalSupplyPromise.Await()
 	if err != nil {
 		// TODO specify which EVM
 		logger.Error("Could not read from evm", "err", err.Error())
-		return err
-	}
-
-	evmSupplyResponse, err := erc20.Unpack(TotalSupplyMethod, evmRead.Data)
-	if err != nil {
-		// TODO specify which EVM
-		logger.Error("Could not unpack evm", "err", err.Error())
-		return err
-	}
-
-	if len(evmSupplyResponse) != 1 {
-		err = errors.New("unexpected number of results")
-		logger.Error("Could not unpack evm", "err", err)
-		return err
-	}
-
-	evmSupply, ok := evmSupplyResponse[0].(*big.Int)
-	if !ok {
-		err = errors.New("unexpected type returned")
-		logger.Error("unexpected return type", "type", fmt.Sprintf("%T", evmSupplyResponse[0]))
 		return err
 	}
 
@@ -137,30 +92,17 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 	// TODO add other chains
 
 	totalReserveScaled := reserveInfo.TotalReserve.Mul(decimal.NewFromUint64(10e18)).BigInt()
-	evmSupplyCallData, err := reserveManager.Pack(UpdateReservesMethod, totalSupply, totalReserveScaled)
-	if err != nil {
-		logger.Error("Could not pack evm reserve call", "err", err.Error())
-		return err
-	}
 
-	report := GenerateReport(config.EvmChainSelector, evmSupplyCallData)
-
-	writeReportReplyPromise := evmClient.WriteReport(runtime, &evm.WriteReportRequest{
-		Receiver: hexToBytes(config.EvmPorAddress),
-		Report: &evm.SignedReport{
-			RawReport:     report.RawReport,
-			ReportContext: report.ReportContext,
-			Signatures:    report.Signatures,
-			Id:            report.ID,
-		},
-		GasConfig: &evm.GasConfig{
-			GasLimit: config.GasLimit,
-		},
+	writeReportReplyPromise := reserveManager.Structs.UpdateReserves.WriteReport(bindings.UpdateReserves{
+		TotalMinted:  *totalSupply,
+		TotalReserve: *totalReserveScaled,
 	})
 
+	writeReportReply, err := writeReportReplyPromise.Await()
+
 	var writeErrors []error
-	txHash, err := writeReportReplyPromise.Await()
 	if err == nil {
+		txHash := writeReportReply.TxHash
 		logger.Debug("Submitted transaction", "tx hash", txHash)
 	} else {
 		logger.Error("failed to submit transaction", "err", err)

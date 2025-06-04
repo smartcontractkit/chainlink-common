@@ -8,19 +8,26 @@ import (
 )
 
 type IERC20 struct {
+	Methods Methods
 }
 
 func NewIERC20(chainSelector uint, address []byte, defaultGasConfig *evm.GasConfig) IERC20 {
 	return IERC20{}
 }
 
-func (IERC20) TotalSupplyAccessor() TotalSupplyAccessor {
-	return TotalSupplyAccessor{}
+type Methods struct {
+   TotalSupply
 }
 
-type TotalSupplyAccessor struct {
+type TotalSupply struct {
+	
 }
 
-func (tsa TotalSupplyAccessor) TotalSupply() sdk.Promise[*big.Int] {
-	panic("")
+type ReadOptions struct {
+	BlockNumber *big.Int
 }
+
+func (ts TotalSupply) Call(runtime sdk.Runtime, options *ReadOptions) sdk.Promise[*big.Int]{
+	panic("not implemented")
+}
+

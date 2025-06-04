@@ -27,7 +27,7 @@ var File_capabilities_v2_chain_capabilities_evm_capability_proto protoreflect.Fi
 
 const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto2\xe1\x06\n" +
+	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto2\xaa\a\n" +
 	"\x06Client\x12J\n" +
 	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +
 	"\n" +
@@ -39,7 +39,8 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a%.loop.evm.LatestAndFinalizedHeadReply\x12V\n" +
 	"\x10QueryTrackedLogs\x12!.loop.evm.QueryTrackedLogsRequest\x1a\x1f.loop.evm.QueryTrackedLogsReply\x12S\n" +
 	"\x13RegisterLogTracking\x12$.loop.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
-	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0BhZfgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evmb\x06proto3"
+	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
+	"\vWriteReport\x12\x1c.loop.evm.WriteReportRequest\x1a\x1a.loop.evm.WriteReportReply\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0BhZfgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evmb\x06proto3"
 
 var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any{
 	(*evm.CallContractRequest)(nil),          // 0: loop.evm.CallContractRequest
@@ -52,14 +53,16 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any
 	(*evm.QueryTrackedLogsRequest)(nil),      // 7: loop.evm.QueryTrackedLogsRequest
 	(*evm.RegisterLogTrackingRequest)(nil),   // 8: loop.evm.RegisterLogTrackingRequest
 	(*evm.UnregisterLogTrackingRequest)(nil), // 9: loop.evm.UnregisterLogTrackingRequest
-	(*evm.CallContractReply)(nil),            // 10: loop.evm.CallContractReply
-	(*evm.FilterLogsReply)(nil),              // 11: loop.evm.FilterLogsReply
-	(*evm.BalanceAtReply)(nil),               // 12: loop.evm.BalanceAtReply
-	(*evm.EstimateGasReply)(nil),             // 13: loop.evm.EstimateGasReply
-	(*evm.GetTransactionByHashReply)(nil),    // 14: loop.evm.GetTransactionByHashReply
-	(*evm.GetTransactionReceiptReply)(nil),   // 15: loop.evm.GetTransactionReceiptReply
-	(*evm.LatestAndFinalizedHeadReply)(nil),  // 16: loop.evm.LatestAndFinalizedHeadReply
-	(*evm.QueryTrackedLogsReply)(nil),        // 17: loop.evm.QueryTrackedLogsReply
+	(*evm.WriteReportRequest)(nil),           // 10: loop.evm.WriteReportRequest
+	(*evm.CallContractReply)(nil),            // 11: loop.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),              // 12: loop.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),               // 13: loop.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),             // 14: loop.evm.EstimateGasReply
+	(*evm.GetTransactionByHashReply)(nil),    // 15: loop.evm.GetTransactionByHashReply
+	(*evm.GetTransactionReceiptReply)(nil),   // 16: loop.evm.GetTransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),  // 17: loop.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),        // 18: loop.evm.QueryTrackedLogsReply
+	(*evm.WriteReportReply)(nil),             // 19: loop.evm.WriteReportReply
 }
 var file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = []int32{
 	0,  // 0: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
@@ -72,18 +75,20 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = []int
 	7,  // 7: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
 	8,  // 8: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
 	9,  // 9: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	10, // 10: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
-	11, // 11: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	12, // 12: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	13, // 13: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	14, // 14: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	15, // 15: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	16, // 16: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	17, // 17: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	6,  // 18: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	6,  // 19: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	10, // [10:20] is the sub-list for method output_type
-	0,  // [0:10] is the sub-list for method input_type
+	10, // 10: cre.sdk.v2.evm.Client.WriteReport:input_type -> loop.evm.WriteReportRequest
+	11, // 11: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
+	12, // 12: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	13, // 13: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	14, // 14: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	15, // 15: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	16, // 16: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	17, // 17: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	18, // 18: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	6,  // 19: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	6,  // 20: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	19, // 21: cre.sdk.v2.evm.Client.WriteReport:output_type -> loop.evm.WriteReportReply
+	11, // [11:22] is the sub-list for method output_type
+	0,  // [0:11] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

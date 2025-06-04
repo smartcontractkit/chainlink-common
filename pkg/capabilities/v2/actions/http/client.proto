@@ -2,7 +2,9 @@ syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http";
 
+import "values/pb/values.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "workflows/sdk/v2/pb/sdk.proto";
 
 message Request {
   string url = 1;

@@ -8,6 +8,8 @@ package http
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -170,7 +172,7 @@ var File_capabilities_v2_actions_http_client_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_actions_http_client_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/actions/http/client.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"\xd3\x01\n" +
+	")capabilities/v2/actions/http/client.proto\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xd3\x01\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12/\n" +

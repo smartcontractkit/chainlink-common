@@ -21,10 +21,10 @@ message Outputs {
   bytes body = 4;
 }
 
-service HTTP {
+service Client {
   option (cre.metadata.capability) = {
     mode: Node
     capability_id: "http-actions@1.0.0"
   };
-  rpc Request (Inputs) returns (Outputs);
+  rpc SendRequest (Inputs) returns (Outputs);
 }

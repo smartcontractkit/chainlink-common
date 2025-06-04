@@ -18,33 +18,33 @@ import (
 // avoid unused imports
 var _ = registry.Registry{}
 
-func NewHTTPCapability(t testing.TB) (*HTTPCapability, error) {
-	c := &HTTPCapability{}
+func NewClientCapability(t testing.TB) (*ClientCapability, error) {
+	c := &ClientCapability{}
 	reg := registry.GetRegistry(t)
 	err := reg.RegisterCapability(c)
 	return c, err
 }
 
-type HTTPCapability struct {
+type ClientCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	Request func(ctx context.Context, input *http.Inputs) (*http.Outputs, error)
+	SendRequest func(ctx context.Context, input *http.Inputs) (*http.Outputs, error)
 }
 
-func (cap *HTTPCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
+func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
-	case "Request":
+	case "SendRequest":
 		input := &http.Inputs{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
-		if cap.Request == nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for Request"}
+		if cap.SendRequest == nil {
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for SendRequest"}
 			break
 		}
-		resp, err := cap.Request(ctx, input)
+		resp, err := cap.SendRequest(ctx, input)
 		if err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {
@@ -61,10 +61,10 @@ func (cap *HTTPCapability) Invoke(ctx context.Context, request *sdkpb.Capability
 	return capResp
 }
 
-func (cap *HTTPCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
+func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
 	return nil, fmt.Errorf("method %s not found", request.Method)
 }
 
-func (cap *HTTPCapability) ID() string {
+func (cap *ClientCapability) ID() string {
 	return "http-actions@1.0.0"
 }

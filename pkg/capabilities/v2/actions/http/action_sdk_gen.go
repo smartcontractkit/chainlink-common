@@ -11,11 +11,11 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type HTTP struct {
+type Client struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *HTTP) Request(runtime sdk.NodeRuntime, input *Inputs) sdk.Promise[*Outputs] {
+func (c *Client) SendRequest(runtime sdk.NodeRuntime, input *Inputs) sdk.Promise[*Outputs] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*Outputs](nil, err)
@@ -23,7 +23,7 @@ func (c *HTTP) Request(runtime sdk.NodeRuntime, input *Inputs) sdk.Promise[*Outp
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "http-actions@1.0.0",
 		Payload: wrapped,
-		Method:  "Request",
+		Method:  "SendRequest",
 	}), func(i *sdkpb.CapabilityResponse) (*Outputs, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:

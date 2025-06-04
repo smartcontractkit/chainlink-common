@@ -191,9 +191,9 @@ const file_capabilities_v2_actions_http_action_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012@\n" +
-	"\x04HTTP\x12\x1c\n" +
-	"\aRequest\x12\a.Inputs\x1a\b.Outputs\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@1.0.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012F\n" +
+	"\x06Client\x12 \n" +
+	"\vSendRequest\x12\a.Inputs\x1a\b.Outputs\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@1.0.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
 
 var (
 	file_capabilities_v2_actions_http_action_proto_rawDescOnce sync.Once
@@ -217,8 +217,8 @@ var file_capabilities_v2_actions_http_action_proto_goTypes = []any{
 var file_capabilities_v2_actions_http_action_proto_depIdxs = []int32{
 	2, // 0: Inputs.headers:type_name -> Inputs.HeadersEntry
 	3, // 1: Outputs.headers:type_name -> Outputs.HeadersEntry
-	0, // 2: HTTP.Request:input_type -> Inputs
-	1, // 3: HTTP.Request:output_type -> Outputs
+	0, // 2: Client.SendRequest:input_type -> Inputs
+	1, // 3: Client.SendRequest:output_type -> Outputs
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

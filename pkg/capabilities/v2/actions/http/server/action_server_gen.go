@@ -18,8 +18,8 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-type HTTPCapability interface {
-	Request(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Inputs) (*http.Outputs, error)
+type ClientCapability interface {
+	SendRequest(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Inputs) (*http.Outputs, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -30,29 +30,29 @@ type HTTPCapability interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
 }
 
-func NewHTTPServer(capability HTTPCapability) *HTTPServer {
+func NewClientServer(capability ClientCapability) *ClientServer {
 	stopCh := make(chan struct{})
-	return &HTTPServer{
-		hTTPCapability: hTTPCapability{HTTPCapability: capability, stopCh: stopCh},
-		stopCh:         stopCh,
+	return &ClientServer{
+		clientCapability: clientCapability{ClientCapability: capability, stopCh: stopCh},
+		stopCh:           stopCh,
 	}
 }
 
-type HTTPServer struct {
-	hTTPCapability
+type ClientServer struct {
+	clientCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 
-func (cs *HTTPServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
-	if err := cs.HTTPCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
+func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
+	if err := cs.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
 	cs.capabilityRegistry = capabilityRegistry
 
-	if err := capabilityRegistry.Add(ctx, &hTTPCapability{
-		HTTPCapability: cs.HTTPCapability,
+	if err := capabilityRegistry.Add(ctx, &clientCapability{
+		ClientCapability: cs.ClientCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -60,7 +60,7 @@ func (cs *HTTPServer) Initialise(ctx context.Context, config string, telemetrySe
 	return nil
 }
 
-func (cs *HTTPServer) Close() error {
+func (cs *ClientServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -74,53 +74,53 @@ func (cs *HTTPServer) Close() error {
 		close(cs.stopCh)
 	}
 
-	return cs.hTTPCapability.Close()
+	return cs.clientCapability.Close()
 }
 
-func (cs *HTTPServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.hTTPCapability.Info(ctx)
+func (cs *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := cs.clientCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return []capabilities.CapabilityInfo{info}, nil
 }
 
-type hTTPCapability struct {
-	HTTPCapability
+type clientCapability struct {
+	ClientCapability
 	stopCh chan struct{}
 }
 
-func (c *hTTPCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
+func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("http-actions@1.0.0", capabilities.CapabilityTypeCombined, c.HTTPCapability.Description())
+	return capabilities.NewCapabilityInfo("http-actions@1.0.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
 }
 
-var _ capabilities.ExecutableAndTriggerCapability = (*hTTPCapability)(nil)
+var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 
-func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }
 
-func (c *hTTPCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	return fmt.Errorf("trigger %s not found", request.Method)
 }
 
-func (c *hTTPCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
+func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
 	return nil
 }
 
-func (c *hTTPCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
+func (c *clientCapability) UnregisterFromWorkflow(ctx context.Context, request capabilities.UnregisterFromWorkflowRequest) error {
 	return nil
 }
 
-func (c *hTTPCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+func (c *clientCapability) Execute(ctx context.Context, request capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
-	case "Request":
+	case "SendRequest":
 		input := &http.Inputs{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Inputs, _ *emptypb.Empty) (*http.Outputs, error) {
-			return c.HTTPCapability.Request(ctx, metadata, input)
+			return c.ClientCapability.SendRequest(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

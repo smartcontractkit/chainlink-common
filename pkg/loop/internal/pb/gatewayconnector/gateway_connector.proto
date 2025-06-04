@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnector";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+import "gateway_common.proto";
+
+message GatewayIDRequest {
+  string gateway_id = 1;
+}
+
+message SignAndSendMessageRequest {
+  string gateway_id = 1;
+  MessageBody body = 2;
+}
+
+message GatewayIDsReply {
+  repeated string gateway_ids = 1;
+}
+
+message DonIDReply {
+  string don_id = 1;
+}
+
+message AddHandlerRequest {
+  repeated string methods = 1;
+  uint32 handler_id = 2;
+}
+
+service GatewayConnector {
+  rpc Start(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc AddHandler(AddHandlerRequest) returns (google.protobuf.Empty);
+  rpc SendToGateway(SendMessageRequest) returns (google.protobuf.Empty);
+  rpc SignAndSendToGateway(SignAndSendMessageRequest) returns (google.protobuf.Empty);
+  rpc GatewayIDs(google.protobuf.Empty) returns (GatewayIDsReply);
+  rpc DonID(google.protobuf.Empty) returns (DonIDReply);
+  rpc AwaitConnection(GatewayIDRequest) returns (google.protobuf.Empty);
+}

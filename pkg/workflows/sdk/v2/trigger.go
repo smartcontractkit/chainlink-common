@@ -17,5 +17,5 @@ type baseTrigger[T proto.Message] interface {
 // Methods are meant to be used by the Runner
 type Trigger[T proto.Message] interface {
 	baseTrigger[T]
-	IsDonTrigger()
+	IsTrigger()
 }

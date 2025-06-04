@@ -15,7 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func newRuntime(tb testing.TB, writer *testWriter) sdkimpl.RuntimeBase {
+func newRuntime(tb testing.TB) sdkimpl.RuntimeBase {
 	tb.Cleanup(func() { delete(calls, tb) })
 
 	defaultConsensus, err := consensusmock.NewConsensusCapability(tb)
@@ -29,7 +29,6 @@ func newRuntime(tb testing.TB, writer *testWriter) sdkimpl.RuntimeBase {
 		MaxResponseSize: sdk.DefaultMaxResponseSizeBytes,
 		Call:            createCallCapability(tb),
 		Await:           createAwaitCapabilities(tb),
-		Writer:          writer,
 	}
 }
 

@@ -75,19 +75,18 @@ type Runner[C any] interface {
 }
 
 func NewRunner[C any](tb testing.TB, config C) Runner[C] {
-	writer := &testWriter{}
-	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(tb, writer)}
-	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, writer, drt, &drt.RuntimeBase)}
+	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(tb)}
+	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, drt, &drt.RuntimeBase)}
 }
 
-func newBaseRunner[C, T any](tb testing.TB, config C, writer *testWriter, t T, base *sdkimpl.RuntimeBase) baseRunner[C, T] {
+func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.RuntimeBase) baseRunner[C, T] {
 	r := baseRunner[C, T]{
 		tb:         tb,
 		config:     config,
 		workflowId: uuid.NewString(),
 		registry:   registry.GetRegistry(tb),
 		runtime:    t,
-		writer:     writer,
+		writer:     &testWriter{},
 		base:       base,
 	}
 

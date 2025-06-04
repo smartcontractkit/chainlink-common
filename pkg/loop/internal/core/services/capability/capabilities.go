@@ -337,12 +337,12 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	cancel, ok := t.cancelFuncs[req.TriggerID]
-	if !ok {
-		t.Logger.Warnw("attempted cleanup of not found trigger", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+	if cancel, ok := t.cancelFuncs[req.TriggerID]; ok {
+		cancel()
 		return nil
 	}
-	cancel()
+
+	t.Logger.Warnw("attempted cleanup of not found trigger", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
 	return nil
 }
 

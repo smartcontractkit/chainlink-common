@@ -12,19 +12,17 @@ const LogLevelKey = "log_level"
 type beholderLogger struct {
 	underlying logger.Logger
 	emitter    MessageEmitter
-	labels     map[string]string
 }
 
 func NewBeholderLogger(underlying logger.Logger, emitter MessageEmitter) *beholderLogger {
 	return &beholderLogger{
 		underlying: logger.Helper(underlying, 1),
 		emitter:    emitter,
-		labels:     map[string]string{},
 	}
 }
 
 func (b *beholderLogger) With(args ...any) *beholderLogger {
-	emitterWithLabels := b.emitter.WithMapLabels(getLabelMap(args))
+	emitterWithLabels := b.emitter.WithMapLabels(getLabelMap(args...))
 	underlyingWith := logger.With(b.underlying, args...)
 	return NewBeholderLogger(underlyingWith, emitterWithLabels)
 }
@@ -33,7 +31,6 @@ func (b *beholderLogger) Named(name string) *beholderLogger {
 	return &beholderLogger{
 		underlying: logger.Named(b.underlying, name),
 		emitter:    b.emitter,
-		labels:     b.labels,
 	}
 }
 

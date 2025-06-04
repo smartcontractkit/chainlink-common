@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749035667573,
+  "lastUpdate": 1749053929969,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14826,6 +14826,48 @@ window.BENCHMARK_DATA = {
             "value": 28166,
             "unit": "ns/op",
             "extra": "42448 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8a0b0d1e6a78d0a8d0ea17fcdb7b5924bebf04d6",
+          "message": "fix(capabilities): pass separate context to stream (#1231)\n\n* fix(capabilities): pass separate context to stream\n\n* fix(capabilities): remove race on logger\n\n* fix: cleanup any existing calls for trigger ID\n\n* fix(capability): resolve race in test struct\n\n* chore(capability): update docstrings",
+          "timestamp": "2025-06-04T12:17:24-04:00",
+          "tree_id": "df1cd27849ab6ffa2ba61e797781d9c6fc2b5254",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8a0b0d1e6a78d0a8d0ea17fcdb7b5924bebf04d6"
+        },
+        "date": 1749053928472,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.9,
+            "unit": "ns/op",
+            "extra": "3403021 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.1,
+            "unit": "ns/op",
+            "extra": "2928416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28280,
+            "unit": "ns/op",
+            "extra": "42688 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1748977686936,
+  "lastUpdate": 1749035667573,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -14784,6 +14784,48 @@ window.BENCHMARK_DATA = {
             "value": 28148,
             "unit": "ns/op",
             "extra": "42675 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "12ebb766d8165eb642cec51a079ec4c2de2fbb77",
+          "message": "[CRE-457] Add vault plugin type (#1228)",
+          "timestamp": "2025-06-04T12:13:05+01:00",
+          "tree_id": "9160eb98453afaa69be56653b86163042081b3d2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/12ebb766d8165eb642cec51a079ec4c2de2fbb77"
+        },
+        "date": 1749035666569,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.1,
+            "unit": "ns/op",
+            "extra": "3250615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.7,
+            "unit": "ns/op",
+            "extra": "2624953 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28166,
+            "unit": "ns/op",
+            "extra": "42448 times\n4 procs"
           }
         ]
       }

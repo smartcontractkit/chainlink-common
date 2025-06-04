@@ -120,15 +120,15 @@ type SignedReport struct {
 type TransactionStatus int
 
 const (
-	Unfinalized TransactionStatus = iota
-	Finalized
-	Fatal
+	TxSuccess TransactionStatus = iota
+	TxReverted
+	TxFatal
 )
 
 type ReceiverContractExecutionStatus int
 
 const (
-	Failed ReceiverContractExecutionStatus = iota
+	Reverted ReceiverContractExecutionStatus = iota
 	Success
 )
 

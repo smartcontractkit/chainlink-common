@@ -20,6 +20,18 @@ type evmClient struct {
 	client  relayerset.EVMRelayerSetClient
 }
 
+// GetTxResult implements evmpb.EVMClient.
+func (e *evmClient) GetTxResult(ctx context.Context, in *evmpb.GetTxResultRequest, opts ...grpc.CallOption) (*evmpb.GetTxResultReply, error) {
+	//TODO: implement
+	panic("unimplemented")
+}
+
+// WriteReport implements evmpb.EVMClient.
+func (e *evmClient) WriteReport(ctx context.Context, in *evmpb.WriteReportRequest, opts ...grpc.CallOption) (*evmpb.WriteReportReply, error) {
+	//TODO: implement
+	panic("unimplemented")
+}
+
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
 func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {

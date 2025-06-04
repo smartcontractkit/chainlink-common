@@ -23,6 +23,9 @@ service Client {
   rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc GetTxResult(loop.evm.GetTxResultRequest) returns (loop.evm.GetTxResultReply);
+  rpc WriteReport(loop.evm.WriteReportRequest) returns (loop.evm.WriteReportReply);
+
 }
 
 

@@ -174,6 +174,16 @@ func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID stri
 	return types.TransactionStatus(reply.GetTransactionStatus()), nil
 }
 
+// GetTxResult implements types.EVMService.
+func (e *EVMClient) GetTxResult(ctx context.Context, txHash evmtypes.Hash) (evmtypes.TransactionStatus, error) {
+	panic("unimplemented")
+}
+
+// WriteReport implements types.EVMService.
+func (e *EVMClient) WriteReport(ctx context.Context, receiver evmtypes.Address, signedReport evmtypes.SignedReport, gasConfig evmtypes.GasConfig) (*evmtypes.WriteReportResult, error) {
+	panic("unimplemented")
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 

@@ -108,3 +108,38 @@ type Head struct {
 type TransactionFee struct {
 	TransactionFee *big.Int // Cost of transaction in wei
 }
+
+type SignedReport struct {
+	RawReport     []byte
+	ReportContext []byte
+	Signatures    [][]byte
+	ID            []byte
+}
+
+// TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.
+type TransactionStatus int
+
+const (
+	Unfinalized TransactionStatus = iota
+	Finalized
+	Fatal
+)
+
+type ReceiverContractExecutionStatus int
+
+const (
+	Failed ReceiverContractExecutionStatus = iota
+	Success
+)
+
+type WriteReportResult struct {
+	TxStatus                        TransactionStatus
+	ReceiverContractExecutionStatus ReceiverContractExecutionStatus
+	TxHash                          Hash
+	TxFee                           TransactionFee
+}
+
+type GasConfig struct {
+	GasLimit    uint64
+	MaxGasPrice *big.Int
+}

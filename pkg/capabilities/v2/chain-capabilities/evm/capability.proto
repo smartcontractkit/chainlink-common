@@ -14,22 +14,12 @@ enum ConfidenceLevel {
   FINALIZED = 2;    // guaranteed to be included in the chain
 }
 
-message Address {
-  bytes address = 1;
-}
-
-// represents evm-style hash
-// [32]byte fix-sized array
-message Hash {
-  bytes hash = 1;
-}
-
 message FilterLogTriggerRequest {
-  repeated Address addresses = 1; // contract(s) to filter logs from, at least one address is required
-  repeated Hash topics0 = 2;  // list of topics0/eventSigs to filter, at least one topic is required
-  repeated Hash topics1 = 3;  // list of topics1 to filter, optional, can be empty
-  repeated Hash topics2 = 4;  // list of topics1 to filter, optional, can be empty
-  repeated Hash topics3 = 5;  // list of topics1 to filter, optional, can be empty
+  repeated bytes addresses = 1; // list of addresses to include in evm address [20]byte fix-sized array format, at least one address is required
+  repeated bytes event_sigs = 2; // list of possible signatures (aka topic1), in [32]byte fix-sized array format, at least one topic is required
+  repeated bytes topic2 = 3; // list of possible values for topic2, in [32]byte fix-sized array format, can be empty
+  repeated bytes topic3 = 4; // list of possible values for topic3, in [32]byte fix-sized array format, can be empty
+  repeated bytes topic4 = 5; // list of possible values for topic4, in [32]byte fix-sized array format, can be empty
   ConfidenceLevel Confidence = 6; // optional, defaults to "EARLY"
   uint64 BlockDepth = 7; // optional, defaults to particular value per chain (from a table), number of blocks to wait for confirmation
 }
@@ -50,7 +40,6 @@ service Client {
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.Log);
-
 }
 
 

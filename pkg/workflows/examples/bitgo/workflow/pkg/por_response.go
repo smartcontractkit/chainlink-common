@@ -9,13 +9,13 @@ import (
 )
 
 type RawReserveInfo struct {
-	LastUpdated  time.Time       `json:"lastUpdated" consensus:"median"`
-	TotalReserve decimal.Decimal `json:"totalReserve" consensus:"median"`
+	LastUpdated  time.Time       `json:"lastUpdated"`
+	TotalReserve decimal.Decimal `json:"totalReserve"`
 }
 
 type ReserveInfo struct {
-	LastUpdated  int64           `json:"lastUpdated" consensus:"median"`
-	TotalReserve decimal.Decimal `json:"totalReserve" consensus:"median"`
+	LastUpdated  int64           `consensus:"median"`
+	TotalReserve decimal.Decimal `consensus:"median"`
 }
 
 type PorResponse struct {

@@ -55,7 +55,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	payload, err := os.ReadFile(signedJSONPath)
 	require.NoError(t, err)
 
-	config := pkg.Config{
+	config := &pkg.Config{
 		EvmTokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
 		EvmPorAddress:   "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
 		PublicKey:       string(pubKeyBytes),
@@ -122,7 +122,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 
 	runner := testutils.NewRunner(t, config)
 
-	pkg.Workflow(runner)
+	runner.Run(pkg.InitWorkflow)
 
 	ok, _, err := runner.Result()
 	require.True(t, ok)

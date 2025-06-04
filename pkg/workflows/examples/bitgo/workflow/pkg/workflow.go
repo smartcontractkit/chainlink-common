@@ -47,8 +47,8 @@ type Config struct {
 	GasLimit         uint64
 }
 
-func InitWorkflow(cfg *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], error) {
-	config := cfg.Config
+func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], error) {
+	config := wcx.Config
 	return sdk.Workflows[*Config]{
 		sdk.On(
 			cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),

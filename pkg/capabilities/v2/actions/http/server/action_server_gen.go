@@ -19,7 +19,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ClientCapability interface {
-	SendRequest(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Inputs) (*http.Outputs, error)
+	SendRequest(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request) (*http.Response, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -65,7 +65,7 @@ func (cs *ClientServer) Close() error {
 	defer cancel()
 
 	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "http-actions@1.0.0"); err != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "http-actions@0.1.0"); err != nil {
 			return err
 		}
 	}
@@ -92,7 +92,7 @@ type clientCapability struct {
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("http-actions@1.0.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
+	return capabilities.NewCapabilityInfo("http-actions@0.1.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
@@ -117,9 +117,9 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "SendRequest":
-		input := &http.Inputs{}
+		input := &http.Request{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Inputs, _ *emptypb.Empty) (*http.Outputs, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *http.Request, _ *emptypb.Empty) (*http.Response, error) {
 			return c.ClientCapability.SendRequest(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

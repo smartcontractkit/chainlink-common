@@ -24,7 +24,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Inputs struct {
+type Request struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
@@ -35,20 +35,20 @@ type Inputs struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Inputs) Reset() {
-	*x = Inputs{}
+func (x *Request) Reset() {
+	*x = Request{}
 	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Inputs) String() string {
+func (x *Request) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Inputs) ProtoMessage() {}
+func (*Request) ProtoMessage() {}
 
-func (x *Inputs) ProtoReflect() protoreflect.Message {
+func (x *Request) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -60,47 +60,47 @@ func (x *Inputs) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Inputs.ProtoReflect.Descriptor instead.
-func (*Inputs) Descriptor() ([]byte, []int) {
+// Deprecated: Use Request.ProtoReflect.Descriptor instead.
+func (*Request) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_actions_http_action_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Inputs) GetUrl() string {
+func (x *Request) GetUrl() string {
 	if x != nil {
 		return x.Url
 	}
 	return ""
 }
 
-func (x *Inputs) GetMethod() string {
+func (x *Request) GetMethod() string {
 	if x != nil {
 		return x.Method
 	}
 	return ""
 }
 
-func (x *Inputs) GetHeaders() map[string]string {
+func (x *Request) GetHeaders() map[string]string {
 	if x != nil {
 		return x.Headers
 	}
 	return nil
 }
 
-func (x *Inputs) GetBody() []byte {
+func (x *Request) GetBody() []byte {
 	if x != nil {
 		return x.Body
 	}
 	return nil
 }
 
-func (x *Inputs) GetTimeoutMs() int32 {
+func (x *Request) GetTimeoutMs() int32 {
 	if x != nil {
 		return x.TimeoutMs
 	}
 	return 0
 }
 
-type Outputs struct {
+type Response struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	StatusCode    uint32                 `protobuf:"varint,2,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
@@ -110,20 +110,20 @@ type Outputs struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Outputs) Reset() {
-	*x = Outputs{}
+func (x *Response) Reset() {
+	*x = Response{}
 	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Outputs) String() string {
+func (x *Response) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Outputs) ProtoMessage() {}
+func (*Response) ProtoMessage() {}
 
-func (x *Outputs) ProtoReflect() protoreflect.Message {
+func (x *Response) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -135,33 +135,33 @@ func (x *Outputs) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Outputs.ProtoReflect.Descriptor instead.
-func (*Outputs) Descriptor() ([]byte, []int) {
+// Deprecated: Use Response.ProtoReflect.Descriptor instead.
+func (*Response) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_actions_http_action_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Outputs) GetErrorMessage() string {
+func (x *Response) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return ""
 }
 
-func (x *Outputs) GetStatusCode() uint32 {
+func (x *Response) GetStatusCode() uint32 {
 	if x != nil {
 		return x.StatusCode
 	}
 	return 0
 }
 
-func (x *Outputs) GetHeaders() map[string]string {
+func (x *Response) GetHeaders() map[string]string {
 	if x != nil {
 		return x.Headers
 	}
 	return nil
 }
 
-func (x *Outputs) GetBody() []byte {
+func (x *Response) GetBody() []byte {
 	if x != nil {
 		return x.Body
 	}
@@ -172,28 +172,28 @@ var File_capabilities_v2_actions_http_action_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_actions_http_action_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/actions/http/action.proto\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xd1\x01\n" +
-	"\x06Inputs\x12\x10\n" +
+	")capabilities/v2/actions/http/action.proto\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xd3\x01\n" +
+	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12.\n" +
-	"\aheaders\x18\x03 \x03(\v2\x14.Inputs.HeadersEntryR\aheaders\x12\x12\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12/\n" +
+	"\aheaders\x18\x03 \x03(\v2\x15.Request.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1d\n" +
 	"\n" +
 	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd0\x01\n" +
-	"\aOutputs\x12#\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd2\x01\n" +
+	"\bResponse\x12#\n" +
 	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\x12\x1f\n" +
 	"\vstatus_code\x18\x02 \x01(\rR\n" +
-	"statusCode\x12/\n" +
-	"\aheaders\x18\x03 \x03(\v2\x15.Outputs.HeadersEntryR\aheaders\x12\x12\n" +
+	"statusCode\x120\n" +
+	"\aheaders\x18\x03 \x03(\v2\x16.Response.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012F\n" +
-	"\x06Client\x12 \n" +
-	"\vSendRequest\x12\a.Inputs\x1a\b.Outputs\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@1.0.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012H\n" +
+	"\x06Client\x12\"\n" +
+	"\vSendRequest\x12\b.Request\x1a\t.Response\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@0.1.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
 
 var (
 	file_capabilities_v2_actions_http_action_proto_rawDescOnce sync.Once
@@ -209,16 +209,16 @@ func file_capabilities_v2_actions_http_action_proto_rawDescGZIP() []byte {
 
 var file_capabilities_v2_actions_http_action_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_capabilities_v2_actions_http_action_proto_goTypes = []any{
-	(*Inputs)(nil),  // 0: Inputs
-	(*Outputs)(nil), // 1: Outputs
-	nil,             // 2: Inputs.HeadersEntry
-	nil,             // 3: Outputs.HeadersEntry
+	(*Request)(nil),  // 0: Request
+	(*Response)(nil), // 1: Response
+	nil,              // 2: Request.HeadersEntry
+	nil,              // 3: Response.HeadersEntry
 }
 var file_capabilities_v2_actions_http_action_proto_depIdxs = []int32{
-	2, // 0: Inputs.headers:type_name -> Inputs.HeadersEntry
-	3, // 1: Outputs.headers:type_name -> Outputs.HeadersEntry
-	0, // 2: Client.SendRequest:input_type -> Inputs
-	1, // 3: Client.SendRequest:output_type -> Outputs
+	2, // 0: Request.headers:type_name -> Request.HeadersEntry
+	3, // 1: Response.headers:type_name -> Response.HeadersEntry
+	0, // 2: Client.SendRequest:input_type -> Request
+	1, // 3: Client.SendRequest:output_type -> Response
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

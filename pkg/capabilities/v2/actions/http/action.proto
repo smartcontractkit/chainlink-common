@@ -6,7 +6,7 @@ import "values/pb/values.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "workflows/sdk/v2/pb/sdk.proto";
 
-message Inputs {
+message Request {
   string url = 1;
   string method = 2;
   map<string, string> headers = 3;
@@ -14,7 +14,7 @@ message Inputs {
   int32 timeout_ms = 5;
 }
 
-message Outputs {
+message Response {
   string error_message = 1;
   uint32 status_code = 2;
   map<string, string> headers = 3;
@@ -24,7 +24,7 @@ message Outputs {
 service Client {
   option (cre.metadata.capability) = {
     mode: Node
-    capability_id: "http-actions@1.0.0"
+    capability_id: "http-actions@0.1.0"
   };
-  rpc SendRequest (Inputs) returns (Outputs);
+  rpc SendRequest (Request) returns (Response);
 }

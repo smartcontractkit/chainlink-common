@@ -27,14 +27,14 @@ func NewClientCapability(t testing.TB) (*ClientCapability, error) {
 
 type ClientCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	SendRequest func(ctx context.Context, input *http.Inputs) (*http.Outputs, error)
+	SendRequest func(ctx context.Context, input *http.Request) (*http.Response, error)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
 	case "SendRequest":
-		input := &http.Inputs{}
+		input := &http.Request{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -66,5 +66,5 @@ func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *sdkpb.T
 }
 
 func (cap *ClientCapability) ID() string {
-	return "http-actions@1.0.0"
+	return "http-actions@0.1.0"
 }

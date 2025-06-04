@@ -292,6 +292,13 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
+	// clean up previous routines for matching trigger ID
+	if prevCancel, ok := t.cancelFuncs[req.TriggerID]; ok {
+		prevCancel()
+		delete(t.cancelFuncs, req.TriggerID)
+	}
+
 	t.cancelFuncs[req.TriggerID] = cancel
 
 	return ch, nil

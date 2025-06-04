@@ -16,7 +16,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
-func WorkflowWithBindings(runner sdk.DonRunner) {
+func WorkflowWithBindings(runner sdk.Runner) {
 	logger := slog.Default()
 	config := &Config{}
 	if err := json.Unmarshal(runner.Config(), config); err != nil {

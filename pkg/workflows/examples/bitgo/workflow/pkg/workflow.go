@@ -95,7 +95,7 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 		return err
 	}
 
-	evmClient := evmcappb.EVM{ /* ChainSelector: config.EvmChainSelector */ }
+	evmClient := evmcappb.Client{ /* ChainSelector: config.EvmChainSelector */ }
 
 	totalSupplyCallPromise := evmClient.CallContract(runtime, &evm.CallContractRequest{
 		Call: &evm.CallMsg{

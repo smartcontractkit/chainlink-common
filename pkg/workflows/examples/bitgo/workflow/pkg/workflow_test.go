@@ -62,8 +62,6 @@ func TestWorkflow_HappyPath(t *testing.T) {
 		Schedule:        "0 0 * * *",
 		Url:             "https://reserves.gousd.com/por.json",
 	}
-	cfgBytes, err := json.Marshal(config)
-	require.NoError(t, err)
 
 	// New pattern, hide registry in a map from testingT to registry.
 	cronMock, err := cronmock.NewCronCapability(t)
@@ -122,7 +120,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 		return &evm.TxID{Value: "fake transaction"}, nil
 	}
 
-	runner := testutils.NewDonRunner(t, cfgBytes)
+	runner := testutils.NewRunner(t, config)
 
 	pkg.Workflow(runner)
 

@@ -19,10 +19,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-		evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
-
 )
 
 //go:embed solc/bin/IERC20.abi
@@ -79,10 +78,12 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 	evmClient := evmcappb.Client{}
 
-	token := bindings.NewIERC20(&evmClient, hexToBytes(config.EvmTokenAddress), nil)
-	reserveManager := bindings.NewIReserveManager(&evmClient, hexToBytes(config.EvmPorAddress), &evm.GasConfig{
-		GasLimit: config.GasLimit,
-	})
+	token := bindings.NewIERC20(bindings.ContractInputs{EVM: evmClient, Address: hexToBytes(config.EvmTokenAddress)})
+	reserveManager := bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: hexToBytes(config.EvmPorAddress), Options: &bindings.ContractOptions{
+		GasConfig: &evm.GasConfig{
+			GasLimit: config.GasLimit,
+		},
+	}})
 
 	evmTotalSupplyPromise := token.Methods.TotalSupply.Call(runtime, nil)
 	evmSupply, err := evmTotalSupplyPromise.Await()

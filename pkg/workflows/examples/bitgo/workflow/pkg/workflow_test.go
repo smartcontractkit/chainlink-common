@@ -19,16 +19,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron/cronmock"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/crosschain"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http/httpmock"
+	evmmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capabilitymock"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -40,6 +40,9 @@ const (
 var testTime = time.Date(2025, 2, 3, 20, 37, 2, 552574000, time.UTC)
 
 const totalReserve = "11.56"
+
+const TotalSupplyMethod = "totalSupply"
+const UpdateReservesMethod = "updateReserves"
 
 func TestWorkflow_HappyPath(t *testing.T) {
 	err := ensureSignedJSON()
@@ -83,28 +86,24 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	totalTokens := numEvmTokens
 	evmMock, err := evmmock.NewClientCapability(t)
 	require.NoError(t, err)
-	evmMock.ReadMethod = func(ctx context.Context, input *evm.ReadMethodRequest) (*crosschain.ByteArray, error) {
-		assert.Equal(t, config.EvmTokenAddress, input.Address)
-		assert.Equal(t, evm.ConfidenceLevel_FINALITY, input.ConfidenceLevel)
+	evmMock.CallContract = func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error) {
+		assert.Equal(t, config.EvmTokenAddress, input.Call.To)
 		erc20, err := abi.JSON(strings.NewReader(pkg.Erc20Abi))
 		require.NoError(t, err)
 
-		method := erc20.Methods[pkg.TotalSupplyMethod]
-		assert.Equal(t, method.ID, input.Calldata)
+		method := erc20.Methods[TotalSupplyMethod]
+		assert.Equal(t, method.ID, input.Call.To)
 
-		response, err := erc20.Methods[pkg.TotalSupplyMethod].Outputs.Pack(numEvmTokens)
+		data, err := erc20.Methods[TotalSupplyMethod].Outputs.Pack(numEvmTokens)
 		require.NoError(t, err)
-		return &crosschain.ByteArray{Value: response}, nil
+		return &evm.CallContractReply{Data: data}, nil
 	}
-	evmMock.SubmitTransaction = func(ctx context.Context, input *evm.SubmitTransactionRequest) (*evm.TxID, error) {
-		assert.Equal(t, config.EvmPorAddress, input.ToAddress)
+	evmMock.WriteReport = func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
+		assert.Equal(t, config.EvmPorAddress, input.Receiver)
 		reserveManager, err := abi.JSON(strings.NewReader(pkg.ReserveManagerAbi))
 		require.NoError(t, err)
-		method := reserveManager.Methods[pkg.UpdateReservesMethod]
-		callId := input.Calldata[0:len(method.ID)]
-		assert.Equal(t, method.ID, callId)
-
-		argData := input.Calldata[len(method.ID):]
+		method := reserveManager.Methods[UpdateReservesMethod]
+		argData := input.Report.RawReport[0:len(method.ID)]
 		args := map[string]any{}
 		assert.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
 
@@ -115,7 +114,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 		assert.Equal(t, reserve.BigInt(), args["totalReserve"])
 		assert.Equal(t, totalTokens, args["totalMinted"])
 
-		return &evm.TxID{Value: "fake transaction"}, nil
+		return &evm.WriteReportReply{TxHash: []byte("fake transaction")}, nil
 	}
 
 	runner := testutils.NewRunner(t, config)

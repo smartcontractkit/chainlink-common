@@ -30,9 +30,6 @@ var Erc20Abi string
 //go:embed solc/bin/IReserveManager.abi
 var ReserveManagerAbi string
 
-const TotalSupplyMethod = "totalSupply"
-const UpdateReservesMethod = "updateReserves"
-
 type Config struct {
 	EvmTokenAddress  string
 	EvmPorAddress    string

@@ -20,6 +20,11 @@ type evmClient struct {
 	client  relayerset.EVMRelayerSetClient
 }
 
+// WriteReport implements evm.EVMClient.
+func (e *evmClient) WriteReport(ctx context.Context, in *evmpb.WriteReportRequest, opts ...grpc.CallOption) (*evmpb.WriteReportReply, error) {
+	panic("unimplemented")
+}
+
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
 func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {

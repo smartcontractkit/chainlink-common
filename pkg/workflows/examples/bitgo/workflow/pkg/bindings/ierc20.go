@@ -3,7 +3,7 @@ package bindings
 import (
 	"math/big"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
@@ -16,18 +16,16 @@ func NewIERC20(chainSelector uint, address []byte, defaultGasConfig *evm.GasConf
 }
 
 type Methods struct {
-   TotalSupply
+	TotalSupply
 }
 
 type TotalSupply struct {
-	
 }
 
 type ReadOptions struct {
 	BlockNumber *big.Int
 }
 
-func (ts TotalSupply) Call(runtime sdk.Runtime, options *ReadOptions) sdk.Promise[*big.Int]{
+func (ts TotalSupply) Call(runtime sdk.Runtime, options *ReadOptions) sdk.Promise[*big.Int] {
 	panic("not implemented")
 }
-

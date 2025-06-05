@@ -9,26 +9,28 @@ import "google/protobuf/struct.proto";
 
 message Config {
   // Public keys against which the signature of incoming requests are validated
-  repeated AuthorizedKey authorized_keys = 1;
+  repeated AllowedSender allowed_senders = 1;
 }
 
+// Defines a sender of a request with a public key
 message Payload {
-  // JSON input in the HTTP trigger request
+  // JSON matching the workflow's input schema
   google.protobuf.Struct input = 1;
 
-  // Key used to sign the HTTP trigger request
-  AuthorizedKey key = 2;
+  // Public key of the sender
+  AllowedSender sender = 2;
 }
 
-enum KeyType {
-  KEY_TYPE_UNSPECIFIED = 0;
-  ECDSA = 1;
+// Generic and extensible public key abstraction
+message AllowedSender {
+  oneof key {
+    ECDSAKey ecdsa = 1;
+  }
 }
 
-// Generic and extensible authorized signer abstraction
-message AuthorizedKey {
-  KeyType type = 1;
-  string public_key = 2;
+message ECDSAKey {
+  // Hex-encoded uncompressed ECDSA public key prefixed with 0x
+  string public_key = 1;
 }
 
 service HTTP {

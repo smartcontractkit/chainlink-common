@@ -20,14 +20,15 @@ import (
 // avoid unused imports
 var _ = registry.Registry{}
 
-func NewClientCapability(t testing.TB) (*ClientCapability, error) {
-	c := &ClientCapability{}
+func NewClientCapability(t testing.TB, chainSelector uint32) (*ClientCapability, error) {
+	c := &ClientCapability{chainSelector: chainSelector}
 	reg := registry.GetRegistry(t)
 	err := reg.RegisterCapability(c)
 	return c, err
 }
 
 type ClientCapability struct {
+	chainSelector uint32
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	CallContract func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
@@ -308,5 +309,5 @@ func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *sdkpb.T
 }
 
 func (cap *ClientCapability) ID() string {
-	return "evm@1.0.0"
+	return fmt.Sprintf("evm-%v@1.0.0",cap.chainSelector)
 }

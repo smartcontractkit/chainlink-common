@@ -4,6 +4,7 @@ package evm
 
 import (
 	"errors"
+	"fmt"
 
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -25,7 +26,7 @@ func (c *Client) CallContract(runtime sdk.Runtime, input *evm.CallContractReques
 		return sdk.PromiseFromResult[*evm.CallContractReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "CallContract",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.CallContractReply, error) {
@@ -48,7 +49,7 @@ func (c *Client) FilterLogs(runtime sdk.Runtime, input *evm.FilterLogsRequest) s
 		return sdk.PromiseFromResult[*evm.FilterLogsReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "FilterLogs",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.FilterLogsReply, error) {
@@ -71,7 +72,7 @@ func (c *Client) BalanceAt(runtime sdk.Runtime, input *evm.BalanceAtRequest) sdk
 		return sdk.PromiseFromResult[*evm.BalanceAtReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "BalanceAt",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.BalanceAtReply, error) {
@@ -94,7 +95,7 @@ func (c *Client) EstimateGas(runtime sdk.Runtime, input *evm.EstimateGasRequest)
 		return sdk.PromiseFromResult[*evm.EstimateGasReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "EstimateGas",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.EstimateGasReply, error) {
@@ -117,7 +118,7 @@ func (c *Client) GetTransactionByHash(runtime sdk.Runtime, input *evm.GetTransac
 		return sdk.PromiseFromResult[*evm.GetTransactionByHashReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "GetTransactionByHash",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.GetTransactionByHashReply, error) {
@@ -140,7 +141,7 @@ func (c *Client) GetTransactionReceipt(runtime sdk.Runtime, input *evm.GetTransa
 		return sdk.PromiseFromResult[*evm.GetTransactionReceiptReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "GetTransactionReceipt",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.GetTransactionReceiptReply, error) {
@@ -163,7 +164,7 @@ func (c *Client) LatestAndFinalizedHead(runtime sdk.Runtime, input *emptypb.Empt
 		return sdk.PromiseFromResult[*evm.LatestAndFinalizedHeadReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "LatestAndFinalizedHead",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.LatestAndFinalizedHeadReply, error) {
@@ -186,7 +187,7 @@ func (c *Client) QueryTrackedLogs(runtime sdk.Runtime, input *evm.QueryTrackedLo
 		return sdk.PromiseFromResult[*evm.QueryTrackedLogsReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "QueryTrackedLogs",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.QueryTrackedLogsReply, error) {
@@ -209,7 +210,7 @@ func (c *Client) RegisterLogTracking(runtime sdk.Runtime, input *evm.RegisterLog
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "RegisterLogTracking",
 	}), func(i *sdkpb.CapabilityResponse) (*emptypb.Empty, error) {
@@ -232,7 +233,7 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "UnregisterLogTracking",
 	}), func(i *sdkpb.CapabilityResponse) (*emptypb.Empty, error) {
@@ -255,7 +256,7 @@ func (c *Client) WriteReport(runtime sdk.Runtime, input *evm.WriteReportRequest)
 		return sdk.PromiseFromResult[*evm.WriteReportReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
+		Id:      fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector),
 		Payload: wrapped,
 		Method:  "WriteReport",
 	}), func(i *sdkpb.CapabilityResponse) (*evm.WriteReportReply, error) {

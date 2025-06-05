@@ -89,7 +89,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 
 	numEvmTokens := new(big.Int).Mul(big.NewInt(103), big.NewInt(1e16))
 	totalTokens := numEvmTokens
-	evmMock, err := evmmock.NewClientCapability(t)
+	evmMock, err := evmmock.NewClientCapability(t, config.EvmChainSelector)
 	require.NoError(t, err)
 	evmMock.CallContract = func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error) {
 		assert.Equal(t, config.EvmTokenAddress[2:], hex.EncodeToString(input.Call.To))

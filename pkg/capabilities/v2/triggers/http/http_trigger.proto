@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package http_trigger.v1;
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/http";
+
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "google/protobuf/struct.proto";
+
+message Config {
+  // Public keys against which the signature of incoming requests are validated
+  repeated AllowedSender allowed_senders = 1;
+}
+
+// Defines a sender of a request with a public key
+message Payload {
+  // JSON matching the workflow's input schema
+  google.protobuf.Struct input = 1;
+
+  // Public key of the sender
+  AllowedSender sender = 2;
+}
+
+// Generic and extensible public key abstraction
+message AllowedSender {
+  oneof key {
+    ECDSAKey ecdsa = 1;
+  }
+}
+
+message ECDSAKey {
+  // Hex-encoded uncompressed ECDSA public key prefixed with 0x
+  string public_key = 1;
+}
+
+service HTTP {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "http-trigger@0.1.0"
+  };
+
+  rpc Trigger(Config) returns (stream Payload) {
+    option (cre.metadata.method) = {
+      map_to_untyped_api: true
+    };
+  }
+}

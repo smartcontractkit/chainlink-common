@@ -175,3 +175,18 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		})
 	}
 }
+
+func TestOCR3Store_AllNCount(t *testing.T) {
+	expectedCount := 13
+	s := NewTestStore(t, expectedCount)
+
+	t.Run("all", func(t *testing.T) {
+		all, err := s.All()
+		require.NoError(t, err)
+		require.Len(t, all, expectedCount)
+	})
+
+	t.Run("count", func(t *testing.T) {
+		require.Len(t, s, expectedCount)
+	})
+}

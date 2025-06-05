@@ -26,7 +26,7 @@ const (
 type Config struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Public keys against which the signature of incoming requests are validated
-	AllowedSenders []*AllowedSender `protobuf:"bytes,1,rep,name=allowed_senders,json=allowedSenders,proto3" json:"allowed_senders,omitempty"`
+	AuthorizedKeys []*AuthorizedKey `protobuf:"bytes,1,rep,name=authorized_keys,json=authorizedKeys,proto3" json:"authorized_keys,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -61,20 +61,19 @@ func (*Config) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Config) GetAllowedSenders() []*AllowedSender {
+func (x *Config) GetAuthorizedKeys() []*AuthorizedKey {
 	if x != nil {
-		return x.AllowedSenders
+		return x.AuthorizedKeys
 	}
 	return nil
 }
 
-// Defines a sender of a request with a public key
 type Payload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// JSON matching the workflow's input schema
+	// JSON input in the HTTP trigger request
 	Input *structpb.Struct `protobuf:"bytes,1,opt,name=input,proto3" json:"input,omitempty"`
-	// Public key of the sender
-	Sender        *AllowedSender `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
+	// Key used to sign the HTTP trigger request
+	Key           *AuthorizedKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -116,38 +115,38 @@ func (x *Payload) GetInput() *structpb.Struct {
 	return nil
 }
 
-func (x *Payload) GetSender() *AllowedSender {
+func (x *Payload) GetKey() *AuthorizedKey {
 	if x != nil {
-		return x.Sender
+		return x.Key
 	}
 	return nil
 }
 
-// Generic and extensible public key abstraction
-type AllowedSender struct {
+// Generic and extensible authorized signer abstraction
+type AuthorizedKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Key:
 	//
-	//	*AllowedSender_Ecdsa
-	Key           isAllowedSender_Key `protobuf_oneof:"key"`
+	//	*AuthorizedKey_Ecdsa
+	Key           isAuthorizedKey_Key `protobuf_oneof:"key"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AllowedSender) Reset() {
-	*x = AllowedSender{}
+func (x *AuthorizedKey) Reset() {
+	*x = AuthorizedKey{}
 	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AllowedSender) String() string {
+func (x *AuthorizedKey) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AllowedSender) ProtoMessage() {}
+func (*AuthorizedKey) ProtoMessage() {}
 
-func (x *AllowedSender) ProtoReflect() protoreflect.Message {
+func (x *AuthorizedKey) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -159,36 +158,36 @@ func (x *AllowedSender) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AllowedSender.ProtoReflect.Descriptor instead.
-func (*AllowedSender) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthorizedKey.ProtoReflect.Descriptor instead.
+func (*AuthorizedKey) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *AllowedSender) GetKey() isAllowedSender_Key {
+func (x *AuthorizedKey) GetKey() isAuthorizedKey_Key {
 	if x != nil {
 		return x.Key
 	}
 	return nil
 }
 
-func (x *AllowedSender) GetEcdsa() *ECDSAKey {
+func (x *AuthorizedKey) GetEcdsa() *ECDSAKey {
 	if x != nil {
-		if x, ok := x.Key.(*AllowedSender_Ecdsa); ok {
+		if x, ok := x.Key.(*AuthorizedKey_Ecdsa); ok {
 			return x.Ecdsa
 		}
 	}
 	return nil
 }
 
-type isAllowedSender_Key interface {
-	isAllowedSender_Key()
+type isAuthorizedKey_Key interface {
+	isAuthorizedKey_Key()
 }
 
-type AllowedSender_Ecdsa struct {
+type AuthorizedKey_Ecdsa struct {
 	Ecdsa *ECDSAKey `protobuf:"bytes,1,opt,name=ecdsa,proto3,oneof"`
 }
 
-func (*AllowedSender_Ecdsa) isAllowedSender_Key() {}
+func (*AuthorizedKey_Ecdsa) isAuthorizedKey_Key() {}
 
 type ECDSAKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -241,11 +240,11 @@ const file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc = "" +
 	"\n" +
 	"0capabilities/v2/triggers/http/http_trigger.proto\x12\x0fhttp_trigger.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"Q\n" +
 	"\x06Config\x12G\n" +
-	"\x0fallowed_senders\x18\x01 \x03(\v2\x1e.http_trigger.v1.AllowedSenderR\x0eallowedSenders\"p\n" +
+	"\x0fauthorized_keys\x18\x01 \x03(\v2\x1e.http_trigger.v1.AuthorizedKeyR\x0eauthorizedKeys\"j\n" +
 	"\aPayload\x12-\n" +
-	"\x05input\x18\x01 \x01(\v2\x17.google.protobuf.StructR\x05input\x126\n" +
-	"\x06sender\x18\x02 \x01(\v2\x1e.http_trigger.v1.AllowedSenderR\x06sender\"I\n" +
-	"\rAllowedSender\x121\n" +
+	"\x05input\x18\x01 \x01(\v2\x17.google.protobuf.StructR\x05input\x120\n" +
+	"\x03key\x18\x02 \x01(\v2\x1e.http_trigger.v1.AuthorizedKeyR\x03key\"I\n" +
+	"\rAuthorizedKey\x121\n" +
 	"\x05ecdsa\x18\x01 \x01(\v2\x19.http_trigger.v1.ECDSAKeyH\x00R\x05ecdsaB\x05\n" +
 	"\x03key\")\n" +
 	"\bECDSAKey\x12\x1d\n" +
@@ -270,15 +269,15 @@ var file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes = make([]prot
 var file_capabilities_v2_triggers_http_http_trigger_proto_goTypes = []any{
 	(*Config)(nil),          // 0: http_trigger.v1.Config
 	(*Payload)(nil),         // 1: http_trigger.v1.Payload
-	(*AllowedSender)(nil),   // 2: http_trigger.v1.AllowedSender
+	(*AuthorizedKey)(nil),   // 2: http_trigger.v1.AuthorizedKey
 	(*ECDSAKey)(nil),        // 3: http_trigger.v1.ECDSAKey
 	(*structpb.Struct)(nil), // 4: google.protobuf.Struct
 }
 var file_capabilities_v2_triggers_http_http_trigger_proto_depIdxs = []int32{
-	2, // 0: http_trigger.v1.Config.allowed_senders:type_name -> http_trigger.v1.AllowedSender
+	2, // 0: http_trigger.v1.Config.authorized_keys:type_name -> http_trigger.v1.AuthorizedKey
 	4, // 1: http_trigger.v1.Payload.input:type_name -> google.protobuf.Struct
-	2, // 2: http_trigger.v1.Payload.sender:type_name -> http_trigger.v1.AllowedSender
-	3, // 3: http_trigger.v1.AllowedSender.ecdsa:type_name -> http_trigger.v1.ECDSAKey
+	2, // 2: http_trigger.v1.Payload.key:type_name -> http_trigger.v1.AuthorizedKey
+	3, // 3: http_trigger.v1.AuthorizedKey.ecdsa:type_name -> http_trigger.v1.ECDSAKey
 	0, // 4: http_trigger.v1.HTTP.Trigger:input_type -> http_trigger.v1.Config
 	1, // 5: http_trigger.v1.HTTP.Trigger:output_type -> http_trigger.v1.Payload
 	5, // [5:6] is the sub-list for method output_type
@@ -294,7 +293,7 @@ func file_capabilities_v2_triggers_http_http_trigger_proto_init() {
 		return
 	}
 	file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[2].OneofWrappers = []any{
-		(*AllowedSender_Ecdsa)(nil),
+		(*AuthorizedKey_Ecdsa)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

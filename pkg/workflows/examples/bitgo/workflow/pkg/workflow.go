@@ -16,8 +16,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http"
 	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
@@ -40,10 +40,41 @@ func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], er
 			cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
 			onCronTrigger,
 		),
+		sdk.OnValue(
+			http.Trigger{}.Request(),
+			onHttpTrigger,
+		),
 	}, nil
 }
 
+type httpTrigger struct {
+	Reason string `json:"reason"`
+}
+
+func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, payload *http.TriggerRequest) (*ReserveInfo, error) {
+	trigger := &httpTrigger{}
+	if err := json.Unmarshal(payload.Body, trigger); err != nil {
+		wcx.Logger.Error("failed to unmarshal http trigger payload", "err", err)
+		return nil, err
+	}
+
+	wcx.Logger = wcx.Logger.With("trigger", "http").With("reason", trigger.Reason)
+	return doPor(wcx, runtime, time.Now())
+}
+
 func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.Payload) error {
+	wcx.Logger = wcx.Logger.With("trigger", "cron")
+	scheduledExecution, err := time.Parse(time.RFC3339Nano, trigger.ScheduledExecutionTime)
+	if err != nil {
+		wcx.Logger.Error("failed to parse scheduled execution time", "err", err)
+		return err
+	}
+
+	_, err = doPor(wcx, runtime, scheduledExecution)
+	return err
+}
+
+func doPor(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, runTime time.Time) (*ReserveInfo, error) {
 	logger := wcx.Logger
 	config := wcx.Config
 	client := &http.Client{}
@@ -57,18 +88,12 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 	if err != nil {
 		logger.Warn("error getting por value", "err", err.Error())
-		return err
+		return nil, err
 	}
 
-	scheduledExecution, err := time.Parse(time.RFC3339Nano, trigger.ScheduledExecutionTime)
-	if err != nil {
-		logger.Error("failed to parse scheduled execution time", "err", err)
-		return err
-	}
-
-	if time.UnixMilli(reserveInfo.LastUpdated).Before(scheduledExecution.Add(-time.Hour * 24)) {
+	if time.UnixMilli(reserveInfo.LastUpdated).Before(runTime.Add(-time.Hour * 24)) {
 		logger.Warn("reserve time is too old", "time", reserveInfo.LastUpdated)
-		return errors.New("reserved time is too old")
+		return nil, errors.New("reserved time is too old")
 	}
 
 	totalSupply := big.NewInt(0)
@@ -87,7 +112,7 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 	if err != nil {
 		// TODO specify which EVM
 		logger.Error("Could not read from evm", "err", err.Error())
-		return err
+		return nil, err
 	}
 
 	totalSupply = totalSupply.Add(totalSupply, evmSupply)
@@ -111,7 +136,7 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 		writeErrors = append(writeErrors, err)
 	}
 
-	return errors.Join(writeErrors...)
+	return nil, errors.Join(writeErrors...)
 }
 
 func fetchPor(wcx *sdk.WorkflowContext[*Config], requester *http.SendRequester) (*ReserveInfo, error) {

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http";
+
+import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+
+import "google/protobuf/empty.proto";
+
+message TriggerRequest {
+  bytes body = 1;
+}
+
+service Trigger {
+  option (cre.metadata.capability) = {
+    mode: DON
+    capability_id: "http-trigger@0.1.0"
+  };
+  rpc Request (google.protobuf.Empty) returns (stream TriggerRequest);
+}

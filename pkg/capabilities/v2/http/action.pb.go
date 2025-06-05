@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/actions/http/action.proto
+// source: capabilities/v2/http/action.proto
 
 package http
 
@@ -58,11 +58,11 @@ func (x Method) String() string {
 }
 
 func (Method) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_actions_http_action_proto_enumTypes[0].Descriptor()
+	return file_capabilities_v2_http_action_proto_enumTypes[0].Descriptor()
 }
 
 func (Method) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_actions_http_action_proto_enumTypes[0]
+	return &file_capabilities_v2_http_action_proto_enumTypes[0]
 }
 
 func (x Method) Number() protoreflect.EnumNumber {
@@ -71,7 +71,7 @@ func (x Method) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Method.Descriptor instead.
 func (Method) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_actions_http_action_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_v2_http_action_proto_rawDescGZIP(), []int{0}
 }
 
 type Request struct {
@@ -87,7 +87,7 @@ type Request struct {
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[0]
+	mi := &file_capabilities_v2_http_action_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[0]
+	mi := &file_capabilities_v2_http_action_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_actions_http_action_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_v2_http_action_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Request) GetUrl() string {
@@ -162,7 +162,7 @@ type Response struct {
 
 func (x *Response) Reset() {
 	*x = Response{}
-	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[1]
+	mi := &file_capabilities_v2_http_action_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +174,7 @@ func (x *Response) String() string {
 func (*Response) ProtoMessage() {}
 
 func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_actions_http_action_proto_msgTypes[1]
+	mi := &file_capabilities_v2_http_action_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_actions_http_action_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_v2_http_action_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Response) GetErrorMessage() string {
@@ -218,11 +218,11 @@ func (x *Response) GetBody() []byte {
 	return nil
 }
 
-var File_capabilities_v2_actions_http_action_proto protoreflect.FileDescriptor
+var File_capabilities_v2_http_action_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_actions_http_action_proto_rawDesc = "" +
+const file_capabilities_v2_http_action_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/actions/http/action.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"\xdc\x01\n" +
+	"!capabilities/v2/http/action.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"\xdc\x01\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1f\n" +
 	"\x06method\x18\x02 \x01(\x0e2\a.MethodR\x06method\x12/\n" +
@@ -249,30 +249,30 @@ const file_capabilities_v2_actions_http_action_proto_rawDesc = "" +
 	"\n" +
 	"\x06DELETE\x10\x032H\n" +
 	"\x06Client\x12\"\n" +
-	"\vSendRequest\x12\b.Request\x1a\t.Response\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@0.1.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
+	"\vSendRequest\x12\b.Request\x1a\t.Response\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@0.1.0BGZEgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/httpb\x06proto3"
 
 var (
-	file_capabilities_v2_actions_http_action_proto_rawDescOnce sync.Once
-	file_capabilities_v2_actions_http_action_proto_rawDescData []byte
+	file_capabilities_v2_http_action_proto_rawDescOnce sync.Once
+	file_capabilities_v2_http_action_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_actions_http_action_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_actions_http_action_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_actions_http_action_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_actions_http_action_proto_rawDesc), len(file_capabilities_v2_actions_http_action_proto_rawDesc)))
+func file_capabilities_v2_http_action_proto_rawDescGZIP() []byte {
+	file_capabilities_v2_http_action_proto_rawDescOnce.Do(func() {
+		file_capabilities_v2_http_action_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_http_action_proto_rawDesc), len(file_capabilities_v2_http_action_proto_rawDesc)))
 	})
-	return file_capabilities_v2_actions_http_action_proto_rawDescData
+	return file_capabilities_v2_http_action_proto_rawDescData
 }
 
-var file_capabilities_v2_actions_http_action_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_v2_actions_http_action_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_capabilities_v2_actions_http_action_proto_goTypes = []any{
+var file_capabilities_v2_http_action_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_capabilities_v2_http_action_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_capabilities_v2_http_action_proto_goTypes = []any{
 	(Method)(0),      // 0: Method
 	(*Request)(nil),  // 1: Request
 	(*Response)(nil), // 2: Response
 	nil,              // 3: Request.HeadersEntry
 	nil,              // 4: Response.HeadersEntry
 }
-var file_capabilities_v2_actions_http_action_proto_depIdxs = []int32{
+var file_capabilities_v2_http_action_proto_depIdxs = []int32{
 	0, // 0: Request.method:type_name -> Method
 	3, // 1: Request.headers:type_name -> Request.HeadersEntry
 	4, // 2: Response.headers:type_name -> Response.HeadersEntry
@@ -285,27 +285,27 @@ var file_capabilities_v2_actions_http_action_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_actions_http_action_proto_init() }
-func file_capabilities_v2_actions_http_action_proto_init() {
-	if File_capabilities_v2_actions_http_action_proto != nil {
+func init() { file_capabilities_v2_http_action_proto_init() }
+func file_capabilities_v2_http_action_proto_init() {
+	if File_capabilities_v2_http_action_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_actions_http_action_proto_rawDesc), len(file_capabilities_v2_actions_http_action_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_http_action_proto_rawDesc), len(file_capabilities_v2_http_action_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_actions_http_action_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_actions_http_action_proto_depIdxs,
-		EnumInfos:         file_capabilities_v2_actions_http_action_proto_enumTypes,
-		MessageInfos:      file_capabilities_v2_actions_http_action_proto_msgTypes,
+		GoTypes:           file_capabilities_v2_http_action_proto_goTypes,
+		DependencyIndexes: file_capabilities_v2_http_action_proto_depIdxs,
+		EnumInfos:         file_capabilities_v2_http_action_proto_enumTypes,
+		MessageInfos:      file_capabilities_v2_http_action_proto_msgTypes,
 	}.Build()
-	File_capabilities_v2_actions_http_action_proto = out.File
-	file_capabilities_v2_actions_http_action_proto_goTypes = nil
-	file_capabilities_v2_actions_http_action_proto_depIdxs = nil
+	File_capabilities_v2_http_action_proto = out.File
+	file_capabilities_v2_http_action_proto_goTypes = nil
+	file_capabilities_v2_http_action_proto_depIdxs = nil
 }

@@ -18,9 +18,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http"
-	httpmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http/actionmock"
 	evmmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capabilitymock"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/http"
+	httpmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/http/actionmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 	cronmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron/cron_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron/cronmock"
@@ -29,6 +30,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings/bindingsmock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,18 +93,10 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	totalTokens := numEvmTokens
 	evmMock, err := evmmock.NewClientCapability(t, config.EvmChainSelector)
 	require.NoError(t, err)
-	evmMock.CallContract = func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error) {
-		assert.Equal(t, config.EvmTokenAddress[2:], hex.EncodeToString(input.Call.To))
-		erc20, err := abi.JSON(strings.NewReader(bindings.IErc20Abi))
-		require.NoError(t, err)
 
-		method := erc20.Methods[TotalSupplyMethod]
-		assert.Equal(t, method.ID, input.Call.Data)
+	erc20Mock := bindingsmock.NewIERC20Mock(common.HexToAddress(config.EvmTokenAddress), evmMock)
+	erc20Mock.TotalSupply = func() *big.Int { return numEvmTokens }
 
-		data, err := erc20.Methods[TotalSupplyMethod].Outputs.Pack(numEvmTokens)
-		require.NoError(t, err)
-		return &evm.CallContractReply{Data: data}, nil
-	}
 	evmMock.WriteReport = func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
 		// TODO what does it verify...?
 

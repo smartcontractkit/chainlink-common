@@ -11,13 +11,19 @@ import (
 )
 
 //go:embed solc/bin/IERC20.abi
-var IErc20Abi string
+var iErc20Raw string
 
-var iErc20Api, _ = abi.JSON(strings.NewReader(IErc20Abi))
+var iErc20Api = NewIERC20Abi()
 
 type IERC20 struct {
 	Methods        Methods
 	ContractInputs ContractInputs
+}
+
+func NewIERC20Abi() abi.ABI {
+	// Parse the ABI from the raw string
+	parsedAbi, _ := abi.JSON(strings.NewReader(iErc20Raw))
+	return parsedAbi
 }
 
 func NewIERC20(contractInputs ContractInputs) IERC20 {
@@ -55,7 +61,7 @@ func (ts TotalSupply) Call(runtime sdk.Runtime, options *ReadOptions) sdk.Promis
 		if err != nil {
 			return nil, err
 		}
-		
+
 		return unpacked[0].(*big.Int), nil
 	})
 }

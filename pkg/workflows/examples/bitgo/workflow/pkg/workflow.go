@@ -17,7 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http"
 	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
@@ -47,7 +47,7 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 	logger := wcx.Logger
 	config := wcx.Config
 	client := &http.Client{}
-	reserveInfo, err := http.ConsensusFetch(
+	reserveInfo, err := http.ConsensusSendRequest(
 		wcx,
 		runtime,
 		client,
@@ -107,11 +107,11 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 	return errors.Join(writeErrors...)
 }
 
-func fetchPor(wcx *sdk.WorkflowContext[*Config], fetcher *http.Fetcher) (*ReserveInfo, error) {
+func fetchPor(wcx *sdk.WorkflowContext[*Config], requester *http.SendRequester) (*ReserveInfo, error) {
 	config := wcx.Config
 
-	request := &http.HttpFetchRequest{Url: config.Url}
-	response, err := fetcher.Fetch(request).Await()
+	request := &http.Request{Url: config.Url}
+	response, err := requester.SendRequest(request).Await()
 	if err != nil {
 		return nil, err
 	}

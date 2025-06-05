@@ -53,6 +53,10 @@ type ClientCapability struct {
 	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 }
 
+func (c *ClientCapability) ChainSelector() uint32 {
+	return c.chainSelector
+}
+
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {

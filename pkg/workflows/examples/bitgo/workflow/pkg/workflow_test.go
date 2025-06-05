@@ -8,18 +8,14 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"math/big"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
@@ -27,7 +23,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http/httpmock"
 	evmmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capabilitymock"
-	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings/bindingsmock"
@@ -46,8 +41,6 @@ var testTime = time.Date(2025, 2, 3, 20, 37, 2, 552574000, time.UTC)
 
 const totalReserve = "11.56"
 
-const TotalSupplyMethod = "totalSupply"
-const UpdateReservesMethod = "updateReserves"
 const anyEvmChainSelector = uint32(123)
 
 func TestWorkflow_HappyPath(t *testing.T) {
@@ -97,28 +90,15 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	erc20Mock := bindingsmock.NewIERC20Mock(common.HexToAddress(config.EvmTokenAddress), evmMock)
 	erc20Mock.TotalSupply = func() (*big.Int, error) { return numEvmTokens, nil }
 
-	evmMock.WriteReport = func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
-		// TODO what does it verify...?
-
-		assert.Equal(t, config.EvmPorAddress[2:], hex.EncodeToString(input.Receiver))
-		reserveManager, err := abi.JSON(strings.NewReader(bindings.IReserveManagerAbi))
-		require.NoError(t, err)
-		method := reserveManager.Methods[UpdateReservesMethod]
-		rawReport := input.Report.RawReport
-		actualChainId := binary.LittleEndian.Uint32(rawReport)
-		assert.Equal(t, anyEvmChainSelector, actualChainId)
-		argData := rawReport[4:]
-		args := map[string]any{}
-		require.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
-
-		assert.Len(t, args, 2)
+	reserveManager := bindingsmock.NewIReserverManagerMock(common.HexToAddress(config.EvmPorAddress), evmMock)
+	reserveManager.UpdateReserves = func(reserves *bindings.UpdateReservesStruct) error {
+		assert.Equal(t, totalTokens, reserves.TotalMinted)
 		reserve, err := decimal.NewFromString(totalReserve)
 		require.NoError(t, err)
 		reserve = reserve.Mul(decimal.New(10, 18))
-		assert.Equal(t, reserve.BigInt(), args["totalReserve"])
-		assert.Equal(t, totalTokens, args["totalMinted"])
-
-		return &evm.WriteReportReply{TxHash: []byte("fake transaction")}, nil
+		assert.Equal(t, reserve.BigInt(), reserves.TotalReserve)
+		assert.Equal(t, totalTokens, reserves.TotalMinted)
+		return nil
 	}
 
 	runner := testutils.NewRunner(t, config)

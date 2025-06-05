@@ -3,6 +3,7 @@ package bindings
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -88,11 +89,14 @@ type FilterOptions struct {
 func AddInterfaceMock(
 	address common.Address,
 	clientMock *evmmock.ClientCapability,
-	funcs map[string]func(payload []byte) ([]byte, error)) {
+	callContract map[string]func(payload []byte) ([]byte, error),
+	writeReport func(payload []byte, config *evm.GasConfig) (*evm.WriteReportReply, error),
+) {
 
 	// copy the mock so that other contract interfaces can be implemented on the same contract
 	original := *clientMock
 
+	// We need to do this for all callbacks. Some refactoring might be good...
 	clientMock.CallContract = func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error) {
 		if !bytes.Equal(address[:], input.Call.To) {
 			if original.CallContract == nil {
@@ -108,7 +112,7 @@ func AddInterfaceMock(
 		}
 
 		methodID := data[:4]
-		callback := funcs[string(methodID)]
+		callback := callContract[string(methodID)]
 		if callback == nil {
 			if original.CallContract != nil {
 				return original.CallContract(ctx, input)
@@ -124,5 +128,31 @@ func AddInterfaceMock(
 		return &evm.CallContractReply{
 			Data: responsePayload,
 		}, nil
+	}
+
+	clientMock.WriteReport = func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
+		if !bytes.Equal(address[:], input.Receiver) {
+			if original.WriteReport == nil {
+				return nil, fmt.Errorf("contract %s not found", address.Hex())
+			} else {
+				return original.WriteReport(ctx, input)
+			}
+		}
+
+		if writeReport == nil {
+			if original.WriteReport != nil {
+				return original.WriteReport(ctx, input)
+			}
+			return nil, fmt.Errorf("writeReport callback not implemented for contract %s", address.Hex())
+		}
+
+		// TODO this needs to be right.
+		raw := input.Report.RawReport
+		chainSelector := binary.LittleEndian.Uint32(raw)
+		if chainSelector != clientMock.ChainSelector() {
+			return nil, fmt.Errorf("chain selector 0x%x not implemented", chainSelector)
+		}
+
+		return writeReport(raw[4:], input.GasConfig)
 	}
 }

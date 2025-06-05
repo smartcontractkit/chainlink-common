@@ -13,9 +13,14 @@ import (
 // TODO figure out how we know the type...?
 
 //go:embed solc/bin/IReserveManager.abi
-var IReserveManagerAbi string
+var iReserveManagerRaw string
 
-var iReserveManagerApi, _ = abi.JSON(strings.NewReader(IReserveManagerAbi))
+var iReserveManagerApi = NewIReserveManagerAbi()
+
+func NewIReserveManagerAbi() abi.ABI {
+	a, _ := abi.JSON(strings.NewReader(iReserveManagerRaw))
+	return a
+}
 
 type IReserverManager struct {
 	Structs        Structs

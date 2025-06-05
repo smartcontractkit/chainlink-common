@@ -31,6 +31,6 @@ func NewIERC20Mock(address common.Address, clientMock *evmmock.ClientCapability)
 			return totalSupply.Outputs.Pack(result)
 		},
 	}
-	bindings.AddInterfaceMock(address, clientMock, funcMap)
+	bindings.AddInterfaceMock(address, clientMock, funcMap, nil)
 	return erc20Mock
 }

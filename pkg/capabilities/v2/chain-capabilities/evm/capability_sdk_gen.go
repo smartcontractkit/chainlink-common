@@ -16,6 +16,7 @@ import (
 
 type Client struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
+	ChainSelector uint32
 }
 
 func (c *Client) CallContract(runtime sdk.Runtime, input *evm.CallContractRequest) sdk.Promise[*evm.CallContractReply] {

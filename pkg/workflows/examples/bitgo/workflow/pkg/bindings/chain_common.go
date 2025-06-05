@@ -36,7 +36,7 @@ type ContractOptions struct {
 }
 
 type ContractInputs struct {
-	EVM     evmcappb.Client
+	EVM     *evmcappb.Client
 	Address []byte
 	Options *ContractOptions
 }

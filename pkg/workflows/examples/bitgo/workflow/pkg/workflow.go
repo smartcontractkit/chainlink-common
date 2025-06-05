@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
-	_ "embed"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -24,19 +23,13 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
-//go:embed solc/bin/IERC20.abi
-var Erc20Abi string
-
-//go:embed solc/bin/IReserveManager.abi
-var ReserveManagerAbi string
-
 type Config struct {
 	EvmTokenAddress  string
 	EvmPorAddress    string
 	PublicKey        string
 	Schedule         string
 	Url              string
-	EvmChainSelector uint
+	EvmChainSelector uint32
 	GasLimit         uint64
 }
 
@@ -73,7 +66,7 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 	totalSupply := big.NewInt(0)
 
-	evmClient := evmcappb.Client{}
+	evmClient := &evmcappb.Client{ChainSelector: config.EvmChainSelector}
 
 	token := bindings.NewIERC20(bindings.ContractInputs{EVM: evmClient, Address: hexToBytes(config.EvmTokenAddress)})
 	reserveManager := bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: hexToBytes(config.EvmPorAddress), Options: &bindings.ContractOptions{
@@ -96,8 +89,8 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 	totalReserveScaled := reserveInfo.TotalReserve.Mul(decimal.NewFromUint64(10e18)).BigInt()
 
 	writeReportReplyPromise := reserveManager.Structs.UpdateReserves.WriteReport(runtime, bindings.UpdateReservesStruct{
-		TotalMinted:  *totalSupply,
-		TotalReserve: *totalReserveScaled,
+		TotalMinted:  totalSupply,
+		TotalReserve: totalReserveScaled,
 	}, nil)
 
 	writeReportReply, err := writeReportReplyPromise.Await()
@@ -186,7 +179,7 @@ func verifySignature(porResponse *PorResponse, publicKey string) error {
 // HexToBytes converts a hex string to a byte array.
 // It returns the byte array and any error encountered.
 func hexToBytes(hexStr string) []byte {
-	bytes, _ := hex.DecodeString(hexStr)
+	bytes, _ := hex.DecodeString(hexStr[2:])
 	return bytes
 }
 
@@ -195,9 +188,4 @@ type CommonReport struct {
 	ReportContext []byte
 	Signatures    [][]byte
 	ID            []byte
-}
-
-// TODO we need to define and implement this function
-func GenerateReport(targetChainID uint, evmSupplyCallData []byte) CommonReport {
-	panic("unimplemented")
 }

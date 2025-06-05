@@ -8,6 +8,8 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -26,6 +28,7 @@ import (
 	evmmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capabilitymock"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,6 +46,7 @@ const totalReserve = "11.56"
 
 const TotalSupplyMethod = "totalSupply"
 const UpdateReservesMethod = "updateReserves"
+const anyEvmChainSelector = uint32(123)
 
 func TestWorkflow_HappyPath(t *testing.T) {
 	err := ensureSignedJSON()
@@ -57,11 +61,12 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	config := &pkg.Config{
-		EvmTokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-		EvmPorAddress:   "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-		PublicKey:       string(pubKeyBytes),
-		Schedule:        "0 0 * * *",
-		Url:             "https://reserves.gousd.com/por.json",
+		EvmTokenAddress:  "0x1234567890abcdef1234567890abcdef12345678",
+		EvmPorAddress:    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+		PublicKey:        string(pubKeyBytes),
+		Schedule:         "0 0 * * *",
+		Url:              "https://reserves.gousd.com/por.json",
+		EvmChainSelector: anyEvmChainSelector,
 	}
 
 	// New pattern, hide registry in a map from testingT to registry.
@@ -87,25 +92,30 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	evmMock, err := evmmock.NewClientCapability(t)
 	require.NoError(t, err)
 	evmMock.CallContract = func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error) {
-		assert.Equal(t, config.EvmTokenAddress, input.Call.To)
-		erc20, err := abi.JSON(strings.NewReader(pkg.Erc20Abi))
+		assert.Equal(t, config.EvmTokenAddress[2:], hex.EncodeToString(input.Call.To))
+		erc20, err := abi.JSON(strings.NewReader(bindings.IErc20Abi))
 		require.NoError(t, err)
 
 		method := erc20.Methods[TotalSupplyMethod]
-		assert.Equal(t, method.ID, input.Call.To)
+		assert.Equal(t, method.ID, input.Call.Data)
 
 		data, err := erc20.Methods[TotalSupplyMethod].Outputs.Pack(numEvmTokens)
 		require.NoError(t, err)
 		return &evm.CallContractReply{Data: data}, nil
 	}
 	evmMock.WriteReport = func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
-		assert.Equal(t, config.EvmPorAddress, input.Receiver)
-		reserveManager, err := abi.JSON(strings.NewReader(pkg.ReserveManagerAbi))
+		// TODO what does it verify...?
+
+		assert.Equal(t, config.EvmPorAddress[2:], hex.EncodeToString(input.Receiver))
+		reserveManager, err := abi.JSON(strings.NewReader(bindings.IReserveManagerAbi))
 		require.NoError(t, err)
 		method := reserveManager.Methods[UpdateReservesMethod]
-		argData := input.Report.RawReport[0:len(method.ID)]
+		rawReport := input.Report.RawReport
+		actualChainId := binary.LittleEndian.Uint32(rawReport)
+		assert.Equal(t, anyEvmChainSelector, actualChainId)
+		argData := rawReport[4:]
 		args := map[string]any{}
-		assert.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
+		require.NoError(t, method.Inputs.UnpackIntoMap(args, argData))
 
 		assert.Len(t, args, 2)
 		reserve, err := decimal.NewFromString(totalReserve)

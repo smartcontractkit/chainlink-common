@@ -95,7 +95,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	erc20Mock := bindingsmock.NewIERC20Mock(common.HexToAddress(config.EvmTokenAddress), evmMock)
-	erc20Mock.TotalSupply = func() *big.Int { return numEvmTokens }
+	erc20Mock.TotalSupply = func() (*big.Int, error) { return numEvmTokens, nil }
 
 	evmMock.WriteReport = func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
 		// TODO what does it verify...?

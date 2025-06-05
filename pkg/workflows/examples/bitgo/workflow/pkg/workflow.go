@@ -16,9 +16,9 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http"
 	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
@@ -43,7 +43,7 @@ func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], er
 	}, nil
 }
 
-func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.CronTrigger) error {
+func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.Payload) error {
 	logger := wcx.Logger
 	config := wcx.Config
 	client := &http.Client{}
@@ -56,10 +56,17 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 		Await()
 
 	if err != nil {
+		logger.Warn("error getting por value", "err", err.Error())
 		return err
 	}
 
-	if time.UnixMilli(reserveInfo.LastUpdated).Before(time.Unix(trigger.ScheduledExecutionTime, 0).Add(-time.Hour * 24)) {
+	scheduledExecution, err := time.Parse(time.RFC3339Nano, trigger.ScheduledExecutionTime)
+	if err != nil {
+		logger.Error("failed to parse scheduled execution time", "err", err)
+		return err
+	}
+
+	if time.UnixMilli(reserveInfo.LastUpdated).Before(scheduledExecution.Add(-time.Hour * 24)) {
 		logger.Warn("reserve time is too old", "time", reserveInfo.LastUpdated)
 		return errors.New("reserved time is too old")
 	}

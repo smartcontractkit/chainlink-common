@@ -18,11 +18,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/don/cron/cronmock"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/stubs/node/http/httpmock"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http"
+	httpmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http/actionmock"
 	evmmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capabilitymock"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
+	cronmock "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron/cron_triggermock"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings/bindingsmock"
@@ -67,19 +67,19 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	// New pattern, hide registry in a map from testingT to registry.
 	cronMock, err := cronmock.NewCronCapability(t)
 	require.NoError(t, err)
-	cronMock.Trigger = func(ctx context.Context, input *cron.Config) (*cron.CronTrigger, error) {
+	cronMock.Trigger = func(ctx context.Context, input *cron.Config) (*cron.Payload, error) {
 		assert.Equal(t, config.Schedule, input.Schedule)
-		triggerTime := testTime.Truncate(24 * time.Hour).Add(time.Hour * 24).Unix()
-		return &cron.CronTrigger{ScheduledExecutionTime: triggerTime}, nil
+		triggerTime := testTime.Truncate(24 * time.Hour).Add(time.Hour * 24)
+		return &cron.Payload{ScheduledExecutionTime: triggerTime.Format(time.RFC3339Nano)}, nil
 	}
 
 	httpMock, err := httpmock.NewClientCapability(t)
 	require.NoError(t, err)
-	httpMock.Fetch = func(ctx context.Context, input *http.HttpFetchRequest) (*http.HttpFetchResponse, error) {
-		assert.Equal(t, http.HttpMethod_GET, input.Method)
+	httpMock.SendRequest = func(ctx context.Context, input *http.Request) (*http.Response, error) {
+		assert.Equal(t, http.Method_GET, input.Method)
 		assert.Equal(t, config.Url, input.Url)
 		assert.Empty(t, input.Body)
-		return &http.HttpFetchResponse{Body: payload}, nil
+		return &http.Response{Body: payload}, nil
 	}
 
 	numEvmTokens := new(big.Int).Mul(big.NewInt(103), big.NewInt(1e16))

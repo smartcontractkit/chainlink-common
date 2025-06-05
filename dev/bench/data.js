@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749133074059,
+  "lastUpdate": 1749139900900,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15036,6 +15036,48 @@ window.BENCHMARK_DATA = {
             "value": 28707,
             "unit": "ns/op",
             "extra": "42105 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1974ede5e920bd7b7de433e43e635a43a70d9482",
+          "message": "chore: bump freeport- support windows (#1241)",
+          "timestamp": "2025-06-05T20:09:21+04:00",
+          "tree_id": "0d6923d46e051c0918146110904c29c6b125fc02",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1974ede5e920bd7b7de433e43e635a43a70d9482"
+        },
+        "date": 1749139899924,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 382.1,
+            "unit": "ns/op",
+            "extra": "3214053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 434.4,
+            "unit": "ns/op",
+            "extra": "2660202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28487,
+            "unit": "ns/op",
+            "extra": "41540 times\n4 procs"
           }
         ]
       }

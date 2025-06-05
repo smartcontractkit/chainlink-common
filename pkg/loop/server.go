@@ -88,6 +88,9 @@ func (s *Server) start() error {
 	}
 
 	tracingAttrs := s.EnvConfig.TracingAttributes
+	if tracingAttrs == nil {
+		tracingAttrs = make(map[string]string, 1)
+	}
 	tracingAttrs[string(semconv.ServiceInstanceIDKey)] = s.EnvConfig.AppID
 	tracingConfig := TracingConfig{
 		Enabled:         s.EnvConfig.TracingEnabled,

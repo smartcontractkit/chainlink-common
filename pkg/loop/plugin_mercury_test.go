@@ -67,7 +67,7 @@ func TestPluginMercuryExec(t *testing.T) {
 
 func newMercuryProvider(t *testing.T, pr loop.PluginRelayer) types.MercuryProvider {
 	ctx := t.Context()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	p, err := r.NewPluginProvider(ctx, mercurytest.RelayArgs, mercurytest.PluginArgs)

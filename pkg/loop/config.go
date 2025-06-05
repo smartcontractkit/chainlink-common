@@ -14,30 +14,13 @@ import (
 )
 
 const (
-	envAppID = "CL_APP_ID"
-
-	envDatabaseURL                          = "CL_DATABASE_URL"
-	envDatabaseIdleInTxSessionTimeout       = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
-	envDatabaseLockTimeout                  = "CL_DATABASE_LOCK_TIMEOUT"
-	envDatabaseQueryTimeout                 = "CL_DATABASE_QUERY_TIMEOUT"
-	envDatabaseListenerFallbackPollInterval = "CL_DATABASE_LISTNER_FALLBACK_POLL_INTERVAL"
-	envDatabaseLogSQL                       = "CL_DATABASE_LOG_SQL"
-	envDatabaseMaxOpenConns                 = "CL_DATABASE_MAX_OPEN_CONNS"
-	envDatabaseMaxIdleConns                 = "CL_DATABASE_MAX_IDLE_CONNS"
-
-	envFeatureLogPoller = "CL_FEATURE_LOG_POLLER"
-
-	envMercuryCacheLatestReportDeadline = "CL_MERCURY_CACHE_LATEST_REPORT_DEADLINE"
-	envMercuryCacheLatestReportTTL      = "CL_MERCURY_CACHE_LATEST_REPORT_TTL"
-	envMercuryCacheMaxStaleAge          = "CL_MERCURY_CACHE_MAX_STALE_AGE"
-
-	envMercuryTransmitterProtocol             = "CL_MERCURY_TRANSMITTER_PROTOCOL"
-	envMercuryTransmitterTransmitQueueMaxSize = "CL_MERCURY_TRANSMITTER_TRANSMIT__QUEUE_MAX_SIZE"
-	envMercuryTransmitterTransmitTimeout      = "CL_MERCURY_TRANSMITTER_TRANSMIT_TIMEOUT"
-	envMercuryTransmitterTransmitConcurrency  = "CL_MERCURY_TRANSMITTER_TRANSMIT_CONCURRENCY"
-	envMercuryTransmitterReaperFrequency      = "CL_MERCURY_TRANSMITTER_REAPER_FREQUENCY"
-	envMercuryTransmitterReaperMaxAge         = "CL_MERCURY_TRANSMITTER_REAPER_MAX_AGE"
-	envMercuryVerboseLogging                  = "CL_MERCURY_VERBOSE_LOGGING"
+	envDatabaseURL                    = "CL_DATABASE_URL"
+	envDatabaseIdleInTxSessionTimeout = "CL_DATABASE_IDLE_IN_TX_SESSION_TIMEOUT"
+	envDatabaseLockTimeout            = "CL_DATABASE_LOCK_TIMEOUT"
+	envDatabaseQueryTimeout           = "CL_DATABASE_QUERY_TIMEOUT"
+	envDatabaseLogSQL                 = "CL_DATABASE_LOG_SQL"
+	envDatabaseMaxOpenConns           = "CL_DATABASE_MAX_OPEN_CONNS"
+	envDatabaseMaxIdleConns           = "CL_DATABASE_MAX_IDLE_CONNS"
 
 	envPromPort = "CL_PROMETHEUS_PORT"
 
@@ -67,30 +50,13 @@ const (
 // EnvConfig is the configuration between the application and the LOOP executable. The values
 // are fully resolved and static and passed via the environment.
 type EnvConfig struct {
-	AppID string
-
-	DatabaseURL                          *config.SecretURL
-	DatabaseIdleInTxSessionTimeout       time.Duration
-	DatabaseLockTimeout                  time.Duration
-	DatabaseQueryTimeout                 time.Duration
-	DatabaseListenerFallbackPollInterval time.Duration
-	DatabaseLogSQL                       bool
-	DatabaseMaxOpenConns                 int
-	DatabaseMaxIdleConns                 int
-
-	FeatureLogPoller bool
-
-	MercuryCacheLatestReportDeadline time.Duration
-	MercuryCacheLatestReportTTL      time.Duration
-	MercuryCacheMaxStaleAge          time.Duration
-
-	MercuryTransmitterProtocol             string
-	MercuryTransmitterTransmitQueueMaxSize uint32
-	MercuryTransmitterTransmitTimeout      time.Duration
-	MercuryTransmitterTransmitConcurrency  uint32
-	MercuryTransmitterReaperFrequency      time.Duration
-	MercuryTransmitterReaperMaxAge         time.Duration
-	MercuryVerboseLogging                  bool
+	DatabaseURL                    *config.SecretURL
+	DatabaseIdleInTxSessionTimeout time.Duration
+	DatabaseLockTimeout            time.Duration
+	DatabaseQueryTimeout           time.Duration
+	DatabaseLogSQL                 bool
+	DatabaseMaxOpenConns           int
+	DatabaseMaxIdleConns           int
 
 	PrometheusPort int
 
@@ -123,32 +89,15 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 		env = append(env, k+"="+v)
 	}
 
-	add(envAppID, e.AppID)
-
 	if e.DatabaseURL != nil { // optional
 		add(envDatabaseURL, e.DatabaseURL.URL().String())
 		add(envDatabaseIdleInTxSessionTimeout, e.DatabaseIdleInTxSessionTimeout.String())
 		add(envDatabaseLockTimeout, e.DatabaseLockTimeout.String())
 		add(envDatabaseQueryTimeout, e.DatabaseQueryTimeout.String())
-		add(envDatabaseListenerFallbackPollInterval, e.DatabaseListenerFallbackPollInterval.String())
 		add(envDatabaseLogSQL, strconv.FormatBool(e.DatabaseLogSQL))
 		add(envDatabaseMaxOpenConns, strconv.Itoa(e.DatabaseMaxOpenConns))
 		add(envDatabaseMaxIdleConns, strconv.Itoa(e.DatabaseMaxIdleConns))
 	}
-
-	add(envFeatureLogPoller, strconv.FormatBool(e.FeatureLogPoller))
-
-	add(envMercuryCacheLatestReportDeadline, e.MercuryCacheLatestReportDeadline.String())
-	add(envMercuryCacheLatestReportTTL, e.MercuryCacheLatestReportTTL.String())
-	add(envMercuryCacheMaxStaleAge, e.MercuryCacheMaxStaleAge.String())
-
-	add(envMercuryTransmitterProtocol, e.MercuryTransmitterProtocol)
-	add(envMercuryTransmitterTransmitQueueMaxSize, strconv.FormatUint(uint64(e.MercuryTransmitterTransmitQueueMaxSize), 10))
-	add(envMercuryTransmitterTransmitTimeout, e.MercuryTransmitterTransmitTimeout.String())
-	add(envMercuryTransmitterTransmitConcurrency, strconv.FormatUint(uint64(e.MercuryTransmitterTransmitConcurrency), 10))
-	add(envMercuryTransmitterReaperFrequency, e.MercuryTransmitterReaperFrequency.String())
-	add(envMercuryTransmitterReaperMaxAge, e.MercuryTransmitterReaperMaxAge.String())
-	add(envMercuryVerboseLogging, strconv.FormatBool(e.MercuryVerboseLogging))
 
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
@@ -187,7 +136,6 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 // parse deserializes environment variables
 func (e *EnvConfig) parse() error {
-	e.AppID = os.Getenv(envAppID)
 	var err error
 	e.DatabaseURL, err = getEnv(envDatabaseURL, func(s string) (*config.SecretURL, error) {
 		if s == "" { // DatabaseURL is optional
@@ -215,10 +163,6 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
-		e.DatabaseListenerFallbackPollInterval, err = getEnv(envDatabaseListenerFallbackPollInterval, time.ParseDuration)
-		if err != nil {
-			return err
-		}
 		e.DatabaseLogSQL, err = getEnv(envDatabaseLogSQL, strconv.ParseBool)
 		if err != nil {
 			return err
@@ -231,50 +175,6 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return err
 		}
-	}
-
-	e.FeatureLogPoller, err = getBool(envFeatureLogPoller)
-	if err != nil {
-		return err
-	}
-
-	e.MercuryCacheLatestReportDeadline, err = getEnv(envMercuryCacheLatestReportDeadline, time.ParseDuration)
-	if err != nil {
-		return err
-	}
-	e.MercuryCacheLatestReportTTL, err = getEnv(envMercuryCacheLatestReportTTL, time.ParseDuration)
-	if err != nil {
-		return err
-	}
-	e.MercuryCacheMaxStaleAge, err = getEnv(envMercuryCacheMaxStaleAge, time.ParseDuration)
-	if err != nil {
-		return err
-	}
-
-	e.MercuryTransmitterProtocol = os.Getenv(envMercuryTransmitterProtocol)
-	e.MercuryTransmitterTransmitQueueMaxSize, err = getUint32(envMercuryTransmitterTransmitQueueMaxSize)
-	if err != nil {
-		return err
-	}
-	e.MercuryTransmitterTransmitTimeout, err = getEnv(envMercuryTransmitterTransmitTimeout, time.ParseDuration)
-	if err != nil {
-		return err
-	}
-	e.MercuryTransmitterTransmitConcurrency, err = getUint32(envMercuryTransmitterTransmitConcurrency)
-	if err != nil {
-		return err
-	}
-	e.MercuryTransmitterReaperFrequency, err = getEnv(envMercuryTransmitterReaperFrequency, time.ParseDuration)
-	if err != nil {
-		return err
-	}
-	e.MercuryTransmitterReaperMaxAge, err = getEnv(envMercuryTransmitterReaperMaxAge, time.ParseDuration)
-	if err != nil {
-		return err
-	}
-	e.MercuryVerboseLogging, err = getBool(envMercuryVerboseLogging)
-	if err != nil {
-		return err
 	}
 
 	promPortStr := os.Getenv(envPromPort)
@@ -397,15 +297,6 @@ func getFloat64OrZero(envKey string) float64 {
 		return 0.0
 	}
 	return f
-}
-
-func getUint32(envKey string) (uint32, error) {
-	s := os.Getenv(envKey)
-	u, err := strconv.ParseUint(s, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	return uint32(u), nil
 }
 
 func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {

@@ -58,7 +58,7 @@ func FuzzRelayer(f *testing.F) {
 		p := newPluginRelayerExec(t, false, stopCh)
 		ctx := t.Context()
 		capRegistry := mocks.NewCapabilitiesRegistry(t)
-		relayer, err := p.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, capRegistry)
+		relayer, err := p.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, capRegistry)
 
 		require.NoError(t, err)
 

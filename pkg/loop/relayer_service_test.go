@@ -43,7 +43,7 @@ func TestRelayerService(t *testing.T) {
 	capRegistry := mocks.NewCapabilitiesRegistry(t)
 	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginRelayerName, false, 0)
-	}, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, capRegistry)
+	}, test.ConfigTOML, keystoretest.Keystore, capRegistry)
 	hook := relayer.XXXTestHook()
 	servicetest.Run(t, relayer)
 
@@ -83,16 +83,12 @@ func TestRelayerService_recovery(t *testing.T) {
 			Command: loop.PluginRelayerName,
 			Limit:   int(limit.Add(1)),
 		}.New()
-	}, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
+	}, test.ConfigTOML, keystoretest.Keystore, nil)
 	servicetest.Run(t, relayer)
 
 	relayertest.Run(t, relayer)
 
-	if hp := relayer.HealthReport(); len(hp) == 2 {
-		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames[:2]...)
-	} else {
-		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames...)
-	}
+	servicetest.AssertHealthReportNames(t, relayer.HealthReport(), relayerServiceNames[:2]...)
 
 }
 
@@ -104,7 +100,7 @@ func TestRelayerService_HealthReport(t *testing.T) {
 	capRegistry := mocks.NewCapabilitiesRegistry(t)
 	s := loop.NewRelayerService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return HelperProcessCommand{Command: loop.PluginRelayerName}.New()
-	}, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, capRegistry)
+	}, test.ConfigTOML, keystoretest.Keystore, capRegistry)
 
 	servicetest.AssertHealthReportNames(t, s.HealthReport(), relayerServiceNames[0])
 

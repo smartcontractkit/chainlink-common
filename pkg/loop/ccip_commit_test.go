@@ -112,7 +112,7 @@ func TestCommitLOOP(t *testing.T) {
 
 func newCommitProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPCommitProvider, error) {
 	ctx := t.Context()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 

@@ -85,7 +85,7 @@ func newStopCh(t *testing.T) <-chan struct{} {
 
 func newMedianProvider(t *testing.T, pr loop.PluginRelayer) types.MedianProvider {
 	ctx := t.Context()
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	p, err := r.NewPluginProvider(ctx, relayertest.RelayArgs, relayertest.PluginArgs)

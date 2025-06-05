@@ -141,7 +141,7 @@ func (s staticPluginRelayer) HealthReport() map[string]error {
 	return hp
 }
 
-func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
+func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
 	if s.relayer.StaticChecks && config != ConfigTOML {
 		return nil, fmt.Errorf("expected config %q but got %q", ConfigTOML, config)
 	}
@@ -151,13 +151,6 @@ func (s staticPluginRelayer) NewRelayer(ctx context.Context, config string, keys
 	}
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("expected at least one key but got none")
-	}
-	keys, err = csaKeystore.Accounts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("expected at least one CSA key but got none")
 	}
 
 	return s.relayer, nil
@@ -440,7 +433,7 @@ func newRelayArgsWithProviderType(_type types.OCR2PluginType) types.RelayArgs {
 func RunPlugin(t *testing.T, p looptypes.PluginRelayer) {
 	t.Run("Relayer", func(t *testing.T) {
 		ctx := t.Context()
-		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
+		relayer, err := p.NewRelayer(ctx, ConfigTOML, keystoretest.Keystore, nil)
 		require.NoError(t, err)
 		servicetest.Run(t, relayer)
 		Run(t, relayer)
@@ -487,7 +480,7 @@ func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.P
 		}
 
 		ctx := t.Context()
-		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, keystore, nil)
+		_, err := relayerFunc(t).NewRelayer(ctx, fConfig, keystore, nil)
 
 		grpcUnavailableErr(t, err)
 	})

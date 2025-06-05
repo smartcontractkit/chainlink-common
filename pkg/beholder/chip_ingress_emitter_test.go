@@ -42,7 +42,7 @@ func TestChipIngressEmit(t *testing.T) {
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
 		require.NoError(t, err)
 
-		err = emitter.Emit(t.Context(), body, beholder.AttrKeyBeholderDomain, domain, beholder.AttrKeyBeholderEntity, entity)
+		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
 		require.NoError(t, err)
 
 		clientMock.AssertExpectations(t)
@@ -59,7 +59,7 @@ func TestChipIngressEmit(t *testing.T) {
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
 		require.NoError(t, err)
 
-		err = emitter.Emit(t.Context(), body, beholder.AttrKeyBeholderDomain, domain)
+		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain)
 		assert.Error(t, err)
 	})
 
@@ -74,7 +74,7 @@ func TestChipIngressEmit(t *testing.T) {
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
 		require.NoError(t, err)
 
-		err = emitter.Emit(t.Context(), body, beholder.AttrKeyBeholderDomain, domain, beholder.AttrKeyBeholderEntity, entity)
+		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
 		require.Error(t, err)
 
 		clientMock.AssertExpectations(t)
@@ -92,7 +92,7 @@ func TestExtractSourceAndType(t *testing.T) {
 	}{
 		{
 			name:       "happy path - domain and entity exist",
-			attrs:      []any{map[string]any{beholder.AttrKeyBeholderDomain: "test-domain", beholder.AttrKeyBeholderEntity: "test-entity"}},
+			attrs:      []any{map[string]any{beholder.AttrKeyDomain: "test-domain", beholder.AttrKeyEntity: "test-entity"}},
 			wantDomain: "test-domain",
 			wantEntity: "test-entity",
 			wantErr:    false,
@@ -106,14 +106,14 @@ func TestExtractSourceAndType(t *testing.T) {
 		},
 		{
 			name:       "happy path - domain and entity exist - uses source/type",
-			attrs:      []any{map[string]any{"source": "other-domain", beholder.AttrKeyBeholderDomain: "test-domain", beholder.AttrKeyBeholderEntity: "test-entity", "type": "other-entity"}},
+			attrs:      []any{map[string]any{"source": "other-domain", beholder.AttrKeyDomain: "test-domain", beholder.AttrKeyEntity: "test-entity", "type": "other-entity"}},
 			wantDomain: "other-domain",
 			wantEntity: "other-entity",
 			wantErr:    false,
 		},
 		{
 			name:          "missing domain/source",
-			attrs:         []any{map[string]any{beholder.AttrKeyBeholderEntity: "test-entity"}},
+			attrs:         []any{map[string]any{beholder.AttrKeyEntity: "test-entity"}},
 			wantDomain:    "",
 			wantEntity:    "",
 			wantErr:       true,
@@ -121,7 +121,7 @@ func TestExtractSourceAndType(t *testing.T) {
 		},
 		{
 			name:          "missing entity/type",
-			attrs:         []any{map[string]any{beholder.AttrKeyBeholderDomain: "test-domain"}},
+			attrs:         []any{map[string]any{beholder.AttrKeyDomain: "test-domain"}},
 			wantDomain:    "",
 			wantEntity:    "",
 			wantErr:       true,
@@ -146,10 +146,10 @@ func TestExtractSourceAndType(t *testing.T) {
 		{
 			name: "domain and entity with additional attributes",
 			attrs: []any{map[string]any{
-				"other_key":                    "other_value",
-				beholder.AttrKeyBeholderDomain: "test-domain",
-				beholder.AttrKeyBeholderEntity: "test-entity",
-				"something_else":               123,
+				"other_key":            "other_value",
+				beholder.AttrKeyDomain: "test-domain",
+				beholder.AttrKeyEntity: "test-entity",
+				"something_else":       123,
 			}},
 			wantDomain: "test-domain",
 			wantEntity: "test-entity",
@@ -158,9 +158,9 @@ func TestExtractSourceAndType(t *testing.T) {
 		{
 			name: "non-string keys ignored",
 			attrs: []any{map[string]any{
-				"other_value":                  "value",
-				beholder.AttrKeyBeholderDomain: "test-domain",
-				beholder.AttrKeyBeholderEntity: "test-entity",
+				"other_value":          "value",
+				beholder.AttrKeyDomain: "test-domain",
+				beholder.AttrKeyEntity: "test-entity",
 			}, 123, "other_key"},
 			wantDomain: "test-domain",
 			wantEntity: "test-entity",
@@ -169,9 +169,9 @@ func TestExtractSourceAndType(t *testing.T) {
 		{
 			name: "non-string values handled",
 			attrs: []any{map[string]any{
-				"other_key":                    123,
-				beholder.AttrKeyBeholderDomain: "test-domain",
-				beholder.AttrKeyBeholderEntity: "test-entity",
+				"other_key":            123,
+				beholder.AttrKeyDomain: "test-domain",
+				beholder.AttrKeyEntity: "test-entity",
 			}},
 			wantDomain: "test-domain",
 			wantEntity: "test-entity",

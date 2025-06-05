@@ -60,9 +60,9 @@ func (m Metadata) Attributes() Attributes {
 		"workflow_owner_address":      m.WorkflowOwnerAddress,
 		"workflow_spec_id":            m.WorkflowSpecID,
 		"workflow_execution_id":       m.WorkflowExecutionID,
-		AttrKeyBeholderDomain:         m.BeholderDomain,
-		AttrKeyBeholderEntity:         m.BeholderEntity,
-		AttrKeyBeholderDataSchema:     m.BeholderDataSchema,
+		AttrKeyDomain:                 m.BeholderDomain,
+		AttrKeyEntity:                 m.BeholderEntity,
+		AttrKeyDataSchema:             m.BeholderDataSchema,
 		"capability_contract_address": m.CapabilityContractAddress,
 		"capability_id":               m.CapabilityID,
 		"capability_version":          m.CapabilityVersion,
@@ -206,11 +206,11 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.WorkflowSpecID = v.(string)
 		case "workflow_execution_id":
 			m.WorkflowExecutionID = v.(string)
-		case AttrKeyBeholderDomain:
+		case AttrKeyDomain:
 			m.BeholderDomain = v.(string)
-		case AttrKeyBeholderEntity:
+		case AttrKeyEntity:
 			m.BeholderEntity = v.(string)
-		case AttrKeyBeholderDataSchema:
+		case AttrKeyDataSchema:
 			m.BeholderDataSchema = v.(string)
 		case "capability_contract_address":
 			m.CapabilityContractAddress = v.(string)

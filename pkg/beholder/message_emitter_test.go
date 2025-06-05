@@ -44,9 +44,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid URI",
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDomain:     "TestDomain",
-				beholder.AttrKeyBeholderEntity:     "TestEntity",
-				beholder.AttrKeyBeholderDataSchema: "example-schema",
+				beholder.AttrKeyDomain:     "TestDomain",
+				beholder.AttrKeyEntity:     "TestEntity",
+				beholder.AttrKeyDataSchema: "example-schema",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
@@ -54,9 +54,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid Beholder domain (double underscore)",
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDataSchema: "/example-schema/versions/1",
-				beholder.AttrKeyBeholderEntity:     "TestEntity",
-				beholder.AttrKeyBeholderDomain:     "Test__Domain",
+				beholder.AttrKeyDataSchema: "/example-schema/versions/1",
+				beholder.AttrKeyEntity:     "TestEntity",
+				beholder.AttrKeyDomain:     "Test__Domain",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
@@ -64,9 +64,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid Beholder domain (special characters)",
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDataSchema: "/example-schema/versions/1",
-				beholder.AttrKeyBeholderEntity:     "TestEntity",
-				beholder.AttrKeyBeholderDomain:     "TestDomain*$",
+				beholder.AttrKeyDataSchema: "/example-schema/versions/1",
+				beholder.AttrKeyEntity:     "TestEntity",
+				beholder.AttrKeyDomain:     "TestDomain*$",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
@@ -74,9 +74,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid Beholder entity (double underscore)",
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDataSchema: "/example-schema/versions/1",
-				beholder.AttrKeyBeholderEntity:     "Test__Entity",
-				beholder.AttrKeyBeholderDomain:     "TestDomain",
+				beholder.AttrKeyDataSchema: "/example-schema/versions/1",
+				beholder.AttrKeyEntity:     "Test__Entity",
+				beholder.AttrKeyDomain:     "TestDomain",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
@@ -84,9 +84,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 		{
 			name: "Invalid Beholder entity (special characters)",
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDataSchema: "/example-schema/versions/1",
-				beholder.AttrKeyBeholderEntity:     "TestEntity*$",
-				beholder.AttrKeyBeholderDomain:     "TestDomain",
+				beholder.AttrKeyDataSchema: "/example-schema/versions/1",
+				beholder.AttrKeyEntity:     "TestEntity*$",
+				beholder.AttrKeyDomain:     "TestDomain",
 			},
 			exporterCalledTimes: 0,
 			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
@@ -95,9 +95,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 			name:                "Valid Attributes",
 			exporterCalledTimes: 1,
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDomain:     "TestDomain",
-				beholder.AttrKeyBeholderEntity:     "TestEntity",
-				beholder.AttrKeyBeholderDataSchema: "/example-schema/versions/1",
+				beholder.AttrKeyDomain:     "TestDomain",
+				beholder.AttrKeyEntity:     "TestEntity",
+				beholder.AttrKeyDataSchema: "/example-schema/versions/1",
 			},
 			expectedError: "",
 		},
@@ -105,9 +105,9 @@ func TestEmitterMessageValidation(t *testing.T) {
 			name:                "Valid Attributes (special characters)",
 			exporterCalledTimes: 1,
 			attrs: beholder.Attributes{
-				beholder.AttrKeyBeholderDomain:     "Test.Domain_42-1",
-				beholder.AttrKeyBeholderEntity:     "Test.Entity_42-1",
-				beholder.AttrKeyBeholderDataSchema: "/example-schema/versions/1",
+				beholder.AttrKeyDomain:     "Test.Domain_42-1",
+				beholder.AttrKeyEntity:     "Test.Entity_42-1",
+				beholder.AttrKeyDataSchema: "/example-schema/versions/1",
 			},
 			expectedError: "",
 		},

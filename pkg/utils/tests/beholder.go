@@ -86,7 +86,7 @@ func (b BeholderTester) BaseMessagesForLabels(t *testing.T, labels map[string]st
 
 messageLoop:
 	for _, eMsg := range b.emitter.msgs {
-		dataSchema, ok := eMsg.Attrs[beholder.AttrKeyBeholderEntity].(string)
+		dataSchema, ok := eMsg.Attrs[beholder.AttrKeyEntity].(string)
 		if !ok {
 			continue
 		}

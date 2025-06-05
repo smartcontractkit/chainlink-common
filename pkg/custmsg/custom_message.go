@@ -111,9 +111,9 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	}
 
 	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
-		beholder.AttrKeyBeholderDataSchema, "/beholder-base-message/versions/1", // required
-		beholder.AttrKeyBeholderDomain, "platform", // required
-		beholder.AttrKeyBeholderEntity, "BaseMessage", // required
+		beholder.AttrKeyDataSchema, "/beholder-base-message/versions/1", // required
+		beholder.AttrKeyDomain, "platform", // required
+		beholder.AttrKeyEntity, "BaseMessage", // required
 	)
 	if err != nil {
 		return fmt.Errorf("sending custom message failed on emit: %w", err)

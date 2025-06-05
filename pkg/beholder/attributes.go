@@ -1,8 +1,8 @@
 package beholder
 
 const (
-	AttrKeyBeholderDataSchema = "beholder_data_schema"
-	AttrKeyBeholderEntity     = "beholder_entity"
-	AttrKeyBeholderDomain     = "beholder_domain"
-	AttrKeyBeholderDataType   = "beholder_data_type"
+	AttrKeyDataSchema = "beholder_data_schema"
+	AttrKeyEntity     = "beholder_entity"
+	AttrKeyDomain     = "beholder_domain"
+	AttrKeyDataType   = "beholder_data_type"
 )

@@ -58,29 +58,29 @@ func toSchemaPath(m proto.Message, basePath string) string {
 
 // appendRequiredAttrDataSchema adds the message schema path as an attribute (required)
 func appendRequiredAttrDataSchema(attrKVs []any, val string) []any {
-	if containsKey(attrKVs, AttrKeyBeholderDataSchema) {
+	if containsKey(attrKVs, AttrKeyDataSchema) {
 		return attrKVs
 	}
 
-	attrKVs = append(attrKVs, AttrKeyBeholderDataSchema)
+	attrKVs = append(attrKVs, AttrKeyDataSchema)
 	attrKVs = append(attrKVs, val)
 	return attrKVs
 }
 
 // appendRequiredAttrEntity adds the message entity type as an attribute (required)
 func appendRequiredAttrEntity(attrKVs []any, m proto.Message) []any {
-	if containsKey(attrKVs, AttrKeyBeholderEntity) {
+	if containsKey(attrKVs, AttrKeyEntity) {
 		return attrKVs
 	}
 
-	attrKVs = append(attrKVs, AttrKeyBeholderEntity)
+	attrKVs = append(attrKVs, AttrKeyEntity)
 	attrKVs = append(attrKVs, toSchemaName(m))
 	return attrKVs
 }
 
 // appendRequiredAttrDomain adds the message domain as an attribute (required)
 func appendRequiredAttrDomain(attrKVs []any, m proto.Message) []any {
-	if containsKey(attrKVs, AttrKeyBeholderDomain) {
+	if containsKey(attrKVs, AttrKeyDomain) {
 		return attrKVs
 	}
 
@@ -93,7 +93,7 @@ func appendRequiredAttrDomain(attrKVs []any, m proto.Message) []any {
 		domain = strings.Split(protoName, ".")[0]
 	}
 
-	attrKVs = append(attrKVs, AttrKeyBeholderDomain)
+	attrKVs = append(attrKVs, AttrKeyDomain)
 	attrKVs = append(attrKVs, domain)
 	return attrKVs
 }

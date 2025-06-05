@@ -55,9 +55,9 @@ func (c GatewayConnectorClient) AddHandler(methods []string, handler core.Gatewa
 		HandlerId: id,
 		Methods:   methods,
 	})
-	if err == nil {
+	if err != nil {
 		cRes.Close()
-		return err
+		return fmt.Errorf("failed to add handler: %w", err)
 	}
 	return nil
 }

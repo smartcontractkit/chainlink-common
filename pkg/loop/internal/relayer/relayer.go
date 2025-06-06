@@ -46,16 +46,25 @@ func NewPluginRelayerClient(brokerCfg net.BrokerConfig) *PluginRelayerClient {
 	return &PluginRelayerClient{PluginClient: pc, pluginRelayer: pb.NewPluginRelayerClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
-	cc := p.NewClientConn("Relayer", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
+	cc := p.NewClientConn("Relayer", func(ctx context.Context) (relayerID uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
-		id, ksRes, err = p.ServeNew("Keystore", func(s *grpc.Server) {
+		ksID, ksRes, err := p.ServeNew("Keystore", func(s *grpc.Server) {
 			pb.RegisterKeystoreServer(s, &keystoreServer{impl: keystore})
 		})
 		if err != nil {
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve keystore: %w", err)
 		}
 		deps.Add(ksRes)
+
+		var ksCSARes net.Resource
+		ksCSAID, ksCSARes, err := p.ServeNew("CSAKeystore", func(s *grpc.Server) {
+			pb.RegisterKeystoreServer(s, &keystoreServer{impl: csaKeystore})
+		})
+		if err != nil {
+			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
+		}
+		deps.Add(ksCSARes)
 
 		capabilityRegistryID, capabilityRegistryResource, err := p.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
 			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
@@ -67,7 +76,8 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 
 		reply, err := p.pluginRelayer.NewRelayer(ctx, &pb.NewRelayerRequest{
 			Config:               config,
-			KeystoreID:           id,
+			KeystoreID:           ksID,
+			KeystoreCSAID:        ksCSAID,
 			CapabilityRegistryID: capabilityRegistryID,
 		})
 		if err != nil {
@@ -102,22 +112,31 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	if err != nil {
 		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreID, Err: err}
 	}
-	ksRes := net.Resource{Closer: ksConn, Name: "CapabilityRegistry"}
+	ksRes := net.Resource{Closer: ksConn, Name: "Keystore"}
+
+	ksCSAConn, err := p.Dial(request.KeystoreCSAID)
+	if err != nil {
+		p.CloseAll(ksRes)
+		return nil, net.ErrConnDial{Name: "CSAKeystore", ID: request.KeystoreCSAID, Err: err}
+	}
+	ksCSARes := net.Resource{Closer: ksConn, Name: "CSAKeystore"}
+
 	capRegistryConn, err := p.Dial(request.CapabilityRegistryID)
 	if err != nil {
+		p.CloseAll(ksRes, ksCSARes)
 		return nil, net.ErrConnDial{Name: "CapabilityRegistry", ID: request.CapabilityRegistryID, Err: err}
 	}
 	crRes := net.Resource{Closer: capRegistryConn, Name: "CapabilityRegistry"}
 	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
 
-	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn), capRegistry)
+	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn), newKeystoreClient(ksCSAConn), capRegistry)
 	if err != nil {
-		p.CloseAll(ksRes, crRes)
+		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err
 	}
 	err = r.Start(ctx)
 	if err != nil {
-		p.CloseAll(ksRes, crRes)
+		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err
 	}
 
@@ -129,7 +148,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		if evmService, ok := r.(types.EVMService); ok {
 			evmpb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
 		}
-	}, rRes, ksRes, crRes)
+	}, rRes, ksRes, ksCSARes, crRes)
 	if err != nil {
 		return nil, err
 	}

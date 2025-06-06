@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability"
+	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"

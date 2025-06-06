@@ -12,7 +12,7 @@ type Cron struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c Cron) Trigger(config *Config) sdk.Trigger[*Payload] {
+func (c Cron) Trigger(config *Config) sdk.Trigger[*Payload, *Payload] {
 	configAny, _ := anypb.New(config)
 	return &cronTrigger{
 		config: configAny,
@@ -39,4 +39,8 @@ func (*cronTrigger) Method() string {
 
 func (t *cronTrigger) ConfigAsAny() *anypb.Any {
 	return t.config
+}
+
+func (t *cronTrigger) Adapt(trigger *Payload) (*Payload, error) {
+	return trigger, nil
 }

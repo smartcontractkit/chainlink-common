@@ -75,7 +75,7 @@ const file_capabilities_v2_http_trigger_proto_rawDesc = "" +
 	"\x0eTriggerRequest\x12\x12\n" +
 	"\x04body\x18\x01 \x01(\fR\x04body2Y\n" +
 	"\aTrigger\x124\n" +
-	"\aRequest\x12\x16.google.protobuf.Empty\x1a\x0f.TriggerRequest0\x01\x1a\x18\x82\xb5\x18\x14\x12\x12http-trigger@0.1.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
+	"\aRequest\x12\x16.google.protobuf.Empty\x1a\x0f.TriggerRequest0\x01\x1a\x18\x82\xb5\x18\x14\x12\x12http-trigger@0.1.0BGZEgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/httpb\x06proto3"
 
 var (
 	file_capabilities_v2_http_trigger_proto_rawDescOnce sync.Once

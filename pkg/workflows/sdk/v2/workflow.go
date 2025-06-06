@@ -5,14 +5,13 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-type Workflows[C any] []Workflow[C]
-type Workflow[C any] = BaseWorkflow[C, Runtime]
+type Workflows[C any] []BaseWorkflow[C, Runtime]
 
 func (w *Workflows[C]) Register(workflow BaseWorkflow[C, Runtime]) {
 	*w = append(*w, workflow)
 }
 
-func On[C any, M proto.Message, T Trigger[M], O any](trigger T, callback func(wcx *WorkflowContext[C], runtime Runtime, payload M) (O, error)) BaseWorkflow[C, Runtime] {
+func On[C any, M proto.Message, T any, O any](trigger Trigger[M, T], callback func(wcx *WorkflowContext[C], runtime Runtime, payload T) (O, error)) BaseWorkflow[C, Runtime] {
 	return on(trigger, callback)
 }
 
@@ -24,31 +23,35 @@ type BaseWorkflow[C, R any] interface {
 	Callback() func(wcx *WorkflowContext[C], runtime R, payload *anypb.Any) (any, error)
 }
 
-func on[R, C any, M proto.Message, T Trigger[M], O any](trigger T, callback func(wcx *WorkflowContext[C], runtime R, payload M) (O, error)) BaseWorkflow[C, R] {
+func on[R, C any, M proto.Message, T any, O any](trigger Trigger[M, T], callback func(wcx *WorkflowContext[C], runtime R, payload T) (O, error)) BaseWorkflow[C, R] {
 	wrapped := func(wcx *WorkflowContext[C], runtime R, payload *anypb.Any) (any, error) {
 		unwrappedTrigger := trigger.NewT()
 		if err := payload.UnmarshalTo(unwrappedTrigger); err != nil {
 			return nil, err
 		}
-		return callback(wcx, runtime, unwrappedTrigger)
+		input, err := trigger.Adapt(unwrappedTrigger)
+		if err != nil {
+			return nil, err
+		}
+		return callback(wcx, runtime, input)
 	}
-	return &workflowImpl[C, R, M]{
+	return &workflowImpl[C, R, M, T]{
 		Trigger: trigger,
 		fn:      wrapped,
 	}
 }
 
-type workflowImpl[C, R any, M proto.Message] struct {
-	Trigger[M]
+type workflowImpl[C, R any, M proto.Message, T any] struct {
+	Trigger[M, T]
 	fn func(wcx *WorkflowContext[C], runtime R, trigger *anypb.Any) (any, error)
 }
 
-var _ BaseWorkflow[int, any] = (*workflowImpl[int, any, proto.Message])(nil)
+var _ BaseWorkflow[int, any] = (*workflowImpl[int, any, proto.Message, any])(nil)
 
-func (h *workflowImpl[C, R, M]) TriggerCfg() *anypb.Any {
+func (h *workflowImpl[C, R, M, T]) TriggerCfg() *anypb.Any {
 	return h.Trigger.ConfigAsAny()
 }
 
-func (h *workflowImpl[C, R, M]) Callback() func(wcx *WorkflowContext[C], runtime R, payload *anypb.Any) (any, error) {
+func (h *workflowImpl[C, R, M, T]) Callback() func(wcx *WorkflowContext[C], runtime R, payload *anypb.Any) (any, error) {
 	return h.fn
 }

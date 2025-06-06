@@ -273,7 +273,7 @@ func (c *Client) WriteReport(runtime sdk.Runtime, input *evm.WriteReportRequest)
 	})
 }
 
-func (c Client) LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log] {
+func (c Client) LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log, *evm.Log] {
 	configAny, _ := anypb.New(config)
 	return &clientLogTrigger{
 		config: configAny,
@@ -284,6 +284,10 @@ func (c Client) LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log
 type clientLogTrigger struct {
 	config *anypb.Any
 	Client
+}
+
+func (c *clientLogTrigger) Adapt(t *evm.Log) (*evm.Log, error) {
+	return t, nil
 }
 
 func (*clientLogTrigger) IsTrigger() {}

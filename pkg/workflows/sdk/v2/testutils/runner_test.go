@@ -106,9 +106,9 @@ func TestRunner_TriggerRegistrationCanBeVerifiedWithoutTriggering(t *testing.T) 
 	runWorkflows(runner, sdk.Workflows[string]{
 		sdk.On(
 			basictrigger.Basic{}.Trigger(anyConfig1),
-			func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, in *basictrigger.Outputs) error {
+			func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, in *basictrigger.Outputs) (struct{}, error) {
 				called = true
-				return nil
+				return struct{}{}, nil
 			},
 		),
 		sdk.On(

@@ -16,7 +16,7 @@ import (
 func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 42, nil
 	}, sdk.ConsensusMedianAggregation[int]())
 
@@ -28,7 +28,7 @@ func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 func TestRunInNodeMode_PrimitiveConsensusWithUnusedDefault(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 99, nil
 	}, sdk.ConsensusMedianAggregation[int]().WithDefault(100))
 
@@ -40,7 +40,7 @@ func TestRunInNodeMode_PrimitiveConsensusWithUnusedDefault(t *testing.T) {
 func TestRunInNodeMode_PrimitiveConsensusWithUsedDefault(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 0, errors.New("error")
 	}, sdk.ConsensusMedianAggregation[int]().WithDefault(100))
 

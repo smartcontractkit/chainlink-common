@@ -73,3 +73,7 @@ func (ur UpdateReserves) WriteReport(runtime sdk.Runtime, updateReserves UpdateR
 
 	return writeReportReplyPromise
 }
+
+type RequestReserveUpdateLog struct {
+	log *evm.Log
+}

@@ -14,9 +14,8 @@ type Trigger struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c Trigger) Request(/* TODO remove empty from the generator*/ /*config *emptypb.Empty*/) sdk.Trigger[*TriggerRequest] {
-	// configAny, _ := anypb.New(config)
-	configAny, _ := anypb.New(&emptypb.Empty{}) 
+func (c Trigger) Request(/* TODO remove if empty in code gen*//*config *emptypb.Empty*/) sdk.Trigger[*TriggerRequest, *TriggerRequest] {
+	configAny, _ := anypb.New(/*config*/ &emptypb.Empty{})
 	return &triggerRequest{
 		config: configAny,
 	}
@@ -42,4 +41,8 @@ func (*triggerRequest) Method() string {
 
 func (t *triggerRequest) ConfigAsAny() *anypb.Any {
 	return t.config
+}
+
+func (t *triggerRequest) Adapt(trigger *TriggerRequest) (*TriggerRequest, error) {
+	return trigger, nil
 }

@@ -12,10 +12,7 @@ type baseTrigger[T proto.Message] interface {
 	Method() string
 }
 
-// Trigger represents a trigger in the workflow engine.
-// Implementations should come from generated code.
-// Methods are meant to be used by the Runner
-type Trigger[T proto.Message] interface {
-	baseTrigger[T]
-	IsTrigger()
+type Trigger[M proto.Message, T any] interface {
+	baseTrigger[M]
+	Adapt(m M) (T, error)
 }

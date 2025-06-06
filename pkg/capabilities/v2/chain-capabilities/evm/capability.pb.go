@@ -201,7 +201,7 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
 	"\vWriteReport\x12\x1c.loop.evm.WriteReportRequest\x1a\x1a.loop.evm.WriteReportReply\x12F\n" +
 	"\n" +
-	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0BhZfgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evmb\x06proto3"
+	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0BYZWgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evmb\x06proto3"
 
 var (
 	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once

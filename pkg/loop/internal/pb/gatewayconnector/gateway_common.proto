@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnector";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+
+message MessageBody {
+  string message_id = 1;
+  string method = 2;
+  string don_id = 3;
+  string receiver = 4;
+  bytes payload = 5; // Raw JSON
+  string sender = 6;
+}
+
+message Message {
+  string signature = 1;
+  MessageBody body = 2;
+}
+
+message SendMessageRequest {
+  string gateway_id = 1;
+  Message message = 2;
+}

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnector";
+package loop;
+
+import "google/protobuf/empty.proto";
+import "gateway_common.proto";
+
+message GatewayConnectorHandlerInfo {
+  string id = 1;
+}
+
+service GatewayConnectorHandler {
+  rpc Start(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Close(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Id(google.protobuf.Empty) returns (GatewayConnectorHandlerInfo);
+  rpc HandleGatewayMessage(SendMessageRequest) returns (google.protobuf.Empty);
+}

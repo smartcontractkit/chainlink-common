@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749139900900,
+  "lastUpdate": 1749227376903,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15078,6 +15078,48 @@ window.BENCHMARK_DATA = {
             "value": 28487,
             "unit": "ns/op",
             "extra": "41540 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "95ba916687f9ca77228ef8259e87697bee938e24",
+          "message": "adding timestamp to BaseMessage (#1238)\n\n* adding timestamp to BaseMessage\n\n* make generate",
+          "timestamp": "2025-06-06T12:27:14-04:00",
+          "tree_id": "8ab76198fb7073d9ef934d125b26ac370946c83b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/95ba916687f9ca77228ef8259e87697bee938e24"
+        },
+        "date": 1749227375375,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 381.4,
+            "unit": "ns/op",
+            "extra": "3308138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.9,
+            "unit": "ns/op",
+            "extra": "2874422 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28933,
+            "unit": "ns/op",
+            "extra": "42158 times\n4 procs"
           }
         ]
       }

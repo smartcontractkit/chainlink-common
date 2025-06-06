@@ -6,7 +6,10 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
@@ -74,6 +77,48 @@ func (ur UpdateReserves) WriteReport(runtime sdk.Runtime, updateReserves UpdateR
 	return writeReportReplyPromise
 }
 
+func (ur UpdateReserves) RequestReserveUpdateTrigger(confidence evmcappb.ConfidenceLevel) sdk.Trigger[*evm.Log, *RequestReserveUpdateLog] {
+	evmTrigger := ur.reserveManager.ContractInputs.EVM.LogTrigger(&evmcappb.FilterLogTriggerRequest{
+		Addresses:  [][]byte{ur.reserveManager.ContractInputs.Address},
+		EventSigs:  [][]byte{[]byte(iReserveManagerApi.Events["RequestReserveUpdate"].Sig)},
+		Confidence: confidence,
+	})
+	return &requestReserveUpdateLogTrigger{Trigger: evmTrigger}
+}
+
+// Someone should review the helpers we generate.
+
 type RequestReserveUpdateLog struct {
-	log *evm.Log
+	// No topics in this event except the hash, should we expose it or verify it?
+	TxHash        common.Hash
+	BlockHash     common.Hash
+	BlockNumber   *pb.BigInt
+	TxIndex       uint32
+	Index         uint32
+	Removed       bool
+	ChainSelector uint32
+	RequestId     *big.Int
+}
+
+type requestReserveUpdateLogTrigger struct {
+	sdk.Trigger[*evm.Log, *evm.Log]
+}
+
+func (r requestReserveUpdateLogTrigger) Adapt(m *evm.Log) (*RequestReserveUpdateLog, error) {
+	data, err := iReserveManagerApi.Events["RequestReserveUpdate"].Inputs.Unpack(m.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	requestId := data[0].(*big.Int)
+	return &RequestReserveUpdateLog{
+		TxHash:        common.BytesToHash(m.TxHash),
+		BlockHash:     common.BytesToHash(m.BlockHash),
+		BlockNumber:   m.BlockNumber,
+		TxIndex:       m.TxIndex,
+		Index:         m.Index,
+		Removed:       m.Removed,
+		ChainSelector: m.ChainSelector,
+		RequestId:     requestId,
+	}, nil
 }

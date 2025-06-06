@@ -37,8 +37,6 @@ type Config struct {
 	Evms      []EvmConfig
 }
 
-var reserveAbi = bindings.NewIReserveManagerAbi()
-
 func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], error) {
 	config := wcx.Config
 	workflows := sdk.Workflows[*Config]{
@@ -57,12 +55,9 @@ func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], er
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode token address %s: %w", evmConfig.TokenAddress, err)
 		}
+		evmClient := &evmcappb.Client{ChainSelector: evmConfig.ChainSelector}
 		workflow := sdk.On(
-			evmcappb.Client{ChainSelector: evmConfig.ChainSelector}.LogTrigger(&evmcappb.FilterLogTriggerRequest{
-				Addresses:  [][]byte{address},
-				EventSigs:  [][]byte{[]byte(reserveAbi.Events["RequestReserveUpdate"].Sig)},
-				Confidence: evmcappb.ConfidenceLevel_FINALIZED,
-			}),
+			bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: address, Options: &bindings.ContractOptions{}}).Structs.UpdateReserves.RequestReserveUpdateTrigger(evmcappb.ConfidenceLevel_FINALIZED),
 			onEvmTrigger,
 		)
 		workflows = append(workflows, workflow)
@@ -75,18 +70,10 @@ type httpTrigger struct {
 	Reason string `json:"reason"`
 }
 
-func onEvmTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, log *evm.Log) (*ReserveInfo, error) {
-	a := bindings.NewIReserveManagerAbi()
-	// TODO verify unpack is right
+func onEvmTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, log *bindings.RequestReserveUpdateLog) (*ReserveInfo, error) {
 	wcx.Logger = wcx.Logger.With("trigger", "evm").With("selector", log.ChainSelector)
-	data, err := a.Events["RequestReserveUpdate"].Inputs.Unpack(log.Data)
-	if err != nil {
-		wcx.Logger.Error("failed to unpack event data", "err", err)
-		return nil, err
-	}
-	requestId := data[0].(*big.Int)
 
-	wcx.Logger = wcx.Logger.With("request id", requestId.String())
+	wcx.Logger = wcx.Logger.With("request id", log.RequestId.String())
 	return doPor(wcx, runtime, time.Now())
 }
 

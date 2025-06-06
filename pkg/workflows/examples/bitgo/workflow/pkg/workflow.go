@@ -10,14 +10,17 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/http/httpcompatibility"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	evmcappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/http"
+	http2 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/http"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/examples/bitgo/workflow/pkg/bindings"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
@@ -45,7 +48,7 @@ func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], er
 			onCronTrigger,
 		),
 		sdk.On(
-			http.Trigger{}.Request(),
+			http2.Trigger{}.Request(),
 			onHttpTrigger,
 		),
 	}
@@ -77,7 +80,7 @@ func onEvmTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, log *b
 	return doPor(wcx, runtime, time.Now())
 }
 
-func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, request *http.TriggerRequest) (*ReserveInfo, error) {
+func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, request *http2.TriggerRequest) (*ReserveInfo, error) {
 	trigger := &httpTrigger{}
 	if err := json.Unmarshal(request.Body, trigger); err != nil {
 		wcx.Logger.Error("failed to unmarshal http trigger payload", "err", err)
@@ -95,11 +98,10 @@ func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigg
 
 func doPor(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, runTime time.Time) (*ReserveInfo, error) {
 	logger := wcx.Logger
-	client := &http.Client{}
-	reserveInfo, err := http.ConsensusSendRequest(
+
+	reserveInfo, err := httpcompatibility.NewConsensusRoundTripper(
 		wcx,
 		runtime,
-		client,
 		fetchPor,
 		sdk.ConsensusAggregationFromTags[*ReserveInfo]()).
 		Await()
@@ -195,17 +197,22 @@ func updateReserve(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, total
 	return errors.Join(errs...)
 }
 
-func fetchPor(wcx *sdk.WorkflowContext[*Config], requester *http.SendRequester) (*ReserveInfo, error) {
+func fetchPor(wcx *sdk.WorkflowContext[*Config], roundTripper http.RoundTripper) (*ReserveInfo, error) {
 	config := wcx.Config
 
-	request := &http.Request{Url: config.Url}
-	response, err := requester.SendRequest(request).Await()
+	// TODO what would happen if they set the timeout or redirect functions?
+	client := &http.Client{Transport: roundTripper}
+	response, err := client.Get(config.Url)
 	if err != nil {
 		return nil, err
 	}
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
 
 	porResponse := &PorResponse{}
-	if err = json.Unmarshal(response.Body, porResponse); err != nil {
+	if err = json.Unmarshal(body, porResponse); err != nil {
 		return nil, err
 	}
 

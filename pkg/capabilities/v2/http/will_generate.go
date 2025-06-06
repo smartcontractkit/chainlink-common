@@ -15,10 +15,9 @@ func ConsensusSendRequest[T, C any](
 	wcx *sdk.WorkflowContext[C],
 	runtime sdk.Runtime,
 	client *Client,
-	fn func(wcx *sdk.WorkflowContext[C], f *SendRequester) (T, error),
+	fn func(wcx *sdk.WorkflowContext[C], sendRequester *SendRequester) (T, error),
 	ca sdk.ConsensusAggregation[T]) sdk.Promise[T] {
 	return sdk.RunInNodeMode[C, T](wcx, runtime, func(wcx *sdk.WorkflowContext[C], nodeRuntime sdk.NodeRuntime) (T, error) {
-		fetcher := &SendRequester{rt: nodeRuntime, client: client}
-		return fn(wcx, fetcher)
+		return fn(wcx, &SendRequester{rt: nodeRuntime, client: client})
 	}, ca)
 }

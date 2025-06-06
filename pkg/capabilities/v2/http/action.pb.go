@@ -29,6 +29,7 @@ const (
 	Method_POST   Method = 1
 	Method_PUT    Method = 2
 	Method_DELETE Method = 3
+	Method_PATCH  Method = 4
 )
 
 // Enum value maps for Method.
@@ -38,12 +39,14 @@ var (
 		1: "POST",
 		2: "PUT",
 		3: "DELETE",
+		4: "PATCH",
 	}
 	Method_value = map[string]int32{
 		"GET":    0,
 		"POST":   1,
 		"PUT":    2,
 		"DELETE": 3,
+		"PATCH":  4,
 	}
 )
 
@@ -241,13 +244,14 @@ const file_capabilities_v2_http_action_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*0\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*;\n" +
 	"\x06Method\x12\a\n" +
 	"\x03GET\x10\x00\x12\b\n" +
 	"\x04POST\x10\x01\x12\a\n" +
 	"\x03PUT\x10\x02\x12\n" +
 	"\n" +
-	"\x06DELETE\x10\x032H\n" +
+	"\x06DELETE\x10\x03\x12\t\n" +
+	"\x05PATCH\x10\x042H\n" +
 	"\x06Client\x12\"\n" +
 	"\vSendRequest\x12\b.Request\x1a\t.Response\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@0.1.0BGZEgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/httpb\x06proto3"
 

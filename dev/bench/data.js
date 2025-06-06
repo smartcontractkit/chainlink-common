@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749227376903,
+  "lastUpdate": 1749236294370,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15120,6 +15120,48 @@ window.BENCHMARK_DATA = {
             "value": 28933,
             "unit": "ns/op",
             "extra": "42158 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbf13d4e5c0428ed03830c37e5e9cc39e2484602",
+          "message": "Seed random for setup and modes (#1236)",
+          "timestamp": "2025-06-06T14:57:10-04:00",
+          "tree_id": "e6b89b826d4e34831df20c61d2b128090cba5f5e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bbf13d4e5c0428ed03830c37e5e9cc39e2484602"
+        },
+        "date": 1749236293522,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357,
+            "unit": "ns/op",
+            "extra": "3378025 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 425.6,
+            "unit": "ns/op",
+            "extra": "2824537 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28633,
+            "unit": "ns/op",
+            "extra": "41594 times\n4 procs"
           }
         ]
       }

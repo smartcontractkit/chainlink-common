@@ -51,12 +51,12 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 	for key, value := range attributes {
 
 		// Retrieve source and type using either ChIP or legacy attribute names, prioritizing source/type
-		if key == "source" || (key == "beholder_domain" && sourceDomain == "") {
+		if key == "source" || (key == AttrKeyDomain && sourceDomain == "") {
 			if val, ok := value.(string); ok {
 				sourceDomain = val
 			}
 		}
-		if key == "type" || (key == "beholder_entity" && entityType == "") {
+		if key == "type" || (key == AttrKeyEntity && entityType == "") {
 			if val, ok := value.(string); ok {
 				entityType = val
 			}

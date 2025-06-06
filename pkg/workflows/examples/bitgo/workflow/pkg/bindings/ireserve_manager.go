@@ -55,7 +55,7 @@ func (ur UpdateReserves) WriteReport(runtime sdk.Runtime, updateReserves UpdateR
 	// 	sdk.Primitive
 	// }
 
-	body, err := iReserveManagerApi.Methods["updateReserves"].Inputs.Pack(updateReserves.TotalMinted, updateReserves.TotalReserve)
+	body, err := iReserveManagerApi.Methods["updateReserves"].Inputs.Pack(updateReserves)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.WriteReportReply](nil, err)
 	}

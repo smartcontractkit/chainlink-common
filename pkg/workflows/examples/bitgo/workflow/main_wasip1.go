@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	runner := wasm.NewRunner(sdk.ParseJson[*pkg.Config])
-	pkg.Workflow(runner)
+	runner := wasm.NewRunner(sdk.ParseJson[pkg.Config])
+	runner.Run(pkg.InitWorkflow)
 }

@@ -5,20 +5,15 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-type Workflows[C any] []BaseWorkflow[C, Runtime]
+type Workflows[C any] []Workflow[C]
+type Workflow[C any] = BaseWorkflow[C, Runtime]
 
 func (w *Workflows[C]) Register(workflow BaseWorkflow[C, Runtime]) {
 	*w = append(*w, workflow)
 }
 
-func OnValue[C any, M proto.Message, T Trigger[M], O any](trigger T, callback func(wcx *WorkflowContext[C], runtime Runtime, payload M) (O, error)) BaseWorkflow[C, Runtime] {
-	return onValue(trigger, callback)
-}
-
-func On[C any, M proto.Message, T Trigger[M]](trigger T, callback func(wcx *WorkflowContext[C], runtime Runtime, payload M) error) BaseWorkflow[C, Runtime] {
-	return onValue(trigger, func(wcx *WorkflowContext[C], runtime Runtime, payload M) (struct{}, error) {
-		return struct{}{}, callback(wcx, runtime, payload)
-	})
+func On[C any, M proto.Message, T Trigger[M], O any](trigger T, callback func(wcx *WorkflowContext[C], runtime Runtime, payload M) (O, error)) BaseWorkflow[C, Runtime] {
+	return on(trigger, callback)
 }
 
 // BaseWorkflow is meant to be used internally by the SDK to define workflows.
@@ -29,7 +24,7 @@ type BaseWorkflow[C, R any] interface {
 	Callback() func(wcx *WorkflowContext[C], runtime R, payload *anypb.Any) (any, error)
 }
 
-func onValue[R, C any, M proto.Message, T Trigger[M], O any](trigger T, callback func(wcx *WorkflowContext[C], runtime R, payload M) (O, error)) BaseWorkflow[C, R] {
+func on[R, C any, M proto.Message, T Trigger[M], O any](trigger T, callback func(wcx *WorkflowContext[C], runtime R, payload M) (O, error)) BaseWorkflow[C, R] {
 	wrapped := func(wcx *WorkflowContext[C], runtime R, payload *anypb.Any) (any, error) {
 		unwrappedTrigger := trigger.NewT()
 		if err := payload.UnmarshalTo(unwrappedTrigger); err != nil {

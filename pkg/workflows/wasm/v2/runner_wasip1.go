@@ -13,8 +13,8 @@ func sendResponse(response unsafe.Pointer, responseLen int32) int32
 //go:wasmimport env version_v2
 func versionV2()
 
-func NewDonRunner[T any](parse func(configBytes []byte) (T, error)) sdk.Runner {
-	return newRunner(parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
+func NewRunner[T any](parse func(configBytes []byte) (T, error)) sdk.Runner[T] {
+	return newRunner[T](parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
 }
 
 type runnerInternalsImpl struct{}

@@ -6,6 +6,7 @@ package loop.evm;
 import "google/protobuf/empty.proto";
 import "loop/chain-common/query.proto";
 import "values/pb/values.proto";
+import "google/protobuf/timestamp.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
@@ -84,6 +85,7 @@ message Log {
   uint32 tx_index = 8;  // index of transaction emmited the log
   uint32 index = 9;  // index of the Log within the intire block
   bool removed = 10;  // flag if the log was removed during reorg
+  uint32 chain_selector = 11;
 }
 
 // represents evm-style filter query

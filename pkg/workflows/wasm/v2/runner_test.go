@@ -54,7 +54,7 @@ func TestRunner_Run(t *testing.T) {
 		dr := getTestRunner(t, subscribeRequest)
 		dr.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 			return sdk.Workflows[string]{
-				sdk.OnValue(
+				sdk.On(
 					basictrigger.Basic{}.Trigger(testhelpers.TestWorkflowTriggerConfig()),
 					func(_ *sdk.WorkflowContext[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
 						require.Fail(t, "Must not be called during registration to tiggers")

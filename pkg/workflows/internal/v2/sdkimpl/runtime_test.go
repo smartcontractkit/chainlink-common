@@ -244,7 +244,7 @@ func TestRuntime_ReturnsConfig(t *testing.T) {
 
 	runner.Run(func(workflowContext *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 		return sdk.Workflows[string]{
-			sdk.OnValue(
+			sdk.On(
 				basictrigger.Basic{}.Trigger(&basictrigger.Config{Name: "name", Number: 123}),
 				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 					return wcx.Config, nil
@@ -270,7 +270,7 @@ func testRuntime[T any](t *testing.T, testFn func(wcx *sdk.WorkflowContext[strin
 	require.NoError(t, err)
 
 	runner.Run(func(workflowContext *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
-		return sdk.Workflows[string]{sdk.OnValue(
+		return sdk.Workflows[string]{sdk.On(
 			basictrigger.Basic{}.Trigger(anyConfig), testFn,
 		)}, nil
 	})

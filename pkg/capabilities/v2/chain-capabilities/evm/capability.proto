@@ -1,12 +1,28 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evm";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm";
 
 package cre.sdk.v2.evm;
 
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "chains/evm/evm.proto";
+
+enum ConfidenceLevel {
+  EARLY = 0;        // default, blocks that have a good level of confidence defined by chain, but not guaranteed to be included in the chain
+  BLOCK_DEPTH = 1;  // blocks that are lower than the BlockDepth parameter defined by user, which is a number of blocks to wait for confirmation
+  FINALIZED = 2;    // guaranteed to be included in the chain
+}
+
+message FilterLogTriggerRequest {
+  repeated bytes addresses = 1; // list of addresses to include in evm address [20]byte fix-sized array format, at least one address is required
+  repeated bytes event_sigs = 2; // list of possible signatures (aka topic1), in [32]byte fix-sized array format, at least one topic is required
+  repeated bytes topic2 = 3; // list of possible values for topic2, in [32]byte fix-sized array format, can be empty
+  repeated bytes topic3 = 4; // list of possible values for topic3, in [32]byte fix-sized array format, can be empty
+  repeated bytes topic4 = 5; // list of possible values for topic4, in [32]byte fix-sized array format, can be empty
+  ConfidenceLevel Confidence = 6; // optional, defaults to "EARLY"
+  uint64 BlockDepth = 7; // optional, defaults to particular value per chain (from a table), number of blocks to wait for confirmation
+}
 
 service Client {
   option (cre.metadata.capability) = {
@@ -24,6 +40,7 @@ service Client {
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc WriteReport(loop.evm.WriteReportRequest) returns (loop.evm.WriteReportReply);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.Log);
 }
 
 

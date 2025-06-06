@@ -272,3 +272,34 @@ func (c *Client) WriteReport(runtime sdk.Runtime, input *evm.WriteReportRequest)
 		}
 	})
 }
+
+func (c Client) LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log] {
+	configAny, _ := anypb.New(config)
+	return &clientLogTrigger{
+		config: configAny,
+		Client: c,
+	}
+}
+
+type clientLogTrigger struct {
+	config *anypb.Any
+	Client
+}
+
+func (*clientLogTrigger) IsTrigger() {}
+
+func (*clientLogTrigger) NewT() *evm.Log {
+	return &evm.Log{}
+}
+
+func (c *clientLogTrigger) CapabilityID() string {
+	return fmt.Sprintf("evm-%v@1.0.0", c.ChainSelector)
+}
+
+func (*clientLogTrigger) Method() string {
+	return "LogTrigger"
+}
+
+func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
+}

@@ -12,6 +12,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -480,6 +481,7 @@ type Log struct {
 	TxIndex       uint32                 `protobuf:"varint,8,opt,name=tx_index,json=txIndex,proto3" json:"tx_index,omitempty"`            // index of transaction emmited the log
 	Index         uint32                 `protobuf:"varint,9,opt,name=index,proto3" json:"index,omitempty"`                               // index of the Log within the intire block
 	Removed       bool                   `protobuf:"varint,10,opt,name=removed,proto3" json:"removed,omitempty"`                          // flag if the log was removed during reorg
+	ChainSelector uint32                 `protobuf:"varint,11,opt,name=chain_selector,json=chainSelector,proto3" json:"chain_selector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -582,6 +584,13 @@ func (x *Log) GetRemoved() bool {
 		return x.Removed
 	}
 	return false
+}
+
+func (x *Log) GetChainSelector() uint32 {
+	if x != nil {
+		return x.ChainSelector
+	}
+	return 0
 }
 
 // represents evm-style filter query
@@ -2528,7 +2537,7 @@ var File_chains_evm_evm_proto protoreflect.FileDescriptor
 
 const file_chains_evm_evm_proto_rawDesc = "" +
 	"\n" +
-	"\x14chains/evm/evm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\"\x84\x01\n" +
+	"\x14chains/evm/evm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x84\x01\n" +
 	"\fSignedReport\x12\x1d\n" +
 	"\n" +
 	"raw_report\x18\x01 \x01(\fR\trawReport\x12%\n" +
@@ -2554,7 +2563,7 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\x02to\x18\x02 \x01(\fR\x02to\x12\x12\n" +
 	"\x04data\x18\x03 \x01(\fR\x04data\"\x1e\n" +
 	"\x06Topics\x12\x14\n" +
-	"\x05topic\x18\x01 \x03(\fR\x05topic\"\x9d\x02\n" +
+	"\x05topic\x18\x01 \x03(\fR\x05topic\"\xc4\x02\n" +
 	"\x03Log\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\x12\x16\n" +
 	"\x06topics\x18\x02 \x03(\fR\x06topics\x12\x17\n" +
@@ -2567,7 +2576,8 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\btx_index\x18\b \x01(\rR\atxIndex\x12\x14\n" +
 	"\x05index\x18\t \x01(\rR\x05index\x12\x18\n" +
 	"\aremoved\x18\n" +
-	" \x01(\bR\aremoved\"\xcc\x01\n" +
+	" \x01(\bR\aremoved\x12%\n" +
+	"\x0echain_selector\x18\v \x01(\rR\rchainSelector\"\xcc\x01\n" +
 	"\vFilterQuery\x12\x1d\n" +
 	"\n" +
 	"block_hash\x18\x01 \x01(\fR\tblockHash\x12,\n" +

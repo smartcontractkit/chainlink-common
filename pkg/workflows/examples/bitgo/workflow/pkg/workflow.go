@@ -23,37 +23,76 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
-type Config struct {
-	EvmTokenAddress  string
-	EvmPorAddress    string
-	PublicKey        string
-	Schedule         string
-	Url              string
-	EvmChainSelector uint32
-	GasLimit         uint64
+type EvmConfig struct {
+	TokenAddress  string
+	PorAddress    string
+	ChainSelector uint32
+	GasLimit      uint64
 }
+
+type Config struct {
+	PublicKey string
+	Schedule  string
+	Url       string
+	Evms      []EvmConfig
+}
+
+var reserveAbi = bindings.NewIReserveManagerAbi()
 
 func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], error) {
 	config := wcx.Config
-	return sdk.Workflows[*Config]{
+	workflows := sdk.Workflows[*Config]{
 		sdk.On(
 			cron.Cron{}.Trigger(&cron.Config{Schedule: config.Schedule}),
 			onCronTrigger,
 		),
-		sdk.OnValue(
+		sdk.On(
 			http.Trigger{}.Request(),
 			onHttpTrigger,
 		),
-	}, nil
+	}
+
+	for _, evmConfig := range config.Evms {
+		address, err := hex.DecodeString(evmConfig.TokenAddress[2:])
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode token address %s: %w", evmConfig.TokenAddress, err)
+		}
+		workflow := sdk.On(
+			evmcappb.Client{ChainSelector: evmConfig.ChainSelector}.LogTrigger(&evmcappb.FilterLogTriggerRequest{
+				Addresses:  [][]byte{address},
+				EventSigs:  [][]byte{[]byte(reserveAbi.Events["RequestReserveUpdate"].Sig)},
+				Confidence: evmcappb.ConfidenceLevel_FINALIZED,
+			}),
+			onEvmTrigger,
+		)
+		workflows = append(workflows, workflow)
+	}
+
+	return workflows, nil
 }
 
 type httpTrigger struct {
 	Reason string `json:"reason"`
 }
 
-func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, payload *http.TriggerRequest) (*ReserveInfo, error) {
+func onEvmTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, log *evm.Log) (*ReserveInfo, error) {
+	a := bindings.NewIReserveManagerAbi()
+	// TODO verify unpack is right
+	wcx.Logger = wcx.Logger.With("trigger", "evm").With("selector", log.ChainSelector)
+	data, err := a.Events["RequestReserveUpdate"].Inputs.Unpack(log.Data)
+	if err != nil {
+		wcx.Logger.Error("failed to unpack event data", "err", err)
+		return nil, err
+	}
+	requestId := data[0].(*big.Int)
+
+	wcx.Logger = wcx.Logger.With("request id", requestId.String())
+	return doPor(wcx, runtime, time.Now())
+}
+
+func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, request *http.TriggerRequest) (*ReserveInfo, error) {
 	trigger := &httpTrigger{}
-	if err := json.Unmarshal(payload.Body, trigger); err != nil {
+	if err := json.Unmarshal(request.Body, trigger); err != nil {
 		wcx.Logger.Error("failed to unmarshal http trigger payload", "err", err)
 		return nil, err
 	}
@@ -62,21 +101,19 @@ func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, paylo
 	return doPor(wcx, runtime, time.Now())
 }
 
-func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.Payload) error {
+func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.Payload) (*ReserveInfo, error) {
 	wcx.Logger = wcx.Logger.With("trigger", "cron")
 	scheduledExecution, err := time.Parse(time.RFC3339Nano, trigger.ScheduledExecutionTime)
 	if err != nil {
 		wcx.Logger.Error("failed to parse scheduled execution time", "err", err)
-		return err
+		return nil, err
 	}
 
-	_, err = doPor(wcx, runtime, scheduledExecution)
-	return err
+	return doPor(wcx, runtime, scheduledExecution)
 }
 
 func doPor(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, runTime time.Time) (*ReserveInfo, error) {
 	logger := wcx.Logger
-	config := wcx.Config
 	client := &http.Client{}
 	reserveInfo, err := http.ConsensusSendRequest(
 		wcx,
@@ -96,47 +133,85 @@ func doPor(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, runTime time.
 		return nil, errors.New("reserved time is too old")
 	}
 
-	totalSupply := big.NewInt(0)
-
-	evmClient := &evmcappb.Client{ChainSelector: config.EvmChainSelector}
-
-	token := bindings.NewIERC20(bindings.ContractInputs{EVM: evmClient, Address: hexToBytes(config.EvmTokenAddress)})
-	reserveManager := bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: hexToBytes(config.EvmPorAddress), Options: &bindings.ContractOptions{
-		GasConfig: &evm.GasConfig{
-			GasLimit: config.GasLimit,
-		},
-	}})
-
-	evmTotalSupplyPromise := token.Methods.TotalSupply.Call(runtime, nil)
-	evmSupply, err := evmTotalSupplyPromise.Await()
-	if err != nil {
-		// TODO specify which EVM
-		logger.Error("Could not read from evm", "err", err.Error())
-		return nil, err
-	}
-
-	totalSupply = totalSupply.Add(totalSupply, evmSupply)
-	// TODO add other chains
+	totalSupply, err := getTotalSupply(wcx, runtime)
 
 	totalReserveScaled := reserveInfo.TotalReserve.Mul(decimal.NewFromUint64(10e18)).BigInt()
 
-	writeReportReplyPromise := reserveManager.Structs.UpdateReserves.WriteReport(runtime, bindings.UpdateReservesStruct{
-		TotalMinted:  totalSupply,
-		TotalReserve: totalReserveScaled,
-	}, nil)
-
-	writeReportReply, err := writeReportReplyPromise.Await()
-
-	var writeErrors []error
-	if err == nil {
-		txHash := writeReportReply.TxHash
-		logger.Debug("Submitted transaction", "tx hash", txHash)
-	} else {
-		logger.Error("failed to submit transaction", "err", err)
-		writeErrors = append(writeErrors, err)
+	if err = updateReserve(wcx, runtime, totalSupply, totalReserveScaled); err != nil {
+		return nil, err
 	}
 
-	return nil, errors.Join(writeErrors...)
+	return reserveInfo, nil
+}
+
+func getTotalSupply(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime) (*big.Int, error) {
+	// Fetch supply from all EVMs in parallel
+	evms := wcx.Config.Evms
+	logger := wcx.Logger
+	supplyPromises := make([]sdk.Promise[*big.Int], len(evms))
+	for i, evmConfig := range evms {
+		evmClient := &evmcappb.Client{ChainSelector: evmConfig.ChainSelector}
+
+		address, err := hexToBytes(evmConfig.TokenAddress)
+		if err != nil {
+			logger.Error("failed to decode token address", "address", evmConfig.TokenAddress, "err", err)
+			return nil, fmt.Errorf("failed to decode token address %s: %w", evmConfig.TokenAddress, err)
+		}
+		token := bindings.NewIERC20(bindings.ContractInputs{EVM: evmClient, Address: address})
+		evmTotalSupplyPromise := token.Methods.TotalSupply.Call(runtime, nil)
+		supplyPromises[i] = evmTotalSupplyPromise
+	}
+
+	// We can add sdk.AwaitAll that takes []sdk.Promise[T] and returns ([]T, error)
+	totalSupply := big.NewInt(0)
+	for i, promise := range supplyPromises {
+		supply, err := promise.Await()
+		if err != nil {
+			selector := evms[i].ChainSelector
+			logger.Error("Could not read from contract", "contract_chain", selector, "err", err.Error())
+			return nil, err
+		}
+
+		totalSupply = totalSupply.Add(totalSupply, supply)
+	}
+
+	return totalSupply, nil
+}
+
+func updateReserve(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, totalSupply, totalReserveScaled *big.Int) error {
+	evms := wcx.Config.Evms
+
+	reportWrites := make([]sdk.Promise[*evm.WriteReportReply], len(evms))
+	for i, evmConfig := range evms {
+		evmClient := &evmcappb.Client{ChainSelector: evmConfig.ChainSelector}
+
+		// Address must be parsable or the workflow would fail to initialize the trigger.
+		address, _ := hexToBytes(evmConfig.PorAddress)
+		reserveManager := bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: address, Options: &bindings.ContractOptions{
+			GasConfig: &evm.GasConfig{
+				GasLimit: evmConfig.GasLimit,
+			},
+		}})
+		reportWrites[i] = reserveManager.Structs.UpdateReserves.WriteReport(runtime, bindings.UpdateReservesStruct{
+			TotalMinted:  totalSupply,
+			TotalReserve: totalReserveScaled,
+		}, nil)
+	}
+
+	var errs []error
+	for i, promise := range reportWrites {
+		writeReportReply, err := promise.Await()
+		if err == nil {
+			wcx.Logger.Debug("update reserve write report reply", "chain_selector", evms[i].ChainSelector, "tx hash", writeReportReply.TxHash)
+		} else {
+			selector := evms[i].ChainSelector
+			wcx.Logger.Error("Could not write to contract", "contract_chain", selector, "err", err.Error())
+			errs = append(errs, fmt.Errorf("failed to write report for chain %d: %w", selector, err))
+			continue
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 func fetchPor(wcx *sdk.WorkflowContext[*Config], requester *http.SendRequester) (*ReserveInfo, error) {
@@ -208,11 +283,8 @@ func verifySignature(porResponse *PorResponse, publicKey string) error {
 	return nil
 }
 
-// HexToBytes converts a hex string to a byte array.
-// It returns the byte array and any error encountered.
-func hexToBytes(hexStr string) []byte {
-	bytes, _ := hex.DecodeString(hexStr[2:])
-	return bytes
+func hexToBytes(hexStr string) ([]byte, error) {
+	return hex.DecodeString(hexStr[2:])
 }
 
 type CommonReport struct {

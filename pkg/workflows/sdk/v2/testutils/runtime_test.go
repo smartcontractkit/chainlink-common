@@ -38,7 +38,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 		runner.SetMaxResponseSizeBytes(1)
 		runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 			return sdk.Workflows[string]{
-				sdk.OnValue(
+				sdk.On(
 					basictrigger.Basic{}.Trigger(&basictrigger.Config{}),
 					func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 						workflowAction1 := &basicaction.BasicAction{}
@@ -69,7 +69,7 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 
 	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 		return sdk.Workflows[string]{
-			sdk.OnValue(
+			sdk.On(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 					workflowAction1 := &basicaction.BasicAction{}
@@ -107,7 +107,7 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 
 	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 		return sdk.Workflows[string]{
-			sdk.OnValue(
+			sdk.On(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
@@ -148,7 +148,7 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 	anyValue := int32(100)
 	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 		return sdk.Workflows[string]{
-			sdk.OnValue(
+			sdk.On(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(
@@ -189,7 +189,7 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 	anyErr := errors.New("no consensus")
 	runner.Run(func(wcx *sdk.WorkflowContext[string]) (sdk.Workflows[string], error) {
 		return sdk.Workflows[string]{
-			sdk.OnValue(
+			sdk.On(
 				basictrigger.Basic{}.Trigger(anyConfig),
 				func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(

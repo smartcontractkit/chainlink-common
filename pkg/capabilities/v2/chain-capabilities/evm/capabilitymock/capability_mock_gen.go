@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -20,7 +21,7 @@ import (
 // avoid unused imports
 var _ = registry.Registry{}
 
-func NewClientCapability(t testing.TB, chainSelector uint32) (*ClientCapability, error) {
+func NewClientCapability(t testing.TB,  chainSelector uint32) (*ClientCapability, error) {
 	c := &ClientCapability{chainSelector: chainSelector}
 	reg := registry.GetRegistry(t)
 	err := reg.RegisterCapability(c)
@@ -29,6 +30,7 @@ func NewClientCapability(t testing.TB, chainSelector uint32) (*ClientCapability,
 
 type ClientCapability struct {
 	chainSelector uint32
+
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	CallContract func(ctx context.Context, input *evm.CallContractRequest) (*evm.CallContractReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
@@ -51,6 +53,8 @@ type ClientCapability struct {
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+
+	LogTrigger func(ctx context.Context, input *evm1.FilterLogTriggerRequest) (*evm.Log, error)
 }
 
 func (c *ClientCapability) ChainSelector() uint32 {
@@ -309,7 +313,36 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 }
 
 func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *sdkpb.TriggerSubscription) (*sdkpb.Trigger, error) {
-	return nil, fmt.Errorf("method %s not found", request.Method)
+	trigger := &sdkpb.Trigger{}
+	switch request.Method {
+	case "LogTrigger":
+		input := &evm1.FilterLogTriggerRequest{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			return nil, err
+		}
+
+		if cap.LogTrigger == nil {
+			return nil, registry.ErrNoTriggerStub("LogTrigger")
+		}
+
+		resp, err := cap.LogTrigger(ctx, input)
+		if err != nil {
+			return nil, err
+		} else {
+			if resp == nil {
+				return nil, nil
+			}
+
+			payload, err := anypb.New(resp)
+			if err != nil {
+				return nil, err
+			}
+			trigger.Payload = payload
+		}
+	default:
+		return nil, fmt.Errorf("method %s not found", request.Method)
+	}
+	return trigger, nil
 }
 
 func (cap *ClientCapability) ID() string {

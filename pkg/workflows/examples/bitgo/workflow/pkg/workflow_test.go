@@ -42,6 +42,7 @@ var testTime = time.Date(2025, 2, 3, 20, 37, 2, 552574000, time.UTC)
 const totalReserve = "11.56"
 
 const anyEvmChainSelector = uint32(123)
+const anyEvmChainSelector2 = uint32(555)
 
 func TestWorkflow_HappyPath(t *testing.T) {
 	err := ensureSignedJSON()
@@ -56,12 +57,21 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	config := &pkg.Config{
-		EvmTokenAddress:  "0x1234567890abcdef1234567890abcdef12345678",
-		EvmPorAddress:    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-		PublicKey:        string(pubKeyBytes),
-		Schedule:         "0 0 * * *",
-		Url:              "https://reserves.gousd.com/por.json",
-		EvmChainSelector: anyEvmChainSelector,
+		Evms: []pkg.EvmConfig{
+			{
+				TokenAddress:  "0x1234567890abcdef1234567890abcdef12345678",
+				PorAddress:    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+				ChainSelector: anyEvmChainSelector,
+			},
+			{
+				TokenAddress:  "0x87654321fedcba0987654321fedcba0987654321",
+				PorAddress:    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+				ChainSelector: anyEvmChainSelector2,
+			},
+		},
+		PublicKey: string(pubKeyBytes),
+		Schedule:  "0 0 * * *",
+		Url:       "https://reserves.gousd.com/por.json",
 	}
 
 	// New pattern, hide registry in a map from testingT to registry.
@@ -82,24 +92,12 @@ func TestWorkflow_HappyPath(t *testing.T) {
 		return &http.Response{Body: payload}, nil
 	}
 
-	numEvmTokens := new(big.Int).Mul(big.NewInt(103), big.NewInt(1e16))
-	totalTokens := numEvmTokens
-	evmMock, err := evmmock.NewClientCapability(t, config.EvmChainSelector)
-	require.NoError(t, err)
+	numEvmTokens1 := new(big.Int).Mul(big.NewInt(103), big.NewInt(1e16))
+	numEvmTokens2 := new(big.Int).Mul(big.NewInt(107), big.NewInt(1e16))
+	totalTokens := new(big.Int).Add(numEvmTokens1, numEvmTokens2)
 
-	erc20Mock := bindingsmock.NewIERC20Mock(common.HexToAddress(config.EvmTokenAddress), evmMock)
-	erc20Mock.TotalSupply = func() (*big.Int, error) { return numEvmTokens, nil }
-
-	reserveManager := bindingsmock.NewIReserverManagerMock(common.HexToAddress(config.EvmPorAddress), evmMock)
-	reserveManager.UpdateReserves = func(reserves *bindings.UpdateReservesStruct) error {
-		assert.Equal(t, totalTokens, reserves.TotalMinted)
-		reserve, err := decimal.NewFromString(totalReserve)
-		require.NoError(t, err)
-		reserve = reserve.Mul(decimal.New(10, 18))
-		assert.Equal(t, reserve.BigInt(), reserves.TotalReserve)
-		assert.Equal(t, totalTokens, reserves.TotalMinted)
-		return nil
-	}
+	setupEvmMock(t, config.Evms[0], numEvmTokens1, totalTokens)
+	setupEvmMock(t, config.Evms[1], numEvmTokens2, totalTokens)
 
 	runner := testutils.NewRunner(t, config)
 
@@ -108,6 +106,25 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	ok, _, err := runner.Result()
 	require.True(t, ok)
 	require.NoError(t, err)
+}
+
+func setupEvmMock(t *testing.T, config pkg.EvmConfig, supply, total *big.Int) {
+	evmMock, err := evmmock.NewClientCapability(t, config.ChainSelector)
+	require.NoError(t, err)
+
+	erc20Mock := bindingsmock.NewIERC20Mock(common.HexToAddress(config.TokenAddress), evmMock)
+	erc20Mock.TotalSupply = func() (*big.Int, error) { return supply, nil }
+
+	reserveManager := bindingsmock.NewIReserverManagerMock(common.HexToAddress(config.PorAddress), evmMock)
+	reserveManager.UpdateReserves = func(reserves *bindings.UpdateReservesStruct) error {
+		assert.Equal(t, total, reserves.TotalMinted)
+		reserve, err := decimal.NewFromString(totalReserve)
+		require.NoError(t, err)
+		reserve = reserve.Mul(decimal.New(10, 18))
+		assert.Equal(t, reserve.BigInt(), reserves.TotalReserve)
+		assert.Equal(t, total, reserves.TotalMinted)
+		return nil
+	}
 }
 
 func ensureSignedJSON() error {

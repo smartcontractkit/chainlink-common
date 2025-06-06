@@ -10,4 +10,5 @@ struct UpdateReserves {
 
 interface IReserveManager {
     function updateReserves(UpdateReserves memory updateReserves) external;
+    event RequestReserveUpdate(uint256 requestId);
 }

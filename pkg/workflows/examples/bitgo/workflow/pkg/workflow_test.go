@@ -29,6 +29,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -80,7 +81,7 @@ func TestWorkflow_HappyPath(t *testing.T) {
 	cronMock.Trigger = func(ctx context.Context, input *cron.Config) (*cron.Payload, error) {
 		assert.Equal(t, config.Schedule, input.Schedule)
 		triggerTime := testTime.Truncate(24 * time.Hour).Add(time.Hour * 24)
-		return &cron.Payload{ScheduledExecutionTime: triggerTime.Format(time.RFC3339Nano)}, nil
+		return &cron.Payload{ScheduledExecutionTime: timestamppb.New(triggerTime)}, nil
 	}
 
 	httpMock, err := httpmock.NewClientCapability(t)

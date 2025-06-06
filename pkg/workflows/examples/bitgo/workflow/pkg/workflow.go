@@ -90,13 +90,7 @@ func onHttpTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, reque
 
 func onCronTrigger(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, trigger *cron.Payload) (*ReserveInfo, error) {
 	wcx.Logger = wcx.Logger.With("trigger", "cron")
-	scheduledExecution, err := time.Parse(time.RFC3339Nano, trigger.ScheduledExecutionTime)
-	if err != nil {
-		wcx.Logger.Error("failed to parse scheduled execution time", "err", err)
-		return nil, err
-	}
-
-	return doPor(wcx, runtime, scheduledExecution)
+	return doPor(wcx, runtime, trigger.ScheduledExecutionTime.AsTime())
 }
 
 func doPor(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, runTime time.Time) (*ReserveInfo, error) {

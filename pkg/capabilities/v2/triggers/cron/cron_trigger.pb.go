@@ -10,6 +10,7 @@ import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -68,7 +69,7 @@ func (x *Config) GetSchedule() string {
 
 type Payload struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
-	ScheduledExecutionTime string                 `protobuf:"bytes,1,opt,name=scheduled_execution_time,json=scheduledExecutionTime,proto3" json:"scheduled_execution_time,omitempty"` // Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)
+	ScheduledExecutionTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=scheduled_execution_time,json=scheduledExecutionTime,proto3" json:"scheduled_execution_time,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -103,22 +104,22 @@ func (*Payload) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Payload) GetScheduledExecutionTime() string {
+func (x *Payload) GetScheduledExecutionTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ScheduledExecutionTime
 	}
-	return ""
+	return nil
 }
 
 var File_capabilities_v2_triggers_cron_cron_trigger_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDesc = "" +
 	"\n" +
-	"0capabilities/v2/triggers/cron/cron_trigger.proto\x12\x0fcron_trigger.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"$\n" +
+	"0capabilities/v2/triggers/cron/cron_trigger.proto\x12\x0fcron_trigger.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"$\n" +
 	"\x06Config\x12\x1a\n" +
-	"\bschedule\x18\x01 \x01(\tR\bschedule\"C\n" +
-	"\aPayload\x128\n" +
-	"\x18scheduled_execution_time\x18\x01 \x01(\tR\x16scheduledExecutionTime2h\n" +
+	"\bschedule\x18\x01 \x01(\tR\bschedule\"_\n" +
+	"\aPayload\x12T\n" +
+	"\x18scheduled_execution_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x16scheduledExecutionTime2h\n" +
 	"\x04Cron\x12F\n" +
 	"\aTrigger\x12\x17.cron_trigger.v1.Config\x1a\x18.cron_trigger.v1.Payload\"\x06\x8a\xb5\x18\x02\b\x010\x01\x1a\x18\x82\xb5\x18\x14\x12\x12cron-trigger@1.0.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cronb\x06proto3"
 
@@ -136,17 +137,19 @@ func file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescGZIP() []byte 
 
 var file_capabilities_v2_triggers_cron_cron_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_capabilities_v2_triggers_cron_cron_trigger_proto_goTypes = []any{
-	(*Config)(nil),  // 0: cron_trigger.v1.Config
-	(*Payload)(nil), // 1: cron_trigger.v1.Payload
+	(*Config)(nil),                // 0: cron_trigger.v1.Config
+	(*Payload)(nil),               // 1: cron_trigger.v1.Payload
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_capabilities_v2_triggers_cron_cron_trigger_proto_depIdxs = []int32{
-	0, // 0: cron_trigger.v1.Cron.Trigger:input_type -> cron_trigger.v1.Config
-	1, // 1: cron_trigger.v1.Cron.Trigger:output_type -> cron_trigger.v1.Payload
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: cron_trigger.v1.Payload.scheduled_execution_time:type_name -> google.protobuf.Timestamp
+	0, // 1: cron_trigger.v1.Cron.Trigger:input_type -> cron_trigger.v1.Config
+	1, // 2: cron_trigger.v1.Cron.Trigger:output_type -> cron_trigger.v1.Payload
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_v2_triggers_cron_cron_trigger_proto_init() }

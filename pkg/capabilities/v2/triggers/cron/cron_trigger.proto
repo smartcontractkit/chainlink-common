@@ -5,13 +5,14 @@ package cron_trigger.v1;
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron";
 
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "google/protobuf/timestamp.proto";
 
 message Config {
   string schedule = 1; // Cron schedule string
 }
 
 message Payload {
-  string scheduled_execution_time = 1; // Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)
+  google.protobuf.Timestamp scheduled_execution_time = 1;
 }
 
 service Cron {

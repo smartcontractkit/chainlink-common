@@ -264,7 +264,14 @@ func TestOCRTriggerEvent_ToMapFromMap(t *testing.T) {
 	t.Run("nil map", func(t *testing.T) {
 		event := &OCRTriggerEvent{}
 		err := event.FromMap(nil)
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "nil map")
+	})
+	t.Run("nil underlying map", func(t *testing.T) {
+		event := &OCRTriggerEvent{}
+		err := event.FromMap(&values.Map{
+			Underlying: nil,
+		})
+		assert.ErrorContains(t, err, "nil underlying map")
 	})
 
 }

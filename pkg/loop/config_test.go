@@ -1,8 +1,6 @@
 package loop
 
 import (
-	"maps"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -24,47 +22,37 @@ func TestEnvConfig_parse(t *testing.T) {
 		envVars     map[string]string
 		expectError bool
 
-		expectedDatabaseURL                    string
-		expectedDatabaseIdleInTxSessionTimeout time.Duration
-		expectedDatabaseLockTimeout            time.Duration
-		expectedDatabaseQueryTimeout           time.Duration
-		expectedDatabaseLogSQL                 bool
-		expectedDatabaseMaxOpenConns           int
-		expectedDatabaseMaxIdleConns           int
-
-		expectedPrometheusPort         int
-		expectedTracingEnabled         bool
-		expectedTracingCollectorTarget string
-		expectedTracingSamplingRatio   float64
-		expectedTracingTLSCertPath     string
-
-		expectedTelemetryEnabled                   bool
-		expectedTelemetryEndpoint                  string
-		expectedTelemetryInsecureConn              bool
-		expectedTelemetryCACertFile                string
-		expectedTelemetryAttributes                OtelAttributes
-		expectedTelemetryTraceSampleRatio          float64
-		expectedTelemetryAuthHeaders               map[string]string
-		expectedTelemetryAuthPubKeyHex             string
-		expectedTelemetryEmitterBatchProcessor     bool
-		expectedTelemetryEmitterExportTimeout      time.Duration
-		expectedTelemetryEmitterExportInterval     time.Duration
-		expectedTelemetryEmitterExportMaxBatchSize int
-		expectedTelemetryEmitterMaxQueueSize       int
-		expectedChipIngressEndpoint                string
+		expectConfig EnvConfig
 	}{
 		{
 			name: "All variables set correctly",
 			envVars: map[string]string{
-				envDatabaseURL:                    "postgres://user:password@localhost:5432/db",
-				envDatabaseIdleInTxSessionTimeout: "42s",
-				envDatabaseLockTimeout:            "8m",
-				envDatabaseQueryTimeout:           "7s",
-				envDatabaseLogSQL:                 "true",
-				envDatabaseMaxOpenConns:           "9999",
-				envDatabaseMaxIdleConns:           "8080",
+				envAppID:                                "app-id",
+				envDatabaseURL:                          "postgres://user:password@localhost:5432/db",
+				envDatabaseIdleInTxSessionTimeout:       "42s",
+				envDatabaseLockTimeout:                  "8m",
+				envDatabaseQueryTimeout:                 "7s",
+				envDatabaseListenerFallbackPollInterval: "17s",
+				envDatabaseLogSQL:                       "true",
+				envDatabaseMaxOpenConns:                 "9999",
+				envDatabaseMaxIdleConns:                 "8080",
 
-				envPromPort:                 "8080",
+				envFeatureLogPoller: "true",
+
+				envMercuryCacheLatestReportDeadline: "1ms",
+				envMercuryCacheLatestReportTTL:      "1µs",
+				envMercuryCacheMaxStaleAge:          "1ns",
+
+				envMercuryTransmitterProtocol:             "foo",
+				envMercuryTransmitterTransmitQueueMaxSize: "42",
+				envMercuryTransmitterTransmitTimeout:      "1s",
+				envMercuryTransmitterTransmitConcurrency:  "13",
+				envMercuryTransmitterReaperFrequency:      "1h",
+				envMercuryTransmitterReaperMaxAge:         "1m",
+				envMercuryVerboseLogging:                  "true",
+
+				envPromPort: "8080",
+
 				envTracingEnabled:           "true",
 				envTracingCollectorTarget:   "some:target",
 				envTracingSamplingRatio:     "1.0",
@@ -85,38 +73,11 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportInterval:     "2s",
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
-				envChipIngressEndpoint:                "http://chip-ingress.example.com",
+
+				envChipIngressEndpoint: "http://chip-ingress.example.com",
 			},
-			expectError: false,
-
-			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
-			expectedDatabaseIdleInTxSessionTimeout: 42 * time.Second,
-			expectedDatabaseLockTimeout:            8 * time.Minute,
-			expectedDatabaseQueryTimeout:           7 * time.Second,
-			expectedDatabaseLogSQL:                 true,
-			expectedDatabaseMaxOpenConns:           9999,
-			expectedDatabaseMaxIdleConns:           8080,
-
-			expectedPrometheusPort:         8080,
-			expectedTracingEnabled:         true,
-			expectedTracingCollectorTarget: "some:target",
-			expectedTracingSamplingRatio:   1.0,
-			expectedTracingTLSCertPath:     "internal/test/fixtures/client.pem",
-
-			expectedTelemetryEnabled:                   true,
-			expectedTelemetryEndpoint:                  "example.com/beholder",
-			expectedTelemetryInsecureConn:              true,
-			expectedTelemetryCACertFile:                "foo/bar",
-			expectedTelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
-			expectedTelemetryTraceSampleRatio:          0.42,
-			expectedTelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
-			expectedTelemetryAuthPubKeyHex:             "pub-key-hex",
-			expectedTelemetryEmitterBatchProcessor:     true,
-			expectedTelemetryEmitterExportTimeout:      1 * time.Second,
-			expectedTelemetryEmitterExportInterval:     2 * time.Second,
-			expectedTelemetryEmitterExportMaxBatchSize: 100,
-			expectedTelemetryEmitterMaxQueueSize:       1000,
-			expectedChipIngressEndpoint:                "http://chip-ingress.example.com",
+			expectError:  false,
+			expectConfig: envCfgFull,
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -152,164 +113,94 @@ func TestEnvConfig_parse(t *testing.T) {
 			err := config.parse()
 
 			if tc.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
+				require.Error(t, err)
 			} else {
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
-				} else {
-					if config.DatabaseURL.URL().String() != tc.expectedDatabaseURL {
-						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL.String())
-					}
-					if config.DatabaseIdleInTxSessionTimeout != tc.expectedDatabaseIdleInTxSessionTimeout {
-						t.Errorf("Expected Database idle in tx session timeout %s, got %s", tc.expectedDatabaseIdleInTxSessionTimeout, config.DatabaseIdleInTxSessionTimeout)
-					}
-					if config.DatabaseLockTimeout != tc.expectedDatabaseLockTimeout {
-						t.Errorf("Expected Database lock timeout %s, got %s", tc.expectedDatabaseLockTimeout, config.DatabaseLockTimeout)
-					}
-					if config.DatabaseQueryTimeout != tc.expectedDatabaseQueryTimeout {
-						t.Errorf("Expected Database query timeout %s, got %s", tc.expectedDatabaseQueryTimeout, config.DatabaseQueryTimeout)
-					}
-					if config.DatabaseLogSQL != tc.expectedDatabaseLogSQL {
-						t.Errorf("Expected Database log sql %t, got %t", tc.expectedDatabaseLogSQL, config.DatabaseLogSQL)
-					}
-					if config.DatabaseMaxOpenConns != tc.expectedDatabaseMaxOpenConns {
-						t.Errorf("Expected Database max open conns %d, got %d", tc.expectedDatabaseMaxOpenConns, config.DatabaseMaxOpenConns)
-					}
-					if config.DatabaseMaxIdleConns != tc.expectedDatabaseMaxIdleConns {
-						t.Errorf("Expected Database max idle conns %d, got %d", tc.expectedDatabaseMaxIdleConns, config.DatabaseMaxIdleConns)
-					}
-
-					if config.PrometheusPort != tc.expectedPrometheusPort {
-						t.Errorf("Expected Prometheus port %d, got %d", tc.expectedPrometheusPort, config.PrometheusPort)
-					}
-					if config.TracingEnabled != tc.expectedTracingEnabled {
-						t.Errorf("Expected tracingEnabled %v, got %v", tc.expectedTracingEnabled, config.TracingEnabled)
-					}
-					if config.TracingCollectorTarget != tc.expectedTracingCollectorTarget {
-						t.Errorf("Expected tracingCollectorTarget %s, got %s", tc.expectedTracingCollectorTarget, config.TracingCollectorTarget)
-					}
-					if config.TracingSamplingRatio != tc.expectedTracingSamplingRatio {
-						t.Errorf("Expected tracingSamplingRatio %f, got %f", tc.expectedTracingSamplingRatio, config.TracingSamplingRatio)
-					}
-					if config.TracingTLSCertPath != tc.expectedTracingTLSCertPath {
-						t.Errorf("Expected tracingTLSCertPath %s, got %s", tc.expectedTracingTLSCertPath, config.TracingTLSCertPath)
-					}
-					if config.TelemetryEnabled != tc.expectedTelemetryEnabled {
-						t.Errorf("Expected telemetryEnabled %v, got %v", tc.expectedTelemetryEnabled, config.TelemetryEnabled)
-					}
-					if config.TelemetryEndpoint != tc.expectedTelemetryEndpoint {
-						t.Errorf("Expected telemetryEndpoint %s, got %s", tc.expectedTelemetryEndpoint, config.TelemetryEndpoint)
-					}
-					if config.TelemetryInsecureConnection != tc.expectedTelemetryInsecureConn {
-						t.Errorf("Expected telemetryInsecureConn %v, got %v", tc.expectedTelemetryInsecureConn, config.TelemetryInsecureConnection)
-					}
-					if config.TelemetryCACertFile != tc.expectedTelemetryCACertFile {
-						t.Errorf("Expected telemetryCACertFile %s, got %s", tc.expectedTelemetryCACertFile, config.TelemetryCACertFile)
-					}
-					if !maps.Equal(config.TelemetryAttributes, tc.expectedTelemetryAttributes) {
-						t.Errorf("Expected telemetryAttributes %v, got %v", tc.expectedTelemetryAttributes, config.TelemetryAttributes)
-					}
-					if config.TelemetryTraceSampleRatio != tc.expectedTelemetryTraceSampleRatio {
-						t.Errorf("Expected telemetryTraceSampleRatio %f, got %f", tc.expectedTelemetryTraceSampleRatio, config.TelemetryTraceSampleRatio)
-					}
-					if !maps.Equal(config.TelemetryAuthHeaders, tc.expectedTelemetryAuthHeaders) {
-						t.Errorf("Expected telemetryAuthHeaders %v, got %v", tc.expectedTelemetryAuthHeaders, config.TelemetryAuthHeaders)
-					}
-					if config.TelemetryAuthPubKeyHex != tc.expectedTelemetryAuthPubKeyHex {
-						t.Errorf("Expected telemetryAuthPubKeyHex %s, got %s", tc.expectedTelemetryAuthPubKeyHex, config.TelemetryAuthPubKeyHex)
-					}
-					if config.TelemetryEmitterBatchProcessor != tc.expectedTelemetryEmitterBatchProcessor {
-						t.Errorf("Expected telemetryEmitterBatchProcessor %v, got %v", tc.expectedTelemetryEmitterBatchProcessor, config.TelemetryEmitterBatchProcessor)
-					}
-					if config.TelemetryEmitterExportTimeout != tc.expectedTelemetryEmitterExportTimeout {
-						t.Errorf("Expected telemetryEmitterExportTimeout %v, got %v", tc.expectedTelemetryEmitterExportTimeout, config.TelemetryEmitterExportTimeout)
-					}
-					if config.TelemetryEmitterExportInterval != tc.expectedTelemetryEmitterExportInterval {
-						t.Errorf("Expected telemetryEmitterExportInterval %v, got %v", tc.expectedTelemetryEmitterExportInterval, config.TelemetryEmitterExportInterval)
-					}
-					if config.TelemetryEmitterExportMaxBatchSize != tc.expectedTelemetryEmitterExportMaxBatchSize {
-						t.Errorf("Expected telemetryEmitterExportMaxBatchSize %d, got %d", tc.expectedTelemetryEmitterExportMaxBatchSize, config.TelemetryEmitterExportMaxBatchSize)
-					}
-					if config.TelemetryEmitterMaxQueueSize != tc.expectedTelemetryEmitterMaxQueueSize {
-						t.Errorf("Expected telemetryEmitterMaxQueueSize %d, got %d", tc.expectedTelemetryEmitterMaxQueueSize, config.TelemetryEmitterMaxQueueSize)
-					}
-					if config.ChipIngressEndpoint != tc.expectedChipIngressEndpoint {
-						t.Errorf("Expected ChipIngressEndpoint %s, got %s", tc.expectedChipIngressEndpoint, config.ChipIngressEndpoint)
-					}
-				}
+				require.NoError(t, err)
+				require.Equal(t, tc.expectConfig, config)
 			}
 		})
 	}
 }
 
-func equalOtelAttributes(a, b OtelAttributes) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if b[k] != v {
-			return false
-		}
-	}
-	return true
-}
+var envCfgFull = EnvConfig{
+	AppID: "app-id",
 
-func equalStringMaps(a, b map[string]string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if b[k] != v {
-			return false
-		}
-	}
-	return true
+	DatabaseURL:                          config.MustSecretURL("postgres://user:password@localhost:5432/db"),
+	DatabaseIdleInTxSessionTimeout:       42 * time.Second,
+	DatabaseLockTimeout:                  8 * time.Minute,
+	DatabaseQueryTimeout:                 7 * time.Second,
+	DatabaseListenerFallbackPollInterval: 17 * time.Second,
+	DatabaseLogSQL:                       true,
+	DatabaseMaxOpenConns:                 9999,
+	DatabaseMaxIdleConns:                 8080,
+
+	FeatureLogPoller: true,
+
+	MercuryCacheLatestReportDeadline: time.Millisecond,
+	MercuryCacheLatestReportTTL:      time.Microsecond,
+	MercuryCacheMaxStaleAge:          time.Nanosecond,
+
+	MercuryTransmitterProtocol:             "foo",
+	MercuryTransmitterTransmitQueueMaxSize: 42,
+	MercuryTransmitterTransmitTimeout:      time.Second,
+	MercuryTransmitterTransmitConcurrency:  13,
+	MercuryTransmitterReaperFrequency:      time.Hour,
+	MercuryTransmitterReaperMaxAge:         time.Minute,
+	MercuryVerboseLogging:                  true,
+
+	PrometheusPort: 8080,
+
+	TracingEnabled:         true,
+	TracingAttributes:      map[string]string{"XYZ": "value"},
+	TracingCollectorTarget: "some:target",
+	TracingSamplingRatio:   1.0,
+	TracingTLSCertPath:     "internal/test/fixtures/client.pem",
+
+	TelemetryEnabled:                   true,
+	TelemetryEndpoint:                  "example.com/beholder",
+	TelemetryInsecureConnection:        true,
+	TelemetryCACertFile:                "foo/bar",
+	TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+	TelemetryTraceSampleRatio:          0.42,
+	TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+	TelemetryAuthPubKeyHex:             "pub-key-hex",
+	TelemetryEmitterBatchProcessor:     true,
+	TelemetryEmitterExportTimeout:      1 * time.Second,
+	TelemetryEmitterExportInterval:     2 * time.Second,
+	TelemetryEmitterExportMaxBatchSize: 100,
+	TelemetryEmitterMaxQueueSize:       1000,
+
+	ChipIngressEndpoint: "http://chip-ingress.example.com",
 }
 
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
-	envCfg := EnvConfig{
-		DatabaseURL:    (*config.SecretURL)(&url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"}),
-		PrometheusPort: 9090,
-
-		TracingEnabled:         true,
-		TracingCollectorTarget: "http://localhost:9000",
-		TracingSamplingRatio:   0.1,
-		TracingTLSCertPath:     "some/path",
-		TracingAttributes:      map[string]string{"key": "value"},
-
-		TelemetryEnabled:                   true,
-		TelemetryEndpoint:                  "example.com/beholder",
-		TelemetryInsecureConnection:        true,
-		TelemetryCACertFile:                "foo/bar",
-		TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
-		TelemetryTraceSampleRatio:          0.42,
-		TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
-		TelemetryAuthPubKeyHex:             "pub-key-hex",
-		TelemetryEmitterBatchProcessor:     true,
-		TelemetryEmitterExportTimeout:      1 * time.Second,
-		TelemetryEmitterExportInterval:     2 * time.Second,
-		TelemetryEmitterExportMaxBatchSize: 100,
-		TelemetryEmitterMaxQueueSize:       1000,
-
-		ChipIngressEndpoint: "http://chip-ingress.example.com",
-	}
 	got := map[string]string{}
-	for _, kv := range envCfg.AsCmdEnv() {
+	for _, kv := range envCfgFull.AsCmdEnv() {
 		pair := strings.SplitN(kv, "=", 2)
 		require.Len(t, pair, 2)
 		got[pair[0]] = pair[1]
 	}
 
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
-	assert.Equal(t, strconv.Itoa(9090), got[envPromPort])
+
+	assert.Equal(t, "1ms", got[envMercuryCacheLatestReportDeadline])
+	assert.Equal(t, "1µs", got[envMercuryCacheLatestReportTTL])
+	assert.Equal(t, "1ns", got[envMercuryCacheMaxStaleAge])
+	assert.Equal(t, "foo", got[envMercuryTransmitterProtocol])
+	assert.Equal(t, "42", got[envMercuryTransmitterTransmitQueueMaxSize])
+	assert.Equal(t, "1s", got[envMercuryTransmitterTransmitTimeout])
+	assert.Equal(t, "13", got[envMercuryTransmitterTransmitConcurrency])
+	assert.Equal(t, "1h0m0s", got[envMercuryTransmitterReaperFrequency])
+	assert.Equal(t, "1m0s", got[envMercuryTransmitterReaperMaxAge])
+	assert.Equal(t, "true", got[envMercuryVerboseLogging])
+
+	assert.Equal(t, strconv.Itoa(8080), got[envPromPort])
 
 	assert.Equal(t, "true", got[envTracingEnabled])
-	assert.Equal(t, "http://localhost:9000", got[envTracingCollectorTarget])
-	assert.Equal(t, "0.1", got[envTracingSamplingRatio])
-	assert.Equal(t, "some/path", got[envTracingTLSCertPath])
-	assert.Equal(t, "value", got[envTracingAttribute+"key"])
+	assert.Equal(t, "some:target", got[envTracingCollectorTarget])
+	assert.Equal(t, "1", got[envTracingSamplingRatio])
+	assert.Equal(t, "internal/test/fixtures/client.pem", got[envTracingTLSCertPath])
+	assert.Equal(t, "value", got[envTracingAttribute+"XYZ"])
 
 	assert.Equal(t, "true", got[envTelemetryEnabled])
 	assert.Equal(t, "example.com/beholder", got[envTelemetryEndpoint])

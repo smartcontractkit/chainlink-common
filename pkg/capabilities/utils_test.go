@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -401,6 +402,12 @@ func TestRegisterTrigger(t *testing.T) {
 			// close the stop channel to cancel transforming
 			if gotEvents == wantEvents {
 				close(stop)
+				require.Eventually(t, func() bool {
+					_, isOpen := <-respCh
+					return !isOpen
+				}, 1*time.Second, 100*time.Millisecond)
+				require.True(t, gotEvents < sentEvents)
+				return
 			}
 
 			assert.Equal(t, "trigger-id", resp.Event.ID)
@@ -410,6 +417,5 @@ func TestRegisterTrigger(t *testing.T) {
 			require.NoError(t, resp.Event.Payload.UnmarshalTo(&gotTrigger))
 			require.Equal(t, fmt.Sprintf("id-%d", gotEvents), gotTrigger.Id)
 		}
-		require.Equal(t, wantEvents, gotEvents, fmt.Sprintf("expected %d events, got %d", wantEvents, gotEvents))
 	})
 }

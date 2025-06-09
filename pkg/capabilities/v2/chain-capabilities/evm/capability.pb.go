@@ -27,22 +27,22 @@ const (
 type ConfidenceLevel int32
 
 const (
-	ConfidenceLevel_EARLY       ConfidenceLevel = 0 // default, blocks that have a good level of confidence defined by chain, but not guaranteed to be included in the chain
-	ConfidenceLevel_BLOCK_DEPTH ConfidenceLevel = 1 // blocks that are lower than the BlockDepth parameter defined by user, which is a number of blocks to wait for confirmation
-	ConfidenceLevel_FINALIZED   ConfidenceLevel = 2 // guaranteed to be included in the chain
+	ConfidenceLevel_SAFE      ConfidenceLevel = 0
+	ConfidenceLevel_LATEST    ConfidenceLevel = 1
+	ConfidenceLevel_FINALIZED ConfidenceLevel = 2
 )
 
 // Enum value maps for ConfidenceLevel.
 var (
 	ConfidenceLevel_name = map[int32]string{
-		0: "EARLY",
-		1: "BLOCK_DEPTH",
+		0: "SAFE",
+		1: "LATEST",
 		2: "FINALIZED",
 	}
 	ConfidenceLevel_value = map[string]int32{
-		"EARLY":       0,
-		"BLOCK_DEPTH": 1,
-		"FINALIZED":   2,
+		"SAFE":      0,
+		"LATEST":    1,
+		"FINALIZED": 2,
 	}
 )
 
@@ -80,8 +80,7 @@ type FilterLogTriggerRequest struct {
 	Topic2        [][]byte               `protobuf:"bytes,3,rep,name=topic2,proto3" json:"topic2,omitempty"`                                              // list of possible values for topic2, in [32]byte fix-sized array format, can be empty
 	Topic3        [][]byte               `protobuf:"bytes,4,rep,name=topic3,proto3" json:"topic3,omitempty"`                                              // list of possible values for topic3, in [32]byte fix-sized array format, can be empty
 	Topic4        [][]byte               `protobuf:"bytes,5,rep,name=topic4,proto3" json:"topic4,omitempty"`                                              // list of possible values for topic4, in [32]byte fix-sized array format, can be empty
-	Confidence    ConfidenceLevel        `protobuf:"varint,6,opt,name=Confidence,proto3,enum=cre.sdk.v2.evm.ConfidenceLevel" json:"Confidence,omitempty"` // optional, defaults to "EARLY"
-	BlockDepth    uint64                 `protobuf:"varint,7,opt,name=BlockDepth,proto3" json:"BlockDepth,omitempty"`                                     // optional, defaults to particular value per chain (from a table), number of blocks to wait for confirmation
+	Confidence    ConfidenceLevel        `protobuf:"varint,6,opt,name=Confidence,proto3,enum=cre.sdk.v2.evm.ConfidenceLevel" json:"Confidence,omitempty"` // optional, defaults to "SAFE"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -155,21 +154,14 @@ func (x *FilterLogTriggerRequest) GetConfidence() ConfidenceLevel {
 	if x != nil {
 		return x.Confidence
 	}
-	return ConfidenceLevel_EARLY
-}
-
-func (x *FilterLogTriggerRequest) GetBlockDepth() uint64 {
-	if x != nil {
-		return x.BlockDepth
-	}
-	return 0
+	return ConfidenceLevel_SAFE
 }
 
 var File_capabilities_v2_chain_capabilities_evm_capability_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"\xff\x01\n" +
+	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"\xdf\x01\n" +
 	"\x17FilterLogTriggerRequest\x12\x1c\n" +
 	"\taddresses\x18\x01 \x03(\fR\taddresses\x12\x1d\n" +
 	"\n" +
@@ -179,13 +171,11 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x06topic4\x18\x05 \x03(\fR\x06topic4\x12?\n" +
 	"\n" +
 	"Confidence\x18\x06 \x01(\x0e2\x1f.cre.sdk.v2.evm.ConfidenceLevelR\n" +
-	"Confidence\x12\x1e\n" +
+	"Confidence*6\n" +
+	"\x0fConfidenceLevel\x12\b\n" +
+	"\x04SAFE\x10\x00\x12\n" +
 	"\n" +
-	"BlockDepth\x18\a \x01(\x04R\n" +
-	"BlockDepth*<\n" +
-	"\x0fConfidenceLevel\x12\t\n" +
-	"\x05EARLY\x10\x00\x12\x0f\n" +
-	"\vBLOCK_DEPTH\x10\x01\x12\r\n" +
+	"\x06LATEST\x10\x01\x12\r\n" +
 	"\tFINALIZED\x10\x022\xa9\a\n" +
 	"\x06Client\x12J\n" +
 	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +

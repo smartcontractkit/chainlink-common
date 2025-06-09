@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"math/rand"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -95,6 +96,10 @@ func TestRunInNodeMode_ErrorWrappingDefault(t *testing.T) {
 // mockNodeRuntime implements NodeRuntime for testing.
 type mockNodeRuntime struct{}
 
+func (m mockNodeRuntime) Rand() (*rand.Rand, error) {
+	panic("unused in tests")
+}
+
 func (m mockNodeRuntime) CallCapability(_ *pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
 	panic("unused in tests")
 }
@@ -114,6 +119,10 @@ func (m mockNodeRuntime) Logger() *slog.Logger {
 func (m mockNodeRuntime) IsNodeRuntime() {}
 
 type mockDonRuntime struct{}
+
+func (m *mockDonRuntime) Rand() (*rand.Rand, error) {
+	panic("unused in tests")
+}
 
 func (m *mockDonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	req := fn(mockNodeRuntime{})

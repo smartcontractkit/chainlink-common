@@ -28,6 +28,7 @@ type NewRelayerRequest struct {
 	Config               string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"` // toml (is chain instance config enough?)
 	KeystoreID           uint32                 `protobuf:"varint,2,opt,name=keystoreID,proto3" json:"keystoreID,omitempty"`
 	CapabilityRegistryID uint32                 `protobuf:"varint,3,opt,name=capabilityRegistryID,proto3" json:"capabilityRegistryID,omitempty"`
+	KeystoreCSAID        uint32                 `protobuf:"varint,4,opt,name=keystoreCSAID,proto3" json:"keystoreCSAID,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -79,6 +80,13 @@ func (x *NewRelayerRequest) GetKeystoreID() uint32 {
 func (x *NewRelayerRequest) GetCapabilityRegistryID() uint32 {
 	if x != nil {
 		return x.CapabilityRegistryID
+	}
+	return 0
+}
+
+func (x *NewRelayerRequest) GetKeystoreCSAID() uint32 {
+	if x != nil {
+		return x.KeystoreCSAID
 	}
 	return 0
 }
@@ -2509,13 +2517,14 @@ var File_loop_internal_pb_relayer_proto protoreflect.FileDescriptor
 
 const file_loop_internal_pb_relayer_proto_rawDesc = "" +
 	"\n" +
-	"\x1eloop/internal/pb/relayer.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a&loop/internal/pb/contract_reader.proto\"\x7f\n" +
+	"\x1eloop/internal/pb/relayer.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a&loop/internal/pb/contract_reader.proto\"\xa5\x01\n" +
 	"\x11NewRelayerRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12\x1e\n" +
 	"\n" +
 	"keystoreID\x18\x02 \x01(\rR\n" +
 	"keystoreID\x122\n" +
-	"\x14capabilityRegistryID\x18\x03 \x01(\rR\x14capabilityRegistryID\"/\n" +
+	"\x14capabilityRegistryID\x18\x03 \x01(\rR\x14capabilityRegistryID\x12$\n" +
+	"\rkeystoreCSAID\x18\x04 \x01(\rR\rkeystoreCSAID\"/\n" +
 	"\x0fNewRelayerReply\x12\x1c\n" +
 	"\trelayerID\x18\x01 \x01(\rR\trelayerID\"+\n" +
 	"\rAccountsReply\x12\x1a\n" +

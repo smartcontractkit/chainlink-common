@@ -359,13 +359,20 @@ func Test_Capabilities(t *testing.T) {
 		<-mtr.registerCalls
 		assert.NotNil(t, mtr.callback)
 
+		// cancel originating context
 		cancel()
 
-		// canceling the context does not unregister trigger
-		_, isOpen := <-ch
+		// send response on stream
+		mtr.callback <- capabilities.TriggerResponse{
+			Event: capabilities.TriggerEvent{
+				ID: "test-event",
+			},
+		}
+		gotTrigger, isOpen := <-ch
 		assert.True(t, isOpen)
+		assert.Equal(t, "test-event", gotTrigger.Event.ID)
 
-		// call unregister to unregister trigger
+		// call unregister to unregister trigger and close stream
 		err = ctr.UnregisterTrigger(t.Context(), capabilities.TriggerRegistrationRequest{})
 		require.NoError(t, err)
 

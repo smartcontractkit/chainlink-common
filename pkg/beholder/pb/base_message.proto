@@ -13,4 +13,10 @@ message BaseMessage {
   // https://protobuf.dev/programming-guides/proto3/#maps
   // In go: if Value is empty for a key, nothing will be serialized
   map<string, string> labels = 2;
+
+  // timestamp is set by the BaseMessage consumer.
+  // Ingestion timestamps should be applied downstream.
+  // Consumers composing BaseMessage are allowed to set timestamp,
+  // but downstream data consumers should respect the outermost message.
+  string timestamp = 3;
 }

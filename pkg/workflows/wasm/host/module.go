@@ -8,8 +8,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"math"
+	"math/rand"
 	"regexp"
 	"strings"
 	"sync"
@@ -86,13 +88,19 @@ type ModuleV2 interface {
 	ModuleBase
 
 	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
-	Execute(ctx context.Context, request *wasmpb.ExecuteRequest, handler CapabilityExecutor) (*wasmpb.ExecutionResult, error)
+	Execute(ctx context.Context, request *wasmpb.ExecuteRequest, handler ExecutionHelper) (*wasmpb.ExecutionResult, error)
 }
 
-// Implemented by the Workflow Engine
-type CapabilityExecutor interface {
-	// blocking call to the Workflow Engine
+// ExecutionHelper Implemented by those running the host, for example the Workflow Engine
+type ExecutionHelper interface {
+	// CallCapability blocking call to the Workflow Engine
 	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
+
+	GetId() string
+
+	GetNodeTime() time.Time
+
+	GetDONTime() time.Time
 }
 
 type module struct {
@@ -243,7 +251,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 }
 
 func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.ExecutionResult]) (*wasmtime.Instance, error) {
-	linker, err := newWasiLinker(m.cfg, m.engine)
+	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
 	}
@@ -290,11 +298,25 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.Executi
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
+	if err = linker.FuncWrap(
+		"env",
+		"switch_modes",
+		exec.switchModes); err != nil {
+		return nil, fmt.Errorf("error wrapping switchModes func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"random_seed",
+		exec.getSeed); err != nil {
+		return nil, fmt.Errorf("error wrapping getSeed func: %w", err)
+	}
+
 	return linker.Instantiate(store, m.module)
 }
 
 func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newWasiLinker(m.cfg, m.engine)
+	linker, err := newDagWasiLinker(m.cfg, m.engine)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +392,7 @@ func (m *module) IsLegacyDAG() bool {
 	return m.v2ImportName == ""
 }
 
-func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, executor CapabilityExecutor) (*wasmpb.ExecutionResult, error) {
+func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, executor ExecutionHelper) (*wasmpb.ExecutionResult, error) {
 	if m.IsLegacyDAG() {
 		return nil, errors.New("cannot execute a legacy dag workflow")
 	}
@@ -422,7 +444,7 @@ func runWasm[I, O proto.Message](
 	request I,
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
-	executor CapabilityExecutor) (O, error) {
+	helper ExecutionHelper) (O, error) {
 
 	var o O
 
@@ -468,11 +490,23 @@ func runWasm[I, O proto.Message](
 	deadline := *m.cfg.Timeout / m.cfg.TickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
+	h := fnv.New64a()
+	if helper != nil {
+		id := helper.GetId()
+		_, _ = h.Write([]byte(id))
+	}
+
+	donSeed := int64(h.Sum64())
+
+	_ = ctxWithTimeout
 	exec := &execution[O]{
-		ctx:                 ctxWithTimeout,
+		//ctx:                 ctxWithTimeout,
+		ctx:                 ctx,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		module:              m,
-		executor:            executor,
+		executor:            helper,
+		donSeed:             donSeed,
+		nodeSeed:            int64(rand.Uint64()),
 	}
 
 	instance, err := linkWasm(m, store, exec)

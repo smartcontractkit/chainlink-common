@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -35,18 +36,25 @@ func (f *mockBaseCapability) Info(ctx context.Context) (capabilities.CapabilityI
 var _ capabilities.TriggerExecutable = (*mockTriggerExecutable)(nil)
 
 type mockTriggerExecutable struct {
+	mu       sync.RWMutex
 	callback chan capabilities.TriggerResponse
 }
 
 func (f *mockTriggerExecutable) XXXTestingPushToCallbackChan(cr capabilities.TriggerResponse) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.callback <- cr
 }
 
 func (f *mockTriggerExecutable) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	return f.callback, nil
 }
 
 func (f *mockTriggerExecutable) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.callback = nil
 	return nil
 }
@@ -263,7 +271,9 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	err = triggerCap.UnregisterTrigger(t.Context(), capabilities.TriggerRegistrationRequest{})
 	require.NoError(t, err)
+	testTrigger.mu.RLock()
 	require.Nil(t, testTrigger.callback)
+	testTrigger.mu.RUnlock()
 
 	// Add capability Trigger
 	actionInfo := capabilities.CapabilityInfo{

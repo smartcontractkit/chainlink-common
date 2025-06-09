@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
@@ -277,38 +276,59 @@ type triggerExecutableClient struct {
 	grpc capabilitiespb.TriggerExecutableClient
 	*net.BrokerExt
 
-	// manage cleanup of forwarding response from stream
+	// manage cancelation of gRPC client stream by trigger ID
 	mu          sync.Mutex
 	cancelFuncs map[string]func()
 }
 
 func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	ch, cancel, err := t.registerTrigger(ctx, req)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	// if exists, clean up previous stream spawned for matching trigger ID
+	if prevCancel, ok := t.cancelFuncs[req.TriggerID]; ok {
+		prevCancel()
+		delete(t.cancelFuncs, req.TriggerID)
+	}
+
+	t.cancelFuncs[req.TriggerID] = cancel
+
+	return ch, nil
+}
+
+// registerTrigger returns a cancel func for shutting down the returned channel of trigger responses.
+func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, context.CancelFunc, error) {
+	// ctx will outlive the parent ctx to keep the gRPC client connection stream alive.
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(context.WithoutCancel(ctx))
 	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
 	if err != nil {
-		return nil, fmt.Errorf("error registering trigger: %w", err)
+		return nil, cancel, fmt.Errorf("error registering trigger: %w", err)
 	}
 
 	// In order to ensure the registration is successful, we need to wait for the first message from the server.
 	// This will be an ack or error message. If the error is not nil, we return an error.
 	ackMsg, err := responseStream.Recv()
 	if err != nil {
-		return nil, fmt.Errorf("failed to receive registering trigger ack message: %w", err)
+		return nil, cancel, fmt.Errorf("failed to receive registering trigger ack message: %w", err)
 	}
 
 	if ackMsg.GetAck() == nil {
-		return nil, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
+		return nil, cancel, errors.New(fmt.Sprintf("failed registering trigger: %s", ackMsg.GetResponse().GetError()))
 	}
 
-	ch, cleanup, err := forwardTriggerResponsesToChannel(t.Logger, req, responseStream.Recv)
+	ch, err := forwardTriggerResponsesToChannel(ctx, responseStream.Recv)
 	if err != nil {
-		return nil, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
+		return nil, cancel, fmt.Errorf("failed to start forwarding messages from stream: %w", err)
 	}
 
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.cancelFuncs[req.TriggerID] = cleanup
-
-	return ch, nil
+	return ch, cancel, nil
 }
 
 func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) error {
@@ -319,12 +339,12 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	cleanup, ok := t.cancelFuncs[req.TriggerID]
-	if !ok {
-		t.Logger.Warnw("attempted cleanup of not found trigger", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+	if cancel, ok := t.cancelFuncs[req.TriggerID]; ok {
+		cancel()
 		return nil
 	}
-	cleanup()
+
+	t.Logger.Warnw("attempted to cleanup stream that was not found", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
 	return nil
 }
 
@@ -493,17 +513,10 @@ func (c *executableClient) RegisterToWorkflow(ctx context.Context, req capabilit
 }
 
 func forwardTriggerResponsesToChannel(
-	lggr logger.Logger, req capabilities.TriggerRegistrationRequest,
+	ctx context.Context,
 	receive func() (*capabilitiespb.TriggerResponseMessage, error),
-) (<-chan capabilities.TriggerResponse, func(), error) {
-	ctx, cancel := context.WithCancel(context.Background())
+) (<-chan capabilities.TriggerResponse, error) {
 	responseCh := make(chan capabilities.TriggerResponse)
-
-	cleanup := func() {
-		defer lggr.Debugw("stopped forwarding trigger responses", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
-		cancel()
-		close(responseCh)
-	}
 
 	send := func(resp capabilities.TriggerResponse) {
 		select {
@@ -513,7 +526,7 @@ func forwardTriggerResponsesToChannel(
 	}
 
 	go func() {
-		defer cleanup()
+		defer close(responseCh)
 
 		for {
 			select {
@@ -554,5 +567,5 @@ func forwardTriggerResponsesToChannel(
 		}
 	}()
 
-	return responseCh, cancel, nil
+	return responseCh, nil
 }

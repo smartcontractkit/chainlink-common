@@ -31,7 +31,8 @@ type GatewayConnectorHandler interface {
 	Start(context.Context) error
 	// Close closes the GatewayConnectorHandler
 	Close() error
-	// TODO: revisit interface
+	// ID returns the unique identifier for the handler
 	ID() (string, error)
+	// HandleGatewayMessage is called when a message is received from a gateway
 	HandleGatewayMessage(ctx context.Context, gatewayID string, msg *gateway.Message) error
 }

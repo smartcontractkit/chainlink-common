@@ -55,9 +55,9 @@ func (c GatewayConnectorClient) AddHandler(methods []string, handler core.Gatewa
 		HandlerId: id,
 		Methods:   methods,
 	})
-	if err == nil {
+	if err != nil {
 		cRes.Close()
-		return err
+		return fmt.Errorf("failed to add handler: %w", err)
 	}
 	return nil
 }
@@ -144,12 +144,12 @@ func NewGatewayConnectorServer(b *net.BrokerExt, impl core.GatewayConnector) *Ga
 func (s GatewayConnectorServer) AddHandler(ctx context.Context, req *pb.AddHandlerRequest) (*emptypb.Empty, error) {
 	conn, err := s.Dial(req.HandlerId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial handler: %s: %w", req.HandlerId, err)
+		return nil, fmt.Errorf("failed to dial handler: %d: %w", req.HandlerId, err)
 	}
 	client := NewGatewayConnectorHandlerClient(conn)
 	err = s.impl.AddHandler(req.Methods, client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to add handler: %s: %w", req.HandlerId, err)
+		return nil, fmt.Errorf("failed to add handler: %d: %w", req.HandlerId, err)
 	}
 	return &emptypb.Empty{}, nil
 }

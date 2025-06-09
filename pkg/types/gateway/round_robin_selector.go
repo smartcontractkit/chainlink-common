@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO: move this to a common pacakage
 var ErrNoGateways = errors.New("no gateways available")
 
 type RoundRobinSelector struct {

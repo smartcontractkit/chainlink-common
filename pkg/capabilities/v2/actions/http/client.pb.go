@@ -8,8 +8,6 @@ package http
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	_ "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -24,10 +22,65 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Method int32
+
+const (
+	Method_GET    Method = 0
+	Method_POST   Method = 1
+	Method_PUT    Method = 2
+	Method_PATCH  Method = 3
+	Method_DELETE Method = 4
+)
+
+// Enum value maps for Method.
+var (
+	Method_name = map[int32]string{
+		0: "GET",
+		1: "POST",
+		2: "PUT",
+		3: "PATCH",
+		4: "DELETE",
+	}
+	Method_value = map[string]int32{
+		"GET":    0,
+		"POST":   1,
+		"PUT":    2,
+		"PATCH":  3,
+		"DELETE": 4,
+	}
+)
+
+func (x Method) Enum() *Method {
+	p := new(Method)
+	*p = x
+	return p
+}
+
+func (x Method) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Method) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_v2_actions_http_client_proto_enumTypes[0].Descriptor()
+}
+
+func (Method) Type() protoreflect.EnumType {
+	return &file_capabilities_v2_actions_http_client_proto_enumTypes[0]
+}
+
+func (x Method) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Method.Descriptor instead.
+func (Method) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_v2_actions_http_client_proto_rawDescGZIP(), []int{0}
+}
+
 type Request struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Method        Method                 `protobuf:"varint,2,opt,name=method,proto3,enum=Method" json:"method,omitempty"`
 	Headers       map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	TimeoutMs     int32                  `protobuf:"varint,5,opt,name=timeout_ms,json=timeoutMs,proto3" json:"timeout_ms,omitempty"`
@@ -72,11 +125,11 @@ func (x *Request) GetUrl() string {
 	return ""
 }
 
-func (x *Request) GetMethod() string {
+func (x *Request) GetMethod() Method {
 	if x != nil {
 		return x.Method
 	}
-	return ""
+	return Method_GET
 }
 
 func (x *Request) GetHeaders() map[string]string {
@@ -172,10 +225,10 @@ var File_capabilities_v2_actions_http_client_proto protoreflect.FileDescriptor
 
 const file_capabilities_v2_actions_http_client_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/actions/http/client.proto\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"\xd3\x01\n" +
+	")capabilities/v2/actions/http/client.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"\xdc\x01\n" +
 	"\aRequest\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12/\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1f\n" +
+	"\x06method\x18\x02 \x01(\x0e2\a.MethodR\x06method\x12/\n" +
 	"\aheaders\x18\x03 \x03(\v2\x15.Request.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1d\n" +
 	"\n" +
@@ -191,7 +244,14 @@ const file_capabilities_v2_actions_http_client_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012H\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*;\n" +
+	"\x06Method\x12\a\n" +
+	"\x03GET\x10\x00\x12\b\n" +
+	"\x04POST\x10\x01\x12\a\n" +
+	"\x03PUT\x10\x02\x12\t\n" +
+	"\x05PATCH\x10\x03\x12\n" +
+	"\n" +
+	"\x06DELETE\x10\x042H\n" +
 	"\x06Client\x12\"\n" +
 	"\vSendRequest\x12\b.Request\x1a\t.Response\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-actions@0.1.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
 
@@ -207,23 +267,26 @@ func file_capabilities_v2_actions_http_client_proto_rawDescGZIP() []byte {
 	return file_capabilities_v2_actions_http_client_proto_rawDescData
 }
 
+var file_capabilities_v2_actions_http_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capabilities_v2_actions_http_client_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_capabilities_v2_actions_http_client_proto_goTypes = []any{
-	(*Request)(nil),  // 0: Request
-	(*Response)(nil), // 1: Response
-	nil,              // 2: Request.HeadersEntry
-	nil,              // 3: Response.HeadersEntry
+	(Method)(0),      // 0: Method
+	(*Request)(nil),  // 1: Request
+	(*Response)(nil), // 2: Response
+	nil,              // 3: Request.HeadersEntry
+	nil,              // 4: Response.HeadersEntry
 }
 var file_capabilities_v2_actions_http_client_proto_depIdxs = []int32{
-	2, // 0: Request.headers:type_name -> Request.HeadersEntry
-	3, // 1: Response.headers:type_name -> Response.HeadersEntry
-	0, // 2: Client.SendRequest:input_type -> Request
-	1, // 3: Client.SendRequest:output_type -> Response
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // 0: Request.method:type_name -> Method
+	3, // 1: Request.headers:type_name -> Request.HeadersEntry
+	4, // 2: Response.headers:type_name -> Response.HeadersEntry
+	1, // 3: Client.SendRequest:input_type -> Request
+	2, // 4: Client.SendRequest:output_type -> Response
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_v2_actions_http_client_proto_init() }
@@ -236,13 +299,14 @@ func file_capabilities_v2_actions_http_client_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_actions_http_client_proto_rawDesc), len(file_capabilities_v2_actions_http_client_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_capabilities_v2_actions_http_client_proto_goTypes,
 		DependencyIndexes: file_capabilities_v2_actions_http_client_proto_depIdxs,
+		EnumInfos:         file_capabilities_v2_actions_http_client_proto_enumTypes,
 		MessageInfos:      file_capabilities_v2_actions_http_client_proto_msgTypes,
 	}.Build()
 	File_capabilities_v2_actions_http_client_proto = out.File

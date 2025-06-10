@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 )
@@ -125,21 +126,30 @@ const (
 	TxFatal
 )
 
-type ReceiverContractExecutionStatus int
+type TxError struct {
+	// Internal ID used for tracking purposes of transactions.
+    TxID string
+}
 
-const (
-	Reverted ReceiverContractExecutionStatus = iota
-	Success
-)
+func (e *TxError) Error() string {
+    return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
+}
 
-type WriteReportResult struct {
-	TxStatus                        TransactionStatus
-	ReceiverContractExecutionStatus ReceiverContractExecutionStatus
-	TxHash                          Hash
-	TxFee                           TransactionFee
+type TransactionResult struct {
+	TxStatus TransactionStatus
+	TxHash   Hash
 }
 
 type GasConfig struct {
-	GasLimit    uint64
+	// Default to nil. If not specified the value configured in GasEstimator will be used
+	GasLimit *uint64
+	// Default to nil. If not specified the value configured in GasEstimator will be used
 	MaxGasPrice *big.Int
+}
+
+type SubmitTransactionRequest struct {
+	To   Address
+	Data ABIPayload
+	// Default to nil. If not specified the configured gas estimator config will be used
+	GasConfig *GasConfig
 }

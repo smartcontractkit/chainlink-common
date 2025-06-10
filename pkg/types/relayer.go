@@ -140,7 +140,10 @@ type EVMService interface {
 	GetTxResult(ctx context.Context, txHash evm.Hash) (evm.TransactionStatus, error)
 
 	// WriteReport writes a transaction against a keystone forwarder contract
-	WriteReport(ctx context.Context, receiver evm.Address, signedReport evm.SignedReport, gasConfig evm.GasConfig) (*evm.WriteReportResult, error)
+	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
+
+	// Utility function to calculate the total fee based on a tx receipt
+	CalculateTransactionFee(ctx context.Context, receipt evm.Receipt) (*evm.TransactionFee, error)
 }
 
 // Relayer extends ChainService with providers for each product.

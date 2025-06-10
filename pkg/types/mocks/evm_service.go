@@ -89,6 +89,65 @@ func (_c *EVMService_BalanceAt_Call) RunAndReturn(run func(context.Context, [20]
 	return _c
 }
 
+// CalculateTransactionFee provides a mock function with given fields: ctx, receipt
+func (_m *EVMService) CalculateTransactionFee(ctx context.Context, receipt evm.Receipt) (*evm.TransactionFee, error) {
+	ret := _m.Called(ctx, receipt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CalculateTransactionFee")
+	}
+
+	var r0 *evm.TransactionFee
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, evm.Receipt) (*evm.TransactionFee, error)); ok {
+		return rf(ctx, receipt)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, evm.Receipt) *evm.TransactionFee); ok {
+		r0 = rf(ctx, receipt)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*evm.TransactionFee)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, evm.Receipt) error); ok {
+		r1 = rf(ctx, receipt)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_CalculateTransactionFee_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CalculateTransactionFee'
+type EVMService_CalculateTransactionFee_Call struct {
+	*mock.Call
+}
+
+// CalculateTransactionFee is a helper method to define mock.On call
+//   - ctx context.Context
+//   - receipt evm.Receipt
+func (_e *EVMService_Expecter) CalculateTransactionFee(ctx interface{}, receipt interface{}) *EVMService_CalculateTransactionFee_Call {
+	return &EVMService_CalculateTransactionFee_Call{Call: _e.mock.On("CalculateTransactionFee", ctx, receipt)}
+}
+
+func (_c *EVMService_CalculateTransactionFee_Call) Run(run func(ctx context.Context, receipt evm.Receipt)) *EVMService_CalculateTransactionFee_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(evm.Receipt))
+	})
+	return _c
+}
+
+func (_c *EVMService_CalculateTransactionFee_Call) Return(_a0 *evm.TransactionFee, _a1 error) *EVMService_CalculateTransactionFee_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_CalculateTransactionFee_Call) RunAndReturn(run func(context.Context, evm.Receipt) (*evm.TransactionFee, error)) *EVMService_CalculateTransactionFee_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CallContract provides a mock function with given fields: ctx, msg, blockNumber
 func (_m *EVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	ret := _m.Called(ctx, msg, blockNumber)
@@ -499,6 +558,63 @@ func (_c *EVMService_GetTransactionStatus_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
+// GetTxResult provides a mock function with given fields: ctx, txHash
+func (_m *EVMService) GetTxResult(ctx context.Context, txHash [32]byte) (evm.TransactionStatus, error) {
+	ret := _m.Called(ctx, txHash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTxResult")
+	}
+
+	var r0 evm.TransactionStatus
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) (evm.TransactionStatus, error)); ok {
+		return rf(ctx, txHash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, [32]byte) evm.TransactionStatus); ok {
+		r0 = rf(ctx, txHash)
+	} else {
+		r0 = ret.Get(0).(evm.TransactionStatus)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, [32]byte) error); ok {
+		r1 = rf(ctx, txHash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_GetTxResult_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTxResult'
+type EVMService_GetTxResult_Call struct {
+	*mock.Call
+}
+
+// GetTxResult is a helper method to define mock.On call
+//   - ctx context.Context
+//   - txHash [32]byte
+func (_e *EVMService_Expecter) GetTxResult(ctx interface{}, txHash interface{}) *EVMService_GetTxResult_Call {
+	return &EVMService_GetTxResult_Call{Call: _e.mock.On("GetTxResult", ctx, txHash)}
+}
+
+func (_c *EVMService_GetTxResult_Call) Run(run func(ctx context.Context, txHash [32]byte)) *EVMService_GetTxResult_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([32]byte))
+	})
+	return _c
+}
+
+func (_c *EVMService_GetTxResult_Call) Return(_a0 evm.TransactionStatus, _a1 error) *EVMService_GetTxResult_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_GetTxResult_Call) RunAndReturn(run func(context.Context, [32]byte) (evm.TransactionStatus, error)) *EVMService_GetTxResult_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // LatestAndFinalizedHead provides a mock function with given fields: ctx
 func (_m *EVMService) LatestAndFinalizedHead(ctx context.Context) (evm.Head, evm.Head, error) {
 	ret := _m.Called(ctx)
@@ -666,6 +782,65 @@ func (_c *EVMService_RegisterLogTracking_Call) Return(_a0 error) *EVMService_Reg
 }
 
 func (_c *EVMService_RegisterLogTracking_Call) RunAndReturn(run func(context.Context, evm.LPFilterQuery) error) *EVMService_RegisterLogTracking_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SubmitTransaction provides a mock function with given fields: ctx, txRequest
+func (_m *EVMService) SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error) {
+	ret := _m.Called(ctx, txRequest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SubmitTransaction")
+	}
+
+	var r0 *evm.TransactionResult
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, evm.SubmitTransactionRequest) (*evm.TransactionResult, error)); ok {
+		return rf(ctx, txRequest)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, evm.SubmitTransactionRequest) *evm.TransactionResult); ok {
+		r0 = rf(ctx, txRequest)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*evm.TransactionResult)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, evm.SubmitTransactionRequest) error); ok {
+		r1 = rf(ctx, txRequest)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_SubmitTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SubmitTransaction'
+type EVMService_SubmitTransaction_Call struct {
+	*mock.Call
+}
+
+// SubmitTransaction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - txRequest evm.SubmitTransactionRequest
+func (_e *EVMService_Expecter) SubmitTransaction(ctx interface{}, txRequest interface{}) *EVMService_SubmitTransaction_Call {
+	return &EVMService_SubmitTransaction_Call{Call: _e.mock.On("SubmitTransaction", ctx, txRequest)}
+}
+
+func (_c *EVMService_SubmitTransaction_Call) Run(run func(ctx context.Context, txRequest evm.SubmitTransactionRequest)) *EVMService_SubmitTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(evm.SubmitTransactionRequest))
+	})
+	return _c
+}
+
+func (_c *EVMService_SubmitTransaction_Call) Return(_a0 *evm.TransactionResult, _a1 error) *EVMService_SubmitTransaction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_SubmitTransaction_Call) RunAndReturn(run func(context.Context, evm.SubmitTransactionRequest) (*evm.TransactionResult, error)) *EVMService_SubmitTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }

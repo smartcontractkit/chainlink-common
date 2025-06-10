@@ -273,9 +273,10 @@ message WriteReportRequest {
 
 message WriteReportReply {
   TransactionStatus tx_status = 1;
-  ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
-  bytes tx_hash = 3;
-  values.BigInt transaction_fee = 4;
+  optional ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
+  optional bytes tx_hash = 3;
+  optional values.BigInt transaction_fee = 4;
+  optional string error_message = 5;
 }
 
 enum ReceiverContractExecutionStatus {

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,12 +23,10 @@ import (
 )
 
 const (
+	nodagBinaryLocation             = "test/nodag/singlehandler/cmd/testmodule.wasm"
+	nodagMultiTriggerBinaryLocation = "test/nodag/multihandler/cmd/testmodule.wasm"
 	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
-	nodagBinaryLocation             = nodagBinaryCmd + "/testmodule.wasm"
 	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
-	nodagMultiTriggerBinaryLocation = nodagMultiTriggerBinaryCmd + "/testmodule.wasm"
-	nodagRandomBinaryCmd            = "test/nodag/randoms/cmd"
-	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
 )
 
 var wordList = []string{"Hello, ", "world", "!"}
@@ -39,7 +36,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
-	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
+	t.Run("NOK fails with unset CapabilityExecutor for trigger", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
@@ -57,7 +54,7 @@ func Test_NoDag_Run(t *testing.T) {
 		require.ErrorContains(t, err, "invalid capability executor")
 	})
 
-	t.Run("OK can subscribe without setting ExecutionHelper", func(t *testing.T) {
+	t.Run("OK can subscribe without setting CapabilityExecutor", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
@@ -84,8 +81,7 @@ func Test_NoDag_Run(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		mockExecutionHelper := NewMockExecutionHelper(t)
-		mockExecutionHelper.EXPECT().GetId().Return("Id")
+		mockCapExecutor := NewMockCapabilityExecutor(t)
 
 		// wrap some common payload
 		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
@@ -101,7 +97,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 		for i := 1; i < len(wordList); i++ {
 			wantCapResp := newWantedCapResponse(i)
-			mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).
+			mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).
 				Run(
 					func(ctx context.Context, request *sdkpb.CapabilityRequest) {
 						require.Equal(t, "basic-test-action@1.0.0", request.Id)
@@ -125,7 +121,7 @@ func Test_NoDag_Run(t *testing.T) {
 			},
 		}
 
-		response, err := m.Execute(ctx, req, mockExecutionHelper)
+		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
 
 		logs := observer.TakeAll()
@@ -199,9 +195,9 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		m.Start()
 		defer m.Close()
 
-		mockExecutionHelper := NewMockExecutionHelper(t)
-		mockExecutionHelper.EXPECT().GetId().Return("Id")
+		mockCapExecutor := NewMockCapabilityExecutor(t)
 
+		// wrap some common payload
 		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
 			action := &basicaction.Outputs{AdaptedThing: wordList[i]}
 			anyAction, err := anypb.New(action)
@@ -215,7 +211,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 
 		for i := 1; i < len(wordList); i++ {
 			wantCapResp := newWantedCapResponse(i)
-			mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).
+			mockCapExecutor.EXPECT().CallCapability(mock.Anything, mock.Anything).
 				Run(
 					func(ctx context.Context, request *sdkpb.CapabilityRequest) {
 						require.Equal(t, "basic-test-action@1.0.0", request.Id)
@@ -238,7 +234,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 				},
 			},
 		}
-		response, err := m.Execute(ctx, req, mockExecutionHelper)
+		response, err := m.Execute(ctx, req, mockCapExecutor)
 		require.NoError(t, err)
 
 		switch output := response.Result.(type) {
@@ -255,100 +251,6 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	})
 }
 
-func Test_NoDag_Random(t *testing.T) {
-	t.Parallel()
-
-	mc := defaultNoDAGModCfg(t)
-	lggr, observed := logger.TestObserved(t, zapcore.DebugLevel)
-	mc.Logger = lggr
-
-	binary := createTestBinary(nodagRandomBinaryCmd, nodagRandomBinaryLocation, true, t)
-
-	m, err := NewModule(mc, binary)
-	require.NoError(t, err)
-
-	// Test binary executes node mode code conditionally based on the value >= 100
-	anyId := "Id"
-	gte100Exec := NewMockExecutionHelper(t)
-	gte100Exec.EXPECT().GetId().Return(anyId)
-	gte100 := &nodeaction.NodeOutputs{OutputThing: 120}
-	gte100Payload, err := anypb.New(gte100)
-	require.NoError(t, err)
-
-	gte100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).Return(&sdkpb.CapabilityResponse{
-		Response: &sdkpb.CapabilityResponse_Payload{
-			Payload: gte100Payload,
-		},
-	}, nil)
-
-	m.Start()
-	defer m.Close()
-
-	trigger := &basictrigger.Outputs{CoolOutput: "trigger1"}
-	triggerPayload, err := anypb.New(trigger)
-	require.NoError(t, err)
-	anyRequest := &wasmpb.ExecuteRequest{
-		Request: &wasmpb.ExecuteRequest_Trigger{
-			Trigger: &sdkpb.Trigger{
-				Id:      uint64(0),
-				Payload: triggerPayload,
-			},
-		},
-	}
-	execution1Result, err := m.Execute(t.Context(), anyRequest, gte100Exec)
-	require.NoError(t, err)
-	wrappedValue1, err := values.FromProto(execution1Result.GetValue())
-	require.NoError(t, err)
-	value1, err := wrappedValue1.Unwrap()
-	require.NoError(t, err)
-
-	t.Run("Same execution id gives the same randoms, even if random is called in node mode", func(t *testing.T) {
-		// Clear from any previous test
-		observed.TakeAll()
-
-		lt100Exec := NewMockExecutionHelper(t)
-		lt100Exec.EXPECT().GetId().Return(anyId)
-		lt100 := &nodeaction.NodeOutputs{OutputThing: 120}
-		lt100Payload, err := anypb.New(lt100)
-		require.NoError(t, err)
-
-		lt100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).Return(&sdkpb.CapabilityResponse{
-			Response: &sdkpb.CapabilityResponse_Payload{
-				Payload: lt100Payload,
-			},
-		}, nil)
-
-		exectuion2Result, err := m.Execute(t.Context(), anyRequest, lt100Exec)
-		require.NoError(t, err)
-		wrappedValue2, err := values.FromProto(exectuion2Result.GetValue())
-		require.NoError(t, err)
-		value2, err := wrappedValue2.Unwrap()
-		require.NoError(t, err)
-		require.Equal(t, value1, value2, "Expected the same random number to be generated for the same trigger")
-	})
-
-	t.Run("Different execution id give different randoms", func(t *testing.T) {
-		require.NoError(t, err)
-
-		gte100Exec2 := NewMockExecutionHelper(t)
-		gte100Exec2.EXPECT().GetId().Return("differentId")
-
-		gte100Exec2.EXPECT().CallCapability(mock.Anything, mock.Anything).Return(&sdkpb.CapabilityResponse{
-			Response: &sdkpb.CapabilityResponse_Payload{
-				Payload: gte100Payload,
-			},
-		}, nil)
-
-		executionResult2, err := m.Execute(t.Context(), anyRequest, gte100Exec2)
-		require.NoError(t, err)
-		wrappedValue2, err := values.FromProto(executionResult2.GetValue())
-		require.NoError(t, err)
-		value2, err := wrappedValue2.Unwrap()
-		require.NoError(t, err)
-		require.NotEqual(t, value1, value2, "Expected different random numbers for different triggers")
-	})
-}
-
 func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	return &ModuleConfig{
 		Logger:         logger.Test(t),
@@ -357,12 +259,10 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 }
 
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
-	helper := NewMockExecutionHelper(t)
-	helper.EXPECT().GetId().Return("Id")
 	execResult, err := m.Execute(t.Context(), &wasmpb.ExecuteRequest{
 		Config:  config,
 		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
-	}, helper)
+	}, NewMockCapabilityExecutor(t))
 
 	if err != nil {
 		return nil, err

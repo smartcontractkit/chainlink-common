@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"math/rand"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -18,7 +17,6 @@ type RuntimeBase interface {
 	Config() []byte
 	LogWriter() io.Writer
 	Logger() *slog.Logger
-	Rand() (*rand.Rand, error)
 }
 
 // NodeRuntime is not thread safe and must not be used concurrently.

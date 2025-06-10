@@ -19,8 +19,6 @@ type runtimeInternalsTestHook struct {
 	awaitResponseOverride func() ([]byte, error)
 	callCapabilityErr     bool
 	outstandingCalls      map[int32]sdk.Promise[*sdkpb.CapabilityResponse]
-	nodeSeed              int64
-	donSeed               int64
 }
 
 var _ runtimeInternals = (*runtimeInternalsTestHook)(nil)
@@ -119,15 +117,4 @@ func readHostMessage(response []byte, msg string, isError bool) int64 {
 	}
 
 	return written
-}
-
-func (r *runtimeInternalsTestHook) switchModes(_ int32) {}
-
-func (r *runtimeInternalsTestHook) getSeed(mode int32) int64 {
-	switch mode {
-	case int32(sdkpb.Mode_DON):
-		return r.donSeed
-	default:
-		return r.nodeSeed
-	}
 }

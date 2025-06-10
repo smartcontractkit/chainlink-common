@@ -3,7 +3,6 @@ package wasm
 import (
 	"context"
 	"errors"
-	"math/rand"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
@@ -80,30 +79,6 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 func TestRuntimeBase_LogWriter(t *testing.T) {
 	runtime := newTestRuntime(t, false, nil)
 	assert.IsType(t, &writer{}, runtime.LogWriter())
-}
-
-func Test_runtimeInternals_UsesSeeds(t *testing.T) {
-	anyDonSeed := int64(123456789)
-	anyNodeSeed := int64(987654321)
-	helper := &runtimeHelper{runtimeInternals: &runtimeInternalsTestHook{
-		donSeed:  anyDonSeed,
-		nodeSeed: anyNodeSeed,
-	}}
-	assertRnd(t, helper, sdkpb.Mode_DON, anyDonSeed)
-	assertRnd(t, helper, sdkpb.Mode_Node, anyNodeSeed)
-}
-
-func assertRnd(t *testing.T, helper *runtimeHelper, mode sdkpb.Mode, seed int64) {
-	rnd := rand.New(helper.GetSource(mode))
-	buff := make([]byte, 1000)
-	n, err := rnd.Read(buff)
-	require.NoError(t, err)
-	assert.Equal(t, len(buff), n)
-	expectedBuf := make([]byte, 1000)
-	n, err = rand.New(rand.NewSource(seed)).Read(expectedBuf)
-	require.NoError(t, err)
-	assert.Equal(t, len(expectedBuf), n)
-	assert.Equal(t, string(expectedBuf), string(buff))
 }
 
 func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride func() ([]byte, error)) sdkimpl.RuntimeBase {

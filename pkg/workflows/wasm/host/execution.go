@@ -16,11 +16,7 @@ type execution[T any] struct {
 	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
 	lock                 sync.RWMutex
 	module               *module
-	executor             ExecutionHelper
-	hasRun               bool
-	mode                 sdkpb.Mode
-	donSeed              int64
-	nodeSeed             int64
+	executor             CapabilityExecutor
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -85,22 +81,6 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 		lggr.Errorf("error calling log: %s", innerErr)
 		return
 	}
-
+	
 	lggr.Info(string(b))
-}
-
-func (e *execution[T]) getSeed(mode int32) int64 {
-	switch sdkpb.Mode(mode) {
-	case sdkpb.Mode_DON:
-		return e.donSeed
-	case sdkpb.Mode_Node:
-		return e.nodeSeed
-	}
-
-	return -1
-}
-
-func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
-	e.hasRun = true
-	e.mode = sdkpb.Mode(mode)
 }

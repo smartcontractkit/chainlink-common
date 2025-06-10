@@ -590,8 +590,8 @@ func Test_toEmissible(t *testing.T) {
 // CallAwaitRace validates that every call can be awaited.
 func Test_CallAwaitRace(t *testing.T) {
 	ctx := t.Context()
-	mockExecHelper := NewMockExecutionHelper(t)
-	mockExecHelper.EXPECT().
+	mockCapExec := NewMockCapabilityExecutor(t)
+	mockCapExec.EXPECT().
 		CallCapability(matches.AnyContext, mock.Anything).
 		Return(&sdkpb.CapabilityResponse{}, nil)
 
@@ -604,7 +604,7 @@ func Test_CallAwaitRace(t *testing.T) {
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		ctx:                 t.Context(),
-		executor:            mockExecHelper,
+		executor:            mockCapExec,
 	}
 
 	wg.Add(wantAttempts)

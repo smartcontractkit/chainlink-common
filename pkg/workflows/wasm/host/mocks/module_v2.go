@@ -57,7 +57,7 @@ func (_c *ModuleV2_Close_Call) RunAndReturn(run func()) *ModuleV2_Close_Call {
 }
 
 // Execute provides a mock function with given fields: ctx, request, handler
-func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest, handler host.ExecutionHelper) (*pb.ExecutionResult, error) {
+func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest, handler host.CapabilityExecutor) (*pb.ExecutionResult, error) {
 	ret := _m.Called(ctx, request, handler)
 
 	if len(ret) == 0 {
@@ -66,10 +66,10 @@ func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest, han
 
 	var r0 *pb.ExecutionResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest, host.ExecutionHelper) (*pb.ExecutionResult, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) (*pb.ExecutionResult, error)); ok {
 		return rf(ctx, request, handler)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest, host.ExecutionHelper) *pb.ExecutionResult); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) *pb.ExecutionResult); ok {
 		r0 = rf(ctx, request, handler)
 	} else {
 		if ret.Get(0) != nil {
@@ -77,7 +77,7 @@ func (_m *ModuleV2) Execute(ctx context.Context, request *pb.ExecuteRequest, han
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *pb.ExecuteRequest, host.ExecutionHelper) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) error); ok {
 		r1 = rf(ctx, request, handler)
 	} else {
 		r1 = ret.Error(1)
@@ -94,14 +94,14 @@ type ModuleV2_Execute_Call struct {
 // Execute is a helper method to define mock.On call
 //   - ctx context.Context
 //   - request *pb.ExecuteRequest
-//   - handler host.ExecutionHelper
+//   - handler host.CapabilityExecutor
 func (_e *ModuleV2_Expecter) Execute(ctx interface{}, request interface{}, handler interface{}) *ModuleV2_Execute_Call {
 	return &ModuleV2_Execute_Call{Call: _e.mock.On("Execute", ctx, request, handler)}
 }
 
-func (_c *ModuleV2_Execute_Call) Run(run func(ctx context.Context, request *pb.ExecuteRequest, handler host.ExecutionHelper)) *ModuleV2_Execute_Call {
+func (_c *ModuleV2_Execute_Call) Run(run func(ctx context.Context, request *pb.ExecuteRequest, handler host.CapabilityExecutor)) *ModuleV2_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*pb.ExecuteRequest), args[2].(host.ExecutionHelper))
+		run(args[0].(context.Context), args[1].(*pb.ExecuteRequest), args[2].(host.CapabilityExecutor))
 	})
 	return _c
 }
@@ -111,7 +111,7 @@ func (_c *ModuleV2_Execute_Call) Return(_a0 *pb.ExecutionResult, _a1 error) *Mod
 	return _c
 }
 
-func (_c *ModuleV2_Execute_Call) RunAndReturn(run func(context.Context, *pb.ExecuteRequest, host.ExecutionHelper) (*pb.ExecutionResult, error)) *ModuleV2_Execute_Call {
+func (_c *ModuleV2_Execute_Call) RunAndReturn(run func(context.Context, *pb.ExecuteRequest, host.CapabilityExecutor) (*pb.ExecutionResult, error)) *ModuleV2_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

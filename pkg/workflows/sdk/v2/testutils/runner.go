@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"math/rand"
 	"testing"
 
 	"github.com/google/uuid"
@@ -28,7 +27,6 @@ type runner[T any] struct {
 	runtime        T
 	writer         *testWriter
 	base           *sdkimpl.RuntimeBase
-	source         rand.Source
 }
 
 func (r *runner[T]) Logs() []string {
@@ -43,10 +41,6 @@ func (r *runner[T]) LogWriter() io.Writer {
 	return r.writer
 }
 
-func (r *runner[T]) SetRandSource(source rand.Source) {
-	r.source = source
-}
-
 type TestRunner interface {
 	Result() (bool, any, error)
 
@@ -59,8 +53,6 @@ type TestRunner interface {
 	SetMaxResponseSizeBytes(maxResponseSizebytes uint64)
 
 	Logs() []string
-
-	SetRandSource(source rand.Source)
 }
 
 type DonRunner interface {
@@ -75,18 +67,14 @@ type NodeRunner interface {
 
 func NewDonRunner(tb testing.TB, config []byte) DonRunner {
 	writer := &testWriter{}
-	drt := &sdkimpl.DonRuntime{}
-	r := newRunner[sdk.DonRuntime](tb, config, writer, drt, &drt.RuntimeBase)
-	drt.RuntimeBase = newRuntime(tb, config, writer, func() rand.Source { return r.source })
-	return r
+	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(tb, config, writer)}
+	return newRunner[sdk.DonRuntime](tb, config, writer, drt, &drt.RuntimeBase)
 }
 
 func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
 	writer := &testWriter{}
-	nrt := &sdkimpl.NodeRuntime{}
-	r := newRunner[sdk.NodeRuntime](tb, config, writer, nrt, &nrt.RuntimeBase)
-	nrt.RuntimeBase = newRuntime(tb, config, writer, func() rand.Source { return r.source })
-	return r
+	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(tb, config, writer)}
+	return newRunner[sdk.NodeRuntime](tb, config, writer, nrt, &nrt.RuntimeBase)
 }
 
 func newRunner[T any](tb testing.TB, config []byte, writer *testWriter, t T, base *sdkimpl.RuntimeBase) *runner[T] {
@@ -98,7 +86,6 @@ func newRunner[T any](tb testing.TB, config []byte, writer *testWriter, t T, bas
 		runtime:    t,
 		writer:     writer,
 		base:       base,
-		source:     rand.NewSource(1),
 	}
 
 	return r

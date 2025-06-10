@@ -17,39 +17,7 @@ var (
 	tick     = 100 * time.Millisecond
 )
 
-func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtime.Linker, error) {
-	linker := wasmtime.NewLinker(engine)
-	linker.AllowShadowing(true)
-
-	err := linker.DefineWasi()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
-	err = linker.FuncWrap(
-		"wasi_snapshot_preview1",
-		"poll_oneoff",
-		pollOneoff,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
-	err = linker.FuncWrap(
-		"wasi_snapshot_preview1",
-		"clock_time_get",
-		clockTimeGet,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return linker, nil
-}
-
-func newDagWasiLinker(modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Linker, error) {
+func newWasiLinker(modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Linker, error) {
 	linker := wasmtime.NewLinker(engine)
 	linker.AllowShadowing(true)
 

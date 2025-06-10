@@ -12,8 +12,6 @@ type runnerInternalsTestHook struct {
 	execId       string
 	arguments    []string
 	sentResponse []byte
-	modeSwitched bool
-	mode         int32
 }
 
 func (r *runnerInternalsTestHook) args() []string {
@@ -26,10 +24,5 @@ func (r *runnerInternalsTestHook) sendResponse(response unsafe.Pointer, response
 }
 
 func (r *runnerInternalsTestHook) versionV2() {}
-
-func (r *runnerInternalsTestHook) switchModes(mode int32) {
-	r.mode = mode
-	r.modeSwitched = true
-}
 
 var _ runnerInternals = (*runnerInternalsTestHook)(nil)

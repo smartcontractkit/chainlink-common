@@ -30,7 +30,12 @@ type BaseMessage struct {
 	Msg   string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 	// https://protobuf.dev/programming-guides/proto3/#maps
 	// In go: if Value is empty for a key, nothing will be serialized
-	Labels        map[string]string `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Labels map[string]string `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// timestamp is set by the BaseMessage consumer.
+	// Ingestion timestamps should be applied downstream.
+	// Consumers composing BaseMessage are allowed to set timestamp,
+	// but downstream data consumers should respect the outermost message.
+	Timestamp     string `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -79,14 +84,22 @@ func (x *BaseMessage) GetLabels() map[string]string {
 	return nil
 }
 
+func (x *BaseMessage) GetTimestamp() string {
+	if x != nil {
+		return x.Timestamp
+	}
+	return ""
+}
+
 var File_beholder_pb_base_message_proto protoreflect.FileDescriptor
 
 const file_beholder_pb_base_message_proto_rawDesc = "" +
 	"\n" +
-	"\x1ebeholder/pb/base_message.proto\x12\x02pb\"\x8f\x01\n" +
+	"\x1ebeholder/pb/base_message.proto\x12\x02pb\"\xad\x01\n" +
 	"\vBaseMessage\x12\x10\n" +
 	"\x03msg\x18\x01 \x01(\tR\x03msg\x123\n" +
-	"\x06labels\x18\x02 \x03(\v2\x1b.pb.BaseMessage.LabelsEntryR\x06labels\x1a9\n" +
+	"\x06labels\x18\x02 \x03(\v2\x1b.pb.BaseMessage.LabelsEntryR\x06labels\x12\x1c\n" +
+	"\ttimestamp\x18\x03 \x01(\tR\ttimestamp\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B?Z=github.com/smartcontractkit/chainlink-common/pkg/beholder/pb/b\x06proto3"

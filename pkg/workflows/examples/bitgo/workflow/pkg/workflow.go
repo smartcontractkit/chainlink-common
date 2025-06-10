@@ -57,7 +57,7 @@ func InitWorkflow(wcx *sdk.WorkflowContext[*Config]) (sdk.Workflows[*Config], er
 		}
 		evmClient := &evmcappb.Client{ChainSelector: evmConfig.ChainSelector}
 		workflow := sdk.On(
-			bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: address, Options: &bindings.ContractOptions{}}).Structs.UpdateReserves.RequestReserveUpdateTrigger(evmcappb.ConfidenceLevel_FINALIZED),
+			bindings.NewIReserveManager(bindings.ContractInputs{EVM: evmClient, Address: address, Options: &bindings.ContractOptions{}}).RequestReserveUpdateTrigger(evmcappb.ConfidenceLevel_FINALIZED),
 			onEvmTrigger,
 		)
 		workflows = append(workflows, workflow)
@@ -173,7 +173,7 @@ func updateReserve(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, total
 				GasLimit: evmConfig.GasLimit,
 			},
 		}})
-		reportWrites[i] = reserveManager.Structs.UpdateReserves.WriteReport(runtime, bindings.UpdateReservesStruct{
+		reportWrites[i] = reserveManager.WriteReportUpdateReserves(runtime, bindings.UpdateReservesStruct{
 			TotalMinted:  totalSupply,
 			TotalReserve: totalReserveScaled,
 		}, nil)

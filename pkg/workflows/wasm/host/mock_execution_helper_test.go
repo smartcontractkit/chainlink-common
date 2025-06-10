@@ -128,12 +128,12 @@ func (_c *MockExecutionHelper_GetDONTime_Call) RunAndReturn(run func() time.Time
 	return _c
 }
 
-// GetId provides a mock function with no fields
-func (_m *MockExecutionHelper) GetId() string {
+// GetID provides a mock function with no fields
+func (_m *MockExecutionHelper) GetID() string {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetId")
+		panic("no return value specified for GetID")
 	}
 
 	var r0 string
@@ -146,29 +146,29 @@ func (_m *MockExecutionHelper) GetId() string {
 	return r0
 }
 
-// MockExecutionHelper_GetId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetId'
-type MockExecutionHelper_GetId_Call struct {
+// MockExecutionHelper_GetID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetID'
+type MockExecutionHelper_GetID_Call struct {
 	*mock.Call
 }
 
-// GetId is a helper method to define mock.On call
-func (_e *MockExecutionHelper_Expecter) GetId() *MockExecutionHelper_GetId_Call {
-	return &MockExecutionHelper_GetId_Call{Call: _e.mock.On("GetId")}
+// GetID is a helper method to define mock.On call
+func (_e *MockExecutionHelper_Expecter) GetID() *MockExecutionHelper_GetID_Call {
+	return &MockExecutionHelper_GetID_Call{Call: _e.mock.On("GetID")}
 }
 
-func (_c *MockExecutionHelper_GetId_Call) Run(run func()) *MockExecutionHelper_GetId_Call {
+func (_c *MockExecutionHelper_GetID_Call) Run(run func()) *MockExecutionHelper_GetID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *MockExecutionHelper_GetId_Call) Return(_a0 string) *MockExecutionHelper_GetId_Call {
+func (_c *MockExecutionHelper_GetID_Call) Return(_a0 string) *MockExecutionHelper_GetID_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockExecutionHelper_GetId_Call) RunAndReturn(run func() string) *MockExecutionHelper_GetId_Call {
+func (_c *MockExecutionHelper_GetID_Call) RunAndReturn(run func() string) *MockExecutionHelper_GetID_Call {
 	_c.Call.Return(run)
 	return _c
 }

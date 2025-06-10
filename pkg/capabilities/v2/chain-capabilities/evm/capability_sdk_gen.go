@@ -247,3 +247,32 @@ func (c *Client) UnregisterLogTracking(runtime sdk.DonRuntime, input *evm.Unregi
 		}
 	})
 }
+
+func (c Client) LogTrigger(config *FilterLogTriggerRequest) sdk.DonTrigger[*evm.FilterLogsReply] {
+	configAny, _ := anypb.New(config)
+	return &clientLogTrigger{
+		config: configAny,
+	}
+}
+
+type clientLogTrigger struct {
+	config *anypb.Any
+}
+
+func (*clientLogTrigger) IsDonTrigger() {}
+
+func (*clientLogTrigger) NewT() *evm.FilterLogsReply {
+	return &evm.FilterLogsReply{}
+}
+
+func (*clientLogTrigger) CapabilityID() string {
+	return "evm@1.0.0"
+}
+
+func (*clientLogTrigger) Method() string {
+	return "LogTrigger"
+}
+
+func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
+}

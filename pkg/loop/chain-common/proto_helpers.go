@@ -178,8 +178,11 @@ func ConvertPrimitiveToProto(primitive primitives.Primitive, encodeValue ValueEn
 }
 
 func ConvertLimitAndSortFromProto(limitAndSort *LimitAndSort) (query.LimitAndSort, error) {
-	sortByArr := make([]query.SortBy, len(limitAndSort.SortBy))
+	if limitAndSort == nil {
+		return query.LimitAndSort{}, nil
+	}
 
+	sortByArr := make([]query.SortBy, len(limitAndSort.SortBy))
 	for idx, sortBy := range limitAndSort.SortBy {
 		switch sortBy.SortType {
 		case SortType_SortTimestamp:
@@ -193,9 +196,14 @@ func ConvertLimitAndSortFromProto(limitAndSort *LimitAndSort) (query.LimitAndSor
 		}
 	}
 
-	limit := limitAndSort.Limit
-	cursorDefined := limit.Cursor != nil
-	cursorDirectionDefined := limit.Direction != nil
+	cursorDefined := false
+	cursorDirectionDefined := false
+	limit := &Limit{}
+	if limitAndSort.Limit != nil {
+		limit = limitAndSort.Limit
+		cursorDefined = limit.Cursor != nil
+		cursorDirectionDefined = limit.Direction != nil
+	}
 
 	if cursorDefined && cursorDirectionDefined {
 		return query.NewLimitAndSort(query.CursorLimit(*limit.Cursor, (query.CursorDirection)(*limit.Direction), limit.Count)), nil

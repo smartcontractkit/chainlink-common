@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749236294370,
+  "lastUpdate": 1749552522935,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15162,6 +15162,48 @@ window.BENCHMARK_DATA = {
             "value": 28633,
             "unit": "ns/op",
             "extra": "41594 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "120329946+george-dorin@users.noreply.github.com",
+            "name": "george-dorin",
+            "username": "george-dorin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a1830e9317e9616f8e8fa93f1e971d8408cb9034",
+          "message": "Add nil underlying map check (#1243)",
+          "timestamp": "2025-06-10T13:47:24+03:00",
+          "tree_id": "11c9849e87e29ddfaabb9dfefe02860676398f17",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a1830e9317e9616f8e8fa93f1e971d8408cb9034"
+        },
+        "date": 1749552522083,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358,
+            "unit": "ns/op",
+            "extra": "3391441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 435.2,
+            "unit": "ns/op",
+            "extra": "2911024 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28531,
+            "unit": "ns/op",
+            "extra": "42076 times\n4 procs"
           }
         ]
       }

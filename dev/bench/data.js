@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749552522935,
+  "lastUpdate": 1749557662235,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15204,6 +15204,48 @@ window.BENCHMARK_DATA = {
             "value": 28531,
             "unit": "ns/op",
             "extra": "42076 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f0d618f73b03d75fead86953527525bdbc86eb2f",
+          "message": "Add relayerset mock and extra validation to limitAndSort proto helpers (#1245)",
+          "timestamp": "2025-06-10T14:13:03+02:00",
+          "tree_id": "a317fbe75b70820e3d5e6f2d63457d6ff76898a8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f0d618f73b03d75fead86953527525bdbc86eb2f"
+        },
+        "date": 1749557661390,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.8,
+            "unit": "ns/op",
+            "extra": "3361134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.5,
+            "unit": "ns/op",
+            "extra": "2879912 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28539,
+            "unit": "ns/op",
+            "extra": "42132 times\n4 procs"
           }
         ]
       }

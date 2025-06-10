@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749559020122,
+  "lastUpdate": 1749569494419,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15288,6 +15288,48 @@ window.BENCHMARK_DATA = {
             "value": 29260,
             "unit": "ns/op",
             "extra": "42126 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "96362174+chainchad@users.noreply.github.com",
+            "name": "chainchad",
+            "username": "chainchad"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "86a4a7db83ee2e9a3ec216bcadc99ed5c4f3f92c",
+          "message": "Create stale PR workflow (#1242)",
+          "timestamp": "2025-06-10T11:29:55-04:00",
+          "tree_id": "20ac6d153890f37570749d0674757446d87bd6b7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/86a4a7db83ee2e9a3ec216bcadc99ed5c4f3f92c"
+        },
+        "date": 1749569492912,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356,
+            "unit": "ns/op",
+            "extra": "3381406 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 436.4,
+            "unit": "ns/op",
+            "extra": "2945020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28429,
+            "unit": "ns/op",
+            "extra": "42128 times\n4 procs"
           }
         ]
       }

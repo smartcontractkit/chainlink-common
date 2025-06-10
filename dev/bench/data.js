@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749569494419,
+  "lastUpdate": 1749575583978,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15330,6 +15330,48 @@ window.BENCHMARK_DATA = {
             "value": 28429,
             "unit": "ns/op",
             "extra": "42128 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "67d52ef3a68393299043d029e81e8f03f51b7da7",
+          "message": "Update GetId to GeID in module.go, core fails lint otherwise (#1248)",
+          "timestamp": "2025-06-10T13:11:47-04:00",
+          "tree_id": "b3fa1047c964888264c42a66a2d413f936db8c4b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/67d52ef3a68393299043d029e81e8f03f51b7da7"
+        },
+        "date": 1749575582968,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.9,
+            "unit": "ns/op",
+            "extra": "3268468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.8,
+            "unit": "ns/op",
+            "extra": "2913840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28495,
+            "unit": "ns/op",
+            "extra": "42234 times\n4 procs"
           }
         ]
       }

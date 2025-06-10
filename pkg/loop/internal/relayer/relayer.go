@@ -260,7 +260,7 @@ func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 		}
 		return reply.ConfigProviderID, nil, nil
 	})
-	return ocr2.NewConfigProviderClient(r.WithName("ConfigProviderClient"), cc), nil
+	return ocr2.NewConfigProviderClient(r.WithName(rargs.ExternalJobID.String()).WithName("ConfigProviderClient"), cc), nil
 }
 
 func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.RelayArgs, pargs types.PluginArgs) (types.PluginProvider, error) {
@@ -285,9 +285,7 @@ func (r *relayerClient) NewPluginProvider(ctx context.Context, rargs types.Relay
 		return reply.PluginProviderID, nil, nil
 	})
 
-	broker := r.BrokerExt
-
-	return WrapProviderClientConnection(ctx, rargs.ProviderType, cc, broker)
+	return WrapProviderClientConnection(ctx, rargs.ProviderType, cc, r.WithName(rargs.ExternalJobID.String()).WithName("PluginProviderClient"))
 }
 
 type PluginProviderClient interface {

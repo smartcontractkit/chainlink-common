@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus/consensusmock"
@@ -110,8 +111,11 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			drt := rt.(*sdkimpl.Runtime)
-			drt.Await = func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
-				return nil, expectedErr
+			drt.RuntimeHelpers = &awaitOverride{
+				RuntimeHelpers: drt.RuntimeHelpers,
+				await: func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
+					return nil, expectedErr
+				},
 			}
 			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 			return "", err
@@ -133,8 +137,11 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			drt := rt.(*sdkimpl.Runtime)
-			drt.Await = func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
-				return &pb.AwaitCapabilitiesResponse{Responses: map[int32]*pb.CapabilityResponse{}}, nil
+			drt.RuntimeHelpers = &awaitOverride{
+				RuntimeHelpers: drt.RuntimeHelpers,
+				await: func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
+					return &pb.AwaitCapabilitiesResponse{Responses: map[int32]*pb.CapabilityResponse{}}, nil
+				},
 			}
 			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 			return "", err
@@ -142,6 +149,55 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		_, _, err = testRuntime(t, test)
 		assert.Error(t, err)
+	})
+}
+
+func TestRuntime_Rand(t *testing.T) {
+	t.Run("random delegates", func(t *testing.T) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
+			r, err := rt.Rand()
+			if err != nil {
+				return 0, err
+			}
+			return r.Uint64(), nil
+		}
+
+		ran, result, err := testRuntime(t, test)
+		require.NoError(t, err)
+		assert.True(t, ran)
+		assert.Equal(t, rand.New(rand.NewSource(1)).Uint64(), result)
+	})
+
+	t.Run("random does not allow use in the wrong mode", func(t *testing.T) {
+		test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
+			return sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], _ sdk.NodeRuntime) (uint64, error) {
+				if _, err := rt.Rand(); err != nil {
+					return 0, err
+				}
+
+				return 0, fmt.Errorf("should not be called in node mode")
+			}, sdk.ConsensusMedianAggregation[uint64]()).Await()
+		}
+
+		_, _, err := testRuntime(t, test)
+		require.Error(t, err)
+	})
+
+	t.Run("returned random panics if you use it in the wrong mode ", func(t *testing.T) {
+		assert.Panics(t, func() {
+			test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
+				r, err := rt.Rand()
+				if err != nil {
+					return 0, err
+				}
+				return sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], _ sdk.NodeRuntime) (uint64, error) {
+					r.Uint64()
+					return 0, fmt.Errorf("should not be called in node mode")
+				}, sdk.ConsensusMedianAggregation[uint64]()).Await()
+			}
+
+			_, _, _ = testRuntime(t, test)
+		})
 	})
 }
 
@@ -315,4 +371,13 @@ type consensusValues struct {
 	Observation int64
 	Err         error
 	Resp        int64
+}
+
+type awaitOverride struct {
+	sdkimpl.RuntimeHelpers
+	await func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error)
+}
+
+func (a *awaitOverride) Await(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
+	return a.await(request, maxResponseSize)
 }

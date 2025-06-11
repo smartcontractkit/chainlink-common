@@ -23,7 +23,7 @@ func (c *Consensus) Simple(runtime sdk.Runtime, input *pb1.SimpleConsensusInputs
 		return sdk.PromiseFromResult[*pb.Value](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "offchain_reporting@1.0.0",
+		Id:      "consensus@1.0.0",
 		Payload: wrapped,
 		Method:  "Simple",
 	}), func(i *sdkpb.CapabilityResponse) (*pb.Value, error) {

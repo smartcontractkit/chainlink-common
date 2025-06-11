@@ -25,22 +25,26 @@ func NewIReserveManagerAbi() abi.ABI {
 	return a
 }
 
+type IReserveManagerCodec interface {
+	
+}
+
+type iReserveManagerCodec struct {
+	abi abi.ABI
+}
+
 type IReserverManager struct {
-	Structs        Structs
+	codec IReserveManagerCodec
 	ContractInputs ContractInputs
 }
 
-type Structs struct {
-	UpdateReserves UpdateReserves
+func NewIReserveManagerCodec() (IReserveManagerCodec, error) {
+	return iReserveManagerCodec{abi: NewIReserveManagerAbi()}, nil	
 }
 
 func NewIReserveManager(contracInputs ContractInputs) IReserverManager {
-	reserveManager := IReserverManager{ContractInputs: contracInputs}
-	reserveManager.Structs = Structs{
-		UpdateReserves: UpdateReserves{
-			reserveManager: &reserveManager,
-		},
-	}
+	codec, _ := NewIReserveManagerCodec()
+	reserveManager := IReserverManager{ContractInputs: contracInputs, codec: codec}
 	return reserveManager
 }
 
@@ -53,7 +57,7 @@ type UpdateReservesStruct struct {
 	TotalReserve *big.Int
 }
 
-func (ur UpdateReserves) WriteReport(runtime sdk.Runtime, updateReserves UpdateReservesStruct, options *WriteOptions) sdk.Promise[*evm.WriteReportReply] {
+func (irm IReserverManager) WriteReportUpdateReserves(runtime sdk.Runtime, updateReserves UpdateReservesStruct, options *WriteOptions) sdk.Promise[*evm.WriteReportReply] {
 	// if ur.reserveManager.gasConfig == nil && options.GasConfig == nil {
 	// 	sdk.Primitive
 	// }
@@ -63,9 +67,9 @@ func (ur UpdateReserves) WriteReport(runtime sdk.Runtime, updateReserves UpdateR
 		return sdk.PromiseFromResult[*evm.WriteReportReply](nil, err)
 	}
 
-	commonReport := GenerateReport(ur.reserveManager.ContractInputs.EVM.ChainSelector, body)
-	writeReportReplyPromise := ur.reserveManager.ContractInputs.EVM.WriteReport(runtime, &evm.WriteReportRequest{
-		Receiver: ur.reserveManager.ContractInputs.Address,
+	commonReport := GenerateReport(irm.ContractInputs.EVM.ChainSelector, body)
+	writeReportReplyPromise := irm.ContractInputs.EVM.WriteReport(runtime, &evm.WriteReportRequest{
+		Receiver: irm.ContractInputs.Address,
 		Report: &evm.SignedReport{
 			RawReport:     commonReport.RawReport,
 			ReportContext: commonReport.ReportContext,
@@ -77,9 +81,9 @@ func (ur UpdateReserves) WriteReport(runtime sdk.Runtime, updateReserves UpdateR
 	return writeReportReplyPromise
 }
 
-func (ur UpdateReserves) RequestReserveUpdateTrigger(confidence evmcappb.ConfidenceLevel) sdk.Trigger[*evm.Log, *RequestReserveUpdateLog] {
-	evmTrigger := ur.reserveManager.ContractInputs.EVM.LogTrigger(&evmcappb.FilterLogTriggerRequest{
-		Addresses:  [][]byte{ur.reserveManager.ContractInputs.Address},
+func (irm IReserverManager) RequestReserveUpdateTrigger(confidence evmcappb.ConfidenceLevel) sdk.Trigger[*evm.Log, *RequestReserveUpdateLog] {
+	evmTrigger := irm.ContractInputs.EVM.LogTrigger(&evmcappb.FilterLogTriggerRequest{
+		Addresses:  [][]byte{irm.ContractInputs.Address},
 		EventSigs:  [][]byte{[]byte(iReserveManagerApi.Events["RequestReserveUpdate"].Sig)},
 		Confidence: confidence,
 	})

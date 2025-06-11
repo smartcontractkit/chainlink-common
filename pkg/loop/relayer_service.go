@@ -22,13 +22,13 @@ type RelayerService struct {
 
 // NewRelayerService returns a new [*RelayerService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
+func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
 	newService := func(ctx context.Context, instance any) (Relayer, services.HealthReporter, error) {
 		plug, ok := instance.(PluginRelayer)
 		if !ok {
 			return nil, nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
 		}
-		r, err := plug.NewRelayer(ctx, config, keystore, capabilityRegistry)
+		r, err := plug.NewRelayer(ctx, config, keystore, csaKeystore, capabilityRegistry)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
 		}

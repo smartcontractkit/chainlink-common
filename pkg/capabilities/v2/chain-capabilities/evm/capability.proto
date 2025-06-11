@@ -38,5 +38,9 @@ service Client {
   rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.Log);
+  rpc IsTxFinalized(loop.evm.IsTxFinalizedRequest) returns (loop.evm.IsTxFinalizedReply);
+  rpc WriteReport(loop.evm.WriteReportRequest) returns (loop.evm.WriteReportReply);
+
 }
+
+

@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"errors"
+	"math/rand"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -12,6 +13,7 @@ import (
 type RuntimeBase interface {
 	// CallCapability is meant to be called by generated code
 	CallCapability(request *pb.CapabilityRequest) Promise[*pb.CapabilityResponse]
+	Rand() (*rand.Rand, error)
 }
 
 // NodeRuntime is not thread safe and must not be used concurrently.

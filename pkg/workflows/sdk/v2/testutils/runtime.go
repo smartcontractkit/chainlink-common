@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus/consensusmock"
@@ -15,9 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func newRuntime(tb testing.TB) sdkimpl.RuntimeBase {
-	tb.Cleanup(func() { delete(calls, tb) })
-
+func newRuntime(tb testing.TB, sourceFn func() rand.Source) sdkimpl.RuntimeBase {
 	defaultConsensus, err := consensusmock.NewConsensusCapability(tb)
 
 	// Do not override if the user provided their own consensus method
@@ -27,8 +26,7 @@ func newRuntime(tb testing.TB) sdkimpl.RuntimeBase {
 
 	return sdkimpl.RuntimeBase{
 		MaxResponseSize: sdk.DefaultMaxResponseSizeBytes,
-		Call:            createCallCapability(tb),
-		Await:           createAwaitCapabilities(tb),
+		RuntimeHelpers:  &runtimeHelpers{tb: tb, calls: map[int32]chan *pb.CapabilityResponse{}, sourceFn: sourceFn},
 	}
 }
 
@@ -47,59 +45,55 @@ func defaultSimpleConsensus(_ context.Context, input *pb.SimpleConsensusInputs) 
 	}
 }
 
-var calls = map[testing.TB]map[int32]chan *pb.CapabilityResponse{}
-
-func createCallCapability(tb testing.TB) func(request *pb.CapabilityRequest) error {
-	return func(request *pb.CapabilityRequest) error {
-		reg := registry.GetRegistry(tb)
-		capability, err := reg.GetCapability(request.Id)
-		if err != nil {
-			return err
-		}
-
-		respCh := make(chan *pb.CapabilityResponse, 1)
-		tbCalls, ok := calls[tb]
-		if !ok {
-			tbCalls = map[int32]chan *pb.CapabilityResponse{}
-			calls[tb] = tbCalls
-		}
-		tbCalls[request.CallbackId] = respCh
-		go func() {
-			respCh <- capability.Invoke(tb.Context(), request)
-		}()
-		return nil
-	}
+type runtimeHelpers struct {
+	tb       testing.TB
+	calls    map[int32]chan *pb.CapabilityResponse
+	sourceFn func() rand.Source
 }
 
-func createAwaitCapabilities(tb testing.TB) sdkimpl.AwaitCapabilitiesFn {
-	return func(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
-		response := &pb.AwaitCapabilitiesResponse{Responses: map[int32]*pb.CapabilityResponse{}}
-
-		testCalls, ok := calls[tb]
-		if !ok {
-			return nil, errors.New("no calls found for this test")
-		}
-
-		var errs []error
-		for _, id := range request.Ids {
-			ch, ok := testCalls[id]
-			if !ok {
-				errs = append(errs, fmt.Errorf("no call found for %d", id))
-				continue
-			}
-			select {
-			case resp := <-ch:
-				response.Responses[id] = resp
-			case <-tb.Context().Done():
-				return nil, tb.Context().Err()
-			}
-		}
-
-		bytes, _ := proto.Marshal(response)
-		if len(bytes) > int(maxResponseSize) {
-			return nil, errors.New(sdk.ResponseBufferTooSmall)
-		}
-
-		return response, errors.Join(errs...)
-	}
+func (rh *runtimeHelpers) GetSource(_ pb.Mode) rand.Source {
+	return rh.sourceFn()
 }
+
+func (rh *runtimeHelpers) Call(request *pb.CapabilityRequest) error {
+	reg := registry.GetRegistry(rh.tb)
+	capability, err := reg.GetCapability(request.Id)
+	if err != nil {
+		return err
+	}
+
+	respCh := make(chan *pb.CapabilityResponse, 1)
+	rh.calls[request.CallbackId] = respCh
+	go func() {
+		respCh <- capability.Invoke(rh.tb.Context(), request)
+	}()
+	return nil
+}
+
+func (rh *runtimeHelpers) Await(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error) {
+	response := &pb.AwaitCapabilitiesResponse{Responses: map[int32]*pb.CapabilityResponse{}}
+
+	var errs []error
+	for _, id := range request.Ids {
+		ch, ok := rh.calls[id]
+		if !ok {
+			errs = append(errs, fmt.Errorf("no call found for %d", id))
+			continue
+		}
+		select {
+		case resp := <-ch:
+			response.Responses[id] = resp
+		case <-rh.tb.Context().Done():
+			return nil, rh.tb.Context().Err()
+		}
+	}
+
+	bytes, _ := proto.Marshal(response)
+	if len(bytes) > int(maxResponseSize) {
+		return nil, errors.New(sdk.ResponseBufferTooSmall)
+	}
+
+	return response, errors.Join(errs...)
+}
+
+func (rh *runtimeHelpers) SwitchModes(_ pb.Mode) {}

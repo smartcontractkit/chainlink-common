@@ -20,6 +20,7 @@ type runnerInternals interface {
 	args() []string
 	sendResponse(response unsafe.Pointer, responseLen int32) int32
 	versionV2()
+	switchModes(mode int32)
 }
 
 func newRunner[T any](parse func(configBytes []byte) (T, error), runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.Runner[T] {

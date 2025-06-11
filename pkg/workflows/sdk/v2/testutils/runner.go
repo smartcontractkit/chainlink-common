@@ -3,6 +3,7 @@ package testutils
 import (
 	"errors"
 	"log/slog"
+	"math/rand"
 	"testing"
 
 	"github.com/google/uuid"
@@ -45,14 +46,11 @@ type baseRunner[C, T any] struct {
 	runtime        T
 	writer         *testWriter
 	base           *sdkimpl.RuntimeBase
+	source         rand.Source
 }
 
-func (r *baseRunner[C, T]) Logs() []string {
-	logs := make([]string, len(r.writer.logs))
-	for i, log := range r.writer.logs {
-		logs[i] = string(log)
-	}
-	return logs
+func (r *runner[T]) SetRandSource(source rand.Source) {
+	r.source = source
 }
 
 type TestRunner interface {
@@ -67,6 +65,8 @@ type TestRunner interface {
 	SetMaxResponseSizeBytes(maxResponseSizebytes uint64)
 
 	Logs() []string
+
+	SetRandSource(source rand.Source)
 }
 
 type Runner[C any] interface {
@@ -75,7 +75,9 @@ type Runner[C any] interface {
 }
 
 func NewRunner[C any](tb testing.TB, config C) Runner[C] {
-	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(tb)}
+	drt := &sdkimpl.Runtime{}
+	r := newBaseRunner(tb, config, drt, &drt.RuntimeBase)
+	drt.RuntimeBase = newRuntime(tb, func() rand.Source { return r.source })
 	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, drt, &drt.RuntimeBase)}
 }
 
@@ -88,6 +90,7 @@ func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.Runtime
 		runtime:    t,
 		writer:     &testWriter{},
 		base:       base,
+		source:     rand.NewSource(1),
 	}
 
 	return r
@@ -99,6 +102,14 @@ func (r *baseRunner[C, T]) SetStrictTriggers(strict bool) {
 
 func (r *baseRunner[C, T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
 	r.base.MaxResponseSize = maxResponseSizeBytes
+}
+
+func (r *baseRunner[C, T]) Logs() []string {
+	logs := make([]string, len(r.writer.logs))
+	for i, log := range r.writer.logs {
+		logs[i] = string(log)
+	}
+	return logs
 }
 
 func (r *baseRunner[C, T]) run(workflows []sdk.BaseWorkflow[C, T]) {

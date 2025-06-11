@@ -13,6 +13,9 @@ func sendResponse(response unsafe.Pointer, responseLen int32) int32
 //go:wasmimport env version_v2
 func versionV2()
 
+//go:wasmimport env switch_modes
+func switchModes(mode int32)
+
 func NewRunner[T any](parse func(configBytes []byte) (T, error)) sdk.Runner[T] {
 	return newRunner[T](parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
 }
@@ -31,4 +34,8 @@ func (r runnerInternalsImpl) sendResponse(response unsafe.Pointer, responseLen i
 
 func (r runnerInternalsImpl) versionV2() {
 	versionV2()
+}
+
+func (r runnerInternalsImpl) switchModes(mode int32) {
+	switchModes(mode)
 }

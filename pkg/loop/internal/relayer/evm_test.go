@@ -307,37 +307,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	})
 
 	t.Run("GetFiltersNames", func(t *testing.T) {
-
-		expReceipt := &evm.Receipt{
-			Status: 1,
-			Logs: []*evm.Log{
-				{
-					LogIndex:    1,
-					BlockHash:   blockHash,
-					BlockNumber: blockNum,
-					Topics:      []evm.Hash{topic, topic2},
-					EventSig:    eventSigHash,
-					Address:     address,
-					TxHash:      txHash,
-					Data:        abi,
-					Removed:     false,
-				},
-			},
-			TxHash:            txHash,
-			EffectiveGasPrice: gasPrice,
-			GasUsed:           gas,
-			BlockNumber:       blockNum,
-			TransactionIndex:  uint64(txIndex),
-		}
-		evmService.staticGetTransactionReceipt = func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
-			require.Equal(t, txHash, got)
-			return expReceipt, nil
-		}
-
-		got, err := client.GetTransactionReceipt(ctx, txHash)
-		require.NoError(t, err)
-		require.Equal(t, expReceipt, got)
-
 		expectedNames := []string{"filter1", "filter2"}
 		evmService.staticGetFiltersNames = func(ctx context.Context) ([]string, error) {
 			//require.Equal(t, expectedNames, []string{})

@@ -2,7 +2,6 @@ package relayerset
 
 import (
 	"context"
-
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -139,6 +138,11 @@ func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransa
 		},
 		Request: in,
 	}, opts...)
+}
+
+func (e evmClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	return e.client.GetFiltersNames(ctx, &emptypb.Empty{}, opts...)
 }
 
 func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {

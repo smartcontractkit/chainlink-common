@@ -305,6 +305,49 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, expLog, got)
 
 	})
+
+	t.Run("GetFiltersNames", func(t *testing.T) {
+
+		expReceipt := &evm.Receipt{
+			Status: 1,
+			Logs: []*evm.Log{
+				{
+					LogIndex:    1,
+					BlockHash:   blockHash,
+					BlockNumber: blockNum,
+					Topics:      []evm.Hash{topic, topic2},
+					EventSig:    eventSigHash,
+					Address:     address,
+					TxHash:      txHash,
+					Data:        abi,
+					Removed:     false,
+				},
+			},
+			TxHash:            txHash,
+			EffectiveGasPrice: gasPrice,
+			GasUsed:           gas,
+			BlockNumber:       blockNum,
+			TransactionIndex:  uint64(txIndex),
+		}
+		evmService.staticGetTransactionReceipt = func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
+			require.Equal(t, txHash, got)
+			return expReceipt, nil
+		}
+
+		got, err := client.GetTransactionReceipt(ctx, txHash)
+		require.NoError(t, err)
+		require.Equal(t, expReceipt, got)
+
+		expectedNames := []string{"filter1", "filter2"}
+		evmService.staticGetFiltersNames = func(ctx context.Context) ([]string, error) {
+			//require.Equal(t, expectedNames, []string{})
+			return expectedNames, nil
+		}
+
+		names, err := client.GetFiltersNames(ctx)
+		require.NoError(t, err)
+		require.Equal(t, expectedNames, names)
+	})
 }
 
 type staticEVMService struct {
@@ -320,6 +363,12 @@ type staticEVMService struct {
 	staticRegisterLogTracking    func(ctx context.Context, filter evm.LPFilterQuery) error
 	staticUnregisterLogTracking  func(ctx context.Context, filterName string) error
 	staticGetTransactionStatus   func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
+	staticGetFiltersNames        func(ctx context.Context) ([]string, error) // TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+}
+
+func (s *staticEVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	return s.staticGetFiltersNames(ctx)
 }
 
 func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {

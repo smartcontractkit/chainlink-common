@@ -2042,7 +2042,7 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x12ContractReaderBind\x12*.loop.relayerset.ContractReaderBindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12^\n" +
 	"\x14ContractReaderUnbind\x12,.loop.relayerset.ContractReaderUnbindRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
 	"\x13ContractReaderStart\x12+.loop.relayerset.ContractReaderStartRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
-	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x002\xf1\b\n" +
+	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x002\xbc\t\n" +
 	"\rEVMRelayerSet\x12b\n" +
 	"\x11GetTransactionFee\x12).loop.relayerset.GetTransactionFeeRequest\x1a .loop.evm.GetTransactionFeeReply\"\x00\x12Q\n" +
 	"\fCallContract\x12$.loop.relayerset.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12K\n" +
@@ -2056,7 +2056,8 @@ const file_loop_internal_pb_relayerset_relayerset_proto_rawDesc = "" +
 	"\x10QueryTrackedLogs\x12(.loop.relayerset.QueryTrackedLogsRequest\x1a\x1f.loop.evm.QueryTrackedLogsReply\x12Z\n" +
 	"\x13RegisterLogTracking\x12+.loop.relayerset.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12^\n" +
 	"\x15UnregisterLogTracking\x12-.loop.relayerset.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12i\n" +
-	"\x14GetTransactionStatus\x12,.loop.relayerset.GetTransactionStatusRequest\x1a#.loop.evm.GetTransactionStatusReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
+	"\x14GetTransactionStatus\x12,.loop.relayerset.GetTransactionStatusRequest\x1a#.loop.evm.GetTransactionStatusReply\x12I\n" +
+	"\x0fGetFiltersNames\x12\x16.google.protobuf.Empty\x1a\x1e.loop.evm.GetFiltersNamesReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
 
 var (
 	file_loop_internal_pb_relayerset_relayerset_proto_rawDescOnce sync.Once
@@ -2143,6 +2144,7 @@ var file_loop_internal_pb_relayerset_relayerset_proto_goTypes = []any{
 	(*evm.LatestAndFinalizedHeadReply)(nil),           // 68: loop.evm.LatestAndFinalizedHeadReply
 	(*evm.QueryTrackedLogsReply)(nil),                 // 69: loop.evm.QueryTrackedLogsReply
 	(*evm.GetTransactionStatusReply)(nil),             // 70: loop.evm.GetTransactionStatusReply
+	(*evm.GetFiltersNamesReply)(nil),                  // 71: loop.evm.GetFiltersNamesReply
 }
 var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
@@ -2217,40 +2219,42 @@ var file_loop_internal_pb_relayerset_relayerset_proto_depIdxs = []int32{
 	34, // 69: loop.relayerset.EVMRelayerSet.RegisterLogTracking:input_type -> loop.relayerset.RegisterLogTrackingRequest
 	35, // 70: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:input_type -> loop.relayerset.UnregisterLogTrackingRequest
 	36, // 71: loop.relayerset.EVMRelayerSet.GetTransactionStatus:input_type -> loop.relayerset.GetTransactionStatusRequest
-	2,  // 72: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
-	4,  // 73: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
-	9,  // 74: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
-	11, // 75: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
-	13, // 76: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
-	55, // 77: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
-	55, // 78: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
-	55, // 79: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
-	16, // 80: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
-	17, // 81: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
-	15, // 82: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
-	56, // 83: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:output_type -> loop.GetLatestValueReply
-	57, // 84: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
-	58, // 85: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
-	59, // 86: loop.relayerset.RelayerSet.ContractReaderQueryKey:output_type -> loop.QueryKeyReply
-	60, // 87: loop.relayerset.RelayerSet.ContractReaderQueryKeys:output_type -> loop.QueryKeysReply
-	55, // 88: loop.relayerset.RelayerSet.ContractReaderBind:output_type -> google.protobuf.Empty
-	55, // 89: loop.relayerset.RelayerSet.ContractReaderUnbind:output_type -> google.protobuf.Empty
-	55, // 90: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
-	55, // 91: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
-	61, // 92: loop.relayerset.EVMRelayerSet.GetTransactionFee:output_type -> loop.evm.GetTransactionFeeReply
-	62, // 93: loop.relayerset.EVMRelayerSet.CallContract:output_type -> loop.evm.CallContractReply
-	63, // 94: loop.relayerset.EVMRelayerSet.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	64, // 95: loop.relayerset.EVMRelayerSet.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	65, // 96: loop.relayerset.EVMRelayerSet.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	66, // 97: loop.relayerset.EVMRelayerSet.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	67, // 98: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	68, // 99: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	69, // 100: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	55, // 101: loop.relayerset.EVMRelayerSet.RegisterLogTracking:output_type -> google.protobuf.Empty
-	55, // 102: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	70, // 103: loop.relayerset.EVMRelayerSet.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
-	72, // [72:104] is the sub-list for method output_type
-	40, // [40:72] is the sub-list for method input_type
+	55, // 72: loop.relayerset.EVMRelayerSet.GetFiltersNames:input_type -> google.protobuf.Empty
+	2,  // 73: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
+	4,  // 74: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
+	9,  // 75: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
+	11, // 76: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
+	13, // 77: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
+	55, // 78: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
+	55, // 79: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
+	55, // 80: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
+	16, // 81: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
+	17, // 82: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
+	15, // 83: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
+	56, // 84: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:output_type -> loop.GetLatestValueReply
+	57, // 85: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
+	58, // 86: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
+	59, // 87: loop.relayerset.RelayerSet.ContractReaderQueryKey:output_type -> loop.QueryKeyReply
+	60, // 88: loop.relayerset.RelayerSet.ContractReaderQueryKeys:output_type -> loop.QueryKeysReply
+	55, // 89: loop.relayerset.RelayerSet.ContractReaderBind:output_type -> google.protobuf.Empty
+	55, // 90: loop.relayerset.RelayerSet.ContractReaderUnbind:output_type -> google.protobuf.Empty
+	55, // 91: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
+	55, // 92: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
+	61, // 93: loop.relayerset.EVMRelayerSet.GetTransactionFee:output_type -> loop.evm.GetTransactionFeeReply
+	62, // 94: loop.relayerset.EVMRelayerSet.CallContract:output_type -> loop.evm.CallContractReply
+	63, // 95: loop.relayerset.EVMRelayerSet.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	64, // 96: loop.relayerset.EVMRelayerSet.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	65, // 97: loop.relayerset.EVMRelayerSet.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	66, // 98: loop.relayerset.EVMRelayerSet.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	67, // 99: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	68, // 100: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	69, // 101: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	55, // 102: loop.relayerset.EVMRelayerSet.RegisterLogTracking:output_type -> google.protobuf.Empty
+	55, // 103: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	70, // 104: loop.relayerset.EVMRelayerSet.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
+	71, // 105: loop.relayerset.EVMRelayerSet.GetFiltersNames:output_type -> loop.evm.GetFiltersNamesReply
+	73, // [73:106] is the sub-list for method output_type
+	40, // [40:73] is the sub-list for method input_type
 	40, // [40:40] is the sub-list for extension type_name
 	40, // [40:40] is the sub-list for extension extendee
 	0,  // [0:40] is the sub-list for field type_name

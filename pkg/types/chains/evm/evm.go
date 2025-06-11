@@ -126,6 +126,7 @@ const (
 	TxFatal
 )
 
+
 type TxError struct {
 	// Internal ID used for tracking purposes of transactions.
     TxID string

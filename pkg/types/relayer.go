@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -134,10 +135,8 @@ type EVMService interface {
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
-	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
-	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
-
-	GetTxResult(ctx context.Context, txHash evm.Hash) (evm.TransactionStatus, error)
+	// Returns true if a transaction is finalized. Will return immediately maxWatTime is zero
+	IsTxFinalized(ctx context.Context, txHash evm.Hash, maxWaitTime time.Duration) (bool, error)
 
 	// WriteReport writes a transaction against a keystone forwarder contract
 	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)

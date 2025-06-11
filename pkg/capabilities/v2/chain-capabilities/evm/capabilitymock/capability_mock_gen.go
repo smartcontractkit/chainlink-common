@@ -49,7 +49,7 @@ type ClientCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	GetTxResult func(ctx context.Context, input *evm.GetTxResultRequest) (*evm.GetTxResultReply, error)
+	IsTxFinalized func(ctx context.Context, input *evm.IsTxFinalizedRequest) (*evm.IsTxFinalizedReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 }
@@ -277,18 +277,18 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
-	case "GetTxResult":
-		input := &evm.GetTxResultRequest{}
+	case "IsTxFinalized":
+		input := &evm.IsTxFinalizedRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
 		}
 
-		if cap.GetTxResult == nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for GetTxResult"}
+		if cap.IsTxFinalized == nil {
+			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for IsTxFinalized"}
 			break
 		}
-		resp, err := cap.GetTxResult(ctx, input)
+		resp, err := cap.IsTxFinalized(ctx, input)
 		if err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {

@@ -248,21 +248,21 @@ func (c *Client) UnregisterLogTracking(runtime sdk.DonRuntime, input *evm.Unregi
 	})
 }
 
-func (c *Client) GetTxResult(runtime sdk.DonRuntime, input *evm.GetTxResultRequest) sdk.Promise[*evm.GetTxResultReply] {
+func (c *Client) IsTxFinalized(runtime sdk.DonRuntime, input *evm.IsTxFinalizedRequest) sdk.Promise[*evm.IsTxFinalizedReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.GetTxResultReply](nil, err)
+		return sdk.PromiseFromResult[*evm.IsTxFinalizedReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
-		Method:  "GetTxResult",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.GetTxResultReply, error) {
+		Method:  "IsTxFinalized",
+	}), func(i *sdkpb.CapabilityResponse) (*evm.IsTxFinalizedReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.GetTxResultReply{}
+			output := &evm.IsTxFinalizedReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

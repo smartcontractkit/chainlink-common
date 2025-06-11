@@ -39,7 +39,7 @@ type ClientCapability interface {
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
-	GetTxResult(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTxResultRequest) (*evm.GetTxResultReply, error)
+	IsTxFinalized(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.IsTxFinalizedRequest) (*evm.IsTxFinalizedReply, error)
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 
@@ -208,11 +208,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 			return c.ClientCapability.UnregisterLogTracking(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "GetTxResult":
-		input := &evm.GetTxResultRequest{}
+	case "IsTxFinalized":
+		input := &evm.IsTxFinalizedRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTxResultRequest, _ *emptypb.Empty) (*evm.GetTxResultReply, error) {
-			return c.ClientCapability.GetTxResult(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.IsTxFinalizedRequest, _ *emptypb.Empty) (*evm.IsTxFinalizedReply, error) {
+			return c.ClientCapability.IsTxFinalized(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":

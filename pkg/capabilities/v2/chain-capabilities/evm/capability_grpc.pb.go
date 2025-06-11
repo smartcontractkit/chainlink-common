@@ -31,7 +31,7 @@ const (
 	Client_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evm.Client/QueryTrackedLogs"
 	Client_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evm.Client/RegisterLogTracking"
 	Client_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evm.Client/UnregisterLogTracking"
-	Client_GetTxResult_FullMethodName            = "/cre.sdk.v2.evm.Client/GetTxResult"
+	Client_IsTxFinalized_FullMethodName          = "/cre.sdk.v2.evm.Client/IsTxFinalized"
 	Client_WriteReport_FullMethodName            = "/cre.sdk.v2.evm.Client/WriteReport"
 )
 
@@ -49,7 +49,7 @@ type ClientClient interface {
 	QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetTxResult(ctx context.Context, in *evm.GetTxResultRequest, opts ...grpc.CallOption) (*evm.GetTxResultReply, error)
+	IsTxFinalized(ctx context.Context, in *evm.IsTxFinalizedRequest, opts ...grpc.CallOption) (*evm.IsTxFinalizedReply, error)
 	WriteReport(ctx context.Context, in *evm.WriteReportRequest, opts ...grpc.CallOption) (*evm.WriteReportReply, error)
 }
 
@@ -161,10 +161,10 @@ func (c *clientClient) UnregisterLogTracking(ctx context.Context, in *evm.Unregi
 	return out, nil
 }
 
-func (c *clientClient) GetTxResult(ctx context.Context, in *evm.GetTxResultRequest, opts ...grpc.CallOption) (*evm.GetTxResultReply, error) {
+func (c *clientClient) IsTxFinalized(ctx context.Context, in *evm.IsTxFinalizedRequest, opts ...grpc.CallOption) (*evm.IsTxFinalizedReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.GetTxResultReply)
-	err := c.cc.Invoke(ctx, Client_GetTxResult_FullMethodName, in, out, cOpts...)
+	out := new(evm.IsTxFinalizedReply)
+	err := c.cc.Invoke(ctx, Client_IsTxFinalized_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ type ClientServer interface {
 	QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-	GetTxResult(context.Context, *evm.GetTxResultRequest) (*evm.GetTxResultReply, error)
+	IsTxFinalized(context.Context, *evm.IsTxFinalizedRequest) (*evm.IsTxFinalizedReply, error)
 	WriteReport(context.Context, *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 	mustEmbedUnimplementedClientServer()
 }
@@ -237,8 +237,8 @@ func (UnimplementedClientServer) RegisterLogTracking(context.Context, *evm.Regis
 func (UnimplementedClientServer) UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
 }
-func (UnimplementedClientServer) GetTxResult(context.Context, *evm.GetTxResultRequest) (*evm.GetTxResultReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTxResult not implemented")
+func (UnimplementedClientServer) IsTxFinalized(context.Context, *evm.IsTxFinalizedRequest) (*evm.IsTxFinalizedReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsTxFinalized not implemented")
 }
 func (UnimplementedClientServer) WriteReport(context.Context, *evm.WriteReportRequest) (*evm.WriteReportReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteReport not implemented")
@@ -444,20 +444,20 @@ func _Client_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Client_GetTxResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(evm.GetTxResultRequest)
+func _Client_IsTxFinalized_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(evm.IsTxFinalizedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ClientServer).GetTxResult(ctx, in)
+		return srv.(ClientServer).IsTxFinalized(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Client_GetTxResult_FullMethodName,
+		FullMethod: Client_IsTxFinalized_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClientServer).GetTxResult(ctx, req.(*evm.GetTxResultRequest))
+		return srv.(ClientServer).IsTxFinalized(ctx, req.(*evm.IsTxFinalizedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -528,8 +528,8 @@ var Client_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Client_UnregisterLogTracking_Handler,
 		},
 		{
-			MethodName: "GetTxResult",
-			Handler:    _Client_GetTxResult_Handler,
+			MethodName: "IsTxFinalized",
+			Handler:    _Client_IsTxFinalized_Handler,
 		},
 		{
 			MethodName: "WriteReport",

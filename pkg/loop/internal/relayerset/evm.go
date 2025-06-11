@@ -20,17 +20,6 @@ type evmClient struct {
 	client  relayerset.EVMRelayerSetClient
 }
 
-// GetTxResult implements evmpb.EVMClient.
-func (e *evmClient) GetTxResult(ctx context.Context, in *evmpb.GetTxResultRequest, opts ...grpc.CallOption) (*evmpb.GetTxResultReply, error) {
-	//TODO: implement
-	panic("unimplemented")
-}
-
-// WriteReport implements evmpb.EVMClient.
-func (e *evmClient) WriteReport(ctx context.Context, in *evmpb.WriteReportRequest, opts ...grpc.CallOption) (*evmpb.WriteReportReply, error) {
-	//TODO: implement
-	panic("unimplemented")
-}
 
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
@@ -152,6 +141,18 @@ func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransa
 		Request: in,
 	}, opts...)
 }
+
+// IsTxFinalized implements evm.EVMClient.
+func (e *evmClient) IsTxFinalized(ctx context.Context, in *evmpb.IsTxFinalizedRequest, opts ...grpc.CallOption) (*evmpb.IsTxFinalizedReply, error) {
+	panic("unimplemented")
+}
+
+// WriteReport implements evmpb.EVMClient.
+func (e *evmClient) WriteReport(ctx context.Context, in *evmpb.WriteReportRequest, opts ...grpc.CallOption) (*evmpb.WriteReportReply, error) {
+	//TODO: implement
+	panic("unimplemented")
+}
+
 
 func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
@@ -357,21 +358,6 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *relayerset.
 	}
 
 	return &emptypb.Empty{}, nil
-}
-
-func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
-	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
-	if err != nil {
-		return nil, err
-	}
-
-	txStatus, err := evmService.GetTransactionStatus(ctx, request.Request.TransactionId)
-	if err != nil {
-		return nil, err
-	}
-
-	//nolint: gosec // G115
-	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {

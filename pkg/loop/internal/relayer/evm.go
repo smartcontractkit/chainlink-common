@@ -3,6 +3,7 @@ package relayer
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -18,6 +19,21 @@ import (
 
 type EVMClient struct {
 	grpcClient evmpb.EVMClient
+}
+
+// CalculateTransactionFee implements types.EVMService.
+func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receipt evmtypes.Receipt) (*evmtypes.TransactionFee, error) {
+	panic("unimplemented")
+}
+
+// IsTxFinalized implements types.EVMService.
+func (e *EVMClient) IsTxFinalized(ctx context.Context, txHash evmtypes.Hash, maxWaitTime time.Duration) (bool, error) {
+	panic("unimplemented")
+}
+
+// SubmitTransaction implements types.EVMService.
+func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
+	panic("unimplemented")
 }
 
 func NewEVMCClient(grpcClient evmpb.EVMClient) *EVMClient {
@@ -163,25 +179,6 @@ func (e *EVMClient) RegisterLogTracking(ctx context.Context, filter evmtypes.LPF
 func (e *EVMClient) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	_, err := e.grpcClient.UnregisterLogTracking(ctx, &evmpb.UnregisterLogTrackingRequest{FilterName: filterName})
 	return net.WrapRPCErr(err)
-}
-
-func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID string) (types.TransactionStatus, error) {
-	reply, err := e.grpcClient.GetTransactionStatus(ctx, &evmpb.GetTransactionStatusRequest{TransactionId: transactionID})
-	if err != nil {
-		return types.Unknown, net.WrapRPCErr(err)
-	}
-
-	return types.TransactionStatus(reply.GetTransactionStatus()), nil
-}
-
-// GetTxResult implements types.EVMService.
-func (e *EVMClient) GetTxResult(ctx context.Context, txHash evmtypes.Hash) (evmtypes.TransactionStatus, error) {
-	panic("unimplemented")
-}
-
-// WriteReport implements types.EVMService.
-func (e *EVMClient) WriteReport(ctx context.Context, receiver evmtypes.Address, signedReport evmtypes.SignedReport, gasConfig evmtypes.GasConfig) (*evmtypes.WriteReportResult, error) {
-	panic("unimplemented")
 }
 
 type evmServer struct {
@@ -330,14 +327,4 @@ func (e *evmServer) RegisterLogTracking(ctx context.Context, request *evmpb.Regi
 
 func (e *evmServer) UnregisterLogTracking(ctx context.Context, request *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, e.impl.UnregisterLogTracking(ctx, request.GetFilterName())
-}
-
-func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
-	txStatus, err := e.impl.GetTransactionStatus(ctx, request.GetTransactionId())
-	if err != nil {
-		return nil, err
-	}
-
-	//nolint: gosec // G115
-	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }

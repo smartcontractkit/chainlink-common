@@ -19,8 +19,7 @@ service EVM{
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
-  rpc GetTxResult(GetTxResultRequest) returns (GetTxResultReply);
+  rpc IsTxFinalized(IsTxFinalizedRequest) returns (IsTxFinalizedReply);
   rpc WriteReport(WriteReportRequest) returns (WriteReportReply);
 }
 
@@ -284,10 +283,10 @@ enum ReceiverContractExecutionStatus {
   REVERTED = 1;
 }
 
-message GetTxResultRequest {
+message IsTxFinalizedRequest {
   bytes tx_hash = 1;
 }
 
-message GetTxResultReply {
-  TransactionStatus tx_status = 1;
+message IsTxFinalizedReply {
+  bool isFinalized = 1;
 }

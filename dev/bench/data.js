@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749638919651,
+  "lastUpdate": 1749651839418,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15414,6 +15414,48 @@ window.BENCHMARK_DATA = {
             "value": 28479,
             "unit": "ns/op",
             "extra": "42080 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eb34d3bf1a6492a7cfc1f51465e34e38f8942105",
+          "message": "Allow consensus on time type, fix identical consensus big int, and rename the tag (#1244)\n\n* Allow consensus on time type, fix identical consensus big int, and rename the tag\n\n* change value's time test to use nanos ensuring correct encoding",
+          "timestamp": "2025-06-11T10:22:43-04:00",
+          "tree_id": "2c51e6128820013cc8380b34e3a73e73ad0e043a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eb34d3bf1a6492a7cfc1f51465e34e38f8942105"
+        },
+        "date": 1749651838558,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.3,
+            "unit": "ns/op",
+            "extra": "3392124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.2,
+            "unit": "ns/op",
+            "extra": "2928292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28492,
+            "unit": "ns/op",
+            "extra": "42141 times\n4 procs"
           }
         ]
       }

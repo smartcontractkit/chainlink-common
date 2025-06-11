@@ -111,7 +111,7 @@ func doPor(wcx *sdk.WorkflowContext[*Config], runtime sdk.Runtime, runTime time.
 		return nil, err
 	}
 
-	if time.UnixMilli(reserveInfo.LastUpdated).Before(runTime.Add(-time.Hour * 24)) {
+	if reserveInfo.LastUpdated.Before(runTime.Add(-time.Hour * 24)) {
 		logger.Warn("reserve time is too old", "time", reserveInfo.LastUpdated)
 		return nil, errors.New("reserved time is too old")
 	}
@@ -225,15 +225,12 @@ func fetchPor(wcx *sdk.WorkflowContext[*Config], roundTripper http.RoundTripper)
 		return nil, errors.New("ripcord is true")
 	}
 
-	rawReserve := &RawReserveInfo{}
-	if err = json.Unmarshal([]byte(porResponse.Data), rawReserve); err != nil {
+	reserveInfo := &ReserveInfo{}
+	if err = json.Unmarshal([]byte(porResponse.Data), reserveInfo); err != nil {
 		return nil, err
 	}
 
-	return &ReserveInfo{
-		LastUpdated:  rawReserve.LastUpdated.UnixMilli(),
-		TotalReserve: rawReserve.TotalReserve,
-	}, nil
+	return reserveInfo, nil
 }
 
 func verifySignature(porResponse *PorResponse, publicKey string) error {

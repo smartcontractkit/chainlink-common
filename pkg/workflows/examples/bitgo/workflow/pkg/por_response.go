@@ -8,14 +8,9 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type RawReserveInfo struct {
-	LastUpdated  time.Time       `json:"lastUpdated"`
-	TotalReserve decimal.Decimal `json:"totalReserve"`
-}
-
 type ReserveInfo struct {
-	LastUpdated  int64           `consensus:"median"`
-	TotalReserve decimal.Decimal `consensus:"median"`
+	LastUpdated  time.Time       `consensus_aggregation:"median" json:"lastUpdated"`
+	TotalReserve decimal.Decimal `consensus_aggregation:"median" json:"totalReserve"`
 }
 
 type PorResponse struct {

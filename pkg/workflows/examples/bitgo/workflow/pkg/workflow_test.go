@@ -171,7 +171,7 @@ func ensureSignedJSON() error {
 		return err
 	}
 
-	dataStruct := pkg.RawReserveInfo{
+	dataStruct := pkg.ReserveInfo{
 		LastUpdated:  testTime,
 		TotalReserve: reserve,
 	}

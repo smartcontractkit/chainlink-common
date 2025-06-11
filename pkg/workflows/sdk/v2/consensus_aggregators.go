@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -63,6 +64,8 @@ func ConsensusAggregationFromTags[T any]() ConsensusAggregation[T] {
 }
 
 var bigIntType = reflect.TypeOf((*big.Int)(nil))
+var timeType = reflect.TypeOf(time.Time{})
+var decimalType = reflect.TypeOf(decimal.Decimal{})
 
 func parseConsensusTag(t reflect.Type) (*pb.ConsensusDescriptor, error) {
 	if t.Kind() == reflect.Pointer {
@@ -76,7 +79,7 @@ func parseConsensusTag(t reflect.Type) (*pb.ConsensusDescriptor, error) {
 	descriptors := make(map[string]*pb.ConsensusDescriptor)
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		tag := field.Tag.Get("consensus")
+		tag := field.Tag.Get("consensus_aggregation")
 		if tag == "ignore" || tag == "" {
 			continue
 		}
@@ -136,7 +139,7 @@ func isNumeric(t reflect.Type) bool {
 		reflect.Float32, reflect.Float64:
 		return true
 	default:
-		return t == reflect.TypeOf((*big.Int)(nil)) || t == reflect.TypeOf(decimal.Decimal{})
+		return t == bigIntType || t == decimalType || t == timeType
 	}
 }
 
@@ -159,6 +162,6 @@ func isIdenticalType(t reflect.Type) bool {
 	case reflect.Slice, reflect.Array:
 		return isIdenticalType(t.Elem())
 	default:
-		return false
+		return t == bigIntType
 	}
 }

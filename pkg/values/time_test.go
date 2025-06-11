@@ -8,7 +8,7 @@ import (
 )
 
 func Test_TimeUnwrapTo(t *testing.T) {
-	expected, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+	expected, err := time.Parse(time.RFC3339Nano, "2006-01-02T15:04:05.000000253Z")
 	assert.NoError(t, err)
 
 	// Unwraps to a time.Time pointer

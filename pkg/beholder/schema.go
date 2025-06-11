@@ -30,14 +30,14 @@ func toSchemaName(m proto.Message) string {
 }
 
 // toSchemaName returns a protobuf message name (full)
-func toSchemaFullName(m proto.Message) string {
+func ToSchemaFullName(m proto.Message) string {
 	return string(protoimpl.X.MessageTypeOf(m).Descriptor().FullName())
 }
 
 // toSchemaPath maps a protobuf message to a Beholder schema path
 func toSchemaPath(m proto.Message, basePath string) string {
 	// Notice: a name like 'platform.on_chain.forwarder.ReportProcessed'
-	protoName := toSchemaFullName(m)
+	protoName := ToSchemaFullName(m)
 
 	// We map to a Beholder schema path like '<basePath>/platform/on-chain/forwarder/report_processed.proto'
 	protoPath := protoName
@@ -85,7 +85,7 @@ func appendRequiredAttrDomain(attrKVs []any, m proto.Message) []any {
 	}
 
 	// Notice: a name like 'platform.on_chain.forwarder.ReportProcessed'
-	protoName := toSchemaFullName(m)
+	protoName := ToSchemaFullName(m)
 
 	// Extract first path component (entrypoint package) as a domain
 	domain := "unknown"

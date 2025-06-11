@@ -67,5 +67,5 @@ func (cap *ConsensusCapability) InvokeTrigger(ctx context.Context, request *sdkp
 }
 
 func (cap *ConsensusCapability) ID() string {
-	return "consensus@1.0.0"
+	return "offchain_reporting@1.0.0"
 }

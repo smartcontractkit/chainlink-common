@@ -6,29 +6,32 @@ import (
 	"sync"
 )
 
-// Store is a generic store for ongoing consensus requests.
-// It is thread-safe and uses a map to store requests.
-type Store[T ConsensusRequest[T, R], R ConsensusResponse] struct {
+// Store stores ongoing consensus requests in an
+// in-memory map.
+// Note: this object is intended to be thread-safe,
+// so any read requests should first deep-copy the returned
+// request object via request.Copy().
+type Store struct {
 	requestIDs []string
-	requests   map[string]T
+	requests   map[string]*Request
 
 	mu sync.RWMutex
 }
 
-func NewStore[T ConsensusRequest[T, R], R ConsensusResponse]() *Store[T, R] {
-	return &Store[T, R]{
+func NewStore() *Store {
+	return &Store{
 		requestIDs: []string{},
-		requests:   map[string]T{},
+		requests:   map[string]*Request{},
 	}
 }
 
-// GetByIDs retrieves requests by their IDs.
+// GetByIDs is best-effort, doesn't return requests that are not in store
 // The method deep-copies requests before returning them.
-func (s *Store[T, R]) GetByIDs(requestIDs []string) []T {
+func (s *Store) GetByIDs(requestIDs []string) []*Request {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	o := []T{}
+	o := []*Request{}
 	for _, r := range requestIDs {
 		gr, ok := s.requests[r]
 		if ok {
@@ -39,15 +42,15 @@ func (s *Store[T, R]) GetByIDs(requestIDs []string) []T {
 	return o
 }
 
-// FirstN retrieves up to `batchSize` requests.
+// FirstN returns up to `bathSize` requests.
 // The method deep-copies requests before returning them.
-func (s *Store[T, R]) FirstN(batchSize int) ([]T, error) {
+func (s *Store) FirstN(batchSize int) ([]*Request, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if batchSize == 0 {
 		return nil, errors.New("batchsize cannot be 0")
 	}
-	got := []T{}
+	got := []*Request{}
 	if len(s.requestIDs) == 0 {
 		return got, nil
 	}
@@ -67,34 +70,31 @@ func (s *Store[T, R]) FirstN(batchSize int) ([]T, error) {
 	return got, nil
 }
 
-// Add adds a new request to the store.
-func (s *Store[T, R]) Add(req T) error {
+func (s *Store) Add(req *Request) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.requests[req.ID()]; ok {
-		return fmt.Errorf("request with id %s already exists", req.ID())
+	if _, ok := s.requests[req.WorkflowExecutionID]; ok {
+		return fmt.Errorf("request with id %s already exists", req.WorkflowExecutionID)
 	}
-	s.requestIDs = append(s.requestIDs, req.ID())
-	s.requests[req.ID()] = req
+	s.requestIDs = append(s.requestIDs, req.WorkflowExecutionID)
+	s.requests[req.WorkflowExecutionID] = req
 	return nil
 }
 
-// Get retrieves a request by its ID.
-// The method deep-copies the request before returning it.
-func (s *Store[T, R]) Get(requestID string) T {
+// Get returns the request corresponding to request ID.
+// The method deep-copies requests before returning them.
+func (s *Store) Get(requestID string) *Request {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	rid, ok := s.requests[requestID]
 	if ok {
 		return rid.Copy()
 	}
-	var zero T
-	return zero
+	return nil
 }
 
-// Evict removes a request from the store by its ID.
-func (s *Store[T, R]) Evict(requestID string) (T, bool) {
+func (s *Store) evict(requestID string) (*Request, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

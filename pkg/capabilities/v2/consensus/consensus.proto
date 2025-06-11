@@ -11,7 +11,7 @@ import "workflows/sdk/v2/pb/sdk.proto";
 service Consensus {
   option (cre.metadata.capability) = {
     mode: DON
-    capability_id: "consensus@1.0.0"
+    capability_id: "offchain_reporting@1.0.0"
   };
   rpc Simple (cre.sdk.v2.SimpleConsensusInputs) returns (values.Value);
 }

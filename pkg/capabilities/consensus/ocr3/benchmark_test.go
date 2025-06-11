@@ -8,19 +8,18 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/libocr/offchainreporting2/types"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
-	"github.com/smartcontractkit/libocr/offchainreporting2/types"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
@@ -109,7 +108,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 	)
 
 	// Create request store with requests for each workflow
-	store := requests.NewStore[*ocr3.ReportRequest, ocr3.ReportResponse]()
+	store := requests.NewStore()
 
 	// Create capability with LLO aggregators for each workflow
 	mockCap := &mockCapability{
@@ -136,7 +135,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 		require.NoError(b, err)
 
 		// Create and add request to store
-		req := &ocr3.ReportRequest{
+		req := &requests.Request{
 			WorkflowID:               workflowID,
 			WorkflowExecutionID:      executionID,
 			WorkflowName:             fmt.Sprintf("Workflow %d", i),
@@ -230,7 +229,7 @@ func runBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWorkflows, numS
 	)
 
 	// Create request store
-	store := requests.NewStore[*ocr3.ReportRequest]()
+	store := requests.NewStore()
 
 	// Create capability with LLO aggregators for each workflow
 	mockCap := &mockCapability{

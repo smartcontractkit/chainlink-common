@@ -10,8 +10,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/metering"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -39,9 +39,9 @@ type capability struct {
 	eng *services.Engine
 
 	capabilities.CapabilityInfo
-	capabilities.Validator[config, inputs, ReportResponse]
+	capabilities.Validator[config, inputs, requests.Response]
 
-	reqHandler *requests.Handler[*ReportRequest, ReportResponse]
+	reqHandler *requests.Handler
 
 	requestTimeout     time.Duration
 	requestTimeoutLock sync.RWMutex
@@ -63,11 +63,11 @@ type capability struct {
 var _ CapabilityIface = (*capability)(nil)
 var _ capabilities.ExecutableCapability = (*capability)(nil)
 
-func NewCapability(s *requests.Store[*ReportRequest, ReportResponse], clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
+func NewCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
-		Validator:         capabilities.NewValidator[config, inputs, ReportResponse](capabilities.ValidatorArgs{Info: info}),
+		Validator:         capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info}),
 		clock:             clock,
 		requestTimeout:    requestTimeout,
 		aggregatorFactory: aggregatorFactory,
@@ -195,7 +195,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			o.eng.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
 			responseErr = capabilities.ErrStopExecution
 		}
-		out := ReportResponse{
+		out := requests.Response{
 			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 			Value:               inputs,
 			Err:                 responseErr,
@@ -254,8 +254,8 @@ func (o *capability) queueRequestForProcessing(
 	metadata capabilities.RequestMetadata,
 	i *inputs,
 	c *config,
-) (<-chan ReportResponse, error) {
-	callbackCh := make(chan ReportResponse, o.callbackChannelBufferSize)
+) (<-chan requests.Response, error) {
+	callbackCh := make(chan requests.Response, o.callbackChannelBufferSize)
 
 	// Use the capability-level request timeout unless the request's config specifies
 	// its own timeout, in which case we'll use that instead. This allows the workflow spec
@@ -267,7 +267,7 @@ func (o *capability) queueRequestForProcessing(
 	}
 	o.requestTimeoutLock.RUnlock()
 
-	r := &ReportRequest{
+	r := &requests.Request{
 		StopCh:                   make(chan struct{}),
 		CallbackCh:               callbackCh,
 		WorkflowExecutionID:      metadata.WorkflowExecutionID,

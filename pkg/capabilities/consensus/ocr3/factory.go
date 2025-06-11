@@ -9,8 +9,8 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -24,7 +24,7 @@ const (
 )
 
 type factory struct {
-	store                   *requests.Store[*ReportRequest, ReportResponse]
+	store                   *requests.Store
 	capability              *capability
 	batchSize               int
 	outcomePruningThreshold uint64
@@ -33,7 +33,7 @@ type factory struct {
 	services.StateMachine
 }
 
-func newFactory(s *requests.Store[*ReportRequest, ReportResponse], c *capability, lggr logger.Logger) (*factory, error) {
+func newFactory(s *requests.Store, c *capability, lggr logger.Logger) (*factory, error) {
 	return &factory{
 		store:      s,
 		capability: c,

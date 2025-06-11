@@ -17,8 +17,8 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
@@ -31,7 +31,7 @@ func TestTransmitter(t *testing.T) {
 	repID := []byte{0xf0, 0xe0}
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 
 	weid := uuid.New().String()
 
@@ -120,7 +120,7 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	wowner := "foo-owner"
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 
 	weid := uuid.New().String()
 

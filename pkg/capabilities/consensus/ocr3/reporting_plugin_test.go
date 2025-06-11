@@ -17,8 +17,8 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
@@ -27,7 +27,7 @@ import (
 func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	batchSize := 0
 	rp, err := NewReportingPlugin(s, nil, batchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
@@ -42,14 +42,14 @@ func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
 func TestReportingPlugin_Query(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	rp, err := NewReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
 	wowner := uuid.New().String()
 
-	err = s.Add(&ReportRequest{
+	err = s.Add(&requests.Request{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
 		WorkflowOwner:       wowner,
@@ -153,7 +153,7 @@ func (mc *mockCapability) UnregisterWorkflowID(workflowID string) {
 func TestReportingPlugin_Observation(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -170,7 +170,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 
 	eid := uuid.New().String()
 	wowner := uuid.New().String()
-	err = s.Add(&ReportRequest{
+	err = s.Add(&requests.Request{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
 		WorkflowOwner:       wowner,
@@ -210,7 +210,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 func TestReportingPlugin_Observation_NilIds(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -244,7 +244,7 @@ func TestReportingPlugin_Observation_NilIds(t *testing.T) {
 func TestReportingPlugin_Observation_NoResults(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -271,7 +271,7 @@ func TestReportingPlugin_Observation_NoResults(t *testing.T) {
 
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	aggregator := &aggregator{}
 	mcap := &mockCapability{
 		aggregator: aggregator,
@@ -331,7 +331,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 
 func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	aggregator := &erroringAggregator{}
 	mcap := &mockCapability{
 		aggregator: aggregator,
@@ -407,7 +407,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t 
 func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -465,7 +465,7 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -531,7 +531,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testi
 
 func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -585,7 +585,7 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -628,7 +628,7 @@ func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
 func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	lggr := logger.Test(t)
 	dynamicEncoderName := "special_encoder"
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		t:                   t,
 		aggregator:          &aggregator{},
@@ -711,7 +711,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -828,7 +828,7 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -960,7 +960,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 
 func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore[*ReportRequest]()
+	s := requests.NewStore()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},

@@ -1,15 +1,13 @@
-package ocr3
+package requests
 
 import (
-	"context"
-	"fmt"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
-type ReportRequest struct {
+type Request struct {
 	Observations            *values.List `mapstructure:"-"`
 	OverriddenEncoderName   string
 	OverriddenEncoderConfig *values.Map
@@ -17,7 +15,7 @@ type ReportRequest struct {
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
-	CallbackCh chan ReportResponse
+	CallbackCh chan Response
 	StopCh     services.StopChan
 
 	WorkflowExecutionID      string
@@ -31,33 +29,8 @@ type ReportRequest struct {
 	KeyID string
 }
 
-func (r *ReportRequest) ID() string {
-	return r.WorkflowExecutionID
-}
-
-func (r *ReportRequest) ExpiryTime() time.Time {
-	return r.ExpiresAt
-}
-
-func (r *ReportRequest) SendResponse(ctx context.Context, resp ReportResponse) {
-	select {
-	case <-ctx.Done():
-		return
-	case r.CallbackCh <- resp:
-		close(r.CallbackCh)
-	}
-}
-
-func (r *ReportRequest) SendTimeout(ctx context.Context) {
-	timeoutResponse := ReportResponse{
-		WorkflowExecutionID: r.WorkflowExecutionID,
-		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
-	}
-	r.SendResponse(ctx, timeoutResponse)
-}
-
-func (r *ReportRequest) Copy() *ReportRequest {
-	return &ReportRequest{
+func (r *Request) Copy() *Request {
+	return &Request{
 		Observations:            r.Observations.CopyList(),
 		OverriddenEncoderConfig: r.OverriddenEncoderConfig.CopyMap(),
 
@@ -79,12 +52,8 @@ func (r *ReportRequest) Copy() *ReportRequest {
 	}
 }
 
-type ReportResponse struct {
+type Response struct {
 	WorkflowExecutionID string
 	Value               *values.Map
 	Err                 error
-}
-
-func (r ReportResponse) RequestID() string {
-	return r.WorkflowExecutionID
 }

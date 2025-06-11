@@ -1,4 +1,4 @@
-package requests_test
+package requests
 
 import (
 	"context"
@@ -11,17 +11,14 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 )
 
 func TestOCR3Store(t *testing.T) {
 	n := time.Now()
 
-	s := requests.NewStore[*ocr3.ReportRequest]()
+	s := NewStore()
 	rid := uuid.New().String()
-	req := &ocr3.ReportRequest{
+	req := &Request{
 		WorkflowExecutionID: rid,
 		ExpiresAt:           n.Add(10 * time.Second),
 	}
@@ -37,11 +34,9 @@ func TestOCR3Store(t *testing.T) {
 	})
 
 	t.Run("evict", func(t *testing.T) {
-		_, wasPresent := s.Evict(rid)
+		_, wasPresent := s.evict(rid)
 		assert.True(t, wasPresent)
-		reqs, err := s.FirstN(10)
-		require.NoError(t, err)
-		assert.Len(t, reqs, 0)
+		assert.Len(t, s.requests, 0)
 	})
 
 	t.Run("firstN", func(t *testing.T) {
@@ -57,7 +52,7 @@ func TestOCR3Store(t *testing.T) {
 
 	t.Run("firstN, batchSize larger than queue", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
+			err := s.Add(&Request{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}
 		items, err := s.FirstN(100)
@@ -75,45 +70,42 @@ func TestOCR3Store(t *testing.T) {
 }
 
 func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
-	s := requests.NewStore[*ocr3.ReportRequest]()
+	s := NewStore()
 	rid := uuid.New().String()
-	req := &ocr3.ReportRequest{
+	req := &Request{
 		WorkflowExecutionID: rid,
 	}
 
 	err := s.Add(req)
 	require.NoError(t, err)
-	reqs, err := s.FirstN(10)
-	require.NoError(t, err)
+	assert.Len(t, s.requests, 1)
+	assert.Len(t, s.requestIDs, 1)
 
-	assert.Len(t, reqs, 1)
+	s.GetByIDs([]string{rid})
+	assert.Len(t, s.requests, 1)
+	assert.Len(t, s.requestIDs, 1)
 
-	reqs = s.GetByIDs([]string{rid})
-	assert.Len(t, reqs, 1)
-
-	_, ok := s.Evict(rid)
+	_, ok := s.evict(rid)
 	assert.True(t, ok)
-	reqs, err = s.FirstN(10)
-	require.NoError(t, err)
-	assert.Len(t, reqs, 0)
+	assert.Len(t, s.requests, 0)
+	assert.Len(t, s.requestIDs, 0)
 
 	err = s.Add(req)
 	require.NoError(t, err)
-	reqs, err = s.FirstN(10)
-	require.NoError(t, err)
-	assert.Len(t, reqs, 1)
+	assert.Len(t, s.requests, 1)
+	assert.Len(t, s.requestIDs, 1)
 }
 
 func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
-	s := requests.NewStore[*ocr3.ReportRequest]()
+	s := NewStore()
 	rid := uuid.New().String()
-	cb := make(chan ocr3.ReportResponse, 1)
+	cb := make(chan Response, 1)
 	stopCh := make(chan struct{}, 1)
 	obs, err := values.NewList(
 		[]any{"hello", 1},
 	)
 	require.NoError(t, err)
-	req := &ocr3.ReportRequest{
+	req := &Request{
 		WorkflowExecutionID:      rid,
 		WorkflowID:               "wid",
 		WorkflowName:             "name",
@@ -132,17 +124,17 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		get  func(ctx context.Context, rid string) *ocr3.ReportRequest
+		get  func(ctx context.Context, rid string) *Request
 	}{
 		{
 			name: "get",
-			get: func(ctx context.Context, rid string) *ocr3.ReportRequest {
+			get: func(ctx context.Context, rid string) *Request {
 				return s.Get(rid)
 			},
 		},
 		{
 			name: "firstN",
-			get: func(ctx context.Context, rid string) *ocr3.ReportRequest {
+			get: func(ctx context.Context, rid string) *Request {
 				rs, err2 := s.FirstN(1)
 				require.NoError(t, err2)
 				assert.Len(t, rs, 1)
@@ -151,7 +143,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		},
 		{
 			name: "getByIDs",
-			get: func(ctx context.Context, rid string) *ocr3.ReportRequest {
+			get: func(ctx context.Context, rid string) *Request {
 				rs := s.GetByIDs([]string{rid})
 				assert.Len(t, rs, 1)
 				return rs[0]
@@ -178,7 +170,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 			gr.StopCh <- struct{}{}
 			<-stopCh
 
-			gr.CallbackCh <- ocr3.ReportResponse{}
+			gr.CallbackCh <- Response{}
 			<-cb
 		})
 	}

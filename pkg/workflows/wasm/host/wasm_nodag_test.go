@@ -85,7 +85,7 @@ func Test_NoDag_Run(t *testing.T) {
 		defer m.Close()
 
 		mockExecutionHelper := NewMockExecutionHelper(t)
-		mockExecutionHelper.EXPECT().GetId().Return("Id")
+		mockExecutionHelper.EXPECT().GetID().Return("Id")
 
 		// wrap some common payload
 		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
@@ -200,7 +200,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		defer m.Close()
 
 		mockExecutionHelper := NewMockExecutionHelper(t)
-		mockExecutionHelper.EXPECT().GetId().Return("Id")
+		mockExecutionHelper.EXPECT().GetID().Return("Id")
 
 		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
 			action := &basicaction.Outputs{AdaptedThing: wordList[i]}
@@ -270,7 +270,7 @@ func Test_NoDag_Random(t *testing.T) {
 	// Test binary executes node mode code conditionally based on the value >= 100
 	anyId := "Id"
 	gte100Exec := NewMockExecutionHelper(t)
-	gte100Exec.EXPECT().GetId().Return(anyId)
+	gte100Exec.EXPECT().GetID().Return(anyId)
 	gte100 := &nodeaction.NodeOutputs{OutputThing: 120}
 	gte100Payload, err := anypb.New(gte100)
 	require.NoError(t, err)
@@ -307,7 +307,7 @@ func Test_NoDag_Random(t *testing.T) {
 		observed.TakeAll()
 
 		lt100Exec := NewMockExecutionHelper(t)
-		lt100Exec.EXPECT().GetId().Return(anyId)
+		lt100Exec.EXPECT().GetID().Return(anyId)
 		lt100 := &nodeaction.NodeOutputs{OutputThing: 120}
 		lt100Payload, err := anypb.New(lt100)
 		require.NoError(t, err)
@@ -331,7 +331,7 @@ func Test_NoDag_Random(t *testing.T) {
 		require.NoError(t, err)
 
 		gte100Exec2 := NewMockExecutionHelper(t)
-		gte100Exec2.EXPECT().GetId().Return("differentId")
+		gte100Exec2.EXPECT().GetID().Return("differentId")
 
 		gte100Exec2.EXPECT().CallCapability(mock.Anything, mock.Anything).Return(&sdkpb.CapabilityResponse{
 			Response: &sdkpb.CapabilityResponse_Payload{
@@ -358,7 +358,7 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
-	helper.EXPECT().GetId().Return("Id")
+	helper.EXPECT().GetID().Return("Id")
 	execResult, err := m.Execute(t.Context(), &wasmpb.ExecuteRequest{
 		Config:  config,
 		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},

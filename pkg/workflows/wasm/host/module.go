@@ -96,7 +96,7 @@ type ExecutionHelper interface {
 	// CallCapability blocking call to the Workflow Engine
 	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
 
-	GetId() string
+	GetID() string
 
 	GetNodeTime() time.Time
 
@@ -492,7 +492,7 @@ func runWasm[I, O proto.Message](
 
 	h := fnv.New64a()
 	if helper != nil {
-		id := helper.GetId()
+		id := helper.GetID()
 		_, _ = h.Write([]byte(id))
 	}
 

@@ -7,8 +7,8 @@ const (
 
 // SpendLimit represents a single spending limit for a specific credit type
 type SpendLimit struct {
-	Credit string
-	Value  int64
+	CreditType string
+	Value      int64
 }
 
 // SpendLimits represents a collection of spending limits that can be applied
@@ -20,7 +20,7 @@ type SpendLimits struct {
 // hasCreditType checks if a credit type already exists in the limits
 func (m *SpendLimits) hasCreditType(credit string) bool {
 	for _, limit := range m.Limits {
-		if limit.Credit == credit {
+		if limit.CreditType == credit {
 			return true
 		}
 	}
@@ -30,7 +30,7 @@ func (m *SpendLimits) hasCreditType(credit string) bool {
 // updateExistingLimit updates the value for an existing credit type
 func (m *SpendLimits) updateExistingLimit(credit string, value int64) {
 	for i, limit := range m.Limits {
-		if limit.Credit == credit {
+		if limit.CreditType == credit {
 			m.Limits[i].Value = value
 			return
 		}
@@ -44,8 +44,8 @@ func (m *SpendLimits) WithMaxSpend(credit string, value int64) *SpendLimits {
 		m.updateExistingLimit(credit, value)
 	} else {
 		m.Limits = append(m.Limits, SpendLimit{
-			Credit: credit,
-			Value:  value,
+			CreditType: credit,
+			Value:      value,
 		})
 	}
 	return m
@@ -59,7 +59,7 @@ func (m *SpendLimits) WithMaxSpendCRE(value int64) *SpendLimits {
 // GetLimit returns the limit for a specific credit type, if it exists
 func (m *SpendLimits) GetLimit(credit string) (*SpendLimit, bool) {
 	for _, limit := range m.Limits {
-		if limit.Credit == credit {
+		if limit.CreditType == credit {
 			return &limit, true
 		}
 	}

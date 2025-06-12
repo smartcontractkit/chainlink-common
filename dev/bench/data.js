@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749651839418,
+  "lastUpdate": 1749736695937,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15456,6 +15456,48 @@ window.BENCHMARK_DATA = {
             "value": 28492,
             "unit": "ns/op",
             "extra": "42141 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a4eee159cd08fbdf69082e8ad4dfacdf73064e7a",
+          "message": "pkg/beholder/beholdertest: move beholder test utils to separate package (#1250)",
+          "timestamp": "2025-06-12T08:57:02-05:00",
+          "tree_id": "d7930daa7df51ba9ea6e513a80ccfe621a89f6d2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a4eee159cd08fbdf69082e8ad4dfacdf73064e7a"
+        },
+        "date": 1749736694015,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.4,
+            "unit": "ns/op",
+            "extra": "3394702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.8,
+            "unit": "ns/op",
+            "extra": "2910624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28432,
+            "unit": "ns/op",
+            "extra": "42097 times\n4 procs"
           }
         ]
       }

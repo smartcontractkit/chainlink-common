@@ -37,6 +37,7 @@ type Config struct {
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool
 	ChipIngressEmitterGRPCEndpoint string
+	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
 
 	// OTel Log
 	LogExportTimeout      time.Duration

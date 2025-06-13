@@ -31,6 +31,7 @@ const (
 	Client_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evm.Client/QueryTrackedLogs"
 	Client_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evm.Client/RegisterLogTracking"
 	Client_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evm.Client/UnregisterLogTracking"
+	Client_WriteReport_FullMethodName            = "/cre.sdk.v2.evm.Client/WriteReport"
 )
 
 // ClientClient is the client API for Client service.
@@ -47,6 +48,7 @@ type ClientClient interface {
 	QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	WriteReport(ctx context.Context, in *WriteReportRequest, opts ...grpc.CallOption) (*WriteReportReply, error)
 }
 
 type clientClient struct {
@@ -157,6 +159,16 @@ func (c *clientClient) UnregisterLogTracking(ctx context.Context, in *evm.Unregi
 	return out, nil
 }
 
+func (c *clientClient) WriteReport(ctx context.Context, in *WriteReportRequest, opts ...grpc.CallOption) (*WriteReportReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WriteReportReply)
+	err := c.cc.Invoke(ctx, Client_WriteReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClientServer is the server API for Client service.
 // All implementations must embed UnimplementedClientServer
 // for forward compatibility.
@@ -171,6 +183,7 @@ type ClientServer interface {
 	QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	WriteReport(context.Context, *WriteReportRequest) (*WriteReportReply, error)
 	mustEmbedUnimplementedClientServer()
 }
 
@@ -210,6 +223,9 @@ func (UnimplementedClientServer) RegisterLogTracking(context.Context, *evm.Regis
 }
 func (UnimplementedClientServer) UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+func (UnimplementedClientServer) WriteReport(context.Context, *WriteReportRequest) (*WriteReportReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WriteReport not implemented")
 }
 func (UnimplementedClientServer) mustEmbedUnimplementedClientServer() {}
 func (UnimplementedClientServer) testEmbeddedByValue()                {}
@@ -412,6 +428,24 @@ func _Client_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Client_WriteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WriteReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientServer).WriteReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Client_WriteReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientServer).WriteReport(ctx, req.(*WriteReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Client_ServiceDesc is the grpc.ServiceDesc for Client service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -458,6 +492,10 @@ var Client_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnregisterLogTracking",
 			Handler:    _Client_UnregisterLogTracking_Handler,
+		},
+		{
+			MethodName: "WriteReport",
+			Handler:    _Client_WriteReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

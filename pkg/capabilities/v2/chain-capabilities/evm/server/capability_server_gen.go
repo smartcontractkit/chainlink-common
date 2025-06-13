@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -38,6 +39,8 @@ type ClientCapability interface {
 	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.WriteReportRequest) (*evm1.WriteReportReply, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -202,6 +205,13 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest, _ *emptypb.Empty) (*emptypb.Empty, error) {
 			return c.ClientCapability.UnregisterLogTracking(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "WriteReport":
+		input := &evm1.WriteReportRequest{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.WriteReportRequest, _ *emptypb.Empty) (*evm1.WriteReportReply, error) {
+			return c.ClientCapability.WriteReport(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

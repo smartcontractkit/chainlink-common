@@ -163,6 +163,7 @@ func ConvertTransactionFromProto(protoTx *Transaction) (*evmtypes.Transaction, e
 
 var errEmptyMsg = errors.New("call msg can't be nil")
 
+
 func ConvertCallMsgToProto(msg *evmtypes.CallMsg) (*CallMsg, error) {
 	if msg == nil {
 		return nil, errEmptyMsg

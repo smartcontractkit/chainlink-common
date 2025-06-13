@@ -75,3 +75,15 @@ message AwaitCapabilitiesRequest {
 message AwaitCapabilitiesResponse {
   map<int32, cre.sdk.v2.CapabilityResponse> responses = 1;
 }
+
+message GetSecretRequest {
+  string id = 1;
+  string namespace = 2;
+}
+
+message GetSecretResponse {
+  string id = 1;
+  string namespace = 2;
+  string owner = 3;
+  string value = 4;
+}

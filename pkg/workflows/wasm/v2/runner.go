@@ -25,9 +25,14 @@ type runnerInternals interface {
 
 func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.DonRunner {
 	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
+	sp := &secretsProvider{runtime: drt}
 	return getRunner(
-		&subscriber[sdk.DonRuntime]{runnerInternals: runnerInternals},
+		&subscriber[sdk.DonRuntime]{
+			secretsProvider: sp,
+			runnerInternals: runnerInternals,
+		},
 		&runner[sdk.DonRuntime]{
+			secretsProvider: sp,
 			runtime:         drt,
 			runnerInternals: runnerInternals,
 			setRuntime: func(config []byte, maxResponseSize uint64) {
@@ -38,9 +43,14 @@ func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInter
 
 func newNodeRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.NodeRunner {
 	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_Node)}
+	sp := &secretsProvider{runtime: nrt}
 	return getRunner(
-		&subscriber[sdk.NodeRuntime]{runnerInternals: runnerInternals},
+		&subscriber[sdk.NodeRuntime]{
+			secretsProvider: sp,
+			runnerInternals: runnerInternals,
+		},
 		&runner[sdk.NodeRuntime]{
+			secretsProvider: sp,
 			runnerInternals: runnerInternals,
 			runtime:         nrt,
 			setRuntime: func(config []byte, maxResponseSize uint64) {
@@ -51,6 +61,7 @@ func newNodeRunner(runnerInternals runnerInternals, runtimeInternals runtimeInte
 
 type runner[T any] struct {
 	runnerInternals
+	*secretsProvider
 	trigger    *sdkpb.Trigger
 	id         string
 	runtime    T
@@ -98,6 +109,7 @@ func (d *runner[T]) Logger() *slog.Logger {
 }
 
 type subscriber[T any] struct {
+	*secretsProvider
 	runnerInternals
 	id     string
 	config []byte
@@ -147,6 +159,7 @@ type genericRunner[T any] interface {
 	Config() []byte
 	LogWriter() io.Writer
 	Logger() *slog.Logger
+	GetSecret(req sdk.GetSecretRequest) string
 }
 
 func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {

@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -116,6 +117,8 @@ func (m mockNodeRuntime) Logger() *slog.Logger {
 	panic("unused in tests")
 }
 
+func (m mockNodeRuntime) GetSecret(sdk.GetSecretRequest) string { return "" }
+
 func (m mockNodeRuntime) IsNodeRuntime() {}
 
 type mockDonRuntime struct{}
@@ -141,9 +144,10 @@ func (m *mockDonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.
 func (m *mockDonRuntime) CallCapability(*pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
 	panic("not used in test")
 }
-func (m *mockDonRuntime) Config() []byte       { return nil }
-func (m *mockDonRuntime) LogWriter() io.Writer { return nil }
-func (m *mockDonRuntime) Logger() *slog.Logger { return nil }
+func (m *mockDonRuntime) Config() []byte                        { return nil }
+func (m *mockDonRuntime) LogWriter() io.Writer                  { return nil }
+func (m *mockDonRuntime) Logger() *slog.Logger                  { return nil }
+func (m *mockDonRuntime) GetSecret(sdk.GetSecretRequest) string { return "" }
 
 type medianTestFieldDescription[T any] struct {
 	T T

@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/log"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
@@ -295,9 +296,17 @@ func TestNewClient(t *testing.T) {
 		}
 		client, err := beholder.NewClient(cfg)
 		require.NoError(t, err)
-		// LoggerProvider and Logger should be nil if LogStreamingEnabled is false
-		assert.Nil(t, client.LoggerProvider)
-		assert.Nil(t, client.Logger)
+		// LoggerProvider and Logger should NOT be nil, but should be no-op implementations
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+
+		// Optionally, check that using the logger does not panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
+			}
+		}()
+		client.Logger.Emit(context.Background(), log.Record{})
 	})
 
 }

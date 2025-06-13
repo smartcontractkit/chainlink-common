@@ -47,6 +47,7 @@ func ExampleConfig() {
 		LogExportInterval:     1 * time.Second,
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
+		LogStreamingEnabled:   false, // Disable streaming logs by default
 	}
 	fmt.Printf("%+v\n", config)
 	config.LogRetryConfig = &beholder.RetryConfig{

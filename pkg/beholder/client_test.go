@@ -276,4 +276,28 @@ func TestNewClient(t *testing.T) {
 		assert.Equal(t, "address for chip ingress service is empty", err.Error())
 	})
 
+	t.Run("LogStreamingEnabled true creates logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      true,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+	})
+
+	t.Run("LogStreamingEnabled false disables logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      false,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		// LoggerProvider and Logger should be nil if LogStreamingEnabled is false
+		assert.Nil(t, client.LoggerProvider)
+		assert.Nil(t, client.Logger)
+	})
+
 }

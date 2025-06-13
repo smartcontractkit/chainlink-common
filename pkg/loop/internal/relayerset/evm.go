@@ -20,6 +20,26 @@ type evmClient struct {
 	client  relayerset.EVMRelayerSetClient
 }
 
+func (e *evmClient) CalculateTransactionFee(ctx context.Context, in *evmpb.CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.CalculateTransactionFeeReply, error) {
+	return e.client.CalculateTransactionFee(ctx, &relayerset.CalculateTransactionFeeRequest{
+		RelayerId: &relayerset.RelayerId{
+			Network: e.relayID.Network,
+			ChainId: e.relayID.ChainID,
+		},
+		Request: in},
+		opts...)
+}
+
+func (e *evmClient) SubmitTransaction(ctx context.Context, in *evmpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*evmpb.SubmitTransactionReply, error) {
+	return e.client.SubmitTransaction(ctx, &relayerset.SubmitTransactionRequest{
+		RelayerId: &relayerset.RelayerId{
+			Network: e.relayID.Network,
+			ChainId: e.relayID.ChainID,
+		},
+		Request: in},
+		opts...)
+}
+
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
 func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
@@ -345,21 +365,6 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *relayerset.
 	}
 
 	return &emptypb.Empty{}, nil
-}
-
-func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
-	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
-	if err != nil {
-		return nil, err
-	}
-
-	txStatus, err := evmService.GetTransactionStatus(ctx, request.Request.TransactionId)
-	if err != nil {
-		return nil, err
-	}
-
-	//nolint: gosec // G115
-	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {

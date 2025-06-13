@@ -20,6 +20,36 @@ type EVMClient struct {
 	grpcClient evmpb.EVMClient
 }
 
+// CalculateTransactionFee implements types.EVMService.
+func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
+	reply, err := e.grpcClient.CalculateTransactionFee(ctx, &evmpb.CalculateTransactionFeeRequest{GasInfo: &evmpb.ReceiptGasInfo{
+		GasUsed:           receiptGasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewBigIntFromInt(receiptGasInfo.EffectiveGasPrice),
+	}})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransactionFee())}, nil
+}
+
+// SubmitTransaction implements types.EVMService.
+func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
+	reply, err := e.grpcClient.SubmitTransaction(ctx, &evmpb.SubmitTransactionRequest{
+		To:        txRequest.To[:],
+		Data:      txRequest.Data,
+		GasConfig: toCapGasConfig(txRequest.GasConfig),
+	})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.TransactionResult{
+		TxStatus: evmtypes.TransactionStatus(reply.TxStatus),
+		TxHash:   evmtypes.Hash(reply.TxHash),
+	}, nil
+}
+
 func NewEVMCClient(grpcClient evmpb.EVMClient) *EVMClient {
 	return &EVMClient{
 		grpcClient: grpcClient,
@@ -330,4 +360,13 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func toCapGasConfig(gasConfig *evmtypes.GasConfig) *evmpb.GasConfig {
+	if gasConfig == nil {
+		return nil
+	}
+	return &evmpb.GasConfig{
+		GasLimit: *gasConfig.GasLimit,
+	}
 }

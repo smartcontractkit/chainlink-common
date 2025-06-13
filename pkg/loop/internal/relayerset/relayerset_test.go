@@ -497,6 +497,14 @@ type TestEVM struct {
 	mockedContractReader *mocks2.EVMService
 }
 
+func (t *TestEVM) CalculateTransactionFee(ctx context.Context, receiptGasInfo evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
+	return t.mockedContractReader.CalculateTransactionFee(ctx, receiptGasInfo)
+}
+
+func (t *TestEVM) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
+	return t.mockedContractReader.SubmitTransaction(ctx, txRequest)
+}
+
 func (t TestEVM) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	return t.mockedContractReader.CallContract(ctx, msg, blockNumber)
 }

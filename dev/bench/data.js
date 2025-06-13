@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749775505344,
+  "lastUpdate": 1749846542204,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15540,6 +15540,48 @@ window.BENCHMARK_DATA = {
             "value": 28498,
             "unit": "ns/op",
             "extra": "42112 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bd3977b4bb4982f042b61fb2e6a70b5b42ef93f7",
+          "message": "chip-ingress: support TLS with HTTP/2 for gRPC client (#1261)\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-06-13T16:27:55-04:00",
+          "tree_id": "46effed2fb118e16c5bb8247384e0dc85e409e95",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bd3977b4bb4982f042b61fb2e6a70b5b42ef93f7"
+        },
+        "date": 1749846541331,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.4,
+            "unit": "ns/op",
+            "extra": "3377876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.8,
+            "unit": "ns/op",
+            "extra": "2937744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28146,
+            "unit": "ns/op",
+            "extra": "42652 times\n4 procs"
           }
         ]
       }

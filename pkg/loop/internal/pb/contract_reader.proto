@@ -123,17 +123,17 @@ message Head {
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Sequence].
 message Sequence {
   string sequence_cursor = 1;
-  bytes tx_hash = 2;
-  Head head = 3;
-  codec.VersionedBytes data = 4;
+  Head head = 2;
+  codec.VersionedBytes data = 3;
+  bytes tx_hash = 4;
 }
 
 message SequenceWithKey {
   string sequence_cursor = 1;
-  bytes tx_hash = 2;
-  Head head = 3;
-  codec.VersionedBytes data = 4;
-  string key = 5;
+  Head head = 2;
+  codec.VersionedBytes data = 3;
+  string key = 4;
+  bytes tx_hash = 5;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

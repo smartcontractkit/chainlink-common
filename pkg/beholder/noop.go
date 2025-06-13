@@ -128,3 +128,16 @@ func (cfg *writerClientConfig) WithWriter(w io.Writer) {
 	cfg.TraceOptions = append(cfg.TraceOptions, stdouttrace.WithWriter(w))
 	cfg.MetricOptions = append(cfg.MetricOptions, stdoutmetric.WithWriter(w))
 }
+
+type beholderNoopLogExporter struct{}
+
+func (beholderNoopLogExporter) Export(ctx context.Context, records []sdklog.Record) error { return nil }
+func (beholderNoopLogExporter) Shutdown(ctx context.Context) error                        { return nil }
+func (beholderNoopLogExporter) ForceFlush(ctx context.Context) error                      { return nil }
+
+// BeholderNoopLoggerProvider returns a *sdklog.LoggerProvider (the same type as sdklog.NewLoggerProvider) that drops all logs.
+func BeholderNoopLoggerProvider() *sdklog.LoggerProvider {
+	return sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewSimpleProcessor(beholderNoopLogExporter{})),
+	)
+}

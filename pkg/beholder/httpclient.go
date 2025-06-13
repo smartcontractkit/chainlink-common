@@ -76,6 +76,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	// Logger
+
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
@@ -112,6 +113,12 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		sdklog.WithResource(loggerResource),
 		sdklog.WithProcessor(loggerProcessor),
 	)
+
+	// If log streaming is disabled, use a noop logger provider
+	if !cfg.LogStreamingEnabled {
+		loggerProvider = BeholderNoopLoggerProvider()
+	}
+
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer

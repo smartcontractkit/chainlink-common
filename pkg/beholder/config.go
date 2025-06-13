@@ -46,7 +46,7 @@ type Config struct {
 	LogBatchProcessor     bool // Enabled by default. Disable only for testing.
 	// Retry config for shared log exporter, used by Emitter and Logger
 	LogRetryConfig      *RetryConfig
-	LogStreamingEnabled bool // Enable streaming logs to the OTel log exporter
+	LogStreamingEnabled bool // Enable logs streaming to the OTel log exporter
 
 	// Auth
 	AuthPublicKeyHex string
@@ -113,7 +113,7 @@ func DefaultConfig() Config {
 		LogExportInterval:     1 * time.Second,
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
-		LogStreamingEnabled:   false, // Disable streaming logs by default
+		LogStreamingEnabled:   true, // Enable logs streaming by default
 	}
 }
 

@@ -76,47 +76,49 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	// Logger
-	var loggerProvider *sdklog.LoggerProvider
-	if cfg.LogStreamingEnabled {
-		var loggerProcessor sdklog.Processor
-		if cfg.LogBatchProcessor {
-			batchProcessorOpts := []sdklog.BatchProcessorOption{}
-			if cfg.LogExportTimeout > 0 {
-				batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
-			}
-			if cfg.LogExportMaxBatchSize > 0 {
-				batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
-			}
-			if cfg.LogExportInterval > 0 {
-				batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.LogExportInterval)) // Default is 1s
-			}
-			if cfg.LogMaxQueueSize > 0 {
-				batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize)) // Default is 2048
-			}
-			loggerProcessor = sdklog.NewBatchProcessor(
-				sharedLogExporter,
-				batchProcessorOpts...,
-			)
-		} else {
-			loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
+
+	var loggerProcessor sdklog.Processor
+	if cfg.LogBatchProcessor {
+		batchProcessorOpts := []sdklog.BatchProcessorOption{}
+		if cfg.LogExportTimeout > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
 		}
-		loggerAttributes := []attribute.KeyValue{
-			attribute.String("beholder_data_type", "zap_log_message"),
+		if cfg.LogExportMaxBatchSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
 		}
-		loggerResource, err := sdkresource.Merge(
-			sdkresource.NewSchemaless(loggerAttributes...),
-			baseResource,
-		)
-		if err != nil {
-			return nil, err
+		if cfg.LogExportInterval > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.LogExportInterval)) // Default is 1s
 		}
-		loggerProvider = sdklog.NewLoggerProvider(
-			sdklog.WithResource(loggerResource),
-			sdklog.WithProcessor(loggerProcessor),
+		if cfg.LogMaxQueueSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize)) // Default is 2048
+		}
+		loggerProcessor = sdklog.NewBatchProcessor(
+			sharedLogExporter,
+			batchProcessorOpts...,
 		)
 	} else {
+		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
+	}
+	loggerAttributes := []attribute.KeyValue{
+		attribute.String("beholder_data_type", "zap_log_message"),
+	}
+	loggerResource, err := sdkresource.Merge(
+		sdkresource.NewSchemaless(loggerAttributes...),
+		baseResource,
+	)
+	if err != nil {
+		return nil, err
+	}
+	loggerProvider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(loggerResource),
+		sdklog.WithProcessor(loggerProcessor),
+	)
+
+	// If log streaming is disabled, use a noop logger provider
+	if !cfg.LogStreamingEnabled {
 		loggerProvider = BeholderNoopLoggerProvider()
 	}
+
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer

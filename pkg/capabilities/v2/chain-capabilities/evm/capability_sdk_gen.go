@@ -248,35 +248,25 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 	})
 }
 
-func LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log, *evm.Log] {
-	configAny, _ := anypb.New(config)
-	return &clientLogTrigger{
-		config: configAny,
+func (c *Client) WriteReport(runtime sdk.DonRuntime, input *WriteReportRequest) sdk.Promise[*WriteReportReply] {
+	wrapped, err := anypb.New(input)
+	if err != nil {
+		return sdk.PromiseFromResult[*WriteReportReply](nil, err)
 	}
-}
-
-type clientLogTrigger struct {
-	config *anypb.Any
-}
-
-func (*clientLogTrigger) IsTrigger() {}
-
-func (*clientLogTrigger) NewT() *evm.Log {
-	return &evm.Log{}
-}
-
-func (*clientLogTrigger) CapabilityID() string {
-	return "evm@1.0.0"
-}
-
-func (*clientLogTrigger) Method() string {
-	return "LogTrigger"
-}
-
-func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
-	return t.config
-}
-
-func (t *clientLogTrigger) Adapt(trigger *evm.Log) (*evm.Log, error) {
-	return trigger, nil
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
+		Id:      "evm@1.0.0",
+		Payload: wrapped,
+		Method:  "WriteReport",
+	}), func(i *sdkpb.CapabilityResponse) (*WriteReportReply, error) {
+		switch payload := i.Response.(type) {
+		case *sdkpb.CapabilityResponse_Error:
+			return nil, errors.New(payload.Error)
+		case *sdkpb.CapabilityResponse_Payload:
+			output := &WriteReportReply{}
+			err = payload.Payload.UnmarshalTo(output)
+			return output, err
+		default:
+			return nil, errors.New("unexpected response type")
+		}
+	})
 }

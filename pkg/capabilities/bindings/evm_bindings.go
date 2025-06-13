@@ -61,16 +61,14 @@ type FilterLogTriggerDataStore struct {
 	BlockDepth uint64
 }
 
-
 func (ds DataStorage) LogTrigger(runtime sdk.DonRuntime, LogTriggerInput *LogTriggerInput) sdk.DonTrigger[*evmpb.FilterLogsReply] {
 }
-
 
 func (ds *DataStorage) LogTriggerDataStoredLog(filterLogTrigger *FilterLogTriggerDataStore) sdk.DonTrigger[*ParsedLog[DataStored]] {
 	//TODO properly use input for filters
 	ds.evmClient.LogTrigger(&evmcappb.FilterLogTriggerRequest{
-		Addresses: [][]byte{ds.Address},
-		Topics0: [][]byte{ds.codec.DataStoreLogHash()},
+		Addresses:  [][]byte{ds.Address},
+		Topics0:    [][]byte{ds.codec.DataStoreLogHash()},
 		Confidence: evmcappb.ConfidenceLevel_FINALIZED,
 	})
 
@@ -114,7 +112,7 @@ func (ds *DataStorage) FilterLogsDataStoredLog(runtime sdk.DonRuntime, options *
 
 // Default behaviour could be to get all known logs until the latest one and next called would retrieve from the last head read + 1 until the new head but this means storing internal state in the workflow
 func (rda *DataStorage) QueryTrackedLogsDataStoredLog(runtime sdk.DonRuntime, options *QueryTrackedLogsOptions) ([]ParsedLog[DataStored], any) {
-		rda.evmClient.QueryTrackedLogs(runtime, &evm.QueryTrackedLogsRequest{
+	rda.evmClient.QueryTrackedLogs(runtime, &evm.QueryTrackedLogsRequest{
 		Expression: []*evm.Expression{
 			//TODO add proper expression
 			&evm.Expression{Evaluator: &evm.Expression_BooleanExpression{&evm.BooleanExpression{
@@ -127,10 +125,10 @@ func (rda *DataStorage) QueryTrackedLogsDataStoredLog(runtime sdk.DonRuntime, op
 }
 
 func (rda *DataStorage) RegisterLogTrackingDataStoredLog(runtime sdk.DonRuntime, options *LogTrackingOptions) {
-		//TODO use log tracking options if set
+	//TODO use log tracking options if set
 	rda.evmClient.RegisterLogTracking(runtime, &evm.RegisterLogTrackingRequest{
 		Filter: &evm.LPFilter{
-			Name:      "DataStored-" + common.Bytes2Hex(rda.Address) ,
+			Name:      "DataStored-" + common.Bytes2Hex(rda.Address),
 			Addresses: [][]byte{rda.Address},
 			EventSigs: [][]byte{rda.codec.DataStoreLogHash()},
 		},
@@ -139,7 +137,7 @@ func (rda *DataStorage) RegisterLogTrackingDataStoredLog(runtime sdk.DonRuntime,
 }
 
 func (rda *DataStorage) UnregisterLogTrackingDataStoredLog(runtime sdk.DonRuntime) {
-		rda.evmClient.UnregisterLogTracking(runtime, &evm.UnregisterLogTrackingRequest{
+	rda.evmClient.UnregisterLogTracking(runtime, &evm.UnregisterLogTrackingRequest{
 		FilterName: "DataStored-" + common.Bytes2Hex(rda.Address),
 	})
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-contract DataStorage implements IReceiver {
+contract DataStorage {
     // Mapping to store data keyed by an address and a string key
     mapping(address => mapping(string => string)) private data;
 
@@ -49,9 +49,10 @@ contract DataStorage implements IReceiver {
         emit DataStored(msg.sender, userData.key, userData.value);
     }
 
-    onReport(metadata []byte, calldata []byte) {
-        UserData user := decode(calldate)
-        user.namme
-        use
+    function onReport(bytes calldata metadata, bytes calldata payload) external {
+        UserData memory user = abi.decode(payload, (UserData));
+        // TODO implement logic to handle the report
+        data[msg.sender][user.key] = user.value;
+        emit DataStored(msg.sender, user.key, user.value);
     }
 }

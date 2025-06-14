@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -101,22 +102,15 @@ type ChainService interface {
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
 type GethClient interface {
-	// CallContract reads a contract as specified in the call message at a block height defined by blockNumber where:
-	// blockNumber :
-	//   nil (default) or (-2) → use the latest mined block (“latest”)
-	//   FinalizedBlockNumber(-3) → last finalized block (“finalized”)
-	//
-	// Any positive value is treated as an explicit block height.
+}
+
+type EVMService interface {
 	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-}
-
-type EVMService interface {
-	GethClient
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected
@@ -141,8 +135,14 @@ type EVMService interface {
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
-	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
-	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
+	// Returns true if a transaction is finalized. Will return immediately maxWatTime is zero
+	IsTxFinalized(ctx context.Context, txHash evm.Hash, maxWaitTime time.Duration) (bool, error)
+
+	// WriteReport writes a transaction against a keystone forwarder contract
+	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
+
+	// Utility function to calculate the total fee based on a tx receipt
+	CalculateTransactionFee(ctx context.Context, receipt evm.Receipt) (*evm.TransactionFee, error)
 }
 
 // Relayer extends ChainService with providers for each product.

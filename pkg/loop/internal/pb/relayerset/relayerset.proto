@@ -135,6 +135,7 @@ service EVMRelayerSet {
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (loop.evm.GetTransactionStatusReply);
+  rpc GetFiltersNames(google.protobuf.Empty) returns (loop.evm.GetFiltersNamesReply); // TODO PLEX-1465: once code is moved away, remove this GetFiltersNames RPC method
 }
 
 message ContractReaderGetLatestValueRequest {

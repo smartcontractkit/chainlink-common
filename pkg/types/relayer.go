@@ -143,6 +143,10 @@ type EVMService interface {
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
+
+	// GetFiltersNames returns all registered filters' names for later pruning
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	GetFiltersNames(ctx context.Context) ([]string, error)
 }
 
 // Relayer extends ChainService with providers for each product.

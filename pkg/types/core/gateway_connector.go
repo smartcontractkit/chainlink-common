@@ -22,6 +22,7 @@ type GatewayConnector interface {
 // GatewayConnector user (node) implements application logic in the Handler interface.
 type GatewayConnectorHandler interface {
 	// ID returns the unique identifier for the handler
+	// This ID is used for routing gRPC requests to the correct handler
 	ID(ctx context.Context) (string, error)
 	// HandleGatewayMessage is called when a message is received from a gateway
 	HandleGatewayMessage(ctx context.Context, gatewayID string, msg []byte) error

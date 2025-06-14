@@ -464,11 +464,11 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := t.Context()
 				firstItem := CreateTestStruct(0, tester)
 
-				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, firstItem, contracts[0], types.Finalized)
 
 				secondItem := CreateTestStruct(1, tester)
 
-				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, secondItem, contracts[0], types.Finalized)
 
 				bound := BindingsByName(contracts, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
 
@@ -546,11 +546,11 @@ func runContractReaderGetLatestValueInterfaceTests[T TestingT[T]](t T, tester Ch
 				ctx := t.Context()
 				firstItem := CreateTestStruct(0, tester)
 
-				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, firstItem, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, firstItem, contracts[0], types.Finalized)
 
 				secondItem := CreateTestStruct(1, tester)
 
-				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, secondItem, contracts[0], types.Unconfirmed)
+				_ = SubmitTransactionToCW(t, tester, cw, MethodSettingStruct, secondItem, contracts[0], types.Finalized)
 
 				bound := BindingsByName(contracts, AnyContractName)[0] // minimum of one bound contract expected, otherwise panics
 

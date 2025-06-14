@@ -2,6 +2,7 @@ package retry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -63,6 +64,12 @@ func (s *Strategy[R]) Do(ctx context.Context, lggr logger.Logger, fn func(ctx co
 		result, err := fn(ctx)
 		if err == nil {
 			return result, nil
+		}
+
+		// Handle permanent errors without retrying.
+		var permanent *PermanentError
+		if errors.As(err, &permanent) {
+			return result, permanent.Unwrap()
 		}
 
 		wait := s.Backoff.Duration()

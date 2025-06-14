@@ -11,7 +11,7 @@ type GatewayConnector interface {
 	// SendToGateway takes a signed message as argument and sends it to the specified gateway
 	SendToGateway(ctx context.Context, gatewayID string, msg []byte) error
 	// Sign the given message and return signature
-	Sign(ctx context.Context, msg []byte) ([]byte, error)
+	SignMessage(ctx context.Context, msg []byte) ([]byte, error)
 	// GatewayIDs returns the list of Gateway IDs
 	GatewayIDs(ctx context.Context) ([]string, error)
 	// DonID returns the DON ID
@@ -22,6 +22,7 @@ type GatewayConnector interface {
 // GatewayConnector user (node) implements application logic in the Handler interface.
 type GatewayConnectorHandler interface {
 	// ID returns the unique identifier for the handler
+	// This ID is used for routing gRPC requests to the correct handler
 	ID(ctx context.Context) (string, error)
 	// HandleGatewayMessage is called when a message is received from a gateway
 	HandleGatewayMessage(ctx context.Context, gatewayID string, msg []byte) error

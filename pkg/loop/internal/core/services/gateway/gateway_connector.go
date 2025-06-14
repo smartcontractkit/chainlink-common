@@ -76,14 +76,14 @@ func (c GatewayConnectorClient) SendToGateway(ctx context.Context, gatewayID str
 	return err
 }
 
-func (c GatewayConnectorClient) Sign(ctx context.Context, msg []byte) ([]byte, error) {
-	signReply, err := c.grpc.Sign(ctx, &pb.SignRequest{
+func (c GatewayConnectorClient) SignMessage(ctx context.Context, msg []byte) ([]byte, error) {
+	signMessageReply, err := c.grpc.SignMessage(ctx, &pb.SignMessageRequest{
 		Message: msg,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign message: %w", err)
 	}
-	return signReply.Signature, nil
+	return signMessageReply.Signature, nil
 }
 
 func NewGatewayConnectorClient(cc grpc.ClientConnInterface, b *net.BrokerExt) *GatewayConnectorClient {
@@ -127,12 +127,12 @@ func (s GatewayConnectorServer) SendToGateway(ctx context.Context, req *pb.SendM
 	}
 	return &emptypb.Empty{}, nil
 }
-func (s GatewayConnectorServer) Sign(ctx context.Context, req *pb.SignRequest) (*pb.SignReply, error) {
-	signature, err := s.impl.Sign(ctx, req.Message)
+func (s GatewayConnectorServer) SignMessage(ctx context.Context, req *pb.SignMessageRequest) (*pb.SignMessageReply, error) {
+	signature, err := s.impl.SignMessage(ctx, req.Message)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign message: %w", err)
 	}
-	return &pb.SignReply{
+	return &pb.SignMessageReply{
 		Signature: signature,
 	}, nil
 }

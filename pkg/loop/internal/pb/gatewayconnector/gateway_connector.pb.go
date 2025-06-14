@@ -66,27 +66,27 @@ func (x *GatewayIDRequest) GetGatewayId() string {
 	return ""
 }
 
-type SignRequest struct {
+type SignMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       []byte                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SignRequest) Reset() {
-	*x = SignRequest{}
+func (x *SignMessageRequest) Reset() {
+	*x = SignMessageRequest{}
 	mi := &file_gateway_connector_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SignRequest) String() string {
+func (x *SignMessageRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SignRequest) ProtoMessage() {}
+func (*SignMessageRequest) ProtoMessage() {}
 
-func (x *SignRequest) ProtoReflect() protoreflect.Message {
+func (x *SignMessageRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_gateway_connector_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -98,39 +98,39 @@ func (x *SignRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SignRequest.ProtoReflect.Descriptor instead.
-func (*SignRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SignMessageRequest.ProtoReflect.Descriptor instead.
+func (*SignMessageRequest) Descriptor() ([]byte, []int) {
 	return file_gateway_connector_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SignRequest) GetMessage() []byte {
+func (x *SignMessageRequest) GetMessage() []byte {
 	if x != nil {
 		return x.Message
 	}
 	return nil
 }
 
-type SignReply struct {
+type SignMessageReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SignReply) Reset() {
-	*x = SignReply{}
+func (x *SignMessageReply) Reset() {
+	*x = SignMessageReply{}
 	mi := &file_gateway_connector_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SignReply) String() string {
+func (x *SignMessageReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SignReply) ProtoMessage() {}
+func (*SignMessageReply) ProtoMessage() {}
 
-func (x *SignReply) ProtoReflect() protoreflect.Message {
+func (x *SignMessageReply) ProtoReflect() protoreflect.Message {
 	mi := &file_gateway_connector_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,12 +142,12 @@ func (x *SignReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SignReply.ProtoReflect.Descriptor instead.
-func (*SignReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SignMessageReply.ProtoReflect.Descriptor instead.
+func (*SignMessageReply) Descriptor() ([]byte, []int) {
 	return file_gateway_connector_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SignReply) GetSignature() []byte {
+func (x *SignMessageReply) GetSignature() []byte {
 	if x != nil {
 		return x.Signature
 	}
@@ -301,10 +301,10 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\x17gateway_connector.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14gateway_common.proto\"1\n" +
 	"\x10GatewayIDRequest\x12\x1d\n" +
 	"\n" +
-	"gateway_id\x18\x01 \x01(\tR\tgatewayId\"'\n" +
-	"\vSignRequest\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\fR\amessage\")\n" +
-	"\tSignReply\x12\x1c\n" +
+	"gateway_id\x18\x01 \x01(\tR\tgatewayId\".\n" +
+	"\x12SignMessageRequest\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\fR\amessage\"0\n" +
+	"\x10SignMessageReply\x12\x1c\n" +
 	"\tsignature\x18\x01 \x01(\fR\tsignature\"2\n" +
 	"\x0fGatewayIDsReply\x12\x1f\n" +
 	"\vgateway_ids\x18\x01 \x03(\tR\n" +
@@ -315,12 +315,12 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\x11AddHandlerRequest\x12\x18\n" +
 	"\amethods\x18\x01 \x03(\tR\amethods\x12\x1d\n" +
 	"\n" +
-	"handler_id\x18\x02 \x01(\rR\thandlerId2\xf3\x02\n" +
+	"handler_id\x18\x02 \x01(\rR\thandlerId2\x88\x03\n" +
 	"\x10GatewayConnector\x12=\n" +
 	"\n" +
 	"AddHandler\x12\x17.loop.AddHandlerRequest\x1a\x16.google.protobuf.Empty\x12A\n" +
-	"\rSendToGateway\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.Empty\x12*\n" +
-	"\x04Sign\x12\x11.loop.SignRequest\x1a\x0f.loop.SignReply\x12;\n" +
+	"\rSendToGateway\x12\x18.loop.SendMessageRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
+	"\vSignMessage\x12\x18.loop.SignMessageRequest\x1a\x16.loop.SignMessageReply\x12;\n" +
 	"\n" +
 	"GatewayIDs\x12\x16.google.protobuf.Empty\x1a\x15.loop.GatewayIDsReply\x121\n" +
 	"\x05DonID\x12\x16.google.protobuf.Empty\x1a\x10.loop.DonIDReply\x12A\n" +
@@ -341,8 +341,8 @@ func file_gateway_connector_proto_rawDescGZIP() []byte {
 var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_gateway_connector_proto_goTypes = []any{
 	(*GatewayIDRequest)(nil),   // 0: loop.GatewayIDRequest
-	(*SignRequest)(nil),        // 1: loop.SignRequest
-	(*SignReply)(nil),          // 2: loop.SignReply
+	(*SignMessageRequest)(nil), // 1: loop.SignMessageRequest
+	(*SignMessageReply)(nil),   // 2: loop.SignMessageReply
 	(*GatewayIDsReply)(nil),    // 3: loop.GatewayIDsReply
 	(*DonIDReply)(nil),         // 4: loop.DonIDReply
 	(*AddHandlerRequest)(nil),  // 5: loop.AddHandlerRequest
@@ -352,13 +352,13 @@ var file_gateway_connector_proto_goTypes = []any{
 var file_gateway_connector_proto_depIdxs = []int32{
 	5, // 0: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
 	6, // 1: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
-	1, // 2: loop.GatewayConnector.Sign:input_type -> loop.SignRequest
+	1, // 2: loop.GatewayConnector.SignMessage:input_type -> loop.SignMessageRequest
 	7, // 3: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
 	7, // 4: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
 	0, // 5: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
 	7, // 6: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
 	7, // 7: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
-	2, // 8: loop.GatewayConnector.Sign:output_type -> loop.SignReply
+	2, // 8: loop.GatewayConnector.SignMessage:output_type -> loop.SignMessageReply
 	3, // 9: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
 	4, // 10: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
 	7, // 11: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty

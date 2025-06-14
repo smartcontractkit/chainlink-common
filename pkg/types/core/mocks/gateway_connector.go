@@ -279,12 +279,12 @@ func (_c *GatewayConnector_SendToGateway_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// Sign provides a mock function with given fields: ctx, msg
-func (_m *GatewayConnector) Sign(ctx context.Context, msg []byte) ([]byte, error) {
+// SignMessage provides a mock function with given fields: ctx, msg
+func (_m *GatewayConnector) SignMessage(ctx context.Context, msg []byte) ([]byte, error) {
 	ret := _m.Called(ctx, msg)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Sign")
+		panic("no return value specified for SignMessage")
 	}
 
 	var r0 []byte
@@ -309,31 +309,31 @@ func (_m *GatewayConnector) Sign(ctx context.Context, msg []byte) ([]byte, error
 	return r0, r1
 }
 
-// GatewayConnector_Sign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sign'
-type GatewayConnector_Sign_Call struct {
+// GatewayConnector_SignMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SignMessage'
+type GatewayConnector_SignMessage_Call struct {
 	*mock.Call
 }
 
-// Sign is a helper method to define mock.On call
+// SignMessage is a helper method to define mock.On call
 //   - ctx context.Context
 //   - msg []byte
-func (_e *GatewayConnector_Expecter) Sign(ctx interface{}, msg interface{}) *GatewayConnector_Sign_Call {
-	return &GatewayConnector_Sign_Call{Call: _e.mock.On("Sign", ctx, msg)}
+func (_e *GatewayConnector_Expecter) SignMessage(ctx interface{}, msg interface{}) *GatewayConnector_SignMessage_Call {
+	return &GatewayConnector_SignMessage_Call{Call: _e.mock.On("SignMessage", ctx, msg)}
 }
 
-func (_c *GatewayConnector_Sign_Call) Run(run func(ctx context.Context, msg []byte)) *GatewayConnector_Sign_Call {
+func (_c *GatewayConnector_SignMessage_Call) Run(run func(ctx context.Context, msg []byte)) *GatewayConnector_SignMessage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([]byte))
 	})
 	return _c
 }
 
-func (_c *GatewayConnector_Sign_Call) Return(_a0 []byte, _a1 error) *GatewayConnector_Sign_Call {
+func (_c *GatewayConnector_SignMessage_Call) Return(_a0 []byte, _a1 error) *GatewayConnector_SignMessage_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *GatewayConnector_Sign_Call) RunAndReturn(run func(context.Context, []byte) ([]byte, error)) *GatewayConnector_Sign_Call {
+func (_c *GatewayConnector_SignMessage_Call) RunAndReturn(run func(context.Context, []byte) ([]byte, error)) *GatewayConnector_SignMessage_Call {
 	_c.Call.Return(run)
 	return _c
 }

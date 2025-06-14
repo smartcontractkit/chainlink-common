@@ -11,7 +11,7 @@ type GatewayConnector interface {
 	// SendToGateway takes a signed message as argument and sends it to the specified gateway
 	SendToGateway(ctx context.Context, gatewayID string, msg []byte) error
 	// Sign the given message and return signature
-	Sign(ctx context.Context, msg []byte) ([]byte, error)
+	SignMessage(ctx context.Context, msg []byte) ([]byte, error)
 	// GatewayIDs returns the list of Gateway IDs
 	GatewayIDs(ctx context.Context) ([]string, error)
 	// DonID returns the DON ID

@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	GatewayConnector_AddHandler_FullMethodName      = "/loop.GatewayConnector/AddHandler"
 	GatewayConnector_SendToGateway_FullMethodName   = "/loop.GatewayConnector/SendToGateway"
-	GatewayConnector_Sign_FullMethodName            = "/loop.GatewayConnector/Sign"
+	GatewayConnector_SignMessage_FullMethodName     = "/loop.GatewayConnector/SignMessage"
 	GatewayConnector_GatewayIDs_FullMethodName      = "/loop.GatewayConnector/GatewayIDs"
 	GatewayConnector_DonID_FullMethodName           = "/loop.GatewayConnector/DonID"
 	GatewayConnector_AwaitConnection_FullMethodName = "/loop.GatewayConnector/AwaitConnection"
@@ -34,7 +34,7 @@ const (
 type GatewayConnectorClient interface {
 	AddHandler(ctx context.Context, in *AddHandlerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SendToGateway(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignReply, error)
+	SignMessage(ctx context.Context, in *SignMessageRequest, opts ...grpc.CallOption) (*SignMessageReply, error)
 	GatewayIDs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayIDsReply, error)
 	DonID(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DonIDReply, error)
 	AwaitConnection(ctx context.Context, in *GatewayIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -68,10 +68,10 @@ func (c *gatewayConnectorClient) SendToGateway(ctx context.Context, in *SendMess
 	return out, nil
 }
 
-func (c *gatewayConnectorClient) Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignReply, error) {
+func (c *gatewayConnectorClient) SignMessage(ctx context.Context, in *SignMessageRequest, opts ...grpc.CallOption) (*SignMessageReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SignReply)
-	err := c.cc.Invoke(ctx, GatewayConnector_Sign_FullMethodName, in, out, cOpts...)
+	out := new(SignMessageReply)
+	err := c.cc.Invoke(ctx, GatewayConnector_SignMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (c *gatewayConnectorClient) AwaitConnection(ctx context.Context, in *Gatewa
 type GatewayConnectorServer interface {
 	AddHandler(context.Context, *AddHandlerRequest) (*emptypb.Empty, error)
 	SendToGateway(context.Context, *SendMessageRequest) (*emptypb.Empty, error)
-	Sign(context.Context, *SignRequest) (*SignReply, error)
+	SignMessage(context.Context, *SignMessageRequest) (*SignMessageReply, error)
 	GatewayIDs(context.Context, *emptypb.Empty) (*GatewayIDsReply, error)
 	DonID(context.Context, *emptypb.Empty) (*DonIDReply, error)
 	AwaitConnection(context.Context, *GatewayIDRequest) (*emptypb.Empty, error)
@@ -134,8 +134,8 @@ func (UnimplementedGatewayConnectorServer) AddHandler(context.Context, *AddHandl
 func (UnimplementedGatewayConnectorServer) SendToGateway(context.Context, *SendMessageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendToGateway not implemented")
 }
-func (UnimplementedGatewayConnectorServer) Sign(context.Context, *SignRequest) (*SignReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Sign not implemented")
+func (UnimplementedGatewayConnectorServer) SignMessage(context.Context, *SignMessageRequest) (*SignMessageReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignMessage not implemented")
 }
 func (UnimplementedGatewayConnectorServer) GatewayIDs(context.Context, *emptypb.Empty) (*GatewayIDsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GatewayIDs not implemented")
@@ -203,20 +203,20 @@ func _GatewayConnector_SendToGateway_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GatewayConnector_Sign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SignRequest)
+func _GatewayConnector_SignMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GatewayConnectorServer).Sign(ctx, in)
+		return srv.(GatewayConnectorServer).SignMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GatewayConnector_Sign_FullMethodName,
+		FullMethod: GatewayConnector_SignMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GatewayConnectorServer).Sign(ctx, req.(*SignRequest))
+		return srv.(GatewayConnectorServer).SignMessage(ctx, req.(*SignMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -291,8 +291,8 @@ var GatewayConnector_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GatewayConnector_SendToGateway_Handler,
 		},
 		{
-			MethodName: "Sign",
-			Handler:    _GatewayConnector_Sign_Handler,
+			MethodName: "SignMessage",
+			Handler:    _GatewayConnector_SignMessage_Handler,
 		},
 		{
 			MethodName: "GatewayIDs",

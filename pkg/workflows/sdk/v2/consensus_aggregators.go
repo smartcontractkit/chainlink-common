@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -84,6 +85,24 @@ func parseConsensusTag(t reflect.Type) (*pb.ConsensusDescriptor, error) {
 			continue
 		}
 
+		serializedName := field.Name
+		mapstructureTagParts := strings.Split(field.Tag.Get("mapstructure"), ",")
+		if mapstructureTagParts[0] != "" {
+			serializedName = mapstructureTagParts[0]
+		}
+
+		if len(mapstructureTagParts) > 1 && mapstructureTagParts[1] == "squash" {
+			inner, err := parseConsensusTag(field.Type)
+			if err != nil {
+				return nil, fmt.Errorf("nested field %s: %w", field.Name, err)
+			}
+
+			for innerFieldName, innerDescriptor := range inner.GetFieldsMap().Fields {
+				descriptors[innerFieldName] = innerDescriptor
+			}
+			break
+		}
+
 		tpe := field.Type
 		if tpe.Kind() == reflect.Pointer && tpe != bigIntType {
 			tpe = tpe.Elem()
@@ -95,24 +114,24 @@ func parseConsensusTag(t reflect.Type) (*pb.ConsensusDescriptor, error) {
 			if !isNumeric(tpe) {
 				return nil, fmt.Errorf("field %s marked as median but is not a numeric type", field.Name)
 			}
-			descriptors[field.Name] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_MEDIAN}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_MEDIAN}}
 		case "identical":
 			if !isIdenticalType(tpe) {
 				return nil, fmt.Errorf("field %s marked as identical but is not a valid type", field.Name)
 			}
-			descriptors[field.Name] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_IDENTICAL}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_IDENTICAL}}
 		case "common_prefix":
 			if !isIdenticalSliceOrArray(tpe) {
 				return nil, fmt.Errorf("field %s marked as common_prefix but is not slice/array", field.Name)
 			}
-			descriptors[field.Name] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_PREFIX}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_PREFIX}}
 		case "common_suffix":
 			if !isIdenticalSliceOrArray(field.Type) {
 				return nil, fmt.Errorf("field %s marked as common_suffix but is not slice/array", field.Name)
 			}
-			descriptors[field.Name] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_SUFFIX}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_SUFFIX}}
 		case "nested":
-			descriptors[field.Name], err = parseConsensusTag(field.Type)
+			descriptors[serializedName], err = parseConsensusTag(field.Type)
 			if err != nil {
 				return nil, fmt.Errorf("nested field %s: %w", field.Name, err)
 			}

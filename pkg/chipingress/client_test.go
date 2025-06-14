@@ -4,19 +4,19 @@ import (
 	"context"
 	"testing"
 
+	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-
-	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 func TestClient(t *testing.T) {
@@ -327,22 +327,80 @@ func (m *mockHeaderProvider) GetHeaders() map[string]string {
 	return m.headers
 }
 
-func TestGetHostFromAddress(t *testing.T) {
-	t.Run("valid address with port", func(t *testing.T) {
-		host, err := getHost("localhost:8080")
-		assert.NoError(t, err)
-		assert.Equal(t, "localhost", host)
-	})
+func TestWithTLSAndHTTP2(t *testing.T) {
+	t.Run("sets TLS credentials with HTTP/2", func(t *testing.T) {
+		serverName := "example.com"
+		config := defaultConfig()
 
-	t.Run("valid address without port", func(t *testing.T) {
-		host, err := getHost("localhost")
-		assert.Error(t, err)
-		assert.Empty(t, host)
-	})
+		WithTLSAndHTTP2(serverName)(&config)
 
-	t.Run("invalid address format", func(t *testing.T) {
-		host, err := getHost("invalid-address-format")
-		assert.Error(t, err)
-		assert.Empty(t, host)
+		assert.NotNil(t, config.transportCredentials)
+
+		// Verify it's TLS credentials (we can't easily inspect the internal config)
+		assert.IsType(t, credentials.NewTLS(nil), config.transportCredentials)
+	})
+}
+
+func TestWithAuthority(t *testing.T) {
+	t.Run("sets authority", func(t *testing.T) {
+		authority := "custom-authority.example.com"
+		config := defaultConfig()
+
+		WithAuthority(authority)(&config)
+
+		assert.Equal(t, authority, config.authority)
+	})
+}
+
+func TestWithInsecureConnection(t *testing.T) {
+	t.Run("sets insecure credentials", func(t *testing.T) {
+		config := defaultConfig()
+
+		WithInsecureConnection()(&config)
+
+		assert.Equal(t, insecure.NewCredentials(), config.transportCredentials)
+	})
+}
+
+func TestNewChipIngressClientWithTLSAndHTTP2(t *testing.T) {
+	t.Run("creates client with TLS and HTTP/2", func(t *testing.T) {
+		// This test verifies the option is applied, but doesn't test actual connection
+		// since we'd need a real gRPC server for that
+		client, err := NewChipIngressClient(
+			"example.com:443",
+			WithTLSAndHTTP2("example.com"),
+		)
+
+		// The client creation should succeed even if connection fails
+		// We're testing the option application, not the actual connection
+		if err != nil {
+			// Connection errors are expected in unit tests
+			assert.Contains(t, err.Error(), "connection")
+		} else {
+			assert.NotNil(t, client)
+			if client != nil {
+				client.Close()
+			}
+		}
+	})
+}
+
+func TestNewChipIngressClientWithAuthority(t *testing.T) {
+	t.Run("creates client with custom authority", func(t *testing.T) {
+		client, err := NewChipIngressClient(
+			"localhost:8080",
+			WithAuthority("custom-authority.example.com"),
+			WithInsecureConnection(),
+		)
+
+		// Connection might fail in unit tests, but option should be applied
+		if err != nil {
+			assert.Contains(t, err.Error(), "connection")
+		} else {
+			assert.NotNil(t, client)
+			if client != nil {
+				client.Close()
+			}
+		}
 	})
 }

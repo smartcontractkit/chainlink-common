@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
@@ -211,13 +212,21 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	// eventually we will remove the dual source emitter and just use chip ingress
 
 	if cfg.ChipIngressEmitterEnabled {
-
-		// Create a header provider that implements the chipingress.HeaderProvider interface
-
-		chipIngressOpts := []chipingress.Opt{
-			chipingress.WithTransportCredentials(creds),
+		chipIngressOpts := make([]chipingress.Opt, 0, 2)
+		chipIngressEndpoint := cfg.ChipIngressEmitterGRPCEndpoint
+		chipIngressHost, err := getHost(chipIngressEndpoint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract host from address '%s': %w", chipIngressEndpoint, err)
 		}
+		// Set Authority
+		chipIngressOpts = append(chipIngressOpts, chipingress.WithAuthority(chipIngressHost))
 
+		if cfg.ChipIngressInsecureConnection {
+			// Use insecure credentials when TLS is not required
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithInsecureConnection())
+		} else {
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithTLSAndHTTP2(chipIngressHost))
+		}
 		// Only add headers if they exist
 		if len(cfg.AuthHeaders) > 0 {
 			headerProvider := NewStaticAuthHeaderProvider(cfg.AuthHeaders)
@@ -225,7 +234,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 
 		chipIngressClient, err := chipingress.NewChipIngressClient(
-			cfg.ChipIngressEmitterGRPCEndpoint,
+			chipIngressEndpoint,
 			chipIngressOpts...,
 		)
 
@@ -408,4 +417,12 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		sdkmetric.WithView(config.MetricViews...),
 	)
 	return mp, nil
+}
+
+func getHost(address string) (string, error) {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", err
+	}
+	return host, nil
 }

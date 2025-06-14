@@ -2,16 +2,15 @@ package chipingress
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
-	"net"
 	"strings"
-
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
@@ -49,6 +48,7 @@ type chipIngressClientConfig struct {
 	log                  *zap.Logger
 	transportCredentials credentials.TransportCredentials
 	headerProvider       HeaderProvider
+	authority            string
 }
 
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
@@ -76,17 +76,14 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 
 	cfg := defaultConfig()
 
+	// Apply configuration options
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 
-	host, err := getHost(address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract host from address '%s': %w", address, err)
-	}
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
-		grpc.WithAuthority(host),
+		grpc.WithAuthority(cfg.authority),
 	}
 
 	// Add headers as a unary interceptor
@@ -112,14 +109,6 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 	}
 
 	return client, nil
-}
-
-func getHost(address string) (string, error) {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return "", err
-	}
-	return host, nil
 }
 
 // Ping sends a request to the ChipIngress service to check if it is alive.
@@ -217,6 +206,29 @@ func WithTransportCredentials(credentials credentials.TransportCredentials) Opt 
 func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *chipIngressClientConfig) {
 		c.headerProvider = provider
+	}
+}
+
+func WithInsecureConnection() Opt {
+	return func(config *chipIngressClientConfig) {
+		config.transportCredentials = insecure.NewCredentials()
+	}
+}
+
+// Add a new option function for TLS with HTTP/2
+func WithTLSAndHTTP2(serverName string) Opt {
+	return func(config *chipIngressClientConfig) {
+		tlsCfg := &tls.Config{
+			ServerName: serverName,     // must match your server's host (SNI + cert SAN)
+			NextProtos: []string{"h2"}, // force HTTP/2
+		}
+		config.transportCredentials = credentials.NewTLS(tlsCfg)
+	}
+}
+
+func WithAuthority(authority string) Opt {
+	return func(c *chipIngressClientConfig) {
+		c.authority = authority
 	}
 }
 

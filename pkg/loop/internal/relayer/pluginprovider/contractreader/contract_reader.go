@@ -598,6 +598,7 @@ func convertSequencesToVersionedBytesProto(sequences []types.Sequence, version c
 		}
 		pbSequence := &pb.Sequence{
 			SequenceCursor: sequence.Cursor,
+			TxHash:         sequence.TxHash,
 			Head: &pb.Head{
 				Height:    sequence.Height,
 				Hash:      sequence.Hash,
@@ -634,6 +635,7 @@ func convertSequencesWithKeyToVersionedBytesProto(sequences iter.Seq2[string, ty
 		pbSequence := &pb.SequenceWithKey{
 			Key:            key,
 			SequenceCursor: sequence.Cursor,
+			TxHash:         sequence.TxHash,
 			Head: &pb.Head{
 				Height:    sequence.Height,
 				Hash:      sequence.Hash,
@@ -770,6 +772,7 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 
 		sequences[idx] = types.Sequence{
 			Cursor: pbSequences[idx].SequenceCursor,
+			TxHash: pbSequences[idx].TxHash,
 			Head: types.Head{
 				Height:    pbSequences[idx].Head.Height,
 				Hash:      pbSequences[idx].Head.Hash,
@@ -835,6 +838,7 @@ func convertSequencesWithKeyFromProto(pbSequences []*pb.SequenceWithKey, keyQuer
 			Key: pbSeq.Key,
 			Sequence: types.Sequence{
 				Cursor: pbSeq.SequenceCursor,
+				TxHash: pbSeq.TxHash,
 				Head: types.Head{
 					Height:    pbSeq.Head.Height,
 					Hash:      pbSeq.Head.Hash,

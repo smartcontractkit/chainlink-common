@@ -127,6 +127,7 @@ type Head struct {
 type Sequence struct {
 	// This way we can retrieve past/future sequences (EVM log events) very granularly, but still hide the chain detail.
 	Cursor string
+	TxHash []byte
 	Head
 	Data any
 }

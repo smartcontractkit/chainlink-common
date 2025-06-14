@@ -938,6 +938,7 @@ type Sequence struct {
 	SequenceCursor string                 `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
 	Head           *Head                  `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
 	Data           *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	TxHash         []byte                 `protobuf:"bytes,4,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -993,12 +994,20 @@ func (x *Sequence) GetData() *codec.VersionedBytes {
 	return nil
 }
 
+func (x *Sequence) GetTxHash() []byte {
+	if x != nil {
+		return x.TxHash
+	}
+	return nil
+}
+
 type SequenceWithKey struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SequenceCursor string                 `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
 	Head           *Head                  `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
 	Data           *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	Key            string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
+	TxHash         []byte                 `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1059,6 +1068,13 @@ func (x *SequenceWithKey) GetKey() string {
 		return x.Key
 	}
 	return ""
+}
+
+func (x *SequenceWithKey) GetTxHash() []byte {
+	if x != nil {
+		return x.TxHash
+	}
+	return nil
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].
@@ -1228,18 +1244,20 @@ const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\x04Head\x12\x16\n" +
 	"\x06height\x18\x01 \x01(\tR\x06height\x12\x12\n" +
 	"\x04hash\x18\x02 \x01(\fR\x04hash\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x04R\ttimestamp\"~\n" +
+	"\ttimestamp\x18\x03 \x01(\x04R\ttimestamp\"\x97\x01\n" +
 	"\bSequence\x12'\n" +
 	"\x0fsequence_cursor\x18\x01 \x01(\tR\x0esequenceCursor\x12\x1e\n" +
 	"\x04head\x18\x02 \x01(\v2\n" +
 	".loop.HeadR\x04head\x12)\n" +
-	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\"\x97\x01\n" +
+	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\x12\x17\n" +
+	"\atx_hash\x18\x04 \x01(\fR\x06txHash\"\xb0\x01\n" +
 	"\x0fSequenceWithKey\x12'\n" +
 	"\x0fsequence_cursor\x18\x01 \x01(\tR\x0esequenceCursor\x12\x1e\n" +
 	"\x04head\x18\x02 \x01(\v2\n" +
 	".loop.HeadR\x04head\x12)\n" +
 	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\x12\x10\n" +
-	"\x03key\x18\x04 \x01(\tR\x03key\"=\n" +
+	"\x03key\x18\x04 \x01(\tR\x03key\x12\x17\n" +
+	"\atx_hash\x18\x05 \x01(\fR\x06txHash\"=\n" +
 	"\rBoundContract\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"a\n" +

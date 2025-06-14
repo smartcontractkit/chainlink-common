@@ -722,7 +722,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 }
 
 func (f *fakeContractReader) QueryKey(ctx context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceType any) ([]types.Sequence, error) {
-	seqsIter, err := f.QueryKeys(ctx, []types.ContractKeyFilter{types.ContractKeyFilter{
+	seqsIter, err := f.QueryKeys(ctx, []types.ContractKeyFilter{{
 		KeyFilter:        filter,
 		Contract:         bc,
 		SequenceDataType: sequenceType,
@@ -820,9 +820,9 @@ func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.Contra
 				if err != nil {
 					return nil, err
 				}
-				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), Data: &value}})
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), TxHash: []byte("0xtest"), Data: &value}})
 			} else {
-				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: trigger.event}})
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: fmt.Sprintf("%d", idx), TxHash: []byte("0xtest"), Data: trigger.event}})
 			}
 		}
 
@@ -1206,7 +1206,7 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 
 			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
-				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data) && assert.Equal(t, []byte("0xtest"), sequences[0].TxHash) && assert.Equal(t, []byte("0xtest"), sequences[1].TxHash)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 		})
 

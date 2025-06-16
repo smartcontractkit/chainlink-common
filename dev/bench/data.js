@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750079742054,
+  "lastUpdate": 1750087445155,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15666,6 +15666,48 @@ window.BENCHMARK_DATA = {
             "value": 28814,
             "unit": "ns/op",
             "extra": "42159 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b60a6dfce5e90e9234ec6d68344aec317900971",
+          "message": "beholder: relax validation for beholder_data_schema required attribute (#1267)",
+          "timestamp": "2025-06-16T11:22:52-04:00",
+          "tree_id": "49dbfcd87f7cbee35379c492160ced8f6f5be61d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1b60a6dfce5e90e9234ec6d68344aec317900971"
+        },
+        "date": 1750087444123,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.3,
+            "unit": "ns/op",
+            "extra": "3352372 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.7,
+            "unit": "ns/op",
+            "extra": "2885444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28523,
+            "unit": "ns/op",
+            "extra": "42145 times\n4 procs"
           }
         ]
       }

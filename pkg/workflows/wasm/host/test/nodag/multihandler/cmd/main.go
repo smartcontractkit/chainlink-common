@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	testhelpers.RunIdenticalTriggersWorkflow(wasm.New(func(configBytes []byte) (string, error) {
+	testhelpers.RunIdenticalTriggersWorkflow(wasm.NewRunner(func(configBytes []byte) (string, error) {
 		return string(configBytes), nil
 	}))
 }

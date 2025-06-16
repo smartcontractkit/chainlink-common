@@ -149,7 +149,7 @@ func assertWcx(t *testing.T, r sdk.Runner[string]) {
 }
 
 func getTestRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.Runner[string] {
-	return newInternal(func(b []byte) (string, error) { return string(b), nil }, testRunnerInternals(tb, request), testRuntimeInternals(tb))
+	return newRunner(func(b []byte) (string, error) { return string(b), nil }, testRunnerInternals(tb, request), testRuntimeInternals(tb))
 }
 
 func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInternalsTestHook {

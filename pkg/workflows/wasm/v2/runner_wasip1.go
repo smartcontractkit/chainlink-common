@@ -16,8 +16,8 @@ func versionV2()
 //go:wasmimport env switch_modes
 func switchModes(mode int32)
 
-func New[C Config](parse func(configBytes []byte) (C, error)) sdk.Runner[C] {
-	return newInternal[C](parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
+func NewRunner[C Config](parse func(configBytes []byte) (C, error)) sdk.Runner[C] {
+	return newRunner[C](parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
 }
 
 type runnerInternalsImpl struct{}

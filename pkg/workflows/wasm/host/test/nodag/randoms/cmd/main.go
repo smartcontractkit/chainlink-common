@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	runner := wasm.New(func(configBytes []byte) (string, error) {
+	runner := wasm.NewRunner(func(configBytes []byte) (string, error) {
 		return string(configBytes), nil
 	})
 

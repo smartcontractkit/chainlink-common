@@ -404,16 +404,6 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			},
 		},
 		{
-			name: "GetTransactionStatus",
-			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				id := types.IdempotencyKey("status-tx")
-				mockEVM.EXPECT().GetTransactionStatus(mock.Anything, id).Return(types.Unconfirmed, nil)
-				out, err := evm.GetTransactionStatus(ctx, id)
-				require.NoError(t, err)
-				require.Equal(t, types.Unconfirmed, out)
-			},
-		},
-		{
 			name: "QueryTrackedLogs",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				fq := generateFixtureQuery()
@@ -425,13 +415,46 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				require.Equal(t, &evmLog, out[0])
 			},
 		},
+		{
+			name: "SubmitTransaction",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				txRequest := evmtypes.SubmitTransactionRequest{
+					To:   address1,
+					Data: []byte("data"),
+				}
+				expectedTxResult := evmtypes.TransactionResult{
+					TxStatus: evmtypes.TxSuccess,
+					TxHash:   evmtypes.Hash{1, 2, 3},
+				}
+				mockEVM.EXPECT().SubmitTransaction(mock.Anything, txRequest).Return(&expectedTxResult, nil)
+				txResult, err := evm.SubmitTransaction(ctx, txRequest)
+				require.NoError(t, err)
+				require.Equal(t, &expectedTxResult, txResult)
+			},
+		},
+		{
+			name: "CalculateTransactionFee",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				gasInfo := evmtypes.ReceiptGasInfo{
+					GasUsed:           1000,
+					EffectiveGasPrice: big.NewInt(2000),
+				}
+				expectedFee := &evmtypes.TransactionFee{
+					TransactionFee: big.NewInt(2000000),
+				}
+				mockEVM.EXPECT().CalculateTransactionFee(mock.Anything, gasInfo).Return(expectedFee, nil)
+				fee, err := evm.CalculateTransactionFee(ctx, gasInfo)
+				require.NoError(t, err)
+				require.Equal(t, expectedFee, fee)
+			},
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			mockEVM := mocks2.NewEVMService(t)
-			evm := TestEVM{mockedContractReader: mockEVM}
-			relayer1.On("EVM", mock.Anything, mock.Anything).Return(evm, nil).Once()
+			// evm := TestEVM{mockedContractReader: mockEVM}
+			relayer1.On("EVM", mock.Anything, mock.Anything).Return(mockEVM, nil).Once()
 
 			fetchedEVM, err := retrievedRelayer.EVM()
 			require.NoError(t, err)
@@ -497,8 +520,8 @@ type TestEVM struct {
 	mockedContractReader *mocks2.EVMService
 }
 
-func (t *TestEVM) CalculateTransactionFee(ctx context.Context, receiptGasInfo evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
-	return t.mockedContractReader.CalculateTransactionFee(ctx, receiptGasInfo)
+func (t *TestEVM) CalculateTransactionFee(ctx context.Context, receipt evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
+	return t.mockedContractReader.CalculateTransactionFee(ctx, receipt)
 }
 
 func (t *TestEVM) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {

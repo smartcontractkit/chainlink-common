@@ -38,7 +38,7 @@ func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.Su
 	reply, err := e.grpcClient.SubmitTransaction(ctx, &evmpb.SubmitTransactionRequest{
 		To:        txRequest.To[:],
 		Data:      txRequest.Data,
-		GasConfig: toCapGasConfig(txRequest.GasConfig),
+		GasConfig: evmpb.ConvertGasConfigToProto(txRequest.GasConfig),
 	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -362,11 +362,26 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }
 
-func toCapGasConfig(gasConfig *evmtypes.GasConfig) *evmpb.GasConfig {
-	if gasConfig == nil {
-		return nil
+func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	txResult, err := e.impl.SubmitTransaction(ctx, evmpb.ConvertSubmitTransactionRequestFromProto(request))
+	if err != nil {
+		return nil, err
 	}
-	return &evmpb.GasConfig{
-		GasLimit: *gasConfig.GasLimit,
+	return &evmpb.SubmitTransactionReply{
+		TxHash:   txResult.TxHash[:],
+		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+	}, nil
+}
+
+func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	txFee, err := e.impl.CalculateTransactionFee(ctx, evmtypes.ReceiptGasInfo{
+		GasUsed:           request.GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
 	}
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(txFee.TransactionFee),
+	}, nil
 }

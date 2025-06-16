@@ -367,6 +367,46 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *relayerset.
 	return &emptypb.Empty{}, nil
 }
 
+func (s *Server) SubmitTransaction(ctx context.Context, request *relayerset.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	txResult, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
+		To:        evm.Address(request.GetRequest().To),
+		Data:      evm.ABIPayload(request.GetRequest().Data),
+		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetRequest().GetGasConfig()),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.SubmitTransactionReply{
+		TxHash:   txResult.TxHash[:],
+		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+	}, nil
+}
+
+func (s *Server) CalculateTransactionFee(ctx context.Context, request *relayerset.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	fee, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
+		GasUsed:           request.GetRequest().GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GetRequest().GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(fee.TransactionFee),
+	}, nil
+}
+
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {
 	r, err := s.getRelayer(ctx, id)
 	if err != nil {

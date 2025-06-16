@@ -11,6 +11,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
+type GetSecretRequest struct {
+	Namespace string
+	ID        string
+}
+
 // RuntimeBase is not thread safe and must not be used concurrently.
 type RuntimeBase interface {
 	// CallCapability is meant to be called by generated code
@@ -19,6 +24,7 @@ type RuntimeBase interface {
 	LogWriter() io.Writer
 	Logger() *slog.Logger
 	Rand() (*rand.Rand, error)
+	GetSecret(GetSecretRequest) string
 }
 
 // NodeRuntime is not thread safe and must not be used concurrently.

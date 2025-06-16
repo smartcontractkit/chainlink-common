@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 //go:wasmimport env send_response
@@ -17,14 +16,8 @@ func versionV2()
 //go:wasmimport env switch_modes
 func switchModes(mode int32)
 
-func NewDonRunner() sdk.DonRunner {
-	switchModes((int32)(sdkpb.Mode_DON))
-	return newDonRunner(runnerInternalsImpl{}, runtimeInternalsImpl{})
-}
-
-func NewNodeRunner() sdk.NodeRunner {
-	switchModes((int32)(sdkpb.Mode_Node))
-	return newNodeRunner(runnerInternalsImpl{}, runtimeInternalsImpl{})
+func NewRunner[T any](parse func(configBytes []byte) (T, error)) sdk.Runner[T] {
+	return newRunner[T](parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
 }
 
 type runnerInternalsImpl struct{}

@@ -19,7 +19,6 @@ type runtimeInternals interface {
 
 func newRuntime(internals runtimeInternals, mode sdkpb.Mode) sdkimpl.RuntimeBase {
 	return sdkimpl.RuntimeBase{
-		Writer:         &writer{},
 		Mode:           mode,
 		RuntimeHelpers: &runtimeHelper{runtimeInternals: internals},
 	}

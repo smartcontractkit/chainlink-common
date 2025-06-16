@@ -1,52 +1,49 @@
 package testhelpers
 
 import (
-	"context"
-	"log/slog"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 )
 
-func RunTestWorkflow(runner sdk.DonRunner) {
+func RunTestWorkflow(runner sdk.Runner[string]) {
 	basic := &basictrigger.Basic{}
-	runner.Logger().Log(context.Background(), slog.LevelInfo, "Hi")
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
+	runner.Run(func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		return sdk.Workflow[string]{
+			sdk.On(
 				basic.Trigger(TestWorkflowTriggerConfig()),
 				onTrigger),
-		},
+		}, nil
 	})
 }
 
-func RunIdenticalTriggersWorkflow(runner sdk.DonRunner) {
+func RunIdenticalTriggersWorkflow(runner sdk.Runner[string]) {
 	basic := &basictrigger.Basic{}
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
+	runner.Run(func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		return sdk.Workflow[string]{
+			sdk.On(
 				basic.Trigger(TestWorkflowTriggerConfig()),
 				onTrigger,
 			),
-			sdk.NewDonHandler(
+			sdk.On(
 				basic.Trigger(&basictrigger.Config{
 					Name:   "second-trigger",
 					Number: 200,
 				}),
-				func(rt sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {
-					res, err := onTrigger(rt, outputs)
+				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
+					res, err := onTrigger(wcx, rt, outputs)
 					if err != nil {
 						return "", err
 					}
 					return res + "true", nil
 				},
 			),
-		},
+		}, nil
 	})
 }
 
-func onTrigger(runtime sdk.DonRuntime, outputs *basictrigger.Outputs) (string, error) {
+func onTrigger(wcx *sdk.WorkflowContext[string], runtime sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
+	wcx.Logger.Info("Hi")
 	action := basicaction.BasicAction{ /* TODO config */ }
 	first := action.PerformAction(runtime, &basicaction.Inputs{InputThing: false})
 	firstResult, err := first.Await()

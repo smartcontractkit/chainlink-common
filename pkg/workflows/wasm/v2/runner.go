@@ -3,8 +3,8 @@ package wasm
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
 	"log/slog"
+	"os"
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
@@ -23,50 +23,46 @@ type runnerInternals interface {
 	switchModes(mode int32)
 }
 
-func newDonRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.DonRunner {
-	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
-	return getRunner(
-		&subscriber[sdk.DonRuntime]{runnerInternals: runnerInternals},
-		&runner[sdk.DonRuntime]{
+func newRunner[T any](parse func(configBytes []byte) (T, error), runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.Runner[T] {
+	runnerInternals.versionV2()
+	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
+	return runnerWrapper[T]{baseRunner: getRunner(
+		parse,
+		&subscriber[T, sdk.Runtime]{runnerInternals: runnerInternals},
+		&runner[T, sdk.Runtime]{
 			runtime:         drt,
 			runnerInternals: runnerInternals,
 			setRuntime: func(config []byte, maxResponseSize uint64) {
-				drt.ConfigBytes = config
 				drt.MaxResponseSize = maxResponseSize
-			}})
+			},
+		}),
+	}
 }
 
-func newNodeRunner(runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.NodeRunner {
-	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_Node)}
-	return getRunner(
-		&subscriber[sdk.NodeRuntime]{runnerInternals: runnerInternals},
-		&runner[sdk.NodeRuntime]{
-			runnerInternals: runnerInternals,
-			runtime:         nrt,
-			setRuntime: func(config []byte, maxResponseSize uint64) {
-				nrt.ConfigBytes = config
-				nrt.MaxResponseSize = maxResponseSize
-			}})
-}
-
-type runner[T any] struct {
+type runner[C, T any] struct {
 	runnerInternals
 	trigger    *sdkpb.Trigger
 	id         string
 	runtime    T
 	setRuntime func(config []byte, maxResponseSize uint64)
-	config     []byte
+	config     C
 }
 
-var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
-var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
+var _ baseRunner[any, sdk.Runtime] = (*runner[any, sdk.Runtime])(nil)
 
-func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
-	// used to ensure that the export isn't optimized away
-	d.versionV2()
-	for idx, handler := range args.Handlers {
-		if uint64(idx) == d.trigger.Id {
-			response, err := handler.Callback()(d.runtime, d.trigger.Payload)
+func (r *runner[C, T]) cfg() C {
+	return r.config
+}
+
+func (r *runner[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
+	wcx := &sdk.WorkflowContext[C]{
+		Config:    r.config,
+		LogWriter: &writer{},
+		Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+	}
+	for idx, handler := range wfs {
+		if uint64(idx) == r.trigger.Id {
+			response, err := handler.Callback()(wcx, r.runtime, r.trigger.Payload)
 			execResponse := &pb.ExecutionResult{}
 			if err == nil {
 				wrapped, err := values.Wrap(response)
@@ -80,35 +76,26 @@ func (d *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 			}
 			marshalled, _ := proto.Marshal(execResponse)
 			marshalledPtr, marshalledLen, _ := bufferToPointerLen(marshalled)
-			d.sendResponse(marshalledPtr, marshalledLen)
+			r.sendResponse(marshalledPtr, marshalledLen)
 		}
 	}
 }
 
-func (d *runner[T]) Config() []byte {
-	return d.config
-}
-
-func (d *runner[T]) LogWriter() io.Writer {
-	return &writer{}
-}
-
-func (d *runner[T]) Logger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(d.LogWriter(), nil))
-}
-
-type subscriber[T any] struct {
+type subscriber[C, T any] struct {
 	runnerInternals
 	id     string
-	config []byte
+	config C
 }
 
-var _ sdk.DonRunner = &subscriber[sdk.DonRuntime]{}
-var _ sdk.NodeRunner = &subscriber[sdk.NodeRuntime]{}
+var _ baseRunner[any, sdk.Runtime] = &subscriber[any, sdk.Runtime]{}
 
-func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
-	subscriptions := make([]*sdkpb.TriggerSubscription, len(args.Handlers))
-	for i, handler := range args.Handlers {
+func (s *subscriber[C, T]) cfg() C {
+	return s.config
+}
+
+func (s *subscriber[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
+	subscriptions := make([]*sdkpb.TriggerSubscription, len(wfs))
+	for i, handler := range wfs {
 		subscriptions[i] = &sdkpb.TriggerSubscription{
 			Id:      handler.CapabilityID(),
 			Payload: handler.TriggerCfg(),
@@ -124,65 +111,87 @@ func (d *subscriber[T]) Run(args *sdk.WorkflowArgs[T]) {
 	configBytes, _ := proto.Marshal(execResponse)
 	configPtr, configLen, _ := bufferToPointerLen(configBytes)
 
-	result := d.sendResponse(configPtr, configLen)
+	result := s.sendResponse(configPtr, configLen)
 	if result < 0 {
-		panic(fmt.Sprintf("could not subscribe to triggers: %s", string(configBytes[:-result])))
+		exitErr(fmt.Sprintf("could not subscribe to triggers: %s", string(configBytes[:-result])))
 	}
 }
 
-func (d *subscriber[T]) Config() []byte {
-	return d.config
+func getWorkflows[C any](config C, initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) sdk.Workflow[C] {
+	wfs, err := initFn(&sdk.WorkflowContext[C]{
+		Config:    config,
+		LogWriter: &writer{},
+		Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+	})
+	if err != nil {
+		exitErr(err.Error())
+	}
+	return wfs
 }
 
-func (d *subscriber[T]) LogWriter() io.Writer {
-	return &writer{}
-}
-
-func (d *subscriber[T]) Logger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(d.LogWriter(), nil))
-}
-
-type genericRunner[T any] interface {
-	Run(args *sdk.WorkflowArgs[T])
-	Config() []byte
-	LogWriter() io.Writer
-	Logger() *slog.Logger
-}
-
-func getRunner[T any](subscribe *subscriber[T], run *runner[T]) genericRunner[T] {
+func getRunner[C, T any](parse func(configBytes []byte) (C, error), subscribe *subscriber[C, T], run *runner[C, T]) baseRunner[C, T] {
 	args := run.args()
 
 	// We expect exactly 2 args, i.e. `wasm <blob>`,
 	// where <blob> is a base64 encoded protobuf message.
 	if len(args) != 2 {
-		panic("invalid request: request must contain a payload")
+		exitErr("invalid request: request must contain a payload")
 	}
 
 	request := args[1]
 	if request == "" {
-		panic("invalid request: request cannot be empty")
+		exitErr("invalid request: request cannot be empty")
 	}
 
 	b, err := base64.StdEncoding.DecodeString(request)
 	if err != nil {
-		panic("invalid request: could not decode request into bytes")
+		exitErr("invalid request: could not decode request into bytes")
 	}
 
 	execRequest := &pb.ExecuteRequest{}
 	if err = proto.Unmarshal(b, execRequest); err != nil {
-		panic("invalid request: could not unmarshal request into ExecuteRequest")
+		exitErr("invalid request: could not unmarshal request into ExecuteRequest")
+	}
+
+	c, err := parse(execRequest.Config)
+	if err != nil {
+		exitErr(err.Error())
 	}
 
 	switch req := execRequest.Request.(type) {
 	case *pb.ExecuteRequest_Subscribe:
-		subscribe.config = execRequest.Config
+		subscribe.config = c
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
-		run.config = execRequest.Config
+		run.config = c
 		run.setRuntime(execRequest.Config, execRequest.MaxResponseSize)
 		return run
 	}
 
-	panic(fmt.Sprintf("invalid request: unknown request type %T", execRequest.Request))
+	exitErr(fmt.Sprintf("invalid request: unknown request type %T", execRequest.Request))
+	return nil
+}
+
+func exitErr(msg string) {
+	_, _ = (&writer{}).Write([]byte(msg))
+	os.Exit(1)
+}
+
+type baseRunner[C, T any] interface {
+	cfg() C
+	run([]sdk.ExecutionHandler[C, T])
+}
+
+func runnerFromBaseRunner[C any](r baseRunner[C, sdk.Runtime]) sdk.Runner[C] {
+	return runnerWrapper[C]{baseRunner: r}
+}
+
+type runnerWrapper[C any] struct {
+	baseRunner[C, sdk.Runtime]
+}
+
+func (r runnerWrapper[C]) Run(initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) {
+	wfs := getWorkflows(r.baseRunner.cfg(), initFn)
+	r.baseRunner.run(wfs)
 }

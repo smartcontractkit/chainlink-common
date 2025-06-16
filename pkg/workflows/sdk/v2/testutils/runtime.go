@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func newRuntime(tb testing.TB, configBytes []byte, writer *testWriter, sourceFn func() rand.Source) sdkimpl.RuntimeBase {
+func newRuntime(tb testing.TB, sourceFn func() rand.Source) sdkimpl.RuntimeBase {
 	defaultConsensus, err := consensusmock.NewConsensusCapability(tb)
 
 	// Do not override if the user provided their own consensus method
@@ -25,9 +25,7 @@ func newRuntime(tb testing.TB, configBytes []byte, writer *testWriter, sourceFn 
 	}
 
 	return sdkimpl.RuntimeBase{
-		ConfigBytes:     configBytes,
 		MaxResponseSize: sdk.DefaultMaxResponseSizeBytes,
-		Writer:          writer,
 		RuntimeHelpers:  &runtimeHelpers{tb: tb, calls: map[int32]chan *pb.CapabilityResponse{}, sourceFn: sourceFn},
 	}
 }
@@ -37,7 +35,7 @@ func defaultSimpleConsensus(_ context.Context, input *pb.SimpleConsensusInputs) 
 	case *pb.SimpleConsensusInputs_Value:
 		return o.Value, nil
 	case *pb.SimpleConsensusInputs_Error:
-		if input.Default.Value == nil {
+		if input.Default == nil || input.Default.Value == nil {
 			return nil, errors.New(o.Error)
 		}
 

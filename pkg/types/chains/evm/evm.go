@@ -122,23 +122,25 @@ type SignedReport struct {
 	ID            []byte
 }
 
-// TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.
+// TransactionStatus is the result of the transaction sent to the chain
 type TransactionStatus int
 
 const (
+	//Transaction was sent successfully to the chain and successfully executed
 	TxSuccess TransactionStatus = iota
+	//Transaction was sent successfully to the chain but the smart contract execution reverted
 	TxReverted
+	//Transaction was not sent successfully to the chain
 	TxFatal
 )
 
-
 type TxError struct {
 	// Internal ID used for tracking purposes of transactions.
-    TxID string
+	TxID string
 }
 
 func (e *TxError) Error() string {
-    return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
+	return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
 }
 
 type TransactionResult struct {

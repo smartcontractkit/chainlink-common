@@ -119,9 +119,9 @@ const file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action
 	"\vinput_thing\x18\x01 \x01(\bR\n" +
 	"inputThing\".\n" +
 	"\aOutputs\x12#\n" +
-	"\radapted_thing\x18\x01 \x01(\tR\fadaptedThing2\x82\x01\n" +
-	"\vBasicAction\x12T\n" +
-	"\rPerformAction\x12\x1c.basic_test_action.v1.Inputs\x1a\x1d.basic_test_action.v1.Outputs\"\x06\x8a\xb5\x18\x02\b\x01\x1a\x1d\x82\xb5\x18\x19\x12\x17basic-test-action@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicactionb\x06proto3"
+	"\radapted_thing\x18\x01 \x01(\tR\fadaptedThing2z\n" +
+	"\vBasicAction\x12L\n" +
+	"\rPerformAction\x12\x1c.basic_test_action.v1.Inputs\x1a\x1d.basic_test_action.v1.Outputs\x1a\x1d\x82\xb5\x18\x19\x12\x17basic-test-action@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicactionb\x06proto3"
 
 var (
 	file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescOnce sync.Once

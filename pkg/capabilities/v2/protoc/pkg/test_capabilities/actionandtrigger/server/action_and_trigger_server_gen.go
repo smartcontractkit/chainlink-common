@@ -100,6 +100,8 @@ func (c *basicCapability) Info(ctx context.Context) (capabilities.CapabilityInfo
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicCapability)(nil)
 
+const BasicID = "basic-test-action-trigger@1.0.0"
+
 func (c *basicCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "Trigger":

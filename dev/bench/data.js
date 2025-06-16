@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750067278209,
+  "lastUpdate": 1750079742054,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15624,6 +15624,48 @@ window.BENCHMARK_DATA = {
             "value": 28583,
             "unit": "ns/op",
             "extra": "42142 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a62474121a947956c421dd029059050d6398a394",
+          "message": "Add txhash to sequences (#1254)\n\n* Add txhash to sequences\n\n* Update contract reader sequence proto",
+          "timestamp": "2025-06-16T15:14:19+02:00",
+          "tree_id": "b263ac597a57b5049aa4ae749b70a5693074ea0c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a62474121a947956c421dd029059050d6398a394"
+        },
+        "date": 1750079740405,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.3,
+            "unit": "ns/op",
+            "extra": "3336087 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.9,
+            "unit": "ns/op",
+            "extra": "2860257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28814,
+            "unit": "ns/op",
+            "extra": "42159 times\n4 procs"
           }
         ]
       }

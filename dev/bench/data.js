@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750087445155,
+  "lastUpdate": 1750092810179,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15708,6 +15708,48 @@ window.BENCHMARK_DATA = {
             "value": 28523,
             "unit": "ns/op",
             "extra": "42145 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db6559760098595e7d52692f9a41a725dd69727c",
+          "message": "Update SDK per the mental model (#1266)",
+          "timestamp": "2025-06-16T12:52:19-04:00",
+          "tree_id": "9d810f058ba3f646a896869ebffb312b8e3b6758",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/db6559760098595e7d52692f9a41a725dd69727c"
+        },
+        "date": 1750092809343,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.4,
+            "unit": "ns/op",
+            "extra": "3335973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.9,
+            "unit": "ns/op",
+            "extra": "2582714 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28510,
+            "unit": "ns/op",
+            "extra": "42097 times\n4 procs"
           }
         ]
       }

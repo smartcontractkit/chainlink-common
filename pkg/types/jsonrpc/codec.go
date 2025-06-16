@@ -9,7 +9,7 @@ import (
 type Codec struct {
 }
 
-func (*Codec) DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (Request, error) {
+func (*Codec) DecodeRequest(requestBytes []byte) (Request, error) {
 	var request Request
 	err := json.Unmarshal(requestBytes, &request)
 	if err != nil {
@@ -27,12 +27,6 @@ func (*Codec) DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (Req
 	if request.Auth != "" {
 		return request, nil
 	}
-
-	if jwtTokenFromHeader == "" {
-		return request, errors.New("missing auth token")
-	}
-
-	request.Auth = jwtTokenFromHeader
 
 	return request, nil
 }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750092810179,
+  "lastUpdate": 1750102114064,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15750,6 +15750,48 @@ window.BENCHMARK_DATA = {
             "value": 28510,
             "unit": "ns/op",
             "extra": "42097 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9839ff5867ae4d11f0cec44805b0691ee6365ce7",
+          "message": "generate SDK for HTTP action capability (#1234)",
+          "timestamp": "2025-06-16T15:27:19-04:00",
+          "tree_id": "b958e6a3108403205c7186a68d4d982478f10a4a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9839ff5867ae4d11f0cec44805b0691ee6365ce7"
+        },
+        "date": 1750102113062,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.2,
+            "unit": "ns/op",
+            "extra": "3244684 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.4,
+            "unit": "ns/op",
+            "extra": "2867030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28498,
+            "unit": "ns/op",
+            "extra": "42126 times\n4 procs"
           }
         ]
       }

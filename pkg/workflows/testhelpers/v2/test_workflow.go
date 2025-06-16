@@ -7,26 +7,24 @@ import (
 )
 
 func RunTestWorkflow(runner sdk.Runner[string]) {
-	basic := &basictrigger.Basic{}
 	runner.Run(func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
-				basic.Trigger(TestWorkflowTriggerConfig()),
+				basictrigger.Trigger(TestWorkflowTriggerConfig()),
 				onTrigger),
 		}, nil
 	})
 }
 
 func RunIdenticalTriggersWorkflow(runner sdk.Runner[string]) {
-	basic := &basictrigger.Basic{}
 	runner.Run(func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
-				basic.Trigger(TestWorkflowTriggerConfig()),
+				basictrigger.Trigger(TestWorkflowTriggerConfig()),
 				onTrigger,
 			),
 			sdk.On(
-				basic.Trigger(&basictrigger.Config{
+				basictrigger.Trigger(&basictrigger.Config{
 					Name:   "second-trigger",
 					Number: 200,
 				}),

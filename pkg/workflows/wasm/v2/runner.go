@@ -16,6 +16,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
+type Config any
+
 type runnerInternals interface {
 	args() []string
 	sendResponse(response unsafe.Pointer, responseLen int32) int32
@@ -23,13 +25,13 @@ type runnerInternals interface {
 	switchModes(mode int32)
 }
 
-func newRunner[T any](parse func(configBytes []byte) (T, error), runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.Runner[T] {
+func newInternal[C Config](parse func(configBytes []byte) (C, error), runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.Runner[C] {
 	runnerInternals.versionV2()
 	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
-	return runnerWrapper[T]{baseRunner: getRunner(
+	return runnerWrapper[C]{baseRunner: getRunner(
 		parse,
-		&subscriber[T, sdk.Runtime]{runnerInternals: runnerInternals},
-		&runner[T, sdk.Runtime]{
+		&subscriber[C, sdk.Runtime]{runnerInternals: runnerInternals},
+		&runner[C, sdk.Runtime]{
 			runtime:         drt,
 			runnerInternals: runnerInternals,
 			setRuntime: func(config []byte, maxResponseSize uint64) {
@@ -181,10 +183,6 @@ func exitErr(msg string) {
 type baseRunner[C, T any] interface {
 	cfg() C
 	run([]sdk.ExecutionHandler[C, T])
-}
-
-func runnerFromBaseRunner[C any](r baseRunner[C, sdk.Runtime]) sdk.Runner[C] {
-	return runnerWrapper[C]{baseRunner: r}
 }
 
 type runnerWrapper[C any] struct {

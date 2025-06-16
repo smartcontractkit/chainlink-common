@@ -13,16 +13,14 @@ import (
 )
 
 func main() {
-	runner := wasm.NewRunner(func(configBytes []byte) (string, error) {
+	runner := wasm.New(func(configBytes []byte) (string, error) {
 		return string(configBytes), nil
 	})
-
-	basic := &basictrigger.Basic{}
 
 	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
-				basic.Trigger(testhelpers.TestWorkflowTriggerConfig()),
+				basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
 				func(wcx *sdk.WorkflowContext[string], runtime sdk.Runtime, payload *basictrigger.Outputs) (uint64, error) {
 					r, err := runtime.Rand()
 					if err != nil {

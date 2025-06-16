@@ -38,7 +38,7 @@ func (c *Basic) Action(runtime sdk.Runtime, input *Input) sdk.Promise[*Output] {
 	})
 }
 
-func (c Basic) Trigger(config *Config) sdk.Trigger[*TriggerEvent, *TriggerEvent] {
+func Trigger(config *Config) sdk.Trigger[*TriggerEvent, *TriggerEvent] {
 	configAny, _ := anypb.New(config)
 	return &basicTrigger{
 		config: configAny,

@@ -12,7 +12,7 @@ type Basic struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c Basic) Trigger(config *Config) sdk.Trigger[*Outputs, *Outputs] {
+func Trigger(config *Config) sdk.Trigger[*Outputs, *Outputs] {
 	configAny, _ := anypb.New(config)
 	return &basicTrigger{
 		config: configAny,

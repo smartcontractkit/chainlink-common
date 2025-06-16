@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	testhelpers.RunTestWorkflow(wasm.NewRunner(func(configBytes []byte) (string, error) {
+	testhelpers.RunTestWorkflow(wasm.New(func(configBytes []byte) (string, error) {
 		return string(configBytes), nil
 	}))
 }

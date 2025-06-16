@@ -22,7 +22,7 @@ var (
 	anyConfig          = []byte("config")
 	anyMaxResponseSize = uint64(2048)
 
-	defaultBasicTrigger = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{})
+	defaultBasicTrigger = basictrigger.Trigger(&basictrigger.Config{})
 	triggerIndex        = int(0)
 	capID               = defaultBasicTrigger.CapabilityID()
 
@@ -55,7 +55,7 @@ func TestRunner_Run(t *testing.T) {
 		dr.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
 			return sdk.Workflow[string]{
 				sdk.On(
-					basictrigger.Basic{}.Trigger(testhelpers.TestWorkflowTriggerConfig()),
+					basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
 					func(_ *sdk.WorkflowContext[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
 						require.Fail(t, "Must not be called during registration to tiggers")
 						return 0, nil
@@ -149,7 +149,7 @@ func assertWcx(t *testing.T, r sdk.Runner[string]) {
 }
 
 func getTestRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.Runner[string] {
-	return newRunner(func(b []byte) (string, error) { return string(b), nil }, testRunnerInternals(tb, request), testRuntimeInternals(tb))
+	return newInternal(func(b []byte) (string, error) { return string(b), nil }, testRunnerInternals(tb, request), testRuntimeInternals(tb))
 }
 
 func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInternalsTestHook {

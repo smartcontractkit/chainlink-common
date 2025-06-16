@@ -1,5 +1,5 @@
 {{define "trigger_method"}}
-func (c {{.Service.GoName}}) {{.Method.GoName}}(config *{{name .InputType .GoPackageName}}) sdk.{{.Mode}}Trigger[*{{name .OutputType .GoPackageName}}, *{{name .OutputType .GoPackageName}}] {
+func {{.Method.GoName}}(config *{{name .InputType .GoPackageName}}) sdk.{{.Mode}}Trigger[*{{name .OutputType .GoPackageName}}, *{{name .OutputType .GoPackageName}}] {
     configAny, _ := anypb.New(config)
     return &{{.Service.GoName | LowerFirst}}{{.Method.GoName}} {
         config: configAny,

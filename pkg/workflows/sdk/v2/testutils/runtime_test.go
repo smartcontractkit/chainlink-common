@@ -34,19 +34,19 @@ func TestRuntime_CallCapability(t *testing.T) {
 			return &basicaction.Outputs{AdaptedThing: strings.Repeat("a", 1000)}, nil
 		}
 
-		runner := testutils.NewDonRunner(t, nil)
+		runner := testutils.NewRunner(t, "unused")
 		runner.SetMaxResponseSizeBytes(1)
-		runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-			Handlers: []sdk.Handler[sdk.DonRuntime]{
-				sdk.NewDonHandler(
-					basictrigger.Basic{}.Trigger(&basictrigger.Config{}),
-					func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+		runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+			return sdk.Workflow[string]{
+				sdk.On(
+					basictrigger.Trigger(&basictrigger.Config{}),
+					func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 						workflowAction1 := &basicaction.BasicAction{}
 						call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
 						_, err := call.Await()
 						return "", err
 					},
-				)},
+				)}, nil
 		})
 
 		_, _, err = runner.Result()
@@ -64,20 +64,20 @@ func TestRuntime_ReturnsErrorsFromCapabilitiesThatDoNotExist(t *testing.T) {
 		return &basictrigger.Outputs{CoolOutput: "cool"}, nil
 	}
 
-	runner := testutils.NewDonRunner(t, nil)
+	runner := testutils.NewRunner(t, "unused")
 	require.NoError(t, err)
 
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, _ *basictrigger.Outputs) (string, error) {
+	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		return sdk.Workflow[string]{
+			sdk.On(
+				basictrigger.Trigger(anyConfig),
+				func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 					workflowAction1 := &basicaction.BasicAction{}
 					call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
 					_, err := call.Await()
 					return "", err
 				},
-			)},
+			)}, nil
 	})
 
 	_, _, err = runner.Result()
@@ -102,15 +102,15 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 		return &nodeaction.NodeOutputs{OutputThing: anyValue}, nil
 	}
 
-	runner := testutils.NewDonRunner(t, nil)
+	runner := testutils.NewRunner(t, "unused")
 	require.NoError(t, err)
 
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
-					consensus := sdk.RunInNodeMode(rt, func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		return sdk.Workflow[string]{
+			sdk.On(
+				basictrigger.Trigger(anyConfig),
+				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
+					consensus := sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 						action := &nodeaction.BasicAction{}
 						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
 						require.NoError(t, err)
@@ -122,7 +122,7 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 					return consensusResult, nil
 
 				},
-			)},
+			)}, nil
 	})
 
 	ran, result, err := runner.Result()
@@ -142,18 +142,19 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 		return anyTrigger, nil
 	}
 
-	runner := testutils.NewDonRunner(t, nil)
+	runner := testutils.NewRunner(t, "unused")
 	require.NoError(t, err)
 
 	anyValue := int32(100)
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+	runner.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		return sdk.Workflow[string]{
+			sdk.On(
+				basictrigger.Trigger(anyConfig),
+				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(
+						wcx,
 						rt,
-						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+						func(_ *sdk.WorkflowContext[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, errors.New("no consensus")
 						},
 						sdk.ConsensusMedianAggregation[int32]().WithDefault(anyValue))
@@ -162,7 +163,7 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 					require.NoError(t, err)
 					return consensusResult, nil
 				},
-			)},
+			)}, nil
 	})
 
 	ran, result, err := runner.Result()
@@ -182,25 +183,26 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 		return anyTrigger, nil
 	}
 
-	runner := testutils.NewDonRunner(t, nil)
+	runner := testutils.NewRunner(t, "unused")
 	require.NoError(t, err)
 
 	anyErr := errors.New("no consensus")
-	runner.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-		Handlers: []sdk.Handler[sdk.DonRuntime]{
-			sdk.NewDonHandler(
-				basictrigger.Basic{}.Trigger(anyConfig),
-				func(rt sdk.DonRuntime, input *basictrigger.Outputs) (int32, error) {
+	runner.Run(func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		return sdk.Workflow[string]{
+			sdk.On(
+				basictrigger.Trigger(anyConfig),
+				func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(
+						wcx,
 						rt,
-						func(nodeRuntime sdk.NodeRuntime) (int32, error) {
+						func(_ *sdk.WorkflowContext[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, anyErr
 						},
 						sdk.ConsensusMedianAggregation[int32]())
 
 					return consensus.Await()
 				},
-			)},
+			)}, nil
 	})
 
 	_, _, err = runner.Result()

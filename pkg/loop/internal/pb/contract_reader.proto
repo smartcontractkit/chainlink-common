@@ -125,6 +125,7 @@ message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
   codec.VersionedBytes data = 3;
+  bytes tx_hash = 4;
 }
 
 message SequenceWithKey {
@@ -132,6 +133,7 @@ message SequenceWithKey {
   Head head = 2;
   codec.VersionedBytes data = 3;
   string key = 4;
+  bytes tx_hash = 5;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

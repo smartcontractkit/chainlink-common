@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1749846542204,
+  "lastUpdate": 1750067278209,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15582,6 +15582,48 @@ window.BENCHMARK_DATA = {
             "value": 28146,
             "unit": "ns/op",
             "extra": "42652 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8fe61292a55018bd8e2bdc27135170da8b6097fb",
+          "message": "INFOPLAT-2282: Add beholderNoopLogerProvider and LogStreamingEnabled flag to control emitting logs (#1263)\n\n* Add beholderNoopLogerProvider and LogStreamingEnabled flag to control emitting logs\n\n* Fix tests\n\n* Fix config test\n\n* Flatten if conditions\n\n* Fix tests",
+          "timestamp": "2025-06-16T11:46:53+02:00",
+          "tree_id": "f1d22d434fdaa1aa2cc4febb7392c7881703568d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8fe61292a55018bd8e2bdc27135170da8b6097fb"
+        },
+        "date": 1750067277304,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.9,
+            "unit": "ns/op",
+            "extra": "3355990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.2,
+            "unit": "ns/op",
+            "extra": "2935824 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28583,
+            "unit": "ns/op",
+            "extra": "42142 times\n4 procs"
           }
         ]
       }

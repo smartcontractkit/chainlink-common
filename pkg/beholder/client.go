@@ -133,6 +133,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	} else {
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
 	}
+
 	loggerAttributes := []attribute.KeyValue{
 		attribute.String("beholder_data_type", "zap_log_message"),
 	}
@@ -147,6 +148,12 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		sdklog.WithResource(loggerResource),
 		sdklog.WithProcessor(loggerProcessor),
 	)
+
+	// If log streaming is disabled, use a noop logger provider
+	if !cfg.LogStreamingEnabled {
+		loggerProvider = BeholderNoopLoggerProvider()
+	}
+
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer

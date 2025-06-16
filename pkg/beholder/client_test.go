@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/log"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
@@ -289,6 +290,40 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 		assert.NotNil(t, client)
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
+
+
+	t.Run("LogStreamingEnabled true creates logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      true,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+	})
+
+	t.Run("LogStreamingEnabled false disables logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      false,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		// LoggerProvider and Logger should NOT be nil, but should be no-op implementations
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+
+		// Optionally, check that using the logger does not panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
+			}
+		}()
+		client.Logger.Emit(context.Background(), log.Record{})
+	})
+
 
 	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{

@@ -31,6 +31,7 @@ const (
 	Client_QueryTrackedLogs_FullMethodName       = "/cre.sdk.v2.evm.Client/QueryTrackedLogs"
 	Client_RegisterLogTracking_FullMethodName    = "/cre.sdk.v2.evm.Client/RegisterLogTracking"
 	Client_UnregisterLogTracking_FullMethodName  = "/cre.sdk.v2.evm.Client/UnregisterLogTracking"
+	Client_LogTrigger_FullMethodName             = "/cre.sdk.v2.evm.Client/LogTrigger"
 )
 
 // ClientClient is the client API for Client service.
@@ -47,6 +48,7 @@ type ClientClient interface {
 	QueryTrackedLogs(ctx context.Context, in *evm.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(ctx context.Context, in *evm.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *evm.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	LogTrigger(ctx context.Context, in *FilterLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[evm.FilterLogsReply], error)
 }
 
 type clientClient struct {
@@ -157,6 +159,25 @@ func (c *clientClient) UnregisterLogTracking(ctx context.Context, in *evm.Unregi
 	return out, nil
 }
 
+func (c *clientClient) LogTrigger(ctx context.Context, in *FilterLogTriggerRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[evm.FilterLogsReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Client_ServiceDesc.Streams[0], Client_LogTrigger_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FilterLogTriggerRequest, evm.FilterLogsReply]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Client_LogTriggerClient = grpc.ServerStreamingClient[evm.FilterLogsReply]
+
 // ClientServer is the server API for Client service.
 // All implementations must embed UnimplementedClientServer
 // for forward compatibility.
@@ -171,6 +192,7 @@ type ClientServer interface {
 	QueryTrackedLogs(context.Context, *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
 	RegisterLogTracking(context.Context, *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+	LogTrigger(*FilterLogTriggerRequest, grpc.ServerStreamingServer[evm.FilterLogsReply]) error
 	mustEmbedUnimplementedClientServer()
 }
 
@@ -210,6 +232,9 @@ func (UnimplementedClientServer) RegisterLogTracking(context.Context, *evm.Regis
 }
 func (UnimplementedClientServer) UnregisterLogTracking(context.Context, *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+func (UnimplementedClientServer) LogTrigger(*FilterLogTriggerRequest, grpc.ServerStreamingServer[evm.FilterLogsReply]) error {
+	return status.Errorf(codes.Unimplemented, "method LogTrigger not implemented")
 }
 func (UnimplementedClientServer) mustEmbedUnimplementedClientServer() {}
 func (UnimplementedClientServer) testEmbeddedByValue()                {}
@@ -412,6 +437,17 @@ func _Client_UnregisterLogTracking_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Client_LogTrigger_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FilterLogTriggerRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ClientServer).LogTrigger(m, &grpc.GenericServerStream[FilterLogTriggerRequest, evm.FilterLogsReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Client_LogTriggerServer = grpc.ServerStreamingServer[evm.FilterLogsReply]
+
 // Client_ServiceDesc is the grpc.ServiceDesc for Client service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -460,6 +496,12 @@ var Client_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Client_UnregisterLogTracking_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "LogTrigger",
+			Handler:       _Client_LogTrigger_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "capabilities/v2/chain-capabilities/evm/capability.proto",
 }

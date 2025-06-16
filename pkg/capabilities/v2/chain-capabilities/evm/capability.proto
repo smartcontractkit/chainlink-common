@@ -23,6 +23,20 @@ service Client {
   rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.FilterLogsReply);
 }
 
-
+enum ConfidenceLevel {
+  EARLY = 0;        // default, blocks that have a good level of confidence defined by chain, but not guaranteed to be included in the chain
+  BLOCK_DEPTH = 1;  // blocks that are lower than the BlockDepth parameter defined by user, which is a number of blocks to wait for confirmation
+  FINALIZED = 2;    // guaranteed to be included in the chain
+}
+message FilterLogTriggerRequest {
+  repeated bytes addresses = 1; // contract(s) to filter logs from, at least one address is required
+  repeated bytes topics0 = 2;  // list of topics0/eventSigs to filter, at least one topic is required
+  repeated bytes topics1 = 3;  // list of topics1 to filter, optional, can be empty
+  repeated bytes topics2 = 4;  // list of topics1 to filter, optional, can be empty
+  repeated bytes topics3 = 5;  // list of topics1 to filter, optional, can be empty
+  ConfidenceLevel Confidence = 6; // optional, defaults to "EARLY"
+  uint64 BlockDepth = 7; // optional, defaults to particular value per chain (from a table), number of blocks to wait for confirmation
+}

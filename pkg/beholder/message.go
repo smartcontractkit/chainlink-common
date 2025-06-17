@@ -21,7 +21,7 @@ type Metadata struct {
 	// Schema Registry URI to fetch schema
 	BeholderDomain     string `validate:"required,domain_entity"`
 	BeholderEntity     string `validate:"required,domain_entity"`
-	BeholderDataSchema string `validate:"required,uri"`
+	BeholderDataSchema string `validate:"required"`
 
 	// OPTIONAL FIELDS
 	// The version of the CL node.

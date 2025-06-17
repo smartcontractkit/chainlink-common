@@ -15,7 +15,7 @@ type BasicAction struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *BasicAction) PerformAction(runtime sdk.DonRuntime, input *Inputs) sdk.Promise[*Outputs] {
+func (c *BasicAction) PerformAction(runtime sdk.Runtime, input *Inputs) sdk.Promise[*Outputs] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*Outputs](nil, err)

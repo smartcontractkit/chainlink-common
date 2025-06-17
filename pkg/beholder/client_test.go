@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/log"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
@@ -273,7 +274,140 @@ func TestNewClient(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Equal(t, "address for chip ingress service is empty", err.Error())
+		assert.Equal(t, "failed to extract host from address '': missing port in address", err.Error())
+	})
+}
+
+func TestNewClientWithChipIngressConfig(t *testing.T) {
+	t.Run("creates client with ChipIngress TLS endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
 
+
+	t.Run("LogStreamingEnabled true creates logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      true,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+	})
+
+	t.Run("LogStreamingEnabled false disables logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      false,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		// LoggerProvider and Logger should NOT be nil, but should be no-op implementations
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+
+		// Optionally, check that using the logger does not panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
+			}
+		}()
+		client.Logger.Emit(context.Background(), log.Record{})
+	})
+
+
+	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("creates client with IPv4 ChipIngress endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "192.168.1.100:9090",
+			ChipIngressInsecureConnection:  true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("creates client with IPv6 ChipIngress endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "[::1]:9090",
+			ChipIngressInsecureConnection:  true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+}
+
+// Update the existing function name to match its actual purpose
+func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
+	t.Run("errors with ChipIngress endpoint without port", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "missing port")
+	})
+
+	t.Run("errors with malformed ChipIngress endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:invalid:port",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+	})
+
+	t.Run("errors when ChipIngress enabled with empty endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "",
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "failed to extract host from address '': missing port in address")
+	})
+
+	t.Run("errors when ChipIngress enabled with whitespace-only endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "   ",
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		// The whitespace is preserved in the address, so the error includes the spaces
+		assert.Contains(t, err.Error(), "failed to extract host from address '   '")
+		assert.Contains(t, err.Error(), "missing port in address")
+	})
 }

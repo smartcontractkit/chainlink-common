@@ -2,8 +2,6 @@ package sdk
 
 import (
 	"errors"
-	"io"
-	"log/slog"
 	"math/rand"
 	"reflect"
 
@@ -15,9 +13,6 @@ import (
 type RuntimeBase interface {
 	// CallCapability is meant to be called by generated code
 	CallCapability(request *pb.CapabilityRequest) Promise[*pb.CapabilityResponse]
-	Config() []byte
-	LogWriter() io.Writer
-	Logger() *slog.Logger
 	Rand() (*rand.Rand, error)
 }
 
@@ -27,8 +22,8 @@ type NodeRuntime interface {
 	IsNodeRuntime()
 }
 
-// DonRuntime is not thread safe and must not be used concurrently.
-type DonRuntime interface {
+// Runtime is not thread safe and must not be used concurrently.
+type Runtime interface {
 	RuntimeBase
 
 	// RunInNodeMode is meant to be used by the helper method RunInNodeMode
@@ -115,16 +110,19 @@ func NodeModeCallInDonMode() error {
 	return nodeModeCallInDonMode
 }
 
-var donModeCallInNodeMode = errors.New("cannot use the DonRuntime inside RunInNodeMode")
+var donModeCallInNodeMode = errors.New("cannot use the Runtime inside RunInNodeMode")
 
 func DonModeCallInNodeMode() error {
 	return donModeCallInNodeMode
 }
 
-func RunInNodeMode[T any](
-	runtime DonRuntime, fn func(nodeRuntime NodeRuntime) (T, error), cd ConsensusAggregation[T]) Promise[T] {
+func RunInNodeMode[C, T any](
+	wcx *WorkflowContext[C],
+	runtime Runtime,
+	fn func(wcx *WorkflowContext[C], nodeRuntime NodeRuntime) (T, error),
+	cd ConsensusAggregation[T]) Promise[T] {
 	observationFn := func(nodeRuntime NodeRuntime) *pb.SimpleConsensusInputs {
-
+		wcxClone := *wcx
 		if cd.Err() != nil {
 			return &pb.SimpleConsensusInputs{Observation: &pb.SimpleConsensusInputs_Error{Error: cd.Err().Error()}}
 		}
@@ -144,7 +142,7 @@ func RunInNodeMode[T any](
 			Default:     values.Proto(defaultValue),
 		}
 
-		result, err := fn(nodeRuntime)
+		result, err := fn(&wcxClone, nodeRuntime)
 		if err != nil {
 			returnValue.Observation = &pb.SimpleConsensusInputs_Error{Error: err.Error()}
 			return returnValue

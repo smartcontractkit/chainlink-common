@@ -42,14 +42,14 @@ func TestEmitterMessageValidation(t *testing.T) {
 			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'required' tag",
 		},
 		{
-			name: "Invalid URI",
+			name: "Invalid URI not causing error",
 			attrs: beholder.Attributes{
 				beholder.AttrKeyDomain:     "TestDomain",
 				beholder.AttrKeyEntity:     "TestEntity",
 				beholder.AttrKeyDataSchema: "example-schema",
 			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
+			exporterCalledTimes: 1,
+			expectedError:       "",
 		},
 		{
 			name: "Invalid Beholder domain (double underscore)",

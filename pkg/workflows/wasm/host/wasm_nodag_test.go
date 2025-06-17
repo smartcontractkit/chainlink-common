@@ -10,9 +10,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -28,6 +31,8 @@ const (
 	nodagMultiTriggerBinaryLocation = nodagMultiTriggerBinaryCmd + "/testmodule.wasm"
 	nodagRandomBinaryCmd            = "test/nodag/randoms/cmd"
 	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagSecretsBinaryCmd           = "test/nodag/secrets/cmd"
+	nodagSecretsBinaryLocation      = nodagBinaryCmd + "/testmodule.wasm"
 )
 
 var wordList = []string{"Hello, ", "world", "!"}
@@ -142,6 +147,105 @@ func Test_NoDag_Run(t *testing.T) {
 		default:
 			t.Fatalf("unexpected response type %T", output)
 		}
+	})
+}
+
+func Test_NoDag_Secrets(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(nodagSecretsBinaryCmd, nodagSecretsBinaryLocation, true, t)
+
+	t.Run("Returns an error if the secret doesn't exist", func(t *testing.T) {
+		ctx := t.Context()
+		lggr, _ := logger.TestObserved(t, zapcore.InfoLevel)
+		mc := &ModuleConfig{
+			Logger:         lggr,
+			IsUncompressed: true,
+		}
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
+
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+
+		mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
+			Return([]*sdkpb.SecretResponse{
+				{
+					Response: &sdkpb.SecretResponse_Error{
+						Error: "could not find secret",
+					},
+				},
+			}, nil).
+			Once()
+
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		req := &wasmpb.ExecuteRequest{
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(0),
+					Payload: wrapped,
+				},
+			},
+		}
+
+		resp, err := m.Execute(ctx, req, mockExecutionHelper)
+		require.NoError(t, err)
+
+		assert.ErrorContains(t, errors.New(resp.GetError()), "could not find secret")
+	})
+
+	t.Run("Returns the secret if it exists", func(t *testing.T) {
+		ctx := t.Context()
+		lggr, _ := logger.TestObserved(t, zapcore.InfoLevel)
+		mc := &ModuleConfig{
+			Logger:         lggr,
+			IsUncompressed: true,
+		}
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
+
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+
+		mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
+			Return([]*sdkpb.SecretResponse{
+				{
+					Response: &sdkpb.SecretResponse_Secret{
+						Secret: &sdkpb.Secret{Value: "Bar"},
+					},
+				},
+			}, nil).
+			Once()
+
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		req := &wasmpb.ExecuteRequest{
+			Request: &wasmpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(0),
+					Payload: wrapped,
+				},
+			},
+		}
+
+		resp, err := m.Execute(ctx, req, mockExecutionHelper)
+		require.NoError(t, err)
+		assert.Equal(t, "", resp.GetError())
+
+		assert.Equal(t, "Bar", resp.GetValue().GetStringValue())
 	})
 }
 

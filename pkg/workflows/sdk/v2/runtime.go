@@ -117,12 +117,12 @@ func DonModeCallInNodeMode() error {
 }
 
 func RunInNodeMode[C, T any](
-	wcx *WorkflowContext[C],
+	wcx *Environment[C],
 	runtime Runtime,
-	fn func(wcx *WorkflowContext[C], nodeRuntime NodeRuntime) (T, error),
+	fn func(wcx *NodeEnvironment[C], nodeRuntime NodeRuntime) (T, error),
 	cd ConsensusAggregation[T]) Promise[T] {
 	observationFn := func(nodeRuntime NodeRuntime) *pb.SimpleConsensusInputs {
-		wcxClone := *wcx
+		wcxClone := wcx.NodeEnvironment
 		if cd.Err() != nil {
 			return &pb.SimpleConsensusInputs{Observation: &pb.SimpleConsensusInputs_Error{Error: cd.Err().Error()}}
 		}

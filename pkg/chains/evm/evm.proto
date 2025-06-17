@@ -256,3 +256,15 @@ enum TransactionStatus {
   TRANSACTION_STATUS_FAILED = 4;
   TRANSACTION_STATUS_FATAL = 5;
 }
+
+message Observations {
+  values.BigInt latest = 1;
+  values.BigInt safe = 2;
+  values.BigInt finalized = 3;
+}
+
+message Outcome {
+  values.BigInt latest = 1;
+  values.BigInt safe = 2;
+  values.BigInt finalized = 3;
+}

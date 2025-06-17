@@ -367,6 +367,21 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *relayerset.
 	return &emptypb.Empty{}, nil
 }
 
+func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	txStatus, err := evmService.GetTransactionStatus(ctx, request.Request.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+
+	//nolint: gosec // G115
+	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
 func (s *Server) SubmitTransaction(ctx context.Context, request *relayerset.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {

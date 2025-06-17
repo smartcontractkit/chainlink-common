@@ -404,6 +404,16 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			},
 		},
 		{
+			name: "GetTransactionStatus",
+			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
+				id := types.IdempotencyKey("status-tx")
+				mockEVM.EXPECT().GetTransactionStatus(mock.Anything, id).Return(types.Unconfirmed, nil)
+				out, err := evm.GetTransactionStatus(ctx, id)
+				require.NoError(t, err)
+				require.Equal(t, types.Unconfirmed, out)
+			},
+		},
+		{
 			name: "QueryTrackedLogs",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				fq := generateFixtureQuery()

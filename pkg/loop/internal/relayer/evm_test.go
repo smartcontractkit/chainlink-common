@@ -145,6 +145,17 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, txFee, fee.TransactionFee)
 	})
+	
+	t.Run("GetTransactionStatus", func(t *testing.T) {
+		evmService.staticGetTransactionStatus = func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
+			require.Equal(t, txId, transactionID)
+			return types.Finalized, nil
+		}
+
+		got, err := client.GetTransactionStatus(ctx, txId)
+		require.NoError(t, err)
+		require.Equal(t, got, types.Finalized)
+	})
 
 	t.Run("FilterLogs", func(t *testing.T) {
 		expFQ := evm.FilterQuery{

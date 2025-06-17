@@ -143,6 +143,10 @@ type EVMService interface {
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
+
+	GetForwarderForEOA(ctx context.Context, eoa evm.Address) (forwarder evm.Address, err error)
+
+	GetForwarderForEOAOCR2Feeds(ctx context.Context, eoa, ocr2AggregatorID evm.Address) (forwarder evm.Address, err error)
 }
 
 // Relayer extends ChainService with providers for each product.

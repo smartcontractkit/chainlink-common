@@ -143,6 +143,7 @@ func (e *TxError) Error() string {
 	return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
 }
 
+//PLEX-1524 - Refactor this to return the Tx Hash in a Transaction type and a second return value for the TxStatus. We may even be able to return the whole transaction object instead of just the hash.
 type TransactionResult struct {
 	TxStatus TransactionStatus
 	TxHash   Hash

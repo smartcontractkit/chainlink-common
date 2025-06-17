@@ -20,6 +20,24 @@ service EVM{
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
+  rpc GetForwarderForEOA(GetForwarderForEOARequest) returns (GetForwarderForEOAReply);
+  rpc GetForwarderForEOAOCR2Feeds(GetForwarderForEOAOCR2FeedsRequest) returns (GetForwarderForEOAOCR2FeedsReply);
+}
+
+message GetForwarderForEOARequest {
+
+}
+
+message GetForwarderForEOAReply {
+
+}
+
+message GetForwarderForEOAOCR2FeedsRequest {
+
+}
+
+message GetForwarderForEOAOCR2FeedsReply {
+
 }
 
 // represents simplified evm-style CallMsg

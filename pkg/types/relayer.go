@@ -144,8 +144,10 @@ type EVMService interface {
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
 
+	// GetForwarderForEOA returns a proper forwarder for a given EOA.
 	GetForwarderForEOA(ctx context.Context, eoa evm.Address) (forwarder evm.Address, err error)
 
+	// GetForwarderForEOAOCR2Feeds returns a proper forwarder for a given EOA and checks if it is set as a transmitter on the OCR2Aggregator contract.
 	GetForwarderForEOAOCR2Feeds(ctx context.Context, eoa, ocr2AggregatorID evm.Address) (forwarder evm.Address, err error)
 }
 

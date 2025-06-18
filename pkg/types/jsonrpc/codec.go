@@ -3,7 +3,6 @@ package jsonrpc
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 )
 
 type Codec struct {
@@ -40,9 +39,6 @@ func (*Codec) DecodeResponse(responseBytes []byte) (Response, error) {
 	err := json.Unmarshal(responseBytes, &response)
 	if err != nil {
 		return Response{}, err
-	}
-	if response.Error != nil {
-		return Response{}, fmt.Errorf("received non-empty error field: %v", response.Error)
 	}
 	return response, nil
 }

@@ -308,18 +308,20 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 }
 
 type staticEVMService struct {
-	staticCallContract           func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	staticFilterLogs             func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	staticBalanceAt              func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
-	staticEstimateGas            func(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	staticGetTransactionByHash   func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	staticGetTransactionReceipt  func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-	staticGetTransactionFee      func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
-	staticQueryTrackedLogs       func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	staticLatestAndFinalizedHead func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
-	staticRegisterLogTracking    func(ctx context.Context, filter evm.LPFilterQuery) error
-	staticUnregisterLogTracking  func(ctx context.Context, filterName string) error
-	staticGetTransactionStatus   func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
+	staticCallContract                func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
+	staticFilterLogs                  func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
+	staticBalanceAt                   func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
+	staticEstimateGas                 func(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	staticGetTransactionByHash        func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	staticGetTransactionReceipt       func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+	staticGetTransactionFee           func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
+	staticQueryTrackedLogs            func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	staticLatestAndFinalizedHead      func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
+	staticRegisterLogTracking         func(ctx context.Context, filter evm.LPFilterQuery) error
+	staticUnregisterLogTracking       func(ctx context.Context, filterName string) error
+	staticGetTransactionStatus        func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
+	staticGetForwarderForEOA          func(ctx context.Context, eoa evm.Address) (forwarder evm.Address, err error)
+	staticGetForwarderForEOAOCR2Feeds func(ctx context.Context, eoa, ocr2AggregatorID evm.Address) (forwarder evm.Address, err error)
 }
 
 func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -368,6 +370,14 @@ func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName
 
 func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
 	return s.staticGetTransactionStatus(ctx, transactionID)
+}
+
+func (s *staticEVMService) GetForwarderForEOA(ctx context.Context, eoa evm.Address) (forwarder evm.Address, err error) {
+	return s.staticGetForwarderForEOA(ctx, eoa)
+}
+
+func (s *staticEVMService) GetForwarderForEOAOCR2Feeds(ctx context.Context, eoa, ocr2AggregatorID evm.Address) (forwarder evm.Address, err error) {
+	return s.staticGetForwarderForEOAOCR2Feeds(ctx, eoa, ocr2AggregatorID)
 }
 
 func generateFixtureQuery() []query.Expression {

@@ -174,6 +174,14 @@ func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID stri
 	return types.TransactionStatus(reply.GetTransactionStatus()), nil
 }
 
+func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa evmtypes.Address) (forwarder evmtypes.Address, err error) {
+	return evmtypes.Address{}, nil
+}
+
+func (e *EVMClient) GetForwarderForEOAOCR2Feeds(ctx context.Context, eoa, ocr2AggregatorID evmtypes.Address) (forwarder evmtypes.Address, err error) {
+	return evmtypes.Address{}, nil
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 

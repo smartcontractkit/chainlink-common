@@ -43,18 +43,18 @@ func (m *MockExporter) ForceFlush(ctx context.Context) error {
 func TestClient(t *testing.T) {
 	defaultCustomAttributes := func() map[string]any {
 		return map[string]any{
-			"int_key_1":            123,
-			"int64_key_1":          int64(123),
-			"int32_key_1":          int32(123),
-			"str_key_1":            "str_val_1",
-			"bool_key_1":           true,
-			"float_key_1":          123.456,
-			"byte_key_1":           []byte("byte_val_1"),
-			"str_slice_key_1":      []string{"str_val_1", "str_val_2"},
-			"nil_key_1":            nil,
-			"beholder_domain":      "TestDomain",        // Required field
-			"beholder_entity":      "TestEntity",        // Required field
-			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
+			"int_key_1":                123,
+			"int64_key_1":              int64(123),
+			"int32_key_1":              int32(123),
+			"str_key_1":                "str_val_1",
+			"bool_key_1":               true,
+			"float_key_1":              123.456,
+			"byte_key_1":               []byte("byte_val_1"),
+			"str_slice_key_1":          []string{"str_val_1", "str_val_2"},
+			"nil_key_1":                nil,
+			beholder.AttrKeyDomain:     "TestDomain",        // Required field
+			beholder.AttrKeyEntity:     "TestEntity",        // Required field
+			beholder.AttrKeyDataSchema: "/schemas/ids/1001", // Required field, URI
 		}
 	}
 	defaultMessageBody := []byte("body bytes")

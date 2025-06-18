@@ -2,8 +2,6 @@ package sdkimpl
 
 import (
 	"fmt"
-	"io"
-	"log/slog"
 	"math/rand"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus"
@@ -21,9 +19,7 @@ type RuntimeHelpers interface {
 }
 
 type RuntimeBase struct {
-	ConfigBytes     []byte
 	MaxResponseSize uint64
-	Writer          io.Writer
 	RuntimeHelpers
 
 	source     rand.Source
@@ -73,18 +69,6 @@ func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[
 	})
 }
 
-func (r *RuntimeBase) Config() []byte {
-	return r.ConfigBytes
-}
-
-func (r *RuntimeBase) LogWriter() io.Writer {
-	return r.Writer
-}
-
-func (r *RuntimeBase) Logger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(r.LogWriter(), nil))
-}
-
 func (r *RuntimeBase) Rand() (*rand.Rand, error) {
 	if r.modeErr != nil {
 		return nil, r.modeErr
@@ -101,12 +85,12 @@ func (r *RuntimeBase) Rand() (*rand.Rand, error) {
 	return rand.New(r), nil
 }
 
-type DonRuntime struct {
+type Runtime struct {
 	RuntimeBase
 	nextNodeCallId int32
 }
 
-func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
+func (d *Runtime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	nrt := &NodeRuntime{RuntimeBase: d.RuntimeBase}
 	nrt.nextCallId = d.nextNodeCallId
 	nrt.Mode = pb.Mode_Node
@@ -122,6 +106,8 @@ func (d *DonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.Simp
 		return values.FromProto(result)
 	})
 }
+
+var _ sdk.Runtime = &Runtime{}
 
 func (r *RuntimeBase) Int63() int64 {
 	if r.modeErr != nil {
@@ -151,8 +137,6 @@ func (r *RuntimeBase) Seed(seed int64) {
 
 	r.source.Seed(seed)
 }
-
-var _ sdk.DonRuntime = &DonRuntime{}
 
 type NodeRuntime struct {
 	RuntimeBase

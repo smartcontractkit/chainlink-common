@@ -126,12 +126,12 @@ type SignedReport struct {
 type TransactionStatus int
 
 const (
-	//Transaction was sent successfully to the chain and successfully executed
-	TxSuccess TransactionStatus = iota
-	//Transaction was sent successfully to the chain but the smart contract execution reverted
+	// Transaction processing failed due to a network issue, RPC issue, or other fatal error
+	TxFatal TransactionStatus = iota
+	// Transaction was sent successfully to the chain but the smart contract execution reverted
 	TxReverted
-	//Transaction was not sent successfully to the chain
-	TxFatal
+	// Transaction was sent successfully to the chain, smart contract executed successfully and mined into a block.
+	TxSuccess
 )
 
 type TxError struct {
@@ -143,7 +143,7 @@ func (e *TxError) Error() string {
 	return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
 }
 
-//PLEX-1524 - Refactor this to return the Tx Hash in a Transaction type and a second return value for the TxStatus. We may even be able to return the whole transaction object instead of just the hash.
+// PLEX-1524 - Refactor this to return the Tx Hash in a Transaction type and a second return value for the TxStatus. We may even be able to return the whole transaction object instead of just the hash.
 type TransactionResult struct {
 	TxStatus TransactionStatus
 	TxHash   Hash

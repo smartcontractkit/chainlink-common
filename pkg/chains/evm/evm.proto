@@ -241,9 +241,9 @@ message QueryTrackedLogsReply {
 }
 
 enum TxStatus {
-  TX_SUCCESS = 0;
+  TX_FATAL = 0;
   TX_REVERTED = 1;
-  TX_FATAL = 2;
+  TX_SUCCESS = 2;
 }
 
 message GasConfig {

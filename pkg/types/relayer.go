@@ -140,7 +140,7 @@ type EVMService interface {
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
-	// WriteReport writes a transaction against a keystone forwarder contract
+	// Submits a transaction to the EVM chain. It will return once the transaction is included in a block or an error occurs.
 	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
 
 	// Utility function to calculate the total fee based on a tx receipt

@@ -27,22 +27,22 @@ const (
 type TxStatus int32
 
 const (
-	TxStatus_TX_SUCCESS  TxStatus = 0
+	TxStatus_TX_FATAL    TxStatus = 0
 	TxStatus_TX_REVERTED TxStatus = 1
-	TxStatus_TX_FATAL    TxStatus = 2
+	TxStatus_TX_SUCCESS  TxStatus = 2
 )
 
 // Enum value maps for TxStatus.
 var (
 	TxStatus_name = map[int32]string{
-		0: "TX_SUCCESS",
+		0: "TX_FATAL",
 		1: "TX_REVERTED",
-		2: "TX_FATAL",
+		2: "TX_SUCCESS",
 	}
 	TxStatus_value = map[string]int32{
-		"TX_SUCCESS":  0,
+		"TX_FATAL":    0,
 		"TX_REVERTED": 1,
-		"TX_FATAL":    2,
+		"TX_SUCCESS":  2,
 	}
 )
 
@@ -2501,7 +2501,7 @@ func (x *SubmitTransactionReply) GetTxStatus() TxStatus {
 	if x != nil {
 		return x.TxStatus
 	}
-	return TxStatus_TX_SUCCESS
+	return TxStatus_TX_FATAL
 }
 
 type GetTransactionStatusRequest struct {
@@ -2782,12 +2782,18 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"g\n" +
 	"\x19GetTransactionStatusReply\x12J\n" +
 	"\x12transaction_status\x18\x01 \x01(\x0e2\x1b.loop.evm.TransactionStatusR\x11transactionStatus*9\n" +
-	"\bTxStatus\x12\x0e\n" +
+	"\bTxStatus\x12\f\n" +
+	"\bTX_FATAL\x10\x00\x12\x0f\n" +
+	"\vTX_REVERTED\x10\x01\x12\x0e\n" +
 	"\n" +
+<<<<<<< HEAD
 	"TX_SUCCESS\x10\x00\x12\x0f\n" +
 	"\vTX_REVERTED\x10\x01\x12\f\n" +
 	"\bTX_FATAL\x10\x02*\xd6\x01\n" +
 >>>>>>> cc5e0f18 (updaing gen code)
+=======
+	"TX_SUCCESS\x10\x02*\xd6\x01\n" +
+>>>>>>> 4492b86d (changing TxStatus.SUCCESS so it is not the default int value)
 	"\x11TransactionStatus\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_UNKNOWN\x10\x00\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12\"\n" +

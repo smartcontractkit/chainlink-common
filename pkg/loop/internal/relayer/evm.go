@@ -45,7 +45,7 @@ func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.Su
 	}
 
 	return &evmtypes.TransactionResult{
-		TxStatus: evmtypes.TransactionStatus(reply.TxStatus),
+		TxStatus: evmpb.ConvertTxStatusFromProto(reply.TxStatus),
 		TxHash:   evmtypes.Hash(reply.TxHash),
 	}, nil
 }

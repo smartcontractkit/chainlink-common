@@ -247,3 +247,36 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 		}
 	})
 }
+
+func LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log, *evm.Log] {
+	configAny, _ := anypb.New(config)
+	return &clientLogTrigger{
+		config: configAny,
+	}
+}
+
+type clientLogTrigger struct {
+	config *anypb.Any
+}
+
+func (*clientLogTrigger) IsTrigger() {}
+
+func (*clientLogTrigger) NewT() *evm.Log {
+	return &evm.Log{}
+}
+
+func (*clientLogTrigger) CapabilityID() string {
+	return "evm@1.0.0"
+}
+
+func (*clientLogTrigger) Method() string {
+	return "LogTrigger"
+}
+
+func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
+}
+
+func (t *clientLogTrigger) Adapt(trigger *evm.Log) (*evm.Log, error) {
+	return trigger, nil
+}

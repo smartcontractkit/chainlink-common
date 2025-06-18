@@ -44,10 +44,10 @@ func ExampleNewClient() {
 	fmt.Println("Emit custom messages")
 	for range 10 {
 		err := beholder.GetEmitter().Emit(context.Background(), payloadBytes,
-			"beholder_data_schema", "/custom-message/versions/1", // required
-			"beholder_domain", "ExampleDomain", // required
-			"beholder_entity", "ExampleEntity", // required
-			"beholder_data_type", "custom_message",
+			beholder.AttrKeyDataSchema, "/custom-message/versions/1", // required
+			beholder.AttrKeyDomain, "ExampleDomain", // required
+			beholder.AttrKeyEntity, "ExampleEntity", // required
+			beholder.AttrKeyDataType, "custom_message",
 			"foo", "bar",
 		)
 		if err != nil {
@@ -106,9 +106,9 @@ func ExampleNewNoopClient() {
 	fmt.Println("Emitting custom message via noop otel client")
 
 	err := beholder.GetEmitter().Emit(context.Background(), []byte("test message"),
-		"beholder_data_schema", "/custom-message/versions/1", // required
-		"beholder_domain", "ExampleDomain", // required
-		"beholder_entity", "ExampleEntity", // required
+		beholder.AttrKeyDataSchema, "/custom-message/versions/1", // required
+		beholder.AttrKeyDomain, "ExampleDomain", // required
+		beholder.AttrKeyEntity, "ExampleEntity", // required
 	)
 	if err != nil {
 		log.Printf("Error emitting message: %v", err)

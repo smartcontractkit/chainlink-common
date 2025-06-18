@@ -248,7 +248,6 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 	})
 }
 
-<<<<<<< HEAD
 func LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log, *evm.Log] {
 	configAny, _ := anypb.New(config)
 	return &clientLogTrigger{
@@ -282,10 +281,7 @@ func (t *clientLogTrigger) Adapt(trigger *evm.Log) (*evm.Log, error) {
 	return trigger, nil
 }
 
-func (c *Client) WriteReport(runtime sdk.DonRuntime, input *WriteReportRequest) sdk.Promise[*WriteReportReply] {
-=======
 func (c *Client) WriteReport(runtime sdk.Runtime, input *WriteReportRequest) sdk.Promise[*WriteReportReply] {
->>>>>>> 01ac0ac3 (applying merge to main)
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*WriteReportReply](nil, err)
@@ -307,4 +303,3 @@ func (c *Client) WriteReport(runtime sdk.Runtime, input *WriteReportRequest) sdk
 		}
 	})
 }
-

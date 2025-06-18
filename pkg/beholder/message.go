@@ -21,7 +21,7 @@ type Metadata struct {
 	// Schema Registry URI to fetch schema
 	BeholderDomain     string `validate:"required,domain_entity"`
 	BeholderEntity     string `validate:"required,domain_entity"`
-	BeholderDataSchema string `validate:"required,uri"`
+	BeholderDataSchema string `validate:"required"`
 
 	// OPTIONAL FIELDS
 	// The version of the CL node.
@@ -60,9 +60,9 @@ func (m Metadata) Attributes() Attributes {
 		"workflow_owner_address":      m.WorkflowOwnerAddress,
 		"workflow_spec_id":            m.WorkflowSpecID,
 		"workflow_execution_id":       m.WorkflowExecutionID,
-		"beholder_domain":             m.BeholderDomain,
-		"beholder_entity":             m.BeholderEntity,
-		"beholder_data_schema":        m.BeholderDataSchema,
+		AttrKeyDomain:                 m.BeholderDomain,
+		AttrKeyEntity:                 m.BeholderEntity,
+		AttrKeyDataSchema:             m.BeholderDataSchema,
 		"capability_contract_address": m.CapabilityContractAddress,
 		"capability_id":               m.CapabilityID,
 		"capability_version":          m.CapabilityVersion,
@@ -206,11 +206,11 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.WorkflowSpecID = v.(string)
 		case "workflow_execution_id":
 			m.WorkflowExecutionID = v.(string)
-		case "beholder_domain":
+		case AttrKeyDomain:
 			m.BeholderDomain = v.(string)
-		case "beholder_entity":
+		case AttrKeyEntity:
 			m.BeholderEntity = v.(string)
-		case "beholder_data_schema":
+		case AttrKeyDataSchema:
 			m.BeholderDataSchema = v.(string)
 		case "capability_contract_address":
 			m.CapabilityContractAddress = v.(string)

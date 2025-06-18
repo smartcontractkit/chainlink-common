@@ -1,12 +1,27 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evm";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evm";
 
 package cre.sdk.v2.evm;
 
 import "google/protobuf/empty.proto";
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 import "chains/evm/evm.proto";
+
+enum ConfidenceLevel {
+  SAFE = 0;
+  LATEST = 1;
+  FINALIZED = 2;
+}
+
+message FilterLogTriggerRequest {
+  repeated bytes addresses = 1; // list of addresses to include in evm address [20]byte fix-sized array format, at least one address is required
+  repeated bytes event_sigs = 2; // list of possible signatures (aka topic1), in [32]byte fix-sized array format, at least one topic is required
+  repeated bytes topic2 = 3; // list of possible values for topic2, in [32]byte fix-sized array format, can be empty
+  repeated bytes topic3 = 4; // list of possible values for topic3, in [32]byte fix-sized array format, can be empty
+  repeated bytes topic4 = 5; // list of possible values for topic4, in [32]byte fix-sized array format, can be empty
+  ConfidenceLevel Confidence = 6; // optional, defaults to "SAFE"
+}
 
 service Client {
   option (cre.metadata.capability) = {
@@ -23,6 +38,5 @@ service Client {
   rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.Log);
 }
-
-

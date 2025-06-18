@@ -37,6 +37,7 @@ type Config struct {
 	// Custom Events via Chip Ingress Emitter
 	ChipIngressEmitterEnabled      bool
 	ChipIngressEmitterGRPCEndpoint string
+	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
 
 	// OTel Log
 	LogExportTimeout      time.Duration
@@ -45,7 +46,8 @@ type Config struct {
 	LogMaxQueueSize       int
 	LogBatchProcessor     bool // Enabled by default. Disable only for testing.
 	// Retry config for shared log exporter, used by Emitter and Logger
-	LogRetryConfig *RetryConfig
+	LogRetryConfig      *RetryConfig
+	LogStreamingEnabled bool // Enable logs streaming to the OTel log exporter
 
 	// Auth
 	AuthPublicKeyHex string
@@ -112,6 +114,7 @@ func DefaultConfig() Config {
 		LogExportInterval:     1 * time.Second,
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
+		LogStreamingEnabled:   true, // Enable logs streaming by default
 	}
 }
 

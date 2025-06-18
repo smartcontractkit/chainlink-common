@@ -34,3 +34,12 @@ func (m MetricInfo) NewFloat64Gauge(meter metric.Meter) (metric.Float64Gauge, er
 		metric.WithDescription(m.Description),
 	)
 }
+
+// NewFloat64Histogram creates a new Float64Histogram metric
+func (m MetricInfo) NewFloat64Histogram(meter metric.Meter) (metric.Float64Histogram, error) {
+	return meter.Float64Histogram(
+		m.Name,
+		metric.WithUnit(m.Unit),
+		metric.WithDescription(m.Description),
+	)
+}

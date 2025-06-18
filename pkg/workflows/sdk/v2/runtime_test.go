@@ -17,7 +17,7 @@ import (
 func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 42, nil
 	}, sdk.ConsensusMedianAggregation[int]())
 
@@ -29,7 +29,7 @@ func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 func TestRunInNodeMode_PrimitiveConsensusWithUnusedDefault(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 99, nil
 	}, sdk.ConsensusMedianAggregation[int]().WithDefault(100))
 
@@ -41,7 +41,7 @@ func TestRunInNodeMode_PrimitiveConsensusWithUnusedDefault(t *testing.T) {
 func TestRunInNodeMode_PrimitiveConsensusWithUsedDefault(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 0, errors.New("error")
 	}, sdk.ConsensusMedianAggregation[int]().WithDefault(100))
 
@@ -53,7 +53,7 @@ func TestRunInNodeMode_PrimitiveConsensusWithUsedDefault(t *testing.T) {
 func TestRunInNodeMode_ErrorFromFunction(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (int, error) {
 		return 0, errors.New("some error")
 	}, sdk.ConsensusMedianAggregation[int]())
 
@@ -68,7 +68,7 @@ func TestRunInNodeMode_ErrorWrappingResult(t *testing.T) {
 	type unsupported struct {
 		Test chan int
 	}
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (*unsupported, error) {
 		return &unsupported{Test: make(chan int)}, nil
 	}, sdk.ConsensusAggregationFromTags[*unsupported]())
 
@@ -84,7 +84,7 @@ func TestRunInNodeMode_ErrorWrappingDefault(t *testing.T) {
 		Test chan int
 	}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
+	p := sdk.RunInNodeMode(&sdk.WorkflowContext[string]{}, runtime, func(_ *sdk.WorkflowContext[string], nr sdk.NodeRuntime) (*unsupported, error) {
 		return nil, errors.New("some error")
 	}, &medianTestFieldDescription[*unsupported]{T: &unsupported{Test: make(chan int)}})
 

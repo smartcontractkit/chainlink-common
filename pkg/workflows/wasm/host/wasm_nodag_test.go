@@ -150,7 +150,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 	t.Parallel()
 
 	mc := defaultNoDAGModCfg(t)
-	capID := (&basictrigger.Basic{}).Trigger(&basictrigger.Config{}).CapabilityID()
+	capID := basictrigger.Trigger(&basictrigger.Config{}).CapabilityID()
 	binary := createTestBinary(nodagMultiTriggerBinaryCmd, nodagMultiTriggerBinaryLocation, true, t)
 
 	t.Run("OK subscribe to triggers with identical capability IDs", func(t *testing.T) {

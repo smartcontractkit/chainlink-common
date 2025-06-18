@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750264157204,
+  "lastUpdate": 1750268539504,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15960,6 +15960,48 @@ window.BENCHMARK_DATA = {
             "value": 28480,
             "unit": "ns/op",
             "extra": "42189 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "534622ec8df55de35cac25eb10724aa5ba7a51cd",
+          "message": "define SDK for HTTP trigger (#1240)\n\n* define SDK for HTTP trigger\n\n---------\n\nCo-authored-by: Akhil Chainani <akhil.chainani1@gmail.com>",
+          "timestamp": "2025-06-19T02:39:55+09:00",
+          "tree_id": "060f0168c4d95d071f29df4cc05ae5d1bb53ca5c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/534622ec8df55de35cac25eb10724aa5ba7a51cd"
+        },
+        "date": 1750268537990,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.8,
+            "unit": "ns/op",
+            "extra": "3362640 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 422.3,
+            "unit": "ns/op",
+            "extra": "2885719 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28625,
+            "unit": "ns/op",
+            "extra": "42123 times\n4 procs"
           }
         ]
       }

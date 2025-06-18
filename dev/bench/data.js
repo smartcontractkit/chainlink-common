@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750268539504,
+  "lastUpdate": 1750270836052,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16002,6 +16002,48 @@ window.BENCHMARK_DATA = {
             "value": 28625,
             "unit": "ns/op",
             "extra": "42123 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d4be6761facb516d2227dbf91b586624a2e6ec5",
+          "message": "move common gateway code from core (#1257)\n\n* remove start and close methods. use bytes instead of gateway message type over grpc\n\n* move common gateway code from core for reuse in capabilities repo\n\n* Revert \"remove start and close methods. use bytes instead of gateway message type over grpc\"\n\nThis reverts commit db3ab142e33132a61ae772c9ffd4b64088958077.\n\n* remove gateway message from here\n\n* move rate limiter to a top level pkg\n\n* Update pkg/types/gateway/round_robin_selector.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* gomodtidy\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\nCo-authored-by: Bolek <1416262+bolekk@users.noreply.github.com>",
+          "timestamp": "2025-06-18T11:19:27-07:00",
+          "tree_id": "1eb858ccdb8bfbc88f0278791e02184a64548259",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1d4be6761facb516d2227dbf91b586624a2e6ec5"
+        },
+        "date": 1750270835183,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.6,
+            "unit": "ns/op",
+            "extra": "3392058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412,
+            "unit": "ns/op",
+            "extra": "2924869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28458,
+            "unit": "ns/op",
+            "extra": "42118 times\n4 procs"
           }
         ]
       }

@@ -40,12 +40,10 @@ type ClientCapability interface {
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
-<<<<<<< HEAD
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm1.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm1.FilterLogTriggerRequest) error
-=======
+
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.WriteReportRequest) (*evm1.WriteReportReply, error)
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 
 	Start(ctx context.Context) error
 	Close() error

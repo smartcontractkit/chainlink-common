@@ -15,14 +15,7 @@ import (
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	unsafe "unsafe"
-=======
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
-=======
-	unsafe "unsafe"
->>>>>>> e678946b (updaing gen code)
 )
 
 const (
@@ -32,7 +25,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-<<<<<<< HEAD
 type ConfidenceLevel int32
 
 const (
@@ -57,7 +49,31 @@ var (
 
 func (x ConfidenceLevel) Enum() *ConfidenceLevel {
 	p := new(ConfidenceLevel)
-=======
+	*p = x
+	return p
+}
+
+func (x ConfidenceLevel) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0].Descriptor()
+}
+
+func (ConfidenceLevel) Type() protoreflect.EnumType {
+	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0]
+}
+
+func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ConfidenceLevel.Descriptor instead.
+func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+}
+
 type ReceiverContractExecutionStatus int32
 
 const (
@@ -79,31 +95,44 @@ var (
 
 func (x ReceiverContractExecutionStatus) Enum() *ReceiverContractExecutionStatus {
 	p := new(ReceiverContractExecutionStatus)
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 	*p = x
 	return p
 }
 
-<<<<<<< HEAD
-func (x ConfidenceLevel) String() string {
+func (x ReceiverContractExecutionStatus) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
+<<<<<<< HEAD
 func (ConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
 	return file_capability_proto_enumTypes[0].Descriptor()
 }
 
 func (ConfidenceLevel) Type() protoreflect.EnumType {
 	return &file_capability_proto_enumTypes[0]
+=======
+func (ReceiverContractExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[1].Descriptor()
 }
 
-func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
+func (ReceiverContractExecutionStatus) Type() protoreflect.EnumType {
+	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[1]
+>>>>>>> be0c4d0f (rebase)
+}
+
+func (x ReceiverContractExecutionStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+<<<<<<< HEAD
 // Deprecated: Use ConfidenceLevel.Descriptor instead.
 func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
 	return file_capability_proto_rawDescGZIP(), []int{0}
+=======
+// Deprecated: Use ReceiverContractExecutionStatus.Descriptor instead.
+func (ReceiverContractExecutionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{1}
+>>>>>>> be0c4d0f (rebase)
 }
 
 type TopicValues struct {
@@ -180,26 +209,60 @@ func (*FilterLogTriggerRequest) ProtoMessage() {}
 func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_capability_proto_msgTypes[1]
 	if x != nil {
-=======
-func (x ReceiverContractExecutionStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
 }
 
-func (ReceiverContractExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0].Descriptor()
-}
-
-func (ReceiverContractExecutionStatus) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0]
-}
-
-func (x ReceiverContractExecutionStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ReceiverContractExecutionStatus.Descriptor instead.
-func (ReceiverContractExecutionStatus) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
+func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
 	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FilterLogTriggerRequest) GetAddresses() [][]byte {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetEventSigs() [][]byte {
+	if x != nil {
+		return x.EventSigs
+	}
+	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetTopic2() [][]byte {
+	if x != nil {
+		return x.Topic2
+	}
+	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetTopic3() [][]byte {
+	if x != nil {
+		return x.Topic3
+	}
+	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetTopic4() [][]byte {
+	if x != nil {
+		return x.Topic4
+	}
+	return nil
+}
+
+func (x *FilterLogTriggerRequest) GetConfidence() ConfidenceLevel {
+	if x != nil {
+		return x.Confidence
+	}
+	return ConfidenceLevel_SAFE
 }
 
 type SignedReport struct {
@@ -214,7 +277,7 @@ type SignedReport struct {
 
 func (x *SignedReport) Reset() {
 	*x = SignedReport{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[0]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -226,13 +289,8 @@ func (x *SignedReport) String() string {
 func (*SignedReport) ProtoMessage() {}
 
 func (x *SignedReport) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[0]
-<<<<<<< HEAD
-	if protoimpl.UnsafeEnabled && x != nil {
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
-=======
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1]
 	if x != nil {
->>>>>>> e678946b (updaing gen code)
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -243,6 +301,7 @@ func (x *SignedReport) ProtoReflect() protoreflect.Message {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
 func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
 	return file_capability_proto_rawDescGZIP(), []int{1}
@@ -252,19 +311,21 @@ func (x *FilterLogTriggerRequest) GetAddresses() [][]byte {
 	if x != nil {
 		return x.Addresses
 =======
+=======
+>>>>>>> be0c4d0f (rebase)
 // Deprecated: Use SignedReport.ProtoReflect.Descriptor instead.
 func (*SignedReport) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SignedReport) GetRawReport() []byte {
 	if x != nil {
 		return x.RawReport
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 	}
 	return nil
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 func (x *FilterLogTriggerRequest) GetTopics() []*TopicValues {
 	if x != nil {
@@ -275,45 +336,29 @@ func (x *FilterLogTriggerRequest) GetEventSigs() [][]byte {
 	if x != nil {
 		return x.EventSigs
 =======
+=======
+>>>>>>> c9c2c993 (rebase)
 func (x *SignedReport) GetReportContext() []byte {
 	if x != nil {
 		return x.ReportContext
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 	}
 	return nil
 }
 
-<<<<<<< HEAD
-func (x *FilterLogTriggerRequest) GetTopic2() [][]byte {
-	if x != nil {
-		return x.Topic2
-=======
 func (x *SignedReport) GetSignatures() [][]byte {
 	if x != nil {
 		return x.Signatures
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 	}
 	return nil
 }
 
-<<<<<<< HEAD
-func (x *FilterLogTriggerRequest) GetTopic3() [][]byte {
-	if x != nil {
-		return x.Topic3
-=======
 func (x *SignedReport) GetId() []byte {
 	if x != nil {
 		return x.Id
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 	}
 	return nil
 }
 
-<<<<<<< HEAD
-func (x *FilterLogTriggerRequest) GetTopic4() [][]byte {
-	if x != nil {
-		return x.Topic4
-=======
 type WriteReportRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Receiver      []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`
@@ -325,7 +370,7 @@ type WriteReportRequest struct {
 
 func (x *WriteReportRequest) Reset() {
 	*x = WriteReportRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -337,7 +382,7 @@ func (x *WriteReportRequest) String() string {
 func (*WriteReportRequest) ProtoMessage() {}
 
 func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -350,25 +395,21 @@ func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
 func (*WriteReportRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *WriteReportRequest) GetReceiver() []byte {
 	if x != nil {
 		return x.Receiver
+<<<<<<< HEAD
 >>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 >>>>>>> 9303f631 (PLEX-250 - WriteReport initial implementation)
+=======
+>>>>>>> c9c2c993 (rebase)
 	}
 	return nil
 }
 
-<<<<<<< HEAD
-func (x *FilterLogTriggerRequest) GetConfidence() ConfidenceLevel {
-	if x != nil {
-		return x.Confidence
-	}
-	return ConfidenceLevel_SAFE
-=======
 func (x *WriteReportRequest) GetReport() *SignedReport {
 	if x != nil {
 		return x.Report
@@ -392,7 +433,7 @@ type GasConfig struct {
 
 func (x *GasConfig) Reset() {
 	*x = GasConfig{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +445,7 @@ func (x *GasConfig) String() string {
 func (*GasConfig) ProtoMessage() {}
 
 func (x *GasConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +458,7 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
 func (*GasConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GasConfig) GetGasLimit() uint64 {
@@ -440,7 +481,7 @@ type WriteReportReply struct {
 
 func (x *WriteReportReply) Reset() {
 	*x = WriteReportReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -452,7 +493,7 @@ func (x *WriteReportReply) String() string {
 func (*WriteReportReply) ProtoMessage() {}
 
 func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3]
+	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -465,7 +506,7 @@ func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
 func (*WriteReportReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *WriteReportReply) GetTxStatus() evm.TxStatus {
@@ -501,11 +542,11 @@ func (x *WriteReportReply) GetErrorMessage() string {
 		return *x.ErrorMessage
 	}
 	return ""
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 }
 
 var File_capability_proto protoreflect.FileDescriptor
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 const file_capability_proto_rawDesc = "" +
@@ -513,17 +554,37 @@ const file_capability_proto_rawDesc = "" +
 =======
 >>>>>>> cc5e0f18 (updaing gen code)
 <<<<<<< HEAD
+=======
+>>>>>>> be0c4d0f (rebase)
 const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
 >>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
 	"\n" +
+<<<<<<< HEAD
 	"\x10capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"%\n" +
 	"\vTopicValues\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\fR\x06values\"\xad\x01\n" +
+=======
+<<<<<<< HEAD
+	"\x10capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"\xdf\x01\n" +
+=======
+	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\x1a\x16values/pb/values.proto\"\xdf\x01\n" +
+>>>>>>> be0c4d0f (rebase)
+>>>>>>> c9c2c993 (rebase)
 	"\x17FilterLogTriggerRequest\x12\x1c\n" +
 	"\taddresses\x18\x01 \x03(\fR\taddresses\x123\n" +
 	"\x06topics\x18\x02 \x03(\v2\x1b.cre.sdk.v2.evm.TopicValuesR\x06topics\x12?\n" +
 	"\n" +
+<<<<<<< HEAD
 	"Confidence\x18\x03 \x01(\x0e2\x1f.cre.sdk.v2.evm.ConfidenceLevelR\n" +
+=======
+	"event_sigs\x18\x02 \x03(\fR\teventSigs\x12\x16\n" +
+	"\x06topic2\x18\x03 \x03(\fR\x06topic2\x12\x16\n" +
+	"\x06topic3\x18\x04 \x03(\fR\x06topic3\x12\x16\n" +
+	"\x06topic4\x18\x05 \x03(\fR\x06topic4\x12?\n" +
+	"\n" +
+	"Confidence\x18\x06 \x01(\x0e2\x1f.cre.sdk.v2.evm.ConfidenceLevelR\n" +
+<<<<<<< HEAD
+>>>>>>> c9c2c993 (rebase)
 	"Confidence*6\n" +
 	"\x0fConfidenceLevel\x12\b\n" +
 	"\x04SAFE\x10\x00\x12\n" +
@@ -537,6 +598,9 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
 	"\n" +
 	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\x1a\x16values/pb/values.proto\"\x84\x01\n" +
+=======
+	"Confidence\"\x84\x01\n" +
+>>>>>>> be0c4d0f (rebase)
 	"\fSignedReport\x12\x1d\n" +
 	"\n" +
 	"raw_report\x18\x01 \x01(\fR\trawReport\x12%\n" +
@@ -563,12 +627,21 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\n" +
 	"\b_tx_hashB\x12\n" +
 	"\x10_transaction_feeB\x10\n" +
-	"\x0e_error_message*<\n" +
+	"\x0e_error_message*6\n" +
+	"\x0fConfidenceLevel\x12\b\n" +
+	"\x04SAFE\x10\x00\x12\n" +
+	"\n" +
+	"\x06LATEST\x10\x01\x12\r\n" +
+	"\tFINALIZED\x10\x02*<\n" +
 	"\x1fReceiverContractExecutionStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\f\n" +
+<<<<<<< HEAD
 	"\bREVERTED\x10\x012\xb6\a\n" +
 >>>>>>> e678946b (updaing gen code)
 >>>>>>> cc5e0f18 (updaing gen code)
+=======
+	"\bREVERTED\x10\x012\xfe\a\n" +
+>>>>>>> be0c4d0f (rebase)
 	"\x06Client\x12J\n" +
 	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +
 	"\n" +
@@ -580,9 +653,9 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a%.loop.evm.LatestAndFinalizedHeadReply\x12V\n" +
 	"\x10QueryTrackedLogs\x12!.loop.evm.QueryTrackedLogsRequest\x1a\x1f.loop.evm.QueryTrackedLogsReply\x12S\n" +
 	"\x13RegisterLogTracking\x12$.loop.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
-<<<<<<< HEAD
 	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12F\n" +
 	"\n" +
+<<<<<<< HEAD
 	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x1a\x11\x82\xb5\x18\r\b\x01\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
 
 var (
@@ -739,19 +812,20 @@ var (
 >>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 =======
 	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12S\n" +
+=======
+	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x12S\n" +
+>>>>>>> be0c4d0f (rebase)
 	"\vWriteReport\x12\".cre.sdk.v2.evm.WriteReportRequest\x1a .cre.sdk.v2.evm.WriteReportReply\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
 
 var (
 	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
 	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData []byte
->>>>>>> e678946b (updaing gen code)
 )
 
 func file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP() []byte {
 	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce.Do(func() {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
+<<<<<<< HEAD
 =======
 		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData)
 >>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
@@ -762,10 +836,13 @@ func file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP() 
 		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
 >>>>>>> e678946b (updaing gen code)
 >>>>>>> cc5e0f18 (updaing gen code)
+=======
+>>>>>>> be0c4d0f (rebase)
 	})
 	return file_capability_proto_rawDescData
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 var file_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
@@ -774,9 +851,14 @@ var file_capability_proto_goTypes = []any{
 var file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 <<<<<<< HEAD
 var file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+=======
+var file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+>>>>>>> be0c4d0f (rebase)
 var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any{
 >>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
 	(ConfidenceLevel)(0),                     // 0: cre.sdk.v2.evm.ConfidenceLevel
+<<<<<<< HEAD
 	(*TopicValues)(nil),                      // 1: cre.sdk.v2.evm.TopicValues
 	(*FilterLogTriggerRequest)(nil),          // 2: cre.sdk.v2.evm.FilterLogTriggerRequest
 	(*evm.CallContractRequest)(nil),          // 3: loop.evm.CallContractRequest
@@ -798,6 +880,35 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any
 	(*evm.LatestAndFinalizedHeadReply)(nil),  // 19: loop.evm.LatestAndFinalizedHeadReply
 	(*evm.QueryTrackedLogsReply)(nil),        // 20: loop.evm.QueryTrackedLogsReply
 	(*evm.Log)(nil),                          // 21: loop.evm.Log
+=======
+	(ReceiverContractExecutionStatus)(0),     // 1: cre.sdk.v2.evm.ReceiverContractExecutionStatus
+	(*FilterLogTriggerRequest)(nil),          // 2: cre.sdk.v2.evm.FilterLogTriggerRequest
+	(*SignedReport)(nil),                     // 3: cre.sdk.v2.evm.SignedReport
+	(*WriteReportRequest)(nil),               // 4: cre.sdk.v2.evm.WriteReportRequest
+	(*GasConfig)(nil),                        // 5: cre.sdk.v2.evm.GasConfig
+	(*WriteReportReply)(nil),                 // 6: cre.sdk.v2.evm.WriteReportReply
+	(evm.TxStatus)(0),                        // 7: loop.evm.TxStatus
+	(*pb.BigInt)(nil),                        // 8: values.BigInt
+	(*evm.CallContractRequest)(nil),          // 9: loop.evm.CallContractRequest
+	(*evm.FilterLogsRequest)(nil),            // 10: loop.evm.FilterLogsRequest
+	(*evm.BalanceAtRequest)(nil),             // 11: loop.evm.BalanceAtRequest
+	(*evm.EstimateGasRequest)(nil),           // 12: loop.evm.EstimateGasRequest
+	(*evm.GetTransactionByHashRequest)(nil),  // 13: loop.evm.GetTransactionByHashRequest
+	(*evm.GetTransactionReceiptRequest)(nil), // 14: loop.evm.GetTransactionReceiptRequest
+	(*emptypb.Empty)(nil),                    // 15: google.protobuf.Empty
+	(*evm.QueryTrackedLogsRequest)(nil),      // 16: loop.evm.QueryTrackedLogsRequest
+	(*evm.RegisterLogTrackingRequest)(nil),   // 17: loop.evm.RegisterLogTrackingRequest
+	(*evm.UnregisterLogTrackingRequest)(nil), // 18: loop.evm.UnregisterLogTrackingRequest
+	(*evm.CallContractReply)(nil),            // 19: loop.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),              // 20: loop.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),               // 21: loop.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),             // 22: loop.evm.EstimateGasReply
+	(*evm.GetTransactionByHashReply)(nil),    // 23: loop.evm.GetTransactionByHashReply
+	(*evm.GetTransactionReceiptReply)(nil),   // 24: loop.evm.GetTransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),  // 25: loop.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),        // 26: loop.evm.QueryTrackedLogsReply
+	(*evm.Log)(nil),                          // 27: loop.evm.Log
+>>>>>>> c9c2c993 (rebase)
 }
 var file_capability_proto_depIdxs = []int32{
 <<<<<<< HEAD
@@ -832,6 +943,7 @@ var file_capability_proto_depIdxs = []int32{
 	0,  // [0:2] is the sub-list for field type_name
 =======
 	0,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.Confidence:type_name -> cre.sdk.v2.evm.ConfidenceLevel
+<<<<<<< HEAD
 	2,  // 1: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
 	3,  // 2: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
 	4,  // 3: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
@@ -923,6 +1035,42 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = []int
 	0,  // [0:5] is the sub-list for field type_name
 >>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 >>>>>>> 9303f631 (PLEX-250 - WriteReport initial implementation)
+=======
+	3,  // 1: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
+	5,  // 2: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
+	7,  // 3: cre.sdk.v2.evm.WriteReportReply.tx_status:type_name -> loop.evm.TxStatus
+	1,  // 4: cre.sdk.v2.evm.WriteReportReply.receiver_contract_execution_status:type_name -> cre.sdk.v2.evm.ReceiverContractExecutionStatus
+	8,  // 5: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.BigInt
+	9,  // 6: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
+	10, // 7: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
+	11, // 8: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
+	12, // 9: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
+	13, // 10: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
+	14, // 11: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
+	15, // 12: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	16, // 13: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
+	17, // 14: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
+	18, // 15: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
+	2,  // 16: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
+	4,  // 17: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
+	19, // 18: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
+	20, // 19: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	21, // 20: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	22, // 21: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	23, // 22: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	24, // 23: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	25, // 24: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	26, // 25: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	15, // 26: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	15, // 27: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	27, // 28: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
+	6,  // 29: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
+	18, // [18:30] is the sub-list for method output_type
+	6,  // [6:18] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
+>>>>>>> c9c2c993 (rebase)
 }
 
 func init() { file_capability_proto_init() }
@@ -930,12 +1078,13 @@ func file_capability_proto_init() {
 	if File_capability_proto != nil {
 		return
 	}
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1].OneofWrappers = []any{}
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3].OneofWrappers = []any{}
+	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2].OneofWrappers = []any{}
+	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capability_proto_rawDesc), len(file_capability_proto_rawDesc)),
@@ -958,7 +1107,15 @@ func file_capability_proto_init() {
 			NumEnums:      1,
 			NumMessages:   4,
 >>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
+<<<<<<< HEAD
 >>>>>>> 9303f631 (PLEX-250 - WriteReport initial implementation)
+=======
+=======
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)),
+			NumEnums:      2,
+			NumMessages:   5,
+>>>>>>> be0c4d0f (rebase)
+>>>>>>> c9c2c993 (rebase)
 			NumExtensions: 0,
 			NumServices:   1,
 		},

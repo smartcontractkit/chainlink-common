@@ -20,16 +20,15 @@ message Payload {
   AuthorizedKey key = 2;
 }
 
-// Generic and extensible authorized signer abstraction
-message AuthorizedKey {
-  oneof key {
-    ECDSAKey ecdsa = 1;
-  }
+enum KeyType {
+  KEY_TYPE_UNSPECIFIED = 0;
+  ECDSA = 1;
 }
 
-message ECDSAKey {
-  // Hex-encoded uncompressed ECDSA public key prefixed with 0x
-  string public_key = 1;
+// Generic and extensible authorized signer abstraction
+message AuthorizedKey {
+  KeyType type = 1;
+  string public_key = 2;
 }
 
 service HTTP {

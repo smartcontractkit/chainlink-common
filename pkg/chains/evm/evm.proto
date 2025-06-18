@@ -25,19 +25,20 @@ service EVM{
 }
 
 message GetForwarderForEOARequest {
-
+  bytes addr = 1; // eoa address in evm address [20]byte fix-sized array format
 }
 
 message GetForwarderForEOAReply {
-
+  bytes addr = 1; // forwarder address in evm address [20]byte fix-sized array format
 }
 
 message GetForwarderForEOAOCR2FeedsRequest {
-
+  bytes addr = 1; // eoa address in evm address [20]byte fix-sized array format
+  bytes aggr = 2; // aggregator address in evm address [20]byte fix-sized array format
 }
 
 message GetForwarderForEOAOCR2FeedsReply {
-
+  bytes addr  = 1; // forwarder address in evm address [20]byte fix-sized array format
 }
 
 // represents simplified evm-style CallMsg

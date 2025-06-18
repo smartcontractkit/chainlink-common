@@ -31,6 +31,7 @@ var (
 	respAbi      = []byte("response")
 	address      = evm.Address{1, 2, 3}
 	address1     = evm.Address{10, 11, 14}
+	address2     = evm.Address{13, 15, 16}
 	blockHash    = evm.Hash{22, 33, 44}
 	parentHash   = evm.Hash{01, 33, 44}
 	fromBlock    = big.NewInt(10)
@@ -304,6 +305,27 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expLog, got)
 
+	})
+
+	t.Run("GetForwarderForEOA", func(t *testing.T) {
+		evmService.staticGetForwarderForEOA = func(ctx context.Context, eoa evm.Address) (evm.Address, error) {
+			require.Equal(t, address, eoa)
+			return address1, nil
+		}
+		got, err := client.GetForwarderForEOA(ctx, address)
+		require.NoError(t, err)
+		require.Equal(t, address1, got)
+	})
+
+	t.Run("GetForwarderForEOAOCR2Feeds", func(t *testing.T) {
+		evmService.staticGetForwarderForEOAOCR2Feeds = func(ctx context.Context, eoa, ocr2AggregatorID evm.Address) (evm.Address, error) {
+			require.Equal(t, address, eoa)
+			require.Equal(t, address2, ocr2AggregatorID)
+			return address1, nil
+		}
+		got, err := client.GetForwarderForEOAOCR2Feeds(ctx, address, address2)
+		require.NoError(t, err)
+		require.Equal(t, address1, got)
 	})
 }
 

@@ -86,6 +86,7 @@ func (TransactionStatus) EnumDescriptor() ([]byte, []int) {
 
 type GetForwarderForEOARequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"` // eoa address in evm address [20]byte fix-sized array format
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,8 +121,16 @@ func (*GetForwarderForEOARequest) Descriptor() ([]byte, []int) {
 	return file_chains_evm_evm_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *GetForwarderForEOARequest) GetAddr() []byte {
+	if x != nil {
+		return x.Addr
+	}
+	return nil
+}
+
 type GetForwarderForEOAReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"` // forwarder address in evm address [20]byte fix-sized array format
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -156,8 +165,17 @@ func (*GetForwarderForEOAReply) Descriptor() ([]byte, []int) {
 	return file_chains_evm_evm_proto_rawDescGZIP(), []int{1}
 }
 
+func (x *GetForwarderForEOAReply) GetAddr() []byte {
+	if x != nil {
+		return x.Addr
+	}
+	return nil
+}
+
 type GetForwarderForEOAOCR2FeedsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"` // eoa address in evm address [20]byte fix-sized array format
+	Aggr          []byte                 `protobuf:"bytes,2,opt,name=aggr,proto3" json:"aggr,omitempty"` // aggregator address in evm address [20]byte fix-sized array format
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -192,8 +210,23 @@ func (*GetForwarderForEOAOCR2FeedsRequest) Descriptor() ([]byte, []int) {
 	return file_chains_evm_evm_proto_rawDescGZIP(), []int{2}
 }
 
+func (x *GetForwarderForEOAOCR2FeedsRequest) GetAddr() []byte {
+	if x != nil {
+		return x.Addr
+	}
+	return nil
+}
+
+func (x *GetForwarderForEOAOCR2FeedsRequest) GetAggr() []byte {
+	if x != nil {
+		return x.Aggr
+	}
+	return nil
+}
+
 type GetForwarderForEOAOCR2FeedsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"` // forwarder address in evm address [20]byte fix-sized array format
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -226,6 +259,13 @@ func (x *GetForwarderForEOAOCR2FeedsReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetForwarderForEOAOCR2FeedsReply.ProtoReflect.Descriptor instead.
 func (*GetForwarderForEOAOCR2FeedsReply) Descriptor() ([]byte, []int) {
 	return file_chains_evm_evm_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetForwarderForEOAOCR2FeedsReply) GetAddr() []byte {
+	if x != nil {
+		return x.Addr
+	}
+	return nil
 }
 
 // represents simplified evm-style CallMsg
@@ -2394,11 +2434,16 @@ var File_chains_evm_evm_proto protoreflect.FileDescriptor
 
 const file_chains_evm_evm_proto_rawDesc = "" +
 	"\n" +
-	"\x14chains/evm/evm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\"\x1b\n" +
-	"\x19GetForwarderForEOARequest\"\x19\n" +
-	"\x17GetForwarderForEOAReply\"$\n" +
-	"\"GetForwarderForEOAOCR2FeedsRequest\"\"\n" +
-	" GetForwarderForEOAOCR2FeedsReply\"A\n" +
+	"\x14chains/evm/evm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\"/\n" +
+	"\x19GetForwarderForEOARequest\x12\x12\n" +
+	"\x04addr\x18\x01 \x01(\fR\x04addr\"-\n" +
+	"\x17GetForwarderForEOAReply\x12\x12\n" +
+	"\x04addr\x18\x01 \x01(\fR\x04addr\"L\n" +
+	"\"GetForwarderForEOAOCR2FeedsRequest\x12\x12\n" +
+	"\x04addr\x18\x01 \x01(\fR\x04addr\x12\x12\n" +
+	"\x04aggr\x18\x02 \x01(\fR\x04aggr\"6\n" +
+	" GetForwarderForEOAOCR2FeedsReply\x12\x12\n" +
+	"\x04addr\x18\x01 \x01(\fR\x04addr\"A\n" +
 	"\aCallMsg\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\fR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\fR\x02to\x12\x12\n" +

@@ -49,13 +49,10 @@ type ClientCapability struct {
 	RegisterLogTracking func(ctx context.Context, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-<<<<<<< HEAD
 
 	LogTrigger func(ctx context.Context, input *evm1.FilterLogTriggerRequest) (*evm.Log, error)
-=======
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	WriteReport func(ctx context.Context, input *evm1.WriteReportRequest) (*evm1.WriteReportReply, error)
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {

@@ -8,47 +8,50 @@ import (
 type Codec struct {
 }
 
-func (c *Codec) DecodeRequestWithAuthToken(requestBytes []byte, authTokenFromHeader string) (Request, error) {
+func NewCodec() *Codec {
+	return &Codec{}
+}
+func (c *Codec) DecodeRequestWithAuthToken(requestBytes []byte, authTokenFromHeader string) (*Request, error) {
 	req, err := c.DecodeRequest(requestBytes)
 	if err != nil {
-		return Request{}, err
+		return nil, err
 	}
 	if authTokenFromHeader == "" {
-		return Request{}, errors.New("missing auth token")
+		return nil, errors.New("missing auth token")
 	}
 	req.Auth = authTokenFromHeader
 	return req, nil
 }
 
-func (*Codec) DecodeRequest(requestBytes []byte) (Request, error) {
+func (*Codec) DecodeRequest(requestBytes []byte) (*Request, error) {
 	var request Request
 	err := json.Unmarshal(requestBytes, &request)
 	if err != nil {
-		return Request{}, err
+		return nil, err
 	}
 	if request.Version != "2.0" {
-		return Request{}, errors.New("incorrect jsonrpc version")
+		return nil, errors.New("incorrect jsonrpc version")
 	}
 	if request.Method == "" {
-		return Request{}, errors.New("empty method field")
+		return nil, errors.New("empty method field")
 	}
 	if request.Params == nil {
-		return Request{}, errors.New("missing params attribute")
+		return nil, errors.New("missing params attribute")
 	}
-	return request, nil
+	return &request, nil
 }
 
 func (*Codec) EncodeRequest(request *Request) ([]byte, error) {
 	return json.Marshal(request)
 }
 
-func (*Codec) DecodeResponse(responseBytes []byte) (Response, error) {
+func (*Codec) DecodeResponse(responseBytes []byte) (*Response, error) {
 	var response Response
 	err := json.Unmarshal(responseBytes, &response)
 	if err != nil {
-		return Response{}, err
+		return nil, err
 	}
-	return response, nil
+	return &response, nil
 }
 
 func (*Codec) EncodeResponse(response *Response) ([]byte, error) {

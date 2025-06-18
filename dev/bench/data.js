@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750214737089,
+  "lastUpdate": 1750264157204,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15918,6 +15918,48 @@ window.BENCHMARK_DATA = {
             "value": 28523,
             "unit": "ns/op",
             "extra": "41012 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "32529249+silaslenihan@users.noreply.github.com",
+            "name": "Silas Lenihan",
+            "username": "silaslenihan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a5a42ee8701be96574c4c416f6c2e2e3993558f4",
+          "message": "Updated ocr3 Metadata type to include Encoding and Decoding and updated common beholder code  (#1160)\n\n* Updated ocr3 Metadata type to include Encoding and Decoding\n\n* Revert \"add GetEstimateFee (#1196)\"\n\nThis reverts commit 80bc8b13c0e7839849182ef9e55b8ac0063145c9.\n\n* Reapply \"add GetEstimateFee (#1196)\"\n\nThis reverts commit f3ed96e428724590d600ab73b9c6be5fce146d10.\n\n* addressed feedback\n\n* Moved proto emitter and helpers to common\n\n* Published common attritutes\n\n* addressed feedback\n\n* added beholder attribute data_type\n\n* removed behodler for attr keys'\n\n* Revert \"pkg/loop: expand EnvConfig and make available from Server (#1149)\"\n\nThis reverts commit c4fb36f5716e26a7ff98f2224d2a6cff1bb05fc9.\n\n* Reapply \"pkg/loop: expand EnvConfig and make available from Server (#1149)\"\n\nThis reverts commit 1ff9a4634a1f7bbf2ffcaaec8d038587689e8857.\n\n* Revert \"Seed random for setup and modes (#1236)\"\n\nThis reverts commit bbf13d4e5c0428ed03830c37e5e9cc39e2484602.\n\n* Reapply \"Seed random for setup and modes (#1236)\"\n\nThis reverts commit 54755c8caea7637e627f489b1603c74b1d80cd1d.\n\n* Revert \"requests handling (#1247)\"\n\nThis reverts commit 26e78071ce46e347cf2fc8256b707b856279877e.\n\n* Reapply \"requests handling (#1247)\"\n\nThis reverts commit 00a1fdb4172af042269eefc66880b0b900ab89d4.\n\n* Made ToSchemaFullName public",
+          "timestamp": "2025-06-18T12:28:08-04:00",
+          "tree_id": "f233f8abaede6dfae23cf0da119120222eba5e2d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a5a42ee8701be96574c4c416f6c2e2e3993558f4"
+        },
+        "date": 1750264156287,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.1,
+            "unit": "ns/op",
+            "extra": "3399758 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.2,
+            "unit": "ns/op",
+            "extra": "2908112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28480,
+            "unit": "ns/op",
+            "extra": "42189 times\n4 procs"
           }
         ]
       }

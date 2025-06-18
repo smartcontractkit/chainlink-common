@@ -51,7 +51,6 @@ const (
 	Unknown TransactionStatus = iota
 	Pending
 	Unconfirmed
-	Confirmed
 	Finalized
 	Failed
 	Fatal

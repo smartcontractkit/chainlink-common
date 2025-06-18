@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750184293568,
+  "lastUpdate": 1750210995238,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15834,6 +15834,48 @@ window.BENCHMARK_DATA = {
             "value": 28462,
             "unit": "ns/op",
             "extra": "42199 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6a1496bbe01100e89d49f0e2de4775d76d5bc69b",
+          "message": "PLEX-1436: LogTrigger implementation (#1190)\n\n* PLEX-1436: LogTrigger POC implementation\n\n* PLEX-1461: trigger sends one log at a time to distinguish their IDs\n\n* rebasing to master take 1\n\n* adjusting code to latest API changes\n\n* updating API to have confidence of SAFE, LATEST, FINALIZED\n\n* rebasing w main",
+          "timestamp": "2025-06-17T22:40:59-03:00",
+          "tree_id": "fa97521e80fc2deb7f200b63d7e8e9d7eeac6fb6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6a1496bbe01100e89d49f0e2de4775d76d5bc69b"
+        },
+        "date": 1750210993663,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.8,
+            "unit": "ns/op",
+            "extra": "3267399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 432.4,
+            "unit": "ns/op",
+            "extra": "2892073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28507,
+            "unit": "ns/op",
+            "extra": "42166 times\n4 procs"
           }
         ]
       }

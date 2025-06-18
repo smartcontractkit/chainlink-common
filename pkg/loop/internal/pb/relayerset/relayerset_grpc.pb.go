@@ -858,6 +858,7 @@ const (
 	EVMRelayerSet_RegisterLogTracking_FullMethodName    = "/loop.relayerset.EVMRelayerSet/RegisterLogTracking"
 	EVMRelayerSet_UnregisterLogTracking_FullMethodName  = "/loop.relayerset.EVMRelayerSet/UnregisterLogTracking"
 	EVMRelayerSet_GetTransactionStatus_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionStatus"
+	EVMRelayerSet_GetFiltersNames_FullMethodName        = "/loop.relayerset.EVMRelayerSet/GetFiltersNames"
 )
 
 // EVMRelayerSetClient is the client API for EVMRelayerSet service.
@@ -876,6 +877,7 @@ type EVMRelayerSetClient interface {
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*evm.GetTransactionStatusReply, error)
+	GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evm.GetFiltersNamesReply, error)
 }
 
 type eVMRelayerSetClient struct {
@@ -1006,6 +1008,16 @@ func (c *eVMRelayerSetClient) GetTransactionStatus(ctx context.Context, in *GetT
 	return out, nil
 }
 
+func (c *eVMRelayerSetClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evm.GetFiltersNamesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.GetFiltersNamesReply)
+	err := c.cc.Invoke(ctx, EVMRelayerSet_GetFiltersNames_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EVMRelayerSetServer is the server API for EVMRelayerSet service.
 // All implementations must embed UnimplementedEVMRelayerSetServer
 // for forward compatibility.
@@ -1022,6 +1034,7 @@ type EVMRelayerSetServer interface {
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error)
+	GetFiltersNames(context.Context, *emptypb.Empty) (*evm.GetFiltersNamesReply, error)
 	mustEmbedUnimplementedEVMRelayerSetServer()
 }
 
@@ -1067,6 +1080,9 @@ func (UnimplementedEVMRelayerSetServer) UnregisterLogTracking(context.Context, *
 }
 func (UnimplementedEVMRelayerSetServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
+func (UnimplementedEVMRelayerSetServer) GetFiltersNames(context.Context, *emptypb.Empty) (*evm.GetFiltersNamesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
 func (UnimplementedEVMRelayerSetServer) mustEmbedUnimplementedEVMRelayerSetServer() {}
 func (UnimplementedEVMRelayerSetServer) testEmbeddedByValue()                       {}
@@ -1305,6 +1321,24 @@ func _EVMRelayerSet_GetTransactionStatus_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVMRelayerSet_GetFiltersNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMRelayerSetServer).GetFiltersNames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVMRelayerSet_GetFiltersNames_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMRelayerSetServer).GetFiltersNames(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EVMRelayerSet_ServiceDesc is the grpc.ServiceDesc for EVMRelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1359,6 +1393,10 @@ var EVMRelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTransactionStatus",
 			Handler:    _EVMRelayerSet_GetTransactionStatus_Handler,
+		},
+		{
+			MethodName: "GetFiltersNames",
+			Handler:    _EVMRelayerSet_GetFiltersNames_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

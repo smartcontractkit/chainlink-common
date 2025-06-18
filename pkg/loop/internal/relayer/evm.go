@@ -160,6 +160,15 @@ func (e *EVMClient) RegisterLogTracking(ctx context.Context, filter evmtypes.LPF
 	return net.WrapRPCErr(err)
 }
 
+func (e *EVMClient) GetFiltersNames(ctx context.Context) ([]string, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	names, err := e.grpcClient.GetFiltersNames(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return names.GetItems(), nil
+}
+
 func (e *EVMClient) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	_, err := e.grpcClient.UnregisterLogTracking(ctx, &evmpb.UnregisterLogTrackingRequest{FilterName: filterName})
 	return net.WrapRPCErr(err)
@@ -330,4 +339,13 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (e *evmServer) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	names, err := e.impl.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetFiltersNamesReply{Items: names}, nil
 }

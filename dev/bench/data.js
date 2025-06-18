@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750210995238,
+  "lastUpdate": 1750214737089,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -15876,6 +15876,48 @@ window.BENCHMARK_DATA = {
             "value": 28507,
             "unit": "ns/op",
             "extra": "42166 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "03012f597e11d4a4901df3b437ce869ac10c30f0",
+          "message": "introduce gatewayConnector and gatewayConnectorHandler as gRPC services (#1256)\n\n* remove start and close methods. use bytes instead of gateway message type over grpc\n\n* Update pkg/types/core/gateway_connector.go\n\n* rename sign to sign message",
+          "timestamp": "2025-06-18T11:44:20+09:00",
+          "tree_id": "2b10b49f7882649280053f00b64d8e6967de591e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/03012f597e11d4a4901df3b437ce869ac10c30f0"
+        },
+        "date": 1750214736225,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.3,
+            "unit": "ns/op",
+            "extra": "3378132 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.2,
+            "unit": "ns/op",
+            "extra": "2882562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28523,
+            "unit": "ns/op",
+            "extra": "41012 times\n4 procs"
           }
         ]
       }

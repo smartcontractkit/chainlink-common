@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750270836052,
+  "lastUpdate": 1750345367730,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16044,6 +16044,48 @@ window.BENCHMARK_DATA = {
             "value": 28458,
             "unit": "ns/op",
             "extra": "42118 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "66edcc4a4449aa41692cbff2275ea1d7bb91c5ed",
+          "message": "Add a generic jsonrpc2 library (#1279)",
+          "timestamp": "2025-06-19T18:01:34+03:00",
+          "tree_id": "144de09b8eb259ad9e66b004501a1c817df41e5f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/66edcc4a4449aa41692cbff2275ea1d7bb91c5ed"
+        },
+        "date": 1750345366735,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.8,
+            "unit": "ns/op",
+            "extra": "3345994 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.4,
+            "unit": "ns/op",
+            "extra": "2868384 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28540,
+            "unit": "ns/op",
+            "extra": "41173 times\n4 procs"
           }
         ]
       }

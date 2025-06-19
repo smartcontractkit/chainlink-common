@@ -243,14 +243,14 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = []byt
 }
 
 var (
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
+	// file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
 	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData []byte
 )
 
 func file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
-	})
+	// file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce.Do(func() {
+	// 	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
+	// })
 	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData
 }
 

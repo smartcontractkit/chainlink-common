@@ -12,7 +12,7 @@ type HTTP struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c HTTP) Trigger(config *Config) sdk.DonTrigger[*Payload] {
+func Trigger(config *Config) sdk.Trigger[*Payload, *Payload] {
 	configAny, _ := anypb.New(config)
 	return &hTTPTrigger{
 		config: configAny,
@@ -39,4 +39,8 @@ func (*hTTPTrigger) Method() string {
 
 func (t *hTTPTrigger) ConfigAsAny() *anypb.Any {
 	return t.config
+}
+
+func (t *hTTPTrigger) Adapt(trigger *Payload) (*Payload, error) {
+	return trigger, nil
 }

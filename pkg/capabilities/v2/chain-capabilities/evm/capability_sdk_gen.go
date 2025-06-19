@@ -248,7 +248,7 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 	})
 }
 
-func (c *Client) IsTxFinalized(runtime sdk.DonRuntime, input *evm.IsTxFinalizedRequest) sdk.Promise[*evm.IsTxFinalizedReply] {
+func (c *Client) IsTxFinalized(runtime sdk.Runtime, input *evm.IsTxFinalizedRequest) sdk.Promise[*evm.IsTxFinalizedReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.IsTxFinalizedReply](nil, err)
@@ -271,7 +271,7 @@ func (c *Client) IsTxFinalized(runtime sdk.DonRuntime, input *evm.IsTxFinalizedR
 	})
 }
 
-func (c *Client) WriteReport(runtime sdk.DonRuntime, input *evm.WriteReportRequest) sdk.Promise[*evm.WriteReportReply] {
+func (c *Client) WriteReport(runtime sdk.Runtime, input *evm.WriteReportRequest) sdk.Promise[*evm.WriteReportReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.WriteReportReply](nil, err)

@@ -53,6 +53,8 @@ type ClientCapability struct {
 	IsTxFinalized func(ctx context.Context, input *evm.IsTxFinalizedRequest) (*evm.IsTxFinalizedReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+
+	LogTrigger func(ctx context.Context, input *evm1.FilterLogTriggerRequest) (*sdkpb.Trigger, error)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {

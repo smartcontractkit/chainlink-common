@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -122,9 +121,9 @@ var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
-	case "LogTrigger":
-		input := &evm1.FilterLogTriggerRequest{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
+	// case "LogTrigger":
+	// 	input := &evm1.FilterLogTriggerRequest{}
+	// 	return capabilities.RegisterTrigger(ctx, c.stopCh, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}
@@ -132,13 +131,13 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
-	case "LogTrigger":
-		input := &evm1.FilterLogTriggerRequest{}
-		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
-		if err != nil {
-			return err
-		}
-		return c.ClientCapability.UnregisterLogTrigger(ctx, request.TriggerID, request.Metadata, input)
+	// case "LogTrigger":
+	// 	input := &evm1.FilterLogTriggerRequest{}
+	// 	_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return c.ClientCapability.UnregisterLogTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

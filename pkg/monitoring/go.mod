@@ -1,13 +1,15 @@
 module github.com/smartcontractkit/chainlink-common/pkg/monitoring
 
-go 1.24
+go 1.24.2
+
+toolchain go1.24.4
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
 	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/prometheus/client_golang v1.21.1
 	github.com/riferrei/srclient v0.5.4
-	github.com/smartcontractkit/chainlink-common v0.6.1-0.20250410123243-8c3a44de58d6
+	github.com/smartcontractkit/chainlink-common v0.7.1-0.20250616192719-9839ff5867ae
 	github.com/smartcontractkit/libocr v0.0.0-20250220133800-f3b940c4f298
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/goleak v1.3.0
@@ -51,6 +53,7 @@ require (
 	github.com/prometheus/procfs v0.16.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.2 // indirect
+	github.com/smartcontractkit/freeport v0.1.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/testcontainers/testcontainers-go v0.36.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
@@ -80,10 +83,10 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
-	google.golang.org/grpc v1.71.0 // indirect
+	google.golang.org/grpc v1.72.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -18,7 +18,7 @@ type Client struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Client) CallContract(runtime sdk.DonRuntime, input *evm.CallContractRequest) sdk.Promise[*evm.CallContractReply] {
+func (c *Client) CallContract(runtime sdk.Runtime, input *evm.CallContractRequest) sdk.Promise[*evm.CallContractReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.CallContractReply](nil, err)
@@ -41,7 +41,7 @@ func (c *Client) CallContract(runtime sdk.DonRuntime, input *evm.CallContractReq
 	})
 }
 
-func (c *Client) FilterLogs(runtime sdk.DonRuntime, input *evm.FilterLogsRequest) sdk.Promise[*evm.FilterLogsReply] {
+func (c *Client) FilterLogs(runtime sdk.Runtime, input *evm.FilterLogsRequest) sdk.Promise[*evm.FilterLogsReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.FilterLogsReply](nil, err)
@@ -64,7 +64,7 @@ func (c *Client) FilterLogs(runtime sdk.DonRuntime, input *evm.FilterLogsRequest
 	})
 }
 
-func (c *Client) BalanceAt(runtime sdk.DonRuntime, input *evm.BalanceAtRequest) sdk.Promise[*evm.BalanceAtReply] {
+func (c *Client) BalanceAt(runtime sdk.Runtime, input *evm.BalanceAtRequest) sdk.Promise[*evm.BalanceAtReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.BalanceAtReply](nil, err)
@@ -87,7 +87,7 @@ func (c *Client) BalanceAt(runtime sdk.DonRuntime, input *evm.BalanceAtRequest) 
 	})
 }
 
-func (c *Client) EstimateGas(runtime sdk.DonRuntime, input *evm.EstimateGasRequest) sdk.Promise[*evm.EstimateGasReply] {
+func (c *Client) EstimateGas(runtime sdk.Runtime, input *evm.EstimateGasRequest) sdk.Promise[*evm.EstimateGasReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.EstimateGasReply](nil, err)
@@ -110,7 +110,7 @@ func (c *Client) EstimateGas(runtime sdk.DonRuntime, input *evm.EstimateGasReque
 	})
 }
 
-func (c *Client) GetTransactionByHash(runtime sdk.DonRuntime, input *evm.GetTransactionByHashRequest) sdk.Promise[*evm.GetTransactionByHashReply] {
+func (c *Client) GetTransactionByHash(runtime sdk.Runtime, input *evm.GetTransactionByHashRequest) sdk.Promise[*evm.GetTransactionByHashReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.GetTransactionByHashReply](nil, err)
@@ -133,7 +133,7 @@ func (c *Client) GetTransactionByHash(runtime sdk.DonRuntime, input *evm.GetTran
 	})
 }
 
-func (c *Client) GetTransactionReceipt(runtime sdk.DonRuntime, input *evm.GetTransactionReceiptRequest) sdk.Promise[*evm.GetTransactionReceiptReply] {
+func (c *Client) GetTransactionReceipt(runtime sdk.Runtime, input *evm.GetTransactionReceiptRequest) sdk.Promise[*evm.GetTransactionReceiptReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.GetTransactionReceiptReply](nil, err)
@@ -156,7 +156,7 @@ func (c *Client) GetTransactionReceipt(runtime sdk.DonRuntime, input *evm.GetTra
 	})
 }
 
-func (c *Client) LatestAndFinalizedHead(runtime sdk.DonRuntime, input *emptypb.Empty) sdk.Promise[*evm.LatestAndFinalizedHeadReply] {
+func (c *Client) LatestAndFinalizedHead(runtime sdk.Runtime, input *emptypb.Empty) sdk.Promise[*evm.LatestAndFinalizedHeadReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.LatestAndFinalizedHeadReply](nil, err)
@@ -179,7 +179,7 @@ func (c *Client) LatestAndFinalizedHead(runtime sdk.DonRuntime, input *emptypb.E
 	})
 }
 
-func (c *Client) QueryTrackedLogs(runtime sdk.DonRuntime, input *evm.QueryTrackedLogsRequest) sdk.Promise[*evm.QueryTrackedLogsReply] {
+func (c *Client) QueryTrackedLogs(runtime sdk.Runtime, input *evm.QueryTrackedLogsRequest) sdk.Promise[*evm.QueryTrackedLogsReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*evm.QueryTrackedLogsReply](nil, err)
@@ -202,7 +202,7 @@ func (c *Client) QueryTrackedLogs(runtime sdk.DonRuntime, input *evm.QueryTracke
 	})
 }
 
-func (c *Client) RegisterLogTracking(runtime sdk.DonRuntime, input *evm.RegisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
+func (c *Client) RegisterLogTracking(runtime sdk.Runtime, input *evm.RegisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
@@ -225,7 +225,7 @@ func (c *Client) RegisterLogTracking(runtime sdk.DonRuntime, input *evm.Register
 	})
 }
 
-func (c *Client) UnregisterLogTracking(runtime sdk.DonRuntime, input *evm.UnregisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
+func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.UnregisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
@@ -246,4 +246,37 @@ func (c *Client) UnregisterLogTracking(runtime sdk.DonRuntime, input *evm.Unregi
 			return nil, errors.New("unexpected response type")
 		}
 	})
+}
+
+func LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log, *evm.Log] {
+	configAny, _ := anypb.New(config)
+	return &clientLogTrigger{
+		config: configAny,
+	}
+}
+
+type clientLogTrigger struct {
+	config *anypb.Any
+}
+
+func (*clientLogTrigger) IsTrigger() {}
+
+func (*clientLogTrigger) NewT() *evm.Log {
+	return &evm.Log{}
+}
+
+func (*clientLogTrigger) CapabilityID() string {
+	return "evm@1.0.0"
+}
+
+func (*clientLogTrigger) Method() string {
+	return "LogTrigger"
+}
+
+func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
+	return t.config
+}
+
+func (t *clientLogTrigger) Adapt(trigger *evm.Log) (*evm.Log, error) {
+	return trigger, nil
 }

@@ -17,7 +17,7 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
-func convertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
+func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
 	evmAddresses := make([]evmtypes.Address, 0, len(addresses))
 	for _, address := range addresses {
 		if len(address) != 20 {
@@ -36,7 +36,7 @@ func convertAddressesToProto(addresses []evmtypes.Address) [][]byte {
 	return protoAddresses
 }
 
-func convertHashesFromProto(hashes [][]byte) []evmtypes.Hash {
+func ConvertHashesFromProto(hashes [][]byte) []evmtypes.Hash {
 	hashesList := make([]evmtypes.Hash, 0, len(hashes))
 	for _, hash := range hashes {
 		if len(hash) != 32 {
@@ -218,11 +218,11 @@ func ConvertLPFilterFromProto(protoFilter *LPFilter) (evmtypes.LPFilterQuery, er
 	return evmtypes.LPFilterQuery{
 		Name:         protoFilter.GetName(),
 		Retention:    time.Duration(protoFilter.GetRetentionTime()),
-		Addresses:    convertAddressesFromProto(protoFilter.GetAddresses()),
-		EventSigs:    convertHashesFromProto(protoFilter.GetEventSigs()),
-		Topic2:       convertHashesFromProto(protoFilter.GetTopic2()),
-		Topic3:       convertHashesFromProto(protoFilter.GetTopic3()),
-		Topic4:       convertHashesFromProto(protoFilter.GetTopic4()),
+		Addresses:    ConvertAddressesFromProto(protoFilter.GetAddresses()),
+		EventSigs:    ConvertHashesFromProto(protoFilter.GetEventSigs()),
+		Topic2:       ConvertHashesFromProto(protoFilter.GetTopic2()),
+		Topic3:       ConvertHashesFromProto(protoFilter.GetTopic3()),
+		Topic4:       ConvertHashesFromProto(protoFilter.GetTopic4()),
 		MaxLogsKept:  protoFilter.GetMaxLogsKept(),
 		LogsPerBlock: protoFilter.GetLogsPerBlock(),
 	}, nil
@@ -254,7 +254,7 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 		BlockHash: evmtypes.Hash(protoFilter.GetBlockHash()),
 		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
 		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
-		Addresses: convertAddressesFromProto(protoFilter.GetAddresses()),
+		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),
 		Topics:    ConvertTopicsFromProto(protoFilter.GetTopics()),
 	}, nil
 }
@@ -272,7 +272,7 @@ func convertLogFromProto(protoLog *Log) *evmtypes.Log {
 		LogIndex:    protoLog.GetIndex(),
 		BlockHash:   evmtypes.Hash(protoLog.GetBlockHash()),
 		BlockNumber: valuespb.NewIntFromBigInt(protoLog.GetBlockNumber()),
-		Topics:      convertHashesFromProto(protoLog.GetTopics()),
+		Topics:      ConvertHashesFromProto(protoLog.GetTopics()),
 		EventSig:    evmtypes.Hash(protoLog.GetEventSig()),
 		Address:     evmtypes.Address(protoLog.GetAddress()),
 		TxHash:      evmtypes.Hash(protoLog.GetTxHash()),

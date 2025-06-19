@@ -22,7 +22,7 @@ var (
 	anyConfig          = []byte("config")
 	anyMaxResponseSize = uint64(2048)
 
-	defaultBasicTrigger = (&basictrigger.Basic{}).Trigger(&basictrigger.Config{})
+	defaultBasicTrigger = basictrigger.Trigger(&basictrigger.Config{})
 	triggerIndex        = int(0)
 	capID               = defaultBasicTrigger.CapabilityID()
 
@@ -44,44 +44,27 @@ var (
 	}
 )
 
-func TestRunner_Config(t *testing.T) {
-	dr := getTestDonRunner(t, anyExecuteRequest)
-	assert.Equal(t, string(anyConfig), string(dr.Config()))
-	dr = getTestDonRunner(t, subscribeRequest)
-	assert.Equal(t, string(anyConfig), string(dr.Config()))
-	nr := getTestNodeRunner(t, anyExecuteRequest)
-	assert.Equal(t, string(anyConfig), string(nr.Config()))
-	nr = getTestNodeRunner(t, subscribeRequest)
-	assert.Equal(t, string(anyConfig), string(nr.Config()))
-}
-
-func TestRunner_LogWriter(t *testing.T) {
-	dr := getTestDonRunner(t, anyExecuteRequest)
-	assert.IsType(t, &writer{}, dr.LogWriter())
-	dr = getTestDonRunner(t, subscribeRequest)
-	assert.IsType(t, &writer{}, dr.LogWriter())
-	nr := getTestNodeRunner(t, anyExecuteRequest)
-	assert.IsType(t, &writer{}, nr.LogWriter())
-	nr = getTestNodeRunner(t, subscribeRequest)
-	assert.IsType(t, &writer{}, nr.LogWriter())
+func TestRunner_CreateWorkflows(t *testing.T) {
+	assertWcx(t, getTestRunner(t, anyExecuteRequest))
+	assertWcx(t, getTestRunner(t, subscribeRequest))
 }
 
 func TestRunner_Run(t *testing.T) {
 	t.Run("runner gathers subscriptions", func(t *testing.T) {
-		dr := getTestDonRunner(t, subscribeRequest)
-		dr.Run(&sdk.WorkflowArgs[sdk.DonRuntime]{
-			Handlers: []sdk.Handler[sdk.DonRuntime]{
-				sdk.NewDonHandler(
-					basictrigger.Basic{}.Trigger(testhelpers.TestWorkflowTriggerConfig()),
-					func(_ sdk.DonRuntime, _ *basictrigger.Outputs) (int, error) {
+		dr := getTestRunner(t, subscribeRequest)
+		dr.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+			return sdk.Workflow[string]{
+				sdk.On(
+					basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
+					func(_ *sdk.WorkflowContext[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
 						require.Fail(t, "Must not be called during registration to tiggers")
 						return 0, nil
 					}),
-			},
+			}, nil
 		})
 
 		actual := &pb.ExecutionResult{}
-		sentResponse := dr.(*subscriber[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
+		sentResponse := dr.(runnerWrapper[string]).baseRunner.(*subscriber[string, sdk.Runtime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
 
 		switch result := actual.Result.(type) {
@@ -101,11 +84,11 @@ func TestRunner_Run(t *testing.T) {
 
 	t.Run("makes callback with correct runner", func(t *testing.T) {
 		testhelpers.SetupExpectedCalls(t)
-		dr := getTestDonRunner(t, anyExecuteRequest)
+		dr := getTestRunner(t, anyExecuteRequest)
 		testhelpers.RunTestWorkflow(dr)
 
 		actual := &pb.ExecutionResult{}
-		sentResponse := dr.(*runner[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
+		sentResponse := dr.(runnerWrapper[string]).baseRunner.(*runner[string, sdk.Runtime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
 
 		switch result := actual.Result.(type) {
@@ -132,11 +115,11 @@ func TestRunner_Run(t *testing.T) {
 			},
 		}
 		testhelpers.SetupExpectedCalls(t)
-		dr := getTestDonRunner(t, secondTriggerReq)
+		dr := getTestRunner(t, secondTriggerReq)
 		testhelpers.RunIdenticalTriggersWorkflow(dr)
 
 		actual := &pb.ExecutionResult{}
-		sentResponse := dr.(*runner[sdk.DonRuntime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
+		sentResponse := dr.(runnerWrapper[string]).baseRunner.(*runner[string, sdk.Runtime]).runnerInternals.(*runnerInternalsTestHook).sentResponse
 		require.NoError(t, proto.Unmarshal(sentResponse, actual))
 
 		switch result := actual.Result.(type) {
@@ -152,12 +135,21 @@ func TestRunner_Run(t *testing.T) {
 	})
 }
 
-func getTestDonRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.DonRunner {
-	return newDonRunner(testRunnerInternals(tb, request), testRuntimeInternals(tb))
+func assertWcx(t *testing.T, r sdk.Runner[string]) {
+	ran := false
+	verifyCtx := func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		ran = true
+		assert.Equal(t, string(anyConfig), wcx.Config)
+		assert.IsType(t, &writer{}, wcx.LogWriter)
+		return sdk.Workflow[string]{}, nil
+
+	}
+	r.Run(verifyCtx)
+	assert.True(t, ran, "Workflow should have been run")
 }
 
-func getTestNodeRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.NodeRunner {
-	return newNodeRunner(testRunnerInternals(tb, request), testRuntimeInternals(tb))
+func getTestRunner(tb testing.TB, request *pb.ExecuteRequest) sdk.Runner[string] {
+	return newRunner(func(b []byte) (string, error) { return string(b), nil }, testRunnerInternals(tb, request), testRuntimeInternals(tb))
 }
 
 func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInternalsTestHook {

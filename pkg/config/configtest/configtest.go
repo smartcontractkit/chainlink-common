@@ -18,10 +18,16 @@ import (
 
 // AssertFieldsNotNil recursively checks s for nil fields. s must be a struct.
 func AssertFieldsNotNil(t *testing.T, s interface{}) {
+	_, err := CheckFieldsNotNil(t, s)
+	assert.NoError(t, err)
+}
+
+// CheckFieldsNotNil recursively checks s for nil fields. s must be a struct.
+// Returns the number of nil fields found and an error describing them.
+func CheckFieldsNotNil(t *testing.T, s interface{}) (int, error) {
 	t.Helper()
 	err := assertValNotNil(t, "", reflect.ValueOf(s))
-	_, err = config.MultiErrorList(err)
-	assert.NoError(t, err)
+	return config.MultiErrorList(err)
 }
 
 // assertFieldsNotNil recursively checks the struct s for nil fields.
@@ -115,6 +121,13 @@ func assertValNotNil(t *testing.T, key string, val reflect.Value) error {
 
 // AssertDocsTOMLComplete ensures that docsTOML contains every field in C and no extra fields.
 func AssertDocsTOMLComplete[C any](t *testing.T, docsTOML string) {
+	_, err := CheckDocsTOMLComplete[C](t, docsTOML)
+	assert.NoError(t, err)
+}
+
+// CheckDocsTOMLComplete ensures that docsTOML returns the number of nil fields in C and an error listing them.
+// It requires that no extra fields are present.
+func CheckDocsTOMLComplete[C any](t *testing.T, docsTOML string) (int, error) {
 	t.Helper()
 	var c C
 	err := config.DecodeTOML(strings.NewReader(docsTOML), &c)
@@ -123,7 +136,7 @@ func AssertDocsTOMLComplete[C any](t *testing.T, docsTOML string) {
 	} else {
 		require.NoError(t, err)
 	}
-	AssertFieldsNotNil(t, c)
+	return CheckFieldsNotNil(t, c)
 }
 
 // AssertFullMarshal ensures that c encodes to expTOML and contains no nil fields.

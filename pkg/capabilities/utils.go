@@ -20,10 +20,10 @@ func UnwrapRequest(request CapabilityRequest, config proto.Message, value proto.
 		return migrated, err
 	}
 
-	// _, err = FromValueOrAny(request.Config, request.ConfigPayload, config)
-	// if err != nil {
-	// 	return migrated, err
-	// }
+	_, err = FromValueOrAny(request.Config, request.ConfigPayload, config)
+	if err != nil {
+		return migrated, err
+	}
 
 	return migrated, nil
 }

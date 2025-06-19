@@ -49,10 +49,8 @@ type ClientCapability struct {
 	RegisterLogTracking func(ctx context.Context, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	IsTxFinalized func(ctx context.Context, input *evm.IsTxFinalizedRequest) (*evm.IsTxFinalizedReply, error)
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+
+	LogTrigger func(ctx context.Context, input *evm1.FilterLogTriggerRequest) (*evm.Log, error)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
@@ -268,50 +266,6 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			break
 		}
 		resp, err := cap.UnregisterLogTracking(ctx, input)
-		if err != nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-		} else {
-			payload, err := anypb.New(resp)
-			if err == nil {
-				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
-			} else {
-				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-			}
-		}
-	case "IsTxFinalized":
-		input := &evm.IsTxFinalizedRequest{}
-		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-			break
-		}
-
-		if cap.IsTxFinalized == nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for IsTxFinalized"}
-			break
-		}
-		resp, err := cap.IsTxFinalized(ctx, input)
-		if err != nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-		} else {
-			payload, err := anypb.New(resp)
-			if err == nil {
-				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
-			} else {
-				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-			}
-		}
-	case "WriteReport":
-		input := &evm.WriteReportRequest{}
-		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-			break
-		}
-
-		if cap.WriteReport == nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for WriteReport"}
-			break
-		}
-		resp, err := cap.WriteReport(ctx, input)
 		if err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 		} else {

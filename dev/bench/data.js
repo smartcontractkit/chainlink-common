@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750355082699,
+  "lastUpdate": 1750375546941,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16128,6 +16128,48 @@ window.BENCHMARK_DATA = {
             "value": 28524,
             "unit": "ns/op",
             "extra": "42034 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cc40cf268dfdbfffaeeeecea8c0903673b013f50",
+          "message": "Have consensus tags respect mapstructure use in values.Value (#1252)\n\nCo-authored-by: Justin Kaseman <justinkaseman@live.com>",
+          "timestamp": "2025-06-19T23:24:42Z",
+          "tree_id": "3a214bff157253010a59bea3007e1a300ce6f691",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cc40cf268dfdbfffaeeeecea8c0903673b013f50"
+        },
+        "date": 1750375546103,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.2,
+            "unit": "ns/op",
+            "extra": "3372525 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.9,
+            "unit": "ns/op",
+            "extra": "2893765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28489,
+            "unit": "ns/op",
+            "extra": "42009 times\n4 procs"
           }
         ]
       }

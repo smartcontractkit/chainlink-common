@@ -38,7 +38,7 @@ message GetForwarderForEOAOCR2FeedsRequest {
 }
 
 message GetForwarderForEOAOCR2FeedsReply {
-  bytes addr  = 1; // forwarder address in evm address [20]byte fix-sized array format
+  bytes addr = 1; // forwarder address in evm address [20]byte fix-sized array format
 }
 
 // represents simplified evm-style CallMsg

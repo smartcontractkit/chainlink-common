@@ -388,7 +388,7 @@ func (s *Server) GetForwarderForEOA(ctx context.Context, request *relayerset.Get
 		return nil, err
 	}
 
-	forwarder, err := evmService.GetForwarderForEOA(ctx, evm.Address(request.Request.Addr))
+	forwarder, err := evmService.GetForwarderForEOA(ctx, evm.Address(request.Request.GetAddr()))
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (s *Server) GetForwarderForEOAOCR2Feeds(ctx context.Context, request *relay
 		return nil, err
 	}
 
-	forwarder, err := evmService.GetForwarderForEOAOCR2Feeds(ctx, evm.Address(request.Request.Addr), evm.Address(request.Request.Aggr))
+	forwarder, err := evmService.GetForwarderForEOAOCR2Feeds(ctx, evm.Address(request.Request.GetAddr()), evm.Address(request.Request.GetAggr()))
 	if err != nil {
 		return nil, err
 	}

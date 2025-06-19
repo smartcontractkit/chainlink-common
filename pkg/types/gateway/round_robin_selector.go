@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/pkg/errors"
+	"errors"
 )
 
 var ErrNoGateways = errors.New("no gateways available")

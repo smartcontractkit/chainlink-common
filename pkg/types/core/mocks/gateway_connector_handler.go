@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/gateway/jsonrpc"
+	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
 
 	mock "github.com/stretchr/testify/mock"
 )

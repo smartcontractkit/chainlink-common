@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/gateway/jsonrpc"
+	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
 )
 
 // GatewayConnector is a component run by Nodes to connect to a set of Gateways.

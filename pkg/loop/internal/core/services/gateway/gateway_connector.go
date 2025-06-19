@@ -2,12 +2,13 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/gateway/jsonrpc"
+	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/gatewayconnector"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -17,8 +18,7 @@ var _ core.GatewayConnector = (*GatewayConnectorClient)(nil)
 
 type GatewayConnectorClient struct {
 	*net.BrokerExt
-	grpc  pb.GatewayConnectorClient
-	codec *jsonrpc.Codec
+	grpc pb.GatewayConnectorClient
 }
 
 func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string, handler core.GatewayConnectorHandler) error {
@@ -71,7 +71,7 @@ func (c GatewayConnectorClient) AwaitConnection(ctx context.Context, gatewayID s
 }
 
 func (c GatewayConnectorClient) SendToGateway(ctx context.Context, gatewayID string, resp *jsonrpc.Response) error {
-	data, err := c.codec.EncodeResponse(resp)
+	data, err := json.Marshal(resp)
 	if err != nil {
 		return fmt.Errorf("failed to encode response: %w", err)
 	}
@@ -96,7 +96,6 @@ func NewGatewayConnectorClient(cc grpc.ClientConnInterface, b *net.BrokerExt) *G
 	return &GatewayConnectorClient{
 		grpc:      pb.NewGatewayConnectorClient(cc),
 		BrokerExt: b.WithName("GatewayConnectorClient"),
-		codec:     jsonrpc.NewCodec(),
 	}
 }
 
@@ -105,15 +104,13 @@ var _ pb.GatewayConnectorServer = (*GatewayConnectorServer)(nil)
 type GatewayConnectorServer struct {
 	pb.UnimplementedGatewayConnectorServer
 	*net.BrokerExt
-	impl  core.GatewayConnector
-	codec *jsonrpc.Codec
+	impl core.GatewayConnector
 }
 
 func NewGatewayConnectorServer(b *net.BrokerExt, impl core.GatewayConnector) *GatewayConnectorServer {
 	return &GatewayConnectorServer{
 		BrokerExt: b.WithName("GatewayConnectorServer"),
 		impl:      impl,
-		codec:     jsonrpc.NewCodec(),
 	}
 }
 
@@ -131,11 +128,12 @@ func (s GatewayConnectorServer) AddHandler(ctx context.Context, req *pb.AddHandl
 }
 
 func (s GatewayConnectorServer) SendToGateway(ctx context.Context, req *pb.SendMessageRequest) (*emptypb.Empty, error) {
-	resp, err := s.codec.DecodeResponse(req.Message)
+	var resp jsonrpc.Response
+	err := json.Unmarshal(req.Message, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	if err := s.impl.SendToGateway(ctx, req.GatewayId, resp); err != nil {
+	if err := s.impl.SendToGateway(ctx, req.GatewayId, &resp); err != nil {
 		return nil, fmt.Errorf("failed to send message to gateway: %s: %w", req.GatewayId, err)
 	}
 	return &emptypb.Empty{}, nil

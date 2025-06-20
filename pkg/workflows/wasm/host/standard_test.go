@@ -344,7 +344,7 @@ func makeTestModule(t *testing.T) *module {
 	binary, err := os.ReadFile(filepath.Join(absPath, testName))
 	require.NoError(t, err)
 
-	cfg := defaultNoDAGMod(t)
+	cfg := defaultNoDAGModCfg(t)
 	mod, err := NewModule(cfg, binary)
 	require.NoError(t, err)
 	return mod

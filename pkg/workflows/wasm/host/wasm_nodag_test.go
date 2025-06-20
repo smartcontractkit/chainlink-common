@@ -29,7 +29,7 @@ func Test_NoDag_Run(t *testing.T) {
 	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
 
 	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
-		mc := defaultNoDAGMod(t)
+		mc := defaultNoDAGModCfg(t)
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
 
@@ -47,7 +47,7 @@ func Test_NoDag_Run(t *testing.T) {
 	})
 
 	t.Run("OK can subscribe without setting ExecutionHelper", func(t *testing.T) {
-		mc := defaultNoDAGMod(t)
+		mc := defaultNoDAGModCfg(t)
 		m, err := NewModule(mc, binary)
 		require.NoError(t, err)
 
@@ -60,7 +60,7 @@ func Test_NoDag_Run(t *testing.T) {
 	})
 }
 
-func defaultNoDAGMod(t testing.TB) *ModuleConfig {
+func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	return &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,

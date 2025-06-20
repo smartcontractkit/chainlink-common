@@ -6,7 +6,6 @@ package loop.evm;
 import "google/protobuf/empty.proto";
 import "loop/chain-common/query.proto";
 import "values/pb/values.proto";
-import "google/protobuf/timestamp.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
@@ -21,45 +20,6 @@ service EVM{
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
-  rpc WriteReport(WriteReportRequest) returns (WriteReportReply);
-}
-
-message SignedReport {
-  bytes raw_report = 1;
-  bytes report_context = 2;
-  repeated bytes signatures = 3;
-  bytes id = 4;
-}
-
-message GasConfig {
-  uint64 gas_limit = 1;
-}
-
-message WriteReportRequest {
-    bytes receiver = 1;
-    SignedReport report = 2;
-    GasConfig gas_config = 3; 
-}
-
-message WriteReportReply {
-  TransactionStatus tx_status = 1;
-  ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
-  bytes tx_hash = 3;
-  values.BigInt transaction_fee = 4;
-}
-
-// TransactionStatus is an enum for the status of a transaction.
-// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
-enum TransactionStatus {
-  //TODO weird issue makes this enums to collide with ReceiverContractExecutionStatus enum values
-  TX_SUCCESS = 0; //Successfully executed and within a block - Not finalized
-  TX_REVERTED = 1; //Successfully call to the RPC and TX processing but reverted
-  TX_FAILURE = 2; //Was not executed at all by an RPC for some reason
-}
-
-enum ReceiverContractExecutionStatus {
-  SUCCESS = 0;
-  FAILURE = 1;
 }
 
 // represents simplified evm-style CallMsg
@@ -85,7 +45,6 @@ message Log {
   uint32 tx_index = 8;  // index of transaction emmited the log
   uint32 index = 9;  // index of the Log within the intire block
   bool removed = 10;  // flag if the log was removed during reorg
-  uint32 chain_selector = 11;
 }
 
 // represents evm-style filter query
@@ -287,3 +246,13 @@ message GetTransactionStatusReply {
   TransactionStatus transaction_status = 1;
 }
 
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNKNOWN = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_UNCONFIRMED = 2;
+  TRANSACTION_STATUS_FINALIZED = 3;
+  TRANSACTION_STATUS_FAILED = 4;
+  TRANSACTION_STATUS_FATAL = 5;
+}

@@ -146,17 +146,6 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, txFee, fee.TransactionFee)
 	})
 
-	t.Run("GetTransactionStatus", func(t *testing.T) {
-		evmService.staticGetTransactionStatus = func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-			require.Equal(t, txId, transactionID)
-			return types.Finalized, nil
-		}
-
-		got, err := client.GetTransactionStatus(ctx, txId)
-		require.NoError(t, err)
-		require.Equal(t, got, types.Finalized)
-	})
-
 	t.Run("FilterLogs", func(t *testing.T) {
 		expFQ := evm.FilterQuery{
 			BlockHash: blockHash,
@@ -305,6 +294,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, expLog, got)
 
 	})
+	//TODO: Add test cases
 }
 
 type staticEVMService struct {
@@ -364,10 +354,6 @@ func (s *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.L
 
 func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return s.staticUnregisterLogTracking(ctx, filterName)
-}
-
-func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-	return s.staticGetTransactionStatus(ctx, transactionID)
 }
 
 func generateFixtureQuery() []query.Expression {

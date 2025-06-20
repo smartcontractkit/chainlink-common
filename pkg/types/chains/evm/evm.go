@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 )
@@ -107,4 +108,49 @@ type Head struct {
 
 type TransactionFee struct {
 	TransactionFee *big.Int // Cost of transaction in wei
+}
+
+type SignedReport struct {
+	RawReport     []byte
+	ReportContext []byte
+	Signatures    [][]byte
+	ID            []byte
+}
+
+// TransactionStatus are the status we expect every TXM to support and that can be returned by StatusForUUID.
+type TransactionStatus int
+
+const (
+	TxSuccess TransactionStatus = iota
+	TxReverted
+	TxFatal
+)
+
+
+type TxError struct {
+	// Internal ID used for tracking purposes of transactions.
+    TxID string
+}
+
+func (e *TxError) Error() string {
+    return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
+}
+
+type TransactionResult struct {
+	TxStatus TransactionStatus
+	TxHash   Hash
+}
+
+type GasConfig struct {
+	// Default to nil. If not specified the value configured in GasEstimator will be used
+	GasLimit *uint64
+	// Default to nil. If not specified the value configured in GasEstimator will be used
+	MaxGasPrice *big.Int
+}
+
+type SubmitTransactionRequest struct {
+	To   Address
+	Data ABIPayload
+	// Default to nil. If not specified the configured gas estimator config will be used
+	GasConfig *GasConfig
 }

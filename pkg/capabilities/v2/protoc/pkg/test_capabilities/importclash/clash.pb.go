@@ -27,9 +27,9 @@ var File_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto pr
 
 const file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_rawDesc = "" +
 	"\n" +
-	"Dcapabilities/v2/protoc/pkg/test_capabilities/importclash/clash.proto\x12\x0eimportclash.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1aKcapabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb/import.proto\x1aKcapabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb/import.proto2w\n" +
-	"\vBasicAction\x12N\n" +
-	"\rPerformAction\x12\x19.importclash.p1.v1.Inputs\x1a\x1a.importclash.p2.v1.Outputs\"\x06\x8a\xb5\x18\x02\b\x01\x1a\x18\x82\xb5\x18\x14\x12\x12import-clash@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclashb\x06proto3"
+	"Dcapabilities/v2/protoc/pkg/test_capabilities/importclash/clash.proto\x12\x0eimportclash.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1aKcapabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb/import.proto\x1aKcapabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb/import.proto2o\n" +
+	"\vBasicAction\x12F\n" +
+	"\rPerformAction\x12\x19.importclash.p1.v1.Inputs\x1a\x1a.importclash.p2.v1.Outputs\x1a\x18\x82\xb5\x18\x14\x12\x12import-clash@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclashb\x06proto3"
 
 var file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_goTypes = []any{
 	(*pb.Inputs)(nil),   // 0: importclash.p1.v1.Inputs

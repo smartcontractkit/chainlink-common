@@ -98,11 +98,10 @@ func (c *hTTPCapability) Info(ctx context.Context) (capabilities.CapabilityInfo,
 
 var _ capabilities.ExecutableAndTriggerCapability = (*hTTPCapability)(nil)
 
+const HTTPID = "http-trigger@0.1.0"
+
 func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
-	case "Trigger":
-		input := &http.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@0.1.0", request, input, c.HTTPCapability.RegisterTrigger)
 	case "":
 		input := &http.Config{}
 		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@0.1.0", request, input, c.HTTPCapability.RegisterTrigger)
@@ -113,13 +112,6 @@ func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabiliti
 
 func (c *hTTPCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
-	case "Trigger":
-		input := &http.Config{}
-		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
-		if err != nil {
-			return err
-		}
-		return c.HTTPCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
 	case "":
 		input := &http.Config{}
 		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)

@@ -19,9 +19,5 @@ service BasicAction {
     mode: DON
     capability_id: "basic-test-action@1.0.0"
   };
-  rpc PerformAction (Inputs) returns (Outputs) {
-    option (cre.metadata.method) = {
-      map_to_untyped_api: true
-    };
-  }
+  rpc PerformAction (Inputs) returns (Outputs);
 }

@@ -2,11 +2,13 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/gatewayconnector"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -26,16 +28,22 @@ func (c GatewayConnectorHandlerClient) ID(ctx context.Context) (string, error) {
 	return resp.Id, nil
 }
 
-func (c GatewayConnectorHandlerClient) HandleGatewayMessage(ctx context.Context, gatewayID string, msg []byte) error {
-	_, err := c.grpc.HandleGatewayMessage(ctx, &pb.SendMessageRequest{
+func (c GatewayConnectorHandlerClient) HandleGatewayMessage(ctx context.Context, gatewayID string, req *jsonrpc.Request) error {
+	data, err := json.Marshal(req)
+	if err != nil {
+		return fmt.Errorf("failed to encode request: %w", err)
+	}
+	_, err = c.grpc.HandleGatewayMessage(ctx, &pb.SendMessageRequest{
 		GatewayId: gatewayID,
-		Message:   msg,
+		Message:   data,
 	})
 	return err
 }
 
 func NewGatewayConnectorHandlerClient(cc grpc.ClientConnInterface) *GatewayConnectorHandlerClient {
-	return &GatewayConnectorHandlerClient{pb.NewGatewayConnectorHandlerClient(cc)}
+	return &GatewayConnectorHandlerClient{
+		grpc: pb.NewGatewayConnectorHandlerClient(cc),
+	}
 }
 
 var _ pb.GatewayConnectorHandlerServer = (*GatewayConnectorHandlerServer)(nil)
@@ -47,11 +55,18 @@ type GatewayConnectorHandlerServer struct {
 }
 
 func NewGatewayConnectorHandlerServer(impl core.GatewayConnectorHandler) *GatewayConnectorHandlerServer {
-	return &GatewayConnectorHandlerServer{impl: impl}
+	return &GatewayConnectorHandlerServer{
+		impl: impl,
+	}
 }
 
 func (s GatewayConnectorHandlerServer) HandleGatewayMessage(ctx context.Context, req *pb.SendMessageRequest) (*emptypb.Empty, error) {
-	if err := s.impl.HandleGatewayMessage(ctx, req.GatewayId, req.Message); err != nil {
+	var msg *jsonrpc.Request
+	err := json.Unmarshal(req.Message, &msg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode message: %w", err)
+	}
+	if err := s.impl.HandleGatewayMessage(ctx, req.GatewayId, msg); err != nil {
 		return nil, fmt.Errorf("failed to handle gateway message: %s: %w", req.GatewayId, err)
 	}
 	return &emptypb.Empty{}, nil

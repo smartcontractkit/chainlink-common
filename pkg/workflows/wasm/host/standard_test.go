@@ -63,7 +63,7 @@ func TestCapabilityCallsAreAsync(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	m := makeTestModule(t)
 	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
-	firstCall := true
+	callsSeen := map[bool]bool{}
 	mt := sync.Mutex{}
 	mt.Lock()
 	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
@@ -71,10 +71,10 @@ func TestCapabilityCallsAreAsync(t *testing.T) {
 		assert.Equal(t, "PerformAction", request.Method)
 		input := &basicaction.Inputs{}
 		assert.NoError(t, request.Payload.UnmarshalTo(input))
-		assert.Equal(t, firstCall, input.InputThing)
+		assert.False(t, callsSeen[input.InputThing])
+		callsSeen[input.InputThing] = true
 		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("%t", input.InputThing)})
 		require.NoError(t, err)
-		firstCall = false
 
 		// Don't return until the second call has been executed
 		defer func() {

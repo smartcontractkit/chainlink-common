@@ -54,6 +54,9 @@ const (
 	// ReportFormatEVMStreamlined is a feeless report format that offers packed
 	// encoding and minimal header overhead for optimal size and gas efficiency
 	ReportFormatEVMStreamlined = 6
+	// ReportFormatEVMABIEncodeUnpackedExpr is like ReportFormatEVMABIEncodeUnpacked
+	// but adds custom expressions to calculate report values from the available streams
+	ReportFormatEVMABIEncodeUnpackedExpr = 7
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -65,6 +68,7 @@ var ReportFormats = []ReportFormat{
 	ReportFormatEVMABIEncodeUnpacked,
 	ReportFormatCapabilityTrigger,
 	ReportFormatEVMStreamlined,
+	ReportFormatEVMABIEncodeUnpackedExpr,
 }
 
 func (rf ReportFormat) String() string {
@@ -81,6 +85,8 @@ func (rf ReportFormat) String() string {
 		return "capability_trigger"
 	case ReportFormatEVMStreamlined:
 		return "evm_streamlined"
+	case ReportFormatEVMABIEncodeUnpackedExpr:
+		return "evm_abi_encode_unpacked_expr"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -100,6 +106,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatCapabilityTrigger, nil
 	case "evm_streamlined":
 		return ReportFormatEVMStreamlined, nil
+	case "evm_abi_encode_unpacked_expr":
+		return ReportFormatEVMABIEncodeUnpackedExpr, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}
@@ -154,6 +162,9 @@ const (
 	// AggregatorQuote is a special aggregator that is used to aggregate
 	// a list of Bid/Mid/Ask price tuples
 	AggregatorQuote = 3
+	// AggregatorCalculated is a special aggregator used for calculated
+	// streams values in the Outcome for the ReportFormatEVMABIEncodeUnpackedExpr
+	AggregatorCalculated = 4
 
 	_ Aggregator = math.MaxUint32 // reserved
 )
@@ -166,6 +177,8 @@ func (a Aggregator) String() string {
 		return "mode"
 	case AggregatorQuote:
 		return "quote"
+	case AggregatorCalculated:
+		return "calculated"
 	default:
 		return fmt.Sprintf("unknown(%d)", a)
 	}
@@ -183,6 +196,8 @@ func AggregatorFromString(s string) (Aggregator, error) {
 		return AggregatorMode, nil
 	case "quote":
 		return AggregatorQuote, nil
+	case "calculated":
+		return AggregatorCalculated, nil
 	default:
 		return 0, fmt.Errorf("unknown aggregator: %q", s)
 	}

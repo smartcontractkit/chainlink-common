@@ -70,3 +70,27 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 	}
 	return s.signFn(ctx, s.account, digest)
 }
+
+// multiAccountSigner implements Keystore for multiple accounts. If a signer is not
+// found for a requested account, an error is returned.
+type multiAccountSigner struct {
+	accounts []string
+	signers  []crypto.Signer
+}
+
+var _ Keystore = &multiAccountSigner{}
+
+func NewMultiAccountSigner(accounts []string, signers []crypto.Signer) *multiAccountSigner {
+	return &multiAccountSigner{accounts: accounts, signers: signers}
+}
+func (c *multiAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
+	return c.accounts, nil
+}
+func (c *multiAccountSigner) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+	for i, a := range c.accounts {
+		if a == account {
+			return c.signers[i].Sign(rand.Reader, data, crypto.Hash(0))
+		}
+	}
+	return nil, fmt.Errorf("account not found: %s", account)
+}

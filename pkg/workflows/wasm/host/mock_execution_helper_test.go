@@ -219,6 +219,65 @@ func (_c *MockExecutionHelper_GetNodeTime_Call) RunAndReturn(run func() time.Tim
 	return _c
 }
 
+// GetSecrets provides a mock function with given fields: ctx, request
+func (_m *MockExecutionHelper) GetSecrets(ctx context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {
+	ret := _m.Called(ctx, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSecrets")
+	}
+
+	var r0 []*pb.SecretResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.GetSecretsRequest) ([]*pb.SecretResponse, error)); ok {
+		return rf(ctx, request)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.GetSecretsRequest) []*pb.SecretResponse); ok {
+		r0 = rf(ctx, request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*pb.SecretResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *pb.GetSecretsRequest) error); ok {
+		r1 = rf(ctx, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockExecutionHelper_GetSecrets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSecrets'
+type MockExecutionHelper_GetSecrets_Call struct {
+	*mock.Call
+}
+
+// GetSecrets is a helper method to define mock.On call
+//   - ctx context.Context
+//   - request *pb.GetSecretsRequest
+func (_e *MockExecutionHelper_Expecter) GetSecrets(ctx interface{}, request interface{}) *MockExecutionHelper_GetSecrets_Call {
+	return &MockExecutionHelper_GetSecrets_Call{Call: _e.mock.On("GetSecrets", ctx, request)}
+}
+
+func (_c *MockExecutionHelper_GetSecrets_Call) Run(run func(ctx context.Context, request *pb.GetSecretsRequest)) *MockExecutionHelper_GetSecrets_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*pb.GetSecretsRequest))
+	})
+	return _c
+}
+
+func (_c *MockExecutionHelper_GetSecrets_Call) Return(_a0 []*pb.SecretResponse, _a1 error) *MockExecutionHelper_GetSecrets_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockExecutionHelper_GetSecrets_Call) RunAndReturn(run func(context.Context, *pb.GetSecretsRequest) ([]*pb.SecretResponse, error)) *MockExecutionHelper_GetSecrets_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetWorkflowExecutionID provides a mock function with no fields
 func (_m *MockExecutionHelper) GetWorkflowExecutionID() string {
 	ret := _m.Called()

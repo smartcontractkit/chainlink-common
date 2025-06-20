@@ -2250,13 +2250,13 @@ var File_chains_evm_evm_proto protoreflect.FileDescriptor
 
 const file_chains_evm_evm_proto_rawDesc = "" +
 	"\n" +
-	"\x14chains/evm/evm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/pb/values.proto\"A\n" +
+	"\x14chains/evm/evm.proto\x12\bloop.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1dloop/chain-common/query.proto\x1a\x16values/v1/values.proto\"A\n" +
 	"\aCallMsg\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\fR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\fR\x02to\x12\x12\n" +
 	"\x04data\x18\x03 \x01(\fR\x04data\"\x1e\n" +
 	"\x06Topics\x12\x14\n" +
-	"\x05topic\x18\x01 \x03(\fR\x05topic\"\x9d\x02\n" +
+	"\x05topic\x18\x01 \x03(\fR\x05topic\"\xa0\x02\n" +
 	"\x03Log\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\x12\x16\n" +
 	"\x06topics\x18\x02 \x03(\fR\x06topics\x12\x17\n" +
@@ -2264,27 +2264,27 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\n" +
 	"block_hash\x18\x04 \x01(\fR\tblockHash\x12\x12\n" +
 	"\x04data\x18\x05 \x01(\fR\x04data\x12\x1a\n" +
-	"\beventSig\x18\x06 \x01(\fR\beventSig\x121\n" +
-	"\fblock_number\x18\a \x01(\v2\x0e.values.BigIntR\vblockNumber\x12\x19\n" +
+	"\beventSig\x18\x06 \x01(\fR\beventSig\x124\n" +
+	"\fblock_number\x18\a \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12\x19\n" +
 	"\btx_index\x18\b \x01(\rR\atxIndex\x12\x14\n" +
 	"\x05index\x18\t \x01(\rR\x05index\x12\x18\n" +
 	"\aremoved\x18\n" +
-	" \x01(\bR\aremoved\"\xcc\x01\n" +
+	" \x01(\bR\aremoved\"\xd2\x01\n" +
 	"\vFilterQuery\x12\x1d\n" +
 	"\n" +
-	"block_hash\x18\x01 \x01(\fR\tblockHash\x12,\n" +
-	"\tfromBlock\x18\x02 \x01(\v2\x0e.values.BigIntR\tfromBlock\x12(\n" +
-	"\atoBlock\x18\x03 \x01(\v2\x0e.values.BigIntR\atoBlock\x12\x1c\n" +
+	"block_hash\x18\x01 \x01(\fR\tblockHash\x12/\n" +
+	"\tfromBlock\x18\x02 \x01(\v2\x11.values.v1.BigIntR\tfromBlock\x12+\n" +
+	"\atoBlock\x18\x03 \x01(\v2\x11.values.v1.BigIntR\atoBlock\x12\x1c\n" +
 	"\taddresses\x18\x04 \x03(\fR\taddresses\x12(\n" +
-	"\x06topics\x18\x05 \x03(\v2\x10.loop.evm.TopicsR\x06topics\"\xc0\x01\n" +
+	"\x06topics\x18\x05 \x03(\v2\x10.loop.evm.TopicsR\x06topics\"\xc6\x01\n" +
 	"\vTransaction\x12\x14\n" +
 	"\x05nonce\x18\x01 \x01(\x04R\x05nonce\x12\x10\n" +
 	"\x03gas\x18\x02 \x01(\x04R\x03gas\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\fR\x02to\x12\x12\n" +
 	"\x04data\x18\x04 \x01(\fR\x04data\x12\x12\n" +
-	"\x04hash\x18\x05 \x01(\fR\x04hash\x12$\n" +
-	"\x05value\x18\x06 \x01(\v2\x0e.values.BigIntR\x05value\x12+\n" +
-	"\tgas_price\x18\a \x01(\v2\x0e.values.BigIntR\bgasPrice\"\xd0\x02\n" +
+	"\x04hash\x18\x05 \x01(\fR\x04hash\x12'\n" +
+	"\x05value\x18\x06 \x01(\v2\x11.values.v1.BigIntR\x05value\x12.\n" +
+	"\tgas_price\x18\a \x01(\v2\x11.values.v1.BigIntR\bgasPrice\"\xd6\x02\n" +
 	"\aReceipt\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\x04R\x06status\x12\x19\n" +
 	"\bgas_used\x18\x02 \x01(\x04R\agasUsed\x12\x19\n" +
@@ -2292,9 +2292,9 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\n" +
 	"block_hash\x18\x04 \x01(\fR\tblockHash\x12!\n" +
 	"\x04logs\x18\x06 \x03(\v2\r.loop.evm.LogR\x04logs\x12\x17\n" +
-	"\atx_hash\x18\a \x01(\fR\x06txHash\x12>\n" +
-	"\x13effective_gas_price\x18\b \x01(\v2\x0e.values.BigIntR\x11effectiveGasPrice\x121\n" +
-	"\fblock_number\x18\t \x01(\v2\x0e.values.BigIntR\vblockNumber\x12)\n" +
+	"\atx_hash\x18\a \x01(\fR\x06txHash\x12A\n" +
+	"\x13effective_gas_price\x18\b \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\x124\n" +
+	"\fblock_number\x18\t \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12)\n" +
 	"\x10contract_address\x18\n" +
 	" \x01(\fR\x0fcontractAddress\"\x94\x02\n" +
 	"\bLPFilter\x12\"\n" +
@@ -2307,10 +2307,10 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"event_sigs\x18\x06 \x03(\fR\teventSigs\x12\x16\n" +
 	"\x06topic2\x18\a \x03(\fR\x06topic2\x12\x16\n" +
 	"\x06topic3\x18\b \x03(\fR\x06topic3\x12\x16\n" +
-	"\x06topic4\x18\t \x03(\fR\x06topic4\"\x8c\x01\n" +
+	"\x06topic4\x18\t \x03(\fR\x06topic4\"\x8f\x01\n" +
 	"\x04Head\x12\x1c\n" +
-	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x121\n" +
-	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\x12\x12\n" +
+	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x124\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12\x12\n" +
 	"\x04hash\x18\x03 \x01(\fR\x04hash\x12\x1f\n" +
 	"\vparent_hash\x18\x04 \x01(\fR\n" +
 	"parentHash\"\x9c\x01\n" +
@@ -2347,25 +2347,25 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\tprimitive\"s\n" +
 	"\x1bLatestAndFinalizedHeadReply\x12&\n" +
 	"\x06latest\x18\x01 \x01(\v2\x0e.loop.evm.HeadR\x06latest\x12,\n" +
-	"\tfinalized\x18\x02 \x01(\v2\x0e.loop.evm.HeadR\tfinalized\"o\n" +
+	"\tfinalized\x18\x02 \x01(\v2\x0e.loop.evm.HeadR\tfinalized\"r\n" +
 	"\x13CallContractRequest\x12%\n" +
-	"\x04call\x18\x01 \x01(\v2\x11.loop.evm.CallMsgR\x04call\x121\n" +
-	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\"'\n" +
+	"\x04call\x18\x01 \x01(\v2\x11.loop.evm.CallMsgR\x04call\x124\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\"'\n" +
 	"\x11CallContractReply\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\fR\x04data\"A\n" +
 	"\x18GetTransactionFeeRequest\x12%\n" +
-	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"Q\n" +
-	"\x16GetTransactionFeeReply\x127\n" +
-	"\x0ftransaction_fee\x18\x01 \x01(\v2\x0e.values.BigIntR\x0etransactionFee\"M\n" +
+	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"T\n" +
+	"\x16GetTransactionFeeReply\x12:\n" +
+	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"M\n" +
 	"\x11FilterLogsRequest\x128\n" +
 	"\ffilter_query\x18\x01 \x01(\v2\x15.loop.evm.FilterQueryR\vfilterQuery\"4\n" +
 	"\x0fFilterLogsReply\x12!\n" +
-	"\x04logs\x18\x01 \x03(\v2\r.loop.evm.LogR\x04logs\"_\n" +
+	"\x04logs\x18\x01 \x03(\v2\r.loop.evm.LogR\x04logs\"b\n" +
 	"\x10BalanceAtRequest\x12\x18\n" +
-	"\aaccount\x18\x01 \x01(\fR\aaccount\x121\n" +
-	"\fblock_number\x18\x02 \x01(\v2\x0e.values.BigIntR\vblockNumber\":\n" +
-	"\x0eBalanceAtReply\x12(\n" +
-	"\abalance\x18\x01 \x01(\v2\x0e.values.BigIntR\abalance\"9\n" +
+	"\aaccount\x18\x01 \x01(\fR\aaccount\x124\n" +
+	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\"=\n" +
+	"\x0eBalanceAtReply\x12+\n" +
+	"\abalance\x18\x01 \x01(\v2\x11.values.v1.BigIntR\abalance\"9\n" +
 	"\x12EstimateGasRequest\x12#\n" +
 	"\x03msg\x18\x01 \x01(\v2\x11.loop.evm.CallMsgR\x03msg\"$\n" +
 	"\x10EstimateGasReply\x12\x10\n" +
@@ -2470,7 +2470,7 @@ var file_chains_evm_evm_proto_goTypes = []any{
 	(*QueryTrackedLogsReply)(nil),        // 35: loop.evm.QueryTrackedLogsReply
 	(*GetTransactionStatusRequest)(nil),  // 36: loop.evm.GetTransactionStatusRequest
 	(*GetTransactionStatusReply)(nil),    // 37: loop.evm.GetTransactionStatusReply
-	(*pb.BigInt)(nil),                    // 38: values.BigInt
+	(*pb.BigInt)(nil),                    // 38: values.v1.BigInt
 	(chain_common.BooleanOperator)(0),    // 39: loop.chain.common.BooleanOperator
 	(chain_common.ComparisonOperator)(0), // 40: loop.chain.common.ComparisonOperator
 	(*chain_common.Primitive)(nil),       // 41: loop.chain.common.Primitive
@@ -2479,16 +2479,16 @@ var file_chains_evm_evm_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),                // 44: google.protobuf.Empty
 }
 var file_chains_evm_evm_proto_depIdxs = []int32{
-	38, // 0: loop.evm.Log.block_number:type_name -> values.BigInt
-	38, // 1: loop.evm.FilterQuery.fromBlock:type_name -> values.BigInt
-	38, // 2: loop.evm.FilterQuery.toBlock:type_name -> values.BigInt
+	38, // 0: loop.evm.Log.block_number:type_name -> values.v1.BigInt
+	38, // 1: loop.evm.FilterQuery.fromBlock:type_name -> values.v1.BigInt
+	38, // 2: loop.evm.FilterQuery.toBlock:type_name -> values.v1.BigInt
 	2,  // 3: loop.evm.FilterQuery.topics:type_name -> loop.evm.Topics
-	38, // 4: loop.evm.Transaction.value:type_name -> values.BigInt
-	38, // 5: loop.evm.Transaction.gas_price:type_name -> values.BigInt
+	38, // 4: loop.evm.Transaction.value:type_name -> values.v1.BigInt
+	38, // 5: loop.evm.Transaction.gas_price:type_name -> values.v1.BigInt
 	3,  // 6: loop.evm.Receipt.logs:type_name -> loop.evm.Log
-	38, // 7: loop.evm.Receipt.effective_gas_price:type_name -> values.BigInt
-	38, // 8: loop.evm.Receipt.block_number:type_name -> values.BigInt
-	38, // 9: loop.evm.Head.block_number:type_name -> values.BigInt
+	38, // 7: loop.evm.Receipt.effective_gas_price:type_name -> values.v1.BigInt
+	38, // 8: loop.evm.Receipt.block_number:type_name -> values.v1.BigInt
+	38, // 9: loop.evm.Head.block_number:type_name -> values.v1.BigInt
 	16, // 10: loop.evm.Expression.primitive:type_name -> loop.evm.Primitive
 	10, // 11: loop.evm.Expression.boolean_expression:type_name -> loop.evm.BooleanExpression
 	39, // 12: loop.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
@@ -2504,12 +2504,12 @@ var file_chains_evm_evm_proto_depIdxs = []int32{
 	8,  // 22: loop.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.evm.Head
 	8,  // 23: loop.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.evm.Head
 	1,  // 24: loop.evm.CallContractRequest.call:type_name -> loop.evm.CallMsg
-	38, // 25: loop.evm.CallContractRequest.block_number:type_name -> values.BigInt
-	38, // 26: loop.evm.GetTransactionFeeReply.transaction_fee:type_name -> values.BigInt
+	38, // 25: loop.evm.CallContractRequest.block_number:type_name -> values.v1.BigInt
+	38, // 26: loop.evm.GetTransactionFeeReply.transaction_fee:type_name -> values.v1.BigInt
 	4,  // 27: loop.evm.FilterLogsRequest.filter_query:type_name -> loop.evm.FilterQuery
 	3,  // 28: loop.evm.FilterLogsReply.logs:type_name -> loop.evm.Log
-	38, // 29: loop.evm.BalanceAtRequest.block_number:type_name -> values.BigInt
-	38, // 30: loop.evm.BalanceAtReply.balance:type_name -> values.BigInt
+	38, // 29: loop.evm.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
+	38, // 30: loop.evm.BalanceAtReply.balance:type_name -> values.v1.BigInt
 	1,  // 31: loop.evm.EstimateGasRequest.msg:type_name -> loop.evm.CallMsg
 	5,  // 32: loop.evm.GetTransactionByHashReply.transaction:type_name -> loop.evm.Transaction
 	6,  // 33: loop.evm.GetTransactionReceiptReply.receipt:type_name -> loop.evm.Receipt

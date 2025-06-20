@@ -12,8 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type Config any
@@ -27,7 +26,7 @@ type runnerInternals interface {
 
 func newRunner[C Config](parse func(configBytes []byte) (C, error), runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.Runner[C] {
 	runnerInternals.versionV2()
-	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
+	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, pb.Mode_MODE_DON)}
 	return runnerWrapper[C]{baseRunner: getRunner(
 		parse,
 		&subscriber[C, sdk.Runtime]{runnerInternals: runnerInternals},
@@ -43,7 +42,7 @@ func newRunner[C Config](parse func(configBytes []byte) (C, error), runnerIntern
 
 type runner[C, T any] struct {
 	runnerInternals
-	trigger    *sdkpb.Trigger
+	trigger    *pb.Trigger
 	id         string
 	runtime    T
 	setRuntime func(config []byte, maxResponseSize uint64)
@@ -96,15 +95,15 @@ func (s *subscriber[C, T]) cfg() C {
 }
 
 func (s *subscriber[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
-	subscriptions := make([]*sdkpb.TriggerSubscription, len(wfs))
+	subscriptions := make([]*pb.TriggerSubscription, len(wfs))
 	for i, handler := range wfs {
-		subscriptions[i] = &sdkpb.TriggerSubscription{
+		subscriptions[i] = &pb.TriggerSubscription{
 			Id:      handler.CapabilityID(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),
 		}
 	}
-	triggerSubscription := &sdkpb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
+	triggerSubscription := &pb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
 
 	execResponse := &pb.ExecutionResult{
 		Result: &pb.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: triggerSubscription},

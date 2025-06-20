@@ -125,7 +125,7 @@ func (r *runtimeInternalsTestHook) switchModes(_ int32) {}
 
 func (r *runtimeInternalsTestHook) getSeed(mode int32) int64 {
 	switch mode {
-	case int32(sdkpb.Mode_DON):
+	case int32(sdkpb.Mode_MODE_DON):
 		return r.donSeed
 	default:
 		return r.nodeSeed

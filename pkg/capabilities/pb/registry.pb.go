@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/pb/registry.proto
+// source: registry.proto
 
 package pb
 
@@ -37,7 +37,7 @@ type RemoteTriggerConfig struct {
 
 func (x *RemoteTriggerConfig) Reset() {
 	*x = RemoteTriggerConfig{}
-	mi := &file_capabilities_pb_registry_proto_msgTypes[0]
+	mi := &file_registry_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -49,7 +49,7 @@ func (x *RemoteTriggerConfig) String() string {
 func (*RemoteTriggerConfig) ProtoMessage() {}
 
 func (x *RemoteTriggerConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_registry_proto_msgTypes[0]
+	mi := &file_registry_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -62,7 +62,7 @@ func (x *RemoteTriggerConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoteTriggerConfig.ProtoReflect.Descriptor instead.
 func (*RemoteTriggerConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{0}
+	return file_registry_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RemoteTriggerConfig) GetRegistrationRefresh() *durationpb.Duration {
@@ -119,7 +119,7 @@ type RemoteTargetConfig struct {
 
 func (x *RemoteTargetConfig) Reset() {
 	*x = RemoteTargetConfig{}
-	mi := &file_capabilities_pb_registry_proto_msgTypes[1]
+	mi := &file_registry_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +131,7 @@ func (x *RemoteTargetConfig) String() string {
 func (*RemoteTargetConfig) ProtoMessage() {}
 
 func (x *RemoteTargetConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_registry_proto_msgTypes[1]
+	mi := &file_registry_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +144,7 @@ func (x *RemoteTargetConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoteTargetConfig.ProtoReflect.Descriptor instead.
 func (*RemoteTargetConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{1}
+	return file_registry_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RemoteTargetConfig) GetRequestHashExcludedAttributes() []string {
@@ -168,7 +168,7 @@ type RemoteExecutableConfig struct {
 
 func (x *RemoteExecutableConfig) Reset() {
 	*x = RemoteExecutableConfig{}
-	mi := &file_capabilities_pb_registry_proto_msgTypes[2]
+	mi := &file_registry_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -180,7 +180,7 @@ func (x *RemoteExecutableConfig) String() string {
 func (*RemoteExecutableConfig) ProtoMessage() {}
 
 func (x *RemoteExecutableConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_registry_proto_msgTypes[2]
+	mi := &file_registry_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -193,7 +193,7 @@ func (x *RemoteExecutableConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoteExecutableConfig.ProtoReflect.Descriptor instead.
 func (*RemoteExecutableConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{2}
+	return file_registry_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RemoteExecutableConfig) GetRequestHashExcludedAttributes() []string {
@@ -234,7 +234,7 @@ type CapabilityConfig struct {
 
 func (x *CapabilityConfig) Reset() {
 	*x = CapabilityConfig{}
-	mi := &file_capabilities_pb_registry_proto_msgTypes[3]
+	mi := &file_registry_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -246,7 +246,7 @@ func (x *CapabilityConfig) String() string {
 func (*CapabilityConfig) ProtoMessage() {}
 
 func (x *CapabilityConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_registry_proto_msgTypes[3]
+	mi := &file_registry_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +259,7 @@ func (x *CapabilityConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityConfig.ProtoReflect.Descriptor instead.
 func (*CapabilityConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_registry_proto_rawDescGZIP(), []int{3}
+	return file_registry_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CapabilityConfig) GetDefaultConfig() *pb.Map {
@@ -339,11 +339,11 @@ func (*CapabilityConfig_RemoteTargetConfig) isCapabilityConfig_RemoteConfig() {}
 
 func (*CapabilityConfig_RemoteExecutableConfig) isCapabilityConfig_RemoteConfig() {}
 
-var File_capabilities_pb_registry_proto protoreflect.FileDescriptor
+var File_registry_proto protoreflect.FileDescriptor
 
-const file_capabilities_pb_registry_proto_rawDesc = "" +
+const file_registry_proto_rawDesc = "" +
 	"\n" +
-	"\x1ecapabilities/pb/registry.proto\x12\x04loop\x1a\x16values/pb/values.proto\x1a\x1egoogle/protobuf/duration.proto\"\x9d\x03\n" +
+	"\x0eregistry.proto\x12\x04loop\x1a\x16values/v1/values.proto\x1a\x1egoogle/protobuf/duration.proto\"\x9d\x03\n" +
 	"\x13RemoteTriggerConfig\x12K\n" +
 	"\x13registrationRefresh\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x13registrationRefresh\x12I\n" +
 	"\x12registrationExpiry\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\x128\n" +
@@ -356,49 +356,49 @@ const file_capabilities_pb_registry_proto_rawDesc = "" +
 	"\x16RemoteExecutableConfig\x12D\n" +
 	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\x12K\n" +
 	"\x13registrationRefresh\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x13registrationRefresh\x12I\n" +
-	"\x12registrationExpiry\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\"\xb3\x03\n" +
-	"\x10CapabilityConfig\x122\n" +
-	"\x0edefault_config\x18\x01 \x01(\v2\v.values.MapR\rdefaultConfig\x12O\n" +
+	"\x12registrationExpiry\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x12registrationExpiry\"\xb9\x03\n" +
+	"\x10CapabilityConfig\x125\n" +
+	"\x0edefault_config\x18\x01 \x01(\v2\x0e.values.v1.MapR\rdefaultConfig\x12O\n" +
 	"\x15remote_trigger_config\x18\x02 \x01(\v2\x19.loop.RemoteTriggerConfigH\x00R\x13remoteTriggerConfig\x12L\n" +
 	"\x14remote_target_config\x18\x03 \x01(\v2\x18.loop.RemoteTargetConfigH\x00R\x12remoteTargetConfig\x12X\n" +
-	"\x18remote_executable_config\x18\x04 \x01(\v2\x1c.loop.RemoteExecutableConfigH\x00R\x16remoteExecutableConfig\x128\n" +
-	"\x11restricted_config\x18\x05 \x01(\v2\v.values.MapR\x10restrictedConfig\x12'\n" +
+	"\x18remote_executable_config\x18\x04 \x01(\v2\x1c.loop.RemoteExecutableConfigH\x00R\x16remoteExecutableConfig\x12;\n" +
+	"\x11restricted_config\x18\x05 \x01(\v2\x0e.values.v1.MapR\x10restrictedConfig\x12'\n" +
 	"\x0frestricted_keys\x18\x06 \x03(\tR\x0erestrictedKeysB\x0f\n" +
 	"\rremote_configBBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
 
 var (
-	file_capabilities_pb_registry_proto_rawDescOnce sync.Once
-	file_capabilities_pb_registry_proto_rawDescData []byte
+	file_registry_proto_rawDescOnce sync.Once
+	file_registry_proto_rawDescData []byte
 )
 
-func file_capabilities_pb_registry_proto_rawDescGZIP() []byte {
-	file_capabilities_pb_registry_proto_rawDescOnce.Do(func() {
-		file_capabilities_pb_registry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_pb_registry_proto_rawDesc), len(file_capabilities_pb_registry_proto_rawDesc)))
+func file_registry_proto_rawDescGZIP() []byte {
+	file_registry_proto_rawDescOnce.Do(func() {
+		file_registry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_registry_proto_rawDesc), len(file_registry_proto_rawDesc)))
 	})
-	return file_capabilities_pb_registry_proto_rawDescData
+	return file_registry_proto_rawDescData
 }
 
-var file_capabilities_pb_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_capabilities_pb_registry_proto_goTypes = []any{
+var file_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_registry_proto_goTypes = []any{
 	(*RemoteTriggerConfig)(nil),    // 0: loop.RemoteTriggerConfig
 	(*RemoteTargetConfig)(nil),     // 1: loop.RemoteTargetConfig
 	(*RemoteExecutableConfig)(nil), // 2: loop.RemoteExecutableConfig
 	(*CapabilityConfig)(nil),       // 3: loop.CapabilityConfig
 	(*durationpb.Duration)(nil),    // 4: google.protobuf.Duration
-	(*pb.Map)(nil),                 // 5: values.Map
+	(*pb.Map)(nil),                 // 5: values.v1.Map
 }
-var file_capabilities_pb_registry_proto_depIdxs = []int32{
+var file_registry_proto_depIdxs = []int32{
 	4,  // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
 	4,  // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
 	4,  // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
 	4,  // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
 	4,  // 4: loop.RemoteExecutableConfig.registrationRefresh:type_name -> google.protobuf.Duration
 	4,  // 5: loop.RemoteExecutableConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	5,  // 6: loop.CapabilityConfig.default_config:type_name -> values.Map
+	5,  // 6: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
 	0,  // 7: loop.CapabilityConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
 	1,  // 8: loop.CapabilityConfig.remote_target_config:type_name -> loop.RemoteTargetConfig
 	2,  // 9: loop.CapabilityConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
-	5,  // 10: loop.CapabilityConfig.restricted_config:type_name -> values.Map
+	5,  // 10: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -406,12 +406,12 @@ var file_capabilities_pb_registry_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_pb_registry_proto_init() }
-func file_capabilities_pb_registry_proto_init() {
-	if File_capabilities_pb_registry_proto != nil {
+func init() { file_registry_proto_init() }
+func file_registry_proto_init() {
+	if File_registry_proto != nil {
 		return
 	}
-	file_capabilities_pb_registry_proto_msgTypes[3].OneofWrappers = []any{
+	file_registry_proto_msgTypes[3].OneofWrappers = []any{
 		(*CapabilityConfig_RemoteTriggerConfig)(nil),
 		(*CapabilityConfig_RemoteTargetConfig)(nil),
 		(*CapabilityConfig_RemoteExecutableConfig)(nil),
@@ -420,17 +420,17 @@ func file_capabilities_pb_registry_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_pb_registry_proto_rawDesc), len(file_capabilities_pb_registry_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_registry_proto_rawDesc), len(file_registry_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_capabilities_pb_registry_proto_goTypes,
-		DependencyIndexes: file_capabilities_pb_registry_proto_depIdxs,
-		MessageInfos:      file_capabilities_pb_registry_proto_msgTypes,
+		GoTypes:           file_registry_proto_goTypes,
+		DependencyIndexes: file_registry_proto_depIdxs,
+		MessageInfos:      file_registry_proto_msgTypes,
 	}.Build()
-	File_capabilities_pb_registry_proto = out.File
-	file_capabilities_pb_registry_proto_goTypes = nil
-	file_capabilities_pb_registry_proto_depIdxs = nil
+	File_registry_proto = out.File
+	file_registry_proto_goTypes = nil
+	file_registry_proto_depIdxs = nil
 }

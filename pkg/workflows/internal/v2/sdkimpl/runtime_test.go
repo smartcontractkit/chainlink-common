@@ -342,7 +342,7 @@ func setupSimpleConsensus(t *testing.T, values *consensusValues) {
 		assert.Nil(t, input.Default.Value)
 		switch d := input.Descriptors.Descriptor_.(type) {
 		case *pb.ConsensusDescriptor_Aggregation:
-			assert.Equal(t, pb.AggregationType_MEDIAN, d.Aggregation)
+			assert.Equal(t, pb.AggregationType_AGGREGATION_TYPE_MEDIAN, d.Aggregation)
 		default:
 			assert.Fail(t, "unexpected descriptor type")
 		}

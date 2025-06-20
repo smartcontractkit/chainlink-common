@@ -1,4 +1,4 @@
-//go:generate protoc --go_out=../../ --go_opt=paths=source_relative --go-grpc_out=../../ --go-grpc_opt=paths=source_relative --proto_path=../../ capabilities/pb/capabilities.proto values/pb/values.proto metering/pb/meteringdetail.proto
-//go:generate protoc --go_out=../../ --go_opt=paths=source_relative --go-grpc_out=../../ --go-grpc_opt=paths=source_relative --proto_path=../../ capabilities/pb/registry.proto values/pb/values.proto
-//go:generate protoc --go_out=../../ --go_opt=paths=source_relative --go-grpc_out=../../ --go-grpc_opt=paths=source_relative --proto_path=../../ capabilities/pb/triggers.proto values/pb/values.proto
+//go:generate make generate FILE=capabilities.proto
+//go:generate make generate FILE=registry.proto
+//go:generate make generate FILE=triggers.proto
 package pb

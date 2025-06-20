@@ -83,6 +83,52 @@ func (_c *MockExecutionHelper_CallCapability_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// EmitUserLog provides a mock function with given fields: log
+func (_m *MockExecutionHelper) EmitUserLog(log string) error {
+	ret := _m.Called(log)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EmitUserLog")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(log)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockExecutionHelper_EmitUserLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EmitUserLog'
+type MockExecutionHelper_EmitUserLog_Call struct {
+	*mock.Call
+}
+
+// EmitUserLog is a helper method to define mock.On call
+//   - log string
+func (_e *MockExecutionHelper_Expecter) EmitUserLog(log interface{}) *MockExecutionHelper_EmitUserLog_Call {
+	return &MockExecutionHelper_EmitUserLog_Call{Call: _e.mock.On("EmitUserLog", log)}
+}
+
+func (_c *MockExecutionHelper_EmitUserLog_Call) Run(run func(log string)) *MockExecutionHelper_EmitUserLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockExecutionHelper_EmitUserLog_Call) Return(_a0 error) *MockExecutionHelper_EmitUserLog_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockExecutionHelper_EmitUserLog_Call) RunAndReturn(run func(string) error) *MockExecutionHelper_EmitUserLog_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDONTime provides a mock function with no fields
 func (_m *MockExecutionHelper) GetDONTime() time.Time {
 	ret := _m.Called()
@@ -128,51 +174,6 @@ func (_c *MockExecutionHelper_GetDONTime_Call) RunAndReturn(run func() time.Time
 	return _c
 }
 
-// GetID provides a mock function with no fields
-func (_m *MockExecutionHelper) GetID() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetID")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// MockExecutionHelper_GetID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetID'
-type MockExecutionHelper_GetID_Call struct {
-	*mock.Call
-}
-
-// GetID is a helper method to define mock.On call
-func (_e *MockExecutionHelper_Expecter) GetID() *MockExecutionHelper_GetID_Call {
-	return &MockExecutionHelper_GetID_Call{Call: _e.mock.On("GetID")}
-}
-
-func (_c *MockExecutionHelper_GetID_Call) Run(run func()) *MockExecutionHelper_GetID_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockExecutionHelper_GetID_Call) Return(_a0 string) *MockExecutionHelper_GetID_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockExecutionHelper_GetID_Call) RunAndReturn(run func() string) *MockExecutionHelper_GetID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetNodeTime provides a mock function with no fields
 func (_m *MockExecutionHelper) GetNodeTime() time.Time {
 	ret := _m.Called()
@@ -214,6 +215,51 @@ func (_c *MockExecutionHelper_GetNodeTime_Call) Return(_a0 time.Time) *MockExecu
 }
 
 func (_c *MockExecutionHelper_GetNodeTime_Call) RunAndReturn(run func() time.Time) *MockExecutionHelper_GetNodeTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetWorkflowExecutionID provides a mock function with no fields
+func (_m *MockExecutionHelper) GetWorkflowExecutionID() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetWorkflowExecutionID")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// MockExecutionHelper_GetWorkflowExecutionID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetWorkflowExecutionID'
+type MockExecutionHelper_GetWorkflowExecutionID_Call struct {
+	*mock.Call
+}
+
+// GetWorkflowExecutionID is a helper method to define mock.On call
+func (_e *MockExecutionHelper_Expecter) GetWorkflowExecutionID() *MockExecutionHelper_GetWorkflowExecutionID_Call {
+	return &MockExecutionHelper_GetWorkflowExecutionID_Call{Call: _e.mock.On("GetWorkflowExecutionID")}
+}
+
+func (_c *MockExecutionHelper_GetWorkflowExecutionID_Call) Run(run func()) *MockExecutionHelper_GetWorkflowExecutionID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockExecutionHelper_GetWorkflowExecutionID_Call) Return(_a0 string) *MockExecutionHelper_GetWorkflowExecutionID_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockExecutionHelper_GetWorkflowExecutionID_Call) RunAndReturn(run func() string) *MockExecutionHelper_GetWorkflowExecutionID_Call {
 	_c.Call.Return(run)
 	return _c
 }

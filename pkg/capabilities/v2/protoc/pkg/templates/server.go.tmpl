@@ -122,18 +122,15 @@ func (c *{{.GoName|LowerFirst}}Capability) Info(ctx context.Context) (capabiliti
 
 var _ capabilities.ExecutableAndTriggerCapability = (*{{.GoName|LowerFirst}}Capability)(nil)
 
+const {{.GoName}}ID = "{{CapabilityId $service}}"
+
 func (c *{{.GoName|LowerFirst}}Capability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 {{- if $hasTriggers }}
     switch request.Method {
         {{- range .Methods}}
         {{- if (isTrigger .) }}
-            case "{{.GoName}}":
+            case {{- if (MapToUntypedAPI .) }} "" {{- else}} "{{.GoName}}" {{- end }}:
                 input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
-                return capabilities.RegisterTrigger(ctx, c.stopCh, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
-        {{- end }}
-        {{- if (MapToUntypedAPI .) }}
-            case "":
-                input := &{{name .Input.GoIdent ""}}{}
                 return capabilities.RegisterTrigger(ctx, c.stopCh, "{{(CapabilityId $service)}}", request, input, c.{{$service.GoName}}Capability.Register{{.GoName}})
         {{- end }}
         {{- end }}
@@ -150,16 +147,7 @@ func (c *{{.GoName|LowerFirst}}Capability) UnregisterTrigger(ctx context.Context
 	    switch request.Method {
             {{- range .Methods}}
             {{- if (isTrigger .) }}
-                case "{{.GoName}}":
-                    input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
-                    _, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
-                    if err != nil {
-                        return err
-                    }
-                    return c.{{$service.GoName}}Capability.Unregister{{.GoName}}(ctx, request.TriggerID, request.Metadata, input)
-            {{- end }}
-            {{- if (MapToUntypedAPI .) }}
-                case "":
+                case {{- if (MapToUntypedAPI .) }} "" {{- else}} "{{.GoName}}" {{- end }}:
                     input := &{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}{}
                     _, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
                     if err != nil {

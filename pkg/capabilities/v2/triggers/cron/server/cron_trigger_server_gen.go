@@ -22,6 +22,9 @@ type CronCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.Payload], error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
 
+	RegisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.LegacyPayload], error)
+	UnregisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -66,7 +69,7 @@ func (cs *CronServer) Close() error {
 	defer cancel()
 
 	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.1.0"); err != nil {
 			return err
 		}
 	}
@@ -93,19 +96,21 @@ type cronCapability struct {
 
 func (c *cronCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("cron-trigger@1.0.0", capabilities.CapabilityTypeCombined, c.CronCapability.Description())
+	return capabilities.NewCapabilityInfo("cron-trigger@1.1.0", capabilities.CapabilityTypeCombined, c.CronCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*cronCapability)(nil)
+
+const CronID = "cron-trigger@1.1.0"
 
 func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.1.0", request, input, c.CronCapability.RegisterTrigger)
 	case "":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.1.0", request, input, c.CronCapability.RegisterLegacyTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}
@@ -126,7 +131,7 @@ func (c *cronCapability) UnregisterTrigger(ctx context.Context, request capabili
 		if err != nil {
 			return err
 		}
-		return c.CronCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
+		return c.CronCapability.UnregisterLegacyTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

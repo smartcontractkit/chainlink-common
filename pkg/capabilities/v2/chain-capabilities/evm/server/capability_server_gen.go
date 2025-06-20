@@ -119,6 +119,8 @@ func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInf
 
 var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 
+const ClientID = "evm@1.0.0"
+
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "LogTrigger":

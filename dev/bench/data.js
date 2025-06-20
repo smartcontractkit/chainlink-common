@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750375546941,
+  "lastUpdate": 1750432117158,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16170,6 +16170,48 @@ window.BENCHMARK_DATA = {
             "value": 28489,
             "unit": "ns/op",
             "extra": "42009 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "13f3ead5fedbb4d531f240eac9b85f289b1f4bc2",
+          "message": "[CAPPL-782] Handle user logs independently of system logs (#1278)",
+          "timestamp": "2025-06-20T08:07:18-07:00",
+          "tree_id": "ab558c522d758d28ea8f54454066aadfc5672422",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/13f3ead5fedbb4d531f240eac9b85f289b1f4bc2"
+        },
+        "date": 1750432115612,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357,
+            "unit": "ns/op",
+            "extra": "3359937 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 420.8,
+            "unit": "ns/op",
+            "extra": "2888158 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28491,
+            "unit": "ns/op",
+            "extra": "42187 times\n4 procs"
           }
         ]
       }

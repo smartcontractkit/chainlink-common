@@ -79,14 +79,16 @@ func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCa
 }
 
 func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
-	lggr := e.module.cfg.Logger
 	b, innerErr := wasmRead(caller, ptr, ptrlen)
 	if innerErr != nil {
-		lggr.Errorf("error calling log: %s", innerErr)
+		e.module.cfg.Logger.Errorf("error calling log: %s", innerErr)
 		return
 	}
-
-	lggr.Info(string(b))
+	innerErr = e.executor.EmitUserLog(string(b))
+	if innerErr != nil {
+		e.module.cfg.Logger.Errorf("error emitting user log: %s", innerErr)
+		return
+	}
 }
 
 func (e *execution[T]) getSeed(mode int32) int64 {

@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -38,6 +39,9 @@ type ClientCapability interface {
 	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm1.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm1.FilterLogTriggerRequest) error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -118,11 +122,27 @@ var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 const ClientID = "evm@1.0.0"
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	return nil, fmt.Errorf("trigger %s not found", request.Method)
+	switch request.Method {
+	case "LogTrigger":
+		input := &evm1.FilterLogTriggerRequest{}
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
+	default:
+		return nil, fmt.Errorf("trigger %s not found", request.Method)
+	}
 }
 
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	return fmt.Errorf("trigger %s not found", request.Method)
+	switch request.Method {
+	case "LogTrigger":
+		input := &evm1.FilterLogTriggerRequest{}
+		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
+		if err != nil {
+			return err
+		}
+		return c.ClientCapability.UnregisterLogTrigger(ctx, request.TriggerID, request.Metadata, input)
+	default:
+		return fmt.Errorf("method %s not found", request.Method)
+	}
 }
 
 func (c *clientCapability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {

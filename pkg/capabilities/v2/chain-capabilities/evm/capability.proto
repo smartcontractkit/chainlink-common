@@ -5,7 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 package cre.sdk.v2.evm;
 
 import "google/protobuf/empty.proto";
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 import "chains/evm/evm.proto";
 
 enum ConfidenceLevel {
@@ -24,8 +24,8 @@ message FilterLogTriggerRequest {
 }
 
 service Client {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "evm@1.0.0"
   };
   rpc CallContract(loop.evm.CallContractRequest) returns (loop.evm.CallContractReply);

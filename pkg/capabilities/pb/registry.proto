@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 package loop;
 
-import "values/pb/values.proto";
+import "values/v1/values.proto";
 import "google/protobuf/duration.proto";
 
 message RemoteTriggerConfig {
@@ -33,7 +33,7 @@ message RemoteExecutableConfig {
 }
 
 message CapabilityConfig {
-  values.Map default_config = 1;
+  values.v1.Map default_config = 1;
 
   oneof remote_config {
     RemoteTriggerConfig remote_trigger_config = 2;
@@ -41,7 +41,7 @@ message CapabilityConfig {
     RemoteExecutableConfig remote_executable_config = 4;
   }
 
-  values.Map restricted_config = 5;
+  values.v1.Map restricted_config = 5;
   repeated string restricted_keys = 6;
 }
 

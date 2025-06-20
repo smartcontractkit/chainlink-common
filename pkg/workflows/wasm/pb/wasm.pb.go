@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: workflows/wasm/pb/wasm.proto
+// source: wasm.proto
 
 package pb
 
@@ -34,7 +34,7 @@ type RuntimeConfig struct {
 
 func (x *RuntimeConfig) Reset() {
 	*x = RuntimeConfig{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[0]
+	mi := &file_wasm_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *RuntimeConfig) String() string {
 func (*RuntimeConfig) ProtoMessage() {}
 
 func (x *RuntimeConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[0]
+	mi := &file_wasm_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *RuntimeConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeConfig.ProtoReflect.Descriptor instead.
 func (*RuntimeConfig) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{0}
+	return file_wasm_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RuntimeConfig) GetMaxResponseSizeBytes() int64 {
@@ -79,7 +79,7 @@ type ComputeRequest struct {
 
 func (x *ComputeRequest) Reset() {
 	*x = ComputeRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[1]
+	mi := &file_wasm_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -91,7 +91,7 @@ func (x *ComputeRequest) String() string {
 func (*ComputeRequest) ProtoMessage() {}
 
 func (x *ComputeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[1]
+	mi := &file_wasm_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -104,7 +104,7 @@ func (x *ComputeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComputeRequest.ProtoReflect.Descriptor instead.
 func (*ComputeRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{1}
+	return file_wasm_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ComputeRequest) GetRequest() *pb.CapabilityRequest {
@@ -136,7 +136,7 @@ type Request struct {
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[2]
+	mi := &file_wasm_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -148,7 +148,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[2]
+	mi := &file_wasm_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -161,7 +161,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{2}
+	return file_wasm_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Request) GetId() string {
@@ -228,7 +228,7 @@ type ComputeResponse struct {
 
 func (x *ComputeResponse) Reset() {
 	*x = ComputeResponse{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[3]
+	mi := &file_wasm_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +240,7 @@ func (x *ComputeResponse) String() string {
 func (*ComputeResponse) ProtoMessage() {}
 
 func (x *ComputeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[3]
+	mi := &file_wasm_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +253,7 @@ func (x *ComputeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComputeResponse.ProtoReflect.Descriptor instead.
 func (*ComputeResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{3}
+	return file_wasm_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ComputeResponse) GetResponse() *pb.CapabilityResponse {
@@ -273,7 +273,7 @@ type StepInputs struct {
 
 func (x *StepInputs) Reset() {
 	*x = StepInputs{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[4]
+	mi := &file_wasm_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -285,7 +285,7 @@ func (x *StepInputs) String() string {
 func (*StepInputs) ProtoMessage() {}
 
 func (x *StepInputs) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[4]
+	mi := &file_wasm_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -298,7 +298,7 @@ func (x *StepInputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StepInputs.ProtoReflect.Descriptor instead.
 func (*StepInputs) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{4}
+	return file_wasm_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *StepInputs) GetOutputRef() string {
@@ -328,7 +328,7 @@ type StepDefinition struct {
 
 func (x *StepDefinition) Reset() {
 	*x = StepDefinition{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[5]
+	mi := &file_wasm_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +340,7 @@ func (x *StepDefinition) String() string {
 func (*StepDefinition) ProtoMessage() {}
 
 func (x *StepDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[5]
+	mi := &file_wasm_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +353,7 @@ func (x *StepDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StepDefinition.ProtoReflect.Descriptor instead.
 func (*StepDefinition) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{5}
+	return file_wasm_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StepDefinition) GetId() string {
@@ -405,7 +405,7 @@ type WorkflowSpec struct {
 
 func (x *WorkflowSpec) Reset() {
 	*x = WorkflowSpec{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[6]
+	mi := &file_wasm_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -417,7 +417,7 @@ func (x *WorkflowSpec) String() string {
 func (*WorkflowSpec) ProtoMessage() {}
 
 func (x *WorkflowSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[6]
+	mi := &file_wasm_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -430,7 +430,7 @@ func (x *WorkflowSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkflowSpec.ProtoReflect.Descriptor instead.
 func (*WorkflowSpec) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{6}
+	return file_wasm_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *WorkflowSpec) GetName() string {
@@ -490,7 +490,7 @@ type Response struct {
 
 func (x *Response) Reset() {
 	*x = Response{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[7]
+	mi := &file_wasm_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -502,7 +502,7 @@ func (x *Response) String() string {
 func (*Response) ProtoMessage() {}
 
 func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[7]
+	mi := &file_wasm_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -515,7 +515,7 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{7}
+	return file_wasm_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Response) GetId() string {
@@ -587,7 +587,7 @@ type FetchRequestMetadata struct {
 
 func (x *FetchRequestMetadata) Reset() {
 	*x = FetchRequestMetadata{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[8]
+	mi := &file_wasm_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -599,7 +599,7 @@ func (x *FetchRequestMetadata) String() string {
 func (*FetchRequestMetadata) ProtoMessage() {}
 
 func (x *FetchRequestMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[8]
+	mi := &file_wasm_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +612,7 @@ func (x *FetchRequestMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FetchRequestMetadata.ProtoReflect.Descriptor instead.
 func (*FetchRequestMetadata) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{8}
+	return file_wasm_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *FetchRequestMetadata) GetWorkflowId() string {
@@ -666,7 +666,7 @@ type FetchRequest struct {
 
 func (x *FetchRequest) Reset() {
 	*x = FetchRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[9]
+	mi := &file_wasm_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -678,7 +678,7 @@ func (x *FetchRequest) String() string {
 func (*FetchRequest) ProtoMessage() {}
 
 func (x *FetchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[9]
+	mi := &file_wasm_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -691,7 +691,7 @@ func (x *FetchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FetchRequest.ProtoReflect.Descriptor instead.
 func (*FetchRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{9}
+	return file_wasm_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FetchRequest) GetUrl() string {
@@ -764,7 +764,7 @@ type FetchResponse struct {
 
 func (x *FetchResponse) Reset() {
 	*x = FetchResponse{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[10]
+	mi := &file_wasm_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -776,7 +776,7 @@ func (x *FetchResponse) String() string {
 func (*FetchResponse) ProtoMessage() {}
 
 func (x *FetchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[10]
+	mi := &file_wasm_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -789,7 +789,7 @@ func (x *FetchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FetchResponse.ProtoReflect.Descriptor instead.
 func (*FetchResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{10}
+	return file_wasm_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *FetchResponse) GetExecutionError() bool {
@@ -838,7 +838,7 @@ type EmitMessageRequest struct {
 
 func (x *EmitMessageRequest) Reset() {
 	*x = EmitMessageRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[11]
+	mi := &file_wasm_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -850,7 +850,7 @@ func (x *EmitMessageRequest) String() string {
 func (*EmitMessageRequest) ProtoMessage() {}
 
 func (x *EmitMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[11]
+	mi := &file_wasm_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -863,7 +863,7 @@ func (x *EmitMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmitMessageRequest.ProtoReflect.Descriptor instead.
 func (*EmitMessageRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{11}
+	return file_wasm_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EmitMessageRequest) GetMessage() string {
@@ -896,7 +896,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[12]
+	mi := &file_wasm_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +908,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[12]
+	mi := &file_wasm_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +921,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{12}
+	return file_wasm_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Error) GetMessage() string {
@@ -940,7 +940,7 @@ type EmitMessageResponse struct {
 
 func (x *EmitMessageResponse) Reset() {
 	*x = EmitMessageResponse{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[13]
+	mi := &file_wasm_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -952,7 +952,7 @@ func (x *EmitMessageResponse) String() string {
 func (*EmitMessageResponse) ProtoMessage() {}
 
 func (x *EmitMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[13]
+	mi := &file_wasm_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -965,7 +965,7 @@ func (x *EmitMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmitMessageResponse.ProtoReflect.Descriptor instead.
 func (*EmitMessageResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{13}
+	return file_wasm_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EmitMessageResponse) GetError() *Error {
@@ -988,7 +988,7 @@ type TriggerSubscription struct {
 
 func (x *TriggerSubscription) Reset() {
 	*x = TriggerSubscription{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[14]
+	mi := &file_wasm_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1000,7 +1000,7 @@ func (x *TriggerSubscription) String() string {
 func (*TriggerSubscription) ProtoMessage() {}
 
 func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[14]
+	mi := &file_wasm_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1013,7 +1013,7 @@ func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscription.ProtoReflect.Descriptor instead.
 func (*TriggerSubscription) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{14}
+	return file_wasm_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *TriggerSubscription) GetExecId() string {
@@ -1053,7 +1053,7 @@ type TriggerSubscriptionRequest struct {
 
 func (x *TriggerSubscriptionRequest) Reset() {
 	*x = TriggerSubscriptionRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[15]
+	mi := &file_wasm_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1065,7 +1065,7 @@ func (x *TriggerSubscriptionRequest) String() string {
 func (*TriggerSubscriptionRequest) ProtoMessage() {}
 
 func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[15]
+	mi := &file_wasm_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1078,7 @@ func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscriptionRequest.ProtoReflect.Descriptor instead.
 func (*TriggerSubscriptionRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{15}
+	return file_wasm_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *TriggerSubscriptionRequest) GetSubscriptions() []*TriggerSubscription {
@@ -1098,7 +1098,7 @@ type Trigger struct {
 
 func (x *Trigger) Reset() {
 	*x = Trigger{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[16]
+	mi := &file_wasm_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1110,7 +1110,7 @@ func (x *Trigger) String() string {
 func (*Trigger) ProtoMessage() {}
 
 func (x *Trigger) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[16]
+	mi := &file_wasm_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1123,7 +1123,7 @@ func (x *Trigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trigger.ProtoReflect.Descriptor instead.
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{16}
+	return file_wasm_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Trigger) GetId() string {
@@ -1156,7 +1156,7 @@ type ExecuteRequest struct {
 
 func (x *ExecuteRequest) Reset() {
 	*x = ExecuteRequest{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[17]
+	mi := &file_wasm_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1168,7 +1168,7 @@ func (x *ExecuteRequest) String() string {
 func (*ExecuteRequest) ProtoMessage() {}
 
 func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[17]
+	mi := &file_wasm_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1181,7 +1181,7 @@ func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{17}
+	return file_wasm_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ExecuteRequest) GetId() string {
@@ -1261,7 +1261,7 @@ type ExecutionResult struct {
 
 func (x *ExecutionResult) Reset() {
 	*x = ExecutionResult{}
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[18]
+	mi := &file_wasm_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1273,7 +1273,7 @@ func (x *ExecutionResult) String() string {
 func (*ExecutionResult) ProtoMessage() {}
 
 func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_wasm_pb_wasm_proto_msgTypes[18]
+	mi := &file_wasm_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1286,7 +1286,7 @@ func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionResult.ProtoReflect.Descriptor instead.
 func (*ExecutionResult) Descriptor() ([]byte, []int) {
-	return file_workflows_wasm_pb_wasm_proto_rawDescGZIP(), []int{18}
+	return file_wasm_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ExecutionResult) GetId() string {
@@ -1352,11 +1352,12 @@ func (*ExecutionResult_Error) isExecutionResult_Result() {}
 
 func (*ExecutionResult_TriggerSubscriptions) isExecutionResult_Result() {}
 
-var File_workflows_wasm_pb_wasm_proto protoreflect.FileDescriptor
+var File_wasm_proto protoreflect.FileDescriptor
 
-const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
+const file_wasm_proto_rawDesc = "" +
 	"\n" +
-	"\x1cworkflows/wasm/pb/wasm.proto\x12\x03sdk\x1a\"capabilities/pb/capabilities.proto\x1a\x16values/pb/values.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19google/protobuf/any.proto\"C\n" +
+	"\n" +
+	"wasm.proto\x12\x03sdk\x1a\"capabilities/pb/capabilities.proto\x1a\x16values/v1/values.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19google/protobuf/any.proto\"C\n" +
 	"\rRuntimeConfig\x122\n" +
 	"\x14maxResponseSizeBytes\x18\x01 \x01(\x03R\x14maxResponseSizeBytes\"\x85\x01\n" +
 	"\x0eComputeRequest\x129\n" +
@@ -1369,16 +1370,16 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\vspecRequest\x18\x04 \x01(\v2\x16.google.protobuf.EmptyH\x00R\vspecRequestB\t\n" +
 	"\amessage\"O\n" +
 	"\x0fComputeResponse\x12<\n" +
-	"\bresponse\x18\x01 \x01(\v2 .capabilities.CapabilityResponseR\bresponse\"Q\n" +
+	"\bresponse\x18\x01 \x01(\v2 .capabilities.CapabilityResponseR\bresponse\"T\n" +
 	"\n" +
 	"StepInputs\x12\x1c\n" +
-	"\toutputRef\x18\x01 \x01(\tR\toutputRef\x12%\n" +
-	"\amapping\x18\x02 \x01(\v2\v.values.MapR\amapping\"\xa8\x01\n" +
+	"\toutputRef\x18\x01 \x01(\tR\toutputRef\x12(\n" +
+	"\amapping\x18\x02 \x01(\v2\x0e.values.v1.MapR\amapping\"\xab\x01\n" +
 	"\x0eStepDefinition\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
 	"\x03ref\x18\x02 \x01(\tR\x03ref\x12'\n" +
-	"\x06inputs\x18\x03 \x01(\v2\x0f.sdk.StepInputsR\x06inputs\x12#\n" +
-	"\x06config\x18\x04 \x01(\v2\v.values.MapR\x06config\x12&\n" +
+	"\x06inputs\x18\x03 \x01(\v2\x0f.sdk.StepInputsR\x06inputs\x12&\n" +
+	"\x06config\x18\x04 \x01(\v2\x0e.values.v1.MapR\x06config\x12&\n" +
 	"\x0ecapabilityType\x18\x05 \x01(\tR\x0ecapabilityType\"\xfa\x01\n" +
 	"\fWorkflowSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -1400,29 +1401,29 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\fworkflowName\x18\x02 \x01(\tR\fworkflowName\x12$\n" +
 	"\rworkflowOwner\x18\x03 \x01(\tR\rworkflowOwner\x120\n" +
 	"\x13workflowExecutionId\x18\x04 \x01(\tR\x13workflowExecutionId\x120\n" +
-	"\x13decodedWorkflowName\x18\x05 \x01(\tR\x13decodedWorkflowName\"\xf8\x01\n" +
+	"\x13decodedWorkflowName\x18\x05 \x01(\tR\x13decodedWorkflowName\"\xfb\x01\n" +
 	"\fFetchRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12%\n" +
-	"\aheaders\x18\x03 \x01(\v2\v.values.MapR\aheaders\x12\x12\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12(\n" +
+	"\aheaders\x18\x03 \x01(\v2\x0e.values.v1.MapR\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1c\n" +
 	"\ttimeoutMs\x18\x05 \x01(\rR\ttimeoutMs\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x125\n" +
 	"\bmetadata\x18\a \x01(\v2\x19.sdk.FetchRequestMetadataR\bmetadata\x12\x1e\n" +
 	"\n" +
 	"maxRetries\x18\b \x01(\rR\n" +
-	"maxRetries\"\xb6\x01\n" +
+	"maxRetries\"\xb9\x01\n" +
 	"\rFetchResponse\x12&\n" +
 	"\x0eexecutionError\x18\x01 \x01(\bR\x0eexecutionError\x12\"\n" +
 	"\ferrorMessage\x18\x02 \x01(\tR\ferrorMessage\x12\x1e\n" +
 	"\n" +
 	"statusCode\x18\x03 \x01(\rR\n" +
-	"statusCode\x12%\n" +
-	"\aheaders\x18\x04 \x01(\v2\v.values.MapR\aheaders\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\fR\x04body\"q\n" +
+	"statusCode\x12(\n" +
+	"\aheaders\x18\x04 \x01(\v2\x0e.values.v1.MapR\aheaders\x12\x12\n" +
+	"\x04body\x18\x05 \x01(\fR\x04body\"t\n" +
 	"\x12EmitMessageRequest\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\x12#\n" +
-	"\x06labels\x18\x02 \x01(\v2\v.values.MapR\x06labels\x12\x1c\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12&\n" +
+	"\x06labels\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06labels\x12\x1c\n" +
 	"\trequestId\x18\x03 \x01(\tR\trequestId\"!\n" +
 	"\x05Error\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"7\n" +
@@ -1454,19 +1455,19 @@ const file_workflows_wasm_pb_wasm_proto_rawDesc = "" +
 	"\x06resultBCZAgithub.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/pbb\x06proto3"
 
 var (
-	file_workflows_wasm_pb_wasm_proto_rawDescOnce sync.Once
-	file_workflows_wasm_pb_wasm_proto_rawDescData []byte
+	file_wasm_proto_rawDescOnce sync.Once
+	file_wasm_proto_rawDescData []byte
 )
 
-func file_workflows_wasm_pb_wasm_proto_rawDescGZIP() []byte {
-	file_workflows_wasm_pb_wasm_proto_rawDescOnce.Do(func() {
-		file_workflows_wasm_pb_wasm_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_workflows_wasm_pb_wasm_proto_rawDesc), len(file_workflows_wasm_pb_wasm_proto_rawDesc)))
+func file_wasm_proto_rawDescGZIP() []byte {
+	file_wasm_proto_rawDescOnce.Do(func() {
+		file_wasm_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_wasm_proto_rawDesc), len(file_wasm_proto_rawDesc)))
 	})
-	return file_workflows_wasm_pb_wasm_proto_rawDescData
+	return file_wasm_proto_rawDescData
 }
 
-var file_workflows_wasm_pb_wasm_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
-var file_workflows_wasm_pb_wasm_proto_goTypes = []any{
+var file_wasm_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_wasm_proto_goTypes = []any{
 	(*RuntimeConfig)(nil),              // 0: sdk.RuntimeConfig
 	(*ComputeRequest)(nil),             // 1: sdk.ComputeRequest
 	(*Request)(nil),                    // 2: sdk.Request
@@ -1489,28 +1490,28 @@ var file_workflows_wasm_pb_wasm_proto_goTypes = []any{
 	(*pb.CapabilityRequest)(nil),       // 19: capabilities.CapabilityRequest
 	(*emptypb.Empty)(nil),              // 20: google.protobuf.Empty
 	(*pb.CapabilityResponse)(nil),      // 21: capabilities.CapabilityResponse
-	(*pb1.Map)(nil),                    // 22: values.Map
+	(*pb1.Map)(nil),                    // 22: values.v1.Map
 	(*anypb.Any)(nil),                  // 23: google.protobuf.Any
 }
-var file_workflows_wasm_pb_wasm_proto_depIdxs = []int32{
+var file_wasm_proto_depIdxs = []int32{
 	19, // 0: sdk.ComputeRequest.request:type_name -> capabilities.CapabilityRequest
 	0,  // 1: sdk.ComputeRequest.runtimeConfig:type_name -> sdk.RuntimeConfig
 	1,  // 2: sdk.Request.computeRequest:type_name -> sdk.ComputeRequest
 	20, // 3: sdk.Request.specRequest:type_name -> google.protobuf.Empty
 	21, // 4: sdk.ComputeResponse.response:type_name -> capabilities.CapabilityResponse
-	22, // 5: sdk.StepInputs.mapping:type_name -> values.Map
+	22, // 5: sdk.StepInputs.mapping:type_name -> values.v1.Map
 	4,  // 6: sdk.StepDefinition.inputs:type_name -> sdk.StepInputs
-	22, // 7: sdk.StepDefinition.config:type_name -> values.Map
+	22, // 7: sdk.StepDefinition.config:type_name -> values.v1.Map
 	5,  // 8: sdk.WorkflowSpec.triggers:type_name -> sdk.StepDefinition
 	5,  // 9: sdk.WorkflowSpec.actions:type_name -> sdk.StepDefinition
 	5,  // 10: sdk.WorkflowSpec.consensus:type_name -> sdk.StepDefinition
 	5,  // 11: sdk.WorkflowSpec.targets:type_name -> sdk.StepDefinition
 	3,  // 12: sdk.Response.computeResponse:type_name -> sdk.ComputeResponse
 	6,  // 13: sdk.Response.specResponse:type_name -> sdk.WorkflowSpec
-	22, // 14: sdk.FetchRequest.headers:type_name -> values.Map
+	22, // 14: sdk.FetchRequest.headers:type_name -> values.v1.Map
 	8,  // 15: sdk.FetchRequest.metadata:type_name -> sdk.FetchRequestMetadata
-	22, // 16: sdk.FetchResponse.headers:type_name -> values.Map
-	22, // 17: sdk.EmitMessageRequest.labels:type_name -> values.Map
+	22, // 16: sdk.FetchResponse.headers:type_name -> values.v1.Map
+	22, // 17: sdk.EmitMessageRequest.labels:type_name -> values.v1.Map
 	12, // 18: sdk.EmitMessageResponse.error:type_name -> sdk.Error
 	23, // 19: sdk.TriggerSubscription.payload:type_name -> google.protobuf.Any
 	14, // 20: sdk.TriggerSubscriptionRequest.subscriptions:type_name -> sdk.TriggerSubscription
@@ -1526,24 +1527,24 @@ var file_workflows_wasm_pb_wasm_proto_depIdxs = []int32{
 	0,  // [0:26] is the sub-list for field type_name
 }
 
-func init() { file_workflows_wasm_pb_wasm_proto_init() }
-func file_workflows_wasm_pb_wasm_proto_init() {
-	if File_workflows_wasm_pb_wasm_proto != nil {
+func init() { file_wasm_proto_init() }
+func file_wasm_proto_init() {
+	if File_wasm_proto != nil {
 		return
 	}
-	file_workflows_wasm_pb_wasm_proto_msgTypes[2].OneofWrappers = []any{
+	file_wasm_proto_msgTypes[2].OneofWrappers = []any{
 		(*Request_ComputeRequest)(nil),
 		(*Request_SpecRequest)(nil),
 	}
-	file_workflows_wasm_pb_wasm_proto_msgTypes[7].OneofWrappers = []any{
+	file_wasm_proto_msgTypes[7].OneofWrappers = []any{
 		(*Response_ComputeResponse)(nil),
 		(*Response_SpecResponse)(nil),
 	}
-	file_workflows_wasm_pb_wasm_proto_msgTypes[17].OneofWrappers = []any{
+	file_wasm_proto_msgTypes[17].OneofWrappers = []any{
 		(*ExecuteRequest_Subscribe)(nil),
 		(*ExecuteRequest_Trigger)(nil),
 	}
-	file_workflows_wasm_pb_wasm_proto_msgTypes[18].OneofWrappers = []any{
+	file_wasm_proto_msgTypes[18].OneofWrappers = []any{
 		(*ExecutionResult_Payload)(nil),
 		(*ExecutionResult_Error)(nil),
 		(*ExecutionResult_TriggerSubscriptions)(nil),
@@ -1552,17 +1553,17 @@ func file_workflows_wasm_pb_wasm_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_workflows_wasm_pb_wasm_proto_rawDesc), len(file_workflows_wasm_pb_wasm_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wasm_proto_rawDesc), len(file_wasm_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_workflows_wasm_pb_wasm_proto_goTypes,
-		DependencyIndexes: file_workflows_wasm_pb_wasm_proto_depIdxs,
-		MessageInfos:      file_workflows_wasm_pb_wasm_proto_msgTypes,
+		GoTypes:           file_wasm_proto_goTypes,
+		DependencyIndexes: file_wasm_proto_depIdxs,
+		MessageInfos:      file_wasm_proto_msgTypes,
 	}.Build()
-	File_workflows_wasm_pb_wasm_proto = out.File
-	file_workflows_wasm_pb_wasm_proto_goTypes = nil
-	file_workflows_wasm_pb_wasm_proto_depIdxs = nil
+	File_wasm_proto = out.File
+	file_wasm_proto_goTypes = nil
+	file_wasm_proto_depIdxs = nil
 }

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/consensus/ocr3/types/ocr3_config_types.proto
+// source: ocr3_config_types.proto
 
 package types
 
@@ -40,7 +40,7 @@ type ReportingPluginConfig struct {
 
 func (x *ReportingPluginConfig) Reset() {
 	*x = ReportingPluginConfig{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_msgTypes[0]
+	mi := &file_ocr3_config_types_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +52,7 @@ func (x *ReportingPluginConfig) String() string {
 func (*ReportingPluginConfig) ProtoMessage() {}
 
 func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_msgTypes[0]
+	mi := &file_ocr3_config_types_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +65,7 @@ func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginConfig.ProtoReflect.Descriptor instead.
 func (*ReportingPluginConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescGZIP(), []int{0}
+	return file_ocr3_config_types_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ReportingPluginConfig) GetMaxQueryLengthBytes() uint32 {
@@ -124,11 +124,11 @@ func (x *ReportingPluginConfig) GetRequestTimeout() *durationpb.Duration {
 	return nil
 }
 
-var File_capabilities_consensus_ocr3_types_ocr3_config_types_proto protoreflect.FileDescriptor
+var File_ocr3_config_types_proto protoreflect.FileDescriptor
 
-const file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDesc = "" +
+const file_ocr3_config_types_proto_rawDesc = "" +
 	"\n" +
-	"9capabilities/consensus/ocr3/types/ocr3_config_types.proto\x12\x11ocr3_config_types\x1a\x1egoogle/protobuf/duration.proto\"\xba\x03\n" +
+	"\x17ocr3_config_types.proto\x12\x11ocr3_config_types\x1a\x1egoogle/protobuf/duration.proto\"\xba\x03\n" +
 	"\x15ReportingPluginConfig\x120\n" +
 	"\x13maxQueryLengthBytes\x18\x01 \x01(\rR\x13maxQueryLengthBytes\x12<\n" +
 	"\x19maxObservationLengthBytes\x18\x02 \x01(\rR\x19maxObservationLengthBytes\x124\n" +
@@ -140,23 +140,23 @@ const file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDesc = "
 	"\x0erequestTimeout\x18\b \x01(\v2\x19.google.protobuf.DurationR\x0erequestTimeoutB#Z!capabilities/consensus/ocr3/typesb\x06proto3"
 
 var (
-	file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescOnce sync.Once
-	file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescData []byte
+	file_ocr3_config_types_proto_rawDescOnce sync.Once
+	file_ocr3_config_types_proto_rawDescData []byte
 )
 
-func file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescGZIP() []byte {
-	file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescOnce.Do(func() {
-		file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDesc), len(file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDesc)))
+func file_ocr3_config_types_proto_rawDescGZIP() []byte {
+	file_ocr3_config_types_proto_rawDescOnce.Do(func() {
+		file_ocr3_config_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_ocr3_config_types_proto_rawDesc), len(file_ocr3_config_types_proto_rawDesc)))
 	})
-	return file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDescData
+	return file_ocr3_config_types_proto_rawDescData
 }
 
-var file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_goTypes = []any{
+var file_ocr3_config_types_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_ocr3_config_types_proto_goTypes = []any{
 	(*ReportingPluginConfig)(nil), // 0: ocr3_config_types.ReportingPluginConfig
 	(*durationpb.Duration)(nil),   // 1: google.protobuf.Duration
 }
-var file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_depIdxs = []int32{
+var file_ocr3_config_types_proto_depIdxs = []int32{
 	1, // 0: ocr3_config_types.ReportingPluginConfig.requestTimeout:type_name -> google.protobuf.Duration
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -165,26 +165,26 @@ var file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_depIdxs = []i
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_init() }
-func file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_init() {
-	if File_capabilities_consensus_ocr3_types_ocr3_config_types_proto != nil {
+func init() { file_ocr3_config_types_proto_init() }
+func file_ocr3_config_types_proto_init() {
+	if File_ocr3_config_types_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDesc), len(file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ocr3_config_types_proto_rawDesc), len(file_ocr3_config_types_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_goTypes,
-		DependencyIndexes: file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_depIdxs,
-		MessageInfos:      file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_msgTypes,
+		GoTypes:           file_ocr3_config_types_proto_goTypes,
+		DependencyIndexes: file_ocr3_config_types_proto_depIdxs,
+		MessageInfos:      file_ocr3_config_types_proto_msgTypes,
 	}.Build()
-	File_capabilities_consensus_ocr3_types_ocr3_config_types_proto = out.File
-	file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_goTypes = nil
-	file_capabilities_consensus_ocr3_types_ocr3_config_types_proto_depIdxs = nil
+	File_ocr3_config_types_proto = out.File
+	file_ocr3_config_types_proto_goTypes = nil
+	file_ocr3_config_types_proto_depIdxs = nil
 }

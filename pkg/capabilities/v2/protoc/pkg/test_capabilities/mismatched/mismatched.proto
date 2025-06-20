@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
     
 package capabilities.v2.protoc.pkg.test_capabilities.mismatched;;
 
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 import "google/protobuf/empty.proto";
 
 message Input {
@@ -12,8 +12,8 @@ message Input {
 }
 
 service Mismatched {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "example@1.0.0"
   };
   rpc ExampleMethod (Input) returns (google.protobuf.Empty);

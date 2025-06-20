@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/triggers/http/http_trigger.proto
+// source: http_trigger.proto
 
 package http
 
@@ -53,11 +53,11 @@ func (x KeyType) String() string {
 }
 
 func (KeyType) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_triggers_http_http_trigger_proto_enumTypes[0].Descriptor()
+	return file_http_trigger_proto_enumTypes[0].Descriptor()
 }
 
 func (KeyType) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_triggers_http_http_trigger_proto_enumTypes[0]
+	return &file_http_trigger_proto_enumTypes[0]
 }
 
 func (x KeyType) Number() protoreflect.EnumNumber {
@@ -66,7 +66,7 @@ func (x KeyType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use KeyType.Descriptor instead.
 func (KeyType) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP(), []int{0}
+	return file_http_trigger_proto_rawDescGZIP(), []int{0}
 }
 
 type Config struct {
@@ -79,7 +79,7 @@ type Config struct {
 
 func (x *Config) Reset() {
 	*x = Config{}
-	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[0]
+	mi := &file_http_trigger_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -91,7 +91,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[0]
+	mi := &file_http_trigger_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -104,7 +104,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP(), []int{0}
+	return file_http_trigger_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Config) GetAuthorizedKeys() []*AuthorizedKey {
@@ -126,7 +126,7 @@ type Payload struct {
 
 func (x *Payload) Reset() {
 	*x = Payload{}
-	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[1]
+	mi := &file_http_trigger_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +138,7 @@ func (x *Payload) String() string {
 func (*Payload) ProtoMessage() {}
 
 func (x *Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[1]
+	mi := &file_http_trigger_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +151,7 @@ func (x *Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Payload.ProtoReflect.Descriptor instead.
 func (*Payload) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP(), []int{1}
+	return file_http_trigger_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Payload) GetInput() *structpb.Struct {
@@ -179,7 +179,7 @@ type AuthorizedKey struct {
 
 func (x *AuthorizedKey) Reset() {
 	*x = AuthorizedKey{}
-	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[2]
+	mi := &file_http_trigger_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +191,7 @@ func (x *AuthorizedKey) String() string {
 func (*AuthorizedKey) ProtoMessage() {}
 
 func (x *AuthorizedKey) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes[2]
+	mi := &file_http_trigger_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -204,7 +204,7 @@ func (x *AuthorizedKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthorizedKey.ProtoReflect.Descriptor instead.
 func (*AuthorizedKey) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP(), []int{2}
+	return file_http_trigger_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AuthorizedKey) GetType() KeyType {
@@ -221,11 +221,11 @@ func (x *AuthorizedKey) GetPublicKey() string {
 	return ""
 }
 
-var File_capabilities_v2_triggers_http_http_trigger_proto protoreflect.FileDescriptor
+var File_http_trigger_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc = "" +
+const file_http_trigger_proto_rawDesc = "" +
 	"\n" +
-	"0capabilities/v2/triggers/http/http_trigger.proto\x12\x0fhttp_trigger.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"Q\n" +
+	"\x12http_trigger.proto\x12\x0fhttp_trigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"Q\n" +
 	"\x06Config\x12G\n" +
 	"\x0fauthorized_keys\x18\x01 \x03(\v2\x1e.http_trigger.v1.AuthorizedKeyR\x0eauthorizedKeys\"j\n" +
 	"\aPayload\x12-\n" +
@@ -237,32 +237,32 @@ const file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc = "" +
 	"public_key\x18\x02 \x01(\tR\tpublicKey*.\n" +
 	"\aKeyType\x12\x18\n" +
 	"\x14KEY_TYPE_UNSPECIFIED\x10\x00\x12\t\n" +
-	"\x05ECDSA\x10\x012h\n" +
+	"\x05ECDSA\x10\x012j\n" +
 	"\x04HTTP\x12F\n" +
-	"\aTrigger\x12\x17.http_trigger.v1.Config\x1a\x18.http_trigger.v1.Payload\"\x06\x8a\xb5\x18\x02\b\x010\x01\x1a\x18\x82\xb5\x18\x14\x12\x12http-trigger@0.1.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/httpb\x06proto3"
+	"\aTrigger\x12\x17.http_trigger.v1.Config\x1a\x18.http_trigger.v1.Payload\"\x06\x8a\xb5\x18\x02\b\x010\x01\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-trigger@0.1.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/httpb\x06proto3"
 
 var (
-	file_capabilities_v2_triggers_http_http_trigger_proto_rawDescOnce sync.Once
-	file_capabilities_v2_triggers_http_http_trigger_proto_rawDescData []byte
+	file_http_trigger_proto_rawDescOnce sync.Once
+	file_http_trigger_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_triggers_http_http_trigger_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_triggers_http_http_trigger_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_triggers_http_http_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc), len(file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc)))
+func file_http_trigger_proto_rawDescGZIP() []byte {
+	file_http_trigger_proto_rawDescOnce.Do(func() {
+		file_http_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_http_trigger_proto_rawDesc), len(file_http_trigger_proto_rawDesc)))
 	})
-	return file_capabilities_v2_triggers_http_http_trigger_proto_rawDescData
+	return file_http_trigger_proto_rawDescData
 }
 
-var file_capabilities_v2_triggers_http_http_trigger_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_capabilities_v2_triggers_http_http_trigger_proto_goTypes = []any{
+var file_http_trigger_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_http_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_http_trigger_proto_goTypes = []any{
 	(KeyType)(0),            // 0: http_trigger.v1.KeyType
 	(*Config)(nil),          // 1: http_trigger.v1.Config
 	(*Payload)(nil),         // 2: http_trigger.v1.Payload
 	(*AuthorizedKey)(nil),   // 3: http_trigger.v1.AuthorizedKey
 	(*structpb.Struct)(nil), // 4: google.protobuf.Struct
 }
-var file_capabilities_v2_triggers_http_http_trigger_proto_depIdxs = []int32{
+var file_http_trigger_proto_depIdxs = []int32{
 	3, // 0: http_trigger.v1.Config.authorized_keys:type_name -> http_trigger.v1.AuthorizedKey
 	4, // 1: http_trigger.v1.Payload.input:type_name -> google.protobuf.Struct
 	3, // 2: http_trigger.v1.Payload.key:type_name -> http_trigger.v1.AuthorizedKey
@@ -276,27 +276,27 @@ var file_capabilities_v2_triggers_http_http_trigger_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_triggers_http_http_trigger_proto_init() }
-func file_capabilities_v2_triggers_http_http_trigger_proto_init() {
-	if File_capabilities_v2_triggers_http_http_trigger_proto != nil {
+func init() { file_http_trigger_proto_init() }
+func file_http_trigger_proto_init() {
+	if File_http_trigger_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc), len(file_capabilities_v2_triggers_http_http_trigger_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_http_trigger_proto_rawDesc), len(file_http_trigger_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_triggers_http_http_trigger_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_triggers_http_http_trigger_proto_depIdxs,
-		EnumInfos:         file_capabilities_v2_triggers_http_http_trigger_proto_enumTypes,
-		MessageInfos:      file_capabilities_v2_triggers_http_http_trigger_proto_msgTypes,
+		GoTypes:           file_http_trigger_proto_goTypes,
+		DependencyIndexes: file_http_trigger_proto_depIdxs,
+		EnumInfos:         file_http_trigger_proto_enumTypes,
+		MessageInfos:      file_http_trigger_proto_msgTypes,
 	}.Build()
-	File_capabilities_v2_triggers_http_http_trigger_proto = out.File
-	file_capabilities_v2_triggers_http_http_trigger_proto_goTypes = nil
-	file_capabilities_v2_triggers_http_http_trigger_proto_depIdxs = nil
+	File_http_trigger_proto = out.File
+	file_http_trigger_proto_goTypes = nil
+	file_http_trigger_proto_depIdxs = nil
 }

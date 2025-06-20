@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/pb/triggers.proto
+// source: triggers.proto
 
 package pb
 
@@ -34,7 +34,7 @@ type OCRTriggerEvent struct {
 
 func (x *OCRTriggerEvent) Reset() {
 	*x = OCRTriggerEvent{}
-	mi := &file_capabilities_pb_triggers_proto_msgTypes[0]
+	mi := &file_triggers_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *OCRTriggerEvent) String() string {
 func (*OCRTriggerEvent) ProtoMessage() {}
 
 func (x *OCRTriggerEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_triggers_proto_msgTypes[0]
+	mi := &file_triggers_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *OCRTriggerEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OCRTriggerEvent.ProtoReflect.Descriptor instead.
 func (*OCRTriggerEvent) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_triggers_proto_rawDescGZIP(), []int{0}
+	return file_triggers_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *OCRTriggerEvent) GetConfigDigest() []byte {
@@ -101,7 +101,7 @@ type OCRAttributedOnchainSignature struct {
 
 func (x *OCRAttributedOnchainSignature) Reset() {
 	*x = OCRAttributedOnchainSignature{}
-	mi := &file_capabilities_pb_triggers_proto_msgTypes[1]
+	mi := &file_triggers_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +113,7 @@ func (x *OCRAttributedOnchainSignature) String() string {
 func (*OCRAttributedOnchainSignature) ProtoMessage() {}
 
 func (x *OCRAttributedOnchainSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_triggers_proto_msgTypes[1]
+	mi := &file_triggers_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +126,7 @@ func (x *OCRAttributedOnchainSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OCRAttributedOnchainSignature.ProtoReflect.Descriptor instead.
 func (*OCRAttributedOnchainSignature) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_triggers_proto_rawDescGZIP(), []int{1}
+	return file_triggers_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *OCRAttributedOnchainSignature) GetSignature() []byte {
@@ -154,7 +154,7 @@ type OCRTriggerReport struct {
 
 func (x *OCRTriggerReport) Reset() {
 	*x = OCRTriggerReport{}
-	mi := &file_capabilities_pb_triggers_proto_msgTypes[2]
+	mi := &file_triggers_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -166,7 +166,7 @@ func (x *OCRTriggerReport) String() string {
 func (*OCRTriggerReport) ProtoMessage() {}
 
 func (x *OCRTriggerReport) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_pb_triggers_proto_msgTypes[2]
+	mi := &file_triggers_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -179,7 +179,7 @@ func (x *OCRTriggerReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OCRTriggerReport.ProtoReflect.Descriptor instead.
 func (*OCRTriggerReport) Descriptor() ([]byte, []int) {
-	return file_capabilities_pb_triggers_proto_rawDescGZIP(), []int{2}
+	return file_triggers_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *OCRTriggerReport) GetEventID() string {
@@ -203,11 +203,11 @@ func (x *OCRTriggerReport) GetOutputs() *pb.Map {
 	return nil
 }
 
-var File_capabilities_pb_triggers_proto protoreflect.FileDescriptor
+var File_triggers_proto protoreflect.FileDescriptor
 
-const file_capabilities_pb_triggers_proto_rawDesc = "" +
+const file_triggers_proto_rawDesc = "" +
 	"\n" +
-	"\x1ecapabilities/pb/triggers.proto\x12\x02v1\x1a\x16values/pb/values.proto\"\x9a\x01\n" +
+	"\x0etriggers.proto\x12\x02v1\x1a\x16values/v1/values.proto\"\x9a\x01\n" +
 	"\x0fOCRTriggerEvent\x12\"\n" +
 	"\fconfigDigest\x18\x01 \x01(\fR\fconfigDigest\x12\x14\n" +
 	"\x05seqNr\x18\x02 \x01(\x04R\x05seqNr\x12\x16\n" +
@@ -215,34 +215,34 @@ const file_capabilities_pb_triggers_proto_rawDesc = "" +
 	"\x04sigs\x18\x04 \x03(\v2!.v1.OCRAttributedOnchainSignatureR\x04sigs\"U\n" +
 	"\x1dOCRAttributedOnchainSignature\x12\x1c\n" +
 	"\tsignature\x18\x01 \x01(\fR\tsignature\x12\x16\n" +
-	"\x06signer\x18\x02 \x01(\rR\x06signer\"q\n" +
+	"\x06signer\x18\x02 \x01(\rR\x06signer\"t\n" +
 	"\x10OCRTriggerReport\x12\x18\n" +
 	"\aeventID\x18\x01 \x01(\tR\aeventID\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x04R\ttimestamp\x12%\n" +
-	"\aoutputs\x18\x03 \x01(\v2\v.values.MapR\aoutputsBBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
+	"\ttimestamp\x18\x02 \x01(\x04R\ttimestamp\x12(\n" +
+	"\aoutputs\x18\x03 \x01(\v2\x0e.values.v1.MapR\aoutputsBBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
 
 var (
-	file_capabilities_pb_triggers_proto_rawDescOnce sync.Once
-	file_capabilities_pb_triggers_proto_rawDescData []byte
+	file_triggers_proto_rawDescOnce sync.Once
+	file_triggers_proto_rawDescData []byte
 )
 
-func file_capabilities_pb_triggers_proto_rawDescGZIP() []byte {
-	file_capabilities_pb_triggers_proto_rawDescOnce.Do(func() {
-		file_capabilities_pb_triggers_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_pb_triggers_proto_rawDesc), len(file_capabilities_pb_triggers_proto_rawDesc)))
+func file_triggers_proto_rawDescGZIP() []byte {
+	file_triggers_proto_rawDescOnce.Do(func() {
+		file_triggers_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_triggers_proto_rawDesc), len(file_triggers_proto_rawDesc)))
 	})
-	return file_capabilities_pb_triggers_proto_rawDescData
+	return file_triggers_proto_rawDescData
 }
 
-var file_capabilities_pb_triggers_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_capabilities_pb_triggers_proto_goTypes = []any{
+var file_triggers_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_triggers_proto_goTypes = []any{
 	(*OCRTriggerEvent)(nil),               // 0: v1.OCRTriggerEvent
 	(*OCRAttributedOnchainSignature)(nil), // 1: v1.OCRAttributedOnchainSignature
 	(*OCRTriggerReport)(nil),              // 2: v1.OCRTriggerReport
-	(*pb.Map)(nil),                        // 3: values.Map
+	(*pb.Map)(nil),                        // 3: values.v1.Map
 }
-var file_capabilities_pb_triggers_proto_depIdxs = []int32{
+var file_triggers_proto_depIdxs = []int32{
 	1, // 0: v1.OCRTriggerEvent.sigs:type_name -> v1.OCRAttributedOnchainSignature
-	3, // 1: v1.OCRTriggerReport.outputs:type_name -> values.Map
+	3, // 1: v1.OCRTriggerReport.outputs:type_name -> values.v1.Map
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -250,26 +250,26 @@ var file_capabilities_pb_triggers_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_pb_triggers_proto_init() }
-func file_capabilities_pb_triggers_proto_init() {
-	if File_capabilities_pb_triggers_proto != nil {
+func init() { file_triggers_proto_init() }
+func file_triggers_proto_init() {
+	if File_triggers_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_pb_triggers_proto_rawDesc), len(file_capabilities_pb_triggers_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_triggers_proto_rawDesc), len(file_triggers_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_capabilities_pb_triggers_proto_goTypes,
-		DependencyIndexes: file_capabilities_pb_triggers_proto_depIdxs,
-		MessageInfos:      file_capabilities_pb_triggers_proto_msgTypes,
+		GoTypes:           file_triggers_proto_goTypes,
+		DependencyIndexes: file_triggers_proto_depIdxs,
+		MessageInfos:      file_triggers_proto_msgTypes,
 	}.Build()
-	File_capabilities_pb_triggers_proto = out.File
-	file_capabilities_pb_triggers_proto_goTypes = nil
-	file_capabilities_pb_triggers_proto_depIdxs = nil
+	File_triggers_proto = out.File
+	file_triggers_proto_goTypes = nil
+	file_triggers_proto_depIdxs = nil
 }

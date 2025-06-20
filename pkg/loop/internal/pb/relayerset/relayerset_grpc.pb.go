@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: loop/internal/pb/relayerset/relayerset.proto
+// source: relayerset.proto
 
 package relayerset
 
@@ -842,7 +842,7 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/relayerset/relayerset.proto",
+	Metadata: "relayerset.proto",
 }
 
 const (
@@ -1362,5 +1362,5 @@ var EVMRelayerSet_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/relayerset/relayerset.proto",
+	Metadata: "relayerset.proto",
 }

@@ -21,6 +21,7 @@ pkg/capabilities/v2/protoc/protoc-gen-cre
 
 # Dependency directories (remove the comment below to include it)
 vendor/
+proto_vendor/
 
 # IntelliJ IDE
 .idea

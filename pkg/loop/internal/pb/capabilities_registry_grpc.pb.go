@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: loop/internal/pb/capabilities_registry.proto
+// source: capabilities_registry.proto
 
 package pb
 
@@ -384,5 +384,5 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/capabilities_registry.proto",
+	Metadata: "capabilities_registry.proto",
 }

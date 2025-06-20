@@ -4,7 +4,7 @@ package basic_test_action.v1;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction";
 
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 
 message Inputs {
   bool input_thing = 1;
@@ -15,8 +15,8 @@ message Outputs {
 }
 
 service BasicAction {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "basic-test-action@1.0.0"
   };
   rpc PerformAction (Inputs) returns (Outputs);

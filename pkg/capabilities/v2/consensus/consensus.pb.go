@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/consensus/consensus.proto
+// source: consensus.proto
 
 package consensus
 
@@ -23,21 +23,21 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_capabilities_v2_consensus_consensus_proto protoreflect.FileDescriptor
+var File_consensus_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_consensus_consensus_proto_rawDesc = "" +
+const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	")capabilities/v2/consensus/consensus.proto\x12\x14cre.sdk.v2.consensus\x1a\x16values/pb/values.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto2^\n" +
-	"\tConsensus\x12:\n" +
-	"\x06Simple\x12!.cre.sdk.v2.SimpleConsensusInputs\x1a\r.values.Value\x1a\x15\x82\xb5\x18\x11\x12\x0fconsensus@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
+	"\x0fconsensus.proto\x12\x10sdk.v2.consensus\x1a\x16values/v1/values.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x15sdk/v1alpha/sdk.proto2d\n" +
+	"\tConsensus\x12>\n" +
+	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x10.values.v1.Value\x1a\x17\x82\xb5\x18\x13\b\x01\x12\x0fconsensus@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
 
-var file_capabilities_v2_consensus_consensus_proto_goTypes = []any{
-	(*pb.SimpleConsensusInputs)(nil), // 0: cre.sdk.v2.SimpleConsensusInputs
-	(*pb1.Value)(nil),                // 1: values.Value
+var file_consensus_proto_goTypes = []any{
+	(*pb.SimpleConsensusInputs)(nil), // 0: sdk.v1alpha.SimpleConsensusInputs
+	(*pb1.Value)(nil),                // 1: values.v1.Value
 }
-var file_capabilities_v2_consensus_consensus_proto_depIdxs = []int32{
-	0, // 0: cre.sdk.v2.consensus.Consensus.Simple:input_type -> cre.sdk.v2.SimpleConsensusInputs
-	1, // 1: cre.sdk.v2.consensus.Consensus.Simple:output_type -> values.Value
+var file_consensus_proto_depIdxs = []int32{
+	0, // 0: sdk.v2.consensus.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
+	1, // 1: sdk.v2.consensus.Consensus.Simple:output_type -> values.v1.Value
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -45,25 +45,25 @@ var file_capabilities_v2_consensus_consensus_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_consensus_consensus_proto_init() }
-func file_capabilities_v2_consensus_consensus_proto_init() {
-	if File_capabilities_v2_consensus_consensus_proto != nil {
+func init() { file_consensus_proto_init() }
+func file_consensus_proto_init() {
+	if File_consensus_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_consensus_consensus_proto_rawDesc), len(file_capabilities_v2_consensus_consensus_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_consensus_proto_rawDesc), len(file_consensus_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_consensus_consensus_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_consensus_consensus_proto_depIdxs,
+		GoTypes:           file_consensus_proto_goTypes,
+		DependencyIndexes: file_consensus_proto_depIdxs,
 	}.Build()
-	File_capabilities_v2_consensus_consensus_proto = out.File
-	file_capabilities_v2_consensus_consensus_proto_goTypes = nil
-	file_capabilities_v2_consensus_consensus_proto_depIdxs = nil
+	File_consensus_proto = out.File
+	file_consensus_proto_goTypes = nil
+	file_consensus_proto_depIdxs = nil
 }

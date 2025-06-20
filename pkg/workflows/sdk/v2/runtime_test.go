@@ -154,7 +154,7 @@ func (h *medianTestFieldDescription[T]) Descriptor() *pb.ConsensusDescriptor {
 		Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 			FieldsMap: &pb.FieldsMap{
 				Fields: map[string]*pb.ConsensusDescriptor{
-					"Test": {Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_MEDIAN}},
+					"Test": {Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN}},
 				},
 			},
 		},

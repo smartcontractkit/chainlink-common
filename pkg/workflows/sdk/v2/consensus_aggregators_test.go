@@ -17,14 +17,14 @@ import (
 func TestConsensusMedianAggregation(t *testing.T) {
 	descriptor := sdk.ConsensusMedianAggregation[int]()
 	require.NoError(t, descriptor.Err())
-	assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_MEDIAN)
+	assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_AGGREGATION_TYPE_MEDIAN)
 }
 
 func TestConsensusIdenticalAggregation(t *testing.T) {
 	t.Run("valid types", func(t *testing.T) {
 		descriptor := sdk.ConsensusIdenticalAggregation[int]()
 		require.NoError(t, descriptor.Err())
-		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_IDENTICAL)
+		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_AGGREGATION_TYPE_IDENTICAL)
 	})
 
 	t.Run("invalid types", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestConsensusCommonPrefixAggregation(t *testing.T) {
 	t.Run("valid primitive types", func(t *testing.T) {
 		descriptor, err := sdk.ConsensusCommonPrefixAggregation[string]()()
 		require.NoError(t, err)
-		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_COMMON_PREFIX)
+		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_AGGREGATION_TYPE_COMMON_PREFIX)
 	})
 
 	t.Run("invalid primitive types", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestConsensusCommonSuffixAggregation(t *testing.T) {
 	t.Run("valid primitive types", func(t *testing.T) {
 		descriptor, err := sdk.ConsensusCommonSuffixAggregation[string]()()
 		require.NoError(t, err)
-		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_COMMON_SUFFIX)
+		assert.Equal(t, descriptor.Descriptor().GetAggregation(), pb.AggregationType_AGGREGATION_TYPE_COMMON_SUFFIX)
 	})
 
 	t.Run("invalid primitive types", func(t *testing.T) {
@@ -94,27 +94,27 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 						"PVal": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 						"Slice": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 						"Array": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 						"Bi": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 					},
@@ -136,7 +136,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_COMMON_PREFIX,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_PREFIX,
 							},
 						},
 					},
@@ -158,7 +158,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_COMMON_SUFFIX,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_SUFFIX,
 							},
 						},
 					},
@@ -187,7 +187,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 									Fields: map[string]*pb.ConsensusDescriptor{
 										"Score": {
 											Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-												Aggregation: pb.AggregationType_MEDIAN,
+												Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 											},
 										},
 									},
@@ -218,12 +218,12 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"In": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 						"PIn": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 					},
@@ -252,12 +252,12 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"renamed_val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 						"renamed_val_inner": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 					},
@@ -309,7 +309,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 					},
@@ -346,7 +346,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_IDENTICAL,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 							},
 						},
 					},
@@ -373,7 +373,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_COMMON_PREFIX,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_PREFIX,
 							},
 						},
 					},
@@ -404,7 +404,7 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 					Fields: map[string]*pb.ConsensusDescriptor{
 						"Val": {
 							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-								Aggregation: pb.AggregationType_COMMON_SUFFIX,
+								Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_SUFFIX,
 							},
 						},
 					},
@@ -445,12 +445,12 @@ func testMedianField[T any](t *testing.T) {
 				Fields: map[string]*pb.ConsensusDescriptor{
 					"Val": {
 						Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-							Aggregation: pb.AggregationType_MEDIAN,
+							Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 						},
 					},
 					"PVal": {
 						Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-							Aggregation: pb.AggregationType_MEDIAN,
+							Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 						},
 					},
 				},

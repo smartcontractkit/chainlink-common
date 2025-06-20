@@ -20,13 +20,13 @@ type Primitive interface {
 }
 
 func ConsensusMedianAggregation[T NumericType]() ConsensusAggregation[T] {
-	return &consensusDescriptor[T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_MEDIAN}}
+	return &consensusDescriptor[T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN}}
 }
 
 func ConsensusIdenticalAggregation[T any]() ConsensusAggregation[T] {
 	var t T
 	if isIdenticalType(reflect.TypeOf(t)) {
-		return &consensusDescriptor[T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_IDENTICAL}}
+		return &consensusDescriptor[T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL}}
 	}
 
 	return &consensusDescriptorError[T]{Error: fmt.Errorf("%T is not a valid type for identical consensus", t)}
@@ -36,7 +36,7 @@ func ConsensusCommonPrefixAggregation[T any]() func() (ConsensusAggregation[[]T]
 	return func() (ConsensusAggregation[[]T], error) {
 		var t []T
 		if isIdenticalSliceOrArray(reflect.TypeOf(t)) {
-			return &consensusDescriptor[[]T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_PREFIX}}, nil
+			return &consensusDescriptor[[]T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_PREFIX}}, nil
 		}
 
 		return &consensusDescriptor[[]T]{}, fmt.Errorf("%T is not a valid type for common prefix consensus", t)
@@ -47,7 +47,7 @@ func ConsensusCommonSuffixAggregation[T any]() func() (ConsensusAggregation[[]T]
 	return func() (ConsensusAggregation[[]T], error) {
 		var t []T
 		if isIdenticalSliceOrArray(reflect.TypeOf(t)) {
-			return &consensusDescriptor[[]T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_SUFFIX}}, nil
+			return &consensusDescriptor[[]T]{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_SUFFIX}}, nil
 		}
 
 		return &consensusDescriptor[[]T]{}, fmt.Errorf("%T is not a valid type for common prefix consensus", t)
@@ -114,22 +114,22 @@ func parseConsensusTag(t reflect.Type) (*pb.ConsensusDescriptor, error) {
 			if !isNumeric(tpe) {
 				return nil, fmt.Errorf("field %s marked as median but is not a numeric type", field.Name)
 			}
-			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_MEDIAN}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN}}
 		case "identical":
 			if !isIdenticalType(tpe) {
 				return nil, fmt.Errorf("field %s marked as identical but is not a valid type", field.Name)
 			}
-			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_IDENTICAL}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL}}
 		case "common_prefix":
 			if !isIdenticalSliceOrArray(tpe) {
 				return nil, fmt.Errorf("field %s marked as common_prefix but is not slice/array", field.Name)
 			}
-			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_PREFIX}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_PREFIX}}
 		case "common_suffix":
 			if !isIdenticalSliceOrArray(field.Type) {
 				return nil, fmt.Errorf("field %s marked as common_suffix but is not slice/array", field.Name)
 			}
-			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_COMMON_SUFFIX}}
+			descriptors[serializedName] = &pb.ConsensusDescriptor{Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_COMMON_SUFFIX}}
 		case "nested":
 			descriptors[serializedName], err = parseConsensusTag(field.Type)
 			if err != nil {

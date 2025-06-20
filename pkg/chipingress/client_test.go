@@ -3,6 +3,7 @@ package chipingress
 import (
 	"context"
 	"testing"
+	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ func TestClient(t *testing.T) {
 		testProto := pb.PingResponse{Message: "testing"}
 		protoBytes, err := proto.Marshal(&testProto)
 		require.NoError(t, err)
-		event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes)
+		event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes, nil)
 		require.NoError(t, err)
 
 		// Publish event
@@ -160,8 +161,14 @@ func TestNewEvent(t *testing.T) {
 	// Create new event
 	testProto := pb.PingResponse{Message: "testing"}
 	protoBytes, err := proto.Marshal(&testProto)
+	attributes := map[string]any{
+		"datacontenttype": "application/protobuf",
+		"dataschema":      "https://example.com/schema",
+		"subject":         "example-subject",
+		"time":            time.Now(),
+	}
 	assert.NoError(t, err)
-	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes)
+	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes, attributes)
 	assert.NoError(t, err)
 
 	// There should be no validation errors
@@ -172,6 +179,11 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, "some-domain_here", event.Source())
 	assert.Equal(t, "platform.on_chain.forwarder.ReportProcessed", event.Type())
 	assert.NotEmpty(t, event.ID())
+	assert.Equal(t, "application/protobuf", event.DataContentType())
+	assert.Equal(t, "https://example.com/schema", event.DataSchema())
+	assert.Equal(t, "example-subject", event.Subject())
+	assert.Equal(t, attributes["time"].(time.Time).UTC(), event.Time())
+	assert.NotEmpty(t, event.Extensions()["recordedtime"])
 
 	// Assert the event data was set as expected
 	var resultProto pb.PingResponse
@@ -220,13 +232,13 @@ func TestPublishBatch(t *testing.T) {
 		testProto1 := pb.PingResponse{Message: "testing1"}
 		protoBytes1, err := proto.Marshal(&testProto1)
 		require.NoError(t, err)
-		event1, err := NewEvent("domain1", "entity.event1", protoBytes1)
+		event1, err := NewEvent("domain1", "entity.event1", protoBytes1, nil)
 		require.NoError(t, err)
 
 		testProto2 := pb.PingResponse{Message: "testing2"}
 		protoBytes2, err := proto.Marshal(&testProto2)
 		require.NoError(t, err)
-		event2, err := NewEvent("domain2", "entity.event2", protoBytes2)
+		event2, err := NewEvent("domain2", "entity.event2", protoBytes2, nil)
 		require.NoError(t, err)
 
 		events := []ce.Event{event1, event2}
@@ -270,7 +282,7 @@ func TestPublishBatch(t *testing.T) {
 		testProto := pb.PingResponse{Message: "testing"}
 		protoBytes, err := proto.Marshal(&testProto)
 		require.NoError(t, err)
-		event, err := NewEvent("domain", "entity.event", protoBytes)
+		event, err := NewEvent("domain", "entity.event", protoBytes, nil)
 		require.NoError(t, err)
 
 		events := []ce.Event{event}

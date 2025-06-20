@@ -8,9 +8,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // HealthReporter should be implemented by any type requiring health checks.
@@ -52,7 +49,7 @@ type HealthChecker struct {
 	chStop chan struct{}
 	chDone chan struct{}
 
-	ver, sha string
+	cfg HealthCheckerConfig
 
 	servicesMu sync.RWMutex
 	services   map[string]HealthReporter
@@ -64,34 +61,12 @@ type HealthChecker struct {
 
 const interval = 15 * time.Second
 
-var (
-	healthStatus = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "health",
-			Help: "Health status by service",
-		},
-		[]string{"service_id"},
-	)
-	uptimeSeconds = promauto.NewCounter(
-		prometheus.CounterOpts{
-			Name: "uptime_seconds",
-			Help: "Uptime of the application measured in seconds",
-		},
-	)
-	version = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "version",
-			Help: "Application version information",
-		},
-		[]string{"version", "commit"},
-	)
-)
-
-// Deprecated: Use NewHealthChecker
+// Deprecated: Use HealthCheckerConfig.New or a helper like promhealth.NewChecker for the old behavior.
 func NewChecker(ver, sha string) *HealthChecker {
 	return NewHealthChecker(ver, sha)
 }
 
+// Deprecated: Use HealthCheckerConfig.New or a helper like promhealth.NewChecker for the old behavior.
 func NewHealthChecker(ver, sha string) *HealthChecker {
 	if ver == "" || sha == "" {
 		if bi, ok := debug.ReadBuildInfo(); ok {
@@ -106,9 +81,55 @@ func NewHealthChecker(ver, sha string) *HealthChecker {
 	if len(sha) > 7 {
 		sha = sha[:7]
 	}
+	return HealthCheckerConfig{Ver: ver, Sha: sha}.New()
+}
+
+type HealthCheckerConfig struct {
+	// Optionally override debug.BuildInfo
+	Ver, Sha string
+	// Optional hooks for reporting.
+	IncVersion func(ver string, sha string)
+	AddUptime  func(duration time.Duration)
+	SetStatus  func(name string, status int)
+	Delete     func(name string)
+}
+
+func (cfg HealthCheckerConfig) initVerSha() {
+	if cfg.Ver == "" || cfg.Sha == "" {
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			if cfg.Ver == "" {
+				cfg.Ver = bi.Main.Version
+			}
+			if cfg.Sha == "" {
+				cfg.Sha = bi.Main.Sum
+			}
+		}
+	}
+	if len(cfg.Sha) > 7 {
+		cfg.Sha = cfg.Sha[:7]
+	}
+}
+
+func (cfg HealthCheckerConfig) setNoopHooks() {
+	if cfg.IncVersion == nil {
+		cfg.IncVersion = func(ver, sha string) {}
+	}
+	if cfg.AddUptime == nil {
+		cfg.AddUptime = func(d time.Duration) {}
+	}
+	if cfg.SetStatus == nil {
+		cfg.SetStatus = func(name string, status int) {}
+	}
+	if cfg.Delete == nil {
+		cfg.Delete = func(name string) {}
+	}
+}
+
+func (cfg HealthCheckerConfig) New() *HealthChecker {
+	cfg.initVerSha()
+	cfg.setNoopHooks()
 	return &HealthChecker{
-		ver:      ver,
-		sha:      sha,
+		cfg:      cfg,
 		services: make(map[string]HealthReporter, 10),
 		healthy:  make(map[string]error, 10),
 		ready:    make(map[string]error, 10),
@@ -119,7 +140,7 @@ func NewHealthChecker(ver, sha string) *HealthChecker {
 
 func (c *HealthChecker) Start() error {
 	return c.StartOnce("HealthCheck", func() error {
-		version.WithLabelValues(c.ver, c.sha).Inc()
+		c.cfg.IncVersion(c.cfg.Ver, c.cfg.Sha)
 
 		// update immediately
 		c.update()
@@ -175,10 +196,10 @@ func (c *HealthChecker) update() {
 			}
 
 			// report metrics to prometheus
-			healthStatus.WithLabelValues(name).Set(float64(value))
+			c.cfg.SetStatus(name, value)
 		}
 	}
-	uptimeSeconds.Add(interval.Seconds())
+	c.cfg.AddUptime(interval)
 
 	// save state
 	c.stateMu.Lock()
@@ -214,7 +235,7 @@ func (c *HealthChecker) Unregister(name string) error {
 	c.servicesMu.Lock()
 	defer c.servicesMu.Unlock()
 	delete(c.services, name)
-	healthStatus.DeleteLabelValues(name)
+	c.cfg.Delete(name)
 	return nil
 }
 

@@ -97,6 +97,8 @@ func (c *mismatchedCapability) Info(ctx context.Context) (capabilities.Capabilit
 
 var _ capabilities.ExecutableAndTriggerCapability = (*mismatchedCapability)(nil)
 
+const MismatchedID = "example@1.0.0"
+
 func (c *mismatchedCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }

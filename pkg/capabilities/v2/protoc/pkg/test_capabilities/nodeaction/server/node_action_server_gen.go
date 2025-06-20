@@ -97,6 +97,8 @@ func (c *basicActionCapability) Info(ctx context.Context) (capabilities.Capabili
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicActionCapability)(nil)
 
+const BasicActionID = "basic-test-node-action@1.0.0"
+
 func (c *basicActionCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }

@@ -27,9 +27,9 @@ var File_clash_proto protoreflect.FileDescriptor
 
 const file_clash_proto_rawDesc = "" +
 	"\n" +
-	"\vclash.proto\x12\x0eimportclash.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x12p1/pb/import.proto\x1a\x12p2/pb/import.proto2y\n" +
-	"\vBasicAction\x12N\n" +
-	"\rPerformAction\x12\x19.importclash.p1.v1.Inputs\x1a\x1a.importclash.p2.v1.Outputs\"\x06\x8a\xb5\x18\x02\b\x01\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12import-clash@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclashb\x06proto3"
+	"\vclash.proto\x12\x0eimportclash.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x12p1/pb/import.proto\x1a\x12p2/pb/import.proto2q\n" +
+	"\vBasicAction\x12F\n" +
+	"\rPerformAction\x12\x19.importclash.p1.v1.Inputs\x1a\x1a.importclash.p2.v1.Outputs\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12import-clash@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclashb\x06proto3"
 
 var file_clash_proto_goTypes = []any{
 	(*pb.Inputs)(nil),   // 0: importclash.p1.v1.Inputs

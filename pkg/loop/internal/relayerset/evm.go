@@ -141,6 +141,26 @@ func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransa
 	}, opts...)
 }
 
+func (e evmClient) GetForwarderForEOA(ctx context.Context, in *evmpb.GetForwarderForEOARequest, opts ...grpc.CallOption) (*evmpb.GetForwarderForEOAReply, error) {
+	return e.client.GetForwarderForEOA(ctx, &relayerset.GetForwarderForEOARequest{
+		RelayerId: &relayerset.RelayerId{
+			Network: e.relayID.Network,
+			ChainId: e.relayID.ChainID,
+		},
+		Request: in,
+	}, opts...)
+}
+
+func (e evmClient) GetForwarderForEOAOCR2Feeds(ctx context.Context, in *evmpb.GetForwarderForEOAOCR2FeedsRequest, opts ...grpc.CallOption) (*evmpb.GetForwarderForEOAOCR2FeedsReply, error) {
+	return e.client.GetForwarderForEOAOCR2Feeds(ctx, &relayerset.GetForwarderForEOAOCR2FeedsRequest{
+		RelayerId: &relayerset.RelayerId{
+			Network: e.relayID.Network,
+			ChainId: e.relayID.ChainID,
+		},
+		Request: in,
+	}, opts...)
+}
+
 func (s *Server) GetTransactionFee(ctx context.Context, request *relayerset.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
 	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
 	if err != nil {
@@ -360,6 +380,32 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.G
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (s *Server) GetForwarderForEOA(ctx context.Context, request *relayerset.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	forwarder, err := evmService.GetForwarderForEOA(ctx, evm.Address(request.Request.GetAddr()))
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
+}
+
+func (s *Server) GetForwarderForEOAOCR2Feeds(ctx context.Context, request *relayerset.GetForwarderForEOAOCR2FeedsRequest) (*evmpb.GetForwarderForEOAOCR2FeedsReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	forwarder, err := evmService.GetForwarderForEOAOCR2Feeds(ctx, evm.Address(request.Request.GetAddr()), evm.Address(request.Request.GetAggr()))
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAOCR2FeedsReply{Addr: forwarder[:]}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {

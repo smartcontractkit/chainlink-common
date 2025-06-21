@@ -846,18 +846,20 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	EVMRelayerSet_GetTransactionFee_FullMethodName      = "/loop.relayerset.EVMRelayerSet/GetTransactionFee"
-	EVMRelayerSet_CallContract_FullMethodName           = "/loop.relayerset.EVMRelayerSet/CallContract"
-	EVMRelayerSet_FilterLogs_FullMethodName             = "/loop.relayerset.EVMRelayerSet/FilterLogs"
-	EVMRelayerSet_BalanceAt_FullMethodName              = "/loop.relayerset.EVMRelayerSet/BalanceAt"
-	EVMRelayerSet_EstimateGas_FullMethodName            = "/loop.relayerset.EVMRelayerSet/EstimateGas"
-	EVMRelayerSet_GetTransactionByHash_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionByHash"
-	EVMRelayerSet_GetTransactionReceipt_FullMethodName  = "/loop.relayerset.EVMRelayerSet/GetTransactionReceipt"
-	EVMRelayerSet_LatestAndFinalizedHead_FullMethodName = "/loop.relayerset.EVMRelayerSet/LatestAndFinalizedHead"
-	EVMRelayerSet_QueryTrackedLogs_FullMethodName       = "/loop.relayerset.EVMRelayerSet/QueryTrackedLogs"
-	EVMRelayerSet_RegisterLogTracking_FullMethodName    = "/loop.relayerset.EVMRelayerSet/RegisterLogTracking"
-	EVMRelayerSet_UnregisterLogTracking_FullMethodName  = "/loop.relayerset.EVMRelayerSet/UnregisterLogTracking"
-	EVMRelayerSet_GetTransactionStatus_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionStatus"
+	EVMRelayerSet_GetTransactionFee_FullMethodName           = "/loop.relayerset.EVMRelayerSet/GetTransactionFee"
+	EVMRelayerSet_CallContract_FullMethodName                = "/loop.relayerset.EVMRelayerSet/CallContract"
+	EVMRelayerSet_FilterLogs_FullMethodName                  = "/loop.relayerset.EVMRelayerSet/FilterLogs"
+	EVMRelayerSet_BalanceAt_FullMethodName                   = "/loop.relayerset.EVMRelayerSet/BalanceAt"
+	EVMRelayerSet_EstimateGas_FullMethodName                 = "/loop.relayerset.EVMRelayerSet/EstimateGas"
+	EVMRelayerSet_GetTransactionByHash_FullMethodName        = "/loop.relayerset.EVMRelayerSet/GetTransactionByHash"
+	EVMRelayerSet_GetTransactionReceipt_FullMethodName       = "/loop.relayerset.EVMRelayerSet/GetTransactionReceipt"
+	EVMRelayerSet_LatestAndFinalizedHead_FullMethodName      = "/loop.relayerset.EVMRelayerSet/LatestAndFinalizedHead"
+	EVMRelayerSet_QueryTrackedLogs_FullMethodName            = "/loop.relayerset.EVMRelayerSet/QueryTrackedLogs"
+	EVMRelayerSet_RegisterLogTracking_FullMethodName         = "/loop.relayerset.EVMRelayerSet/RegisterLogTracking"
+	EVMRelayerSet_UnregisterLogTracking_FullMethodName       = "/loop.relayerset.EVMRelayerSet/UnregisterLogTracking"
+	EVMRelayerSet_GetTransactionStatus_FullMethodName        = "/loop.relayerset.EVMRelayerSet/GetTransactionStatus"
+	EVMRelayerSet_GetForwarderForEOA_FullMethodName          = "/loop.relayerset.EVMRelayerSet/GetForwarderForEOA"
+	EVMRelayerSet_GetForwarderForEOAOCR2Feeds_FullMethodName = "/loop.relayerset.EVMRelayerSet/GetForwarderForEOAOCR2Feeds"
 )
 
 // EVMRelayerSetClient is the client API for EVMRelayerSet service.
@@ -876,6 +878,8 @@ type EVMRelayerSetClient interface {
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*evm.GetTransactionStatusReply, error)
+	GetForwarderForEOA(ctx context.Context, in *GetForwarderForEOARequest, opts ...grpc.CallOption) (*evm.GetForwarderForEOAReply, error)
+	GetForwarderForEOAOCR2Feeds(ctx context.Context, in *GetForwarderForEOAOCR2FeedsRequest, opts ...grpc.CallOption) (*evm.GetForwarderForEOAOCR2FeedsReply, error)
 }
 
 type eVMRelayerSetClient struct {
@@ -1006,6 +1010,26 @@ func (c *eVMRelayerSetClient) GetTransactionStatus(ctx context.Context, in *GetT
 	return out, nil
 }
 
+func (c *eVMRelayerSetClient) GetForwarderForEOA(ctx context.Context, in *GetForwarderForEOARequest, opts ...grpc.CallOption) (*evm.GetForwarderForEOAReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.GetForwarderForEOAReply)
+	err := c.cc.Invoke(ctx, EVMRelayerSet_GetForwarderForEOA_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eVMRelayerSetClient) GetForwarderForEOAOCR2Feeds(ctx context.Context, in *GetForwarderForEOAOCR2FeedsRequest, opts ...grpc.CallOption) (*evm.GetForwarderForEOAOCR2FeedsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(evm.GetForwarderForEOAOCR2FeedsReply)
+	err := c.cc.Invoke(ctx, EVMRelayerSet_GetForwarderForEOAOCR2Feeds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EVMRelayerSetServer is the server API for EVMRelayerSet service.
 // All implementations must embed UnimplementedEVMRelayerSetServer
 // for forward compatibility.
@@ -1022,6 +1046,8 @@ type EVMRelayerSetServer interface {
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error)
+	GetForwarderForEOA(context.Context, *GetForwarderForEOARequest) (*evm.GetForwarderForEOAReply, error)
+	GetForwarderForEOAOCR2Feeds(context.Context, *GetForwarderForEOAOCR2FeedsRequest) (*evm.GetForwarderForEOAOCR2FeedsReply, error)
 	mustEmbedUnimplementedEVMRelayerSetServer()
 }
 
@@ -1067,6 +1093,12 @@ func (UnimplementedEVMRelayerSetServer) UnregisterLogTracking(context.Context, *
 }
 func (UnimplementedEVMRelayerSetServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
+func (UnimplementedEVMRelayerSetServer) GetForwarderForEOA(context.Context, *GetForwarderForEOARequest) (*evm.GetForwarderForEOAReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
+}
+func (UnimplementedEVMRelayerSetServer) GetForwarderForEOAOCR2Feeds(context.Context, *GetForwarderForEOAOCR2FeedsRequest) (*evm.GetForwarderForEOAOCR2FeedsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetForwarderForEOAOCR2Feeds not implemented")
 }
 func (UnimplementedEVMRelayerSetServer) mustEmbedUnimplementedEVMRelayerSetServer() {}
 func (UnimplementedEVMRelayerSetServer) testEmbeddedByValue()                       {}
@@ -1305,6 +1337,42 @@ func _EVMRelayerSet_GetTransactionStatus_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVMRelayerSet_GetForwarderForEOA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetForwarderForEOARequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMRelayerSetServer).GetForwarderForEOA(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVMRelayerSet_GetForwarderForEOA_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMRelayerSetServer).GetForwarderForEOA(ctx, req.(*GetForwarderForEOARequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EVMRelayerSet_GetForwarderForEOAOCR2Feeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetForwarderForEOAOCR2FeedsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMRelayerSetServer).GetForwarderForEOAOCR2Feeds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVMRelayerSet_GetForwarderForEOAOCR2Feeds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMRelayerSetServer).GetForwarderForEOAOCR2Feeds(ctx, req.(*GetForwarderForEOAOCR2FeedsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EVMRelayerSet_ServiceDesc is the grpc.ServiceDesc for EVMRelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1359,6 +1427,14 @@ var EVMRelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTransactionStatus",
 			Handler:    _EVMRelayerSet_GetTransactionStatus_Handler,
+		},
+		{
+			MethodName: "GetForwarderForEOA",
+			Handler:    _EVMRelayerSet_GetForwarderForEOA_Handler,
+		},
+		{
+			MethodName: "GetForwarderForEOAOCR2Feeds",
+			Handler:    _EVMRelayerSet_GetForwarderForEOAOCR2Feeds_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

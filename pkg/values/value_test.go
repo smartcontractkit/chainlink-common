@@ -679,6 +679,22 @@ func Test_Aliases(t *testing.T) {
 	}
 }
 
+func Test_FloatTypes(t *testing.T) {
+	testCases := []struct {
+		name string
+		test func(tt *testing.T)
+	}{
+		{name: "wrap float64 as float64", test: func(tt *testing.T) { wrappableTest[float64, float64](tt, float64(100.01)) }},
+		{name: "wrap float32 as float64", test: func(tt *testing.T) { wrappableTest[float32, float64](tt, float32(100.01)) }},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(st *testing.T) {
+			tc.test(st)
+		})
+	}
+}
+
 func wrappableTest[Native, Alias any](t *testing.T, native Native) {
 	wrappableTestWithConversion(t, native, func(alias Alias) Native {
 		return reflect.ValueOf(alias).Convert(reflect.TypeOf(native)).Interface().(Native)

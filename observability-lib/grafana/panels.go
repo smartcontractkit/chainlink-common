@@ -1,6 +1,8 @@
 package grafana
 
 import (
+	"time"
+
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/bargauge"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
@@ -14,6 +16,7 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/table"
 	"github.com/grafana/grafana-foundation-sdk/go/text"
 	"github.com/grafana/grafana-foundation-sdk/go/timeseries"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
 )
 
@@ -30,6 +33,7 @@ type Query struct {
 	Min       float64
 	Format    prometheus.PromQueryFormat
 	QueryType QueryType
+	Interval  *time.Duration
 }
 
 func newQuery(query Query) *prometheus.DataqueryBuilder {
@@ -43,6 +47,9 @@ func newQuery(query Query) *prometheus.DataqueryBuilder {
 	}
 	if query.QueryType != "" {
 		res.QueryType(string(query.QueryType))
+	}
+	if query.Interval != nil {
+		res.Interval(query.Interval.String())
 	}
 
 	return res

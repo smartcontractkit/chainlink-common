@@ -253,6 +253,7 @@ func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 				ContractID:    rargs.ContractID,
 				New:           rargs.New,
 				RelayConfig:   rargs.RelayConfig,
+				ProviderType:  rargs.ProviderType,
 			},
 		})
 		if err != nil {

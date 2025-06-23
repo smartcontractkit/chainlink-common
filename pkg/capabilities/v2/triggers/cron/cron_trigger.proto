@@ -23,7 +23,7 @@ message LegacyPayload {
 service Cron {
   option (cre.metadata.capability) = {
     mode: DON
-    capability_id: "cron-trigger@1.1.0"
+    capability_id: "cron-trigger@1.0.0"
   };
 
   rpc Trigger(Config) returns (stream Payload);

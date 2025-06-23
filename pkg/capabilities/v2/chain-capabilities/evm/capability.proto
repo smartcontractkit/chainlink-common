@@ -28,7 +28,7 @@ message FilterLogTriggerRequest {
       d) the fourth element is an array of possible values for the third indexed argument, can be empty
    */
   repeated TopicValues topics = 2;
-  ConfidenceLevel Confidence = 6; // optional, defaults to "SAFE"
+  ConfidenceLevel Confidence = 3; // optional, defaults to "SAFE"
 }
 
 service Client {

@@ -110,8 +110,8 @@ func TestRuntime_ConsensusReturnsTheObservation(t *testing.T) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(anyConfig),
-				func(wcx *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
-					consensus := sdk.RunInNodeMode(wcx, rt, func(_ *sdk.NodeEnvironment[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
+				func(env *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
+					consensus := sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 						action := &nodeaction.BasicAction{}
 						resp, err := action.PerformAction(nodeRuntime, &nodeaction.NodeInputs{InputThing: true}).Await()
 						require.NoError(t, err)
@@ -151,9 +151,9 @@ func TestRuntime_ConsensusReturnsTheDefaultValue(t *testing.T) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(anyConfig),
-				func(wcx *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
+				func(env *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(
-						wcx,
+						env,
 						rt,
 						func(_ *sdk.NodeEnvironment[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, errors.New("no consensus")
@@ -188,13 +188,13 @@ func TestRuntime_ConsensusReturnsErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	anyErr := errors.New("no consensus")
-	runner.Run(func(wcx *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(anyConfig),
 				func(_ *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
 					consensus := sdk.RunInNodeMode(
-						wcx,
+						env,
 						rt,
 						func(_ *sdk.NodeEnvironment[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 							return 0, anyErr

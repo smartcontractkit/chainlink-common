@@ -8,7 +8,7 @@ import (
 )
 
 func RunTestWorkflow(runner sdk.Runner[string]) {
-	runner.Run(func(wcx *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),
@@ -18,7 +18,7 @@ func RunTestWorkflow(runner sdk.Runner[string]) {
 }
 
 func RunIdenticalTriggersWorkflow(runner sdk.Runner[string]) {
-	runner.Run(func(wcx *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),
@@ -29,8 +29,8 @@ func RunIdenticalTriggersWorkflow(runner sdk.Runner[string]) {
 					Name:   "second-trigger",
 					Number: 200,
 				}),
-				func(wcx *sdk.Environment[string], rt sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
-					res, err := onTrigger(wcx, rt, outputs)
+				func(env *sdk.Environment[string], rt sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
+					res, err := onTrigger(env, rt, outputs)
 					if err != nil {
 						return "", err
 					}
@@ -41,8 +41,8 @@ func RunIdenticalTriggersWorkflow(runner sdk.Runner[string]) {
 	})
 }
 
-func onTrigger(wcx *sdk.Environment[string], runtime sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
-	wcx.Logger.Info("Hi")
+func onTrigger(env *sdk.Environment[string], runtime sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
+	env.Logger.Info("Hi")
 	action := basicaction.BasicAction{ /* TODO config */ }
 	first := action.PerformAction(runtime, &basicaction.Inputs{InputThing: false})
 	firstResult, err := first.Await()
@@ -60,12 +60,12 @@ func onTrigger(wcx *sdk.Environment[string], runtime sdk.Runtime, outputs *basic
 }
 
 func RunTestSecretsWorkflow(runner sdk.Runner[string]) {
-	runner.Run(func(wcx *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),
-				func(wcx *sdk.Environment[string], rt sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
-					secret, err := wcx.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
+				func(env *sdk.Environment[string], rt sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
+					secret, err := env.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
 					if err != nil {
 						return "", err
 					}

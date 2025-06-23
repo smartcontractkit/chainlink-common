@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ type runner[C any] struct {
 	baseRunner[C, sdk.Runtime]
 }
 
-func (r *runner[C]) Run(initFn func(wcx *sdk.Environment[C]) (sdk.Workflow[C], error)) {
+func (r *runner[C]) Run(initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) {
 	wfc := &sdk.Environment[C]{
 		NodeEnvironment: sdk.NodeEnvironment[C]{
 			Config:    r.config,
@@ -73,7 +74,7 @@ type TestRunner interface {
 
 	SetRandSource(source rand.Source)
 
-	SetSecret(id, namespace, value string)
+	SetSecret(id, namespace, value string) error
 }
 
 type Runner[C any] interface {
@@ -105,9 +106,14 @@ func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.Runtime
 	return r
 }
 
-func (r *baseRunner[C, T]) SetSecret(namespace, id, value string) {
+func (r *baseRunner[C, T]) SetSecret(namespace, id, value string) error {
+	if strings.Contains(namespace, "/") || strings.Contains(id, "/") {
+		return fmt.Errorf("namespace and id cannot contain '/'")
+	}
+
 	key := fmt.Sprintf("%s/%s", namespace, id)
 	r.secrets[key] = value
+	return nil
 }
 
 func (r *baseRunner[C, T]) SetStrictTriggers(strict bool) {
@@ -161,7 +167,7 @@ func (r *baseRunner[C, T]) run(workflows []sdk.ExecutionHandler[C, T]) {
 		}
 
 		r.ran = true
-		wcx := &sdk.Environment[C]{
+		env := &sdk.Environment[C]{
 			NodeEnvironment: sdk.NodeEnvironment[C]{
 				Config:    r.config,
 				LogWriter: r.writer,
@@ -169,7 +175,7 @@ func (r *baseRunner[C, T]) run(workflows []sdk.ExecutionHandler[C, T]) {
 			},
 			SecretsProvider: &sdkimpl.Runtime{RuntimeBase: *r.base},
 		}
-		result, err := handler.Callback()(wcx, r.runtime, response.Payload)
+		result, err := handler.Callback()(env, r.runtime, response.Payload)
 		// If an error occurred during the callback (eg. via secrets fetching)
 		// we don't want to override it with the result of the callback.
 		if r.err != nil {

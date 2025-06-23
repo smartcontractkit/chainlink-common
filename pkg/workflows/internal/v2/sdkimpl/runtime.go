@@ -104,11 +104,6 @@ type Runtime struct {
 }
 
 func (d *Runtime) GetSecret(req *pb.SecretRequest) sdk.Promise[*pb.Secret] {
-	// TODO: Do I need this?
-	if d.Mode == pb.Mode_Node {
-		return sdk.PromiseFromResult[*pb.Secret](nil, sdk.DonModeCallInNodeMode())
-	}
-
 	d.nextCallId++
 
 	sr := &pb.GetSecretsRequest{

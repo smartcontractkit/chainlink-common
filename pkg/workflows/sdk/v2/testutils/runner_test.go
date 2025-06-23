@@ -339,8 +339,8 @@ func TestRunner_Logs(t *testing.T) {
 	runWorkflows(runner, sdk.Workflow[string]{
 		sdk.On(
 			basictrigger.Trigger(anyConfig),
-			func(wcx *sdk.Environment[string], _ sdk.Runtime, input *basictrigger.Outputs) (string, error) {
-				logger := wcx.Logger
+			func(env *sdk.Environment[string], _ sdk.Runtime, input *basictrigger.Outputs) (string, error) {
+				logger := env.Logger
 				logger.Info(anyResult)
 				logger.Warn(anyResult + "2")
 				return anyResult, nil
@@ -373,55 +373,75 @@ func TestRunner_Logs(t *testing.T) {
 }
 
 func TestRunner_SecretsProvider(t *testing.T) {
-	anyConfig := &basictrigger.Config{Name: "name", Number: 123}
-	anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
+	t.Run("secret is not found", func(t *testing.T) {
+		anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+		anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	trigger, err := basictriggermock.NewBasicCapability(t)
-	require.NoError(t, err)
-	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
-		return anyTrigger, nil
-	}
+		trigger, err := basictriggermock.NewBasicCapability(t)
+		require.NoError(t, err)
+		trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+			return anyTrigger, nil
+		}
 
-	runner := testutils.NewRunner(t, "unused")
+		runner := testutils.NewRunner(t, "unused")
 
-	runWorkflows(runner, sdk.Workflow[string]{
-		sdk.On(
-			basictrigger.Trigger(anyConfig),
-			func(wcx *sdk.Environment[string], _ sdk.Runtime, input *basictrigger.Outputs) (string, error) {
-				secret, err := wcx.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
-				if err != nil {
-					return "", err
-				}
-				return secret.Value, nil
-			},
-		),
+		runWorkflows(runner, sdk.Workflow[string]{
+			sdk.On(
+				basictrigger.Trigger(anyConfig),
+				func(env *sdk.Environment[string], _ sdk.Runtime, input *basictrigger.Outputs) (string, error) {
+					secret, err := env.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
+					if err != nil {
+						return "", err
+					}
+					return secret.Value, nil
+				},
+			),
+		})
+
+		_, _, err = runner.Result()
+		assert.ErrorContains(t, err, "could not find secret /Foo")
 	})
 
-	_, _, err = runner.Result()
-	assert.ErrorContains(t, err, "could not find secret /Foo")
+	t.Run("secret has been set", func(t *testing.T) {
+		anyConfig := &basictrigger.Config{Name: "name", Number: 123}
+		anyTrigger := &basictrigger.Outputs{CoolOutput: "cool"}
 
-	runner = testutils.NewRunner(t, "unused")
+		trigger, err := basictriggermock.NewBasicCapability(t)
+		require.NoError(t, err)
+		trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
+			return anyTrigger, nil
+		}
 
-	expectedSecret := "bar"
-	runner.SetSecret("", "Foo", expectedSecret)
+		runner := testutils.NewRunner(t, "unused")
 
-	runWorkflows(runner, sdk.Workflow[string]{
-		sdk.On(
-			basictrigger.Trigger(anyConfig),
-			func(wcx *sdk.Environment[string], _ sdk.Runtime, input *basictrigger.Outputs) (string, error) {
-				secret, err := wcx.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
-				if err != nil {
-					return "", err
-				}
+		expectedSecret := "bar"
+		require.NoError(t, runner.SetSecret("", "Foo", expectedSecret))
 
-				assert.Equal(t, expectedSecret, secret.Value)
-				return secret.Value, nil
-			},
-		),
+		runWorkflows(runner, sdk.Workflow[string]{
+			sdk.On(
+				basictrigger.Trigger(anyConfig),
+				func(env *sdk.Environment[string], _ sdk.Runtime, input *basictrigger.Outputs) (string, error) {
+					secret, err := env.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
+					if err != nil {
+						return "", err
+					}
+
+					assert.Equal(t, expectedSecret, secret.Value)
+					return secret.Value, nil
+				},
+			),
+		})
+
+		_, _, err = runner.Result()
+		assert.NoError(t, err)
 	})
 
-	_, _, err = runner.Result()
-	assert.NoError(t, err)
+	t.Run("secret set errors", func(t *testing.T) {
+		runner := testutils.NewRunner(t, "unused")
+		require.ErrorContains(t, runner.SetSecret("default/", "Foo", "bar"), "namespace and id cannot contain '/'")
+		require.ErrorContains(t, runner.SetSecret("default", "/Foo", "bar"), "namespace and id cannot contain '/'")
+		require.ErrorContains(t, runner.SetSecret("/default", "/Foo", "bar"), "namespace and id cannot contain '/'")
+	})
 }
 
 func TestRunner_ReturnsTriggerErrorsWithoutRunningTheWorkflow(t *testing.T) {
@@ -478,7 +498,7 @@ func TestRunner_FullWorkflow(t *testing.T) {
 }
 
 func runWorkflows(runner sdk.Runner[string], workflows sdk.Workflow[string]) {
-	runner.Run(func(wcx *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return workflows, nil
 	})
 }

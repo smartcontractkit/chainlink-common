@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750697953008,
+  "lastUpdate": 1750701593717,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16380,6 +16380,48 @@ window.BENCHMARK_DATA = {
             "value": 28930,
             "unit": "ns/op",
             "extra": "42116 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a17cdfe27dfd738c6c900a28243b6332c8f0d24c",
+          "message": "add gateway connector to standard capabilities interface (#1258)\n\n* add gateway connector to standard capabilities\n\n* gateway connector and handler uses jsonrpc structs instead of []byte",
+          "timestamp": "2025-06-23T17:58:19Z",
+          "tree_id": "e56f3a43f0649c6000be330fb16b5b76d69cfb25",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a17cdfe27dfd738c6c900a28243b6332c8f0d24c"
+        },
+        "date": 1750701592121,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.1,
+            "unit": "ns/op",
+            "extra": "3393423 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.4,
+            "unit": "ns/op",
+            "extra": "2883906 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28476,
+            "unit": "ns/op",
+            "extra": "40442 times\n4 procs"
           }
         ]
       }

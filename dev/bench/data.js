@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750433587163,
+  "lastUpdate": 1750670702686,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16254,6 +16254,48 @@ window.BENCHMARK_DATA = {
             "value": 28552,
             "unit": "ns/op",
             "extra": "41066 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9469184bca40b195b5ef05754c30779cee1c1b3f",
+          "message": "[CRE-446] Implement SDK support for GetSecret (#1270)\n\n* [CRE-446] Implement SDK support for GetSecret\n\n* Use timestamp in cron, seperate legacy call from original (#1268)\n\n* [fix] Address review comments:\n- wcx > env\n- remove TODO\n- disallow '/' in SetSecret\n\n---------\n\nCo-authored-by: Ryan Tinianov <tinianov@live.com>",
+          "timestamp": "2025-06-23T09:22:51Z",
+          "tree_id": "e36849b90ce54f657e79e9ffe4c3b6f490f1a98d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9469184bca40b195b5ef05754c30779cee1c1b3f"
+        },
+        "date": 1750670701665,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.3,
+            "unit": "ns/op",
+            "extra": "3382768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 420.7,
+            "unit": "ns/op",
+            "extra": "2871627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28562,
+            "unit": "ns/op",
+            "extra": "42214 times\n4 procs"
           }
         ]
       }

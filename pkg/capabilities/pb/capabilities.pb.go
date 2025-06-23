@@ -995,17 +995,18 @@ func (x *UnregisterFromWorkflowRequest) GetConfig() *pb.Map {
 }
 
 type InitialiseRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Config           string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	ErrorLogId       uint32                 `protobuf:"varint,2,opt,name=error_log_id,json=errorLogId,proto3" json:"error_log_id,omitempty"`
-	PipelineRunnerId uint32                 `protobuf:"varint,3,opt,name=pipeline_runner_id,json=pipelineRunnerId,proto3" json:"pipeline_runner_id,omitempty"`
-	TelemetryId      uint32                 `protobuf:"varint,4,opt,name=telemetry_id,json=telemetryId,proto3" json:"telemetry_id,omitempty"`
-	CapRegistryId    uint32                 `protobuf:"varint,5,opt,name=capRegistry_id,json=capRegistryId,proto3" json:"capRegistry_id,omitempty"`
-	KeyValueStoreId  uint32                 `protobuf:"varint,6,opt,name=keyValueStore_id,json=keyValueStoreId,proto3" json:"keyValueStore_id,omitempty"`
-	RelayerSetId     uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
-	OracleFactoryId  uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Config             string                 `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	ErrorLogId         uint32                 `protobuf:"varint,2,opt,name=error_log_id,json=errorLogId,proto3" json:"error_log_id,omitempty"`
+	PipelineRunnerId   uint32                 `protobuf:"varint,3,opt,name=pipeline_runner_id,json=pipelineRunnerId,proto3" json:"pipeline_runner_id,omitempty"`
+	TelemetryId        uint32                 `protobuf:"varint,4,opt,name=telemetry_id,json=telemetryId,proto3" json:"telemetry_id,omitempty"`
+	CapRegistryId      uint32                 `protobuf:"varint,5,opt,name=capRegistry_id,json=capRegistryId,proto3" json:"capRegistry_id,omitempty"`
+	KeyValueStoreId    uint32                 `protobuf:"varint,6,opt,name=keyValueStore_id,json=keyValueStoreId,proto3" json:"keyValueStore_id,omitempty"`
+	RelayerSetId       uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
+	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
+	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *InitialiseRequest) Reset() {
@@ -1090,6 +1091,13 @@ func (x *InitialiseRequest) GetRelayerSetId() uint32 {
 func (x *InitialiseRequest) GetOracleFactoryId() uint32 {
 	if x != nil {
 		return x.OracleFactoryId
+	}
+	return 0
+}
+
+func (x *InitialiseRequest) GetGatewayConnectorId() uint32 {
+	if x != nil {
+		return x.GatewayConnectorId
 	}
 	return 0
 }
@@ -1211,7 +1219,7 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\v.values.MapR\x06config\"\x84\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12#\n" +
-	"\x06config\x18\x02 \x01(\v2\v.values.MapR\x06config\"\xc2\x02\n" +
+	"\x06config\x18\x02 \x01(\v2\v.values.MapR\x06config\"\xf4\x02\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1221,7 +1229,8 @@ const file_capabilities_pb_capabilities_proto_rawDesc = "" +
 	"\x0ecapRegistry_id\x18\x05 \x01(\rR\rcapRegistryId\x12)\n" +
 	"\x10keyValueStore_id\x18\x06 \x01(\rR\x0fkeyValueStoreId\x12$\n" +
 	"\x0erelayer_set_id\x18\a \x01(\rR\frelayerSetId\x12*\n" +
-	"\x11oracle_factory_id\x18\b \x01(\rR\x0foracleFactoryId\"O\n" +
+	"\x11oracle_factory_id\x18\b \x01(\rR\x0foracleFactoryId\x120\n" +
+	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +

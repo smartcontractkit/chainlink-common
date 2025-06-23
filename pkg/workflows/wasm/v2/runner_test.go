@@ -7,11 +7,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
@@ -44,18 +45,18 @@ var (
 )
 
 func TestRunner_CreateWorkflows(t *testing.T) {
-	assertWcx(t, getTestRunner(t, anyExecuteRequest))
-	assertWcx(t, getTestRunner(t, subscribeRequest))
+	assertEnv(t, getTestRunner(t, anyExecuteRequest))
+	assertEnv(t, getTestRunner(t, subscribeRequest))
 }
 
 func TestRunner_Run(t *testing.T) {
 	t.Run("runner gathers subscriptions", func(t *testing.T) {
 		dr := getTestRunner(t, subscribeRequest)
-		dr.Run(func(_ *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+		dr.Run(func(_ *sdk.Environment[string]) (sdk.Workflow[string], error) {
 			return sdk.Workflow[string]{
 				sdk.On(
 					basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
-					func(_ *sdk.WorkflowContext[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
+					func(_ *sdk.Environment[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
 						require.Fail(t, "Must not be called during registration to tiggers")
 						return 0, nil
 					}),
@@ -134,16 +135,16 @@ func TestRunner_Run(t *testing.T) {
 	})
 }
 
-func assertWcx(t *testing.T, r sdk.Runner[string]) {
+func assertEnv(t *testing.T, r sdk.Runner[string]) {
 	ran := false
-	verifyCtx := func(wcx *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
+	verifyEnv := func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		ran = true
-		assert.Equal(t, string(anyConfig), wcx.Config)
-		assert.IsType(t, &writer{}, wcx.LogWriter)
+		assert.Equal(t, string(anyConfig), env.Config)
+		assert.IsType(t, &writer{}, env.LogWriter)
 		return sdk.Workflow[string]{}, nil
 
 	}
-	r.Run(verifyCtx)
+	r.Run(verifyEnv)
 	assert.True(t, ran, "Workflow should have been run")
 }
 
@@ -164,8 +165,10 @@ func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInter
 
 func testRuntimeInternals(tb testing.TB) *runtimeInternalsTestHook {
 	return &runtimeInternalsTestHook{
-		testTb:           tb,
-		outstandingCalls: map[int32]sdk.Promise[*pb.CapabilityResponse]{},
+		testTb:                  tb,
+		outstandingCalls:        map[int32]sdk.Promise[*pb.CapabilityResponse]{},
+		outstandingSecretsCalls: map[int32]sdk.Promise[[]*pb.SecretResponse]{},
+		secrets:                 map[string]*pb.Secret{},
 	}
 }
 

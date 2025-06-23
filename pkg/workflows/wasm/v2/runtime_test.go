@@ -11,9 +11,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/internal/v2/sdkimpl"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestRuntimeBase_CallCapability(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 			return anyOutput, nil
 		}
 
-		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, nil)}
+		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, nil, nil)}
 		capability := &basicaction.BasicAction{}
 		response, err := capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
 		require.NoError(t, err)
@@ -36,7 +37,7 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 		_, err := basicactionmock.NewBasicActionCapability(t)
 		require.NoError(t, err)
 
-		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, true, nil)}
+		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, true, nil, nil)}
 
 		capability := &basicaction.BasicAction{}
 		_, err = capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
@@ -52,7 +53,7 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 
 		override := func() ([]byte, error) { return []byte("invalid"), nil }
 
-		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, override)}
+		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, override, nil)}
 		capability := &basicaction.BasicAction{}
 		_, err = capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
 
@@ -69,7 +70,7 @@ func TestRuntimeBase_CallCapability(t *testing.T) {
 		anyErr := errors.New("not this time")
 		override := func() ([]byte, error) { return nil, anyErr }
 
-		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, override)}
+		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, override, nil)}
 		capability := &basicaction.BasicAction{}
 		_, err = capability.PerformAction(runtime, &basicaction.Inputs{InputThing: true}).Await()
 
@@ -101,10 +102,46 @@ func assertRnd(t *testing.T, helper *runtimeHelper, mode sdkpb.Mode, seed int64)
 	assert.Equal(t, string(expectedBuf), string(buff))
 }
 
-func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride func() ([]byte, error)) sdkimpl.RuntimeBase {
+func TestEnvironment_GetSecret(t *testing.T) {
+	t.Run("no secret is found", func(t *testing.T) {
+		capCallOverride := func() ([]byte, error) { return nil, errors.New("disabled") }
+
+		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, capCallOverride, nil)}
+		environment := &sdk.Environment[string]{
+			SecretsProvider: runtime,
+		}
+
+		_, err := environment.GetSecret(&sdkpb.SecretRequest{Id: "Foo"}).Await()
+		require.ErrorContains(t, err, "secret default.Foo not found")
+	})
+
+	t.Run("secret is found", func(t *testing.T) {
+		capCallOverride := func() ([]byte, error) { return nil, errors.New("disabled") }
+
+		secrets := []*sdkpb.Secret{
+			{Id: "Foo", Value: "Bar"},
+		}
+		runtime := &sdkimpl.Runtime{RuntimeBase: newTestRuntime(t, false, capCallOverride, secrets)}
+		environment := &sdk.Environment[string]{
+			SecretsProvider: runtime,
+		}
+
+		secret, err := environment.GetSecret(&sdkpb.SecretRequest{Id: "Foo"}).Await()
+		require.NoError(t, err)
+
+		assert.Equal(t, "Bar", secret.Value)
+	})
+}
+
+func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride func() ([]byte, error), secrets []*sdkpb.Secret) sdkimpl.RuntimeBase {
 	internals := testRuntimeInternals(t)
 	internals.callCapabilityErr = callCapabilityErr
 	internals.awaitResponseOverride = awaitResponseOverride
+
+	for _, s := range secrets {
+		internals.secrets[secretKey(s.Namespace, s.Id)] = s
+	}
+
 	runtime := newRuntime(internals, sdkpb.Mode_MODE_DON)
 	runtime.MaxResponseSize = sdk.DefaultMaxResponseSizeBytes
 	return runtime

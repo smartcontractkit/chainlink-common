@@ -98,7 +98,7 @@ func MakeRequest[I, O proto.Message](capabilityId, method string, mode sdkpb.Mod
 	Await(MakeRequestAsync(capabilityId, method, mode, input), output)
 }
 
-func GetSecrets(id string) (string, error) {
+func GetSecret(id string) (string, error) {
 	callbackId := donCall
 	donCall++
 	marshalled := Must(proto.Marshal(&sdkpb.GetSecretsRequest{
@@ -121,16 +121,26 @@ func GetSecrets(id string) (string, error) {
 	}
 
 	req := &sdkpb.AwaitSecretsRequest{Ids: []int32{callbackId}}
-	resp := &sdkpb.SecretResponse{}
+	resp := &sdkpb.AwaitSecretsResponse{}
 	await(req, resp, awaitSecrets)
-	switch r := resp.GetResponse().(type) {
-	case *sdkpb.SecretResponse_Secret:
-		return r.Secret.Id, nil
-	case *sdkpb.SecretResponse_Error:
-		return "", errors.New(r.Error)
+	if len(resp.Responses) != 1 {
+		SendError(fmt.Errorf("expected 1 response, got %d", len(resp.Responses)))
 	}
 
-	SendError(fmt.Errorf("unexpected response type %T", resp.GetResponse()))
+	responses := resp.Responses[callbackId].Responses
+	if len(responses) != 1 {
+		SendError(fmt.Errorf("expected 1 secret response, got %d", len(responses)))
+	}
+
+	switch r := responses[0].Response.(type) {
+	case *sdkpb.SecretResponse_Secret:
+		return r.Secret.Value, nil
+	case *sdkpb.SecretResponse_Error:
+		return "", errors.New(r.Error)
+	default:
+		SendError(fmt.Errorf("unexpected response type: %T", r))
+	}
+
 	return "", nil
 }
 

@@ -98,6 +98,8 @@ func (c *basicActionCapability) Info(ctx context.Context) (capabilities.Capabili
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicActionCapability)(nil)
 
+const BasicActionID = "import-clash@1.0.0"
+
 func (c *basicActionCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }
@@ -118,13 +120,6 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "PerformAction":
-		input := &pb3.Inputs{}
-		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs, _ *emptypb.Empty) (*pb4.Outputs, error) {
-			return c.BasicActionCapability.PerformAction(ctx, metadata, input)
-		}
-		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "":
 		input := &pb3.Inputs{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs, _ *emptypb.Empty) (*pb4.Outputs, error) {

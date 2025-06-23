@@ -95,6 +95,7 @@ type ModuleV2 interface {
 type ExecutionHelper interface {
 	// CallCapability blocking call to the Workflow Engine
 	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
+	GetSecrets(ctx context.Context, request *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error)
 
 	GetWorkflowExecutionID() string
 
@@ -290,6 +291,22 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.Executi
 		createAwaitCapsFn(logger, exec),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping awaitcaps func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"get_secrets",
+		createGetSecretsFn(logger, exec),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping get_secrets func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"await_secrets",
+		createAwaitSecretsFn(logger, exec),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping await_secrets func: %w", err)
 	}
 
 	if err := linker.FuncWrap(
@@ -505,6 +522,7 @@ func runWasm[I, O proto.Message](
 		//ctx:                 ctxWithTimeout,
 		ctx:                 ctx,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		secretsResponses:    map[int32]<-chan *secretsResponse{},
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,
@@ -1033,6 +1051,80 @@ func createAwaitCapsFn(
 		}
 
 		resp, err := exec.awaitCapabilities(exec.ctx, req)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		respBytes, err := proto.Marshal(resp)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
+		if size == -1 {
+			errStr := sdk.ResponseBufferTooSmall
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		return size
+	}
+}
+
+func createGetSecretsFn(
+	logger logger.Logger,
+	exec *execution[*wasmpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+		b, innerErr := wasmRead(caller, req, requestLen)
+		if innerErr != nil {
+			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		r := &sdkpb.GetSecretsRequest{}
+		innerErr = proto.Unmarshal(b, r)
+		if innerErr != nil {
+			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
+			logger.Errorf(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		if err := exec.getSecretsAsync(exec.ctx, r); err != nil {
+			errStr := fmt.Sprintf("error calling getSecretsAsync: %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		return 0
+	}
+}
+
+func createAwaitSecretsFn(
+	logger logger.Logger,
+	exec *execution[*wasmpb.ExecutionResult],
+) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
+		if err != nil {
+			errStr := fmt.Sprintf("error reading from wasm %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		req := &sdkpb.AwaitSecretsRequest{}
+		err = proto.Unmarshal(b, req)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		resp, err := exec.awaitSecrets(exec.ctx, req)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)

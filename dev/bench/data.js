@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750670702686,
+  "lastUpdate": 1750687342859,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16296,6 +16296,48 @@ window.BENCHMARK_DATA = {
             "value": 28562,
             "unit": "ns/op",
             "extra": "42214 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "brunotm@gmail.com",
+            "name": "Bruno Moura",
+            "username": "brunotm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9cb7ec4a4def677580561176cf6e6609ca13aea2",
+          "message": "pkg/types/llo: add evm_abi_encode_unpacked_expr report format and calculated aggregator (#1259)",
+          "timestamp": "2025-06-23T14:01:16Z",
+          "tree_id": "87110fe353510307695506f8c16b202f34f85a9d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9cb7ec4a4def677580561176cf6e6609ca13aea2"
+        },
+        "date": 1750687341926,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.5,
+            "unit": "ns/op",
+            "extra": "3345838 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.4,
+            "unit": "ns/op",
+            "extra": "2890928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28764,
+            "unit": "ns/op",
+            "extra": "42026 times\n4 procs"
           }
         ]
       }

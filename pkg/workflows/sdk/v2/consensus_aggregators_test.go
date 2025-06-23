@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/assert"
@@ -230,6 +231,46 @@ func TestConsensusAggregationFromTags(t *testing.T) {
 			},
 		}
 		require.True(t, proto.Equal(desc.Descriptor(), expected))
+	})
+
+	t.Run("valid naming aligns with mapstructure rename", func(t *testing.T) {
+		type Inner struct {
+			Val string `consensus_aggregation:"identical" mapstructure:"renamed_val_inner"`
+		}
+
+		type MapstructureFields struct {
+			Val  string `consensus_aggregation:"identical" mapstructure:"renamed_val"`
+			Val2 Inner  `consensus_aggregation:"identical" mapstructure:",squash"`
+		}
+
+		desc := sdk.ConsensusAggregationFromTags[*MapstructureFields]()
+		require.NoError(t, desc.Err())
+
+		expected := &pb.ConsensusDescriptor{
+			Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
+				FieldsMap: &pb.FieldsMap{
+					Fields: map[string]*pb.ConsensusDescriptor{
+						"renamed_val": {
+							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
+								Aggregation: pb.AggregationType_IDENTICAL,
+							},
+						},
+						"renamed_val_inner": {
+							Descriptor_: &pb.ConsensusDescriptor_Aggregation{
+								Aggregation: pb.AggregationType_IDENTICAL,
+							},
+						},
+					},
+				},
+			},
+		}
+		assert.True(t, proto.Equal(desc.Descriptor(), expected))
+
+		wrapped, err := values.Wrap(&MapstructureFields{Val: "anything", Val2: Inner{Val: "anything_else"}})
+		require.NoError(t, err)
+		actual := &MapstructureFields{}
+		require.NoError(t, wrapped.UnwrapTo(actual))
+		assert.Equal(t, "anything", actual.Val)
 	})
 
 	t.Run("invalid identical nested", func(t *testing.T) {

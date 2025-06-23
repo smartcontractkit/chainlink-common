@@ -98,6 +98,8 @@ func (c *consensusCapability) Info(ctx context.Context) (capabilities.Capability
 
 var _ capabilities.ExecutableAndTriggerCapability = (*consensusCapability)(nil)
 
+const ConsensusID = "consensus@1.0.0"
+
 func (c *consensusCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }

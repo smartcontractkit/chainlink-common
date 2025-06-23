@@ -22,6 +22,9 @@ type CronCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.Payload], error)
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
 
+	RegisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.LegacyPayload], error)
+	UnregisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -98,6 +101,8 @@ func (c *cronCapability) Info(ctx context.Context) (capabilities.CapabilityInfo,
 
 var _ capabilities.ExecutableAndTriggerCapability = (*cronCapability)(nil)
 
+const CronID = "cron-trigger@1.0.0"
+
 func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "Trigger":
@@ -105,7 +110,7 @@ func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabiliti
 		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
 	case "":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterLegacyTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}
@@ -126,7 +131,7 @@ func (c *cronCapability) UnregisterTrigger(ctx context.Context, request capabili
 		if err != nil {
 			return err
 		}
-		return c.CronCapability.UnregisterTrigger(ctx, request.TriggerID, request.Metadata, input)
+		return c.CronCapability.UnregisterLegacyTrigger(ctx, request.TriggerID, request.Metadata, input)
 	default:
 		return fmt.Errorf("method %s not found", request.Method)
 	}

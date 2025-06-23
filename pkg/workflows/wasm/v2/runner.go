@@ -30,8 +30,12 @@ func newRunner[C Config](parse func(configBytes []byte) (C, error), runnerIntern
 	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
 	return runnerWrapper[C]{baseRunner: getRunner(
 		parse,
-		&subscriber[C, sdk.Runtime]{runnerInternals: runnerInternals},
+		&subscriber[C, sdk.Runtime]{
+			sp:              drt,
+			runnerInternals: runnerInternals,
+		},
 		&runner[C, sdk.Runtime]{
+			sp:              drt,
 			runtime:         drt,
 			runnerInternals: runnerInternals,
 			setRuntime: func(config []byte, maxResponseSize uint64) {
@@ -48,6 +52,7 @@ type runner[C, T any] struct {
 	runtime    T
 	setRuntime func(config []byte, maxResponseSize uint64)
 	config     C
+	sp         sdk.SecretsProvider
 }
 
 var _ baseRunner[any, sdk.Runtime] = (*runner[any, sdk.Runtime])(nil)
@@ -56,15 +61,22 @@ func (r *runner[C, T]) cfg() C {
 	return r.config
 }
 
+func (r *runner[C, T]) secretsProvider() sdk.SecretsProvider {
+	return r.sp
+}
+
 func (r *runner[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
-	wcx := &sdk.WorkflowContext[C]{
-		Config:    r.config,
-		LogWriter: &writer{},
-		Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+	env := &sdk.Environment[C]{
+		NodeEnvironment: sdk.NodeEnvironment[C]{
+			Config:    r.config,
+			LogWriter: &writer{},
+			Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+		},
+		SecretsProvider: r.secretsProvider(),
 	}
 	for idx, handler := range wfs {
 		if uint64(idx) == r.trigger.Id {
-			response, err := handler.Callback()(wcx, r.runtime, r.trigger.Payload)
+			response, err := handler.Callback()(env, r.runtime, r.trigger.Payload)
 			execResponse := &pb.ExecutionResult{}
 			if err == nil {
 				wrapped, err := values.Wrap(response)
@@ -87,12 +99,17 @@ type subscriber[C, T any] struct {
 	runnerInternals
 	id     string
 	config C
+	sp     sdk.SecretsProvider
 }
 
 var _ baseRunner[any, sdk.Runtime] = &subscriber[any, sdk.Runtime]{}
 
 func (s *subscriber[C, T]) cfg() C {
 	return s.config
+}
+
+func (s *subscriber[C, T]) secretsProvider() sdk.SecretsProvider {
+	return s.sp
 }
 
 func (s *subscriber[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
@@ -119,11 +136,14 @@ func (s *subscriber[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
 	}
 }
 
-func getWorkflows[C any](config C, initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) sdk.Workflow[C] {
-	wfs, err := initFn(&sdk.WorkflowContext[C]{
-		Config:    config,
-		LogWriter: &writer{},
-		Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+func getWorkflows[C any](config C, secretsProvider sdk.SecretsProvider, initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) sdk.Workflow[C] {
+	wfs, err := initFn(&sdk.Environment[C]{
+		NodeEnvironment: sdk.NodeEnvironment[C]{
+			Config:    config,
+			LogWriter: &writer{},
+			Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+		},
+		SecretsProvider: secretsProvider,
 	})
 	if err != nil {
 		exitErr(err.Error())
@@ -181,6 +201,7 @@ func exitErr(msg string) {
 }
 
 type baseRunner[C, T any] interface {
+	secretsProvider() sdk.SecretsProvider
 	cfg() C
 	run([]sdk.ExecutionHandler[C, T])
 }
@@ -189,7 +210,7 @@ type runnerWrapper[C any] struct {
 	baseRunner[C, sdk.Runtime]
 }
 
-func (r runnerWrapper[C]) Run(initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) {
-	wfs := getWorkflows(r.baseRunner.cfg(), initFn)
+func (r runnerWrapper[C]) Run(initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) {
+	wfs := getWorkflows(r.baseRunner.cfg(), r.baseRunner.secretsProvider(), initFn)
 	r.baseRunner.run(wfs)
 }

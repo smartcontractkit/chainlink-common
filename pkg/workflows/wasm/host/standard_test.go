@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -310,6 +311,32 @@ func TestRandom(t *testing.T) {
 	})
 }
 
+func TestSecrets(t *testing.T) {
+	t.Parallel()
+
+	m := makeTestModule(t)
+
+	t.Run("returns the secret value", func(t *testing.T) {
+		result := runSecretTest(t, m, &sdkpb.SecretResponse{
+			Response: &sdkpb.SecretResponse_Secret{
+				Secret: &sdkpb.Secret{
+					Value: "Bar",
+				},
+			},
+		})
+		require.Equal(t, "Bar", result.GetValue().GetStringValue())
+	})
+
+	t.Run("returns an error if the secret doesn't exist", func(t *testing.T) {
+		resp := runSecretTest(t, m, &sdkpb.SecretResponse{
+			Response: &sdkpb.SecretResponse_Error{
+				Error: "could not find secret",
+			},
+		})
+		assert.ErrorContains(t, errors.New(resp.GetError()), "could not find secret")
+	})
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *pb.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)
@@ -420,4 +447,23 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 		}
 	}
 	assert.Empty(t, sb.String())
+}
+
+func runSecretTest(t *testing.T, m *module, secretResponse *sdkpb.SecretResponse) *pb.ExecutionResult {
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+
+	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, request *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error) {
+			assert.Len(t, request.Requests, 1)
+			assert.Equal(t, "Foo", request.Requests[0].Id)
+			return []*sdkpb.SecretResponse{secretResponse}, nil
+		}).
+		Once()
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	executeRequest := triggerExecuteRequest(t, 0, trigger)
+	response, err := m.Execute(t.Context(), executeRequest, mockExecutionHelper)
+	require.NoError(t, err)
+	return response
 }

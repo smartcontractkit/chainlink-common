@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750701593717,
+  "lastUpdate": 1750781564291,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16422,6 +16422,48 @@ window.BENCHMARK_DATA = {
             "value": 28476,
             "unit": "ns/op",
             "extra": "40442 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "93f383781b0aba88ded6a303e7744af02dcd213e",
+          "message": "Update to use chainlink protos for CRE sdk, the CRE generator, and values.Value. (#1281)",
+          "timestamp": "2025-06-24T18:10:23+02:00",
+          "tree_id": "ce5a7e51257176db4db36e5fd88bf729f7d3aa5e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/93f383781b0aba88ded6a303e7744af02dcd213e"
+        },
+        "date": 1750781562713,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.8,
+            "unit": "ns/op",
+            "extra": "3338826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.7,
+            "unit": "ns/op",
+            "extra": "2917545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28242,
+            "unit": "ns/op",
+            "extra": "42625 times\n4 procs"
           }
         ]
       }

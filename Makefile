@@ -34,7 +34,7 @@ rm-builders:
 	rm -f ./pkg/workflows/wasm/host/test/cmd/testmodule.wasm
 
 .PHONY: generate
-generate: mockery install-protoc gomods clprotos cre-protoc
+generate: mockery install-protoc gomods cre-protoc
 	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files
 

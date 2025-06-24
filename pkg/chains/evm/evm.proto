@@ -6,6 +6,7 @@ package loop.evm;
 import "google/protobuf/empty.proto";
 import "loop/chain-common/query.proto";
 import "values/pb/values.proto";
+import "google/protobuf/any.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
@@ -257,14 +258,46 @@ enum TransactionStatus {
   TRANSACTION_STATUS_FATAL = 5;
 }
 
+message ChainHeight {
+  int64 latest = 1;
+  int64 safe = 2;
+  int64 finalized = 3;
+}
+
+enum RequestType {
+  REQUEST_TYPE_UNKNOWN = 0;
+  REQUEST_TYPE_EVENTUALLY_CONSISTENT = 1;
+  REQUEST_TYPE_LOCKABLE_TO_BLOCK = 2;
+  REQUEST_TYPE_AGGREGATABLE = 3;
+}
+
+message RequestObservation {
+  // Request type is needed to ensure all honest nodes, even if they have not received a request, can produce an outcome.
+  RequestType requestType = 2;
+  bytes value = 3;
+}
+
 message Observations {
-  values.BigInt latest = 1;
-  values.BigInt safe = 2;
-  values.BigInt finalized = 3;
+  ChainHeight chainHeight = 1;
+  map<string, RequestObservation> observations = 2;
+}
+
+message RequestOutcome {
+  string requestID = 1;
+  RequestType requestType = 2;
+  bytes value = 3;
 }
 
 message Outcome {
-  values.BigInt latest = 1;
-  values.BigInt safe = 2;
-  values.BigInt finalized = 3;
+  ChainHeight chainHeight = 1;
+  repeated RequestOutcome outcomes = 2;
+}
+
+message RequestReport {
+  string id = 1;
+  RequestType requestType = 2;
+  oneof payload {
+    bytes value = 3;
+    ChainHeight height = 4;
+  }
 }

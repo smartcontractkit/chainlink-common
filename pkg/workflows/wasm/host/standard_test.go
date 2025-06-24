@@ -32,6 +32,15 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+/*
+	This test will not only run against the chainlink-common repository.
+	It will also run against the cre-sdk-* repositories.
+	Modules are created using a Makefile in the test directory.
+	The default path for tests is ./standard_tests, but it can be changed using the -path flag.
+	This allows us to test the module itself to ensure it works correctly and the standard tests can pass.
+	Each cre-sdk-* repository would contain a standard_tests directory that produces the same binaries that chainlink-common does.
+*/
+
 var anyTestConfig = []byte("config")
 var anyTestTriggerValue = "test value"
 
@@ -248,7 +257,6 @@ func TestRandom(t *testing.T) {
 	gte100Exec := NewMockExecutionHelper(t)
 	gte100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
 
-	// TODO this should ensure consensus is called and return accordingly so that if there's ever a reason to await it will still work.
 	// RunAndReturn
 	gte100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 150))
 
@@ -358,6 +366,10 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionRe
 	return response
 }
 
+// makeTestModule compiles the test module from the Makefile in the testPath directory
+// The test to compile and run is determined by the test name.
+// To re-use a binary, an outer test can create the module and use t.Run to run subtests using that module.
+// When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
 	testName := strcase.ToSnake(t.Name()[len("Test"):]) + "/test.wasm"
 	cmd := exec.Command("make", testName) // #nosec

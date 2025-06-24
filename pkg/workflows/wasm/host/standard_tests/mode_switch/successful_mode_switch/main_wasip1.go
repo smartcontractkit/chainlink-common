@@ -13,12 +13,12 @@ import (
 func main() {
 	dinput := &basicaction.Inputs{InputThing: true}
 	doutput := &basicaction.Outputs{}
-	rawsdk.MakeRequest("basic-test-action@1.0.0", "PerformAction", pb.Mode_MODE_DON, dinput, doutput)
+	rawsdk.DoRequest("basic-test-action@1.0.0", "PerformAction", pb.Mode_MODE_DON, dinput, doutput)
 
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_NODE))
 	ninput := &nodeaction.NodeInputs{InputThing: true}
 	noutput := &nodeaction.NodeOutputs{}
-	rawsdk.MakeRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, ninput, noutput)
+	rawsdk.DoRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, ninput, noutput)
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
 
 	dft := &nodeaction.NodeOutputs{OutputThing: 123}

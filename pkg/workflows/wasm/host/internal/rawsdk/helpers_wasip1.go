@@ -93,7 +93,7 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 	return callbackId
 }
 
-func MakeRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {
+func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {
 	Await(DoRequestAsync(capabilityId, method, mode, input), output)
 }
 

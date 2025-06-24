@@ -27,6 +27,8 @@ func NewCronCapability(t testing.TB) (*CronCapability, error) {
 
 type CronCapability struct {
 	Trigger func(ctx context.Context, input *cron.Config) (*cron.Payload, error)
+
+	LegacyTrigger func(ctx context.Context, input *cron.Config) (*cron.LegacyPayload, error)
 }
 
 func (cap *CronCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
@@ -49,6 +51,30 @@ func (cap *CronCapability) InvokeTrigger(ctx context.Context, request *sdkpb.Tri
 		}
 
 		resp, err := cap.Trigger(ctx, input)
+		if err != nil {
+			return nil, err
+		} else {
+			if resp == nil {
+				return nil, nil
+			}
+
+			payload, err := anypb.New(resp)
+			if err != nil {
+				return nil, err
+			}
+			trigger.Payload = payload
+		}
+	case "LegacyTrigger":
+		input := &cron.Config{}
+		if err := request.Payload.UnmarshalTo(input); err != nil {
+			return nil, err
+		}
+
+		if cap.LegacyTrigger == nil {
+			return nil, registry.ErrNoTriggerStub("LegacyTrigger")
+		}
+
+		resp, err := cap.LegacyTrigger(ctx, input)
 		if err != nil {
 			return nil, err
 		} else {

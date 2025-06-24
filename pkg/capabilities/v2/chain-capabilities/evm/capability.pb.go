@@ -9,7 +9,6 @@ package evm
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
 	evm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -72,52 +71,6 @@ func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
 // Deprecated: Use ConfidenceLevel.Descriptor instead.
 func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
 	return file_capability_proto_rawDescGZIP(), []int{0}
-}
-
-type ReceiverContractExecutionStatus int32
-
-const (
-	ReceiverContractExecutionStatus_SUCCESS  ReceiverContractExecutionStatus = 0
-	ReceiverContractExecutionStatus_REVERTED ReceiverContractExecutionStatus = 1
-)
-
-// Enum value maps for ReceiverContractExecutionStatus.
-var (
-	ReceiverContractExecutionStatus_name = map[int32]string{
-		0: "SUCCESS",
-		1: "REVERTED",
-	}
-	ReceiverContractExecutionStatus_value = map[string]int32{
-		"SUCCESS":  0,
-		"REVERTED": 1,
-	}
-)
-
-func (x ReceiverContractExecutionStatus) Enum() *ReceiverContractExecutionStatus {
-	p := new(ReceiverContractExecutionStatus)
-	*p = x
-	return p
-}
-
-func (x ReceiverContractExecutionStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ReceiverContractExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[1].Descriptor()
-}
-
-func (ReceiverContractExecutionStatus) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[1]
-}
-
-func (x ReceiverContractExecutionStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ReceiverContractExecutionStatus.Descriptor instead.
-func (ReceiverContractExecutionStatus) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{1}
 }
 
 type FilterLogTriggerRequest struct {
@@ -218,34 +171,7 @@ const file_capability_proto_rawDesc = "" +
 	"\x06topic4\x18\x05 \x03(\fR\x06topic4\x12?\n" +
 	"\n" +
 	"Confidence\x18\x06 \x01(\x0e2\x1f.cre.sdk.v2.evm.ConfidenceLevelR\n" +
-	"Confidence\"\x84\x01\n" +
-	"\fSignedReport\x12\x1d\n" +
-	"\n" +
-	"raw_report\x18\x01 \x01(\fR\trawReport\x12%\n" +
-	"\x0ereport_context\x18\x02 \x01(\fR\rreportContext\x12\x1e\n" +
-	"\n" +
-	"signatures\x18\x03 \x03(\fR\n" +
-	"signatures\x12\x0e\n" +
-	"\x02id\x18\x04 \x01(\fR\x02id\"\xb4\x01\n" +
-	"\x12WriteReportRequest\x12\x1a\n" +
-	"\breceiver\x18\x01 \x01(\fR\breceiver\x124\n" +
-	"\x06report\x18\x02 \x01(\v2\x1c.cre.sdk.v2.evm.SignedReportR\x06report\x12=\n" +
-	"\n" +
-	"gas_config\x18\x03 \x01(\v2\x19.cre.sdk.v2.evm.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
-	"\v_gas_config\"(\n" +
-	"\tGasConfig\x12\x1b\n" +
-	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"\xa6\x03\n" +
-	"\x10WriteReportReply\x12/\n" +
-	"\ttx_status\x18\x01 \x01(\x0e2\x12.loop.evm.TxStatusR\btxStatus\x12\x81\x01\n" +
-	"\"receiver_contract_execution_status\x18\x02 \x01(\x0e2/.cre.sdk.v2.evm.ReceiverContractExecutionStatusH\x00R\x1freceiverContractExecutionStatus\x88\x01\x01\x12\x1c\n" +
-	"\atx_hash\x18\x03 \x01(\fH\x01R\x06txHash\x88\x01\x01\x12<\n" +
-	"\x0ftransaction_fee\x18\x04 \x01(\v2\x0e.values.BigIntH\x02R\x0etransactionFee\x88\x01\x01\x12(\n" +
-	"\rerror_message\x18\x05 \x01(\tH\x03R\ferrorMessage\x88\x01\x01B%\n" +
-	"#_receiver_contract_execution_statusB\n" +
-	"\n" +
-	"\b_tx_hashB\x12\n" +
-	"\x10_transaction_feeB\x10\n" +
-	"\x0e_error_message*6\n" +
+	"Confidence*6\n" +
 	"\x0fConfidenceLevel\x12\b\n" +
 	"\x04SAFE\x10\x00\x12\n" +
 	"\n" +
@@ -282,70 +208,56 @@ var file_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_capability_proto_goTypes = []any{
 	(ConfidenceLevel)(0),                     // 0: cre.sdk.v2.evm.ConfidenceLevel
-	(ReceiverContractExecutionStatus)(0),     // 1: cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	(*FilterLogTriggerRequest)(nil),          // 2: cre.sdk.v2.evm.FilterLogTriggerRequest
-	(*SignedReport)(nil),                     // 3: cre.sdk.v2.evm.SignedReport
-	(*WriteReportRequest)(nil),               // 4: cre.sdk.v2.evm.WriteReportRequest
-	(*GasConfig)(nil),                        // 5: cre.sdk.v2.evm.GasConfig
-	(*WriteReportReply)(nil),                 // 6: cre.sdk.v2.evm.WriteReportReply
-	(evm.TxStatus)(0),                        // 7: loop.evm.TxStatus
-	(*pb.BigInt)(nil),                        // 8: values.BigInt
-	(*evm.CallContractRequest)(nil),          // 9: loop.evm.CallContractRequest
-	(*evm.FilterLogsRequest)(nil),            // 10: loop.evm.FilterLogsRequest
-	(*evm.BalanceAtRequest)(nil),             // 11: loop.evm.BalanceAtRequest
-	(*evm.EstimateGasRequest)(nil),           // 12: loop.evm.EstimateGasRequest
-	(*evm.GetTransactionByHashRequest)(nil),  // 13: loop.evm.GetTransactionByHashRequest
-	(*evm.GetTransactionReceiptRequest)(nil), // 14: loop.evm.GetTransactionReceiptRequest
-	(*emptypb.Empty)(nil),                    // 15: google.protobuf.Empty
-	(*evm.QueryTrackedLogsRequest)(nil),      // 16: loop.evm.QueryTrackedLogsRequest
-	(*evm.RegisterLogTrackingRequest)(nil),   // 17: loop.evm.RegisterLogTrackingRequest
-	(*evm.UnregisterLogTrackingRequest)(nil), // 18: loop.evm.UnregisterLogTrackingRequest
-	(*evm.CallContractReply)(nil),            // 19: loop.evm.CallContractReply
-	(*evm.FilterLogsReply)(nil),              // 20: loop.evm.FilterLogsReply
-	(*evm.BalanceAtReply)(nil),               // 21: loop.evm.BalanceAtReply
-	(*evm.EstimateGasReply)(nil),             // 22: loop.evm.EstimateGasReply
-	(*evm.GetTransactionByHashReply)(nil),    // 23: loop.evm.GetTransactionByHashReply
-	(*evm.GetTransactionReceiptReply)(nil),   // 24: loop.evm.GetTransactionReceiptReply
-	(*evm.LatestAndFinalizedHeadReply)(nil),  // 25: loop.evm.LatestAndFinalizedHeadReply
-	(*evm.QueryTrackedLogsReply)(nil),        // 26: loop.evm.QueryTrackedLogsReply
-	(*evm.Log)(nil),                          // 27: loop.evm.Log
+	(*FilterLogTriggerRequest)(nil),          // 1: cre.sdk.v2.evm.FilterLogTriggerRequest
+	(*evm.CallContractRequest)(nil),          // 2: loop.evm.CallContractRequest
+	(*evm.FilterLogsRequest)(nil),            // 3: loop.evm.FilterLogsRequest
+	(*evm.BalanceAtRequest)(nil),             // 4: loop.evm.BalanceAtRequest
+	(*evm.EstimateGasRequest)(nil),           // 5: loop.evm.EstimateGasRequest
+	(*evm.GetTransactionByHashRequest)(nil),  // 6: loop.evm.GetTransactionByHashRequest
+	(*evm.GetTransactionReceiptRequest)(nil), // 7: loop.evm.GetTransactionReceiptRequest
+	(*emptypb.Empty)(nil),                    // 8: google.protobuf.Empty
+	(*evm.QueryTrackedLogsRequest)(nil),      // 9: loop.evm.QueryTrackedLogsRequest
+	(*evm.RegisterLogTrackingRequest)(nil),   // 10: loop.evm.RegisterLogTrackingRequest
+	(*evm.UnregisterLogTrackingRequest)(nil), // 11: loop.evm.UnregisterLogTrackingRequest
+	(*evm.CallContractReply)(nil),            // 12: loop.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),              // 13: loop.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),               // 14: loop.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),             // 15: loop.evm.EstimateGasReply
+	(*evm.GetTransactionByHashReply)(nil),    // 16: loop.evm.GetTransactionByHashReply
+	(*evm.GetTransactionReceiptReply)(nil),   // 17: loop.evm.GetTransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),  // 18: loop.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),        // 19: loop.evm.QueryTrackedLogsReply
+	(*evm.Log)(nil),                          // 20: loop.evm.Log
 }
 var file_capability_proto_depIdxs = []int32{
 	0,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.Confidence:type_name -> cre.sdk.v2.evm.ConfidenceLevel
-	3,  // 1: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
-	5,  // 2: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
-	7,  // 3: cre.sdk.v2.evm.WriteReportReply.tx_status:type_name -> loop.evm.TxStatus
-	1,  // 4: cre.sdk.v2.evm.WriteReportReply.receiver_contract_execution_status:type_name -> cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	8,  // 5: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.BigInt
-	9,  // 6: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
-	10, // 7: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
-	11, // 8: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
-	12, // 9: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
-	13, // 10: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
-	14, // 11: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
-	15, // 12: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	16, // 13: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
-	17, // 14: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
-	18, // 15: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	2,  // 16: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
-	4,  // 17: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
-	19, // 18: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
-	20, // 19: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	21, // 20: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	22, // 21: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	23, // 22: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	24, // 23: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	25, // 24: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	26, // 25: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	15, // 26: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	15, // 27: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	27, // 28: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
-	6,  // 29: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
-	18, // [18:30] is the sub-list for method output_type
-	6,  // [6:18] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	2,  // 1: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
+	3,  // 2: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
+	4,  // 3: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
+	5,  // 4: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
+	6,  // 5: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
+	7,  // 6: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
+	8,  // 7: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	9,  // 8: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
+	10, // 9: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
+	11, // 10: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
+	1,  // 11: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
+	12, // 12: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
+	13, // 13: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	14, // 14: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	15, // 15: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	16, // 16: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	17, // 17: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	18, // 18: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	19, // 19: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	8,  // 20: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	8,  // 21: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	20, // 22: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
+	12, // [12:23] is the sub-list for method output_type
+	1,  // [1:12] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_capability_proto_init() }
@@ -353,8 +265,6 @@ func file_capability_proto_init() {
 	if File_capability_proto != nil {
 		return
 	}
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2].OneofWrappers = []any{}
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

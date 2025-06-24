@@ -20,8 +20,6 @@ service EVM{
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
-  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
-  rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply); 
 }
 
 // represents simplified evm-style CallMsg
@@ -240,40 +238,12 @@ message QueryTrackedLogsReply {
   repeated Log logs = 1;
 }
 
-enum TxStatus {
-  TX_SUCCESS = 0;
-  TX_REVERTED = 1;
-  TX_FATAL = 2;
+message GetTransactionStatusRequest {
+  string transaction_id = 1;
 }
 
-message GasConfig {
-  uint64 gas_limit = 1;
-}
-
-message CalculateTransactionFeeRequest {
-  ReceiptGasInfo gas_info = 1;
-}
-
-// represents evm-style receipt
-message ReceiptGasInfo {
-  uint64 gas_used = 1; // gas used by this transaction (in gas units)
-  values.BigInt effective_gas_price = 2; // actual gas price paid in wei (include after EIP-1559)
-}
-
-
-message CalculateTransactionFeeReply {
-  values.BigInt transaction_fee = 1;
-}
-
-message SubmitTransactionRequest {
-  bytes to  = 1;
-  bytes data = 2;
-  optional GasConfig gas_config = 3;
-}
-
-message SubmitTransactionReply {
-  bytes txHash = 1;
-  TxStatus txStatus = 2;
+message GetTransactionStatusReply {
+  TransactionStatus transaction_status = 1;
 }
 
 // TransactionStatus is an enum for the status of a transaction.
@@ -286,13 +256,3 @@ enum TransactionStatus {
   TRANSACTION_STATUS_FAILED = 4;
   TRANSACTION_STATUS_FATAL = 5;
 }
-
-message GetTransactionStatusRequest {
-  string transaction_id = 1;
-}
-
-message GetTransactionStatusReply {
-  TransactionStatus transaction_status = 1;
-}
-
-

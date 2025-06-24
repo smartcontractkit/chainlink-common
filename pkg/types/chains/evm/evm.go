@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 )
@@ -85,11 +84,6 @@ type Transaction struct {
 	Value    *big.Int   // amount of eth sent in wei
 }
 
-type ReceiptGasInfo struct {
-	GasUsed           uint64   // actual gas used during execution in gas units
-	EffectiveGasPrice *big.Int // actual price in wei paid per gas unit
-}
-
 // matches evm-style receipt
 type Receipt struct {
 	Status            uint64   // 1 for success 0 for revert
@@ -113,52 +107,4 @@ type Head struct {
 
 type TransactionFee struct {
 	TransactionFee *big.Int // Cost of transaction in wei
-}
-
-type SignedReport struct {
-	RawReport     []byte
-	ReportContext []byte
-	Signatures    [][]byte
-	ID            []byte
-}
-
-// TransactionStatus is the result of the transaction sent to the chain
-type TransactionStatus int
-
-const (
-	//Transaction was sent successfully to the chain and successfully executed
-	TxFatal TransactionStatus = iota
-	//Transaction was sent successfully to the chain but the smart contract execution reverted
-	TxReverted
-	//Transaction was not sent successfully to the chain
-	TxSuccess
-)
-
-type TxError struct {
-	// Internal ID used for tracking purposes of transactions.
-	TxID string
-}
-
-func (e *TxError) Error() string {
-	return fmt.Sprintf("Fail processing Transaction with internal TxID: %s", e.TxID)
-}
-
-// PLEX-1524 - Refactor this to return the Tx Hash in a Transaction type and a second return value for the TxStatus. We may even be able to return the whole transaction object instead of just the hash.
-type TransactionResult struct {
-	TxStatus TransactionStatus
-	TxHash   Hash
-}
-
-type GasConfig struct {
-	// Default to nil. If not specified the value configured in GasEstimator will be used
-	GasLimit *uint64
-	// Default to nil. If not specified the value configured in GasEstimator will be used
-	MaxGasPrice *big.Int
-}
-
-type SubmitTransactionRequest struct {
-	To   Address
-	Data ABIPayload
-	// Default to nil. If not specified the configured gas estimator config will be used
-	GasConfig *GasConfig
 }

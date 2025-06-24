@@ -22,9 +22,7 @@ func UnwrapRequest(request CapabilityRequest, config proto.Message, value proto.
 
 	_, err = FromValueOrAny(request.Config, request.ConfigPayload, config)
 	if err != nil {
-		// TODO: Engine does not populate the config field in the request object
-		// disabling this check for now
-		return migrated, nil
+		return migrated, err
 	}
 
 	return migrated, nil

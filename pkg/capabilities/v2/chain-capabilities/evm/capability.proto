@@ -7,7 +7,6 @@ package cre.sdk.v2.evm;
 import "google/protobuf/empty.proto";
 import "tools/generator/v1alpha/cre_metadata.proto";
 import "chains/evm/evm.proto";
-import "values/pb/values.proto";
 
 enum ConfidenceLevel {
   SAFE = 0;
@@ -40,36 +39,4 @@ service Client {
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.Log);
-  rpc WriteReport(WriteReportRequest) returns (WriteReportReply);
-
-}
-
-message SignedReport {
-  bytes raw_report = 1;
-  bytes report_context = 2;
-  repeated bytes signatures = 3;
-  bytes id = 4;
-}
-
-enum ReceiverContractExecutionStatus {
-  SUCCESS = 0;
-  REVERTED = 1;
-}
-
-message WriteReportRequest {
-    bytes receiver = 1;
-    SignedReport report = 2;
-    optional GasConfig gas_config = 3; 
-}
-
-message GasConfig {
-  uint64 gas_limit = 1;
-}
-
-message WriteReportReply {
-  loop.evm.TxStatus tx_status = 1;
-  optional ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
-  optional bytes tx_hash = 3;
-  optional values.BigInt transaction_fee = 4;
-  optional string error_message = 5;
 }

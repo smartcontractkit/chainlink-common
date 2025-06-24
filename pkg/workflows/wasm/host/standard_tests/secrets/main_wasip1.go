@@ -7,7 +7,7 @@ import (
 func main() {
 	s, err := rawsdk.GetSecret("Foo")
 	if err != nil {
-		rawsdk.SendResponse(err.Error())
+		rawsdk.SendError(err)
 	} else {
 		rawsdk.SendResponse(s)
 	}

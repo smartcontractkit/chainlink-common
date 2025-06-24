@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/protoc/pkg/test_capabilities/mismatched/mismatched.proto
+// source: mismatched.proto
 
 package mismatchedpb
 
@@ -32,7 +32,7 @@ type Input struct {
 
 func (x *Input) Reset() {
 	*x = Input{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_msgTypes[0]
+	mi := &file_mismatched_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *Input) String() string {
 func (*Input) ProtoMessage() {}
 
 func (x *Input) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_msgTypes[0]
+	mi := &file_mismatched_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *Input) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Input.ProtoReflect.Descriptor instead.
 func (*Input) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescGZIP(), []int{0}
+	return file_mismatched_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Input) GetInputThing() bool {
@@ -67,36 +67,36 @@ func (x *Input) GetInputThing() bool {
 	return false
 }
 
-var File_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto protoreflect.FileDescriptor
+var File_mismatched_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDesc = "" +
+const file_mismatched_proto_rawDesc = "" +
 	"\n" +
-	"Hcapabilities/v2/protoc/pkg/test_capabilities/mismatched/mismatched.proto\x127capabilities.v2.protoc.pkg.test_capabilities.mismatched\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x1bgoogle/protobuf/empty.proto\"(\n" +
+	"\x10mismatched.proto\x127capabilities.v2.protoc.pkg.test_capabilities.mismatched\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x1bgoogle/protobuf/empty.proto\"(\n" +
 	"\x05Input\x12\x1f\n" +
 	"\vinput_thing\x18\x01 \x01(\bR\n" +
-	"inputThing2\x8a\x01\n" +
+	"inputThing2\x8c\x01\n" +
 	"\n" +
 	"Mismatched\x12g\n" +
-	"\rExampleMethod\x12>.capabilities.v2.protoc.pkg.test_capabilities.mismatched.Input\x1a\x16.google.protobuf.Empty\x1a\x13\x82\xb5\x18\x0f\x12\rexample@1.0.0BwZugithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/mismatched;mismatchedpbb\x06proto3"
+	"\rExampleMethod\x12>.capabilities.v2.protoc.pkg.test_capabilities.mismatched.Input\x1a\x16.google.protobuf.Empty\x1a\x15\x82\xb5\x18\x11\b\x01\x12\rexample@1.0.0BwZugithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/mismatched;mismatchedpbb\x06proto3"
 
 var (
-	file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescOnce sync.Once
-	file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescData []byte
+	file_mismatched_proto_rawDescOnce sync.Once
+	file_mismatched_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDesc)))
+func file_mismatched_proto_rawDescGZIP() []byte {
+	file_mismatched_proto_rawDescOnce.Do(func() {
+		file_mismatched_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_mismatched_proto_rawDesc), len(file_mismatched_proto_rawDesc)))
 	})
-	return file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDescData
+	return file_mismatched_proto_rawDescData
 }
 
-var file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_goTypes = []any{
+var file_mismatched_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_mismatched_proto_goTypes = []any{
 	(*Input)(nil),         // 0: capabilities.v2.protoc.pkg.test_capabilities.mismatched.Input
 	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
 }
-var file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_depIdxs = []int32{
+var file_mismatched_proto_depIdxs = []int32{
 	0, // 0: capabilities.v2.protoc.pkg.test_capabilities.mismatched.Mismatched.ExampleMethod:input_type -> capabilities.v2.protoc.pkg.test_capabilities.mismatched.Input
 	1, // 1: capabilities.v2.protoc.pkg.test_capabilities.mismatched.Mismatched.ExampleMethod:output_type -> google.protobuf.Empty
 	1, // [1:2] is the sub-list for method output_type
@@ -106,26 +106,26 @@ var file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_prot
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_init() }
-func file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_init() {
-	if File_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto != nil {
+func init() { file_mismatched_proto_init() }
+func file_mismatched_proto_init() {
+	if File_mismatched_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mismatched_proto_rawDesc), len(file_mismatched_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_depIdxs,
-		MessageInfos:      file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_msgTypes,
+		GoTypes:           file_mismatched_proto_goTypes,
+		DependencyIndexes: file_mismatched_proto_depIdxs,
+		MessageInfos:      file_mismatched_proto_msgTypes,
 	}.Build()
-	File_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto = out.File
-	file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_goTypes = nil
-	file_capabilities_v2_protoc_pkg_test_capabilities_mismatched_mismatched_proto_depIdxs = nil
+	File_mismatched_proto = out.File
+	file_mismatched_proto_goTypes = nil
+	file_mismatched_proto_depIdxs = nil
 }

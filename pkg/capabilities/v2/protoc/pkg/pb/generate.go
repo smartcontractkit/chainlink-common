@@ -1,3 +1,4 @@
+//go:generate go run ./gen
+//go:generate mv tools/generator/v1alpha/cre_metadata.pb.go cre_metadata.pb.go
+//go:generate rm -rf tools
 package pb
-
-//go:generate protoc --go_out=../../../../.. --go_opt=paths=source_relative  --proto_path=../../../../.. capabilities/v2/protoc/pkg/pb/cre_metadata.proto

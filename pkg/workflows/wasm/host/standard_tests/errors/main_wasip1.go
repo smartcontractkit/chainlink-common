@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/standard_tests/internal/rawsdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 )
 
 func main() {

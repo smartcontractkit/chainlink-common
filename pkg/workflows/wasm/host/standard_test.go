@@ -21,8 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -32,14 +31,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-/*
-	This test will not only run against the chainlink-common repository.
-	It will also run against the cre-sdk-* repositories.
-	Modules are created using a Makefile in the test directory.
-	The default path for tests is ./standard_tests, but it can be changed using the -path flag.
-	This allows us to test the module itself to ensure it works correctly and the standard tests can pass.
-	Each cre-sdk-* repository would contain a standard_tests directory that produces the same binaries that chainlink-common does.
-*/
+// See the README.md in standard_tests for more information.
 
 var anyTestConfig = []byte("config")
 var anyTestTriggerValue = "test value"
@@ -76,7 +68,7 @@ func TestCapabilityCallsAreAsync(t *testing.T) {
 	callsSeen := map[bool]bool{}
 	mt := sync.Mutex{}
 	mt.Lock()
-	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 		assert.Equal(t, "basic-test-action@1.0.0", request.Id)
 		assert.Equal(t, "PerformAction", request.Method)
 		input := &basicaction.Inputs{}
@@ -93,8 +85,8 @@ func TestCapabilityCallsAreAsync(t *testing.T) {
 			}
 			defer mt.Unlock()
 		}()
-		return &sdkpb.CapabilityResponse{
-			Response: &sdkpb.CapabilityResponse_Payload{Payload: payload},
+		return &pb.CapabilityResponse{
+			Response: &pb.CapabilityResponse_Payload{Payload: payload},
 		}, nil
 	})
 	result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -108,15 +100,15 @@ func TestModeSwitch(t *testing.T) {
 	t.Run("successful mode switch", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			if request.Id == "basic-test-action@1.0.0" {
 				input := &basicaction.Inputs{}
 				assert.NoError(t, request.Payload.UnmarshalTo(input))
 				assert.True(t, input.InputThing)
 				payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: fmt.Sprintf("test")})
 				require.NoError(t, err)
-				return &sdkpb.CapabilityResponse{
-					Response: &sdkpb.CapabilityResponse_Payload{Payload: payload},
+				return &pb.CapabilityResponse{
+					Response: &pb.CapabilityResponse_Payload{Payload: payload},
 				}, nil
 			}
 			return setupNodeCallAndConsensusCall(t, 555)(ctx, request)
@@ -191,8 +183,8 @@ func TestMultipleTriggers(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		expected := &sdkpb.TriggerSubscriptionRequest{
-			Subscriptions: []*sdkpb.TriggerSubscription{
+		expected := &pb.TriggerSubscriptionRequest{
+			Subscriptions: []*pb.TriggerSubscription{
 				{
 					Id:      "basic-trigger@1.0.0",
 					Payload: payload0,
@@ -268,7 +260,7 @@ func TestRandom(t *testing.T) {
 	require.NoError(t, err)
 	anyRequest := &pb.ExecuteRequest{
 		Request: &pb.ExecuteRequest_Trigger{
-			Trigger: &sdkpb.Trigger{
+			Trigger: &pb.Trigger{
 				Id:      uint64(0),
 				Payload: triggerPayload,
 			},
@@ -325,9 +317,9 @@ func TestSecrets(t *testing.T) {
 	m := makeTestModule(t)
 
 	t.Run("returns the secret value", func(t *testing.T) {
-		result := runSecretTest(t, m, &sdkpb.SecretResponse{
-			Response: &sdkpb.SecretResponse_Secret{
-				Secret: &sdkpb.Secret{
+		result := runSecretTest(t, m, &pb.SecretResponse{
+			Response: &pb.SecretResponse_Secret{
+				Secret: &pb.Secret{
 					Value: "Bar",
 				},
 			},
@@ -336,8 +328,8 @@ func TestSecrets(t *testing.T) {
 	})
 
 	t.Run("returns an error if the secret doesn't exist", func(t *testing.T) {
-		resp := runSecretTest(t, m, &sdkpb.SecretResponse{
-			Response: &sdkpb.SecretResponse_Error{
+		resp := runSecretTest(t, m, &pb.SecretResponse{
+			Response: &pb.SecretResponse_Error{
 				Error: "could not find secret",
 			},
 		})
@@ -351,7 +343,7 @@ func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *pb.E
 	return &pb.ExecuteRequest{
 		Config: anyTestConfig,
 		Request: &pb.ExecuteRequest_Trigger{
-			Trigger: &sdkpb.Trigger{Id: id, Payload: wrappedTrigger},
+			Trigger: &pb.Trigger{Id: id, Payload: wrappedTrigger},
 		},
 		MaxResponseSize: uint64(defaultMaxResponseSizeBytes),
 	}
@@ -389,8 +381,8 @@ func makeTestModule(t *testing.T) *module {
 	return mod
 }
 
-func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
-	return func(_ context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
+func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+	return func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 		nodeResponse := &nodeaction.NodeOutputs{OutputThing: output}
 		var err error
 		var payload *anypb.Any
@@ -404,19 +396,19 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 				require.Fail(t, err.Error())
 			}
 		case "consensus@1.0.0":
-			input := &sdkpb.SimpleConsensusInputs{}
+			input := &pb.SimpleConsensusInputs{}
 			require.NoError(t, request.Payload.UnmarshalTo(input))
 
 			expectedObservation := wrapValue(t, nodeResponse)
-			expectedInput := &sdkpb.SimpleConsensusInputs{
-				Observation: &sdkpb.SimpleConsensusInputs_Value{Value: expectedObservation},
-				Descriptors: &sdkpb.ConsensusDescriptor{
-					Descriptor_: &sdkpb.ConsensusDescriptor_FieldsMap{
-						FieldsMap: &sdkpb.FieldsMap{
-							Fields: map[string]*sdkpb.ConsensusDescriptor{
+			expectedInput := &pb.SimpleConsensusInputs{
+				Observation: &pb.SimpleConsensusInputs_Value{Value: expectedObservation},
+				Descriptors: &pb.ConsensusDescriptor{
+					Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
+						FieldsMap: &pb.FieldsMap{
+							Fields: map[string]*pb.ConsensusDescriptor{
 								"OutputThing": {
-									Descriptor_: &sdkpb.ConsensusDescriptor_Aggregation{
-										Aggregation: sdkpb.AggregationType_IDENTICAL,
+									Descriptor_: &pb.ConsensusDescriptor_Aggregation{
+										Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 									},
 								},
 							},
@@ -434,8 +426,8 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			return nil, err
 		}
 
-		return &sdkpb.CapabilityResponse{
-			Response: &sdkpb.CapabilityResponse_Payload{
+		return &pb.CapabilityResponse{
+			Response: &pb.CapabilityResponse_Payload{
 				Payload: payload,
 			},
 		}, nil
@@ -461,15 +453,15 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 	assert.Empty(t, sb.String())
 }
 
-func runSecretTest(t *testing.T, m *module, secretResponse *sdkpb.SecretResponse) *pb.ExecutionResult {
+func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *pb.ExecutionResult {
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
-		RunAndReturn(func(_ context.Context, request *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error) {
+		RunAndReturn(func(_ context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {
 			assert.Len(t, request.Requests, 1)
 			assert.Equal(t, "Foo", request.Requests[0].Id)
-			return []*sdkpb.SecretResponse{secretResponse}, nil
+			return []*pb.SecretResponse{secretResponse}, nil
 		}).
 		Once()
 

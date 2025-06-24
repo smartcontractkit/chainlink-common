@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -37,8 +36,8 @@ func Test_NoDag_Run(t *testing.T) {
 		defer m.Close()
 
 		ctx := t.Context()
-		req := &wasmpb.ExecuteRequest{
-			Request: &wasmpb.ExecuteRequest_Trigger{},
+		req := &pb.ExecuteRequest{
+			Request: &pb.ExecuteRequest_Trigger{},
 		}
 
 		_, err = m.Execute(ctx, req, nil)
@@ -67,12 +66,12 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 	}
 }
 
-func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
+func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
 	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
-	execResult, err := m.Execute(t.Context(), &wasmpb.ExecuteRequest{
+	execResult, err := m.Execute(t.Context(), &pb.ExecuteRequest{
 		Config:  config,
-		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
+		Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
 	}, helper)
 
 	if err != nil {
@@ -80,9 +79,9 @@ func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSub
 	}
 
 	switch r := execResult.Result.(type) {
-	case *wasmpb.ExecutionResult_TriggerSubscriptions:
+	case *pb.ExecutionResult_TriggerSubscriptions:
 		return r.TriggerSubscriptions, nil
-	case *wasmpb.ExecutionResult_Error:
+	case *pb.ExecutionResult_Error:
 		return nil, errors.New(r.Error)
 	default:
 		return nil, errors.New("unexpected response from WASM binary: got nil spec response")

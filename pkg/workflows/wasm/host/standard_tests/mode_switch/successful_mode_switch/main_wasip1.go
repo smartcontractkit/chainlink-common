@@ -7,19 +7,19 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/standard_tests/internal/rawsdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 )
 
 func main() {
 	dinput := &basicaction.Inputs{InputThing: true}
 	doutput := &basicaction.Outputs{}
-	rawsdk.MakeRequest("basic-test-action@1.0.0", "PerformAction", pb.Mode_DON, dinput, doutput)
+	rawsdk.MakeRequest("basic-test-action@1.0.0", "PerformAction", pb.Mode_MODE_DON, dinput, doutput)
 
-	rawsdk.SwitchModes(int32(pb.Mode_Node))
+	rawsdk.SwitchModes(int32(pb.Mode_MODE_NODE))
 	ninput := &nodeaction.NodeInputs{InputThing: true}
 	noutput := &nodeaction.NodeOutputs{}
-	rawsdk.MakeRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_Node, ninput, noutput)
-	rawsdk.SwitchModes(int32(pb.Mode_DON))
+	rawsdk.MakeRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, ninput, noutput)
+	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
 
 	dft := &nodeaction.NodeOutputs{OutputThing: 123}
 	consensus := &pb.SimpleConsensusInputs{

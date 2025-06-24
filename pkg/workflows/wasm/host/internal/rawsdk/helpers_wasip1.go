@@ -8,8 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -48,7 +47,7 @@ func SendError(err error) {
 	os.Exit(0)
 }
 
-func SendSubscription(subscriptions *sdkpb.TriggerSubscriptionRequest) {
+func SendSubscription(subscriptions *pb.TriggerSubscriptionRequest) {
 	execResult := &pb.ExecutionResult{Result: &pb.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
 }
@@ -56,13 +55,13 @@ func SendSubscription(subscriptions *sdkpb.TriggerSubscriptionRequest) {
 var donCall = int32(0)
 var nodeCall = int32(-1)
 
-var NodeOutputConsensusDescriptor = &sdkpb.ConsensusDescriptor{
-	Descriptor_: &sdkpb.ConsensusDescriptor_FieldsMap{
-		FieldsMap: &sdkpb.FieldsMap{
-			Fields: map[string]*sdkpb.ConsensusDescriptor{
+var NodeOutputConsensusDescriptor = &pb.ConsensusDescriptor{
+	Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
+		FieldsMap: &pb.FieldsMap{
+			Fields: map[string]*pb.ConsensusDescriptor{
 				"OutputThing": {
-					Descriptor_: &sdkpb.ConsensusDescriptor_Aggregation{
-						Aggregation: sdkpb.AggregationType_IDENTICAL,
+					Descriptor_: &pb.ConsensusDescriptor_Aggregation{
+						Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
 					},
 				},
 			},
@@ -70,9 +69,9 @@ var NodeOutputConsensusDescriptor = &sdkpb.ConsensusDescriptor{
 	},
 }
 
-func MakeRequestAsync(capabilityId, method string, mode sdkpb.Mode, input proto.Message) int32 {
+func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Message) int32 {
 	var callbackId int32
-	if mode == sdkpb.Mode_Node {
+	if mode == pb.Mode_MODE_NODE {
 		callbackId = nodeCall
 		nodeCall--
 	} else {
@@ -80,7 +79,7 @@ func MakeRequestAsync(capabilityId, method string, mode sdkpb.Mode, input proto.
 		donCall++
 	}
 
-	req := &sdkpb.CapabilityRequest{
+	req := &pb.CapabilityRequest{
 		Id:         capabilityId,
 		Payload:    Must(anypb.New(input)),
 		Method:     method,
@@ -94,15 +93,15 @@ func MakeRequestAsync(capabilityId, method string, mode sdkpb.Mode, input proto.
 	return callbackId
 }
 
-func MakeRequest[I, O proto.Message](capabilityId, method string, mode sdkpb.Mode, input I, output O) {
-	Await(MakeRequestAsync(capabilityId, method, mode, input), output)
+func MakeRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {
+	Await(DoRequestAsync(capabilityId, method, mode, input), output)
 }
 
 func GetSecret(id string) (string, error) {
 	callbackId := donCall
 	donCall++
-	marshalled := Must(proto.Marshal(&sdkpb.GetSecretsRequest{
-		Requests: []*sdkpb.SecretRequest{
+	marshalled := Must(proto.Marshal(&pb.GetSecretsRequest{
+		Requests: []*pb.SecretRequest{
 			{
 				Id: id,
 			},
@@ -120,8 +119,8 @@ func GetSecret(id string) (string, error) {
 		SendError(errors.New("callCapability returned an error"))
 	}
 
-	req := &sdkpb.AwaitSecretsRequest{Ids: []int32{callbackId}}
-	resp := &sdkpb.AwaitSecretsResponse{}
+	req := &pb.AwaitSecretsRequest{Ids: []int32{callbackId}}
+	resp := &pb.AwaitSecretsResponse{}
 	await(req, resp, awaitSecrets)
 	if len(resp.Responses) != 1 {
 		SendError(fmt.Errorf("expected 1 response, got %d", len(resp.Responses)))
@@ -133,9 +132,9 @@ func GetSecret(id string) (string, error) {
 	}
 
 	switch r := responses[0].Response.(type) {
-	case *sdkpb.SecretResponse_Secret:
+	case *pb.SecretResponse_Secret:
 		return r.Secret.Value, nil
-	case *sdkpb.SecretResponse_Error:
+	case *pb.SecretResponse_Error:
 		return "", errors.New(r.Error)
 	default:
 		SendError(fmt.Errorf("unexpected response type: %T", r))
@@ -145,8 +144,8 @@ func GetSecret(id string) (string, error) {
 }
 
 func Await[O proto.Message](callbackId int32, output O) {
-	resp := &sdkpb.AwaitCapabilitiesResponse{}
-	await(&sdkpb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
+	resp := &pb.AwaitCapabilitiesResponse{}
+	await(&pb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
 
 	payload := resp.Responses[callbackId].GetPayload()
 	if payload.UnmarshalTo(output) != nil {

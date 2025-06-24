@@ -6,17 +6,16 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/standard_tests/internal/rawsdk"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func main() {
 	switch request := rawsdk.GetRequest().Request.(type) {
-	case *wasmpb.ExecuteRequest_Subscribe:
+	case *pb.ExecuteRequest_Subscribe:
 		subscribe()
-	case *wasmpb.ExecuteRequest_Trigger:
+	case *pb.ExecuteRequest_Trigger:
 		trigger(request)
 	}
 }
@@ -54,7 +53,7 @@ func subscribe() {
 	rawsdk.SendSubscription(subscription)
 }
 
-func trigger(request *wasmpb.ExecuteRequest_Trigger) {
+func trigger(request *pb.ExecuteRequest_Trigger) {
 	switch request.Trigger.Id {
 	case 0, 2:
 		proveTrigger(request.Trigger, &basictrigger.Outputs{})

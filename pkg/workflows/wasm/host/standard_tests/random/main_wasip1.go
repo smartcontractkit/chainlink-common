@@ -8,18 +8,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/standard_tests/internal/rawsdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 )
 
 func main() {
-	dr := rand.New(rand.NewSource(rawsdk.GetSeed(int32(pb.Mode_DON))))
+	dr := rand.New(rand.NewSource(rawsdk.GetSeed(int32(pb.Mode_MODE_DON))))
 	total := dr.Uint64()
 
-	nr := rand.New(rand.NewSource(rawsdk.GetSeed(int32(pb.Mode_Node))))
-	rawsdk.SwitchModes(int32(pb.Mode_Node))
+	nr := rand.New(rand.NewSource(rawsdk.GetSeed(int32(pb.Mode_MODE_NODE))))
+	rawsdk.SwitchModes(int32(pb.Mode_MODE_NODE))
 	result := &nodeaction.NodeOutputs{}
 	input := &nodeaction.NodeInputs{InputThing: true}
-	rawsdk.MakeRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_Node, input, result)
+	rawsdk.MakeRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, input, result)
 	if result.OutputThing < 100 {
 		msg := []byte(strconv.FormatUint(nr.Uint64(), 10))
 		rawsdk.Log(rawsdk.BufferToPointerLen(msg))
@@ -33,8 +33,8 @@ func main() {
 	}
 
 	cresult := &valuespb.Value{}
-	rawsdk.MakeRequest("consensus@1.0.0", "Simple", pb.Mode_DON, consensus, cresult)
-	rawsdk.SwitchModes(int32(pb.Mode_DON))
+	rawsdk.MakeRequest("consensus@1.0.0", "Simple", pb.Mode_MODE_DON, consensus, cresult)
+	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
 	total += dr.Uint64()
 	rawsdk.SendResponse(total)
 }

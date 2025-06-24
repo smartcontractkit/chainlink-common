@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/chain-capabilities/evm/capability.proto
+// source: capability.proto
 
 package evm
 
@@ -57,11 +57,11 @@ func (x ConfidenceLevel) String() string {
 }
 
 func (ConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0].Descriptor()
+	return file_capability_proto_enumTypes[0].Descriptor()
 }
 
 func (ConfidenceLevel) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0]
+	return &file_capability_proto_enumTypes[0]
 }
 
 func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
@@ -70,7 +70,7 @@ func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConfidenceLevel.Descriptor instead.
 func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+	return file_capability_proto_rawDescGZIP(), []int{0}
 }
 
 type FilterLogTriggerRequest struct {
@@ -87,7 +87,7 @@ type FilterLogTriggerRequest struct {
 
 func (x *FilterLogTriggerRequest) Reset() {
 	*x = FilterLogTriggerRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[0]
+	mi := &file_capability_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *FilterLogTriggerRequest) String() string {
 func (*FilterLogTriggerRequest) ProtoMessage() {}
 
 func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[0]
+	mi := &file_capability_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
 func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+	return file_capability_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *FilterLogTriggerRequest) GetAddresses() [][]byte {
@@ -157,11 +157,11 @@ func (x *FilterLogTriggerRequest) GetConfidence() ConfidenceLevel {
 	return ConfidenceLevel_SAFE
 }
 
-var File_capabilities_v2_chain_capabilities_evm_capability_proto protoreflect.FileDescriptor
+var File_capability_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
+const file_capability_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"\xdf\x01\n" +
+	"\x10capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"\xdf\x01\n" +
 	"\x17FilterLogTriggerRequest\x12\x1c\n" +
 	"\taddresses\x18\x01 \x03(\fR\taddresses\x12\x1d\n" +
 	"\n" +
@@ -176,7 +176,7 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x04SAFE\x10\x00\x12\n" +
 	"\n" +
 	"\x06LATEST\x10\x01\x12\r\n" +
-	"\tFINALIZED\x10\x022\xa9\a\n" +
+	"\tFINALIZED\x10\x022\xab\a\n" +
 	"\x06Client\x12J\n" +
 	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +
 	"\n" +
@@ -190,23 +190,23 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x13RegisterLogTracking\x12$.loop.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
 	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12F\n" +
 	"\n" +
-	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
+	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x1a\x11\x82\xb5\x18\r\b\x01\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
 
 var (
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData []byte
+	file_capability_proto_rawDescOnce sync.Once
+	file_capability_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
+func file_capability_proto_rawDescGZIP() []byte {
+	file_capability_proto_rawDescOnce.Do(func() {
+		file_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capability_proto_rawDesc), len(file_capability_proto_rawDesc)))
 	})
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData
+	return file_capability_proto_rawDescData
 }
 
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any{
+var file_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_capability_proto_goTypes = []any{
 	(ConfidenceLevel)(0),                     // 0: cre.sdk.v2.evm.ConfidenceLevel
 	(*FilterLogTriggerRequest)(nil),          // 1: cre.sdk.v2.evm.FilterLogTriggerRequest
 	(*evm.CallContractRequest)(nil),          // 2: loop.evm.CallContractRequest
@@ -229,7 +229,7 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any
 	(*evm.QueryTrackedLogsReply)(nil),        // 19: loop.evm.QueryTrackedLogsReply
 	(*evm.Log)(nil),                          // 20: loop.evm.Log
 }
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = []int32{
+var file_capability_proto_depIdxs = []int32{
 	0,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.Confidence:type_name -> cre.sdk.v2.evm.ConfidenceLevel
 	2,  // 1: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
 	3,  // 2: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
@@ -260,27 +260,27 @@ var file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = []int
 	0,  // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_chain_capabilities_evm_capability_proto_init() }
-func file_capabilities_v2_chain_capabilities_evm_capability_proto_init() {
-	if File_capabilities_v2_chain_capabilities_evm_capability_proto != nil {
+func init() { file_capability_proto_init() }
+func file_capability_proto_init() {
+	if File_capability_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capability_proto_rawDesc), len(file_capability_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs,
-		EnumInfos:         file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes,
-		MessageInfos:      file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes,
+		GoTypes:           file_capability_proto_goTypes,
+		DependencyIndexes: file_capability_proto_depIdxs,
+		EnumInfos:         file_capability_proto_enumTypes,
+		MessageInfos:      file_capability_proto_msgTypes,
 	}.Build()
-	File_capabilities_v2_chain_capabilities_evm_capability_proto = out.File
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = nil
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = nil
+	File_capability_proto = out.File
+	file_capability_proto_goTypes = nil
+	file_capability_proto_depIdxs = nil
 }

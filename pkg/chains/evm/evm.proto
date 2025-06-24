@@ -5,7 +5,7 @@ package loop.evm;
 
 import "google/protobuf/empty.proto";
 import "loop/chain-common/query.proto";
-import "values/pb/values.proto";
+import "values/v1/values.proto";
 
 service EVM{
   rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
@@ -41,7 +41,7 @@ message Log {
   bytes block_hash = 4; // hash of the block containing the log, in [32]byte fix-sized array format
   bytes data = 5; // solidity-spec abi encoded log Data 
   bytes eventSig = 6; // keccak256 of event signature, in [32]byte fix-sized array format
-  values.BigInt block_number = 7;  // block number containing the log
+  values.v1.BigInt block_number = 7;  // block number containing the log
   uint32 tx_index = 8;  // index of transaction emmited the log
   uint32 index = 9;  // index of the Log within the intire block
   bool removed = 10;  // flag if the log was removed during reorg
@@ -50,8 +50,8 @@ message Log {
 // represents evm-style filter query
 message FilterQuery {
   bytes block_hash = 1; // exact block (cant use from/to), in [32]byte fix-sized array format
-  values.BigInt fromBlock = 2; // start block range
-  values.BigInt toBlock = 3; // end block range
+  values.v1.BigInt fromBlock = 2; // start block range
+  values.v1.BigInt toBlock = 3; // end block range
   repeated bytes addresses = 4; // contract(s) to filter logs from in evm address [20]byte fix-sized array format
   repeated Topics topics = 5;  // filter log by event signature and indexed args
 }
@@ -63,8 +63,8 @@ message Transaction {
   bytes to = 3; // recipient address in evm address [20]byte fix-sized array format
   bytes data = 4; // solidity-spec abi encoded input data for function call payload
   bytes hash = 5; // transaction hash, in [32]byte fix-sized array format
-  values.BigInt value = 6; // amount of eth sent in wei
-  values.BigInt gas_price = 7; // price for a single gas unit in wei
+  values.v1.BigInt value = 6; // amount of eth sent in wei
+  values.v1.BigInt gas_price = 7; // price for a single gas unit in wei
 }
 
 // represents evm-style receipt
@@ -75,8 +75,8 @@ message Receipt {
   bytes block_hash = 4; // block hash containing the transaction
   repeated Log logs = 6; // logs emitted by this transaction
   bytes tx_hash = 7; // hash of the transaction this receipt is for, in [32]byte fix-sized array format
-  values.BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
-  values.BigInt block_number = 9; // block number containing the transaction
+  values.v1.BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
+  values.v1.BigInt block_number = 9; // block number containing the transaction
   bytes contract_address = 10; // address of the contract if this transaction created one in evm address [20]byte fix-sized array format
 }
 
@@ -96,7 +96,7 @@ message LPFilter {
 
 message Head {
   uint64 timestamp = 1; // unix timestamp
-  values.BigInt block_number = 2;
+  values.v1.BigInt block_number = 2;
   bytes hash = 3; // in [32]byte fix-sized array format
   bytes parent_hash = 4; // in [32]byte fix-sized array format
 }
@@ -162,7 +162,7 @@ message LatestAndFinalizedHeadReply {
 // Any positive value is treated as an explicit block height.
 message CallContractRequest {
   CallMsg call = 1;
-  values.BigInt block_number = 2;
+  values.v1.BigInt block_number = 2;
 }
 
 message CallContractReply {
@@ -176,7 +176,7 @@ message GetTransactionFeeRequest {
 
 // GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMService.GetTransactionFee].
 message GetTransactionFeeReply {
-  values.BigInt transaction_fee = 1; // transaction fee is the cost of transaction execution in Wei
+  values.v1.BigInt transaction_fee = 1; // transaction fee is the cost of transaction execution in Wei
 }
 
 message FilterLogsRequest {
@@ -189,11 +189,11 @@ message FilterLogsReply {
 
 message BalanceAtRequest {
   bytes account = 1; // in evm address [20]byte fix-sized array format
-  values.BigInt block_number = 2;
+  values.v1.BigInt block_number = 2;
 }
 
 message BalanceAtReply {
-  values.BigInt balance = 1; // Balance of the account in wei (10^-18 eth)
+  values.v1.BigInt balance = 1; // Balance of the account in wei (10^-18 eth)
 }
 
 message EstimateGasRequest {

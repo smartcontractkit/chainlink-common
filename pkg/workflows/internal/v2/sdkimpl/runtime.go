@@ -47,7 +47,7 @@ var _ rand.Source = (*RuntimeBase)(nil)
 var _ rand.Source64 = (*RuntimeBase)(nil)
 
 func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
-	if r.Mode == pb.Mode_DON {
+	if r.Mode == pb.Mode_MODE_DON {
 		r.nextCallId++
 	} else {
 		r.nextCallId--
@@ -145,11 +145,11 @@ func (d *Runtime) GetSecret(req *pb.SecretRequest) sdk.Promise[*pb.Secret] {
 func (d *Runtime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	nrt := &NodeRuntime{RuntimeBase: d.RuntimeBase}
 	nrt.nextCallId = d.nextNodeCallId
-	nrt.Mode = pb.Mode_Node
+	nrt.Mode = pb.Mode_MODE_NODE
 	d.modeErr = sdk.DonModeCallInNodeMode()
-	d.SwitchModes(pb.Mode_Node)
+	d.SwitchModes(pb.Mode_MODE_NODE)
 	observation := fn(nrt)
-	d.SwitchModes(pb.Mode_DON)
+	d.SwitchModes(pb.Mode_MODE_DON)
 	nrt.modeErr = sdk.NodeModeCallInDonMode()
 	d.modeErr = nil
 	d.nextNodeCallId = nrt.nextCallId

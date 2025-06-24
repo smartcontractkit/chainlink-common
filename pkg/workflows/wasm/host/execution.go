@@ -148,9 +148,9 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 
 func (e *execution[T]) getSeed(mode int32) int64 {
 	switch sdkpb.Mode(mode) {
-	case sdkpb.Mode_DON:
+	case sdkpb.Mode_MODE_DON:
 		return e.donSeed
-	case sdkpb.Mode_Node:
+	case sdkpb.Mode_MODE_NODE:
 		return e.nodeSeed
 	}
 

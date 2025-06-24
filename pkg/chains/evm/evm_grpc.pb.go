@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: chains/evm/evm.proto
+// source: evm.proto
 
 package evm
 
@@ -536,5 +536,5 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "chains/evm/evm.proto",
+	Metadata: "evm.proto",
 }

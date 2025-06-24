@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750786335133,
+  "lastUpdate": 1750793665587,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16506,6 +16506,48 @@ window.BENCHMARK_DATA = {
             "value": 28156,
             "unit": "ns/op",
             "extra": "42526 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7566a2b110f13c6598ececbf1e16176b9ccb46b3",
+          "message": "Create a standard test suite that all languages can run against to verify host-guest interactions (#1284)",
+          "timestamp": "2025-06-24T12:33:10-07:00",
+          "tree_id": "36041a52599b3b159f94be2272eabfa4ca72aa2c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7566a2b110f13c6598ececbf1e16176b9ccb46b3"
+        },
+        "date": 1750793664004,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.2,
+            "unit": "ns/op",
+            "extra": "3198686 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.1,
+            "unit": "ns/op",
+            "extra": "2911370 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28140,
+            "unit": "ns/op",
+            "extra": "42685 times\n4 procs"
           }
         ]
       }

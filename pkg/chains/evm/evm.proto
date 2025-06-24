@@ -257,12 +257,12 @@ message CalculateTransactionFeeRequest {
 // represents evm-style receipt
 message ReceiptGasInfo {
   uint64 gas_used = 1; // gas used by this transaction (in gas units)
-  values.BigInt effective_gas_price = 2; // actual gas price paid in wei (include after EIP-1559)
+  values.v1.BigInt effective_gas_price = 2; // actual gas price paid in wei (include after EIP-1559)
 }
 
 
 message CalculateTransactionFeeReply {
-  values.BigInt transaction_fee = 1;
+  values.v1.BigInt transaction_fee = 1;
 }
 
 message SubmitTransactionRequest {

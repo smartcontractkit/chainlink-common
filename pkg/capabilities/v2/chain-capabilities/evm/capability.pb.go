@@ -58,11 +58,11 @@ func (x ConfidenceLevel) String() string {
 }
 
 func (ConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0].Descriptor()
+	return file_capability_proto_enumTypes[0].Descriptor()
 }
 
 func (ConfidenceLevel) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[0]
+	return &file_capability_proto_enumTypes[0]
 }
 
 func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
@@ -71,7 +71,7 @@ func (x ConfidenceLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConfidenceLevel.Descriptor instead.
 func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+	return file_capability_proto_rawDescGZIP(), []int{0}
 }
 
 type ReceiverContractExecutionStatus int32
@@ -103,36 +103,21 @@ func (x ReceiverContractExecutionStatus) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-<<<<<<< HEAD
-func (ConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_capability_proto_enumTypes[0].Descriptor()
-}
-
-func (ConfidenceLevel) Type() protoreflect.EnumType {
-	return &file_capability_proto_enumTypes[0]
-=======
 func (ReceiverContractExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[1].Descriptor()
+	return file_capability_proto_enumTypes[1].Descriptor()
 }
 
 func (ReceiverContractExecutionStatus) Type() protoreflect.EnumType {
-	return &file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes[1]
->>>>>>> be0c4d0f (rebase)
+	return &file_capability_proto_enumTypes[1]
 }
 
 func (x ReceiverContractExecutionStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-<<<<<<< HEAD
-// Deprecated: Use ConfidenceLevel.Descriptor instead.
-func (ConfidenceLevel) EnumDescriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{0}
-=======
 // Deprecated: Use ReceiverContractExecutionStatus.Descriptor instead.
 func (ReceiverContractExecutionStatus) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{1}
->>>>>>> be0c4d0f (rebase)
+	return file_capability_proto_rawDescGZIP(), []int{1}
 }
 
 type TopicValues struct {
@@ -220,7 +205,7 @@ func (x *FilterLogTriggerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
 func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{0}
+	return file_capability_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *FilterLogTriggerRequest) GetAddresses() [][]byte {
@@ -230,30 +215,9 @@ func (x *FilterLogTriggerRequest) GetAddresses() [][]byte {
 	return nil
 }
 
-func (x *FilterLogTriggerRequest) GetEventSigs() [][]byte {
+func (x *FilterLogTriggerRequest) GetTopics() []*TopicValues {
 	if x != nil {
-		return x.EventSigs
-	}
-	return nil
-}
-
-func (x *FilterLogTriggerRequest) GetTopic2() [][]byte {
-	if x != nil {
-		return x.Topic2
-	}
-	return nil
-}
-
-func (x *FilterLogTriggerRequest) GetTopic3() [][]byte {
-	if x != nil {
-		return x.Topic3
-	}
-	return nil
-}
-
-func (x *FilterLogTriggerRequest) GetTopic4() [][]byte {
-	if x != nil {
-		return x.Topic4
+		return x.Topics
 	}
 	return nil
 }
@@ -277,7 +241,7 @@ type SignedReport struct {
 
 func (x *SignedReport) Reset() {
 	*x = SignedReport{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1]
+	mi := &file_capability_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -289,7 +253,7 @@ func (x *SignedReport) String() string {
 func (*SignedReport) ProtoMessage() {}
 
 func (x *SignedReport) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[1]
+	mi := &file_capability_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -300,22 +264,9 @@ func (x *SignedReport) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-// Deprecated: Use FilterLogTriggerRequest.ProtoReflect.Descriptor instead.
-func (*FilterLogTriggerRequest) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *FilterLogTriggerRequest) GetAddresses() [][]byte {
-	if x != nil {
-		return x.Addresses
-=======
-=======
->>>>>>> be0c4d0f (rebase)
 // Deprecated: Use SignedReport.ProtoReflect.Descriptor instead.
 func (*SignedReport) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{1}
+	return file_capability_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SignedReport) GetRawReport() []byte {
@@ -325,19 +276,6 @@ func (x *SignedReport) GetRawReport() []byte {
 	return nil
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-func (x *FilterLogTriggerRequest) GetTopics() []*TopicValues {
-	if x != nil {
-		return x.Topics
-=======
-<<<<<<< HEAD
-func (x *FilterLogTriggerRequest) GetEventSigs() [][]byte {
-	if x != nil {
-		return x.EventSigs
-=======
-=======
->>>>>>> c9c2c993 (rebase)
 func (x *SignedReport) GetReportContext() []byte {
 	if x != nil {
 		return x.ReportContext
@@ -370,7 +308,7 @@ type WriteReportRequest struct {
 
 func (x *WriteReportRequest) Reset() {
 	*x = WriteReportRequest{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2]
+	mi := &file_capability_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -382,7 +320,7 @@ func (x *WriteReportRequest) String() string {
 func (*WriteReportRequest) ProtoMessage() {}
 
 func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2]
+	mi := &file_capability_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -395,17 +333,12 @@ func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
 func (*WriteReportRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{2}
+	return file_capability_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *WriteReportRequest) GetReceiver() []byte {
 	if x != nil {
 		return x.Receiver
-<<<<<<< HEAD
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
->>>>>>> 9303f631 (PLEX-250 - WriteReport initial implementation)
-=======
->>>>>>> c9c2c993 (rebase)
 	}
 	return nil
 }
@@ -433,7 +366,7 @@ type GasConfig struct {
 
 func (x *GasConfig) Reset() {
 	*x = GasConfig{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3]
+	mi := &file_capability_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -445,7 +378,7 @@ func (x *GasConfig) String() string {
 func (*GasConfig) ProtoMessage() {}
 
 func (x *GasConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[3]
+	mi := &file_capability_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -458,7 +391,7 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
 func (*GasConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{3}
+	return file_capability_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GasConfig) GetGasLimit() uint64 {
@@ -481,7 +414,7 @@ type WriteReportReply struct {
 
 func (x *WriteReportReply) Reset() {
 	*x = WriteReportReply{}
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4]
+	mi := &file_capability_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +426,7 @@ func (x *WriteReportReply) String() string {
 func (*WriteReportReply) ProtoMessage() {}
 
 func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4]
+	mi := &file_capability_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +439,7 @@ func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
 func (*WriteReportReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP(), []int{4}
+	return file_capability_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *WriteReportReply) GetTxStatus() evm.TxStatus {
@@ -546,61 +479,17 @@ func (x *WriteReportReply) GetErrorMessage() string {
 
 var File_capability_proto protoreflect.FileDescriptor
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 const file_capability_proto_rawDesc = "" +
-=======
-=======
->>>>>>> cc5e0f18 (updaing gen code)
-<<<<<<< HEAD
-=======
->>>>>>> be0c4d0f (rebase)
-const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
->>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
 	"\n" +
-<<<<<<< HEAD
-	"\x10capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"%\n" +
+	"\x10capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x14chains/evm/evm.proto\x1a\x16values/v1/values.proto\"%\n" +
 	"\vTopicValues\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\fR\x06values\"\xad\x01\n" +
-=======
-<<<<<<< HEAD
-	"\x10capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x14chains/evm/evm.proto\"\xdf\x01\n" +
-=======
-	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\x1a\x16values/pb/values.proto\"\xdf\x01\n" +
->>>>>>> be0c4d0f (rebase)
->>>>>>> c9c2c993 (rebase)
 	"\x17FilterLogTriggerRequest\x12\x1c\n" +
 	"\taddresses\x18\x01 \x03(\fR\taddresses\x123\n" +
 	"\x06topics\x18\x02 \x03(\v2\x1b.cre.sdk.v2.evm.TopicValuesR\x06topics\x12?\n" +
 	"\n" +
-<<<<<<< HEAD
 	"Confidence\x18\x03 \x01(\x0e2\x1f.cre.sdk.v2.evm.ConfidenceLevelR\n" +
-=======
-	"event_sigs\x18\x02 \x03(\fR\teventSigs\x12\x16\n" +
-	"\x06topic2\x18\x03 \x03(\fR\x06topic2\x12\x16\n" +
-	"\x06topic3\x18\x04 \x03(\fR\x06topic3\x12\x16\n" +
-	"\x06topic4\x18\x05 \x03(\fR\x06topic4\x12?\n" +
-	"\n" +
-	"Confidence\x18\x06 \x01(\x0e2\x1f.cre.sdk.v2.evm.ConfidenceLevelR\n" +
-<<<<<<< HEAD
->>>>>>> c9c2c993 (rebase)
-	"Confidence*6\n" +
-	"\x0fConfidenceLevel\x12\b\n" +
-	"\x04SAFE\x10\x00\x12\n" +
-	"\n" +
-	"\x06LATEST\x10\x01\x12\r\n" +
-<<<<<<< HEAD
-	"\tFINALIZED\x10\x022\xab\a\n" +
-=======
-	"\tFINALIZED\x10\x022\xa9\a\n" +
-=======
-const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" +
-	"\n" +
-	"7capabilities/v2/chain-capabilities/evm/capability.proto\x12\x0ecre.sdk.v2.evm\x1a\x1bgoogle/protobuf/empty.proto\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1a\x14chains/evm/evm.proto\x1a\x16values/pb/values.proto\"\x84\x01\n" +
-=======
 	"Confidence\"\x84\x01\n" +
->>>>>>> be0c4d0f (rebase)
 	"\fSignedReport\x12\x1d\n" +
 	"\n" +
 	"raw_report\x18\x01 \x01(\fR\trawReport\x12%\n" +
@@ -616,12 +505,12 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"gas_config\x18\x03 \x01(\v2\x19.cre.sdk.v2.evm.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
 	"\v_gas_config\"(\n" +
 	"\tGasConfig\x12\x1b\n" +
-	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"\xa6\x03\n" +
+	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"\xa9\x03\n" +
 	"\x10WriteReportReply\x12/\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x12.loop.evm.TxStatusR\btxStatus\x12\x81\x01\n" +
 	"\"receiver_contract_execution_status\x18\x02 \x01(\x0e2/.cre.sdk.v2.evm.ReceiverContractExecutionStatusH\x00R\x1freceiverContractExecutionStatus\x88\x01\x01\x12\x1c\n" +
-	"\atx_hash\x18\x03 \x01(\fH\x01R\x06txHash\x88\x01\x01\x12<\n" +
-	"\x0ftransaction_fee\x18\x04 \x01(\v2\x0e.values.BigIntH\x02R\x0etransactionFee\x88\x01\x01\x12(\n" +
+	"\atx_hash\x18\x03 \x01(\fH\x01R\x06txHash\x88\x01\x01\x12?\n" +
+	"\x0ftransaction_fee\x18\x04 \x01(\v2\x11.values.v1.BigIntH\x02R\x0etransactionFee\x88\x01\x01\x12(\n" +
 	"\rerror_message\x18\x05 \x01(\tH\x03R\ferrorMessage\x88\x01\x01B%\n" +
 	"#_receiver_contract_execution_statusB\n" +
 	"\n" +
@@ -635,13 +524,7 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\tFINALIZED\x10\x02*<\n" +
 	"\x1fReceiverContractExecutionStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\f\n" +
-<<<<<<< HEAD
-	"\bREVERTED\x10\x012\xb6\a\n" +
->>>>>>> e678946b (updaing gen code)
->>>>>>> cc5e0f18 (updaing gen code)
-=======
-	"\bREVERTED\x10\x012\xfe\a\n" +
->>>>>>> be0c4d0f (rebase)
+	"\bREVERTED\x10\x012\x80\b\n" +
 	"\x06Client\x12J\n" +
 	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +
 	"\n" +
@@ -655,11 +538,10 @@ const file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = "" 
 	"\x13RegisterLogTracking\x12$.loop.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
 	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12F\n" +
 	"\n" +
-<<<<<<< HEAD
-	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x1a\x11\x82\xb5\x18\r\b\x01\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
+	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x12S\n" +
+	"\vWriteReport\x12\".cre.sdk.v2.evm.WriteReportRequest\x1a .cre.sdk.v2.evm.WriteReportReply\x1a\x11\x82\xb5\x18\r\b\x01\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
 
 var (
-<<<<<<< HEAD
 	file_capability_proto_rawDescOnce sync.Once
 	file_capability_proto_rawDescData []byte
 )
@@ -667,410 +549,80 @@ var (
 func file_capability_proto_rawDescGZIP() []byte {
 	file_capability_proto_rawDescOnce.Do(func() {
 		file_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capability_proto_rawDesc), len(file_capability_proto_rawDesc)))
-=======
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData []byte
-=======
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc = []byte{
-	0x0a, 0x37, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x2f, 0x76,
-	0x32, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x2d, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69,
-	0x74, 0x69, 0x65, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c,
-	0x69, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x63, 0x72, 0x65, 0x2e, 0x73,
-	0x64, 0x6b, 0x2e, 0x76, 0x32, 0x2e, 0x65, 0x76, 0x6d, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
-	0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x30, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69,
-	0x74, 0x69, 0x65, 0x73, 0x2f, 0x76, 0x32, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x2f, 0x70,
-	0x6b, 0x67, 0x2f, 0x70, 0x62, 0x2f, 0x63, 0x72, 0x65, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x73,
-	0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x76, 0x6d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x16,
-	0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x2f, 0x70, 0x62, 0x2f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x84, 0x01, 0x0a, 0x0c, 0x53, 0x69, 0x67, 0x6e, 0x65,
-	0x64, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x61, 0x77, 0x5f, 0x72,
-	0x65, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x72, 0x61, 0x77,
-	0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x25, 0x0a, 0x0e, 0x72, 0x65, 0x70, 0x6f, 0x72, 0x74,
-	0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0d,
-	0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x1e, 0x0a,
-	0x0a, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
-	0x0c, 0x52, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73, 0x12, 0x0e, 0x0a,
-	0x02, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x69, 0x64, 0x22, 0xb4, 0x01,
-	0x0a, 0x12, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72,
-	0x12, 0x34, 0x0a, 0x06, 0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x1c, 0x2e, 0x63, 0x72, 0x65, 0x2e, 0x73, 0x64, 0x6b, 0x2e, 0x76, 0x32, 0x2e, 0x65, 0x76,
-	0x6d, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x06,
-	0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x3d, 0x0a, 0x0a, 0x67, 0x61, 0x73, 0x5f, 0x63, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x72, 0x65,
-	0x2e, 0x73, 0x64, 0x6b, 0x2e, 0x76, 0x32, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x47, 0x61, 0x73, 0x43,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x48, 0x00, 0x52, 0x09, 0x67, 0x61, 0x73, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x88, 0x01, 0x01, 0x42, 0x0d, 0x0a, 0x0b, 0x5f, 0x67, 0x61, 0x73, 0x5f, 0x63, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x22, 0x28, 0x0a, 0x09, 0x47, 0x61, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x12, 0x1b, 0x0a, 0x09, 0x67, 0x61, 0x73, 0x5f, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x67, 0x61, 0x73, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x22, 0xa6,
-	0x03, 0x0a, 0x10, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65,
-	0x70, 0x6c, 0x79, 0x12, 0x2f, 0x0a, 0x09, 0x74, 0x78, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x12, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76,
-	0x6d, 0x2e, 0x54, 0x78, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x08, 0x74, 0x78, 0x53, 0x74,
-	0x61, 0x74, 0x75, 0x73, 0x12, 0x81, 0x01, 0x0a, 0x22, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65,
-	0x72, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0e, 0x32, 0x2f, 0x2e, 0x63, 0x72, 0x65, 0x2e, 0x73, 0x64, 0x6b, 0x2e, 0x76, 0x32, 0x2e, 0x65,
-	0x76, 0x6d, 0x2e, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x74, 0x72,
-	0x61, 0x63, 0x74, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74,
-	0x75, 0x73, 0x48, 0x00, 0x52, 0x1f, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x43, 0x6f,
-	0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x88, 0x01, 0x01, 0x12, 0x1c, 0x0a, 0x07, 0x74, 0x78, 0x5f, 0x68,
-	0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x01, 0x52, 0x06, 0x74, 0x78, 0x48,
-	0x61, 0x73, 0x68, 0x88, 0x01, 0x01, 0x12, 0x3c, 0x0a, 0x0f, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61,
-	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x0e, 0x2e, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x2e, 0x42, 0x69, 0x67, 0x49, 0x6e, 0x74, 0x48,
-	0x02, 0x52, 0x0e, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x46, 0x65,
-	0x65, 0x88, 0x01, 0x01, 0x12, 0x28, 0x0a, 0x0d, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x5f, 0x6d, 0x65,
-	0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x48, 0x03, 0x52, 0x0c, 0x65,
-	0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x88, 0x01, 0x01, 0x42, 0x25,
-	0x0a, 0x23, 0x5f, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x72, 0x5f, 0x63, 0x6f, 0x6e, 0x74,
-	0x72, 0x61, 0x63, 0x74, 0x5f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x0a, 0x0a, 0x08, 0x5f, 0x74, 0x78, 0x5f, 0x68, 0x61, 0x73,
-	0x68, 0x42, 0x12, 0x0a, 0x10, 0x5f, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f,
-	0x6e, 0x5f, 0x66, 0x65, 0x65, 0x42, 0x10, 0x0a, 0x0e, 0x5f, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x5f,
-	0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x2a, 0x3c, 0x0a, 0x1f, 0x52, 0x65, 0x63, 0x65, 0x69,
-	0x76, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x45, 0x78, 0x65, 0x63, 0x75,
-	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x55,
-	0x43, 0x43, 0x45, 0x53, 0x53, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x52, 0x45, 0x56, 0x45, 0x52,
-	0x54, 0x45, 0x44, 0x10, 0x01, 0x32, 0xb6, 0x07, 0x0a, 0x06, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74,
-	0x12, 0x4a, 0x0a, 0x0c, 0x43, 0x61, 0x6c, 0x6c, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
-	0x12, 0x1d, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x43, 0x61, 0x6c, 0x6c,
-	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x1b, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x43, 0x61, 0x6c, 0x6c, 0x43,
-	0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x44, 0x0a, 0x0a,
-	0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x67, 0x73, 0x12, 0x1b, 0x2e, 0x6c, 0x6f, 0x6f,
-	0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x67, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65,
-	0x76, 0x6d, 0x2e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x67, 0x73, 0x52, 0x65, 0x70,
-	0x6c, 0x79, 0x12, 0x41, 0x0a, 0x09, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x41, 0x74, 0x12,
-	0x1a, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x42, 0x61, 0x6c, 0x61, 0x6e,
-	0x63, 0x65, 0x41, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x6c, 0x6f,
-	0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x41, 0x74,
-	0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x47, 0x0a, 0x0b, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74,
-	0x65, 0x47, 0x61, 0x73, 0x12, 0x1c, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e,
-	0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x47, 0x61, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x45, 0x73,
-	0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x47, 0x61, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x62,
-	0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x42, 0x79, 0x48, 0x61, 0x73, 0x68, 0x12, 0x25, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76,
-	0x6d, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x42, 0x79, 0x48, 0x61, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e,
-	0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x72, 0x61, 0x6e,
-	0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x79, 0x48, 0x61, 0x73, 0x68, 0x52, 0x65, 0x70,
-	0x6c, 0x79, 0x12, 0x65, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x65, 0x69, 0x70, 0x74, 0x12, 0x26, 0x2e, 0x6c, 0x6f,
-	0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x47, 0x65, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61,
-	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63, 0x65, 0x69, 0x70, 0x74, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x47,
-	0x65, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x63,
-	0x65, 0x69, 0x70, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x57, 0x0a, 0x16, 0x4c, 0x61, 0x74,
-	0x65, 0x73, 0x74, 0x41, 0x6e, 0x64, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x48,
-	0x65, 0x61, 0x64, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x25, 0x2e, 0x6c, 0x6f,
-	0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x64,
-	0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x48, 0x65, 0x61, 0x64, 0x52, 0x65, 0x70,
-	0x6c, 0x79, 0x12, 0x56, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x61, 0x63, 0x6b,
-	0x65, 0x64, 0x4c, 0x6f, 0x67, 0x73, 0x12, 0x21, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76,
-	0x6d, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x65, 0x64, 0x4c, 0x6f,
-	0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x6c, 0x6f, 0x6f, 0x70,
-	0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x65,
-	0x64, 0x4c, 0x6f, 0x67, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x53, 0x0a, 0x13, 0x52, 0x65,
-	0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x67, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x69, 0x6e,
-	0x67, 0x12, 0x24, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x52, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x67, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x69, 0x6e, 0x67,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12,
-	0x57, 0x0a, 0x15, 0x55, 0x6e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x67,
-	0x54, 0x72, 0x61, 0x63, 0x6b, 0x69, 0x6e, 0x67, 0x12, 0x26, 0x2e, 0x6c, 0x6f, 0x6f, 0x70, 0x2e,
-	0x65, 0x76, 0x6d, 0x2e, 0x55, 0x6e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4c, 0x6f,
-	0x67, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x53, 0x0a, 0x0b, 0x57, 0x72, 0x69, 0x74,
-	0x65, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x22, 0x2e, 0x63, 0x72, 0x65, 0x2e, 0x73, 0x64,
-	0x6b, 0x2e, 0x76, 0x32, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65,
-	0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x63, 0x72,
-	0x65, 0x2e, 0x73, 0x64, 0x6b, 0x2e, 0x76, 0x32, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x57, 0x72, 0x69,
-	0x74, 0x65, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x1a, 0x0f, 0x82,
-	0xb5, 0x18, 0x0b, 0x12, 0x09, 0x65, 0x76, 0x6d, 0x40, 0x31, 0x2e, 0x30, 0x2e, 0x30, 0x42, 0x5d,
-	0x5a, 0x5b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6d, 0x61,
-	0x72, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x6b, 0x69, 0x74, 0x2f, 0x63, 0x68,
-	0x61, 0x69, 0x6e, 0x6c, 0x69, 0x6e, 0x6b, 0x2d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70,
-	0x6b, 0x67, 0x2f, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x2f,
-	0x76, 0x32, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x2d, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c,
-	0x69, 0x74, 0x69, 0x65, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x3b, 0x65, 0x76, 0x6d, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
-=======
-	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12S\n" +
-=======
-	"LogTrigger\x12'.cre.sdk.v2.evm.FilterLogTriggerRequest\x1a\r.loop.evm.Log0\x01\x12S\n" +
->>>>>>> be0c4d0f (rebase)
-	"\vWriteReport\x12\".cre.sdk.v2.evm.WriteReportRequest\x1a .cre.sdk.v2.evm.WriteReportReply\x1a\x0f\x82\xb5\x18\v\x12\tevm@1.0.0B]Z[github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evmb\x06proto3"
-
-var (
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce sync.Once
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData []byte
-)
-
-func file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
-<<<<<<< HEAD
-=======
-		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData)
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
-<<<<<<< HEAD
->>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
-=======
-=======
-		file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)))
->>>>>>> e678946b (updaing gen code)
->>>>>>> cc5e0f18 (updaing gen code)
-=======
->>>>>>> be0c4d0f (rebase)
 	})
 	return file_capability_proto_rawDescData
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-var file_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_capability_proto_goTypes = []any{
-=======
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-<<<<<<< HEAD
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-=======
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
->>>>>>> be0c4d0f (rebase)
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any{
->>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
 	(ConfidenceLevel)(0),                     // 0: cre.sdk.v2.evm.ConfidenceLevel
-<<<<<<< HEAD
-	(*TopicValues)(nil),                      // 1: cre.sdk.v2.evm.TopicValues
-	(*FilterLogTriggerRequest)(nil),          // 2: cre.sdk.v2.evm.FilterLogTriggerRequest
-	(*evm.CallContractRequest)(nil),          // 3: loop.evm.CallContractRequest
-	(*evm.FilterLogsRequest)(nil),            // 4: loop.evm.FilterLogsRequest
-	(*evm.BalanceAtRequest)(nil),             // 5: loop.evm.BalanceAtRequest
-	(*evm.EstimateGasRequest)(nil),           // 6: loop.evm.EstimateGasRequest
-	(*evm.GetTransactionByHashRequest)(nil),  // 7: loop.evm.GetTransactionByHashRequest
-	(*evm.GetTransactionReceiptRequest)(nil), // 8: loop.evm.GetTransactionReceiptRequest
-	(*emptypb.Empty)(nil),                    // 9: google.protobuf.Empty
-	(*evm.QueryTrackedLogsRequest)(nil),      // 10: loop.evm.QueryTrackedLogsRequest
-	(*evm.RegisterLogTrackingRequest)(nil),   // 11: loop.evm.RegisterLogTrackingRequest
-	(*evm.UnregisterLogTrackingRequest)(nil), // 12: loop.evm.UnregisterLogTrackingRequest
-	(*evm.CallContractReply)(nil),            // 13: loop.evm.CallContractReply
-	(*evm.FilterLogsReply)(nil),              // 14: loop.evm.FilterLogsReply
-	(*evm.BalanceAtReply)(nil),               // 15: loop.evm.BalanceAtReply
-	(*evm.EstimateGasReply)(nil),             // 16: loop.evm.EstimateGasReply
-	(*evm.GetTransactionByHashReply)(nil),    // 17: loop.evm.GetTransactionByHashReply
-	(*evm.GetTransactionReceiptReply)(nil),   // 18: loop.evm.GetTransactionReceiptReply
-	(*evm.LatestAndFinalizedHeadReply)(nil),  // 19: loop.evm.LatestAndFinalizedHeadReply
-	(*evm.QueryTrackedLogsReply)(nil),        // 20: loop.evm.QueryTrackedLogsReply
-	(*evm.Log)(nil),                          // 21: loop.evm.Log
-=======
 	(ReceiverContractExecutionStatus)(0),     // 1: cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	(*FilterLogTriggerRequest)(nil),          // 2: cre.sdk.v2.evm.FilterLogTriggerRequest
-	(*SignedReport)(nil),                     // 3: cre.sdk.v2.evm.SignedReport
-	(*WriteReportRequest)(nil),               // 4: cre.sdk.v2.evm.WriteReportRequest
-	(*GasConfig)(nil),                        // 5: cre.sdk.v2.evm.GasConfig
-	(*WriteReportReply)(nil),                 // 6: cre.sdk.v2.evm.WriteReportReply
-	(evm.TxStatus)(0),                        // 7: loop.evm.TxStatus
-	(*pb.BigInt)(nil),                        // 8: values.BigInt
-	(*evm.CallContractRequest)(nil),          // 9: loop.evm.CallContractRequest
-	(*evm.FilterLogsRequest)(nil),            // 10: loop.evm.FilterLogsRequest
-	(*evm.BalanceAtRequest)(nil),             // 11: loop.evm.BalanceAtRequest
-	(*evm.EstimateGasRequest)(nil),           // 12: loop.evm.EstimateGasRequest
-	(*evm.GetTransactionByHashRequest)(nil),  // 13: loop.evm.GetTransactionByHashRequest
-	(*evm.GetTransactionReceiptRequest)(nil), // 14: loop.evm.GetTransactionReceiptRequest
-	(*emptypb.Empty)(nil),                    // 15: google.protobuf.Empty
-	(*evm.QueryTrackedLogsRequest)(nil),      // 16: loop.evm.QueryTrackedLogsRequest
-	(*evm.RegisterLogTrackingRequest)(nil),   // 17: loop.evm.RegisterLogTrackingRequest
-	(*evm.UnregisterLogTrackingRequest)(nil), // 18: loop.evm.UnregisterLogTrackingRequest
-	(*evm.CallContractReply)(nil),            // 19: loop.evm.CallContractReply
-	(*evm.FilterLogsReply)(nil),              // 20: loop.evm.FilterLogsReply
-	(*evm.BalanceAtReply)(nil),               // 21: loop.evm.BalanceAtReply
-	(*evm.EstimateGasReply)(nil),             // 22: loop.evm.EstimateGasReply
-	(*evm.GetTransactionByHashReply)(nil),    // 23: loop.evm.GetTransactionByHashReply
-	(*evm.GetTransactionReceiptReply)(nil),   // 24: loop.evm.GetTransactionReceiptReply
-	(*evm.LatestAndFinalizedHeadReply)(nil),  // 25: loop.evm.LatestAndFinalizedHeadReply
-	(*evm.QueryTrackedLogsReply)(nil),        // 26: loop.evm.QueryTrackedLogsReply
-	(*evm.Log)(nil),                          // 27: loop.evm.Log
->>>>>>> c9c2c993 (rebase)
+	(*TopicValues)(nil),                      // 2: cre.sdk.v2.evm.TopicValues
+	(*FilterLogTriggerRequest)(nil),          // 3: cre.sdk.v2.evm.FilterLogTriggerRequest
+	(*SignedReport)(nil),                     // 4: cre.sdk.v2.evm.SignedReport
+	(*WriteReportRequest)(nil),               // 5: cre.sdk.v2.evm.WriteReportRequest
+	(*GasConfig)(nil),                        // 6: cre.sdk.v2.evm.GasConfig
+	(*WriteReportReply)(nil),                 // 7: cre.sdk.v2.evm.WriteReportReply
+	(evm.TxStatus)(0),                        // 8: loop.evm.TxStatus
+	(*pb.BigInt)(nil),                        // 9: values.v1.BigInt
+	(*evm.CallContractRequest)(nil),          // 10: loop.evm.CallContractRequest
+	(*evm.FilterLogsRequest)(nil),            // 11: loop.evm.FilterLogsRequest
+	(*evm.BalanceAtRequest)(nil),             // 12: loop.evm.BalanceAtRequest
+	(*evm.EstimateGasRequest)(nil),           // 13: loop.evm.EstimateGasRequest
+	(*evm.GetTransactionByHashRequest)(nil),  // 14: loop.evm.GetTransactionByHashRequest
+	(*evm.GetTransactionReceiptRequest)(nil), // 15: loop.evm.GetTransactionReceiptRequest
+	(*emptypb.Empty)(nil),                    // 16: google.protobuf.Empty
+	(*evm.QueryTrackedLogsRequest)(nil),      // 17: loop.evm.QueryTrackedLogsRequest
+	(*evm.RegisterLogTrackingRequest)(nil),   // 18: loop.evm.RegisterLogTrackingRequest
+	(*evm.UnregisterLogTrackingRequest)(nil), // 19: loop.evm.UnregisterLogTrackingRequest
+	(*evm.CallContractReply)(nil),            // 20: loop.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),              // 21: loop.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),               // 22: loop.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),             // 23: loop.evm.EstimateGasReply
+	(*evm.GetTransactionByHashReply)(nil),    // 24: loop.evm.GetTransactionByHashReply
+	(*evm.GetTransactionReceiptReply)(nil),   // 25: loop.evm.GetTransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),  // 26: loop.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),        // 27: loop.evm.QueryTrackedLogsReply
+	(*evm.Log)(nil),                          // 28: loop.evm.Log
 }
 var file_capability_proto_depIdxs = []int32{
-<<<<<<< HEAD
-	1,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.topics:type_name -> cre.sdk.v2.evm.TopicValues
+	2,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.topics:type_name -> cre.sdk.v2.evm.TopicValues
 	0,  // 1: cre.sdk.v2.evm.FilterLogTriggerRequest.Confidence:type_name -> cre.sdk.v2.evm.ConfidenceLevel
-	3,  // 2: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
-	4,  // 3: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
-	5,  // 4: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
-	6,  // 5: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
-	7,  // 6: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
-	8,  // 7: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
-	9,  // 8: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	10, // 9: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
-	11, // 10: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
-	12, // 11: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	2,  // 12: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
-	13, // 13: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
-	14, // 14: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	15, // 15: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	16, // 16: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	17, // 17: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	18, // 18: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	19, // 19: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	20, // 20: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	9,  // 21: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	9,  // 22: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	21, // 23: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
-	13, // [13:24] is the sub-list for method output_type
-	2,  // [2:13] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
-=======
-	0,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.Confidence:type_name -> cre.sdk.v2.evm.ConfidenceLevel
-<<<<<<< HEAD
-	2,  // 1: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
-	3,  // 2: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
-	4,  // 3: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
-	5,  // 4: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
-	6,  // 5: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
-	7,  // 6: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
-	8,  // 7: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	9,  // 8: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
-	10, // 9: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
-	11, // 10: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	1,  // 11: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
-	12, // 12: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
-	13, // 13: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	14, // 14: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	15, // 15: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	16, // 16: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	17, // 17: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	18, // 18: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	19, // 19: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	8,  // 20: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	8,  // 21: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	20, // 22: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
-	12, // [12:23] is the sub-list for method output_type
-	1,  // [1:12] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
-=======
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = []any{
-	(ReceiverContractExecutionStatus)(0),     // 0: cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	(*SignedReport)(nil),                     // 1: cre.sdk.v2.evm.SignedReport
-	(*WriteReportRequest)(nil),               // 2: cre.sdk.v2.evm.WriteReportRequest
-	(*GasConfig)(nil),                        // 3: cre.sdk.v2.evm.GasConfig
-	(*WriteReportReply)(nil),                 // 4: cre.sdk.v2.evm.WriteReportReply
-	(evm.TxStatus)(0),                        // 5: loop.evm.TxStatus
-	(*pb.BigInt)(nil),                        // 6: values.BigInt
-	(*evm.CallContractRequest)(nil),          // 7: loop.evm.CallContractRequest
-	(*evm.FilterLogsRequest)(nil),            // 8: loop.evm.FilterLogsRequest
-	(*evm.BalanceAtRequest)(nil),             // 9: loop.evm.BalanceAtRequest
-	(*evm.EstimateGasRequest)(nil),           // 10: loop.evm.EstimateGasRequest
-	(*evm.GetTransactionByHashRequest)(nil),  // 11: loop.evm.GetTransactionByHashRequest
-	(*evm.GetTransactionReceiptRequest)(nil), // 12: loop.evm.GetTransactionReceiptRequest
-	(*emptypb.Empty)(nil),                    // 13: google.protobuf.Empty
-	(*evm.QueryTrackedLogsRequest)(nil),      // 14: loop.evm.QueryTrackedLogsRequest
-	(*evm.RegisterLogTrackingRequest)(nil),   // 15: loop.evm.RegisterLogTrackingRequest
-	(*evm.UnregisterLogTrackingRequest)(nil), // 16: loop.evm.UnregisterLogTrackingRequest
-	(*evm.CallContractReply)(nil),            // 17: loop.evm.CallContractReply
-	(*evm.FilterLogsReply)(nil),              // 18: loop.evm.FilterLogsReply
-	(*evm.BalanceAtReply)(nil),               // 19: loop.evm.BalanceAtReply
-	(*evm.EstimateGasReply)(nil),             // 20: loop.evm.EstimateGasReply
-	(*evm.GetTransactionByHashReply)(nil),    // 21: loop.evm.GetTransactionByHashReply
-	(*evm.GetTransactionReceiptReply)(nil),   // 22: loop.evm.GetTransactionReceiptReply
-	(*evm.LatestAndFinalizedHeadReply)(nil),  // 23: loop.evm.LatestAndFinalizedHeadReply
-	(*evm.QueryTrackedLogsReply)(nil),        // 24: loop.evm.QueryTrackedLogsReply
-}
-var file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = []int32{
-	1,  // 0: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
-	3,  // 1: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
-	5,  // 2: cre.sdk.v2.evm.WriteReportReply.tx_status:type_name -> loop.evm.TxStatus
-	0,  // 3: cre.sdk.v2.evm.WriteReportReply.receiver_contract_execution_status:type_name -> cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	6,  // 4: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.BigInt
-	7,  // 5: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
-	8,  // 6: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
-	9,  // 7: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
-	10, // 8: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
-	11, // 9: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
-	12, // 10: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
-	13, // 11: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	14, // 12: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
-	15, // 13: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
-	16, // 14: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	2,  // 15: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
-	17, // 16: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
-	18, // 17: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	19, // 18: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	20, // 19: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	21, // 20: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	22, // 21: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	23, // 22: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	24, // 23: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	13, // 24: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	13, // 25: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	4,  // 26: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
->>>>>>> 9303f631 (PLEX-250 - WriteReport initial implementation)
-=======
-	3,  // 1: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
-	5,  // 2: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
-	7,  // 3: cre.sdk.v2.evm.WriteReportReply.tx_status:type_name -> loop.evm.TxStatus
-	1,  // 4: cre.sdk.v2.evm.WriteReportReply.receiver_contract_execution_status:type_name -> cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	8,  // 5: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.BigInt
-	9,  // 6: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
-	10, // 7: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
-	11, // 8: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
-	12, // 9: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
-	13, // 10: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
-	14, // 11: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
-	15, // 12: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	16, // 13: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
-	17, // 14: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
-	18, // 15: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	2,  // 16: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
-	4,  // 17: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
-	19, // 18: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
-	20, // 19: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	21, // 20: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	22, // 21: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	23, // 22: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	24, // 23: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	25, // 24: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	26, // 25: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	15, // 26: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	15, // 27: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	27, // 28: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
-	6,  // 29: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
-	18, // [18:30] is the sub-list for method output_type
-	6,  // [6:18] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
->>>>>>> c9c2c993 (rebase)
+	4,  // 2: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
+	6,  // 3: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
+	8,  // 4: cre.sdk.v2.evm.WriteReportReply.tx_status:type_name -> loop.evm.TxStatus
+	1,  // 5: cre.sdk.v2.evm.WriteReportReply.receiver_contract_execution_status:type_name -> cre.sdk.v2.evm.ReceiverContractExecutionStatus
+	9,  // 6: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
+	10, // 7: cre.sdk.v2.evm.Client.CallContract:input_type -> loop.evm.CallContractRequest
+	11, // 8: cre.sdk.v2.evm.Client.FilterLogs:input_type -> loop.evm.FilterLogsRequest
+	12, // 9: cre.sdk.v2.evm.Client.BalanceAt:input_type -> loop.evm.BalanceAtRequest
+	13, // 10: cre.sdk.v2.evm.Client.EstimateGas:input_type -> loop.evm.EstimateGasRequest
+	14, // 11: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
+	15, // 12: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
+	16, // 13: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	17, // 14: cre.sdk.v2.evm.Client.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
+	18, // 15: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
+	19, // 16: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
+	3,  // 17: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
+	5,  // 18: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
+	20, // 19: cre.sdk.v2.evm.Client.CallContract:output_type -> loop.evm.CallContractReply
+	21, // 20: cre.sdk.v2.evm.Client.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	22, // 21: cre.sdk.v2.evm.Client.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	23, // 22: cre.sdk.v2.evm.Client.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	24, // 23: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	25, // 24: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	26, // 25: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	27, // 26: cre.sdk.v2.evm.Client.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	16, // 27: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	16, // 28: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	28, // 29: cre.sdk.v2.evm.Client.LogTrigger:output_type -> loop.evm.Log
+	7,  // 30: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
+	19, // [19:31] is the sub-list for method output_type
+	7,  // [7:19] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_capability_proto_init() }
@@ -1078,44 +630,15 @@ func file_capability_proto_init() {
 	if File_capability_proto != nil {
 		return
 	}
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[2].OneofWrappers = []any{}
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_msgTypes[4].OneofWrappers = []any{}
+	file_capability_proto_msgTypes[3].OneofWrappers = []any{}
+	file_capability_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capability_proto_rawDesc), len(file_capability_proto_rawDesc)),
-=======
-=======
->>>>>>> cc5e0f18 (updaing gen code)
-<<<<<<< HEAD
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)),
->>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
-			NumEnums:      1,
-<<<<<<< HEAD
-			NumMessages:   2,
-=======
-			NumMessages:   1,
-=======
-			RawDescriptor: file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc,
-=======
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)),
->>>>>>> e678946b (updaing gen code)
-			NumEnums:      1,
-			NumMessages:   4,
->>>>>>> 38cb133e (PLEX-250 - WriteReport initial implementation)
-<<<<<<< HEAD
->>>>>>> 9303f631 (PLEX-250 - WriteReport initial implementation)
-=======
-=======
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc), len(file_capabilities_v2_chain_capabilities_evm_capability_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   5,
->>>>>>> be0c4d0f (rebase)
->>>>>>> c9c2c993 (rebase)
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1124,13 +647,7 @@ func file_capability_proto_init() {
 		EnumInfos:         file_capability_proto_enumTypes,
 		MessageInfos:      file_capability_proto_msgTypes,
 	}.Build()
-<<<<<<< HEAD
 	File_capability_proto = out.File
 	file_capability_proto_goTypes = nil
 	file_capability_proto_depIdxs = nil
-=======
-	File_capabilities_v2_chain_capabilities_evm_capability_proto = out.File
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_goTypes = nil
-	file_capabilities_v2_chain_capabilities_evm_capability_proto_depIdxs = nil
->>>>>>> ace21f70 (PLEX-250 - WriteReport initial implementation)
 }

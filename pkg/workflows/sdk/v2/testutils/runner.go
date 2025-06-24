@@ -2,8 +2,10 @@ package testutils
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,11 +21,14 @@ type runner[C any] struct {
 	baseRunner[C, sdk.Runtime]
 }
 
-func (r *runner[C]) Run(initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) {
-	wfc := &sdk.WorkflowContext[C]{
-		Config:    r.config,
-		LogWriter: r.writer,
-		Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+func (r *runner[C]) Run(initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) {
+	wfc := &sdk.Environment[C]{
+		NodeEnvironment: sdk.NodeEnvironment[C]{
+			Config:    r.config,
+			LogWriter: r.writer,
+			Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+		},
+		SecretsProvider: &sdkimpl.Runtime{RuntimeBase: *r.baseRunner.base},
 	}
 	wfs, err := initFn(wfc)
 	if err != nil {
@@ -47,6 +52,7 @@ type baseRunner[C, T any] struct {
 	writer         *testWriter
 	base           *sdkimpl.RuntimeBase
 	source         rand.Source
+	secrets        map[string]string
 }
 
 func (r *runner[T]) SetRandSource(source rand.Source) {
@@ -67,6 +73,8 @@ type TestRunner interface {
 	Logs() []string
 
 	SetRandSource(source rand.Source)
+
+	SetSecret(id, namespace, value string) error
 }
 
 type Runner[C any] interface {
@@ -76,12 +84,13 @@ type Runner[C any] interface {
 
 func NewRunner[C any](tb testing.TB, config C) Runner[C] {
 	drt := &sdkimpl.Runtime{}
-	r := newBaseRunner(tb, config, drt, &drt.RuntimeBase)
-	drt.RuntimeBase = newRuntime(tb, func() rand.Source { return r.source })
-	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, drt, &drt.RuntimeBase)}
+	secrets := make(map[string]string)
+	r := newBaseRunner(tb, config, drt, &drt.RuntimeBase, secrets)
+	drt.RuntimeBase = newRuntime(tb, func() rand.Source { return r.source }, secrets)
+	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, drt, &drt.RuntimeBase, secrets)}
 }
 
-func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.RuntimeBase) baseRunner[C, T] {
+func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.RuntimeBase, secrets map[string]string) baseRunner[C, T] {
 	r := baseRunner[C, T]{
 		tb:         tb,
 		config:     config,
@@ -91,9 +100,20 @@ func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.Runtime
 		writer:     &testWriter{},
 		base:       base,
 		source:     rand.NewSource(1),
+		secrets:    secrets,
 	}
 
 	return r
+}
+
+func (r *baseRunner[C, T]) SetSecret(namespace, id, value string) error {
+	if strings.Contains(namespace, "/") || strings.Contains(id, "/") {
+		return fmt.Errorf("namespace and id cannot contain '/'")
+	}
+
+	key := fmt.Sprintf("%s/%s", namespace, id)
+	r.secrets[key] = value
+	return nil
 }
 
 func (r *baseRunner[C, T]) SetStrictTriggers(strict bool) {
@@ -147,12 +167,22 @@ func (r *baseRunner[C, T]) run(workflows []sdk.ExecutionHandler[C, T]) {
 		}
 
 		r.ran = true
-		wcx := &sdk.WorkflowContext[C]{
-			Config:    r.config,
-			LogWriter: r.writer,
-			Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+		env := &sdk.Environment[C]{
+			NodeEnvironment: sdk.NodeEnvironment[C]{
+				Config:    r.config,
+				LogWriter: r.writer,
+				Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+			},
+			SecretsProvider: &sdkimpl.Runtime{RuntimeBase: *r.base},
 		}
-		r.result, r.err = handler.Callback()(wcx, r.runtime, response.Payload)
+		result, err := handler.Callback()(env, r.runtime, response.Payload)
+		// If an error occurred during the callback (eg. via secrets fetching)
+		// we don't want to override it with the result of the callback.
+		if r.err != nil {
+			return
+		}
+		r.result, r.err = result, err
+
 		_, err = values.Wrap(r.result)
 		if err != nil {
 			r.result = nil

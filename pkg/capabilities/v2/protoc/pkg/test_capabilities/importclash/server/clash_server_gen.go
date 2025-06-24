@@ -28,7 +28,7 @@ type BasicActionCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
 }
 
 func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
@@ -45,8 +45,8 @@ type BasicActionServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
-	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
+func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
@@ -98,8 +98,6 @@ func (c *basicActionCapability) Info(ctx context.Context) (capabilities.Capabili
 
 var _ capabilities.ExecutableAndTriggerCapability = (*basicActionCapability)(nil)
 
-const BasicActionID = "import-clash@1.0.0"
-
 func (c *basicActionCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)
 }
@@ -120,6 +118,13 @@ func (c *basicActionCapability) Execute(ctx context.Context, request capabilitie
 	response := capabilities.CapabilityResponse{}
 	switch request.Method {
 	case "PerformAction":
+		input := &pb3.Inputs{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs, _ *emptypb.Empty) (*pb4.Outputs, error) {
+			return c.BasicActionCapability.PerformAction(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "":
 		input := &pb3.Inputs{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb3.Inputs, _ *emptypb.Empty) (*pb4.Outputs, error) {

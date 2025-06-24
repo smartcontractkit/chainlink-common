@@ -21,10 +21,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var anyTrigger = &basictrigger.Outputs{CoolOutput: "cool"}
@@ -47,7 +46,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 			return &actionandtrigger.Output{Welcome: anyResult2}, nil
 		}
 
-		test := func(_ *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			workflowAction1 := &basicaction.BasicAction{}
 			call1 := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
 
@@ -69,7 +68,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 	t.Run("call capability errors", func(t *testing.T) {
 		// The capability is not registered, so the call will fail.
-		test := func(_ *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			workflowAction1 := &basicaction.BasicAction{}
 			call := workflowAction1.PerformAction(rt, &basicaction.Inputs{InputThing: true})
 			_, err := call.Await()
@@ -90,7 +89,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		capability := &basicaction.BasicAction{}
 
-		test := func(_ *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			_, err := capability.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 			return "", err
 		}
@@ -110,7 +109,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		capability := &basicaction.BasicAction{}
 
-		test := func(_ *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			drt := rt.(*sdkimpl.Runtime)
 			drt.RuntimeHelpers = &awaitOverride{
 				RuntimeHelpers: drt.RuntimeHelpers,
@@ -136,7 +135,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 		capability := &basicaction.BasicAction{}
 
-		test := func(_ *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 			drt := rt.(*sdkimpl.Runtime)
 			drt.RuntimeHelpers = &awaitOverride{
 				RuntimeHelpers: drt.RuntimeHelpers,
@@ -155,7 +154,7 @@ func TestRuntime_CallCapability(t *testing.T) {
 
 func TestRuntime_Rand(t *testing.T) {
 	t.Run("random delegates", func(t *testing.T) {
-		test := func(_ *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
+		test := func(_ *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
 			r, err := rt.Rand()
 			if err != nil {
 				return 0, err
@@ -170,8 +169,8 @@ func TestRuntime_Rand(t *testing.T) {
 	})
 
 	t.Run("random does not allow use in the wrong mode", func(t *testing.T) {
-		test := func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
-			return sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], _ sdk.NodeRuntime) (uint64, error) {
+		test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
+			return sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], _ sdk.NodeRuntime) (uint64, error) {
 				if _, err := rt.Rand(); err != nil {
 					return 0, err
 				}
@@ -186,12 +185,12 @@ func TestRuntime_Rand(t *testing.T) {
 
 	t.Run("returned random panics if you use it in the wrong mode ", func(t *testing.T) {
 		assert.Panics(t, func() {
-			test := func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
+			test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (uint64, error) {
 				r, err := rt.Rand()
 				if err != nil {
 					return 0, err
 				}
-				return sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], _ sdk.NodeRuntime) (uint64, error) {
+				return sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], _ sdk.NodeRuntime) (uint64, error) {
 					r.Uint64()
 					return 0, fmt.Errorf("should not be called in node mode")
 				}, sdk.ConsensusMedianAggregation[uint64]()).Await()
@@ -214,8 +213,8 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 
 		setupSimpleConsensus(t, &consensusValues{Observation: int64(anyObservation), Resp: anyMedian})
 
-		test := func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (int64, error) {
-			result, err := sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], runtime sdk.NodeRuntime) (int64, error) {
+		test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (int64, error) {
+			result, err := sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], runtime sdk.NodeRuntime) (int64, error) {
 				capability := &nodeaction.BasicAction{}
 				value, err := capability.PerformAction(runtime, &nodeaction.NodeInputs{InputThing: true}).Await()
 				require.NoError(t, err)
@@ -235,8 +234,8 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 
 		setupSimpleConsensus(t, &consensusValues{Err: anyError})
 
-		test := func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (int64, error) {
-			return sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], _ sdk.NodeRuntime) (int64, error) {
+		test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (int64, error) {
+			return sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], _ sdk.NodeRuntime) (int64, error) {
 				return int64(0), anyError
 			}, sdk.ConsensusMedianAggregation[int64]()).Await()
 		}
@@ -253,9 +252,9 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 			return nil, fmt.Errorf("should not be called")
 		}
 
-		test := func(env *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
+		test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (*nodeaction.NodeOutputs, error) {
 			var nrt sdk.NodeRuntime
-			sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
+			sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 				nrt = nodeRuntime
 				return 0, err
 			}, sdk.ConsensusMedianAggregation[int32]())
@@ -275,8 +274,8 @@ func TestDonRuntime_RunInNodeMode(t *testing.T) {
 			return nil, errors.New("should not be called")
 		}
 
-		test := func(env *sdk.Environment[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
-			consensus := sdk.RunInNodeMode(env, rt, func(_ *sdk.NodeEnvironment[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
+		test := func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, input *basictrigger.Outputs) (int32, error) {
+			consensus := sdk.RunInNodeMode(wcx, rt, func(_ *sdk.WorkflowContext[string], nodeRuntime sdk.NodeRuntime) (int32, error) {
 				action := basicaction.BasicAction{}
 				_, err := action.PerformAction(rt, &basicaction.Inputs{InputThing: true}).Await()
 				return 0, err
@@ -299,12 +298,12 @@ func TestRuntime_ReturnsConfig(t *testing.T) {
 	anyConfig := "config"
 	runner := testutils.NewRunner(t, anyConfig)
 
-	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(workflowContext *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
 			sdk.On(
 				basictrigger.Trigger(&basictrigger.Config{Name: "name", Number: 123}),
-				func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
-					return env.Config, nil
+				func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
+					return wcx.Config, nil
 				}),
 		}, nil
 	})
@@ -315,7 +314,7 @@ func TestRuntime_ReturnsConfig(t *testing.T) {
 	assert.Equal(t, anyConfig, result)
 }
 
-func testRuntime[T any](t *testing.T, testFn func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (T, error)) (bool, any, error) {
+func testRuntime[T any](t *testing.T, testFn func(wcx *sdk.WorkflowContext[string], rt sdk.Runtime, _ *basictrigger.Outputs) (T, error)) (bool, any, error) {
 	trigger, err := basictriggermock.NewBasicCapability(t)
 	require.NoError(t, err)
 	trigger.Trigger = func(_ context.Context, config *basictrigger.Config) (*basictrigger.Outputs, error) {
@@ -326,7 +325,7 @@ func testRuntime[T any](t *testing.T, testFn func(env *sdk.Environment[string], 
 	runner := testutils.NewRunner[string](t, "unused")
 	require.NoError(t, err)
 
-	runner.Run(func(workflowContext *sdk.Environment[string]) (sdk.Workflow[string], error) {
+	runner.Run(func(workflowContext *sdk.WorkflowContext[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{sdk.On(
 			basictrigger.Trigger(anyConfig), testFn,
 		)}, nil

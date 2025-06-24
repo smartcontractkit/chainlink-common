@@ -75,39 +75,3 @@ message AwaitCapabilitiesRequest {
 message AwaitCapabilitiesResponse {
   map<int32, cre.sdk.v2.CapabilityResponse> responses = 1;
 }
-
-message GetSecretsRequest {
-  repeated SecretRequest requests = 1;
-  int32 callbackId = 2;
-}
-
-message AwaitSecretsRequest {
-  repeated int32 ids = 1;
-}
-
-message AwaitSecretsResponse {
-  map<int32, SecretResponses> responses = 1;
-}
-
-message SecretRequest {
-  string id = 1;
-  string namespace = 2;
-}
-
-message Secret {
-  string id = 1;
-  string namespace = 2;
-  string owner = 3;
-  string value = 4;
-}
-
-message SecretResponse {
-  oneof response {
-    Secret secret = 1;
-    string error = 2;
-  }
-}
-
-message SecretResponses {
-  repeated SecretResponse responses = 1;
-}

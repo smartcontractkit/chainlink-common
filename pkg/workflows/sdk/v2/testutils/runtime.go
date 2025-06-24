@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func newRuntime(tb testing.TB, sourceFn func() rand.Source, secrets map[string]string) sdkimpl.RuntimeBase {
+func newRuntime(tb testing.TB, sourceFn func() rand.Source) sdkimpl.RuntimeBase {
 	defaultConsensus, err := consensusmock.NewConsensusCapability(tb)
 
 	// Do not override if the user provided their own consensus method
@@ -26,7 +26,7 @@ func newRuntime(tb testing.TB, sourceFn func() rand.Source, secrets map[string]s
 
 	return sdkimpl.RuntimeBase{
 		MaxResponseSize: sdk.DefaultMaxResponseSizeBytes,
-		RuntimeHelpers:  &runtimeHelpers{tb: tb, calls: map[int32]chan *pb.CapabilityResponse{}, sourceFn: sourceFn, secretsCalls: map[int32][]*pb.SecretResponse{}, secrets: secrets},
+		RuntimeHelpers:  &runtimeHelpers{tb: tb, calls: map[int32]chan *pb.CapabilityResponse{}, sourceFn: sourceFn},
 	}
 }
 
@@ -49,9 +49,6 @@ type runtimeHelpers struct {
 	tb       testing.TB
 	calls    map[int32]chan *pb.CapabilityResponse
 	sourceFn func() rand.Source
-
-	secretsCalls map[int32][]*pb.SecretResponse
-	secrets      map[string]string
 }
 
 func (rh *runtimeHelpers) GetSource(_ pb.Mode) rand.Source {
@@ -97,52 +94,6 @@ func (rh *runtimeHelpers) Await(request *pb.AwaitCapabilitiesRequest, maxRespons
 	}
 
 	return response, errors.Join(errs...)
-}
-
-func (rh *runtimeHelpers) GetSecrets(req *pb.GetSecretsRequest, _ uint64) error {
-	resp := []*pb.SecretResponse{}
-	for _, secret := range req.Requests {
-		key := secret.Namespace + "/" + secret.Id
-		sec, ok := rh.secrets[key]
-		if !ok {
-			resp = append(resp, &pb.SecretResponse{
-				Response: &pb.SecretResponse_Error{
-					Error: "could not find secret " + key,
-				},
-			})
-		} else {
-			resp = append(resp, &pb.SecretResponse{
-				Response: &pb.SecretResponse_Secret{
-					Secret: &pb.Secret{
-						Id:        secret.Id,
-						Namespace: secret.Namespace,
-						Value:     sec,
-					},
-				},
-			})
-		}
-	}
-
-	rh.secretsCalls[req.CallbackId] = resp
-	return nil
-}
-
-func (rh *runtimeHelpers) AwaitSecrets(req *pb.AwaitSecretsRequest, _ uint64) (*pb.AwaitSecretsResponse, error) {
-	response := &pb.AwaitSecretsResponse{Responses: map[int32]*pb.SecretResponses{}}
-
-	for _, id := range req.Ids {
-		resp, ok := rh.secretsCalls[id]
-		if !ok {
-			return nil, fmt.Errorf("could not find call with id: %d", id)
-		}
-
-		response.Responses[id] = &pb.SecretResponses{
-			Responses: resp,
-		}
-	}
-
-	return response, nil
-
 }
 
 func (rh *runtimeHelpers) SwitchModes(_ pb.Mode) {}

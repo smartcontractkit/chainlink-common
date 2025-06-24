@@ -48,7 +48,6 @@ func (t StandardCapabilitiesService) Name() string { return "StandardCapabilitie
 
 func (t StandardCapabilitiesService) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
 	capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory,
-	gatewayConnector core.GatewayConnector) error {
+	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
 	return nil
 }

@@ -739,392 +739,6 @@ func (x *AwaitCapabilitiesResponse) GetResponses() map[int32]*CapabilityResponse
 	return nil
 }
 
-type GetSecretsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Requests      []*SecretRequest       `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
-	CallbackId    int32                  `protobuf:"varint,2,opt,name=callbackId,proto3" json:"callbackId,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetSecretsRequest) Reset() {
-	*x = GetSecretsRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetSecretsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetSecretsRequest) ProtoMessage() {}
-
-func (x *GetSecretsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetSecretsRequest.ProtoReflect.Descriptor instead.
-func (*GetSecretsRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *GetSecretsRequest) GetRequests() []*SecretRequest {
-	if x != nil {
-		return x.Requests
-	}
-	return nil
-}
-
-func (x *GetSecretsRequest) GetCallbackId() int32 {
-	if x != nil {
-		return x.CallbackId
-	}
-	return 0
-}
-
-type AwaitSecretsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ids           []int32                `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AwaitSecretsRequest) Reset() {
-	*x = AwaitSecretsRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AwaitSecretsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AwaitSecretsRequest) ProtoMessage() {}
-
-func (x *AwaitSecretsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AwaitSecretsRequest.ProtoReflect.Descriptor instead.
-func (*AwaitSecretsRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *AwaitSecretsRequest) GetIds() []int32 {
-	if x != nil {
-		return x.Ids
-	}
-	return nil
-}
-
-type AwaitSecretsResponse struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Responses     map[int32]*SecretResponses `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AwaitSecretsResponse) Reset() {
-	*x = AwaitSecretsResponse{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AwaitSecretsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AwaitSecretsResponse) ProtoMessage() {}
-
-func (x *AwaitSecretsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AwaitSecretsResponse.ProtoReflect.Descriptor instead.
-func (*AwaitSecretsResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *AwaitSecretsResponse) GetResponses() map[int32]*SecretResponses {
-	if x != nil {
-		return x.Responses
-	}
-	return nil
-}
-
-type SecretRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SecretRequest) Reset() {
-	*x = SecretRequest{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SecretRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SecretRequest) ProtoMessage() {}
-
-func (x *SecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SecretRequest.ProtoReflect.Descriptor instead.
-func (*SecretRequest) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *SecretRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *SecretRequest) GetNamespace() string {
-	if x != nil {
-		return x.Namespace
-	}
-	return ""
-}
-
-type Secret struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Owner         string                 `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
-	Value         string                 `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Secret) Reset() {
-	*x = Secret{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Secret) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Secret) ProtoMessage() {}
-
-func (x *Secret) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Secret.ProtoReflect.Descriptor instead.
-func (*Secret) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *Secret) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Secret) GetNamespace() string {
-	if x != nil {
-		return x.Namespace
-	}
-	return ""
-}
-
-func (x *Secret) GetOwner() string {
-	if x != nil {
-		return x.Owner
-	}
-	return ""
-}
-
-func (x *Secret) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
-type SecretResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Response:
-	//
-	//	*SecretResponse_Secret
-	//	*SecretResponse_Error
-	Response      isSecretResponse_Response `protobuf_oneof:"response"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SecretResponse) Reset() {
-	*x = SecretResponse{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SecretResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SecretResponse) ProtoMessage() {}
-
-func (x *SecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SecretResponse.ProtoReflect.Descriptor instead.
-func (*SecretResponse) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *SecretResponse) GetResponse() isSecretResponse_Response {
-	if x != nil {
-		return x.Response
-	}
-	return nil
-}
-
-func (x *SecretResponse) GetSecret() *Secret {
-	if x != nil {
-		if x, ok := x.Response.(*SecretResponse_Secret); ok {
-			return x.Secret
-		}
-	}
-	return nil
-}
-
-func (x *SecretResponse) GetError() string {
-	if x != nil {
-		if x, ok := x.Response.(*SecretResponse_Error); ok {
-			return x.Error
-		}
-	}
-	return ""
-}
-
-type isSecretResponse_Response interface {
-	isSecretResponse_Response()
-}
-
-type SecretResponse_Secret struct {
-	Secret *Secret `protobuf:"bytes,1,opt,name=secret,proto3,oneof"`
-}
-
-type SecretResponse_Error struct {
-	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
-}
-
-func (*SecretResponse_Secret) isSecretResponse_Response() {}
-
-func (*SecretResponse_Error) isSecretResponse_Response() {}
-
-type SecretResponses struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Responses     []*SecretResponse      `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SecretResponses) Reset() {
-	*x = SecretResponses{}
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SecretResponses) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SecretResponses) ProtoMessage() {}
-
-func (x *SecretResponses) ProtoReflect() protoreflect.Message {
-	mi := &file_workflows_sdk_v2_pb_sdk_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SecretResponses.ProtoReflect.Descriptor instead.
-func (*SecretResponses) Descriptor() ([]byte, []int) {
-	return file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *SecretResponses) GetResponses() []*SecretResponse {
-	if x != nil {
-		return x.Responses
-	}
-	return nil
-}
-
 var File_workflows_sdk_v2_pb_sdk_proto protoreflect.FileDescriptor
 
 const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
@@ -1174,34 +788,7 @@ const file_workflows_sdk_v2_pb_sdk_proto_rawDesc = "" +
 	"\tresponses\x18\x01 \x03(\v24.cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntryR\tresponses\x1a\\\n" +
 	"\x0eResponsesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x05R\x03key\x124\n" +
-	"\x05value\x18\x02 \x01(\v2\x1e.cre.sdk.v2.CapabilityResponseR\x05value:\x028\x01\"j\n" +
-	"\x11GetSecretsRequest\x125\n" +
-	"\brequests\x18\x01 \x03(\v2\x19.cre.sdk.v2.SecretRequestR\brequests\x12\x1e\n" +
-	"\n" +
-	"callbackId\x18\x02 \x01(\x05R\n" +
-	"callbackId\"'\n" +
-	"\x13AwaitSecretsRequest\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\x05R\x03ids\"\xc0\x01\n" +
-	"\x14AwaitSecretsResponse\x12M\n" +
-	"\tresponses\x18\x01 \x03(\v2/.cre.sdk.v2.AwaitSecretsResponse.ResponsesEntryR\tresponses\x1aY\n" +
-	"\x0eResponsesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\x05R\x03key\x121\n" +
-	"\x05value\x18\x02 \x01(\v2\x1b.cre.sdk.v2.SecretResponsesR\x05value:\x028\x01\"=\n" +
-	"\rSecretRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
-	"\tnamespace\x18\x02 \x01(\tR\tnamespace\"b\n" +
-	"\x06Secret\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
-	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x14\n" +
-	"\x05owner\x18\x03 \x01(\tR\x05owner\x12\x14\n" +
-	"\x05value\x18\x04 \x01(\tR\x05value\"b\n" +
-	"\x0eSecretResponse\x12,\n" +
-	"\x06secret\x18\x01 \x01(\v2\x12.cre.sdk.v2.SecretH\x00R\x06secret\x12\x16\n" +
-	"\x05error\x18\x02 \x01(\tH\x00R\x05errorB\n" +
-	"\n" +
-	"\bresponse\"K\n" +
-	"\x0fSecretResponses\x128\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1a.cre.sdk.v2.SecretResponseR\tresponses*R\n" +
+	"\x05value\x18\x02 \x01(\v2\x1e.cre.sdk.v2.CapabilityResponseR\x05value:\x028\x01*R\n" +
 	"\x0fAggregationType\x12\n" +
 	"\n" +
 	"\x06MEDIAN\x10\x00\x12\r\n" +
@@ -1225,7 +812,7 @@ func file_workflows_sdk_v2_pb_sdk_proto_rawDescGZIP() []byte {
 }
 
 var file_workflows_sdk_v2_pb_sdk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_workflows_sdk_v2_pb_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_workflows_sdk_v2_pb_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_workflows_sdk_v2_pb_sdk_proto_goTypes = []any{
 	(AggregationType)(0),               // 0: cre.sdk.v2.AggregationType
 	(Mode)(0),                          // 1: cre.sdk.v2.Mode
@@ -1239,44 +826,31 @@ var file_workflows_sdk_v2_pb_sdk_proto_goTypes = []any{
 	(*Trigger)(nil),                    // 9: cre.sdk.v2.Trigger
 	(*AwaitCapabilitiesRequest)(nil),   // 10: cre.sdk.v2.AwaitCapabilitiesRequest
 	(*AwaitCapabilitiesResponse)(nil),  // 11: cre.sdk.v2.AwaitCapabilitiesResponse
-	(*GetSecretsRequest)(nil),          // 12: cre.sdk.v2.GetSecretsRequest
-	(*AwaitSecretsRequest)(nil),        // 13: cre.sdk.v2.AwaitSecretsRequest
-	(*AwaitSecretsResponse)(nil),       // 14: cre.sdk.v2.AwaitSecretsResponse
-	(*SecretRequest)(nil),              // 15: cre.sdk.v2.SecretRequest
-	(*Secret)(nil),                     // 16: cre.sdk.v2.Secret
-	(*SecretResponse)(nil),             // 17: cre.sdk.v2.SecretResponse
-	(*SecretResponses)(nil),            // 18: cre.sdk.v2.SecretResponses
-	nil,                                // 19: cre.sdk.v2.FieldsMap.FieldsEntry
-	nil,                                // 20: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
-	nil,                                // 21: cre.sdk.v2.AwaitSecretsResponse.ResponsesEntry
-	(*pb.Value)(nil),                   // 22: values.Value
-	(*anypb.Any)(nil),                  // 23: google.protobuf.Any
+	nil,                                // 12: cre.sdk.v2.FieldsMap.FieldsEntry
+	nil,                                // 13: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
+	(*pb.Value)(nil),                   // 14: values.Value
+	(*anypb.Any)(nil),                  // 15: google.protobuf.Any
 }
 var file_workflows_sdk_v2_pb_sdk_proto_depIdxs = []int32{
-	22, // 0: cre.sdk.v2.SimpleConsensusInputs.value:type_name -> values.Value
+	14, // 0: cre.sdk.v2.SimpleConsensusInputs.value:type_name -> values.Value
 	4,  // 1: cre.sdk.v2.SimpleConsensusInputs.descriptors:type_name -> cre.sdk.v2.ConsensusDescriptor
-	22, // 2: cre.sdk.v2.SimpleConsensusInputs.default:type_name -> values.Value
-	19, // 3: cre.sdk.v2.FieldsMap.fields:type_name -> cre.sdk.v2.FieldsMap.FieldsEntry
+	14, // 2: cre.sdk.v2.SimpleConsensusInputs.default:type_name -> values.Value
+	12, // 3: cre.sdk.v2.FieldsMap.fields:type_name -> cre.sdk.v2.FieldsMap.FieldsEntry
 	0,  // 4: cre.sdk.v2.ConsensusDescriptor.aggregation:type_name -> cre.sdk.v2.AggregationType
 	3,  // 5: cre.sdk.v2.ConsensusDescriptor.fieldsMap:type_name -> cre.sdk.v2.FieldsMap
-	23, // 6: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
-	23, // 7: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	23, // 8: cre.sdk.v2.TriggerSubscription.payload:type_name -> google.protobuf.Any
+	15, // 6: cre.sdk.v2.CapabilityRequest.payload:type_name -> google.protobuf.Any
+	15, // 7: cre.sdk.v2.CapabilityResponse.payload:type_name -> google.protobuf.Any
+	15, // 8: cre.sdk.v2.TriggerSubscription.payload:type_name -> google.protobuf.Any
 	7,  // 9: cre.sdk.v2.TriggerSubscriptionRequest.subscriptions:type_name -> cre.sdk.v2.TriggerSubscription
-	23, // 10: cre.sdk.v2.Trigger.payload:type_name -> google.protobuf.Any
-	20, // 11: cre.sdk.v2.AwaitCapabilitiesResponse.responses:type_name -> cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
-	15, // 12: cre.sdk.v2.GetSecretsRequest.requests:type_name -> cre.sdk.v2.SecretRequest
-	21, // 13: cre.sdk.v2.AwaitSecretsResponse.responses:type_name -> cre.sdk.v2.AwaitSecretsResponse.ResponsesEntry
-	16, // 14: cre.sdk.v2.SecretResponse.secret:type_name -> cre.sdk.v2.Secret
-	17, // 15: cre.sdk.v2.SecretResponses.responses:type_name -> cre.sdk.v2.SecretResponse
-	4,  // 16: cre.sdk.v2.FieldsMap.FieldsEntry.value:type_name -> cre.sdk.v2.ConsensusDescriptor
-	6,  // 17: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> cre.sdk.v2.CapabilityResponse
-	18, // 18: cre.sdk.v2.AwaitSecretsResponse.ResponsesEntry.value:type_name -> cre.sdk.v2.SecretResponses
-	19, // [19:19] is the sub-list for method output_type
-	19, // [19:19] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	15, // 10: cre.sdk.v2.Trigger.payload:type_name -> google.protobuf.Any
+	13, // 11: cre.sdk.v2.AwaitCapabilitiesResponse.responses:type_name -> cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry
+	4,  // 12: cre.sdk.v2.FieldsMap.FieldsEntry.value:type_name -> cre.sdk.v2.ConsensusDescriptor
+	6,  // 13: cre.sdk.v2.AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> cre.sdk.v2.CapabilityResponse
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_workflows_sdk_v2_pb_sdk_proto_init() }
@@ -1296,17 +870,13 @@ func file_workflows_sdk_v2_pb_sdk_proto_init() {
 		(*CapabilityResponse_Payload)(nil),
 		(*CapabilityResponse_Error)(nil),
 	}
-	file_workflows_sdk_v2_pb_sdk_proto_msgTypes[15].OneofWrappers = []any{
-		(*SecretResponse_Secret)(nil),
-		(*SecretResponse_Error)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_workflows_sdk_v2_pb_sdk_proto_rawDesc), len(file_workflows_sdk_v2_pb_sdk_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   20,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -28,13 +28,7 @@ func (*Handler) DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (R
 	if request.Auth != "" {
 		return request, nil
 	}
-
-	if jwtTokenFromHeader == "" {
-		return request, errors.New("missing auth token")
-	}
-
 	request.Auth = jwtTokenFromHeader
-
 	return request, nil
 }
 

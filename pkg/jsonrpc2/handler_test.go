@@ -97,9 +97,12 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req := validReq
 		req.Auth = ""
 		reqBytes, _ := json.Marshal(req)
-		_, err := handler.DecodeRequest(reqBytes, "")
-		if err == nil || err.Error() != "missing auth token" {
-			t.Errorf("expected missing auth token error, got %v", err)
+		got, err := handler.DecodeRequest(reqBytes, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.Auth != "" {
+			t.Errorf("expected auth from body")
 		}
 	})
 

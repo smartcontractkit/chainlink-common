@@ -20,7 +20,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
 const (
@@ -48,8 +47,8 @@ func Test_NoDag_Run(t *testing.T) {
 		defer m.Close()
 
 		ctx := t.Context()
-		req := &wasmpb.ExecuteRequest{
-			Request: &wasmpb.ExecuteRequest_Trigger{},
+		req := &sdkpb.ExecuteRequest{
+			Request: &sdkpb.ExecuteRequest_Trigger{},
 		}
 
 		_, err = m.Execute(ctx, req, nil)
@@ -116,8 +115,8 @@ func Test_NoDag_Run(t *testing.T) {
 		wrapped, err := anypb.New(trigger)
 		require.NoError(t, err)
 
-		req := &wasmpb.ExecuteRequest{
-			Request: &wasmpb.ExecuteRequest_Trigger{
+		req := &sdkpb.ExecuteRequest{
+			Request: &sdkpb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
 					Id:      uint64(0),
 					Payload: wrapped,
@@ -133,7 +132,7 @@ func Test_NoDag_Run(t *testing.T) {
 		assert.True(t, strings.Contains(logs[0].Message, "Hi"))
 
 		switch output := response.Result.(type) {
-		case *wasmpb.ExecutionResult_Value:
+		case *sdkpb.ExecutionResult_Value:
 			valuePb := output.Value
 			value, err := values.FromProto(valuePb)
 			require.NoError(t, err)
@@ -143,6 +142,105 @@ func Test_NoDag_Run(t *testing.T) {
 		default:
 			t.Fatalf("unexpected response type %T", output)
 		}
+	})
+}
+
+func Test_NoDag_Secrets(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(nodagSecretsBinaryCmd, nodagSecretsBinaryLocation, true, t)
+
+	t.Run("Returns an error if the secret doesn't exist", func(t *testing.T) {
+		ctx := t.Context()
+		lggr, _ := logger.TestObserved(t, zapcore.InfoLevel)
+		mc := &ModuleConfig{
+			Logger:         lggr,
+			IsUncompressed: true,
+		}
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
+
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+
+		mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
+			Return([]*sdkpb.SecretResponse{
+				{
+					Response: &sdkpb.SecretResponse_Error{
+						Error: "could not find secret",
+					},
+				},
+			}, nil).
+			Once()
+
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		req := &sdkpb.ExecuteRequest{
+			Request: &sdkpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(0),
+					Payload: wrapped,
+				},
+			},
+		}
+
+		resp, err := m.Execute(ctx, req, mockExecutionHelper)
+		require.NoError(t, err)
+
+		assert.ErrorContains(t, errors.New(resp.GetError()), "could not find secret")
+	})
+
+	t.Run("Returns the secret if it exists", func(t *testing.T) {
+		ctx := t.Context()
+		lggr, _ := logger.TestObserved(t, zapcore.InfoLevel)
+		mc := &ModuleConfig{
+			Logger:         lggr,
+			IsUncompressed: true,
+		}
+		m, err := NewModule(mc, binary)
+		require.NoError(t, err)
+
+		m.Start()
+		defer m.Close()
+
+		mockExecutionHelper := NewMockExecutionHelper(t)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+
+		mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
+			Return([]*sdkpb.SecretResponse{
+				{
+					Response: &sdkpb.SecretResponse_Secret{
+						Secret: &sdkpb.Secret{Value: "Bar"},
+					},
+				},
+			}, nil).
+			Once()
+
+		// When a TriggerEvent occurs, Engine calls Execute with that Event.
+		trigger := &basictrigger.Outputs{CoolOutput: wordList[0]}
+		wrapped, err := anypb.New(trigger)
+		require.NoError(t, err)
+
+		req := &sdkpb.ExecuteRequest{
+			Request: &sdkpb.ExecuteRequest_Trigger{
+				Trigger: &sdkpb.Trigger{
+					Id:      uint64(0),
+					Payload: wrapped,
+				},
+			},
+		}
+
+		resp, err := m.Execute(ctx, req, mockExecutionHelper)
+		require.NoError(t, err)
+		assert.Equal(t, "", resp.GetError())
+
+		assert.Equal(t, "Bar", resp.GetValue().GetStringValue())
 	})
 }
 
@@ -230,8 +328,8 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		wrapped, err := anypb.New(trigger)
 		require.NoError(t, err)
 
-		req := &wasmpb.ExecuteRequest{
-			Request: &wasmpb.ExecuteRequest_Trigger{
+		req := &sdkpb.ExecuteRequest{
+			Request: &sdkpb.ExecuteRequest_Trigger{
 				Trigger: &sdkpb.Trigger{
 					Id:      uint64(1),
 					Payload: wrapped,
@@ -242,7 +340,7 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		switch output := response.Result.(type) {
-		case *wasmpb.ExecutionResult_Value:
+		case *sdkpb.ExecutionResult_Value:
 			valuePb := output.Value
 			value, err := values.FromProto(valuePb)
 			require.NoError(t, err)
@@ -287,8 +385,8 @@ func Test_NoDag_Random(t *testing.T) {
 	trigger := &basictrigger.Outputs{CoolOutput: "trigger1"}
 	triggerPayload, err := anypb.New(trigger)
 	require.NoError(t, err)
-	anyRequest := &wasmpb.ExecuteRequest{
-		Request: &wasmpb.ExecuteRequest_Trigger{
+	anyRequest := &sdkpb.ExecuteRequest{
+		Request: &sdkpb.ExecuteRequest_Trigger{
 			Trigger: &sdkpb.Trigger{
 				Id:      uint64(0),
 				Payload: triggerPayload,
@@ -358,10 +456,10 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
-	helper.EXPECT().GetID().Return("Id")
-	execResult, err := m.Execute(t.Context(), &wasmpb.ExecuteRequest{
+	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
+	execResult, err := m.Execute(t.Context(), &sdkpb.ExecuteRequest{
 		Config:  config,
-		Request: &wasmpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
+		Request: &sdkpb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},
 	}, helper)
 
 	if err != nil {
@@ -369,9 +467,9 @@ func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*sdkpb.TriggerSub
 	}
 
 	switch r := execResult.Result.(type) {
-	case *wasmpb.ExecutionResult_TriggerSubscriptions:
+	case *sdkpb.ExecutionResult_TriggerSubscriptions:
 		return r.TriggerSubscriptions, nil
-	case *wasmpb.ExecutionResult_Error:
+	case *sdkpb.ExecutionResult_Error:
 		return nil, errors.New(r.Error)
 	default:
 		return nil, errors.New("unexpected response from WASM binary: got nil spec response")

@@ -1,2 +1,2 @@
 //go:generate go run ./gen
-package pb
+package v2

@@ -1,2 +1,2 @@
-//go:generate make generate
+//go:generate go run ./generate
 package relayerset

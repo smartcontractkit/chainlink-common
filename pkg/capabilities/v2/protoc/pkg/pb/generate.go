@@ -1,2 +1,4 @@
-//go:generate make generate
+//go:generate go run ./gen
+//go:generate mv tools/generator/v1alpha/cre_metadata.pb.go cre_metadata.pb.go
+//go:generate rm -rf tools
 package pb

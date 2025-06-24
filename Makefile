@@ -52,31 +52,3 @@ lint-workspace:
 
 lint:
 	@./script/lint.sh $(GOLANGCI_LINT_VERSION) "$(GOLANGCI_LINT_COMMON_OPTS)" $(GOLANGCI_LINT_DIRECTORY) "--new-from-rev=origin/main"
-
-CLPROTOS_REPO=https://github.com/smartcontractkit/chainlink-protos
-CLPROTOS_DIR=proto_vendor/chainlink-protos
-PROTOS_VERSION_FILE=.protos-version
-
-.PHONY: setup-clprotos update-clprotos clprotos
-update-clprotos: setup-clprotos
-	@cd $(CLPROTOS_DIR) && git fetch && git reset --hard $(COMMIT) && (echo $(COMMIT) > ../../$(PROTOS_VERSION_FILE))
-
-clprotos: setup-clprotos
-	@echo "Resetting chainlink-protos to version specified in $(PROTOS_VERSION_FILE)..."
-	@cd $(CLPROTOS_DIR) && \
-      TARGET_COMMIT=$$(cat ../../$(PROTOS_VERSION_FILE)) && \
-      if git cat-file -e "$$TARGET_COMMIT"^{commit} 2>/dev/null; then \
-        echo "Commit $$TARGET_COMMIT already present locally, skipping fetch."; \
-      else \
-        git fetch; \
-      fi && \
-      git reset --hard "$$TARGET_COMMIT"
-
-setup-clprotos:
-	@mkdir -p proto_vendor
-	@if [ ! -d "$(CLPROTOS_DIR)/.git" ]; then \
-		echo "Cloning chainlink-protos..."; \
-		git clone $(CLPROTOS_REPO) $(CLPROTOS_DIR); \
-	else \
-		echo "chainlink-protos already exists in proto-vendor."; \
-	fi

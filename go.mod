@@ -35,6 +35,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
+	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-00010101000000-000000000000
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250612182447-1c32d2efe48f
 	github.com/smartcontractkit/freeport v0.1.1
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7
@@ -136,3 +137,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 )
+
+replace github.com/smartcontractkit/chainlink-common/pkg/values => ./pkg/values

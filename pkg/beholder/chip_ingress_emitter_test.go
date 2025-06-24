@@ -260,23 +260,7 @@ func TestExtractAttributes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotAttributes, err := beholder.ExtractAttributes(tt.attrs...)
-
-			if tt.wantErr {
-				if err == nil {
-					t.Errorf("extractAttributes() error = nil, want error")
-					return
-				}
-				if tt.expectedError != "" && tt.expectedError != err.Error() {
-					t.Errorf("extractAttributes() error = %v, want %v", err, tt.expectedError)
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("extractAttributes() unexpected error = %v", err)
-				return
-			}
+			gotAttributes := beholder.ExtractAttributes(tt.attrs...)
 
 			assert.Equal(t, tt.wantAttributes, gotAttributes)
 		})

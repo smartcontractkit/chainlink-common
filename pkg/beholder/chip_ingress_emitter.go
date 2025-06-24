@@ -27,10 +27,7 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	attributes, err := ExtractAttributes(attrKVs...)
-	if err != nil {
-		return err
-	}
+	attributes := ExtractAttributes(attrKVs...)
 
 	event, err := chipingress.NewEvent(sourceDomain, entityType, body, attributes)
 	if err != nil {
@@ -79,7 +76,7 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 	return sourceDomain, entityType, nil
 }
 
-func ExtractAttributes(attrKVs ...any) (map[string]any, error) {
+func ExtractAttributes(attrKVs ...any) map[string]any {
 	attributes := newAttributes(attrKVs...)
 
 	attributesMap := make(map[string]any)
@@ -87,5 +84,5 @@ func ExtractAttributes(attrKVs ...any) (map[string]any, error) {
 		attributesMap[key] = value
 	}
 
-	return attributesMap, nil
+	return attributesMap
 }

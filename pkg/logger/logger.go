@@ -1,8 +1,9 @@
 package logger
 
 import (
-	"io"
 	"fmt"
+	"go.opentelemetry.io/otel/log"
+	"io"
 	"reflect"
 	"testing"
 
@@ -100,6 +101,12 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 func NewWithSync(w io.Writer) Logger {
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(w), zapcore.InfoLevel)
 	return &logger{zap.New(core).Sugar()}
+}
+
+// todo return proper logger object
+// NewWithOtelZapCore returns a new Logger with an OpenTelemetry Core.
+func NewWithOtelZapCore(loggerProvider log.LoggerProvider) Logger {
+	return &otellogger{zap.New(NewOtelZapCore(loggerProvider)}
 }
 
 // Test returns a new test Logger for tb.

@@ -545,6 +545,14 @@ func (t TestEVM) GetTransactionStatus(ctx context.Context, transactionID types.I
 	return t.mockedContractReader.GetTransactionStatus(ctx, transactionID)
 }
 
+func (t TestEVM) GetForwarderForEOA(ctx context.Context, eoa evmtypes.Address) (forwarder evmtypes.Address, err error) {
+	return t.mockedContractReader.GetForwarderForEOA(ctx, eoa)
+}
+
+func (t TestEVM) GetForwarderForEOAOCR2Feeds(ctx context.Context, eoa, ocr2AggregatorID evmtypes.Address) (forwarder evmtypes.Address, err error) {
+	return t.mockedContractReader.GetForwarderForEOAOCR2Feeds(ctx, eoa, ocr2AggregatorID)
+}
+
 var _ types.EVMService = (*TestEVM)(nil)
 
 type TestRelayerSet struct {

@@ -174,6 +174,22 @@ func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID stri
 	return types.TransactionStatus(reply.GetTransactionStatus()), nil
 }
 
+func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa evmtypes.Address) (forwarder evmtypes.Address, err error) {
+	reply, err := e.grpcClient.GetForwarderForEOA(ctx, &evmpb.GetForwarderForEOARequest{Addr: eoa[:]})
+	if err != nil {
+		return evmtypes.Address{}, net.WrapRPCErr(err)
+	}
+	return evmtypes.Address(reply.GetAddr()), nil
+}
+
+func (e *EVMClient) GetForwarderForEOAOCR2Feeds(ctx context.Context, eoa, ocr2AggregatorID evmtypes.Address) (forwarder evmtypes.Address, err error) {
+	reply, err := e.grpcClient.GetForwarderForEOAOCR2Feeds(ctx, &evmpb.GetForwarderForEOAOCR2FeedsRequest{Addr: eoa[:], Aggr: ocr2AggregatorID[:]})
+	if err != nil {
+		return evmtypes.Address{}, net.WrapRPCErr(err)
+	}
+	return evmtypes.Address(reply.GetAddr()), nil
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 
@@ -330,4 +346,20 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (e *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	forwarder, err := e.impl.GetForwarderForEOA(ctx, evmtypes.Address(request.GetAddr()))
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
+}
+
+func (e *evmServer) GetForwarderForEOAOCR2Feeds(ctx context.Context, request *evmpb.GetForwarderForEOAOCR2FeedsRequest) (*evmpb.GetForwarderForEOAOCR2FeedsReply, error) {
+	forwarder, err := e.impl.GetForwarderForEOAOCR2Feeds(ctx, evmtypes.Address(request.GetAddr()), evmtypes.Address(request.GetAggr()))
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAOCR2FeedsReply{Addr: forwarder[:]}, nil
 }

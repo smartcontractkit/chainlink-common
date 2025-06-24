@@ -169,7 +169,7 @@ const file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDesc = "" +
 	"\x18scheduled_execution_time\x18\x01 \x01(\tR\x16scheduledExecutionTime:\x02\x18\x012\xb7\x01\n" +
 	"\x04Cron\x12>\n" +
 	"\aTrigger\x12\x17.cron_trigger.v1.Config\x1a\x18.cron_trigger.v1.Payload0\x01\x12U\n" +
-	"\rLegacyTrigger\x12\x17.cron_trigger.v1.Config\x1a\x1e.cron_trigger.v1.LegacyPayload\"\t\x8a\xb5\x18\x02\b\x01\x88\x02\x010\x01\x1a\x18\x82\xb5\x18\x14\x12\x12cron-trigger@1.1.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cronb\x06proto3"
+	"\rLegacyTrigger\x12\x17.cron_trigger.v1.Config\x1a\x1e.cron_trigger.v1.LegacyPayload\"\t\x8a\xb5\x18\x02\b\x01\x88\x02\x010\x01\x1a\x18\x82\xb5\x18\x14\x12\x12cron-trigger@1.0.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cronb\x06proto3"
 
 var (
 	file_capabilities_v2_triggers_cron_cron_trigger_proto_rawDescOnce sync.Once

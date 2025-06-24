@@ -95,5 +95,5 @@ func (cap *CronCapability) InvokeTrigger(ctx context.Context, request *sdkpb.Tri
 }
 
 func (cap *CronCapability) ID() string {
-	return "cron-trigger@1.1.0"
+	return "cron-trigger@1.0.0"
 }

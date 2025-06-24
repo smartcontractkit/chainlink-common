@@ -425,46 +425,13 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				require.Equal(t, &evmLog, out[0])
 			},
 		},
-		{
-			name: "SubmitTransaction",
-			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				txRequest := evmtypes.SubmitTransactionRequest{
-					To:   address1,
-					Data: []byte("data"),
-				}
-				expectedTxResult := evmtypes.TransactionResult{
-					TxStatus: evmtypes.TxSuccess,
-					TxHash:   evmtypes.Hash{1, 2, 3},
-				}
-				mockEVM.EXPECT().SubmitTransaction(mock.Anything, txRequest).Return(&expectedTxResult, nil)
-				txResult, err := evm.SubmitTransaction(ctx, txRequest)
-				require.NoError(t, err)
-				require.Equal(t, &expectedTxResult, txResult)
-			},
-		},
-		{
-			name: "CalculateTransactionFee",
-			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				gasInfo := evmtypes.ReceiptGasInfo{
-					GasUsed:           1000,
-					EffectiveGasPrice: big.NewInt(2000),
-				}
-				expectedFee := &evmtypes.TransactionFee{
-					TransactionFee: big.NewInt(2000000),
-				}
-				mockEVM.EXPECT().CalculateTransactionFee(mock.Anything, gasInfo).Return(expectedFee, nil)
-				fee, err := evm.CalculateTransactionFee(ctx, gasInfo)
-				require.NoError(t, err)
-				require.Equal(t, expectedFee, fee)
-			},
-		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			mockEVM := mocks2.NewEVMService(t)
-			// evm := TestEVM{mockedContractReader: mockEVM}
-			relayer1.On("EVM", mock.Anything, mock.Anything).Return(mockEVM, nil).Once()
+			evm := TestEVM{mockedContractReader: mockEVM}
+			relayer1.On("EVM", mock.Anything, mock.Anything).Return(evm, nil).Once()
 
 			fetchedEVM, err := retrievedRelayer.EVM()
 			require.NoError(t, err)
@@ -528,14 +495,6 @@ func (t *TestContractReader) QueryKeys(ctx context.Context, keyQueries []types.C
 
 type TestEVM struct {
 	mockedContractReader *mocks2.EVMService
-}
-
-func (t *TestEVM) CalculateTransactionFee(ctx context.Context, receipt evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
-	return t.mockedContractReader.CalculateTransactionFee(ctx, receipt)
-}
-
-func (t *TestEVM) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
-	return t.mockedContractReader.SubmitTransaction(ctx, txRequest)
 }
 
 func (t TestEVM) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {

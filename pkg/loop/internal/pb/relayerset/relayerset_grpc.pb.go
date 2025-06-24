@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: loop/internal/pb/relayerset/relayerset.proto
+// source: relayerset.proto
 
 package relayerset
 
@@ -842,24 +842,22 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/relayerset/relayerset.proto",
+	Metadata: "relayerset.proto",
 }
 
 const (
-	EVMRelayerSet_GetTransactionFee_FullMethodName       = "/loop.relayerset.EVMRelayerSet/GetTransactionFee"
-	EVMRelayerSet_CallContract_FullMethodName            = "/loop.relayerset.EVMRelayerSet/CallContract"
-	EVMRelayerSet_FilterLogs_FullMethodName              = "/loop.relayerset.EVMRelayerSet/FilterLogs"
-	EVMRelayerSet_BalanceAt_FullMethodName               = "/loop.relayerset.EVMRelayerSet/BalanceAt"
-	EVMRelayerSet_EstimateGas_FullMethodName             = "/loop.relayerset.EVMRelayerSet/EstimateGas"
-	EVMRelayerSet_GetTransactionByHash_FullMethodName    = "/loop.relayerset.EVMRelayerSet/GetTransactionByHash"
-	EVMRelayerSet_GetTransactionReceipt_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionReceipt"
-	EVMRelayerSet_LatestAndFinalizedHead_FullMethodName  = "/loop.relayerset.EVMRelayerSet/LatestAndFinalizedHead"
-	EVMRelayerSet_QueryTrackedLogs_FullMethodName        = "/loop.relayerset.EVMRelayerSet/QueryTrackedLogs"
-	EVMRelayerSet_RegisterLogTracking_FullMethodName     = "/loop.relayerset.EVMRelayerSet/RegisterLogTracking"
-	EVMRelayerSet_UnregisterLogTracking_FullMethodName   = "/loop.relayerset.EVMRelayerSet/UnregisterLogTracking"
-	EVMRelayerSet_GetTransactionStatus_FullMethodName    = "/loop.relayerset.EVMRelayerSet/GetTransactionStatus"
-	EVMRelayerSet_SubmitTransaction_FullMethodName       = "/loop.relayerset.EVMRelayerSet/SubmitTransaction"
-	EVMRelayerSet_CalculateTransactionFee_FullMethodName = "/loop.relayerset.EVMRelayerSet/CalculateTransactionFee"
+	EVMRelayerSet_GetTransactionFee_FullMethodName      = "/loop.relayerset.EVMRelayerSet/GetTransactionFee"
+	EVMRelayerSet_CallContract_FullMethodName           = "/loop.relayerset.EVMRelayerSet/CallContract"
+	EVMRelayerSet_FilterLogs_FullMethodName             = "/loop.relayerset.EVMRelayerSet/FilterLogs"
+	EVMRelayerSet_BalanceAt_FullMethodName              = "/loop.relayerset.EVMRelayerSet/BalanceAt"
+	EVMRelayerSet_EstimateGas_FullMethodName            = "/loop.relayerset.EVMRelayerSet/EstimateGas"
+	EVMRelayerSet_GetTransactionByHash_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionByHash"
+	EVMRelayerSet_GetTransactionReceipt_FullMethodName  = "/loop.relayerset.EVMRelayerSet/GetTransactionReceipt"
+	EVMRelayerSet_LatestAndFinalizedHead_FullMethodName = "/loop.relayerset.EVMRelayerSet/LatestAndFinalizedHead"
+	EVMRelayerSet_QueryTrackedLogs_FullMethodName       = "/loop.relayerset.EVMRelayerSet/QueryTrackedLogs"
+	EVMRelayerSet_RegisterLogTracking_FullMethodName    = "/loop.relayerset.EVMRelayerSet/RegisterLogTracking"
+	EVMRelayerSet_UnregisterLogTracking_FullMethodName  = "/loop.relayerset.EVMRelayerSet/UnregisterLogTracking"
+	EVMRelayerSet_GetTransactionStatus_FullMethodName   = "/loop.relayerset.EVMRelayerSet/GetTransactionStatus"
 )
 
 // EVMRelayerSetClient is the client API for EVMRelayerSet service.
@@ -878,8 +876,6 @@ type EVMRelayerSetClient interface {
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*evm.GetTransactionStatusReply, error)
-	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*evm.SubmitTransactionReply, error)
-	CalculateTransactionFee(ctx context.Context, in *CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evm.CalculateTransactionFeeReply, error)
 }
 
 type eVMRelayerSetClient struct {
@@ -1010,26 +1006,6 @@ func (c *eVMRelayerSetClient) GetTransactionStatus(ctx context.Context, in *GetT
 	return out, nil
 }
 
-func (c *eVMRelayerSetClient) SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*evm.SubmitTransactionReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.SubmitTransactionReply)
-	err := c.cc.Invoke(ctx, EVMRelayerSet_SubmitTransaction_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *eVMRelayerSetClient) CalculateTransactionFee(ctx context.Context, in *CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evm.CalculateTransactionFeeReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(evm.CalculateTransactionFeeReply)
-	err := c.cc.Invoke(ctx, EVMRelayerSet_CalculateTransactionFee_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // EVMRelayerSetServer is the server API for EVMRelayerSet service.
 // All implementations must embed UnimplementedEVMRelayerSetServer
 // for forward compatibility.
@@ -1046,8 +1022,6 @@ type EVMRelayerSetServer interface {
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error)
-	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*evm.SubmitTransactionReply, error)
-	CalculateTransactionFee(context.Context, *CalculateTransactionFeeRequest) (*evm.CalculateTransactionFeeReply, error)
 	mustEmbedUnimplementedEVMRelayerSetServer()
 }
 
@@ -1093,12 +1067,6 @@ func (UnimplementedEVMRelayerSetServer) UnregisterLogTracking(context.Context, *
 }
 func (UnimplementedEVMRelayerSetServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*evm.GetTransactionStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
-}
-func (UnimplementedEVMRelayerSetServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*evm.SubmitTransactionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
-}
-func (UnimplementedEVMRelayerSetServer) CalculateTransactionFee(context.Context, *CalculateTransactionFeeRequest) (*evm.CalculateTransactionFeeReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CalculateTransactionFee not implemented")
 }
 func (UnimplementedEVMRelayerSetServer) mustEmbedUnimplementedEVMRelayerSetServer() {}
 func (UnimplementedEVMRelayerSetServer) testEmbeddedByValue()                       {}
@@ -1337,42 +1305,6 @@ func _EVMRelayerSet_GetTransactionStatus_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVMRelayerSet_SubmitTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SubmitTransactionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(EVMRelayerSetServer).SubmitTransaction(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: EVMRelayerSet_SubmitTransaction_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMRelayerSetServer).SubmitTransaction(ctx, req.(*SubmitTransactionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _EVMRelayerSet_CalculateTransactionFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CalculateTransactionFeeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(EVMRelayerSetServer).CalculateTransactionFee(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: EVMRelayerSet_CalculateTransactionFee_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMRelayerSetServer).CalculateTransactionFee(ctx, req.(*CalculateTransactionFeeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // EVMRelayerSet_ServiceDesc is the grpc.ServiceDesc for EVMRelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1428,15 +1360,7 @@ var EVMRelayerSet_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetTransactionStatus",
 			Handler:    _EVMRelayerSet_GetTransactionStatus_Handler,
 		},
-		{
-			MethodName: "SubmitTransaction",
-			Handler:    _EVMRelayerSet_SubmitTransaction_Handler,
-		},
-		{
-			MethodName: "CalculateTransactionFee",
-			Handler:    _EVMRelayerSet_CalculateTransactionFee_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "loop/internal/pb/relayerset/relayerset.proto",
+	Metadata: "relayerset.proto",
 }

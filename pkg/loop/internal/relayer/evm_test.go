@@ -145,7 +145,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, txFee, fee.TransactionFee)
 	})
-	
+
 	t.Run("GetTransactionStatus", func(t *testing.T) {
 		evmService.staticGetTransactionStatus = func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
 			require.Equal(t, txId, transactionID)
@@ -308,20 +308,18 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 }
 
 type staticEVMService struct {
-	staticCallContract            func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	staticFilterLogs              func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	staticBalanceAt               func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
-	staticEstimateGas             func(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	staticGetTransactionByHash    func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	staticGetTransactionReceipt   func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-	staticGetTransactionFee       func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
-	staticQueryTrackedLogs        func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	staticLatestAndFinalizedHead  func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
-	staticRegisterLogTracking     func(ctx context.Context, filter evm.LPFilterQuery) error
-	staticUnregisterLogTracking   func(ctx context.Context, filterName string) error
-	staticGetTransactionStatus    func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
-	staticSubmitTransaction       func(ctx context.Context, submitTransactionRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
-	staticCalculateTransactionFee func(ctx context.Context, gasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error)
+	staticCallContract           func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
+	staticFilterLogs             func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
+	staticBalanceAt              func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
+	staticEstimateGas            func(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	staticGetTransactionByHash   func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	staticGetTransactionReceipt  func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+	staticGetTransactionFee      func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
+	staticQueryTrackedLogs       func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	staticLatestAndFinalizedHead func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
+	staticRegisterLogTracking    func(ctx context.Context, filter evm.LPFilterQuery) error
+	staticUnregisterLogTracking  func(ctx context.Context, filterName string) error
+	staticGetTransactionStatus   func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
 }
 
 func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -364,20 +362,12 @@ func (s *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.L
 	return s.staticRegisterLogTracking(ctx, filter)
 }
 
-func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-	return s.staticGetTransactionStatus(ctx, transactionID)
-}
-
-func (s *staticEVMService) CalculateTransactionFee(ctx context.Context, gasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error) {
-	return s.staticCalculateTransactionFee(ctx, gasInfo)
-}
-
-func (s *staticEVMService) SubmitTransaction(ctx context.Context, submitTransactionRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error) {
-	return s.staticSubmitTransaction(ctx, submitTransactionRequest)
-}
-
 func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return s.staticUnregisterLogTracking(ctx, filterName)
+}
+
+func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
+	return s.staticGetTransactionStatus(ctx, transactionID)
 }
 
 func generateFixtureQuery() []query.Expression {

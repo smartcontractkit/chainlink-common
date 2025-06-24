@@ -135,8 +135,6 @@ service EVMRelayerSet {
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (loop.evm.GetTransactionStatusReply);
-  rpc SubmitTransaction(SubmitTransactionRequest) returns (loop.evm.SubmitTransactionReply);
-  rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (loop.evm.CalculateTransactionFeeReply); 
 }
 
 message ContractReaderGetLatestValueRequest {
@@ -232,15 +230,7 @@ message GetTransactionStatusRequest {
   loop.evm.GetTransactionStatusRequest request = 2;
 }
 
-message SubmitTransactionRequest {
-   RelayerId relayerId = 1; 
-   loop.evm.SubmitTransactionRequest request = 2;
-}
 
-message CalculateTransactionFeeRequest {
-   RelayerId relayerId = 1; 
-   loop.evm.CalculateTransactionFeeRequest request = 2;
-}
 
 
 

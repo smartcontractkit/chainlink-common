@@ -9,12 +9,13 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -29,6 +30,8 @@ const (
 	nodagMultiTriggerBinaryLocation = nodagMultiTriggerBinaryCmd + "/testmodule.wasm"
 	nodagRandomBinaryCmd            = "test/nodag/randoms/cmd"
 	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagSecretsBinaryCmd           = "test/nodag/secrets/cmd"
+	nodagSecretsBinaryLocation      = nodagBinaryCmd + "/testmodule.wasm"
 )
 
 var wordList = []string{"Hello, ", "world", "!"}
@@ -72,7 +75,7 @@ func Test_NoDag_Run(t *testing.T) {
 	t.Run("OK executes happy path with two awaits", func(t *testing.T) {
 		ctx := t.Context()
 		wantResponse := strings.Join(wordList, "")
-		lggr, observer := logger.TestObserved(t, zapcore.InfoLevel)
+		lggr := logger.Test(t)
 		mc := &ModuleConfig{
 			Logger:         lggr,
 			IsUncompressed: true,
@@ -84,7 +87,12 @@ func Test_NoDag_Run(t *testing.T) {
 		defer m.Close()
 
 		mockExecutionHelper := NewMockExecutionHelper(t)
-		mockExecutionHelper.EXPECT().GetID().Return("Id")
+		mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).Return(nil).Run(
+			func(msg string) {
+				require.True(t, strings.Contains(msg, "Hi"))
+			},
+		)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 
 		// wrap some common payload
 		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
@@ -126,10 +134,6 @@ func Test_NoDag_Run(t *testing.T) {
 
 		response, err := m.Execute(ctx, req, mockExecutionHelper)
 		require.NoError(t, err)
-
-		logs := observer.TakeAll()
-		require.Len(t, logs, 1)
-		assert.True(t, strings.Contains(logs[0].Message, "Hi"))
 
 		switch output := response.Result.(type) {
 		case *sdkpb.ExecutionResult_Value:
@@ -298,7 +302,12 @@ func Test_NoDag_MultipleTriggers_Run(t *testing.T) {
 		defer m.Close()
 
 		mockExecutionHelper := NewMockExecutionHelper(t)
-		mockExecutionHelper.EXPECT().GetID().Return("Id")
+		mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).Return(nil).Run(
+			func(msg string) {
+				require.True(t, strings.Contains(msg, "Hi"))
+			},
+		)
+		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 
 		newWantedCapResponse := func(i int) *sdkpb.CapabilityResponse {
 			action := &basicaction.Outputs{AdaptedThing: wordList[i]}
@@ -357,7 +366,7 @@ func Test_NoDag_Random(t *testing.T) {
 	t.Parallel()
 
 	mc := defaultNoDAGModCfg(t)
-	lggr, observed := logger.TestObserved(t, zapcore.DebugLevel)
+	lggr := logger.Test(t)
 	mc.Logger = lggr
 
 	binary := createTestBinary(nodagRandomBinaryCmd, nodagRandomBinaryLocation, true, t)
@@ -368,7 +377,7 @@ func Test_NoDag_Random(t *testing.T) {
 	// Test binary executes node mode code conditionally based on the value >= 100
 	anyId := "Id"
 	gte100Exec := NewMockExecutionHelper(t)
-	gte100Exec.EXPECT().GetID().Return(anyId)
+	gte100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
 	gte100 := &nodeaction.NodeOutputs{OutputThing: 120}
 	gte100Payload, err := anypb.New(gte100)
 	require.NoError(t, err)
@@ -401,11 +410,8 @@ func Test_NoDag_Random(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Same execution id gives the same randoms, even if random is called in node mode", func(t *testing.T) {
-		// Clear from any previous test
-		observed.TakeAll()
-
 		lt100Exec := NewMockExecutionHelper(t)
-		lt100Exec.EXPECT().GetID().Return(anyId)
+		lt100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
 		lt100 := &nodeaction.NodeOutputs{OutputThing: 120}
 		lt100Payload, err := anypb.New(lt100)
 		require.NoError(t, err)
@@ -429,7 +435,7 @@ func Test_NoDag_Random(t *testing.T) {
 		require.NoError(t, err)
 
 		gte100Exec2 := NewMockExecutionHelper(t)
-		gte100Exec2.EXPECT().GetID().Return("differentId")
+		gte100Exec2.EXPECT().GetWorkflowExecutionID().Return("differentId")
 
 		gte100Exec2.EXPECT().CallCapability(mock.Anything, mock.Anything).Return(&sdkpb.CapabilityResponse{
 			Response: &sdkpb.CapabilityResponse_Payload{

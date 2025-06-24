@@ -94,12 +94,15 @@ type ModuleV2 interface {
 type ExecutionHelper interface {
 	// CallCapability blocking call to the Workflow Engine
 	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
+	GetSecrets(ctx context.Context, request *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error)
 
-	GetID() string
+	GetWorkflowExecutionID() string
 
 	GetNodeTime() time.Time
 
 	GetDONTime() time.Time
+
+	EmitUserLog(log string) error
 }
 
 type module struct {
@@ -287,6 +290,22 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		createAwaitCapsFn(logger, exec),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping awaitcaps func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"get_secrets",
+		createGetSecretsFn(logger, exec),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping get_secrets func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"await_secrets",
+		createAwaitSecretsFn(logger, exec),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping await_secrets func: %w", err)
 	}
 
 	if err := linker.FuncWrap(
@@ -491,8 +510,8 @@ func runWasm[I, O proto.Message](
 
 	h := fnv.New64a()
 	if helper != nil {
-		id := helper.GetID()
-		_, _ = h.Write([]byte(id))
+		executionId := helper.GetWorkflowExecutionID()
+		_, _ = h.Write([]byte(executionId))
 	}
 
 	donSeed := int64(h.Sum64())
@@ -502,6 +521,7 @@ func runWasm[I, O proto.Message](
 		//ctx:                 ctxWithTimeout,
 		ctx:                 ctx,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		secretsResponses:    map[int32]<-chan *secretsResponse{},
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,

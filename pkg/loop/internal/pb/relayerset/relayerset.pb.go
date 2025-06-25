@@ -8,6 +8,7 @@ package relayerset
 
 import (
 	evm "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	ton "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -2006,11 +2007,515 @@ func (x *CalculateTransactionFeeRequest) GetRequest() *evm.CalculateTransactionF
 	return nil
 }
 
+type TONSendTransactionRequest struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	RelayerId     *RelayerId                  `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.SendTransactionRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONSendTransactionRequest) Reset() {
+	*x = TONSendTransactionRequest{}
+	mi := &file_relayerset_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONSendTransactionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONSendTransactionRequest) ProtoMessage() {}
+
+func (x *TONSendTransactionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONSendTransactionRequest.ProtoReflect.Descriptor instead.
+func (*TONSendTransactionRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *TONSendTransactionRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONSendTransactionRequest) GetRequest() *ton.SendTransactionRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONGetTransactionStatusRequest struct {
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	RelayerId     *RelayerId                       `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.GetTransactionStatusRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONGetTransactionStatusRequest) Reset() {
+	*x = TONGetTransactionStatusRequest{}
+	mi := &file_relayerset_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONGetTransactionStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONGetTransactionStatusRequest) ProtoMessage() {}
+
+func (x *TONGetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONGetTransactionStatusRequest.ProtoReflect.Descriptor instead.
+func (*TONGetTransactionStatusRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *TONGetTransactionStatusRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONGetTransactionStatusRequest) GetRequest() *ton.GetTransactionStatusRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONGetTransactionExecutionFeesRequest struct {
+	state         protoimpl.MessageState                  `protogen:"open.v1"`
+	RelayerId     *RelayerId                              `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.GetTransactionExecutionFeesRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONGetTransactionExecutionFeesRequest) Reset() {
+	*x = TONGetTransactionExecutionFeesRequest{}
+	mi := &file_relayerset_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONGetTransactionExecutionFeesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONGetTransactionExecutionFeesRequest) ProtoMessage() {}
+
+func (x *TONGetTransactionExecutionFeesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONGetTransactionExecutionFeesRequest.ProtoReflect.Descriptor instead.
+func (*TONGetTransactionExecutionFeesRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *TONGetTransactionExecutionFeesRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONGetTransactionExecutionFeesRequest) GetRequest() *ton.GetTransactionExecutionFeesRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONGetMasterchainInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONGetMasterchainInfoRequest) Reset() {
+	*x = TONGetMasterchainInfoRequest{}
+	mi := &file_relayerset_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONGetMasterchainInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONGetMasterchainInfoRequest) ProtoMessage() {}
+
+func (x *TONGetMasterchainInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONGetMasterchainInfoRequest.ProtoReflect.Descriptor instead.
+func (*TONGetMasterchainInfoRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *TONGetMasterchainInfoRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+type TONGetBlockDataRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Block         *ton.BlockIDExt        `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONGetBlockDataRequest) Reset() {
+	*x = TONGetBlockDataRequest{}
+	mi := &file_relayerset_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONGetBlockDataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONGetBlockDataRequest) ProtoMessage() {}
+
+func (x *TONGetBlockDataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONGetBlockDataRequest.ProtoReflect.Descriptor instead.
+func (*TONGetBlockDataRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *TONGetBlockDataRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONGetBlockDataRequest) GetBlock() *ton.BlockIDExt {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
+type TONGetAccountBalanceRequest struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	RelayerId     *RelayerId                    `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.GetAccountBalanceRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONGetAccountBalanceRequest) Reset() {
+	*x = TONGetAccountBalanceRequest{}
+	mi := &file_relayerset_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONGetAccountBalanceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONGetAccountBalanceRequest) ProtoMessage() {}
+
+func (x *TONGetAccountBalanceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONGetAccountBalanceRequest.ProtoReflect.Descriptor instead.
+func (*TONGetAccountBalanceRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *TONGetAccountBalanceRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONGetAccountBalanceRequest) GetRequest() *ton.GetAccountBalanceRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONHasFilterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.HasFilterRequest  `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONHasFilterRequest) Reset() {
+	*x = TONHasFilterRequest{}
+	mi := &file_relayerset_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONHasFilterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONHasFilterRequest) ProtoMessage() {}
+
+func (x *TONHasFilterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONHasFilterRequest.ProtoReflect.Descriptor instead.
+func (*TONHasFilterRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *TONHasFilterRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONHasFilterRequest) GetRequest() *ton.HasFilterRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONRegisterFilterRequest struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	RelayerId     *RelayerId                 `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.RegisterFilterRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONRegisterFilterRequest) Reset() {
+	*x = TONRegisterFilterRequest{}
+	mi := &file_relayerset_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONRegisterFilterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONRegisterFilterRequest) ProtoMessage() {}
+
+func (x *TONRegisterFilterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONRegisterFilterRequest.ProtoReflect.Descriptor instead.
+func (*TONRegisterFilterRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *TONRegisterFilterRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONRegisterFilterRequest) GetRequest() *ton.RegisterFilterRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONUnregisterFilterRequest struct {
+	state         protoimpl.MessageState       `protogen:"open.v1"`
+	RelayerId     *RelayerId                   `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	Request       *ton.UnregisterFilterRequest `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONUnregisterFilterRequest) Reset() {
+	*x = TONUnregisterFilterRequest{}
+	mi := &file_relayerset_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONUnregisterFilterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONUnregisterFilterRequest) ProtoMessage() {}
+
+func (x *TONUnregisterFilterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONUnregisterFilterRequest.ProtoReflect.Descriptor instead.
+func (*TONUnregisterFilterRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *TONUnregisterFilterRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
+func (x *TONUnregisterFilterRequest) GetRequest() *ton.UnregisterFilterRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type TONGetLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelayerId     *RelayerId             `protobuf:"bytes,1,opt,name=relayerId,proto3" json:"relayerId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TONGetLogsRequest) Reset() {
+	*x = TONGetLogsRequest{}
+	mi := &file_relayerset_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TONGetLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TONGetLogsRequest) ProtoMessage() {}
+
+func (x *TONGetLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_relayerset_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TONGetLogsRequest.ProtoReflect.Descriptor instead.
+func (*TONGetLogsRequest) Descriptor() ([]byte, []int) {
+	return file_relayerset_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *TONGetLogsRequest) GetRelayerId() *RelayerId {
+	if x != nil {
+		return x.RelayerId
+	}
+	return nil
+}
+
 var File_relayerset_proto protoreflect.FileDescriptor
 
 const file_relayerset_proto_rawDesc = "" +
 	"\n" +
-	"\x10relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x14chains/evm/evm.proto\"@\n" +
+	"\x10relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x14chains/evm/evm.proto\x1a\x14chains/ton/ton.proto\"@\n" +
 	"\tRelayerId\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x19\n" +
 	"\bchain_id\x18\x02 \x01(\tR\achainId\"?\n" +
@@ -2130,7 +2635,35 @@ const file_relayerset_proto_rawDesc = "" +
 	"\arequest\x18\x02 \x01(\v2\".loop.evm.SubmitTransactionRequestR\arequest\"\x9e\x01\n" +
 	"\x1eCalculateTransactionFeeRequest\x128\n" +
 	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12B\n" +
-	"\arequest\x18\x02 \x01(\v2(.loop.evm.CalculateTransactionFeeRequestR\arequest2\xaf\x0f\n" +
+	"\arequest\x18\x02 \x01(\v2(.loop.evm.CalculateTransactionFeeRequestR\arequest\"\x91\x01\n" +
+	"\x19TONSendTransactionRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12:\n" +
+	"\arequest\x18\x02 \x01(\v2 .loop.ton.SendTransactionRequestR\arequest\"\x9b\x01\n" +
+	"\x1eTONGetTransactionStatusRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12?\n" +
+	"\arequest\x18\x02 \x01(\v2%.loop.ton.GetTransactionStatusRequestR\arequest\"\xa9\x01\n" +
+	"%TONGetTransactionExecutionFeesRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12F\n" +
+	"\arequest\x18\x02 \x01(\v2,.loop.ton.GetTransactionExecutionFeesRequestR\arequest\"X\n" +
+	"\x1cTONGetMasterchainInfoRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\"~\n" +
+	"\x16TONGetBlockDataRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12*\n" +
+	"\x05block\x18\x02 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\"\x95\x01\n" +
+	"\x1bTONGetAccountBalanceRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12<\n" +
+	"\arequest\x18\x02 \x01(\v2\".loop.ton.GetAccountBalanceRequestR\arequest\"\x85\x01\n" +
+	"\x13TONHasFilterRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x124\n" +
+	"\arequest\x18\x02 \x01(\v2\x1a.loop.ton.HasFilterRequestR\arequest\"\x8f\x01\n" +
+	"\x18TONRegisterFilterRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x129\n" +
+	"\arequest\x18\x02 \x01(\v2\x1f.loop.ton.RegisterFilterRequestR\arequest\"\x93\x01\n" +
+	"\x1aTONUnregisterFilterRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId\x12;\n" +
+	"\arequest\x18\x02 \x01(\v2!.loop.ton.UnregisterFilterRequestR\arequest\"M\n" +
+	"\x11TONGetLogsRequest\x128\n" +
+	"\trelayerId\x18\x01 \x01(\v2\x1a.loop.relayerset.RelayerIdR\trelayerId2\xaf\x0f\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
@@ -2169,7 +2702,18 @@ const file_relayerset_proto_rawDesc = "" +
 	"\x15UnregisterLogTracking\x12-.loop.relayerset.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12i\n" +
 	"\x14GetTransactionStatus\x12,.loop.relayerset.GetTransactionStatusRequest\x1a#.loop.evm.GetTransactionStatusReply\x12`\n" +
 	"\x11SubmitTransaction\x12).loop.relayerset.SubmitTransactionRequest\x1a .loop.evm.SubmitTransactionReply\x12r\n" +
-	"\x17CalculateTransactionFee\x12/.loop.relayerset.CalculateTransactionFeeRequest\x1a&.loop.evm.CalculateTransactionFeeReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
+	"\x17CalculateTransactionFee\x12/.loop.relayerset.CalculateTransactionFeeRequest\x1a&.loop.evm.CalculateTransactionFeeReply2\xa2\a\n" +
+	"\rTONRelayerSet\x12]\n" +
+	"\x0fSendTransaction\x12*.loop.relayerset.TONSendTransactionRequest\x1a\x1e.loop.ton.SendTransactionReply\x12l\n" +
+	"\x14GetTransactionStatus\x12/.loop.relayerset.TONGetTransactionStatusRequest\x1a#.loop.ton.GetTransactionStatusReply\x12\x81\x01\n" +
+	"\x1bGetTransactionExecutionFees\x126.loop.relayerset.TONGetTransactionExecutionFeesRequest\x1a*.loop.ton.GetTransactionExecutionFeesReply\x12Y\n" +
+	"\x12GetMasterchainInfo\x12-.loop.relayerset.TONGetMasterchainInfoRequest\x1a\x14.loop.ton.BlockIDExt\x12H\n" +
+	"\fGetBlockData\x12'.loop.relayerset.TONGetBlockDataRequest\x1a\x0f.loop.ton.Block\x12Y\n" +
+	"\x11GetAccountBalance\x12,.loop.relayerset.TONGetAccountBalanceRequest\x1a\x16.loop.ton.BalanceReply\x12K\n" +
+	"\tHasFilter\x12$.loop.relayerset.TONHasFilterRequest\x1a\x18.loop.ton.HasFilterReply\x12S\n" +
+	"\x0eRegisterFilter\x12).loop.relayerset.TONRegisterFilterRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
+	"\x10UnregisterFilter\x12+.loop.relayerset.TONUnregisterFilterRequest\x1a\x16.google.protobuf.Empty\x12E\n" +
+	"\aGetLogs\x12\".loop.relayerset.TONGetLogsRequest\x1a\x16.loop.ton.GetLogsReplyBNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
 
 var (
 	file_relayerset_proto_rawDescOnce sync.Once
@@ -2183,7 +2727,7 @@ func file_relayerset_proto_rawDescGZIP() []byte {
 	return file_relayerset_proto_rawDescData
 }
 
-var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_relayerset_proto_goTypes = []any{
 	(*RelayerId)(nil),                                 // 0: loop.relayerset.RelayerId
 	(*GetRelayerRequest)(nil),                         // 1: loop.relayerset.GetRelayerRequest
@@ -2224,163 +2768,226 @@ var file_relayerset_proto_goTypes = []any{
 	(*GetTransactionStatusRequest)(nil),               // 36: loop.relayerset.GetTransactionStatusRequest
 	(*SubmitTransactionRequest)(nil),                  // 37: loop.relayerset.SubmitTransactionRequest
 	(*CalculateTransactionFeeRequest)(nil),            // 38: loop.relayerset.CalculateTransactionFeeRequest
-	nil,                                               // 39: loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	(*pb.GetLatestValueRequest)(nil),                  // 40: loop.GetLatestValueRequest
-	(*pb.BatchGetLatestValuesRequest)(nil),            // 41: loop.BatchGetLatestValuesRequest
-	(*pb.QueryKeyRequest)(nil),                        // 42: loop.QueryKeyRequest
-	(*pb.QueryKeysRequest)(nil),                       // 43: loop.QueryKeysRequest
-	(*pb.BindRequest)(nil),                            // 44: loop.BindRequest
-	(*pb.UnbindRequest)(nil),                          // 45: loop.UnbindRequest
-	(*evm.GetTransactionFeeRequest)(nil),              // 46: loop.evm.GetTransactionFeeRequest
-	(*evm.CallContractRequest)(nil),                   // 47: loop.evm.CallContractRequest
-	(*evm.FilterLogsRequest)(nil),                     // 48: loop.evm.FilterLogsRequest
-	(*evm.BalanceAtRequest)(nil),                      // 49: loop.evm.BalanceAtRequest
-	(*evm.EstimateGasRequest)(nil),                    // 50: loop.evm.EstimateGasRequest
-	(*evm.GetTransactionByHashRequest)(nil),           // 51: loop.evm.GetTransactionByHashRequest
-	(*evm.GetTransactionReceiptRequest)(nil),          // 52: loop.evm.GetTransactionReceiptRequest
-	(*evm.QueryTrackedLogsRequest)(nil),               // 53: loop.evm.QueryTrackedLogsRequest
-	(*evm.RegisterLogTrackingRequest)(nil),            // 54: loop.evm.RegisterLogTrackingRequest
-	(*evm.UnregisterLogTrackingRequest)(nil),          // 55: loop.evm.UnregisterLogTrackingRequest
-	(*evm.GetTransactionStatusRequest)(nil),           // 56: loop.evm.GetTransactionStatusRequest
-	(*evm.SubmitTransactionRequest)(nil),              // 57: loop.evm.SubmitTransactionRequest
-	(*evm.CalculateTransactionFeeRequest)(nil),        // 58: loop.evm.CalculateTransactionFeeRequest
-	(*emptypb.Empty)(nil),                             // 59: google.protobuf.Empty
-	(*pb.GetLatestValueReply)(nil),                    // 60: loop.GetLatestValueReply
-	(*pb.GetLatestValueWithHeadDataReply)(nil),        // 61: loop.GetLatestValueWithHeadDataReply
-	(*pb.BatchGetLatestValuesReply)(nil),              // 62: loop.BatchGetLatestValuesReply
-	(*pb.QueryKeyReply)(nil),                          // 63: loop.QueryKeyReply
-	(*pb.QueryKeysReply)(nil),                         // 64: loop.QueryKeysReply
-	(*evm.GetTransactionFeeReply)(nil),                // 65: loop.evm.GetTransactionFeeReply
-	(*evm.CallContractReply)(nil),                     // 66: loop.evm.CallContractReply
-	(*evm.FilterLogsReply)(nil),                       // 67: loop.evm.FilterLogsReply
-	(*evm.BalanceAtReply)(nil),                        // 68: loop.evm.BalanceAtReply
-	(*evm.EstimateGasReply)(nil),                      // 69: loop.evm.EstimateGasReply
-	(*evm.GetTransactionByHashReply)(nil),             // 70: loop.evm.GetTransactionByHashReply
-	(*evm.GetTransactionReceiptReply)(nil),            // 71: loop.evm.GetTransactionReceiptReply
-	(*evm.LatestAndFinalizedHeadReply)(nil),           // 72: loop.evm.LatestAndFinalizedHeadReply
-	(*evm.QueryTrackedLogsReply)(nil),                 // 73: loop.evm.QueryTrackedLogsReply
-	(*evm.GetTransactionStatusReply)(nil),             // 74: loop.evm.GetTransactionStatusReply
-	(*evm.SubmitTransactionReply)(nil),                // 75: loop.evm.SubmitTransactionReply
-	(*evm.CalculateTransactionFeeReply)(nil),          // 76: loop.evm.CalculateTransactionFeeReply
+	(*TONSendTransactionRequest)(nil),                 // 39: loop.relayerset.TONSendTransactionRequest
+	(*TONGetTransactionStatusRequest)(nil),            // 40: loop.relayerset.TONGetTransactionStatusRequest
+	(*TONGetTransactionExecutionFeesRequest)(nil),     // 41: loop.relayerset.TONGetTransactionExecutionFeesRequest
+	(*TONGetMasterchainInfoRequest)(nil),              // 42: loop.relayerset.TONGetMasterchainInfoRequest
+	(*TONGetBlockDataRequest)(nil),                    // 43: loop.relayerset.TONGetBlockDataRequest
+	(*TONGetAccountBalanceRequest)(nil),               // 44: loop.relayerset.TONGetAccountBalanceRequest
+	(*TONHasFilterRequest)(nil),                       // 45: loop.relayerset.TONHasFilterRequest
+	(*TONRegisterFilterRequest)(nil),                  // 46: loop.relayerset.TONRegisterFilterRequest
+	(*TONUnregisterFilterRequest)(nil),                // 47: loop.relayerset.TONUnregisterFilterRequest
+	(*TONGetLogsRequest)(nil),                         // 48: loop.relayerset.TONGetLogsRequest
+	nil,                                               // 49: loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	(*pb.GetLatestValueRequest)(nil),                  // 50: loop.GetLatestValueRequest
+	(*pb.BatchGetLatestValuesRequest)(nil),            // 51: loop.BatchGetLatestValuesRequest
+	(*pb.QueryKeyRequest)(nil),                        // 52: loop.QueryKeyRequest
+	(*pb.QueryKeysRequest)(nil),                       // 53: loop.QueryKeysRequest
+	(*pb.BindRequest)(nil),                            // 54: loop.BindRequest
+	(*pb.UnbindRequest)(nil),                          // 55: loop.UnbindRequest
+	(*evm.GetTransactionFeeRequest)(nil),              // 56: loop.evm.GetTransactionFeeRequest
+	(*evm.CallContractRequest)(nil),                   // 57: loop.evm.CallContractRequest
+	(*evm.FilterLogsRequest)(nil),                     // 58: loop.evm.FilterLogsRequest
+	(*evm.BalanceAtRequest)(nil),                      // 59: loop.evm.BalanceAtRequest
+	(*evm.EstimateGasRequest)(nil),                    // 60: loop.evm.EstimateGasRequest
+	(*evm.GetTransactionByHashRequest)(nil),           // 61: loop.evm.GetTransactionByHashRequest
+	(*evm.GetTransactionReceiptRequest)(nil),          // 62: loop.evm.GetTransactionReceiptRequest
+	(*evm.QueryTrackedLogsRequest)(nil),               // 63: loop.evm.QueryTrackedLogsRequest
+	(*evm.RegisterLogTrackingRequest)(nil),            // 64: loop.evm.RegisterLogTrackingRequest
+	(*evm.UnregisterLogTrackingRequest)(nil),          // 65: loop.evm.UnregisterLogTrackingRequest
+	(*evm.GetTransactionStatusRequest)(nil),           // 66: loop.evm.GetTransactionStatusRequest
+	(*evm.SubmitTransactionRequest)(nil),              // 67: loop.evm.SubmitTransactionRequest
+	(*evm.CalculateTransactionFeeRequest)(nil),        // 68: loop.evm.CalculateTransactionFeeRequest
+	(*ton.SendTransactionRequest)(nil),                // 69: loop.ton.SendTransactionRequest
+	(*ton.GetTransactionStatusRequest)(nil),           // 70: loop.ton.GetTransactionStatusRequest
+	(*ton.GetTransactionExecutionFeesRequest)(nil),    // 71: loop.ton.GetTransactionExecutionFeesRequest
+	(*ton.BlockIDExt)(nil),                            // 72: loop.ton.BlockIDExt
+	(*ton.GetAccountBalanceRequest)(nil),              // 73: loop.ton.GetAccountBalanceRequest
+	(*ton.HasFilterRequest)(nil),                      // 74: loop.ton.HasFilterRequest
+	(*ton.RegisterFilterRequest)(nil),                 // 75: loop.ton.RegisterFilterRequest
+	(*ton.UnregisterFilterRequest)(nil),               // 76: loop.ton.UnregisterFilterRequest
+	(*emptypb.Empty)(nil),                             // 77: google.protobuf.Empty
+	(*pb.GetLatestValueReply)(nil),                    // 78: loop.GetLatestValueReply
+	(*pb.GetLatestValueWithHeadDataReply)(nil),        // 79: loop.GetLatestValueWithHeadDataReply
+	(*pb.BatchGetLatestValuesReply)(nil),              // 80: loop.BatchGetLatestValuesReply
+	(*pb.QueryKeyReply)(nil),                          // 81: loop.QueryKeyReply
+	(*pb.QueryKeysReply)(nil),                         // 82: loop.QueryKeysReply
+	(*evm.GetTransactionFeeReply)(nil),                // 83: loop.evm.GetTransactionFeeReply
+	(*evm.CallContractReply)(nil),                     // 84: loop.evm.CallContractReply
+	(*evm.FilterLogsReply)(nil),                       // 85: loop.evm.FilterLogsReply
+	(*evm.BalanceAtReply)(nil),                        // 86: loop.evm.BalanceAtReply
+	(*evm.EstimateGasReply)(nil),                      // 87: loop.evm.EstimateGasReply
+	(*evm.GetTransactionByHashReply)(nil),             // 88: loop.evm.GetTransactionByHashReply
+	(*evm.GetTransactionReceiptReply)(nil),            // 89: loop.evm.GetTransactionReceiptReply
+	(*evm.LatestAndFinalizedHeadReply)(nil),           // 90: loop.evm.LatestAndFinalizedHeadReply
+	(*evm.QueryTrackedLogsReply)(nil),                 // 91: loop.evm.QueryTrackedLogsReply
+	(*evm.GetTransactionStatusReply)(nil),             // 92: loop.evm.GetTransactionStatusReply
+	(*evm.SubmitTransactionReply)(nil),                // 93: loop.evm.SubmitTransactionReply
+	(*evm.CalculateTransactionFeeReply)(nil),          // 94: loop.evm.CalculateTransactionFeeReply
+	(*ton.SendTransactionReply)(nil),                  // 95: loop.ton.SendTransactionReply
+	(*ton.GetTransactionStatusReply)(nil),             // 96: loop.ton.GetTransactionStatusReply
+	(*ton.GetTransactionExecutionFeesReply)(nil),      // 97: loop.ton.GetTransactionExecutionFeesReply
+	(*ton.Block)(nil),                                 // 98: loop.ton.Block
+	(*ton.BalanceReply)(nil),                          // 99: loop.ton.BalanceReply
+	(*ton.HasFilterReply)(nil),                        // 100: loop.ton.HasFilterReply
+	(*ton.GetLogsReply)(nil),                          // 101: loop.ton.GetLogsReply
 }
 var file_relayerset_proto_depIdxs = []int32{
-	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
-	0,  // 1: loop.relayerset.GetRelayerResponse.id:type_name -> loop.relayerset.RelayerId
-	0,  // 2: loop.relayerset.ListAllRelayersRequest.ids:type_name -> loop.relayerset.RelayerId
-	0,  // 3: loop.relayerset.ListAllRelayersResponse.ids:type_name -> loop.relayerset.RelayerId
-	6,  // 4: loop.relayerset.RelayArgs.mercuryCredentials:type_name -> loop.relayerset.MercuryCredentials
-	0,  // 5: loop.relayerset.NewPluginProviderRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	5,  // 6: loop.relayerset.NewPluginProviderRequest.relayArgs:type_name -> loop.relayerset.RelayArgs
-	7,  // 7: loop.relayerset.NewPluginProviderRequest.pluginArgs:type_name -> loop.relayerset.PluginArgs
-	0,  // 8: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 9: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	0,  // 10: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	39, // 11: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	40, // 12: loop.relayerset.ContractReaderGetLatestValueRequest.request:type_name -> loop.GetLatestValueRequest
-	41, // 13: loop.relayerset.ContractReaderBatchGetLatestValuesRequest.request:type_name -> loop.BatchGetLatestValuesRequest
-	42, // 14: loop.relayerset.ContractReaderQueryKeyRequest.request:type_name -> loop.QueryKeyRequest
-	43, // 15: loop.relayerset.ContractReaderQueryKeysRequest.request:type_name -> loop.QueryKeysRequest
-	44, // 16: loop.relayerset.ContractReaderBindRequest.request:type_name -> loop.BindRequest
-	45, // 17: loop.relayerset.ContractReaderUnbindRequest.request:type_name -> loop.UnbindRequest
-	0,  // 18: loop.relayerset.GetTransactionFeeRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	46, // 19: loop.relayerset.GetTransactionFeeRequest.request:type_name -> loop.evm.GetTransactionFeeRequest
-	0,  // 20: loop.relayerset.CallContractRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	47, // 21: loop.relayerset.CallContractRequest.request:type_name -> loop.evm.CallContractRequest
-	0,  // 22: loop.relayerset.FilterLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	48, // 23: loop.relayerset.FilterLogsRequest.request:type_name -> loop.evm.FilterLogsRequest
-	0,  // 24: loop.relayerset.BalanceAtRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	49, // 25: loop.relayerset.BalanceAtRequest.request:type_name -> loop.evm.BalanceAtRequest
-	0,  // 26: loop.relayerset.EstimateGasRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	50, // 27: loop.relayerset.EstimateGasRequest.request:type_name -> loop.evm.EstimateGasRequest
-	0,  // 28: loop.relayerset.GetTransactionByHashRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	51, // 29: loop.relayerset.GetTransactionByHashRequest.request:type_name -> loop.evm.GetTransactionByHashRequest
-	0,  // 30: loop.relayerset.GetTransactionReceiptRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	52, // 31: loop.relayerset.GetTransactionReceiptRequest.request:type_name -> loop.evm.GetTransactionReceiptRequest
-	0,  // 32: loop.relayerset.QueryTrackedLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	53, // 33: loop.relayerset.QueryTrackedLogsRequest.request:type_name -> loop.evm.QueryTrackedLogsRequest
-	0,  // 34: loop.relayerset.RegisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	54, // 35: loop.relayerset.RegisterLogTrackingRequest.request:type_name -> loop.evm.RegisterLogTrackingRequest
-	0,  // 36: loop.relayerset.UnregisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	55, // 37: loop.relayerset.UnregisterLogTrackingRequest.request:type_name -> loop.evm.UnregisterLogTrackingRequest
-	0,  // 38: loop.relayerset.GetTransactionStatusRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	56, // 39: loop.relayerset.GetTransactionStatusRequest.request:type_name -> loop.evm.GetTransactionStatusRequest
-	0,  // 40: loop.relayerset.SubmitTransactionRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	57, // 41: loop.relayerset.SubmitTransactionRequest.request:type_name -> loop.evm.SubmitTransactionRequest
-	0,  // 42: loop.relayerset.CalculateTransactionFeeRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	58, // 43: loop.relayerset.CalculateTransactionFeeRequest.request:type_name -> loop.evm.CalculateTransactionFeeRequest
-	1,  // 44: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
-	3,  // 45: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
-	8,  // 46: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
-	10, // 47: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
-	12, // 48: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
-	0,  // 49: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
-	0,  // 50: loop.relayerset.RelayerSet.CloseRelayer:input_type -> loop.relayerset.RelayerId
-	0,  // 51: loop.relayerset.RelayerSet.RelayerReady:input_type -> loop.relayerset.RelayerId
-	0,  // 52: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
-	0,  // 53: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
-	14, // 54: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
-	18, // 55: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
-	18, // 56: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
-	19, // 57: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:input_type -> loop.relayerset.ContractReaderBatchGetLatestValuesRequest
-	20, // 58: loop.relayerset.RelayerSet.ContractReaderQueryKey:input_type -> loop.relayerset.ContractReaderQueryKeyRequest
-	21, // 59: loop.relayerset.RelayerSet.ContractReaderQueryKeys:input_type -> loop.relayerset.ContractReaderQueryKeysRequest
-	22, // 60: loop.relayerset.RelayerSet.ContractReaderBind:input_type -> loop.relayerset.ContractReaderBindRequest
-	23, // 61: loop.relayerset.RelayerSet.ContractReaderUnbind:input_type -> loop.relayerset.ContractReaderUnbindRequest
-	24, // 62: loop.relayerset.RelayerSet.ContractReaderStart:input_type -> loop.relayerset.ContractReaderStartRequest
-	25, // 63: loop.relayerset.RelayerSet.ContractReaderClose:input_type -> loop.relayerset.ContractReaderCloseRequest
-	26, // 64: loop.relayerset.EVMRelayerSet.GetTransactionFee:input_type -> loop.relayerset.GetTransactionFeeRequest
-	27, // 65: loop.relayerset.EVMRelayerSet.CallContract:input_type -> loop.relayerset.CallContractRequest
-	28, // 66: loop.relayerset.EVMRelayerSet.FilterLogs:input_type -> loop.relayerset.FilterLogsRequest
-	29, // 67: loop.relayerset.EVMRelayerSet.BalanceAt:input_type -> loop.relayerset.BalanceAtRequest
-	30, // 68: loop.relayerset.EVMRelayerSet.EstimateGas:input_type -> loop.relayerset.EstimateGasRequest
-	31, // 69: loop.relayerset.EVMRelayerSet.GetTransactionByHash:input_type -> loop.relayerset.GetTransactionByHashRequest
-	32, // 70: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:input_type -> loop.relayerset.GetTransactionReceiptRequest
-	14, // 71: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:input_type -> loop.relayerset.LatestHeadRequest
-	33, // 72: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:input_type -> loop.relayerset.QueryTrackedLogsRequest
-	34, // 73: loop.relayerset.EVMRelayerSet.RegisterLogTracking:input_type -> loop.relayerset.RegisterLogTrackingRequest
-	35, // 74: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:input_type -> loop.relayerset.UnregisterLogTrackingRequest
-	36, // 75: loop.relayerset.EVMRelayerSet.GetTransactionStatus:input_type -> loop.relayerset.GetTransactionStatusRequest
-	37, // 76: loop.relayerset.EVMRelayerSet.SubmitTransaction:input_type -> loop.relayerset.SubmitTransactionRequest
-	38, // 77: loop.relayerset.EVMRelayerSet.CalculateTransactionFee:input_type -> loop.relayerset.CalculateTransactionFeeRequest
-	2,  // 78: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
-	4,  // 79: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
-	9,  // 80: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
-	11, // 81: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
-	13, // 82: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
-	59, // 83: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
-	59, // 84: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
-	59, // 85: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
-	16, // 86: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
-	17, // 87: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
-	15, // 88: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
-	60, // 89: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:output_type -> loop.GetLatestValueReply
-	61, // 90: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
-	62, // 91: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
-	63, // 92: loop.relayerset.RelayerSet.ContractReaderQueryKey:output_type -> loop.QueryKeyReply
-	64, // 93: loop.relayerset.RelayerSet.ContractReaderQueryKeys:output_type -> loop.QueryKeysReply
-	59, // 94: loop.relayerset.RelayerSet.ContractReaderBind:output_type -> google.protobuf.Empty
-	59, // 95: loop.relayerset.RelayerSet.ContractReaderUnbind:output_type -> google.protobuf.Empty
-	59, // 96: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
-	59, // 97: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
-	65, // 98: loop.relayerset.EVMRelayerSet.GetTransactionFee:output_type -> loop.evm.GetTransactionFeeReply
-	66, // 99: loop.relayerset.EVMRelayerSet.CallContract:output_type -> loop.evm.CallContractReply
-	67, // 100: loop.relayerset.EVMRelayerSet.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	68, // 101: loop.relayerset.EVMRelayerSet.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	69, // 102: loop.relayerset.EVMRelayerSet.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	70, // 103: loop.relayerset.EVMRelayerSet.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	71, // 104: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	72, // 105: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	73, // 106: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	59, // 107: loop.relayerset.EVMRelayerSet.RegisterLogTracking:output_type -> google.protobuf.Empty
-	59, // 108: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	74, // 109: loop.relayerset.EVMRelayerSet.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
-	75, // 110: loop.relayerset.EVMRelayerSet.SubmitTransaction:output_type -> loop.evm.SubmitTransactionReply
-	76, // 111: loop.relayerset.EVMRelayerSet.CalculateTransactionFee:output_type -> loop.evm.CalculateTransactionFeeReply
-	78, // [78:112] is the sub-list for method output_type
-	44, // [44:78] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	0,   // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
+	0,   // 1: loop.relayerset.GetRelayerResponse.id:type_name -> loop.relayerset.RelayerId
+	0,   // 2: loop.relayerset.ListAllRelayersRequest.ids:type_name -> loop.relayerset.RelayerId
+	0,   // 3: loop.relayerset.ListAllRelayersResponse.ids:type_name -> loop.relayerset.RelayerId
+	6,   // 4: loop.relayerset.RelayArgs.mercuryCredentials:type_name -> loop.relayerset.MercuryCredentials
+	0,   // 5: loop.relayerset.NewPluginProviderRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	5,   // 6: loop.relayerset.NewPluginProviderRequest.relayArgs:type_name -> loop.relayerset.RelayArgs
+	7,   // 7: loop.relayerset.NewPluginProviderRequest.pluginArgs:type_name -> loop.relayerset.PluginArgs
+	0,   // 8: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,   // 9: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,   // 10: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	49,  // 11: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	50,  // 12: loop.relayerset.ContractReaderGetLatestValueRequest.request:type_name -> loop.GetLatestValueRequest
+	51,  // 13: loop.relayerset.ContractReaderBatchGetLatestValuesRequest.request:type_name -> loop.BatchGetLatestValuesRequest
+	52,  // 14: loop.relayerset.ContractReaderQueryKeyRequest.request:type_name -> loop.QueryKeyRequest
+	53,  // 15: loop.relayerset.ContractReaderQueryKeysRequest.request:type_name -> loop.QueryKeysRequest
+	54,  // 16: loop.relayerset.ContractReaderBindRequest.request:type_name -> loop.BindRequest
+	55,  // 17: loop.relayerset.ContractReaderUnbindRequest.request:type_name -> loop.UnbindRequest
+	0,   // 18: loop.relayerset.GetTransactionFeeRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	56,  // 19: loop.relayerset.GetTransactionFeeRequest.request:type_name -> loop.evm.GetTransactionFeeRequest
+	0,   // 20: loop.relayerset.CallContractRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	57,  // 21: loop.relayerset.CallContractRequest.request:type_name -> loop.evm.CallContractRequest
+	0,   // 22: loop.relayerset.FilterLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	58,  // 23: loop.relayerset.FilterLogsRequest.request:type_name -> loop.evm.FilterLogsRequest
+	0,   // 24: loop.relayerset.BalanceAtRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	59,  // 25: loop.relayerset.BalanceAtRequest.request:type_name -> loop.evm.BalanceAtRequest
+	0,   // 26: loop.relayerset.EstimateGasRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	60,  // 27: loop.relayerset.EstimateGasRequest.request:type_name -> loop.evm.EstimateGasRequest
+	0,   // 28: loop.relayerset.GetTransactionByHashRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	61,  // 29: loop.relayerset.GetTransactionByHashRequest.request:type_name -> loop.evm.GetTransactionByHashRequest
+	0,   // 30: loop.relayerset.GetTransactionReceiptRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	62,  // 31: loop.relayerset.GetTransactionReceiptRequest.request:type_name -> loop.evm.GetTransactionReceiptRequest
+	0,   // 32: loop.relayerset.QueryTrackedLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	63,  // 33: loop.relayerset.QueryTrackedLogsRequest.request:type_name -> loop.evm.QueryTrackedLogsRequest
+	0,   // 34: loop.relayerset.RegisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	64,  // 35: loop.relayerset.RegisterLogTrackingRequest.request:type_name -> loop.evm.RegisterLogTrackingRequest
+	0,   // 36: loop.relayerset.UnregisterLogTrackingRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	65,  // 37: loop.relayerset.UnregisterLogTrackingRequest.request:type_name -> loop.evm.UnregisterLogTrackingRequest
+	0,   // 38: loop.relayerset.GetTransactionStatusRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	66,  // 39: loop.relayerset.GetTransactionStatusRequest.request:type_name -> loop.evm.GetTransactionStatusRequest
+	0,   // 40: loop.relayerset.SubmitTransactionRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	67,  // 41: loop.relayerset.SubmitTransactionRequest.request:type_name -> loop.evm.SubmitTransactionRequest
+	0,   // 42: loop.relayerset.CalculateTransactionFeeRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	68,  // 43: loop.relayerset.CalculateTransactionFeeRequest.request:type_name -> loop.evm.CalculateTransactionFeeRequest
+	0,   // 44: loop.relayerset.TONSendTransactionRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	69,  // 45: loop.relayerset.TONSendTransactionRequest.request:type_name -> loop.ton.SendTransactionRequest
+	0,   // 46: loop.relayerset.TONGetTransactionStatusRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	70,  // 47: loop.relayerset.TONGetTransactionStatusRequest.request:type_name -> loop.ton.GetTransactionStatusRequest
+	0,   // 48: loop.relayerset.TONGetTransactionExecutionFeesRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	71,  // 49: loop.relayerset.TONGetTransactionExecutionFeesRequest.request:type_name -> loop.ton.GetTransactionExecutionFeesRequest
+	0,   // 50: loop.relayerset.TONGetMasterchainInfoRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	0,   // 51: loop.relayerset.TONGetBlockDataRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	72,  // 52: loop.relayerset.TONGetBlockDataRequest.block:type_name -> loop.ton.BlockIDExt
+	0,   // 53: loop.relayerset.TONGetAccountBalanceRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	73,  // 54: loop.relayerset.TONGetAccountBalanceRequest.request:type_name -> loop.ton.GetAccountBalanceRequest
+	0,   // 55: loop.relayerset.TONHasFilterRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	74,  // 56: loop.relayerset.TONHasFilterRequest.request:type_name -> loop.ton.HasFilterRequest
+	0,   // 57: loop.relayerset.TONRegisterFilterRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	75,  // 58: loop.relayerset.TONRegisterFilterRequest.request:type_name -> loop.ton.RegisterFilterRequest
+	0,   // 59: loop.relayerset.TONUnregisterFilterRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	76,  // 60: loop.relayerset.TONUnregisterFilterRequest.request:type_name -> loop.ton.UnregisterFilterRequest
+	0,   // 61: loop.relayerset.TONGetLogsRequest.relayerId:type_name -> loop.relayerset.RelayerId
+	1,   // 62: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
+	3,   // 63: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
+	8,   // 64: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
+	10,  // 65: loop.relayerset.RelayerSet.NewContractReader:input_type -> loop.relayerset.NewContractReaderRequest
+	12,  // 66: loop.relayerset.RelayerSet.NewContractWriter:input_type -> loop.relayerset.NewContractWriterRequest
+	0,   // 67: loop.relayerset.RelayerSet.StartRelayer:input_type -> loop.relayerset.RelayerId
+	0,   // 68: loop.relayerset.RelayerSet.CloseRelayer:input_type -> loop.relayerset.RelayerId
+	0,   // 69: loop.relayerset.RelayerSet.RelayerReady:input_type -> loop.relayerset.RelayerId
+	0,   // 70: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
+	0,   // 71: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
+	14,  // 72: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
+	18,  // 73: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
+	18,  // 74: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:input_type -> loop.relayerset.ContractReaderGetLatestValueRequest
+	19,  // 75: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:input_type -> loop.relayerset.ContractReaderBatchGetLatestValuesRequest
+	20,  // 76: loop.relayerset.RelayerSet.ContractReaderQueryKey:input_type -> loop.relayerset.ContractReaderQueryKeyRequest
+	21,  // 77: loop.relayerset.RelayerSet.ContractReaderQueryKeys:input_type -> loop.relayerset.ContractReaderQueryKeysRequest
+	22,  // 78: loop.relayerset.RelayerSet.ContractReaderBind:input_type -> loop.relayerset.ContractReaderBindRequest
+	23,  // 79: loop.relayerset.RelayerSet.ContractReaderUnbind:input_type -> loop.relayerset.ContractReaderUnbindRequest
+	24,  // 80: loop.relayerset.RelayerSet.ContractReaderStart:input_type -> loop.relayerset.ContractReaderStartRequest
+	25,  // 81: loop.relayerset.RelayerSet.ContractReaderClose:input_type -> loop.relayerset.ContractReaderCloseRequest
+	26,  // 82: loop.relayerset.EVMRelayerSet.GetTransactionFee:input_type -> loop.relayerset.GetTransactionFeeRequest
+	27,  // 83: loop.relayerset.EVMRelayerSet.CallContract:input_type -> loop.relayerset.CallContractRequest
+	28,  // 84: loop.relayerset.EVMRelayerSet.FilterLogs:input_type -> loop.relayerset.FilterLogsRequest
+	29,  // 85: loop.relayerset.EVMRelayerSet.BalanceAt:input_type -> loop.relayerset.BalanceAtRequest
+	30,  // 86: loop.relayerset.EVMRelayerSet.EstimateGas:input_type -> loop.relayerset.EstimateGasRequest
+	31,  // 87: loop.relayerset.EVMRelayerSet.GetTransactionByHash:input_type -> loop.relayerset.GetTransactionByHashRequest
+	32,  // 88: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:input_type -> loop.relayerset.GetTransactionReceiptRequest
+	14,  // 89: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:input_type -> loop.relayerset.LatestHeadRequest
+	33,  // 90: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:input_type -> loop.relayerset.QueryTrackedLogsRequest
+	34,  // 91: loop.relayerset.EVMRelayerSet.RegisterLogTracking:input_type -> loop.relayerset.RegisterLogTrackingRequest
+	35,  // 92: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:input_type -> loop.relayerset.UnregisterLogTrackingRequest
+	36,  // 93: loop.relayerset.EVMRelayerSet.GetTransactionStatus:input_type -> loop.relayerset.GetTransactionStatusRequest
+	37,  // 94: loop.relayerset.EVMRelayerSet.SubmitTransaction:input_type -> loop.relayerset.SubmitTransactionRequest
+	38,  // 95: loop.relayerset.EVMRelayerSet.CalculateTransactionFee:input_type -> loop.relayerset.CalculateTransactionFeeRequest
+	39,  // 96: loop.relayerset.TONRelayerSet.SendTransaction:input_type -> loop.relayerset.TONSendTransactionRequest
+	40,  // 97: loop.relayerset.TONRelayerSet.GetTransactionStatus:input_type -> loop.relayerset.TONGetTransactionStatusRequest
+	41,  // 98: loop.relayerset.TONRelayerSet.GetTransactionExecutionFees:input_type -> loop.relayerset.TONGetTransactionExecutionFeesRequest
+	42,  // 99: loop.relayerset.TONRelayerSet.GetMasterchainInfo:input_type -> loop.relayerset.TONGetMasterchainInfoRequest
+	43,  // 100: loop.relayerset.TONRelayerSet.GetBlockData:input_type -> loop.relayerset.TONGetBlockDataRequest
+	44,  // 101: loop.relayerset.TONRelayerSet.GetAccountBalance:input_type -> loop.relayerset.TONGetAccountBalanceRequest
+	45,  // 102: loop.relayerset.TONRelayerSet.HasFilter:input_type -> loop.relayerset.TONHasFilterRequest
+	46,  // 103: loop.relayerset.TONRelayerSet.RegisterFilter:input_type -> loop.relayerset.TONRegisterFilterRequest
+	47,  // 104: loop.relayerset.TONRelayerSet.UnregisterFilter:input_type -> loop.relayerset.TONUnregisterFilterRequest
+	48,  // 105: loop.relayerset.TONRelayerSet.GetLogs:input_type -> loop.relayerset.TONGetLogsRequest
+	2,   // 106: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
+	4,   // 107: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
+	9,   // 108: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
+	11,  // 109: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
+	13,  // 110: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
+	77,  // 111: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
+	77,  // 112: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
+	77,  // 113: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
+	16,  // 114: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
+	17,  // 115: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
+	15,  // 116: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
+	78,  // 117: loop.relayerset.RelayerSet.ContractReaderGetLatestValue:output_type -> loop.GetLatestValueReply
+	79,  // 118: loop.relayerset.RelayerSet.ContractReaderGetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
+	80,  // 119: loop.relayerset.RelayerSet.ContractReaderBatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
+	81,  // 120: loop.relayerset.RelayerSet.ContractReaderQueryKey:output_type -> loop.QueryKeyReply
+	82,  // 121: loop.relayerset.RelayerSet.ContractReaderQueryKeys:output_type -> loop.QueryKeysReply
+	77,  // 122: loop.relayerset.RelayerSet.ContractReaderBind:output_type -> google.protobuf.Empty
+	77,  // 123: loop.relayerset.RelayerSet.ContractReaderUnbind:output_type -> google.protobuf.Empty
+	77,  // 124: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
+	77,  // 125: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
+	83,  // 126: loop.relayerset.EVMRelayerSet.GetTransactionFee:output_type -> loop.evm.GetTransactionFeeReply
+	84,  // 127: loop.relayerset.EVMRelayerSet.CallContract:output_type -> loop.evm.CallContractReply
+	85,  // 128: loop.relayerset.EVMRelayerSet.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	86,  // 129: loop.relayerset.EVMRelayerSet.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	87,  // 130: loop.relayerset.EVMRelayerSet.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	88,  // 131: loop.relayerset.EVMRelayerSet.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	89,  // 132: loop.relayerset.EVMRelayerSet.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	90,  // 133: loop.relayerset.EVMRelayerSet.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	91,  // 134: loop.relayerset.EVMRelayerSet.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	77,  // 135: loop.relayerset.EVMRelayerSet.RegisterLogTracking:output_type -> google.protobuf.Empty
+	77,  // 136: loop.relayerset.EVMRelayerSet.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	92,  // 137: loop.relayerset.EVMRelayerSet.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
+	93,  // 138: loop.relayerset.EVMRelayerSet.SubmitTransaction:output_type -> loop.evm.SubmitTransactionReply
+	94,  // 139: loop.relayerset.EVMRelayerSet.CalculateTransactionFee:output_type -> loop.evm.CalculateTransactionFeeReply
+	95,  // 140: loop.relayerset.TONRelayerSet.SendTransaction:output_type -> loop.ton.SendTransactionReply
+	96,  // 141: loop.relayerset.TONRelayerSet.GetTransactionStatus:output_type -> loop.ton.GetTransactionStatusReply
+	97,  // 142: loop.relayerset.TONRelayerSet.GetTransactionExecutionFees:output_type -> loop.ton.GetTransactionExecutionFeesReply
+	72,  // 143: loop.relayerset.TONRelayerSet.GetMasterchainInfo:output_type -> loop.ton.BlockIDExt
+	98,  // 144: loop.relayerset.TONRelayerSet.GetBlockData:output_type -> loop.ton.Block
+	99,  // 145: loop.relayerset.TONRelayerSet.GetAccountBalance:output_type -> loop.ton.BalanceReply
+	100, // 146: loop.relayerset.TONRelayerSet.HasFilter:output_type -> loop.ton.HasFilterReply
+	77,  // 147: loop.relayerset.TONRelayerSet.RegisterFilter:output_type -> google.protobuf.Empty
+	77,  // 148: loop.relayerset.TONRelayerSet.UnregisterFilter:output_type -> google.protobuf.Empty
+	101, // 149: loop.relayerset.TONRelayerSet.GetLogs:output_type -> loop.ton.GetLogsReply
+	106, // [106:150] is the sub-list for method output_type
+	62,  // [62:106] is the sub-list for method input_type
+	62,  // [62:62] is the sub-list for extension type_name
+	62,  // [62:62] is the sub-list for extension extendee
+	0,   // [0:62] is the sub-list for field type_name
 }
 
 func init() { file_relayerset_proto_init() }
@@ -2394,9 +3001,9 @@ func file_relayerset_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_relayerset_proto_rawDesc), len(file_relayerset_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   40,
+			NumMessages:   50,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   3,
 		},
 		GoTypes:           file_relayerset_proto_goTypes,
 		DependencyIndexes: file_relayerset_proto_depIdxs,

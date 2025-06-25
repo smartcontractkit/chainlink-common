@@ -8,6 +8,7 @@ import "google/protobuf/empty.proto";
 import "loop/internal/pb/contract_reader.proto";
 import "loop/internal/pb/contract_writer.proto";
 import "chains/evm/evm.proto";
+import "chains/ton/ton.proto";
 
 message RelayerId {
   string network = 1;
@@ -139,6 +140,21 @@ service EVMRelayerSet {
   rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (loop.evm.CalculateTransactionFeeReply); 
 }
 
+service TONRelayerSet {
+  rpc SendTransaction(TONSendTransactionRequest) returns (loop.ton.SendTransactionReply);
+  rpc GetTransactionStatus(TONGetTransactionStatusRequest) returns (loop.ton.GetTransactionStatusReply);
+  rpc GetTransactionExecutionFees(TONGetTransactionExecutionFeesRequest) returns (loop.ton.GetTransactionExecutionFeesReply);
+
+  rpc GetMasterchainInfo(TONGetMasterchainInfoRequest) returns (loop.ton.BlockIDExt);
+  rpc GetBlockData(TONGetBlockDataRequest) returns (loop.ton.Block);
+  rpc GetAccountBalance(TONGetAccountBalanceRequest) returns (loop.ton.BalanceReply);
+
+  rpc HasFilter(TONHasFilterRequest) returns (loop.ton.HasFilterReply);
+  rpc RegisterFilter(TONRegisterFilterRequest) returns (google.protobuf.Empty);
+  rpc UnregisterFilter(TONUnregisterFilterRequest) returns (google.protobuf.Empty);
+  rpc GetLogs(TONGetLogsRequest) returns (loop.ton.GetLogsReply);
+}
+
 message ContractReaderGetLatestValueRequest {
   string contractReaderId = 1;
   GetLatestValueRequest request = 2;
@@ -242,6 +258,50 @@ message CalculateTransactionFeeRequest {
    loop.evm.CalculateTransactionFeeRequest request = 2;
 }
 
+message TONSendTransactionRequest {
+  RelayerId relayerId = 1;
+  loop.ton.SendTransactionRequest request = 2;
+}
 
+message TONGetTransactionStatusRequest {
+  RelayerId relayerId = 1;
+  loop.ton.GetTransactionStatusRequest request = 2;
+}
 
+message TONGetTransactionExecutionFeesRequest {
+  RelayerId relayerId = 1;
+  loop.ton.GetTransactionExecutionFeesRequest request = 2;
+}
 
+message TONGetMasterchainInfoRequest {
+  RelayerId relayerId = 1;
+}
+
+message TONGetBlockDataRequest {
+  RelayerId relayerId = 1;
+  loop.ton.BlockIDExt block = 2;
+}
+
+message TONGetAccountBalanceRequest {
+  RelayerId relayerId = 1;
+  loop.ton.GetAccountBalanceRequest request = 2;
+}
+
+message TONHasFilterRequest {
+  RelayerId relayerId = 1;
+  loop.ton.HasFilterRequest request = 2;
+}
+
+message TONRegisterFilterRequest {
+  RelayerId relayerId = 1;
+  loop.ton.RegisterFilterRequest request = 2;
+}
+
+message TONUnregisterFilterRequest {
+  RelayerId relayerId = 1;
+  loop.ton.UnregisterFilterRequest request = 2;
+}
+
+message TONGetLogsRequest {
+  RelayerId relayerId = 1;
+}

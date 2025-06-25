@@ -8,6 +8,7 @@ package relayerset
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -978,7 +979,7 @@ var File_relayerset_proto protoreflect.FileDescriptor
 
 const file_relayerset_proto_rawDesc = "" +
 	"\n" +
-	"\x10relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x14chains/evm/evm.proto\"@\n" +
+	"\x10relayerset.proto\x12\x0floop.relayerset\x1a\x1bgoogle/protobuf/empty.proto\x1a&loop/internal/pb/contract_reader.proto\x1a&loop/internal/pb/contract_writer.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x14chains/evm/evm.proto\x1a\x14chains/ton/ton.proto\"@\n" +
 	"\tRelayerId\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x19\n" +
 	"\bchain_id\x18\x02 \x01(\tR\achainId\"?\n" +

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750848420385,
+  "lastUpdate": 1750860338910,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16590,6 +16590,48 @@ window.BENCHMARK_DATA = {
             "value": 28226,
             "unit": "ns/op",
             "extra": "42696 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ba03877f50b39d96a281606b8fc81d5e39ffa5d",
+          "message": "Rename On to Handler in CRE SDK (#1296)",
+          "timestamp": "2025-06-25T10:04:35-04:00",
+          "tree_id": "2f956476f3472497c332d90f03058ba24e1ff16b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9ba03877f50b39d96a281606b8fc81d5e39ffa5d"
+        },
+        "date": 1750860337882,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.1,
+            "unit": "ns/op",
+            "extra": "3316201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.3,
+            "unit": "ns/op",
+            "extra": "2859110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28367,
+            "unit": "ns/op",
+            "extra": "42562 times\n4 procs"
           }
         ]
       }

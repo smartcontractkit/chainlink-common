@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: loop/internal/pb/contract_writer.proto
+// source: contract_writer.proto
 
 package pb
 
@@ -39,7 +39,7 @@ type SubmitTransactionRequest struct {
 
 func (x *SubmitTransactionRequest) Reset() {
 	*x = SubmitTransactionRequest{}
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[0]
+	mi := &file_contract_writer_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *SubmitTransactionRequest) String() string {
 func (*SubmitTransactionRequest) ProtoMessage() {}
 
 func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[0]
+	mi := &file_contract_writer_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_contract_writer_proto_rawDescGZIP(), []int{0}
+	return file_contract_writer_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SubmitTransactionRequest) GetContractName() string {
@@ -126,7 +126,7 @@ type TransactionMeta struct {
 
 func (x *TransactionMeta) Reset() {
 	*x = TransactionMeta{}
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[1]
+	mi := &file_contract_writer_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +138,7 @@ func (x *TransactionMeta) String() string {
 func (*TransactionMeta) ProtoMessage() {}
 
 func (x *TransactionMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[1]
+	mi := &file_contract_writer_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +151,7 @@ func (x *TransactionMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionMeta.ProtoReflect.Descriptor instead.
 func (*TransactionMeta) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_contract_writer_proto_rawDescGZIP(), []int{1}
+	return file_contract_writer_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TransactionMeta) GetWorkflowExecutionId() string {
@@ -183,7 +183,7 @@ type GetEstimateFeeRequest struct {
 
 func (x *GetEstimateFeeRequest) Reset() {
 	*x = GetEstimateFeeRequest{}
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[2]
+	mi := &file_contract_writer_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -195,7 +195,7 @@ func (x *GetEstimateFeeRequest) String() string {
 func (*GetEstimateFeeRequest) ProtoMessage() {}
 
 func (x *GetEstimateFeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[2]
+	mi := &file_contract_writer_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -208,7 +208,7 @@ func (x *GetEstimateFeeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEstimateFeeRequest.ProtoReflect.Descriptor instead.
 func (*GetEstimateFeeRequest) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_contract_writer_proto_rawDescGZIP(), []int{2}
+	return file_contract_writer_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetEstimateFeeRequest) GetContractName() string {
@@ -264,7 +264,7 @@ type GetFeeComponentsReply struct {
 
 func (x *GetFeeComponentsReply) Reset() {
 	*x = GetFeeComponentsReply{}
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[3]
+	mi := &file_contract_writer_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -276,7 +276,7 @@ func (x *GetFeeComponentsReply) String() string {
 func (*GetFeeComponentsReply) ProtoMessage() {}
 
 func (x *GetFeeComponentsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[3]
+	mi := &file_contract_writer_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -289,7 +289,7 @@ func (x *GetFeeComponentsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeeComponentsReply.ProtoReflect.Descriptor instead.
 func (*GetFeeComponentsReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_contract_writer_proto_rawDescGZIP(), []int{3}
+	return file_contract_writer_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetFeeComponentsReply) GetExecutionFee() *BigInt {
@@ -317,7 +317,7 @@ type GetEstimateFeeReply struct {
 
 func (x *GetEstimateFeeReply) Reset() {
 	*x = GetEstimateFeeReply{}
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[4]
+	mi := &file_contract_writer_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -329,7 +329,7 @@ func (x *GetEstimateFeeReply) String() string {
 func (*GetEstimateFeeReply) ProtoMessage() {}
 
 func (x *GetEstimateFeeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_loop_internal_pb_contract_writer_proto_msgTypes[4]
+	mi := &file_contract_writer_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -342,7 +342,7 @@ func (x *GetEstimateFeeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEstimateFeeReply.ProtoReflect.Descriptor instead.
 func (*GetEstimateFeeReply) Descriptor() ([]byte, []int) {
-	return file_loop_internal_pb_contract_writer_proto_rawDescGZIP(), []int{4}
+	return file_contract_writer_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetEstimateFeeReply) GetFee() *BigInt {
@@ -359,11 +359,11 @@ func (x *GetEstimateFeeReply) GetDecimals() uint32 {
 	return 0
 }
 
-var File_loop_internal_pb_contract_writer_proto protoreflect.FileDescriptor
+var File_contract_writer_proto protoreflect.FileDescriptor
 
-const file_loop_internal_pb_contract_writer_proto_rawDesc = "" +
+const file_contract_writer_proto_rawDesc = "" +
 	"\n" +
-	"&loop/internal/pb/contract_writer.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14chains/evm/evm.proto\"\x9b\x02\n" +
+	"\x15contract_writer.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1eloop/internal/pb/relayer.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x14chains/evm/evm.proto\"\x9b\x02\n" +
 	"\x18SubmitTransactionRequest\x12#\n" +
 	"\rcontract_name\x18\x01 \x01(\tR\fcontractName\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12-\n" +
@@ -397,19 +397,19 @@ const file_loop_internal_pb_contract_writer_proto_rawDesc = "" +
 	"\x0eGetEstimateFee\x12\x1b.loop.GetEstimateFeeRequest\x1a\x19.loop.GetEstimateFeeReply\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
 
 var (
-	file_loop_internal_pb_contract_writer_proto_rawDescOnce sync.Once
-	file_loop_internal_pb_contract_writer_proto_rawDescData []byte
+	file_contract_writer_proto_rawDescOnce sync.Once
+	file_contract_writer_proto_rawDescData []byte
 )
 
-func file_loop_internal_pb_contract_writer_proto_rawDescGZIP() []byte {
-	file_loop_internal_pb_contract_writer_proto_rawDescOnce.Do(func() {
-		file_loop_internal_pb_contract_writer_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_loop_internal_pb_contract_writer_proto_rawDesc), len(file_loop_internal_pb_contract_writer_proto_rawDesc)))
+func file_contract_writer_proto_rawDescGZIP() []byte {
+	file_contract_writer_proto_rawDescOnce.Do(func() {
+		file_contract_writer_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_contract_writer_proto_rawDesc), len(file_contract_writer_proto_rawDesc)))
 	})
-	return file_loop_internal_pb_contract_writer_proto_rawDescData
+	return file_contract_writer_proto_rawDescData
 }
 
-var file_loop_internal_pb_contract_writer_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_loop_internal_pb_contract_writer_proto_goTypes = []any{
+var file_contract_writer_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_contract_writer_proto_goTypes = []any{
 	(*SubmitTransactionRequest)(nil),        // 0: loop.SubmitTransactionRequest
 	(*TransactionMeta)(nil),                 // 1: loop.TransactionMeta
 	(*GetEstimateFeeRequest)(nil),           // 2: loop.GetEstimateFeeRequest
@@ -421,7 +421,7 @@ var file_loop_internal_pb_contract_writer_proto_goTypes = []any{
 	(*emptypb.Empty)(nil),                   // 8: google.protobuf.Empty
 	(*evm.GetTransactionStatusReply)(nil),   // 9: loop.evm.GetTransactionStatusReply
 }
-var file_loop_internal_pb_contract_writer_proto_depIdxs = []int32{
+var file_contract_writer_proto_depIdxs = []int32{
 	5,  // 0: loop.SubmitTransactionRequest.params:type_name -> codec.VersionedBytes
 	1,  // 1: loop.SubmitTransactionRequest.meta:type_name -> loop.TransactionMeta
 	6,  // 2: loop.SubmitTransactionRequest.value:type_name -> loop.BigInt
@@ -447,9 +447,9 @@ var file_loop_internal_pb_contract_writer_proto_depIdxs = []int32{
 	0,  // [0:10] is the sub-list for field type_name
 }
 
-func init() { file_loop_internal_pb_contract_writer_proto_init() }
-func file_loop_internal_pb_contract_writer_proto_init() {
-	if File_loop_internal_pb_contract_writer_proto != nil {
+func init() { file_contract_writer_proto_init() }
+func file_contract_writer_proto_init() {
+	if File_contract_writer_proto != nil {
 		return
 	}
 	file_loop_internal_pb_relayer_proto_init()
@@ -457,17 +457,17 @@ func file_loop_internal_pb_contract_writer_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_loop_internal_pb_contract_writer_proto_rawDesc), len(file_loop_internal_pb_contract_writer_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contract_writer_proto_rawDesc), len(file_contract_writer_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_loop_internal_pb_contract_writer_proto_goTypes,
-		DependencyIndexes: file_loop_internal_pb_contract_writer_proto_depIdxs,
-		MessageInfos:      file_loop_internal_pb_contract_writer_proto_msgTypes,
+		GoTypes:           file_contract_writer_proto_goTypes,
+		DependencyIndexes: file_contract_writer_proto_depIdxs,
+		MessageInfos:      file_contract_writer_proto_msgTypes,
 	}.Build()
-	File_loop_internal_pb_contract_writer_proto = out.File
-	file_loop_internal_pb_contract_writer_proto_goTypes = nil
-	file_loop_internal_pb_contract_writer_proto_depIdxs = nil
+	File_contract_writer_proto = out.File
+	file_contract_writer_proto_goTypes = nil
+	file_contract_writer_proto_depIdxs = nil
 }

@@ -4,7 +4,7 @@ package http_trigger.v1;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/http";
 
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 import "google/protobuf/struct.proto";
 
 message Config {
@@ -32,13 +32,13 @@ message AuthorizedKey {
 }
 
 service HTTP {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "http-trigger@0.1.0"
   };
 
   rpc Trigger(Config) returns (stream Payload) {
-    option (cre.metadata.method) = {
+    option (tools.generator.v1alpha.method) = {
       map_to_untyped_api: true
     };
   }

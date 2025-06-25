@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750864871684,
+  "lastUpdate": 1750871199597,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16674,6 +16674,48 @@ window.BENCHMARK_DATA = {
             "value": 28300,
             "unit": "ns/op",
             "extra": "42404 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5613187324ad638bb25fb5ce65ddc515bc454c25",
+          "message": "Improve Beholder Logger (#1280)\n\n1. Don't drop errors\n2. Protect against blocking calls",
+          "timestamp": "2025-06-25T17:05:38Z",
+          "tree_id": "250680b1bd2d98d4bdac7ce147492ec080410be6",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5613187324ad638bb25fb5ce65ddc515bc454c25"
+        },
+        "date": 1750871198732,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.4,
+            "unit": "ns/op",
+            "extra": "2860522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.6,
+            "unit": "ns/op",
+            "extra": "2920566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28417,
+            "unit": "ns/op",
+            "extra": "41425 times\n4 procs"
           }
         ]
       }

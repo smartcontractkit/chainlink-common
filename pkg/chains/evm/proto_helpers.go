@@ -8,13 +8,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
@@ -246,12 +247,27 @@ func ConvertLogsToProto(logs []*evmtypes.Log) []*Log {
 	return protoLogs
 }
 
+func ConvertHashFromProto(protoHash []byte) (evmtypes.Hash, error) {
+	if len(protoHash) == 0 {
+		return evmtypes.Hash{}, nil
+	}
+	if len(protoHash) != 32 {
+		return evmtypes.Hash{}, fmt.Errorf("invalid hash: got %d bytes, expected 32", len(protoHash))
+	}
+	return evmtypes.Hash(protoHash), nil
+}
+
 func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, error) {
 	if protoFilter == nil {
 		return evmtypes.FilterQuery{}, errEmptyFilter
 	}
+	hash, err := ConvertHashFromProto(protoFilter.GetBlockHash())
+	if err != nil {
+		return evmtypes.FilterQuery{}, err
+	}
+
 	return evmtypes.FilterQuery{
-		BlockHash: evmtypes.Hash(protoFilter.GetBlockHash()),
+		BlockHash: hash,
 		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
 		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
 		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),

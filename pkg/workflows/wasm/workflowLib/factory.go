@@ -4,19 +4,19 @@ import (
 	"context"
 	"time"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 const (
-	// TODO: What should these defaults be?
 	defaultMaxPhaseOutputBytes     = 1000000 // 1 MB
 	defaultMaxReportCount          = 20
-	defaultBatchSize               = 20
+	defaultBatchSize               = 1000
 	defaultOutcomePruningThreshold = 3600
 	defaultRequestExpiry           = 10 * time.Minute // CRE workflow time limit
 	defaultMinTimeIncrease         = time.Millisecond
@@ -60,6 +60,15 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	if configProto.MaxBatchSize <= 0 {
 		configProto.MaxBatchSize = defaultBatchSize
 	}
+	if configProto.OutcomePruningThreshold <= 0 {
+		configProto.OutcomePruningThreshold = defaultOutcomePruningThreshold
+	}
+	if configProto.MaxReportCount <= 0 {
+		configProto.MaxReportCount = defaultMaxReportCount
+	}
+	if configProto.RequestTimeout == nil {
+		configProto.RequestTimeout = durationpb.New(defaultRequestExpiry)
+	}
 	if configProto.MinTimeIncrease <= 0 {
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)
 	}
@@ -68,7 +77,6 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{
-			// TODO: Do we need to change any of these default values? Sync with Bolek on this.
 			MaxQueryLength:       int(configProto.MaxQueryLengthBytes),
 			MaxObservationLength: int(configProto.MaxObservationLengthBytes),
 			MaxOutcomeLength:     int(configProto.MaxOutcomeLengthBytes),

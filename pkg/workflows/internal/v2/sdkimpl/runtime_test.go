@@ -301,7 +301,7 @@ func TestRuntime_ReturnsConfig(t *testing.T) {
 
 	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
-			sdk.On(
+			sdk.Handler(
 				basictrigger.Trigger(&basictrigger.Config{Name: "name", Number: 123}),
 				func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (string, error) {
 					return env.Config, nil
@@ -327,7 +327,7 @@ func testRuntime[T any](t *testing.T, testFn func(env *sdk.Environment[string], 
 	require.NoError(t, err)
 
 	runner.Run(func(workflowContext *sdk.Environment[string]) (sdk.Workflow[string], error) {
-		return sdk.Workflow[string]{sdk.On(
+		return sdk.Workflow[string]{sdk.Handler(
 			basictrigger.Trigger(anyConfig), testFn,
 		)}, nil
 	})

@@ -19,7 +19,7 @@ func main() {
 
 	runner.Run(func(_ *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
-			sdk.On(
+			sdk.Handler(
 				basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
 				func(env *sdk.Environment[string], runtime sdk.Runtime, payload *basictrigger.Outputs) (uint64, error) {
 					r, err := runtime.Rand()

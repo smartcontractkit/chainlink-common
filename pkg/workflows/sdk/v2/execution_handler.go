@@ -13,11 +13,11 @@ type ExecutionHandler[C, R any] interface {
 	Callback() func(env *Environment[C], runtime R, payload *anypb.Any) (any, error)
 }
 
-func On[C any, M proto.Message, T any, O any](trigger Trigger[M, T], callback func(env *Environment[C], runtime Runtime, payload T) (O, error)) ExecutionHandler[C, Runtime] {
-	return on(trigger, callback)
+func Handler[C any, M proto.Message, T any, O any](trigger Trigger[M, T], callback func(env *Environment[C], runtime Runtime, payload T) (O, error)) ExecutionHandler[C, Runtime] {
+	return handler(trigger, callback)
 }
 
-func on[R, C any, M proto.Message, T any, O any](trigger Trigger[M, T], callback func(env *Environment[C], runtime R, payload T) (O, error)) ExecutionHandler[C, R] {
+func handler[R, C any, M proto.Message, T any, O any](trigger Trigger[M, T], callback func(env *Environment[C], runtime R, payload T) (O, error)) ExecutionHandler[C, R] {
 	wrapped := func(env *Environment[C], runtime R, payload *anypb.Any) (any, error) {
 		unwrappedTrigger := trigger.NewT()
 		if err := payload.UnmarshalTo(unwrappedTrigger); err != nil {

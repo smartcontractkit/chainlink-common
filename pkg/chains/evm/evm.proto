@@ -277,7 +277,7 @@ message RequestObservation {
   bytes value = 3;
 }
 
-message Observations {
+message Observation {
   ChainHeight chainHeight = 1;
   map<string, RequestObservation> observations = 2;
 }
@@ -294,7 +294,7 @@ message Outcome {
 }
 
 message RequestReport {
-  string id = 1;
+  string requestID = 1;
   RequestType requestType = 2;
   oneof payload {
     bytes value = 3;

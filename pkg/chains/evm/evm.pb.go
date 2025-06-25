@@ -2412,7 +2412,7 @@ func (x *RequestObservation) GetValue() []byte {
 	return nil
 }
 
-type Observations struct {
+type Observation struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
 	ChainHeight   *ChainHeight                   `protobuf:"bytes,1,opt,name=chainHeight,proto3" json:"chainHeight,omitempty"`
 	Observations  map[string]*RequestObservation `protobuf:"bytes,2,rep,name=observations,proto3" json:"observations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -2420,20 +2420,20 @@ type Observations struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Observations) Reset() {
-	*x = Observations{}
+func (x *Observation) Reset() {
+	*x = Observation{}
 	mi := &file_chains_evm_evm_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Observations) String() string {
+func (x *Observation) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Observations) ProtoMessage() {}
+func (*Observation) ProtoMessage() {}
 
-func (x *Observations) ProtoReflect() protoreflect.Message {
+func (x *Observation) ProtoReflect() protoreflect.Message {
 	mi := &file_chains_evm_evm_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2445,19 +2445,19 @@ func (x *Observations) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Observations.ProtoReflect.Descriptor instead.
-func (*Observations) Descriptor() ([]byte, []int) {
+// Deprecated: Use Observation.ProtoReflect.Descriptor instead.
+func (*Observation) Descriptor() ([]byte, []int) {
 	return file_chains_evm_evm_proto_rawDescGZIP(), []int{39}
 }
 
-func (x *Observations) GetChainHeight() *ChainHeight {
+func (x *Observation) GetChainHeight() *ChainHeight {
 	if x != nil {
 		return x.ChainHeight
 	}
 	return nil
 }
 
-func (x *Observations) GetObservations() map[string]*RequestObservation {
+func (x *Observation) GetObservations() map[string]*RequestObservation {
 	if x != nil {
 		return x.Observations
 	}
@@ -2829,10 +2829,10 @@ const file_chains_evm_evm_proto_rawDesc = "" +
 	"\tfinalized\x18\x03 \x01(\x03R\tfinalized\"c\n" +
 	"\x12RequestObservation\x127\n" +
 	"\vrequestType\x18\x02 \x01(\x0e2\x15.loop.evm.RequestTypeR\vrequestType\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\fR\x05value\"\xf4\x01\n" +
-	"\fObservations\x127\n" +
-	"\vchainHeight\x18\x01 \x01(\v2\x15.loop.evm.ChainHeightR\vchainHeight\x12L\n" +
-	"\fobservations\x18\x02 \x03(\v2(.loop.evm.Observations.ObservationsEntryR\fobservations\x1a]\n" +
+	"\x05value\x18\x03 \x01(\fR\x05value\"\xf2\x01\n" +
+	"\vObservation\x127\n" +
+	"\vchainHeight\x18\x01 \x01(\v2\x15.loop.evm.ChainHeightR\vchainHeight\x12K\n" +
+	"\fobservations\x18\x02 \x03(\v2'.loop.evm.Observation.ObservationsEntryR\fobservations\x1a]\n" +
 	"\x11ObservationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x122\n" +
 	"\x05value\x18\x02 \x01(\v2\x1c.loop.evm.RequestObservationR\x05value:\x028\x01\"}\n" +
@@ -2932,11 +2932,11 @@ var file_chains_evm_evm_proto_goTypes = []any{
 	(*GetTransactionStatusReply)(nil),    // 38: loop.evm.GetTransactionStatusReply
 	(*ChainHeight)(nil),                  // 39: loop.evm.ChainHeight
 	(*RequestObservation)(nil),           // 40: loop.evm.RequestObservation
-	(*Observations)(nil),                 // 41: loop.evm.Observations
+	(*Observation)(nil),                  // 41: loop.evm.Observation
 	(*RequestOutcome)(nil),               // 42: loop.evm.RequestOutcome
 	(*Outcome)(nil),                      // 43: loop.evm.Outcome
 	(*RequestReport)(nil),                // 44: loop.evm.RequestReport
-	nil,                                  // 45: loop.evm.Observations.ObservationsEntry
+	nil,                                  // 45: loop.evm.Observation.ObservationsEntry
 	(*pb.BigInt)(nil),                    // 46: values.BigInt
 	(chain_common.BooleanOperator)(0),    // 47: loop.chain.common.BooleanOperator
 	(chain_common.ComparisonOperator)(0), // 48: loop.chain.common.ComparisonOperator
@@ -2987,14 +2987,14 @@ var file_chains_evm_evm_proto_depIdxs = []int32{
 	4,  // 38: loop.evm.QueryTrackedLogsReply.logs:type_name -> loop.evm.Log
 	0,  // 39: loop.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.evm.TransactionStatus
 	1,  // 40: loop.evm.RequestObservation.requestType:type_name -> loop.evm.RequestType
-	39, // 41: loop.evm.Observations.chainHeight:type_name -> loop.evm.ChainHeight
-	45, // 42: loop.evm.Observations.observations:type_name -> loop.evm.Observations.ObservationsEntry
+	39, // 41: loop.evm.Observation.chainHeight:type_name -> loop.evm.ChainHeight
+	45, // 42: loop.evm.Observation.observations:type_name -> loop.evm.Observation.ObservationsEntry
 	1,  // 43: loop.evm.RequestOutcome.requestType:type_name -> loop.evm.RequestType
 	39, // 44: loop.evm.Outcome.chainHeight:type_name -> loop.evm.ChainHeight
 	42, // 45: loop.evm.Outcome.outcomes:type_name -> loop.evm.RequestOutcome
 	1,  // 46: loop.evm.RequestReport.requestType:type_name -> loop.evm.RequestType
 	39, // 47: loop.evm.RequestReport.height:type_name -> loop.evm.ChainHeight
-	40, // 48: loop.evm.Observations.ObservationsEntry.value:type_name -> loop.evm.RequestObservation
+	40, // 48: loop.evm.Observation.ObservationsEntry.value:type_name -> loop.evm.RequestObservation
 	21, // 49: loop.evm.EVM.GetTransactionFee:input_type -> loop.evm.GetTransactionFeeRequest
 	19, // 50: loop.evm.EVM.CallContract:input_type -> loop.evm.CallContractRequest
 	23, // 51: loop.evm.EVM.FilterLogs:input_type -> loop.evm.FilterLogsRequest

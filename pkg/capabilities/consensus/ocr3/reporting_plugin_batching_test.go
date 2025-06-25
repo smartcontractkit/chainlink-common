@@ -2,11 +2,12 @@ package ocr3
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestReportPlugin_packQueriesToSizeLimit(t *testing.T) {

@@ -2,14 +2,15 @@ package ocr3
 
 import (
 	"fmt"
+	"google.golang.org/protobuf/proto"
+	"time"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"time"
 )
 
 type Serializable interface {
@@ -39,7 +40,7 @@ func (q QueriesSerializable) Len() int {
 	return len(q.batch)
 }
 
-func (q QueriesSerializable) Serialize(lggr logger.Logger) ([]string, []byte, error) {
+func (q QueriesSerializable) Serialize(_ logger.Logger) ([]string, []byte, error) {
 	ids := make([]*pbtypes.Id, 0)
 	allExecutionIDs := make([]string, 0)
 	for _, rq := range q.batch {
@@ -69,7 +70,7 @@ type ObservationSerializable struct {
 
 func (o ObservationSerializable) Serialize(lggr logger.Logger) ([]string, []byte, error) {
 	obs := &pbtypes.Observations{}
-	allExecutionIDs := []string{}
+	allExecutionIDs := make([]string,0)
 
 	weids := make([]string, 0, len(o.reqMap))
 	for k := range o.reqMap {

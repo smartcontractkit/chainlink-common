@@ -15,6 +15,7 @@ import (
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -83,16 +84,15 @@ func (CapabilityType) EnumDescriptor() ([]byte, []int) {
 }
 
 type CapabilityInfoReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id             string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	CapabilityType CapabilityType `protobuf:"varint,2,opt,name=capability_type,json=capabilityType,proto3,enum=capabilities.CapabilityType" json:"capability_type,omitempty"`
-	Description    string         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Version        string         `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
-	IsLocal        bool           `protobuf:"varint,5,opt,name=isLocal,proto3" json:"isLocal,omitempty"`
-	SpendTypes     []string       `protobuf:"bytes,6,rep,name=spend_types,json=spendTypes,proto3" json:"spend_types,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CapabilityType CapabilityType         `protobuf:"varint,2,opt,name=capability_type,json=capabilityType,proto3,enum=capabilities.CapabilityType" json:"capability_type,omitempty"`
+	Description    string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Version        string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	IsLocal        bool                   `protobuf:"varint,5,opt,name=isLocal,proto3" json:"isLocal,omitempty"`
+	SpendTypes     []string               `protobuf:"bytes,6,rep,name=spend_types,json=spendTypes,proto3" json:"spend_types,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CapabilityInfoReply) Reset() {
@@ -168,12 +168,11 @@ func (x *CapabilityInfoReply) GetSpendTypes() []string {
 }
 
 type SpendLimit struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SpendType     string                 `protobuf:"bytes,1,opt,name=spend_type,json=spendType,proto3" json:"spend_type,omitempty"`
+	Limit         string                 `protobuf:"bytes,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	SpendType string `protobuf:"bytes,1,opt,name=spend_type,json=spendType,proto3" json:"spend_type,omitempty"`
-	Limit     string `protobuf:"bytes,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SpendLimit) Reset() {
@@ -221,19 +220,18 @@ func (x *SpendLimit) GetLimit() string {
 }
 
 type RequestMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	WorkflowId               string        `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
-	WorkflowExecutionId      string        `protobuf:"bytes,2,opt,name=workflow_execution_id,json=workflowExecutionId,proto3" json:"workflow_execution_id,omitempty"`
-	WorkflowOwner            string        `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
-	WorkflowName             string        `protobuf:"bytes,4,opt,name=workflow_name,json=workflowName,proto3" json:"workflow_name,omitempty"`
-	WorkflowDonId            uint32        `protobuf:"varint,6,opt,name=workflow_don_id,json=workflowDonId,proto3" json:"workflow_don_id,omitempty"`
-	WorkflowDonConfigVersion uint32        `protobuf:"varint,7,opt,name=workflow_don_config_version,json=workflowDonConfigVersion,proto3" json:"workflow_don_config_version,omitempty"`
-	ReferenceId              string        `protobuf:"bytes,8,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
-	DecodedWorkflowName      string        `protobuf:"bytes,9,opt,name=decoded_workflow_name,json=decodedWorkflowName,proto3" json:"decoded_workflow_name,omitempty"`
-	SpendLimits              []*SpendLimit `protobuf:"bytes,10,rep,name=spend_limits,json=spendLimits,proto3" json:"spend_limits,omitempty"`
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	WorkflowId               string                 `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
+	WorkflowExecutionId      string                 `protobuf:"bytes,2,opt,name=workflow_execution_id,json=workflowExecutionId,proto3" json:"workflow_execution_id,omitempty"`
+	WorkflowOwner            string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	WorkflowName             string                 `protobuf:"bytes,4,opt,name=workflow_name,json=workflowName,proto3" json:"workflow_name,omitempty"`
+	WorkflowDonId            uint32                 `protobuf:"varint,6,opt,name=workflow_don_id,json=workflowDonId,proto3" json:"workflow_don_id,omitempty"`
+	WorkflowDonConfigVersion uint32                 `protobuf:"varint,7,opt,name=workflow_don_config_version,json=workflowDonConfigVersion,proto3" json:"workflow_don_config_version,omitempty"`
+	ReferenceId              string                 `protobuf:"bytes,8,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
+	DecodedWorkflowName      string                 `protobuf:"bytes,9,opt,name=decoded_workflow_name,json=decodedWorkflowName,proto3" json:"decoded_workflow_name,omitempty"`
+	SpendLimits              []*SpendLimit          `protobuf:"bytes,10,rep,name=spend_limits,json=spendLimits,proto3" json:"spend_limits,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *RequestMetadata) Reset() {
@@ -330,11 +328,8 @@ func (x *RequestMetadata) GetSpendLimits() []*SpendLimit {
 }
 
 type CapabilityRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Metadata *RequestMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Metadata *RequestMetadata       `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Used for DAG SDK
 	Config *pb.Map `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	// Used for DAG SDK
@@ -344,8 +339,10 @@ type CapabilityRequest struct {
 	// Used for no DAG SDK
 	ConfigPayload *anypb.Any `protobuf:"bytes,5,opt,name=configPayload,proto3" json:"configPayload,omitempty"`
 	// Used for no DAG SDK
-	Method       string `protobuf:"bytes,6,opt,name=method,proto3" json:"method,omitempty"`
-	CapabilityId string `protobuf:"bytes,7,opt,name=capabilityId,proto3" json:"capabilityId,omitempty"`
+	Method        string `protobuf:"bytes,6,opt,name=method,proto3" json:"method,omitempty"`
+	CapabilityId  string `protobuf:"bytes,7,opt,name=capabilityId,proto3" json:"capabilityId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CapabilityRequest) Reset() {
@@ -428,18 +425,17 @@ func (x *CapabilityRequest) GetCapabilityId() string {
 }
 
 type TriggerRegistrationRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TriggerId string           `protobuf:"bytes,1,opt,name=triggerId,proto3" json:"triggerId,omitempty"`
-	Metadata  *RequestMetadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	TriggerId string                 `protobuf:"bytes,1,opt,name=triggerId,proto3" json:"triggerId,omitempty"`
+	Metadata  *RequestMetadata       `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Used for DAG SDK
 	Config *pb.Map `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 	// Used for no DAG SDK
 	Payload *anypb.Any `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
 	// Used for no DAG SDK
-	Method string `protobuf:"bytes,5,opt,name=method,proto3" json:"method,omitempty"`
+	Method        string `protobuf:"bytes,5,opt,name=method,proto3" json:"method,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerRegistrationRequest) Reset() {
@@ -508,16 +504,15 @@ func (x *TriggerRegistrationRequest) GetMethod() string {
 }
 
 type TriggerEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TriggerType string `protobuf:"bytes,1,opt,name=triggerType,proto3" json:"triggerType,omitempty"`
-	Id          string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	TriggerType string                 `protobuf:"bytes,1,opt,name=triggerType,proto3" json:"triggerType,omitempty"`
+	Id          string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	// Used for DAG SDK
 	Outputs *pb.Map `protobuf:"bytes,4,opt,name=outputs,proto3" json:"outputs,omitempty"`
 	// used for no DAG SDK
-	Payload *anypb.Any `protobuf:"bytes,6,opt,name=payload,proto3" json:"payload,omitempty"`
+	Payload       *anypb.Any `protobuf:"bytes,6,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerEvent) Reset() {
@@ -579,12 +574,11 @@ func (x *TriggerEvent) GetPayload() *anypb.Any {
 }
 
 type TriggerResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Event         *TriggerEvent          `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Event *TriggerEvent `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
-	Error string        `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerResponse) Reset() {
@@ -632,15 +626,14 @@ func (x *TriggerResponse) GetError() string {
 }
 
 type TriggerResponseMessage struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Message:
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Message:
 	//
 	//	*TriggerResponseMessage_Ack
 	//	*TriggerResponseMessage_Response
-	Message isTriggerResponseMessage_Message `protobuf_oneof:"message"`
+	Message       isTriggerResponseMessage_Message `protobuf_oneof:"message"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerResponseMessage) Reset() {
@@ -673,23 +666,27 @@ func (*TriggerResponseMessage) Descriptor() ([]byte, []int) {
 	return file_capabilities_proto_rawDescGZIP(), []int{7}
 }
 
-func (m *TriggerResponseMessage) GetMessage() isTriggerResponseMessage_Message {
-	if m != nil {
-		return m.Message
+func (x *TriggerResponseMessage) GetMessage() isTriggerResponseMessage_Message {
+	if x != nil {
+		return x.Message
 	}
 	return nil
 }
 
 func (x *TriggerResponseMessage) GetAck() *emptypb.Empty {
-	if x, ok := x.GetMessage().(*TriggerResponseMessage_Ack); ok {
-		return x.Ack
+	if x != nil {
+		if x, ok := x.Message.(*TriggerResponseMessage_Ack); ok {
+			return x.Ack
+		}
 	}
 	return nil
 }
 
 func (x *TriggerResponseMessage) GetResponse() *TriggerResponse {
-	if x, ok := x.GetMessage().(*TriggerResponseMessage_Response); ok {
-		return x.Response
+	if x != nil {
+		if x, ok := x.Message.(*TriggerResponseMessage_Response); ok {
+			return x.Response
+		}
 	}
 	return nil
 }
@@ -711,16 +708,15 @@ func (*TriggerResponseMessage_Ack) isTriggerResponseMessage_Message() {}
 func (*TriggerResponseMessage_Response) isTriggerResponseMessage_Message() {}
 
 type CapabilityResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// Used for DAG SDK
 	Value    *pb.Map           `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	Error    string            `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	Metadata *ResponseMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Used for no DAG SDK
-	Payload *anypb.Any `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
+	Payload       *anypb.Any `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CapabilityResponse) Reset() {
@@ -782,10 +778,7 @@ func (x *CapabilityResponse) GetPayload() *anypb.Any {
 }
 
 type ResponseMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// MeteringReportNodeDetail is repeated here due to
 	// the identical response aggregation strategy at the Don2Don layer.
 	// We expect identical responses from capabilities, but not identical
@@ -795,7 +788,9 @@ type ResponseMetadata struct {
 	//
 	// If you are working with this in a capability, you should not emit
 	// more than one metering report per node.
-	Metering []*pb1.MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
+	Metering      []*pb1.MeteringReportNodeDetail `protobuf:"bytes,1,rep,name=metering,proto3" json:"metering,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResponseMetadata) Reset() {
@@ -836,13 +831,12 @@ func (x *ResponseMetadata) GetMetering() []*pb1.MeteringReportNodeDetail {
 }
 
 type RegistrationMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkflowId    string                 `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
+	ReferenceId   string                 `protobuf:"bytes,2,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
+	WorkflowOwner string                 `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	WorkflowId    string `protobuf:"bytes,1,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
-	ReferenceId   string `protobuf:"bytes,2,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
-	WorkflowOwner string `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RegistrationMetadata) Reset() {
@@ -897,12 +891,11 @@ func (x *RegistrationMetadata) GetWorkflowOwner() string {
 }
 
 type RegisterToWorkflowRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Metadata      *RegistrationMetadata  `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Config        *pb.Map                `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Metadata *RegistrationMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Config   *pb.Map               `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RegisterToWorkflowRequest) Reset() {
@@ -950,12 +943,11 @@ func (x *RegisterToWorkflowRequest) GetConfig() *pb.Map {
 }
 
 type UnregisterFromWorkflowRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Metadata      *RegistrationMetadata  `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Config        *pb.Map                `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Metadata *RegistrationMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Config   *pb.Map               `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UnregisterFromWorkflowRequest) Reset() {
@@ -1013,6 +1005,7 @@ type InitialiseRequest struct {
 	RelayerSetId       uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
 	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
 	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
+	KeyStoreId         uint32                 `protobuf:"varint,10,opt,name=keyStore_id,json=keyStoreId,proto3" json:"keyStore_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1110,12 +1103,18 @@ func (x *InitialiseRequest) GetGatewayConnectorId() uint32 {
 	return 0
 }
 
-type CapabilityInfosReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+func (x *InitialiseRequest) GetKeyStoreId() uint32 {
+	if x != nil {
+		return x.KeyStoreId
+	}
+	return 0
+}
 
-	Infos []*CapabilityInfoReply `protobuf:"bytes,1,rep,name=infos,proto3" json:"infos,omitempty"`
+type CapabilityInfosReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Infos         []*CapabilityInfoReply `protobuf:"bytes,1,rep,name=infos,proto3" json:"infos,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CapabilityInfosReply) Reset() {
@@ -1228,7 +1227,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xf4\x02\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x95\x03\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1239,7 +1238,10 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x10keyValueStore_id\x18\x06 \x01(\rR\x0fkeyValueStoreId\x12$\n" +
 	"\x0erelayer_set_id\x18\a \x01(\rR\frelayerSetId\x12*\n" +
 	"\x11oracle_factory_id\x18\b \x01(\rR\x0foracleFactoryId\x120\n" +
-	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\"O\n" +
+	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\x12\x1f\n" +
+	"\vkeyStore_id\x18\n" +
+	" \x01(\rR\n" +
+	"keyStoreId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +

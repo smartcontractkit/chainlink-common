@@ -13,6 +13,7 @@ import (
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -23,16 +24,15 @@ const (
 )
 
 type RemoteTriggerConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	RegistrationRefresh     *durationpb.Duration `protobuf:"bytes,1,opt,name=registrationRefresh,proto3" json:"registrationRefresh,omitempty"`
-	RegistrationExpiry      *durationpb.Duration `protobuf:"bytes,2,opt,name=registrationExpiry,proto3" json:"registrationExpiry,omitempty"`
-	MinResponsesToAggregate uint32               `protobuf:"varint,3,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
-	MessageExpiry           *durationpb.Duration `protobuf:"bytes,4,opt,name=messageExpiry,proto3" json:"messageExpiry,omitempty"`
-	MaxBatchSize            uint32               `protobuf:"varint,5,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
-	BatchCollectionPeriod   *durationpb.Duration `protobuf:"bytes,6,opt,name=batchCollectionPeriod,proto3" json:"batchCollectionPeriod,omitempty"`
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	RegistrationRefresh     *durationpb.Duration   `protobuf:"bytes,1,opt,name=registrationRefresh,proto3" json:"registrationRefresh,omitempty"`
+	RegistrationExpiry      *durationpb.Duration   `protobuf:"bytes,2,opt,name=registrationExpiry,proto3" json:"registrationExpiry,omitempty"`
+	MinResponsesToAggregate uint32                 `protobuf:"varint,3,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
+	MessageExpiry           *durationpb.Duration   `protobuf:"bytes,4,opt,name=messageExpiry,proto3" json:"messageExpiry,omitempty"`
+	MaxBatchSize            uint32                 `protobuf:"varint,5,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
+	BatchCollectionPeriod   *durationpb.Duration   `protobuf:"bytes,6,opt,name=batchCollectionPeriod,proto3" json:"batchCollectionPeriod,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RemoteTriggerConfig) Reset() {
@@ -108,14 +108,13 @@ func (x *RemoteTriggerConfig) GetBatchCollectionPeriod() *durationpb.Duration {
 }
 
 type RemoteTargetConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote target
 	// when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
 	// that the hash of logically identical requests is consistent.
 	RequestHashExcludedAttributes []string `protobuf:"bytes,1,rep,name=requestHashExcludedAttributes,proto3" json:"requestHashExcludedAttributes,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *RemoteTargetConfig) Reset() {
@@ -156,16 +155,15 @@ func (x *RemoteTargetConfig) GetRequestHashExcludedAttributes() []string {
 }
 
 type RemoteExecutableConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote executable capability
 	// when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
 	// that the hash of logically identical requests is consistent.
 	RequestHashExcludedAttributes []string             `protobuf:"bytes,1,rep,name=requestHashExcludedAttributes,proto3" json:"requestHashExcludedAttributes,omitempty"`
 	RegistrationRefresh           *durationpb.Duration `protobuf:"bytes,2,opt,name=registrationRefresh,proto3" json:"registrationRefresh,omitempty"`
 	RegistrationExpiry            *durationpb.Duration `protobuf:"bytes,3,opt,name=registrationExpiry,proto3" json:"registrationExpiry,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *RemoteExecutableConfig) Reset() {
@@ -220,12 +218,9 @@ func (x *RemoteExecutableConfig) GetRegistrationExpiry() *durationpb.Duration {
 }
 
 type CapabilityConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	DefaultConfig *pb.Map `protobuf:"bytes,1,opt,name=default_config,json=defaultConfig,proto3" json:"default_config,omitempty"`
-	// Types that are assignable to RemoteConfig:
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DefaultConfig *pb.Map                `protobuf:"bytes,1,opt,name=default_config,json=defaultConfig,proto3" json:"default_config,omitempty"`
+	// Types that are valid to be assigned to RemoteConfig:
 	//
 	//	*CapabilityConfig_RemoteTriggerConfig
 	//	*CapabilityConfig_RemoteTargetConfig
@@ -233,6 +228,8 @@ type CapabilityConfig struct {
 	RemoteConfig     isCapabilityConfig_RemoteConfig `protobuf_oneof:"remote_config"`
 	RestrictedConfig *pb.Map                         `protobuf:"bytes,5,opt,name=restricted_config,json=restrictedConfig,proto3" json:"restricted_config,omitempty"`
 	RestrictedKeys   []string                        `protobuf:"bytes,6,rep,name=restricted_keys,json=restrictedKeys,proto3" json:"restricted_keys,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CapabilityConfig) Reset() {
@@ -272,30 +269,36 @@ func (x *CapabilityConfig) GetDefaultConfig() *pb.Map {
 	return nil
 }
 
-func (m *CapabilityConfig) GetRemoteConfig() isCapabilityConfig_RemoteConfig {
-	if m != nil {
-		return m.RemoteConfig
+func (x *CapabilityConfig) GetRemoteConfig() isCapabilityConfig_RemoteConfig {
+	if x != nil {
+		return x.RemoteConfig
 	}
 	return nil
 }
 
 func (x *CapabilityConfig) GetRemoteTriggerConfig() *RemoteTriggerConfig {
-	if x, ok := x.GetRemoteConfig().(*CapabilityConfig_RemoteTriggerConfig); ok {
-		return x.RemoteTriggerConfig
+	if x != nil {
+		if x, ok := x.RemoteConfig.(*CapabilityConfig_RemoteTriggerConfig); ok {
+			return x.RemoteTriggerConfig
+		}
 	}
 	return nil
 }
 
 func (x *CapabilityConfig) GetRemoteTargetConfig() *RemoteTargetConfig {
-	if x, ok := x.GetRemoteConfig().(*CapabilityConfig_RemoteTargetConfig); ok {
-		return x.RemoteTargetConfig
+	if x != nil {
+		if x, ok := x.RemoteConfig.(*CapabilityConfig_RemoteTargetConfig); ok {
+			return x.RemoteTargetConfig
+		}
 	}
 	return nil
 }
 
 func (x *CapabilityConfig) GetRemoteExecutableConfig() *RemoteExecutableConfig {
-	if x, ok := x.GetRemoteConfig().(*CapabilityConfig_RemoteExecutableConfig); ok {
-		return x.RemoteExecutableConfig
+	if x != nil {
+		if x, ok := x.RemoteConfig.(*CapabilityConfig_RemoteExecutableConfig); ok {
+			return x.RemoteExecutableConfig
+		}
 	}
 	return nil
 }

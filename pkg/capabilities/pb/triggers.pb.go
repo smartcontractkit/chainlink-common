@@ -12,6 +12,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -22,14 +23,13 @@ const (
 )
 
 type OCRTriggerEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	ConfigDigest  []byte                           `protobuf:"bytes,1,opt,name=configDigest,proto3" json:"configDigest,omitempty"`
+	SeqNr         uint64                           `protobuf:"varint,2,opt,name=seqNr,proto3" json:"seqNr,omitempty"`
+	Report        []byte                           `protobuf:"bytes,3,opt,name=report,proto3" json:"report,omitempty"` // marshalled OCRTriggerReport
+	Sigs          []*OCRAttributedOnchainSignature `protobuf:"bytes,4,rep,name=sigs,proto3" json:"sigs,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	ConfigDigest []byte                           `protobuf:"bytes,1,opt,name=configDigest,proto3" json:"configDigest,omitempty"`
-	SeqNr        uint64                           `protobuf:"varint,2,opt,name=seqNr,proto3" json:"seqNr,omitempty"`
-	Report       []byte                           `protobuf:"bytes,3,opt,name=report,proto3" json:"report,omitempty"` // marshalled OCRTriggerReport
-	Sigs         []*OCRAttributedOnchainSignature `protobuf:"bytes,4,rep,name=sigs,proto3" json:"sigs,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OCRTriggerEvent) Reset() {
@@ -91,13 +91,12 @@ func (x *OCRTriggerEvent) GetSigs() []*OCRAttributedOnchainSignature {
 }
 
 type OCRAttributedOnchainSignature struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Signature []byte `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Signature []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
 	// signer is actually a uint8 but uint32 is the smallest supported by protobuf
-	Signer uint32 `protobuf:"varint,2,opt,name=signer,proto3" json:"signer,omitempty"`
+	Signer        uint32 `protobuf:"varint,2,opt,name=signer,proto3" json:"signer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OCRAttributedOnchainSignature) Reset() {
@@ -145,13 +144,12 @@ func (x *OCRAttributedOnchainSignature) GetSigner() uint32 {
 }
 
 type OCRTriggerReport struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EventID       string                 `protobuf:"bytes,1,opt,name=eventID,proto3" json:"eventID,omitempty"`      // unique, scoped to the trigger capability
+	Timestamp     uint64                 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // used to enforce freshness
+	Outputs       *pb.Map                `protobuf:"bytes,3,opt,name=outputs,proto3" json:"outputs,omitempty"`      // contains trigger-specific data
 	unknownFields protoimpl.UnknownFields
-
-	EventID   string  `protobuf:"bytes,1,opt,name=eventID,proto3" json:"eventID,omitempty"`      // unique, scoped to the trigger capability
-	Timestamp uint64  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // used to enforce freshness
-	Outputs   *pb.Map `protobuf:"bytes,3,opt,name=outputs,proto3" json:"outputs,omitempty"`      // contains trigger-specific data
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OCRTriggerReport) Reset() {

@@ -47,7 +47,11 @@ func (s *Store) Count() int {
 }
 
 func (s *Store) All() ([]*Request, error) {
-	all, err := s.FirstN(len(s.requestIDs))
+	countAll := len(s.requestIDs)
+	if countAll == 0 {
+		return nil, nil // no requests in store
+	}
+	all, err := s.FirstN(countAll)
 	if err != nil {
 		return nil, err
 	}

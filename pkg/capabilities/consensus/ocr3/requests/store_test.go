@@ -187,6 +187,6 @@ func TestOCR3Store_AllNCount(t *testing.T) {
 	})
 
 	t.Run("count", func(t *testing.T) {
-		require.Len(t, s, expectedCount)
+		require.Equal(t, s.Count(), expectedCount)
 	})
 }

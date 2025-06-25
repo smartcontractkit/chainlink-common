@@ -57,103 +57,16 @@ func NewReportingPlugin(s *requests.Store, r CapabilityIface, batchSize int, con
 	}, nil
 }
 
-// packToSizeLimit function maximizes the number of requests from Storage being included in a Query batch.
-// It finds the best utilization of space with the protobuf-marshalled structures using logarithmic (binary search)
-// approach to identify the optimal number of Requests that can be serialized without exceeding
-// the limit (defaultBatchSizeMiB).
-func (r *reportingPlugin) packToSizeLimit() ([]string, types.Query, error) {
+func (r *reportingPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Query, error) {
 	all, err := r.s.All()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	var best []byte
-	var bestRequests []*requests.Request
-	var bestExecutionIDs []string
-
-	low, high := 0, len(all)
-
-	optRound := 0
-
-	for low < high {
-		mid := (low + high) / 2
-		if mid == 0 {
-			mid = 1 // poor man's ceil
-		}
-		candidate := all[:mid]
-		executionIDs, serialized, err := r.serializeQueries(candidate)
-		if err != nil {
-			return nil, nil, err
-		}
-		size := len(serialized)
-
-		r.lggr.Debugw(
-			"packToSizeLimit: optimizing batch size",
-			"optRound",
-			optRound,
-			"low",
-			low,
-			"mid",
-			mid,
-			"high",
-			high,
-			"size",
-			size,
-		)
-
-		if size <= defaultBatchSizeMiB {
-			best = serialized
-			bestRequests = candidate
-			bestExecutionIDs = executionIDs
-			low = mid + 1 // try more Requests
-		} else {
-			high = mid - 1 // try fewer Requests
-		}
-
-		optRound++
-	}
-
-	r.lggr.Debugw(
-		"packToSizeLimit: best batch size",
-		"len",
-		len(bestRequests),
-		"size",
-		len(best),
-		"maxSize",
-		defaultBatchSizeMiB,
-		"optRound",
-		optRound,
+	allExecutionIDs, serializedBatch, err := packToSizeLimit(
+		r.lggr,
+		QueriesSerializable{all},
 	)
-
-	return bestExecutionIDs, best, nil
-}
-
-// serializeQueries marshals batch of Requests into a protobuf.
-func (r *reportingPlugin) serializeQueries(batch []*requests.Request) ([]string, types.Query, error) {
-	ids := make([]*pbtypes.Id, 0)
-	allExecutionIDs := make([]string, 0)
-	for _, rq := range batch {
-		ids = append(ids, &pbtypes.Id{
-			WorkflowExecutionId:      rq.WorkflowExecutionID,
-			WorkflowId:               rq.WorkflowID,
-			WorkflowOwner:            rq.WorkflowOwner,
-			WorkflowName:             rq.WorkflowName,
-			WorkflowDonId:            rq.WorkflowDonID,
-			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
-			ReportId:                 rq.ReportID,
-			KeyId:                    rq.KeyID,
-		})
-		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
-	}
-
-	serialized, err := proto.MarshalOptions{Deterministic: true}.Marshal(&pbtypes.Query{
-		Ids: ids,
-	})
-	return allExecutionIDs, serialized, err
-}
-
-func (r *reportingPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Query, error) {
-	allExecutionIDs, serializedBatch, err := r.packToSizeLimit()
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -186,57 +99,24 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		reqMap[req.WorkflowExecutionID] = req
 	}
 
-	obs := &pbtypes.Observations{}
-	allExecutionIDs := []string{}
-	for _, weid := range weids {
-		rq, ok := reqMap[weid]
-		if !ok {
-			r.lggr.Debugw("could not find local observations for weid requested in the query", "executionID", weid)
-			continue
-		}
+	registeredWorkflowIDs := r.r.GetRegisteredWorkflowsIDs()
 
-		lggr := logger.With(
-			r.lggr,
-			"executionID", rq.WorkflowExecutionID,
-			"workflowID", rq.WorkflowID,
-		)
+	allExecutionIDs, obs, _ := packToSizeLimit(
+		r.lggr,
+		ObservationSerializable{reqMap, registeredWorkflowIDs},
+	)
 
-		listProto := values.Proto(rq.Observations).GetListValue()
-		if listProto == nil {
-			lggr.Errorw("observations are not a list")
-			continue
-		}
+	r.lggr.Debugw(
+		"Observation complete",
+		"len",
+		len(obs),
+		"queryLen",
+		len(queryReq.Ids),
+		"allExecutionIDs",
+		allExecutionIDs,
+	)
 
-		var cfgProto *pb.Map
-		if rq.OverriddenEncoderConfig != nil {
-			cp := values.Proto(rq.OverriddenEncoderConfig).GetMapValue()
-			cfgProto = cp
-		}
-
-		newOb := &pbtypes.Observation{
-			Observations: listProto,
-			Id: &pbtypes.Id{
-				WorkflowExecutionId:      rq.WorkflowExecutionID,
-				WorkflowId:               rq.WorkflowID,
-				WorkflowOwner:            rq.WorkflowOwner,
-				WorkflowName:             rq.WorkflowName,
-				WorkflowDonId:            rq.WorkflowDonID,
-				WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
-				ReportId:                 rq.ReportID,
-				KeyId:                    rq.KeyID,
-			},
-			OverriddenEncoderName:   rq.OverriddenEncoderName,
-			OverriddenEncoderConfig: cfgProto,
-		}
-
-		obs.Observations = append(obs.Observations, newOb)
-		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
-	}
-	obs.RegisteredWorkflowIds = r.r.GetRegisteredWorkflowsIDs()
-	obs.Timestamp = timestamppb.New(time.Now())
-
-	r.lggr.Debugw("Observation complete", "len", len(obs.Observations), "queryLen", len(queryReq.Ids), "allExecutionIDs", allExecutionIDs)
-	return proto.MarshalOptions{Deterministic: true}.Marshal(obs)
+	return obs, nil
 }
 
 func (r *reportingPlugin) ValidateObservation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, ao types.AttributedObservation) error {

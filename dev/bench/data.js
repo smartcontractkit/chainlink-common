@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750860338910,
+  "lastUpdate": 1750864871684,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16632,6 +16632,48 @@ window.BENCHMARK_DATA = {
             "value": 28367,
             "unit": "ns/op",
             "extra": "42562 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5648b4dd059b693d790a8db3f24df228241eab7c",
+          "message": "More verbose error message for incompatible trigger event protos (#1294)",
+          "timestamp": "2025-06-25T15:20:10Z",
+          "tree_id": "13558e85b4fe084ba0aa5cdc06653c93507fc0ee",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5648b4dd059b693d790a8db3f24df228241eab7c"
+        },
+        "date": 1750864870777,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.1,
+            "unit": "ns/op",
+            "extra": "3289532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.7,
+            "unit": "ns/op",
+            "extra": "2966493 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28300,
+            "unit": "ns/op",
+            "extra": "42404 times\n4 procs"
           }
         ]
       }

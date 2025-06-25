@@ -17,9 +17,8 @@ type OutboundHTTPRequest struct {
 }
 
 type OutboundHTTPResponse struct {
-	ExecutionError bool              `json:"executionError"`         // true if there were non-HTTP errors. false if HTTP request was sent regardless of status (2xx, 4xx, 5xx)
-	ErrorMessage   string            `json:"errorMessage,omitempty"` // error message in case of failure
-	StatusCode     int               `json:"statusCode,omitempty"`   // HTTP status code
-	Headers        map[string]string `json:"headers,omitempty"`      // HTTP headers
-	Body           []byte            `json:"body,omitempty"`         // HTTP response body
+	ErrorMessage string            `json:"errorMessage,omitempty"` // error message in case of execution errors. i.e. errors before or after attempting HTTP call to external client
+	StatusCode   int               `json:"statusCode,omitempty"`   // HTTP status code
+	Headers      map[string]string `json:"headers,omitempty"`      // HTTP headers
+	Body         []byte            `json:"body,omitempty"`         // HTTP response body
 }

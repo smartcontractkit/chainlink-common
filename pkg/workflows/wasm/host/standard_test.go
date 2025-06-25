@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -363,8 +365,13 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionRe
 // To re-use a binary, an outer test can create the module and use t.Run to run subtests using that module.
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
-	testName := strcase.ToSnake(t.Name()[len("Test"):]) + "/test.wasm"
-	cmd := exec.Command("make", testName) // #nosec
+	testName := strcase.ToSnake(t.Name()[len("Test"):])
+	return makeTestModuleByName(t, testName)
+}
+
+func makeTestModuleByName(t *testing.T, testName string) *module {
+	wasmName := path.Join(testName, "test.wasm")
+	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
 	cmd.Dir = absPath
@@ -372,13 +379,20 @@ func makeTestModule(t *testing.T) *module {
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	binary, err := os.ReadFile(filepath.Join(absPath, testName))
+	binary, err := os.ReadFile(filepath.Join(absPath, wasmName))
 	require.NoError(t, err)
 
 	cfg := defaultNoDAGModCfg(t)
 	mod, err := NewModule(cfg, binary)
 	require.NoError(t, err)
 	return mod
+}
+
+func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
+	return &ModuleConfig{
+		Logger:         logger.Test(t),
+		IsUncompressed: true,
+	}
 }
 
 func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {

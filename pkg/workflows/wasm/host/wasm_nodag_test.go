@@ -5,65 +5,35 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const (
-	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
-	nodagBinaryLocation             = nodagBinaryCmd + "/testmodule.wasm"
-	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
-	nodagMultiTriggerBinaryLocation = nodagMultiTriggerBinaryCmd + "/testmodule.wasm"
-	nodagRandomBinaryCmd            = "test/nodag/randoms/cmd"
-	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
-)
-
-var wordList = []string{"Hello, ", "world", "!"}
-
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 
-	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
+	// Any of the test binaries that do subscription can be used here.
+	m := makeTestModuleByName(t, "multiple_triggers")
+	m.Start()
+	defer m.Close()
 
 	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
-		mc := defaultNoDAGModCfg(t)
-		m, err := NewModule(mc, binary)
-		require.NoError(t, err)
-
-		m.Start()
-		defer m.Close()
-
 		ctx := t.Context()
 		req := &pb.ExecuteRequest{
 			Request: &pb.ExecuteRequest_Trigger{},
 		}
 
-		_, err = m.Execute(ctx, req, nil)
+		_, err := m.Execute(ctx, req, nil)
 		require.Error(t, err)
 		require.ErrorContains(t, err, "invalid capability executor")
 	})
 
 	t.Run("OK can subscribe without setting ExecutionHelper", func(t *testing.T) {
-		mc := defaultNoDAGModCfg(t)
-		m, err := NewModule(mc, binary)
-		require.NoError(t, err)
-
-		m.Start()
-		defer m.Close()
-
 		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
-		require.Equal(t, len(triggers.Subscriptions), 1)
+		require.Equal(t, len(triggers.Subscriptions), 3)
 	})
-}
-
-func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
-	return &ModuleConfig{
-		Logger:         logger.Test(t),
-		IsUncompressed: true,
-	}
 }
 
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscriptionRequest, error) {

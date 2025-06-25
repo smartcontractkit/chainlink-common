@@ -1,6 +1,8 @@
 package sdk
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -21,11 +23,11 @@ func handler[R, C any, M proto.Message, T any, O any](trigger Trigger[M, T], cal
 	wrapped := func(env *Environment[C], runtime R, payload *anypb.Any) (any, error) {
 		unwrappedTrigger := trigger.NewT()
 		if err := payload.UnmarshalTo(unwrappedTrigger); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to unmarshal trigger event: %w", err)
 		}
 		input, err := trigger.Adapt(unwrappedTrigger)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to adapt trigger event: %w", err)
 		}
 		return callback(env, runtime, input)
 	}

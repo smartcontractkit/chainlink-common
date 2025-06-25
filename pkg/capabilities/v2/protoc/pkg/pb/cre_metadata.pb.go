@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/protoc/pkg/pb/cre_metadata.proto
+// source: tools/generator/v1alpha/cre_metadata.proto
 
 package pb
 
@@ -25,7 +25,7 @@ const (
 
 type CapabilityMetadata struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Mode          pb.Mode                `protobuf:"varint,1,opt,name=mode,proto3,enum=cre.sdk.v2.Mode" json:"mode,omitempty"`
+	Mode          pb.Mode                `protobuf:"varint,1,opt,name=mode,proto3,enum=sdk.v1alpha.Mode" json:"mode,omitempty"`
 	CapabilityId  string                 `protobuf:"bytes,2,opt,name=capability_id,json=capabilityId,proto3" json:"capability_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -33,7 +33,7 @@ type CapabilityMetadata struct {
 
 func (x *CapabilityMetadata) Reset() {
 	*x = CapabilityMetadata{}
-	mi := &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes[0]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *CapabilityMetadata) String() string {
 func (*CapabilityMetadata) ProtoMessage() {}
 
 func (x *CapabilityMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes[0]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *CapabilityMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityMetadata.ProtoReflect.Descriptor instead.
 func (*CapabilityMetadata) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescGZIP(), []int{0}
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CapabilityMetadata) GetMode() pb.Mode {
@@ -84,7 +84,7 @@ type CapabilityMethodMetadata struct {
 
 func (x *CapabilityMethodMetadata) Reset() {
 	*x = CapabilityMethodMetadata{}
-	mi := &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes[1]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -96,7 +96,7 @@ func (x *CapabilityMethodMetadata) String() string {
 func (*CapabilityMethodMetadata) ProtoMessage() {}
 
 func (x *CapabilityMethodMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes[1]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,7 +109,7 @@ func (x *CapabilityMethodMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityMethodMetadata.ProtoReflect.Descriptor instead.
 func (*CapabilityMethodMetadata) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescGZIP(), []int{1}
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CapabilityMethodMetadata) GetMapToUntypedApi() bool {
@@ -119,78 +119,78 @@ func (x *CapabilityMethodMetadata) GetMapToUntypedApi() bool {
 	return false
 }
 
-var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes = []protoimpl.ExtensionInfo{
+var file_tools_generator_v1alpha_cre_metadata_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
 		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
 		ExtensionType: (*CapabilityMetadata)(nil),
 		Field:         50000,
-		Name:          "cre.metadata.capability",
+		Name:          "tools.generator.v1alpha.capability",
 		Tag:           "bytes,50000,opt,name=capability",
-		Filename:      "capabilities/v2/protoc/pkg/pb/cre_metadata.proto",
+		Filename:      "tools/generator/v1alpha/cre_metadata.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.MethodOptions)(nil),
 		ExtensionType: (*CapabilityMethodMetadata)(nil),
 		Field:         50001,
-		Name:          "cre.metadata.method",
+		Name:          "tools.generator.v1alpha.method",
 		Tag:           "bytes,50001,opt,name=method",
-		Filename:      "capabilities/v2/protoc/pkg/pb/cre_metadata.proto",
+		Filename:      "tools/generator/v1alpha/cre_metadata.proto",
 	},
 }
 
 // Extension fields to descriptorpb.ServiceOptions.
 var (
-	// optional cre.metadata.CapabilityMetadata capability = 50000;
-	E_Capability = &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes[0] // 50000-99999 is the range for custom options.
+	// optional tools.generator.v1alpha.CapabilityMetadata capability = 50000;
+	E_Capability = &file_tools_generator_v1alpha_cre_metadata_proto_extTypes[0] // 50000-99999 is the range for custom options.
 )
 
 // Extension fields to descriptorpb.MethodOptions.
 var (
-	// optional cre.metadata.CapabilityMethodMetadata method = 50001;
-	E_Method = &file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes[1] // 50000-99999 is the range for custom options.
+	// optional tools.generator.v1alpha.CapabilityMethodMetadata method = 50001;
+	E_Method = &file_tools_generator_v1alpha_cre_metadata_proto_extTypes[1] // 50000-99999 is the range for custom options.
 )
 
-var File_capabilities_v2_protoc_pkg_pb_cre_metadata_proto protoreflect.FileDescriptor
+var File_tools_generator_v1alpha_cre_metadata_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc = "" +
+const file_tools_generator_v1alpha_cre_metadata_proto_rawDesc = "" +
 	"\n" +
-	"0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x12\fcre.metadata\x1a google/protobuf/descriptor.proto\x1a\x1dworkflows/sdk/v2/pb/sdk.proto\"_\n" +
-	"\x12CapabilityMetadata\x12$\n" +
-	"\x04mode\x18\x01 \x01(\x0e2\x10.cre.sdk.v2.ModeR\x04mode\x12#\n" +
+	"*tools/generator/v1alpha/cre_metadata.proto\x12\x17tools.generator.v1alpha\x1a google/protobuf/descriptor.proto\x1a\x15sdk/v1alpha/sdk.proto\"`\n" +
+	"\x12CapabilityMetadata\x12%\n" +
+	"\x04mode\x18\x01 \x01(\x0e2\x11.sdk.v1alpha.ModeR\x04mode\x12#\n" +
 	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId\"G\n" +
 	"\x18CapabilityMethodMetadata\x12+\n" +
-	"\x12map_to_untyped_api\x18\x01 \x01(\bR\x0fmapToUntypedApi:c\n" +
+	"\x12map_to_untyped_api\x18\x01 \x01(\bR\x0fmapToUntypedApi:n\n" +
 	"\n" +
-	"capability\x12\x1f.google.protobuf.ServiceOptions\x18І\x03 \x01(\v2 .cre.metadata.CapabilityMetadataR\n" +
-	"capability:`\n" +
-	"\x06method\x12\x1e.google.protobuf.MethodOptions\x18ц\x03 \x01(\v2&.cre.metadata.CapabilityMethodMetadataR\x06methodBPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pbb\x06proto3"
+	"capability\x12\x1f.google.protobuf.ServiceOptions\x18І\x03 \x01(\v2+.tools.generator.v1alpha.CapabilityMetadataR\n" +
+	"capability:k\n" +
+	"\x06method\x12\x1e.google.protobuf.MethodOptions\x18ц\x03 \x01(\v21.tools.generator.v1alpha.CapabilityMethodMetadataR\x06methodb\x06proto3"
 
 var (
-	file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescOnce sync.Once
-	file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescData []byte
+	file_tools_generator_v1alpha_cre_metadata_proto_rawDescOnce sync.Once
+	file_tools_generator_v1alpha_cre_metadata_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc)))
+func file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP() []byte {
+	file_tools_generator_v1alpha_cre_metadata_proto_rawDescOnce.Do(func() {
+		file_tools_generator_v1alpha_cre_metadata_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tools_generator_v1alpha_cre_metadata_proto_rawDesc), len(file_tools_generator_v1alpha_cre_metadata_proto_rawDesc)))
 	})
-	return file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDescData
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescData
 }
 
-var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_goTypes = []any{
-	(*CapabilityMetadata)(nil),          // 0: cre.metadata.CapabilityMetadata
-	(*CapabilityMethodMetadata)(nil),    // 1: cre.metadata.CapabilityMethodMetadata
-	(pb.Mode)(0),                        // 2: cre.sdk.v2.Mode
+var file_tools_generator_v1alpha_cre_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_tools_generator_v1alpha_cre_metadata_proto_goTypes = []any{
+	(*CapabilityMetadata)(nil),          // 0: tools.generator.v1alpha.CapabilityMetadata
+	(*CapabilityMethodMetadata)(nil),    // 1: tools.generator.v1alpha.CapabilityMethodMetadata
+	(pb.Mode)(0),                        // 2: sdk.v1alpha.Mode
 	(*descriptorpb.ServiceOptions)(nil), // 3: google.protobuf.ServiceOptions
 	(*descriptorpb.MethodOptions)(nil),  // 4: google.protobuf.MethodOptions
 }
-var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_depIdxs = []int32{
-	2, // 0: cre.metadata.CapabilityMetadata.mode:type_name -> cre.sdk.v2.Mode
-	3, // 1: cre.metadata.capability:extendee -> google.protobuf.ServiceOptions
-	4, // 2: cre.metadata.method:extendee -> google.protobuf.MethodOptions
-	0, // 3: cre.metadata.capability:type_name -> cre.metadata.CapabilityMetadata
-	1, // 4: cre.metadata.method:type_name -> cre.metadata.CapabilityMethodMetadata
+var file_tools_generator_v1alpha_cre_metadata_proto_depIdxs = []int32{
+	2, // 0: tools.generator.v1alpha.CapabilityMetadata.mode:type_name -> sdk.v1alpha.Mode
+	3, // 1: tools.generator.v1alpha.capability:extendee -> google.protobuf.ServiceOptions
+	4, // 2: tools.generator.v1alpha.method:extendee -> google.protobuf.MethodOptions
+	0, // 3: tools.generator.v1alpha.capability:type_name -> tools.generator.v1alpha.CapabilityMetadata
+	1, // 4: tools.generator.v1alpha.method:type_name -> tools.generator.v1alpha.CapabilityMethodMetadata
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	3, // [3:5] is the sub-list for extension type_name
@@ -198,27 +198,27 @@ var file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_init() }
-func file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_init() {
-	if File_capabilities_v2_protoc_pkg_pb_cre_metadata_proto != nil {
+func init() { file_tools_generator_v1alpha_cre_metadata_proto_init() }
+func file_tools_generator_v1alpha_cre_metadata_proto_init() {
+	if File_tools_generator_v1alpha_cre_metadata_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tools_generator_v1alpha_cre_metadata_proto_rawDesc), len(file_tools_generator_v1alpha_cre_metadata_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 2,
 			NumServices:   0,
 		},
-		GoTypes:           file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_depIdxs,
-		MessageInfos:      file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_msgTypes,
-		ExtensionInfos:    file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_extTypes,
+		GoTypes:           file_tools_generator_v1alpha_cre_metadata_proto_goTypes,
+		DependencyIndexes: file_tools_generator_v1alpha_cre_metadata_proto_depIdxs,
+		MessageInfos:      file_tools_generator_v1alpha_cre_metadata_proto_msgTypes,
+		ExtensionInfos:    file_tools_generator_v1alpha_cre_metadata_proto_extTypes,
 	}.Build()
-	File_capabilities_v2_protoc_pkg_pb_cre_metadata_proto = out.File
-	file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_goTypes = nil
-	file_capabilities_v2_protoc_pkg_pb_cre_metadata_proto_depIdxs = nil
+	File_tools_generator_v1alpha_cre_metadata_proto = out.File
+	file_tools_generator_v1alpha_cre_metadata_proto_goTypes = nil
+	file_tools_generator_v1alpha_cre_metadata_proto_depIdxs = nil
 }

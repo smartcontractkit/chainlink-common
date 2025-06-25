@@ -69,7 +69,7 @@ type StandardCapabilities interface {
 		pipelineRunner core.PipelineRunnerService,
 		relayerSet core.RelayerSet,
 		oracleFactory core.OracleFactory,
-		keystore core.Keystore,
+		gatewayConnector core.GatewayConnector,
 	) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }

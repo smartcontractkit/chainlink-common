@@ -14,6 +14,10 @@ import (
 type RuntimeHelpers interface {
 	Call(request *pb.CapabilityRequest) error
 	Await(request *pb.AwaitCapabilitiesRequest, maxResponseSize uint64) (*pb.AwaitCapabilitiesResponse, error)
+
+	GetSecrets(request *pb.GetSecretsRequest, maxResponseSize uint64) error
+	AwaitSecrets(request *pb.AwaitSecretsRequest, maxResponseSize uint64) (*pb.AwaitSecretsResponse, error)
+
 	SwitchModes(mode pb.Mode)
 	GetSource(mode pb.Mode) rand.Source
 }
@@ -22,10 +26,19 @@ type RuntimeBase struct {
 	MaxResponseSize uint64
 	RuntimeHelpers
 
-	source     rand.Source
-	source64   rand.Source64
-	modeErr    error
-	Mode       pb.Mode
+	source   rand.Source
+	source64 rand.Source64
+	modeErr  error
+	Mode     pb.Mode
+
+	// nextCallId tracks the unique id for a request to the WASM host.
+	// to avoid collisions of the ID in different modes, it is
+	// incremented in DON mode and decremented in Node mode.
+	// eg. - first call don mode: nextCallId = 1
+	//     - second call: nextCallId = 2
+	//     - first call node mode: nextCallId = -1
+	//     - second call node mode: nextCallId = -2
+	//     - etc...
 	nextCallId int32
 }
 
@@ -34,7 +47,7 @@ var _ rand.Source = (*RuntimeBase)(nil)
 var _ rand.Source64 = (*RuntimeBase)(nil)
 
 func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
-	if r.Mode == pb.Mode_DON {
+	if r.Mode == pb.Mode_MODE_DON {
 		r.nextCallId++
 	} else {
 		r.nextCallId--
@@ -90,14 +103,53 @@ type Runtime struct {
 	nextNodeCallId int32
 }
 
+func (d *Runtime) GetSecret(req *pb.SecretRequest) sdk.Promise[*pb.Secret] {
+	d.nextCallId++
+
+	sr := &pb.GetSecretsRequest{
+		Requests:   []*pb.SecretRequest{req},
+		CallbackId: d.nextCallId,
+	}
+
+	err := d.RuntimeHelpers.GetSecrets(sr, d.MaxResponseSize)
+	if err != nil {
+		return sdk.PromiseFromResult[*pb.Secret](nil, err)
+	}
+
+	return sdk.NewBasicPromise(func() (*pb.Secret, error) {
+		awaitRequest := &pb.AwaitSecretsRequest{
+			Ids: []int32{d.nextCallId},
+		}
+		awaitResponse, err := d.AwaitSecrets(awaitRequest, d.MaxResponseSize)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, ok := awaitResponse.Responses[d.nextCallId]
+		if !ok {
+			return nil, fmt.Errorf("cannot find response for %d", d.nextCallId)
+		}
+
+		if len(resp.Responses) != 1 {
+			return nil, fmt.Errorf("expected 1 response, got %d", len(resp.Responses))
+		}
+
+		if resp.Responses[0].GetError() != "" {
+			return nil, fmt.Errorf("error getting secret %s: %s", req.Id, resp.Responses[0].GetError())
+		}
+
+		return resp.Responses[0].GetSecret(), nil
+	})
+}
+
 func (d *Runtime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	nrt := &NodeRuntime{RuntimeBase: d.RuntimeBase}
 	nrt.nextCallId = d.nextNodeCallId
-	nrt.Mode = pb.Mode_Node
+	nrt.Mode = pb.Mode_MODE_NODE
 	d.modeErr = sdk.DonModeCallInNodeMode()
-	d.SwitchModes(pb.Mode_Node)
+	d.SwitchModes(pb.Mode_MODE_NODE)
 	observation := fn(nrt)
-	d.SwitchModes(pb.Mode_DON)
+	d.SwitchModes(pb.Mode_MODE_DON)
 	nrt.modeErr = sdk.NodeModeCallInDonMode()
 	d.modeErr = nil
 	d.nextNodeCallId = nrt.nextCallId

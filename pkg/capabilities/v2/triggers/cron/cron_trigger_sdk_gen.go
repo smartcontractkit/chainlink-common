@@ -30,7 +30,7 @@ func (*cronTrigger) NewT() *Payload {
 }
 
 func (*cronTrigger) CapabilityID() string {
-	return "cron-trigger@1.1.0"
+	return "cron-trigger@1.0.0"
 }
 
 func (*cronTrigger) Method() string {

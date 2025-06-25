@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 package capabilities;
 
-import "values/pb/values.proto";
+import "values/v1/values.proto";
 import "metering/pb/meteringdetail.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
@@ -52,9 +52,9 @@ message RequestMetadata {
 message CapabilityRequest {
   RequestMetadata metadata = 1;
   // Used for DAG SDK
-  values.Map config = 2;
+  values.v1.Map config = 2;
   // Used for DAG SDK
-  values.Map inputs = 3;
+  values.v1.Map inputs = 3;
 
   // Used for no DAG SDK
   google.protobuf.Any payload = 4;
@@ -69,7 +69,7 @@ message TriggerRegistrationRequest {
   string triggerId = 1;
   RequestMetadata metadata = 2;
   // Used for DAG SDK
-  values.Map config = 3;
+  values.v1.Map config = 3;
 
   // Used for no DAG SDK
   google.protobuf.Any payload = 4;
@@ -83,7 +83,7 @@ message TriggerEvent {
   string id = 2;
 
   // Used for DAG SDK
-  values.Map outputs = 4;
+  values.v1.Map outputs = 4;
 
   // used for no DAG SDK
   google.protobuf.Any payload = 6;
@@ -108,7 +108,7 @@ service TriggerExecutable {
 
 message CapabilityResponse {
   // Used for DAG SDK
-  values.Map value = 1;
+  values.v1.Map value = 1;
   string error = 2;
   ResponseMetadata metadata = 3;
   // Used for no DAG SDK
@@ -136,12 +136,12 @@ message RegistrationMetadata {
 
 message RegisterToWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Map config = 2;
+  values.v1.Map config = 2;
 }
 
 message UnregisterFromWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Map config = 2;
+  values.v1.Map config = 2;
 }
 
 service Executable {
@@ -164,7 +164,7 @@ message InitialiseRequest {
   uint32 keyValueStore_id = 6;
   uint32 relayer_set_id = 7;
   uint32 oracle_factory_id = 8;
-  uint32 keystore_id = 9;
+  uint32 gateway_connector_id = 9;
 }
 
 message CapabilityInfosReply {

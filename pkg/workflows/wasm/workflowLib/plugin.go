@@ -117,6 +117,10 @@ func (p *workflowLibPlugin) ValidateObservation(ctx context.Context, oc ocr3type
 		priorOutcome.ObservedDonTimes = map[string]*pb.ObservedDonTimes{}
 	}
 
+	newInvalidRequestError := func(requestSeqNum int64, id string, currSeqNum int) error {
+		return fmt.Errorf("request number %d for id %s is greater than the number of observed don times %d", requestSeqNum, id, currSeqNum)
+	}
+
 	// A DON time beyond the expected number of requests is invalid, as there was never consensus on the prior request, which should be blocking.
 	var err error
 	for id, requestedSeqNumber := range observation.Requests {
@@ -126,15 +130,13 @@ func (p *workflowLibPlugin) ValidateObservation(ctx context.Context, oc ocr3type
 
 		if _, ok := priorOutcome.ObservedDonTimes[id]; !ok {
 			if requestedSeqNumber != 0 {
-				// TODO: Improve error message
-				err = errors.Join(err, fmt.Errorf("request number %d for id %s is greater than the number of observed don times %d", requestedSeqNumber, id, 0))
+				err = errors.Join(err, newInvalidRequestError(requestedSeqNumber, id, 0))
 			}
 			continue
 		}
-
 		seqNum := len(priorOutcome.ObservedDonTimes[id].Timestamps)
 		if requestedSeqNumber > int64(seqNum) {
-			err = errors.Join(err, fmt.Errorf("request number %d for id %s is greater than the number of observed don times %d", requestedSeqNumber, id, seqNum))
+			err = errors.Join(err, newInvalidRequestError(requestedSeqNumber, id, seqNum))
 		}
 	}
 
@@ -146,7 +148,7 @@ func (p *workflowLibPlugin) ObservationQuorum(_ context.Context, _ ocr3types.Out
 }
 
 func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	NumFinishedRequests := map[string]int64{} // counts how many nodes reported it at a point where a new DON timestamp might be needed
+	NumFinishedRequests := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	finishedNodes := map[string]int64{}       // counts number of nodes finished with the workflow for executionID
 	var times []int64
 
@@ -176,12 +178,10 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 			}
 		}
 
-		// Increment number of finished nodes for each executionID this node finished
 		for _, id := range observation.Finished {
 			finishedNodes[id]++
 		}
 
-		// Add current node's observed timestamps
 		times = append(times, observation.Timestamp)
 	}
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750793665587,
+  "lastUpdate": 1750848420385,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16548,6 +16548,48 @@ window.BENCHMARK_DATA = {
             "value": 28140,
             "unit": "ns/op",
             "extra": "42685 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "204c365e1e93f1cd9c9da49da2e00c06b8a59433",
+          "message": "PLEX-1513: update LogTrigger topics API (#1287)\n\n* PLEX-1513: update LogTrigger topics API\n\n* PLEX-1513: update LogTrigger topics API\n\n* generate protos",
+          "timestamp": "2025-06-25T11:45:58+01:00",
+          "tree_id": "06846a276d3a5787cdcd2a52e61c48c59bd7700f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/204c365e1e93f1cd9c9da49da2e00c06b8a59433"
+        },
+        "date": 1750848419336,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.5,
+            "unit": "ns/op",
+            "extra": "3357742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.3,
+            "unit": "ns/op",
+            "extra": "2948400 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28226,
+            "unit": "ns/op",
+            "extra": "42696 times\n4 procs"
           }
         ]
       }

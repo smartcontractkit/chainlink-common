@@ -17,7 +17,7 @@ type Mismatched struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Mismatched) ExampleMethod(runtime sdk.DonRuntime, input *Input) sdk.Promise[*emptypb.Empty] {
+func (c *Mismatched) ExampleMethod(runtime sdk.Runtime, input *Input) sdk.Promise[*emptypb.Empty] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)

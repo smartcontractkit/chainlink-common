@@ -17,13 +17,13 @@ type Consensus struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Consensus) Simple(runtime sdk.DonRuntime, input *pb1.SimpleConsensusInputs) sdk.Promise[*pb.Value] {
+func (c *Consensus) Simple(runtime sdk.Runtime, input *pb1.SimpleConsensusInputs) sdk.Promise[*pb.Value] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*pb.Value](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "offchain_reporting@1.0.0",
+		Id:      "consensus@1.0.0",
 		Payload: wrapped,
 		Method:  "Simple",
 	}), func(i *sdkpb.CapabilityResponse) (*pb.Value, error) {

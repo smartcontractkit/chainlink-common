@@ -4,7 +4,7 @@ package v1;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb";
 
-import "values/pb/values.proto";
+import "values/v1/values.proto";
 
 message OCRTriggerEvent {
   bytes configDigest = 1;
@@ -22,5 +22,5 @@ message OCRAttributedOnchainSignature {
 message OCRTriggerReport {
   string eventID = 1;     // unique, scoped to the trigger capability
   uint64 timestamp = 2;    // used to enforce freshness
-  values.Map outputs = 3; // contains trigger-specific data
+  values.v1.Map outputs = 3; // contains trigger-specific data
 }

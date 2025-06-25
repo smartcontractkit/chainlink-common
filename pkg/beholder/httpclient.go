@@ -76,6 +76,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	// Logger
+
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
@@ -99,7 +100,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
 	}
 	loggerAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "zap_log_message"),
+		attribute.String(AttrKeyDataType, "zap_log_message"),
 	}
 	loggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(loggerAttributes...),
@@ -112,6 +113,12 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		sdklog.WithResource(loggerResource),
 		sdklog.WithProcessor(loggerProcessor),
 	)
+
+	// If log streaming is disabled, use a noop logger provider
+	if !cfg.LogStreamingEnabled {
+		loggerProvider = BeholderNoopLoggerProvider()
+	}
+
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
@@ -153,7 +160,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	messageAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "custom_message"),
+		attribute.String(AttrKeyDataType, "custom_message"),
 	}
 	messageLoggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(messageAttributes...),

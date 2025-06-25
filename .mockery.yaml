@@ -25,6 +25,9 @@ packages:
     interfaces:
       CapabilitiesRegistry:
       Relayer:
+      GatewayConnector:
+      GatewayConnectorHandler:
+      RelayerSet:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
     interfaces:
       OTLPExporter: {}
@@ -38,7 +41,7 @@ packages:
     interfaces:
       ModuleV1: {}
       ModuleV2: {}
-      CapabilityExecutor:
+      ExecutionHelper:
         config:
           inpackage: true
           filename: "mock_{{.InterfaceName | snakecase}}_test.go"

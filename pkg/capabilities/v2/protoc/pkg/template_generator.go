@@ -24,7 +24,7 @@ type templateGenerator struct {
 }
 
 func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
-	
+
 	seen := map[string]int{}
 	importToPkg := map[protogen.GoImportPath]protogen.GoPackageName{}
 	for _, f := range plugin.Files {
@@ -39,7 +39,6 @@ func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 		}
 		importToPkg[f.GoImportPath] = protogen.GoPackageName(alias)
 	}
-
 
 	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg)
 	if err != nil {
@@ -168,10 +167,10 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 			}
 
 			switch md.Mode {
-			case sdkpb.Mode_Node:
+			case sdkpb.Mode_MODE_NODE:
 				return "Node", nil
-			case sdkpb.Mode_DON:
-				return "Don", nil
+			case sdkpb.Mode_MODE_DON:
+				return "", nil
 			default:
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)
 			}

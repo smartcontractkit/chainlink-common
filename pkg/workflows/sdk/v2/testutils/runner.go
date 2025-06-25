@@ -2,8 +2,10 @@ package testutils
 
 import (
 	"errors"
-	"io"
+	"fmt"
 	"log/slog"
+	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,10 +17,32 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type runner[T any] struct {
+type runner[C any] struct {
+	baseRunner[C, sdk.Runtime]
+}
+
+func (r *runner[C]) Run(initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) {
+	wfc := &sdk.Environment[C]{
+		NodeEnvironment: sdk.NodeEnvironment[C]{
+			Config:    r.config,
+			LogWriter: r.writer,
+			Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+		},
+		SecretsProvider: &sdkimpl.Runtime{RuntimeBase: *r.baseRunner.base},
+	}
+	wfs, err := initFn(wfc)
+	if err != nil {
+		r.err = err
+		return
+	}
+
+	r.baseRunner.run(wfs)
+}
+
+type baseRunner[C, T any] struct {
 	tb             testing.TB
 	ran            bool
-	config         []byte
+	config         C
 	result         any
 	err            error
 	workflowId     string
@@ -27,18 +51,12 @@ type runner[T any] struct {
 	runtime        T
 	writer         *testWriter
 	base           *sdkimpl.RuntimeBase
+	source         rand.Source
+	secrets        map[string]string
 }
 
-func (r *runner[T]) Logs() []string {
-	logs := make([]string, len(r.writer.logs))
-	for i, log := range r.writer.logs {
-		logs[i] = string(log)
-	}
-	return logs
-}
-
-func (r *runner[T]) LogWriter() io.Writer {
-	return r.writer
+func (r *runner[T]) SetRandSource(source rand.Source) {
+	r.source = source
 }
 
 type TestRunner interface {
@@ -53,54 +71,69 @@ type TestRunner interface {
 	SetMaxResponseSizeBytes(maxResponseSizebytes uint64)
 
 	Logs() []string
+
+	SetRandSource(source rand.Source)
+
+	SetSecret(id, namespace, value string) error
 }
 
-type DonRunner interface {
-	sdk.DonRunner
+type Runner[C any] interface {
+	sdk.Runner[C]
 	TestRunner
 }
 
-type NodeRunner interface {
-	sdk.NodeRunner
-	TestRunner
+func NewRunner[C any](tb testing.TB, config C) Runner[C] {
+	drt := &sdkimpl.Runtime{}
+	secrets := make(map[string]string)
+	r := newBaseRunner(tb, config, drt, &drt.RuntimeBase, secrets)
+	drt.RuntimeBase = newRuntime(tb, func() rand.Source { return r.source }, secrets)
+	return &runner[C]{baseRunner: newBaseRunner[C, sdk.Runtime](tb, config, drt, &drt.RuntimeBase, secrets)}
 }
 
-func NewDonRunner(tb testing.TB, config []byte) DonRunner {
-	writer := &testWriter{}
-	drt := &sdkimpl.DonRuntime{RuntimeBase: newRuntime(tb, config, writer)}
-	return newRunner[sdk.DonRuntime](tb, config, writer, drt, &drt.RuntimeBase)
-}
-
-func NewNodeRunner(tb testing.TB, config []byte) NodeRunner {
-	writer := &testWriter{}
-	nrt := &sdkimpl.NodeRuntime{RuntimeBase: newRuntime(tb, config, writer)}
-	return newRunner[sdk.NodeRuntime](tb, config, writer, nrt, &nrt.RuntimeBase)
-}
-
-func newRunner[T any](tb testing.TB, config []byte, writer *testWriter, t T, base *sdkimpl.RuntimeBase) *runner[T] {
-	r := &runner[T]{
+func newBaseRunner[C, T any](tb testing.TB, config C, t T, base *sdkimpl.RuntimeBase, secrets map[string]string) baseRunner[C, T] {
+	r := baseRunner[C, T]{
 		tb:         tb,
 		config:     config,
 		workflowId: uuid.NewString(),
 		registry:   registry.GetRegistry(tb),
 		runtime:    t,
-		writer:     writer,
+		writer:     &testWriter{},
 		base:       base,
+		source:     rand.NewSource(1),
+		secrets:    secrets,
 	}
 
 	return r
 }
 
-func (r *runner[T]) SetStrictTriggers(strict bool) {
+func (r *baseRunner[C, T]) SetSecret(namespace, id, value string) error {
+	if strings.Contains(namespace, "/") || strings.Contains(id, "/") {
+		return fmt.Errorf("namespace and id cannot contain '/'")
+	}
+
+	key := fmt.Sprintf("%s/%s", namespace, id)
+	r.secrets[key] = value
+	return nil
+}
+
+func (r *baseRunner[C, T]) SetStrictTriggers(strict bool) {
 	r.strictTriggers = strict
 }
 
-func (r *runner[T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
+func (r *baseRunner[C, T]) SetMaxResponseSizeBytes(maxResponseSizeBytes uint64) {
 	r.base.MaxResponseSize = maxResponseSizeBytes
 }
 
-func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
-	for _, handler := range args.Handlers {
+func (r *baseRunner[C, T]) Logs() []string {
+	logs := make([]string, len(r.writer.logs))
+	for i, log := range r.writer.logs {
+		logs[i] = string(log)
+	}
+	return logs
+}
+
+func (r *baseRunner[C, T]) run(workflows []sdk.ExecutionHandler[C, T]) {
+	for _, handler := range workflows {
 		trigger, err := r.registry.GetCapability(handler.CapabilityID())
 		if err != nil {
 			if r.strictTriggers {
@@ -134,7 +167,22 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 		}
 
 		r.ran = true
-		r.result, r.err = handler.Callback()(r.runtime, response.Payload)
+		env := &sdk.Environment[C]{
+			NodeEnvironment: sdk.NodeEnvironment[C]{
+				Config:    r.config,
+				LogWriter: r.writer,
+				Logger:    slog.New(slog.NewTextHandler(r.writer, nil)),
+			},
+			SecretsProvider: &sdkimpl.Runtime{RuntimeBase: *r.base},
+		}
+		result, err := handler.Callback()(env, r.runtime, response.Payload)
+		// If an error occurred during the callback (eg. via secrets fetching)
+		// we don't want to override it with the result of the callback.
+		if r.err != nil {
+			return
+		}
+		r.result, r.err = result, err
+
 		_, err = values.Wrap(r.result)
 		if err != nil {
 			r.result = nil
@@ -144,20 +192,11 @@ func (r *runner[T]) Run(args *sdk.WorkflowArgs[T]) {
 	}
 }
 
-func (r *runner[T]) Config() []byte {
-	return r.config
-}
-
-func (r *runner[T]) Result() (bool, any, error) {
+func (r *baseRunner[C, T]) Result() (bool, any, error) {
 	return r.ran, r.result, r.err
 }
 
-func (r *runner[T]) Logger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(r.LogWriter(), nil))
-}
-
-var _ sdk.DonRunner = &runner[sdk.DonRuntime]{}
-var _ sdk.NodeRunner = &runner[sdk.NodeRuntime]{}
+var _ sdk.Runner[any] = &runner[any]{}
 
 type TooManyTriggers struct{}
 

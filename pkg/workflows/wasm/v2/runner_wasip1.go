@@ -13,12 +13,11 @@ func sendResponse(response unsafe.Pointer, responseLen int32) int32
 //go:wasmimport env version_v2
 func versionV2()
 
-func NewDonRunner() sdk.DonRunner {
-	return newDonRunner(runnerInternalsImpl{}, runtimeInternalsImpl{})
-}
+//go:wasmimport env switch_modes
+func switchModes(mode int32)
 
-func NewNodeRunner() sdk.NodeRunner {
-	return newNodeRunner(runnerInternalsImpl{}, runtimeInternalsImpl{})
+func NewRunner[C Config](parse func(configBytes []byte) (C, error)) sdk.Runner[C] {
+	return newRunner[C](parse, runnerInternalsImpl{}, runtimeInternalsImpl{})
 }
 
 type runnerInternalsImpl struct{}
@@ -35,4 +34,8 @@ func (r runnerInternalsImpl) sendResponse(response unsafe.Pointer, responseLen i
 
 func (r runnerInternalsImpl) versionV2() {
 	versionV2()
+}
+
+func (r runnerInternalsImpl) switchModes(mode int32) {
+	switchModes(mode)
 }

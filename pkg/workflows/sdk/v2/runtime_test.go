@@ -4,11 +4,13 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"math/rand"
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +18,7 @@ import (
 func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.Environment[string]{}, runtime, func(_ *sdk.NodeEnvironment[string], nr sdk.NodeRuntime) (int, error) {
 		return 42, nil
 	}, sdk.ConsensusMedianAggregation[int]())
 
@@ -28,7 +30,7 @@ func TestRunInNodeMode_SimpleConsensusType(t *testing.T) {
 func TestRunInNodeMode_PrimitiveConsensusWithUnusedDefault(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.Environment[string]{}, runtime, func(_ *sdk.NodeEnvironment[string], nr sdk.NodeRuntime) (int, error) {
 		return 99, nil
 	}, sdk.ConsensusMedianAggregation[int]().WithDefault(100))
 
@@ -40,7 +42,7 @@ func TestRunInNodeMode_PrimitiveConsensusWithUnusedDefault(t *testing.T) {
 func TestRunInNodeMode_PrimitiveConsensusWithUsedDefault(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.Environment[string]{}, runtime, func(_ *sdk.NodeEnvironment[string], nr sdk.NodeRuntime) (int, error) {
 		return 0, errors.New("error")
 	}, sdk.ConsensusMedianAggregation[int]().WithDefault(100))
 
@@ -52,7 +54,7 @@ func TestRunInNodeMode_PrimitiveConsensusWithUsedDefault(t *testing.T) {
 func TestRunInNodeMode_ErrorFromFunction(t *testing.T) {
 	runtime := &mockDonRuntime{}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (int, error) {
+	p := sdk.RunInNodeMode(&sdk.Environment[string]{}, runtime, func(_ *sdk.NodeEnvironment[string], nr sdk.NodeRuntime) (int, error) {
 		return 0, errors.New("some error")
 	}, sdk.ConsensusMedianAggregation[int]())
 
@@ -67,7 +69,7 @@ func TestRunInNodeMode_ErrorWrappingResult(t *testing.T) {
 	type unsupported struct {
 		Test chan int
 	}
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
+	p := sdk.RunInNodeMode(&sdk.Environment[string]{}, runtime, func(_ *sdk.NodeEnvironment[string], nr sdk.NodeRuntime) (*unsupported, error) {
 		return &unsupported{Test: make(chan int)}, nil
 	}, sdk.ConsensusAggregationFromTags[*unsupported]())
 
@@ -83,7 +85,7 @@ func TestRunInNodeMode_ErrorWrappingDefault(t *testing.T) {
 		Test chan int
 	}
 
-	p := sdk.RunInNodeMode(runtime, func(nr sdk.NodeRuntime) (*unsupported, error) {
+	p := sdk.RunInNodeMode(&sdk.Environment[string]{}, runtime, func(_ *sdk.NodeEnvironment[string], nr sdk.NodeRuntime) (*unsupported, error) {
 		return nil, errors.New("some error")
 	}, &medianTestFieldDescription[*unsupported]{T: &unsupported{Test: make(chan int)}})
 
@@ -94,6 +96,10 @@ func TestRunInNodeMode_ErrorWrappingDefault(t *testing.T) {
 
 // mockNodeRuntime implements NodeRuntime for testing.
 type mockNodeRuntime struct{}
+
+func (m mockNodeRuntime) Rand() (*rand.Rand, error) {
+	panic("unused in tests")
+}
 
 func (m mockNodeRuntime) CallCapability(_ *pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
 	panic("unused in tests")
@@ -114,6 +120,10 @@ func (m mockNodeRuntime) Logger() *slog.Logger {
 func (m mockNodeRuntime) IsNodeRuntime() {}
 
 type mockDonRuntime struct{}
+
+func (m *mockDonRuntime) Rand() (*rand.Rand, error) {
+	panic("unused in tests")
+}
 
 func (m *mockDonRuntime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleConsensusInputs) sdk.Promise[values.Value] {
 	req := fn(mockNodeRuntime{})
@@ -145,7 +155,7 @@ func (h *medianTestFieldDescription[T]) Descriptor() *pb.ConsensusDescriptor {
 		Descriptor_: &pb.ConsensusDescriptor_FieldsMap{
 			FieldsMap: &pb.FieldsMap{
 				Fields: map[string]*pb.ConsensusDescriptor{
-					"Test": {Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_MEDIAN}},
+					"Test": {Descriptor_: &pb.ConsensusDescriptor_Aggregation{Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN}},
 				},
 			},
 		},

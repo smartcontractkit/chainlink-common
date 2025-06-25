@@ -16,14 +16,15 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type templateGenerator struct {
+type TemplateGenerator struct {
 	Name             string
 	Template         string
 	FileNameTemplate string
 	Partials         map[string]string
+	ExtraFns         template.FuncMap
 }
 
-func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
+func (t *TemplateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
 
 	seen := map[string]int{}
 	importToPkg := map[protogen.GoImportPath]protogen.GoPackageName{}
@@ -50,13 +51,13 @@ func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 	return nil
 }
 
-func (t *templateGenerator) Generate(baseFile, args any, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, string, error) {
-	fileName, err := runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials, importToPkg)
+func (t *TemplateGenerator) Generate(baseFile, args any, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, string, error) {
+	fileName, err := t.runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials, importToPkg)
 	if err != nil {
 		return "", "", err
 	}
 
-	file, err := runTemplate(t.Name, t.Template, args, t.Partials, importToPkg)
+	file, err := t.runTemplate(t.Name, t.Template, args, t.Partials, importToPkg)
 	if err != nil {
 		return fileName, "", err
 	}
@@ -73,9 +74,13 @@ func (t *templateGenerator) Generate(baseFile, args any, importToPkg map[protoge
 	return fileName, prettyFile, err
 }
 
-func runTemplate(name, tmplText string, args any, partials map[string]string, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, error) {
+func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partials map[string]string, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, error) {
 	buf := &bytes.Buffer{}
 	imports := map[string]bool{}
+	if t.ExtraFns == nil {
+		t.ExtraFns = template.FuncMap{}
+	}
+
 	templ := template.New(name).Funcs(template.FuncMap{
 		"ImportAlias": func(importPath protogen.GoImportPath) string {
 			return string(importToPkg[importPath])
@@ -184,7 +189,7 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 
 			return "emptypb.Empty", nil
 		},
-	})
+	}).Funcs(t.ExtraFns)
 
 	// Register partials
 	if partials != nil {

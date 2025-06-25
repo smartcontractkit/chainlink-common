@@ -9,8 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -34,14 +33,12 @@ type ClientCapability interface {
 
 	LatestAndFinalizedHead(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
 
-	QueryTrackedLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
-
 	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
-	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm1.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
-	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm1.FilterLogTriggerRequest) error
+	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
+	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 
 	Start(ctx context.Context) error
 	Close() error
@@ -124,7 +121,7 @@ const ClientID = "evm@1.0.0"
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "LogTrigger":
-		input := &evm1.FilterLogTriggerRequest{}
+		input := &evm.FilterLogTriggerRequest{}
 		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
@@ -134,7 +131,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 func (c *clientCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
 	case "LogTrigger":
-		input := &evm1.FilterLogTriggerRequest{}
+		input := &evm.FilterLogTriggerRequest{}
 		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
 		if err != nil {
 			return err
@@ -203,13 +200,6 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty, _ *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error) {
 			return c.ClientCapability.LatestAndFinalizedHead(ctx, metadata, input)
-		}
-		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "QueryTrackedLogs":
-		input := &evm.QueryTrackedLogsRequest{}
-		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.QueryTrackedLogsRequest, _ *emptypb.Empty) (*evm.QueryTrackedLogsReply, error) {
-			return c.ClientCapability.QueryTrackedLogs(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "RegisterLogTracking":

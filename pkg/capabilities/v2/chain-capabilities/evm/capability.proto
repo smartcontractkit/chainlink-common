@@ -1,16 +1,39 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm/capability;evm";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm;evm";
 
 package cre.sdk.v2.evm;
 
 import "google/protobuf/empty.proto";
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 import "chains/evm/evm.proto";
 
+enum ConfidenceLevel {
+  SAFE = 0;
+  LATEST = 1;
+  FINALIZED = 2;
+}
+
+message TopicValues {
+  repeated bytes values = 1; // list of possible values for any topic, in [32]byte fix-sized array format
+}
+
+message FilterLogTriggerRequest {
+  repeated bytes addresses = 1; // list of addresses to include in evm address [20]byte fix-sized array format, at least one address is required
+  /*
+    TopicValues is a fixed 4 length array of possible values for any topic where:
+      a) the first element is an array of the event signatures (keccak256 of the event name and indexed args types), it has to have at least one value
+      b) the second element is an array of possible values for the first indexed argument, can be empty
+      c) the third element is an array of possible values for the second indexed argument, can be empty
+      d) the fourth element is an array of possible values for the third indexed argument, can be empty
+   */
+  repeated TopicValues topics = 2;
+  ConfidenceLevel Confidence = 3; // optional, defaults to "SAFE"
+}
+
 service Client {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "evm@1.0.0"
   };
   rpc CallContract(loop.evm.CallContractRequest) returns (loop.evm.CallContractReply);
@@ -23,6 +46,5 @@ service Client {
   rpc QueryTrackedLogs(loop.evm.QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
   rpc RegisterLogTracking(loop.evm.RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(loop.evm.UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc LogTrigger(FilterLogTriggerRequest) returns (stream loop.evm.Log);
 }
-
-

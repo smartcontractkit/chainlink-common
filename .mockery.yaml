@@ -25,6 +25,8 @@ packages:
     interfaces:
       CapabilitiesRegistry:
       Relayer:
+      GatewayConnector:
+      GatewayConnectorHandler:
       RelayerSet:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
     interfaces:

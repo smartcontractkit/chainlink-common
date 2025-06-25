@@ -34,7 +34,6 @@ func NewWorkflowLibPlugin(store *DonTimeStore, config ocr3types.ReportingPluginC
 	if err != nil {
 		return nil, err
 	}
-
 	if offchainCfg.MaxBatchSize == 0 {
 		return nil, errors.New("batch size cannot be 0")
 	}
@@ -65,23 +64,16 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 		return nil, err
 	}
 
-	// TODO: Should finishedExecutionIds be part of prior OutcomeContext?
 	finishedExecutionIDs := p.store.GetFinishedExecutionIDs()
-	finished := make([]string, 0, len(finishedExecutionIDs))
-	// Each round every node reports which workflows it has finished.
-	// If consensus is reached that the workflow is complete, then it gets
-	// scheduled for removal. Each node can now remove it locally.
-	for id, _ := range priorOutcome.FinishedExecutionRemovalTimes {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		if _, ok := finishedExecutionIDs[id]; ok {
-			delete(finishedExecutionIDs, id)
+	var unscheduledFinishedExecutionIDs []string
+	for id := range finishedExecutionIDs {
+		if _, ok := priorOutcome.FinishedExecutionRemovalTimes[id]; !ok {
+			unscheduledFinishedExecutionIDs = append(unscheduledFinishedExecutionIDs, id)
 		}
 	}
 
-	for id := range finishedExecutionIDs {
-		finished = append(finished, id)
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 
 	if err := ctx.Err(); err != nil {
@@ -101,7 +93,7 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 	observation := &pb.Observation{
 		Timestamp: time.Now().UTC().UnixMilli(),
 		Requests:  requests,
-		Finished:  finished,
+		Finished:  unscheduledFinishedExecutionIDs,
 	}
 
 	return proto.Marshal(observation)
@@ -117,9 +109,12 @@ func (p *workflowLibPlugin) ValidateObservation(ctx context.Context, oc ocr3type
 		return err
 	}
 
-	priorObservation := &pb.Outcome{}
-	if err := proto.Unmarshal(oc.PreviousOutcome, priorObservation); err != nil {
+	priorOutcome := &pb.Outcome{}
+	if err := proto.Unmarshal(oc.PreviousOutcome, priorOutcome); err != nil {
 		return err
+	}
+	if priorOutcome.ObservedDonTimes == nil {
+		priorOutcome.ObservedDonTimes = map[string]*pb.ObservedDonTimes{}
 	}
 
 	// A DON time beyond the expected number of requests is invalid, as there was never consensus on the prior request, which should be blocking.
@@ -128,7 +123,16 @@ func (p *workflowLibPlugin) ValidateObservation(ctx context.Context, oc ocr3type
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		seqNum := len(priorObservation.ObservedDonTimes[id].Timestamps)
+
+		if _, ok := priorOutcome.ObservedDonTimes[id]; !ok {
+			if requestedSeqNumber != 0 {
+				// TODO: Improve error message
+				err = errors.Join(err, fmt.Errorf("request number %d for id %s is greater than the number of observed don times %d", requestedSeqNumber, id, 0))
+			}
+			continue
+		}
+
+		seqNum := len(priorOutcome.ObservedDonTimes[id].Timestamps)
 		if requestedSeqNumber > int64(seqNum) {
 			err = errors.Join(err, fmt.Errorf("request number %d for id %s is greater than the number of observed don times %d", requestedSeqNumber, id, seqNum))
 		}
@@ -277,7 +281,6 @@ func (p *workflowLibPlugin) Transmit(ctx context.Context, _ types.ConfigDigest, 
 		return err
 	}
 
-	// Add observed don times to store
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
 		p.store.SetDonTimes(id, observedDonTimes.Timestamps)
 	}
@@ -295,7 +298,7 @@ func (p *workflowLibPlugin) Transmit(ctx context.Context, _ types.ConfigDigest, 
 		}
 		if len(outcome.ObservedDonTimes[id].Timestamps) > request.SeqNum {
 			donTime := outcome.ObservedDonTimes[id].Timestamps[request.SeqNum]
-			p.store.Requests.Evict(id)
+			p.store.Requests.Evict(id) // Make space for next request before delivering
 			request.SendResponse(ctx, DonTimeResponse{
 				WorkflowExecutionID: id,
 				seqNum:              request.SeqNum,

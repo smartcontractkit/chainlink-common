@@ -52,9 +52,10 @@ func (r *DonTimeRequest) Copy() *DonTimeRequest {
 		Observations:        r.Observations.CopyList(),
 		ExpiresAt:           r.ExpiresAt,
 		WorkflowExecutionID: r.WorkflowExecutionID,
+		SeqNum:              r.SeqNum,
 
 		// Intentionally not copied, but are thread-safe.
-		CallbackCh: r.CallbackCh, // TODO do we need this?
+		CallbackCh: r.CallbackCh,
 		StopCh:     r.StopCh,
 	}
 }

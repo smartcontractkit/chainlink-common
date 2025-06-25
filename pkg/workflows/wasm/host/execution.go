@@ -14,6 +14,7 @@ type execution[T any] struct {
 	response             T
 	ctx                  context.Context
 	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
+	secretsResponses     map[int32]<-chan *secretsResponse
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
@@ -78,6 +79,60 @@ func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCa
 	}, nil
 }
 
+type secretsResponse struct {
+	responses []*sdkpb.SecretResponse
+	err       error
+}
+
+func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecretsRequest) error {
+	ch := make(chan *secretsResponse, 1)
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	e.secretsResponses[req.CallbackId] = ch
+
+	go func() {
+		resp, err := e.executor.GetSecrets(ctx, req)
+		sr := &secretsResponse{responses: resp, err: err}
+
+		select {
+		case <-ctx.Done():
+		case ch <- sr:
+		}
+	}()
+
+	return nil
+}
+
+func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecretsRequest) (*sdkpb.AwaitSecretsResponse, error) {
+	responses := make(map[int32]*sdkpb.SecretResponses, len(acr.Ids))
+
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	for _, callId := range acr.Ids {
+		ch, ok := e.secretsResponses[callId]
+		if !ok {
+			return nil, fmt.Errorf("failed to get call from store : %d", callId)
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("failed to wait for capability response %d : %w", callId, ctx.Err())
+		case resp := <-ch:
+			if resp.err != nil {
+				return nil, fmt.Errorf("failed to get secrets for call %d: %w", callId, resp.err)
+			}
+
+			responses[callId] = &sdkpb.SecretResponses{Responses: resp.responses}
+		}
+
+		delete(e.secretsResponses, callId)
+	}
+
+	return &sdkpb.AwaitSecretsResponse{
+		Responses: responses,
+	}, nil
+}
+
 func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 	b, innerErr := wasmRead(caller, ptr, ptrlen)
 	if innerErr != nil {
@@ -93,9 +148,9 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 
 func (e *execution[T]) getSeed(mode int32) int64 {
 	switch sdkpb.Mode(mode) {
-	case sdkpb.Mode_DON:
+	case sdkpb.Mode_MODE_DON:
 		return e.donSeed
-	case sdkpb.Mode_Node:
+	case sdkpb.Mode_MODE_NODE:
 		return e.nodeSeed
 	}
 

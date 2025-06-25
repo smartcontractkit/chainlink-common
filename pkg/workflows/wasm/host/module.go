@@ -29,7 +29,6 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
 const v2ImportPrefix = "version_v2"
@@ -88,13 +87,14 @@ type ModuleV2 interface {
 	ModuleBase
 
 	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
-	Execute(ctx context.Context, request *wasmpb.ExecuteRequest, handler ExecutionHelper) (*wasmpb.ExecutionResult, error)
+	Execute(ctx context.Context, request *sdkpb.ExecuteRequest, handler ExecutionHelper) (*sdkpb.ExecutionResult, error)
 }
 
 // ExecutionHelper Implemented by those running the host, for example the Workflow Engine
 type ExecutionHelper interface {
 	// CallCapability blocking call to the Workflow Engine
 	CallCapability(ctx context.Context, request *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error)
+	GetSecrets(ctx context.Context, request *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error)
 
 	GetWorkflowExecutionID() string
 
@@ -252,7 +252,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	return m, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -269,8 +269,8 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.Executi
 	if err = linker.FuncWrap(
 		"env",
 		"send_response",
-		createSendResponseFn(logger, exec, func() *wasmpb.ExecutionResult {
-			return &wasmpb.ExecutionResult{}
+		createSendResponseFn(logger, exec, func() *sdkpb.ExecutionResult {
+			return &sdkpb.ExecutionResult{}
 		}),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping sendResponse func: %w", err)
@@ -290,6 +290,22 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.Executi
 		createAwaitCapsFn(logger, exec),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping awaitcaps func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"get_secrets",
+		createGetSecretsFn(logger, exec),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping get_secrets func: %w", err)
+	}
+
+	if err = linker.FuncWrap(
+		"env",
+		"await_secrets",
+		createAwaitSecretsFn(logger, exec),
+	); err != nil {
+		return nil, fmt.Errorf("error wrapping await_secrets func: %w", err)
 	}
 
 	if err := linker.FuncWrap(
@@ -394,7 +410,7 @@ func (m *module) IsLegacyDAG() bool {
 	return m.v2ImportName == ""
 }
 
-func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, executor ExecutionHelper) (*wasmpb.ExecutionResult, error) {
+func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {
 	if m.IsLegacyDAG() {
 		return nil, errors.New("cannot execute a legacy dag workflow")
 	}
@@ -407,7 +423,7 @@ func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, execut
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
-	setMaxResponseSize := func(r *wasmpb.ExecuteRequest, maxSize uint64) {
+	setMaxResponseSize := func(r *sdkpb.ExecuteRequest, maxSize uint64) {
 		r.MaxResponseSize = maxSize
 	}
 
@@ -505,6 +521,7 @@ func runWasm[I, O proto.Message](
 		//ctx:                 ctxWithTimeout,
 		ctx:                 ctx,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		secretsResponses:    map[int32]<-chan *secretsResponse{},
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,
@@ -984,7 +1001,7 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 
 func createCallCapFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
@@ -1014,7 +1031,7 @@ func createCallCapFn(
 
 func createAwaitCapsFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult],
+	exec *execution[*sdkpb.ExecutionResult],
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
@@ -1033,6 +1050,80 @@ func createAwaitCapsFn(
 		}
 
 		resp, err := exec.awaitCapabilities(exec.ctx, req)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		respBytes, err := proto.Marshal(resp)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
+		if size == -1 {
+			errStr := sdk.ResponseBufferTooSmall
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		return size
+	}
+}
+
+func createGetSecretsFn(
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+		b, innerErr := wasmRead(caller, req, requestLen)
+		if innerErr != nil {
+			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		r := &sdkpb.GetSecretsRequest{}
+		innerErr = proto.Unmarshal(b, r)
+		if innerErr != nil {
+			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
+			logger.Errorf(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		if err := exec.getSecretsAsync(exec.ctx, r); err != nil {
+			errStr := fmt.Sprintf("error calling getSecretsAsync: %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		return 0
+	}
+}
+
+func createAwaitSecretsFn(
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
+		if err != nil {
+			errStr := fmt.Sprintf("error reading from wasm %s", err)
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		req := &sdkpb.AwaitSecretsRequest{}
+		err = proto.Unmarshal(b, req)
+		if err != nil {
+			errStr := err.Error()
+			logger.Error(errStr)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+		}
+
+		resp, err := exec.awaitSecrets(exec.ctx, req)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)

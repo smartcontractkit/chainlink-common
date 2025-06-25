@@ -31,7 +31,7 @@ type CronCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
 }
 
 func NewCronServer(capability CronCapability) *CronServer {
@@ -48,8 +48,8 @@ type CronServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
-	if err := cs.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
+	if err := cs.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
@@ -69,7 +69,7 @@ func (cs *CronServer) Close() error {
 	defer cancel()
 
 	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.1.0"); err != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
 			return err
 		}
 	}
@@ -96,21 +96,21 @@ type cronCapability struct {
 
 func (c *cronCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("cron-trigger@1.1.0", capabilities.CapabilityTypeCombined, c.CronCapability.Description())
+	return capabilities.NewCapabilityInfo("cron-trigger@1.0.0", capabilities.CapabilityTypeCombined, c.CronCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*cronCapability)(nil)
 
-const CronID = "cron-trigger@1.1.0"
+const CronID = "cron-trigger@1.0.0"
 
 func (c *cronCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "Trigger":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.1.0", request, input, c.CronCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterTrigger)
 	case "":
 		input := &cron.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.1.0", request, input, c.CronCapability.RegisterLegacyTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "cron-trigger@1.0.0", request, input, c.CronCapability.RegisterLegacyTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

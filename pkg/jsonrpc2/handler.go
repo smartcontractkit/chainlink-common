@@ -23,7 +23,7 @@ func (*Handler) DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (R
 		return Request{}, errors.New("empty method field")
 	}
 	if request.Params == nil {
-		return Request{}, ErrInvalidParams
+		return Request{}, errors.New("invalid params")
 	}
 	if request.Auth != "" {
 		return request, nil
@@ -52,10 +52,10 @@ func (*Handler) EncodeResponse(response *Response) ([]byte, error) {
 	return json.Marshal(response)
 }
 
-func (r *Request) EncodeErrorReponse(err *WireError) ([]byte, error) {
+func (*Handler) EncodeErrorReponse(id string, err *WireError) ([]byte, error) {
 	return json.Marshal(Response{
 		Version: JsonRpcVersion,
-		ID:      r.ID,
+		ID:      id,
 		Error:   err,
 	})
 }

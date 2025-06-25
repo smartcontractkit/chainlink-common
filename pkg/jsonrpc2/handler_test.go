@@ -68,7 +68,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req.Params = nil
 		reqBytes, _ := json.Marshal(req)
 		_, err := handler.DecodeRequest(reqBytes, testJWT)
-		if err == nil || err.Error() != ErrInvalidParams.Error() {
+		if err == nil || err.Error() != "invalid params" {
 			t.Errorf("expected missing params error, got %v", err)
 		}
 	})
@@ -102,7 +102,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if got.Auth != "" {
-			t.Errorf("expected auth from body")
+			t.Errorf("unexpected auth token")
 		}
 	})
 
@@ -206,9 +206,9 @@ func TestHandler_EncodeResponse(t *testing.T) {
 }
 
 func TestRequest_EncodeErrorReponse(t *testing.T) {
-	req := &Request{ID: "abc"}
+	handler := &Handler{}
 	wireErr := &WireError{Code: 1, Message: "fail"}
-	data, err := req.EncodeErrorReponse(wireErr)
+	data, err := handler.EncodeErrorReponse("abc", wireErr)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

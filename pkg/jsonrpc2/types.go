@@ -4,23 +4,23 @@ import "encoding/json"
 
 var (
 	// ErrUnknown should be used for all non-coded errors.
-	ErrUnknown = NewError(-32001, "JSON RPC unknown error")
+	ErrUnknown = NewWireError(-32001, "JSON RPC unknown error")
 	// ErrParse is used when invalid JSON was received by the server.
-	ErrParse = NewError(-32700, "JSON RPC parse error")
+	ErrParse = NewWireError(-32700, "JSON RPC parse error")
 	//ErrInvalidRequest is used when the JSON sent is not a valid Request object.
-	ErrInvalidRequest = NewError(-32600, "JSON RPC invalid request")
+	ErrInvalidRequest = NewWireError(-32600, "JSON RPC invalid request")
 	// ErrMethodNotFound should be returned by the handler when the method does
 	// not exist / is not available.
-	ErrMethodNotFound = NewError(-32601, "JSON RPC method not found")
+	ErrMethodNotFound = NewWireError(-32601, "JSON RPC method not found")
 	// ErrInvalidParams should be returned by the handler when method
 	// parameter(s) were invalid.
-	ErrInvalidParams = NewError(-32602, "JSON RPC invalid params")
+	ErrInvalidParams = NewWireError(-32602, "JSON RPC invalid params")
 	// ErrInternal is not currently returned but defined for completeness.
-	ErrInternal = NewError(-32603, "JSON RPC internal error")
+	ErrInternal = NewWireError(-32603, "JSON RPC internal error")
 
 	//ErrServerOverloaded is returned when a message was refused due to a
 	//server being temporarily unable to accept any new messages.
-	ErrServerOverloaded = NewError(-32000, "JSON RPC overloaded")
+	ErrServerOverloaded = NewWireError(-32000, "JSON RPC overloaded")
 )
 
 const (
@@ -59,8 +59,8 @@ func (err *WireError) Error() string {
 	return err.Message
 }
 
-func NewError(code int64, message string) error {
-	return &WireError{
+func NewWireError(code int64, message string) WireError {
+	return WireError{
 		Code:    code,
 		Message: message,
 	}

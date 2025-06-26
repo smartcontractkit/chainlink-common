@@ -9,8 +9,6 @@ import (
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"github.com/jonboulle/clockwork"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib"
 )
 
 var (
@@ -39,12 +37,11 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 	}
 
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
-	// TODO: don't use clockTimeGet, instead use GetDONTime() or GetNodeTime() depending on mode?
-	// TODO: Where do I access the execution helper from?
-	errfrom = linker.FuncWrap(
+	// TODO: Can we just link anything?
+	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
-		"clock_time_get",
-		clockTimeGet,
+		"get_time",
+		exec.getTime,
 	)
 	if err != nil {
 		return nil, err
@@ -103,16 +100,12 @@ const (
 // https://github.com/tetratelabs/wazero/blob/main/imports/wasi_snapshot_preview1/clock.go#L42
 // Each call to clockTimeGet increments our fake clock by `tick`.
 func clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
-	donTimeStore := workflowLib.GetDonTimeStore()
-
 	var val int64
 	switch id {
 	case clockIDMonotonic:
-		// TODO: val = donTimeStore.GetLastObservedDonTime(); convert to nanoseconds?
 		clock.Advance(tick)
 		val = clock.Since(nanoBase).Nanoseconds()
 	case clockIDRealtime:
-		// TODO: val = donTimeStore.GetLastObservedDonTime(); convert to nanoseconds?
 		clock.Advance(tick)
 		val = clock.Now().UnixNano()
 	default:
@@ -208,7 +201,6 @@ func pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32,
 		}
 	}
 
-	// TODO: Actually use DON Time for sleep
 	// Advance the clock by timeout.
 	// This will make it seem like we've slept by timeout.
 	if timeout > 0 {

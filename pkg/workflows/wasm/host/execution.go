@@ -2,8 +2,10 @@ package host
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -160,4 +162,23 @@ func (e *execution[T]) getSeed(mode int32) int64 {
 func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 	e.hasRun = true
 	e.mode = sdkpb.Mode(mode)
+}
+
+func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+	var donTime time.Time
+	switch e.mode {
+	case sdkpb.Mode_MODE_DON:
+		donTime = e.executor.GetDONTime()
+	case sdkpb.Mode_MODE_NODE:
+		donTime = e.executor.GetNodeTime()
+	default:
+		// TODO: default to node time?
+		donTime = e.executor.GetNodeTime()
+	}
+
+	uint64Size := int32(8)
+	trg := make([]byte, uint64Size)
+	binary.LittleEndian.PutUint64(trg, uint64(donTime.UnixNano())) // TODO: UnixNano?
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	return ErrnoSuccess
 }

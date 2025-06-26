@@ -1,3 +1,3 @@
 package pkg
 
-const chainlinkProtosVersion = "d06610a7c042861e74791f981320ad4aa4d0b45c"
+const chainlinkProtosVersion = "abc8588fc7c0cd3fc1be4e42bea2ef4a31cf4358"

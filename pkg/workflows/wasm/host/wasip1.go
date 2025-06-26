@@ -36,8 +36,6 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 		return nil, err
 	}
 
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
-	// TODO: Can we just link anything?
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"get_time",

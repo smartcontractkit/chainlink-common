@@ -221,6 +221,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
+	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
 	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
 	require.NoError(t, err)
 
@@ -322,51 +323,9 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		r := ocr3types.ReportWithInfo[struct{}]{}
 		r.Report, err = proto.Marshal(outcomeProto)
 		require.NoError(t, err)
-		err = plugin.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
+		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
 		require.NoError(t, err)
 		require.Contains(t, store.finishedExecutionIDs, "workflow-abc")
 		require.NotContains(t, store.finishedExecutionIDs, "workflow-123")
 	})
-}
-
-func TestReportingPlugin_Transmit(t *testing.T) {
-	lggr := logger.Test(t)
-	store := NewDonTimeStore()
-	config := newTestPluginConfig(t)
-	ctx := t.Context()
-
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
-	require.NoError(t, err)
-
-	// Create request for second donTime in sequence
-	executionID := "workflow-123"
-	timeRequest := store.RequestDonTime(executionID, 1)
-
-	timestamp := time.Now().UnixMilli()
-	outcome := &pb.Outcome{
-		Timestamp: timestamp,
-		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
-			executionID: {Timestamps: []int64{timestamp - int64(time.Second), timestamp}},
-		},
-		FinishedExecutionRemovalTimes: make(map[string]int64),
-		RemovedExecutionIDs:           make(map[string]bool),
-	}
-
-	r := ocr3types.ReportWithInfo[struct{}]{}
-	r.Report, err = proto.Marshal(outcome)
-	require.NoError(t, err)
-	err = plugin.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
-	require.NoError(t, err)
-
-	select {
-	case donTimeResp := <-timeRequest:
-		require.Equal(t, timestamp, donTimeResp.timestamp)
-		require.Equal(t, executionID, donTimeResp.WorkflowExecutionID)
-		require.Equal(t, 1, donTimeResp.seqNum)
-		require.NoError(t, donTimeResp.Err)
-	case <-ctx.Done():
-		t.Fatal("failed to retrieve donTime from request channel")
-	}
-
-	require.Empty(t, store.Requests.Get(executionID))
 }

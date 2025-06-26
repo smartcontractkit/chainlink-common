@@ -18,7 +18,8 @@ import (
 const metadataEVMChain = "evm-chain-id"
 const metadataEVMNetwork = "evm-network"
 
-// evmClient wraps the EVMRelayerSetClient to attach RelayerID to EVMClient request.
+// evmClient wraps the EVMRelayerSetClient by attaching a RelayerID to EVMClient requests.
+// The attached RelayerID is stored in the context metadata.
 type evmClient struct {
 	relayID types.RelayID
 	client  evmpb.EVMClient

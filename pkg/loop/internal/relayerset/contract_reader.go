@@ -12,6 +12,8 @@ import (
 
 const metadataContractReader = "contractReaderID"
 
+// contractReader wraps the ContractReaderClient by attaching a contractReaderId to its requests.
+// The attached contractReaderId is stored in the context metadata.
 type contractReader struct {
 	contractReaderID string
 	client           *Client
@@ -49,6 +51,8 @@ func appendContractReaderID(ctx context.Context, id string) context.Context {
 	return metadata.AppendToOutgoingContext(ctx, metadataContractReader, id)
 }
 
+// contractReaderServiceClient wraps the RelayerSetClient ContractReader{Close/Start} methods by attaching a contractReaderId to its requests.
+// The attached contractReaderId is stored in the context metadata.
 type contractReaderServiceClient struct {
 	contractReaderID string
 	client           *Client

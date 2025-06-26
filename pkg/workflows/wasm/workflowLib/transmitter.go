@@ -64,8 +64,8 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 			t.store.Requests.Evict(id) // Make space for next request before delivering
 			request.SendResponse(ctx, DonTimeResponse{
 				WorkflowExecutionID: id,
-				seqNum:              request.SeqNum,
-				timestamp:           donTime,
+				SeqNum:              request.SeqNum,
+				Timestamp:           donTime,
 				Err:                 nil,
 			})
 		}

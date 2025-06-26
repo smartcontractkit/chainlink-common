@@ -51,8 +51,8 @@ func (s *DonTimeStore) RequestDonTime(executionID string, seqNum int) <-chan Don
 	if dontime != nil {
 		ch <- DonTimeResponse{
 			WorkflowExecutionID: executionID,
-			seqNum:              seqNum,
-			timestamp:           *dontime,
+			SeqNum:              seqNum,
+			Timestamp:           *dontime,
 			Err:                 nil,
 		}
 		close(ch)
@@ -72,8 +72,8 @@ func (s *DonTimeStore) RequestDonTime(executionID string, seqNum int) <-chan Don
 			executionID, seqNum, err)
 		ch <- DonTimeResponse{
 			WorkflowExecutionID: executionID,
-			seqNum:              seqNum,
-			timestamp:           0,
+			SeqNum:              seqNum,
+			Timestamp:           0,
 			Err:                 DonTimeRequestErr,
 		}
 	}

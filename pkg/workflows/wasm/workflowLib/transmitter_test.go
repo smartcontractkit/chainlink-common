@@ -43,9 +43,9 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 
 	select {
 	case donTimeResp := <-timeRequest:
-		require.Equal(t, timestamp, donTimeResp.timestamp)
+		require.Equal(t, timestamp, donTimeResp.Timestamp)
 		require.Equal(t, executionID, donTimeResp.WorkflowExecutionID)
-		require.Equal(t, 1, donTimeResp.seqNum)
+		require.Equal(t, 1, donTimeResp.SeqNum)
 		require.NoError(t, donTimeResp.Err)
 	case <-ctx.Done():
 		t.Fatal("failed to retrieve donTime from request channel")

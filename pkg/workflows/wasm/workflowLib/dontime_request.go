@@ -37,7 +37,7 @@ func (r *DonTimeRequest) SendResponse(ctx context.Context, resp DonTimeResponse)
 func (r *DonTimeRequest) SendTimeout(ctx context.Context) {
 	timeoutResponse := DonTimeResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
-		seqNum:              r.SeqNum,
+		SeqNum:              r.SeqNum,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
 	}
 	r.SendResponse(ctx, timeoutResponse)
@@ -56,8 +56,8 @@ func (r *DonTimeRequest) Copy() *DonTimeRequest {
 
 type DonTimeResponse struct {
 	WorkflowExecutionID string
-	seqNum              int
-	timestamp           int64
+	SeqNum              int
+	Timestamp           int64
 	Err                 error
 }
 

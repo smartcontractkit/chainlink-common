@@ -168,7 +168,11 @@ func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) i
 	var donTime time.Time
 	switch e.mode {
 	case sdkpb.Mode_MODE_DON:
-		donTime = e.executor.GetDONTime()
+		var err error
+		donTime, err = e.executor.GetDONTime(context.TODO())
+		if err != nil {
+			return ErrnoInval
+		}
 	case sdkpb.Mode_MODE_NODE:
 		donTime = e.executor.GetNodeTime()
 	default:

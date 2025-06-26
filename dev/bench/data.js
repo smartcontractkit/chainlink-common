@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750947266998,
+  "lastUpdate": 1750955645657,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16758,6 +16758,48 @@ window.BENCHMARK_DATA = {
             "value": 28142,
             "unit": "ns/op",
             "extra": "42199 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4322119b019c718e2b11f3acf8821da5d66c61d9",
+          "message": "[PRIV-83] Add vault and SDK protos (#1290)\n\n- Add vault protos\n- Update chainlink-protos to incorporate a change where we add ID\ninformation to errors.\n- Fix bug where the maxResponseSize wasn't passed into the runner during\nthe subscription phase.",
+          "timestamp": "2025-06-26T18:31:45+02:00",
+          "tree_id": "b8608a0d978735fe4cc1135c6b2bb4ddff12f814",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4322119b019c718e2b11f3acf8821da5d66c61d9"
+        },
+        "date": 1750955641194,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.9,
+            "unit": "ns/op",
+            "extra": "3384406 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.1,
+            "unit": "ns/op",
+            "extra": "2930146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28242,
+            "unit": "ns/op",
+            "extra": "42674 times\n4 procs"
           }
         ]
       }

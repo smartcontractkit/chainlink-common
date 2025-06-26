@@ -4,19 +4,24 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
 
+message CacheSettings {
+  bool enabled = 1;  // Whether caching is enabled. Defaults to false.
+  int32 ttl_ms = 2;  // Time-to-live for the cache entry in milliseconds.
+}
+
 message Request {
   string url = 1;
   string method = 2;
   map<string, string> headers = 3;
   bytes body = 4;
   int32 timeout_ms = 5;
+  CacheSettings cache_settings = 6;
 }
 
 message Response {
-  string error_message = 1;
-  uint32 status_code = 2;
-  map<string, string> headers = 3;
-  bytes body = 4;
+  uint32 status_code = 1;
+  map<string, string> headers = 2;
+  bytes body = 3;
 }
 
 service Client {

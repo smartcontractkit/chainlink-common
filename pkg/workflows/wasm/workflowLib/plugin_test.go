@@ -331,3 +331,34 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		require.NotContains(t, store.finishedExecutionIDs, "workflow-123")
 	})
 }
+
+func TestPlugin_ExpiredRequest(t *testing.T) {
+	lggr := logger.Test(t)
+	store := newDonTimeStore(0)
+	config := newTestPluginConfig(t)
+	ctx := t.Context()
+
+	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	require.NoError(t, err)
+
+	outcomeCtx := ocr3types.OutcomeContext{
+		PreviousOutcome: []byte(""),
+	}
+
+	query, err := plugin.Query(ctx, outcomeCtx)
+	require.NoError(t, err)
+
+	// Add single request to queue
+	executionID := "workflow-123"
+	timeRequest := store.RequestDonTime(executionID, 0)
+
+	_, err = plugin.Observation(ctx, outcomeCtx, query)
+	require.NoError(t, err)
+
+	select {
+	case donTimeResp := <-timeRequest:
+		require.ErrorContains(t, donTimeResp.Err, "timeout exceeded: could not process request before expiry")
+	case <-ctx.Done():
+		t.Fatal("failed to retrieve donTime from request channel")
+	}
+}

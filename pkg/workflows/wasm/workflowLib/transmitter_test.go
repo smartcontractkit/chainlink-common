@@ -53,37 +53,3 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 
 	require.Empty(t, store.Requests.Get(executionID))
 }
-
-func TestTransmitter_ExpiredRequest(t *testing.T) {
-	lggr := logger.Test(t)
-	store := newDonTimeStore(0) // Expire requests instantly
-	ctx := t.Context()
-
-	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
-
-	// Create request for second donTime in sequence
-	executionID := "workflow-123"
-	timeRequest := store.RequestDonTime(executionID, 1)
-
-	timestamp := time.Now().UnixMilli()
-	outcome := &pb.Outcome{
-		Timestamp:                     timestamp,
-		ObservedDonTimes:              map[string]*pb.ObservedDonTimes{},
-		FinishedExecutionRemovalTimes: make(map[string]int64),
-		RemovedExecutionIDs:           make(map[string]bool),
-	}
-
-	r := ocr3types.ReportWithInfo[struct{}]{}
-	var err error
-	r.Report, err = proto.Marshal(outcome)
-	require.NoError(t, err)
-	err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
-	require.NoError(t, err)
-
-	select {
-	case donTimeResp := <-timeRequest:
-		require.ErrorContains(t, donTimeResp.Err, "timeout exceeded: could not process request before expiry")
-	case <-ctx.Done():
-		t.Fatal("failed to retrieve donTime from request channel")
-	}
-}

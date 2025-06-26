@@ -296,8 +296,8 @@ github.com/shopspring/decimal v1.4.0 h1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp
 github.com/shopspring/decimal v1.4.0/go.mod h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=
 github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250626161505-c2f203274b69 h1:dPisotm/PA6K6Ib8f949KgiYFryDYNkxLBDnmaAYi+k=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250626161505-c2f203274b69/go.mod h1:QUEPHdSkH19Or+E1iMGG+rDQ6jpCTIbm//9Osa6MXDE=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250626180857-b23e8853469e h1:JnwoHbDddPfG4Rv0KjrbGJlU5v0FscDc05GrLXxOr4s=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250626180857-b23e8853469e/go.mod h1:QUEPHdSkH19Or+E1iMGG+rDQ6jpCTIbm//9Osa6MXDE=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250612182447-1c32d2efe48f h1:OYOifWMKVL54uM+sxrY7oPVTZptTXK45tA8dXN5nZSE=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250612182447-1c32d2efe48f/go.mod h1:HHGeDUpAsPa0pmOx7wrByCitjQ0mbUxf0R9v+g67uCA=
 github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20250430163438-97d324ef9061 h1:5BKk6j2QWmb5TFoWYVLuL8U2XUIzTUUo5HBkCHTX2kM=

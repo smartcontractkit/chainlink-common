@@ -271,9 +271,11 @@ enum RequestType {
 }
 
 message RequestObservation {
-  // Request type is needed to ensure all honest nodes, even if they have not received a request, can produce an outcome.
-  RequestType requestType = 2;
-  bytes value = 3;
+  oneof observation {
+    google.protobuf.Empty lockableToBlock = 1;
+    bytes eventuallyConsistent = 2;
+    values.v1.Decimal aggregatable = 3;
+  }
 }
 
 message Observation {
@@ -283,8 +285,11 @@ message Observation {
 
 message RequestOutcome {
   string requestID = 1;
-  RequestType requestType = 2;
-  bytes value = 3;
+  oneof outcome {
+    google.protobuf.Empty lockableToBlock = 2;
+    bytes eventuallyConsistent = 3;
+    values.v1.Decimal aggregatable = 4;
+  }
 }
 
 message Outcome {
@@ -294,9 +299,9 @@ message Outcome {
 
 message RequestReport {
   string requestID = 1;
-  RequestType requestType = 2;
-  oneof payload {
-    bytes value = 3;
-    ChainHeight height = 4;
+  oneof report {
+    ChainHeight lockableToBlock = 2;
+    bytes eventuallyConsistent = 3;
+    values.v1.Decimal aggregatable = 4;
   }
 }

@@ -34,7 +34,7 @@ func (p *ProtocGen) AddSourceDirectories(sources ...string) {
 }
 
 func (p *ProtocGen) Generate(file, from string) error {
-	if err := p.doInit(); err != nil {
+	if err := p.DoInit(); err != nil {
 		return err
 	}
 
@@ -84,7 +84,7 @@ func (p *ProtocGen) GenerateMany(fileToFrom map[string]string) map[string]error 
 	return errors
 }
 
-func (p *ProtocGen) doInit() error {
+func (p *ProtocGen) DoInit() error {
 	if p.init {
 		return nil
 	}

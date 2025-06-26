@@ -90,6 +90,7 @@ func (s *DonTimeStore) RequestDonTime(executionID string, seqNum int) <-chan Don
 			Timestamp:           0,
 			Err:                 DonTimeRequestErr,
 		}
+		close(ch)
 	}
 	return ch
 }

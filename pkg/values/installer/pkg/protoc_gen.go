@@ -54,7 +54,6 @@ func (p *ProtocGen) Generate(file, from string) error {
 			}
 
 			args = append(args, fmt.Sprintf("--plugin=protoc-gen-%s=%s%s%sprotoc-gen-%s", plugin.Name, upDir, plugin.Path, sep, plugin.Name))
-			fmt.Printf("Path: %s\nUpdir %s\n", plugin.Path, upDir)
 		}
 
 		args = append(args, fmt.Sprintf("--%sout=.", prefix))
@@ -118,6 +117,7 @@ func checkoutClProtosRef(repoPath string) error {
 		}
 	}
 
+	// TODO check why this didn't fetch...
 	if _, err := run("git", repoPath, "rev-parse", "--verify", "--quiet", chainlinkProtosVersion); err != nil {
 		if out, err := run("git", repoPath, "fetch", "origin"); err != nil {
 			return fmt.Errorf("failed to fetch: %v\n%s", err, out)

@@ -172,13 +172,12 @@ func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) i
 	case sdkpb.Mode_MODE_NODE:
 		donTime = e.executor.GetNodeTime()
 	default:
-		// TODO: default to node time?
-		donTime = e.executor.GetNodeTime()
+		return ErrnoInval
 	}
 
 	uint64Size := int32(8)
 	trg := make([]byte, uint64Size)
-	binary.LittleEndian.PutUint64(trg, uint64(donTime.UnixNano())) // TODO: UnixNano?
+	binary.LittleEndian.PutUint64(trg, uint64(donTime.UnixNano()))
 	wasmWrite(caller, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
 }

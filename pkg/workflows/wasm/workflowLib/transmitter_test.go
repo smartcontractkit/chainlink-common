@@ -15,7 +15,7 @@ import (
 
 func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestExpiry)
+	store := newDonTimeStore(defaultRequestTimeout)
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, defaultBatchSize)

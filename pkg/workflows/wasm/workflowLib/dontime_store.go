@@ -10,13 +10,14 @@ import (
 
 var (
 	// donTimeStore is a singleton which can be accessed by anyone who needs it
-	donTimeStore *DonTimeStore
-	once         sync.Once
+	donTimeStore          *DonTimeStore
+	once                  sync.Once
+	defaultRequestTimeout = 20 * time.Minute
 )
 
 func GetDonTimeStore() *DonTimeStore {
 	once.Do(func() {
-		donTimeStore = newDonTimeStore(10 * time.Minute)
+		donTimeStore = newDonTimeStore(defaultRequestTimeout)
 	})
 	return donTimeStore
 }

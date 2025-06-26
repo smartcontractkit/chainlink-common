@@ -16,5 +16,5 @@ uint32 maxReportCount = 5;
 uint32 maxBatchSize = 6;
 int64 minTimeIncrease = 7;
 uint64 outcomePruningThreshold = 8;
-google.protobuf.Duration requestTimeout = 9;
+google.protobuf.Duration executionRemovalTime = 9;
 }

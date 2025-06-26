@@ -463,7 +463,6 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			mockEVM := mocks2.NewEVMService(t)
-			// evm := TestEVM{mockedContractReader: mockEVM}
 			relayer1.On("EVM", mock.Anything, mock.Anything).Return(mockEVM, nil).Once()
 
 			fetchedEVM, err := retrievedRelayer.EVM()

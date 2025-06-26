@@ -110,6 +110,7 @@ type GethClient interface {
 }
 
 type EVMService interface {
+	GethClient
 	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)

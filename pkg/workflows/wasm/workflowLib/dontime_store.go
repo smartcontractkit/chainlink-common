@@ -9,7 +9,8 @@ import (
 )
 
 type DonTimeStore struct {
-	Requests *consensusRequests.Store[*DonTimeRequest, DonTimeResponse]
+	Requests       *consensusRequests.Store[*DonTimeRequest, DonTimeResponse]
+	requestTimeout time.Duration
 
 	finishedExecutionIDs map[string]bool
 	donTimes             map[string][]int64 // ExecutionID --> [timestamp-0, timestamp-1 , ...]
@@ -17,9 +18,10 @@ type DonTimeStore struct {
 	mu                   sync.Mutex
 }
 
-func NewDonTimeStore() *DonTimeStore {
+func NewDonTimeStore(requestTimeout time.Duration) *DonTimeStore {
 	return &DonTimeStore{
 		Requests:             consensusRequests.NewStore[*DonTimeRequest, DonTimeResponse](),
+		requestTimeout:       requestTimeout,
 		finishedExecutionIDs: make(map[string]bool),
 		donTimes:             make(map[string][]int64),
 		lastObservedDonTime:  0,
@@ -59,10 +61,8 @@ func (s *DonTimeStore) RequestDonTime(executionID string, seqNum int) <-chan Don
 
 	// Submit request and return channel
 	err := s.Requests.Add(&DonTimeRequest{
-		Observations:        nil,
-		ExpiresAt:           time.Time{}, // TODO: time.now + timeout?
+		ExpiresAt:           time.Now().Add(s.requestTimeout),
 		CallbackCh:          ch,
-		StopCh:              make(chan struct{}), // TODO: Handle context cancellation?
 		WorkflowExecutionID: executionID,
 		SeqNum:              seqNum,
 	})

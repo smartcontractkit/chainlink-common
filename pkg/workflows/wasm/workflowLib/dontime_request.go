@@ -4,19 +4,14 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 type DonTimeRequest struct {
-	Observations *values.List `mapstructure:"-"`
-	ExpiresAt    time.Time
+	ExpiresAt time.Time
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
 	CallbackCh chan DonTimeResponse
-	StopCh     services.StopChan
 
 	WorkflowExecutionID string
 	SeqNum              int
@@ -42,6 +37,7 @@ func (r *DonTimeRequest) SendResponse(ctx context.Context, resp DonTimeResponse)
 func (r *DonTimeRequest) SendTimeout(ctx context.Context) {
 	timeoutResponse := DonTimeResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
+		seqNum:              r.SeqNum,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
 	}
 	r.SendResponse(ctx, timeoutResponse)
@@ -49,14 +45,12 @@ func (r *DonTimeRequest) SendTimeout(ctx context.Context) {
 
 func (r *DonTimeRequest) Copy() *DonTimeRequest {
 	return &DonTimeRequest{
-		Observations:        r.Observations.CopyList(),
 		ExpiresAt:           r.ExpiresAt,
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		SeqNum:              r.SeqNum,
 
 		// Intentionally not copied, but are thread-safe.
 		CallbackCh: r.CallbackCh,
-		StopCh:     r.StopCh,
 	}
 }
 

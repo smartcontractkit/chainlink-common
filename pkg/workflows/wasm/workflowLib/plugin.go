@@ -81,7 +81,14 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 		return nil, err
 	}
 
+	timeoutCheck := time.Now()
 	for _, req := range nextRequestsBatch {
+		if req.ExpiryTime().Before(timeoutCheck) {
+			// Request has been sitting in queue too long
+			p.store.Requests.Evict(req.ID())
+			req.SendTimeout(ctx)
+			continue
+		}
 		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 	}
 

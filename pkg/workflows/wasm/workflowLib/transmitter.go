@@ -2,6 +2,7 @@ package workflowLib
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -46,8 +47,15 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 		return err
 	}
 
+	checkExpiry := time.Now()
 	for _, request := range requests {
 		id := request.WorkflowExecutionID
+		if request.ExpiryTime().Before(checkExpiry) {
+			t.store.Requests.Evict(id)
+			request.SendTimeout(ctx)
+			continue
+		}
+
 		if _, ok := outcome.ObservedDonTimes[id]; !ok {
 			continue
 		}

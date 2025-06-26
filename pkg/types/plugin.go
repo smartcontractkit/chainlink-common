@@ -16,6 +16,7 @@ const (
 	GenericPlugin  OCR2PluginType = "plugin"
 	OCR3Capability OCR2PluginType = "ocr3-capability"
 	VaultPlugin    OCR2PluginType = "vault-plugin"
+	WorkflowLib    OCR2PluginType = "workflow-lib"
 
 	CCIPCommit    OCR2PluginType = "ccip-commit"
 	CCIPExecution OCR2PluginType = "ccip-execution"

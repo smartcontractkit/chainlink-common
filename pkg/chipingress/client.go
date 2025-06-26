@@ -256,20 +256,20 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	event.SetType(entity)
 	event.SetID(uuid.New().String())
 
-	now := t.Now().UTC()
-	event.SetExtension("recordedtime", ce.Timestamp{Time: now})
-
 	// Set optional attributes if provided
 	if attributes == nil {
 		attributes = make(map[string]any)
 	}
 
-	if val, ok := attributes["time"].(t.Time); ok {
-		event.SetTime(val.UTC())
+	if val, ok := attributes["recordedtime"].(t.Time); ok {
+		event.SetExtension("recordedtime", val)
 	} else {
-		event.SetTime(now)
+		event.SetExtension("recordedtime", ce.Timestamp{Time: t.Now().UTC()})
 	}
 
+	if val, ok := attributes["time"].(t.Time); ok {
+		event.SetTime(val.UTC())
+	}
 	if val, ok := attributes["datacontenttype"].(string); ok {
 		event.SetDataContentType(val)
 	}

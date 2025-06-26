@@ -1,9 +1,10 @@
 package ocr3
 
 import (
-	"fmt"
-	"google.golang.org/protobuf/proto"
+	"errors"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
@@ -175,7 +176,7 @@ type OutcomeSerializable struct {
 
 func (o OutcomeSerializable) Serialize(_ logger.Logger) ([]string, []byte, error) {
 	currentReports := make([]*pbtypes.Report, 0)
-	var allExecutionIDs []string
+	allExecutionIDs := make([]string, 0)
 
 	for _, weid := range o.weids {
 		outcome := o.outcomes[weid.WorkflowExecutionId]
@@ -230,7 +231,6 @@ func (o OutcomeSerializable) Mid(mid int) Serializable {
 		weids,
 		newOutcomes,
 	}
-
 }
 
 // packToSizeLimit function maximizes the number of requests being included in a batch.
@@ -238,13 +238,15 @@ func (o OutcomeSerializable) Mid(mid int) Serializable {
 // approach to identify the optimal number of Requests that can be serialized without exceeding
 // the limit (defaultBatchSizeMiB).
 func packToSizeLimit(lggr logger.Logger, all Serializable) ([]string, []byte, error) {
-	if all.Len() == 0 {
-		return nil, nil, fmt.Errorf("no requests to pack")
-	}
-
 	var best []byte
 	var bestRequests Serializable
 	var bestExecutionIDs []string
+
+	if all.Len() == 0 {
+		// _, empty, _ := all.Serialize(lggr)
+		// return bestExecutionIDs, empty, nil
+		return nil, nil, errors.New("no requests to pack")
+	}
 
 	low, high := 0, all.Len()
 
@@ -276,7 +278,7 @@ func packToSizeLimit(lggr logger.Logger, all Serializable) ([]string, []byte, er
 
 	if bestRequests == nil {
 		lggr.Warnw("packToSizeLimit: no suitable batch size found, returning empty result")
-		return nil, nil, fmt.Errorf("no suitable batch size found")
+		return nil, nil, errors.New("no suitable batch size found")
 	}
 
 	lggr.Debugw(

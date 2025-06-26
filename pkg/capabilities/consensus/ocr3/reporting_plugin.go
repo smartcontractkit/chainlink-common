@@ -84,7 +84,7 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 		return nil, err
 	}
 
-	weids := []string{}
+	weids := make([]string, 0)
 	for _, q := range queryReq.Ids {
 		if q == nil {
 			r.lggr.Debugw("skipping nil id for query", "query", queryReq)
@@ -264,19 +264,6 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		previousOutcome.Outcomes = map[string]*pbtypes.AggregationOutcome{}
 	}
 
-	// We need to prune outcomes from previous workflows that are no longer relevant.
-	for workflowID, outcome := range previousOutcome.Outcomes {
-		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
-		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
-			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
-			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
-			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
-			delete(previousOutcome.Outcomes, workflowID)
-			r.r.UnregisterWorkflowID(workflowID)
-		}
-	}
-
 	// Wipe out the CurrentReports. This gets regenerated
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
@@ -291,7 +278,22 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		finalTimestamp,
 	)
 
-	OutcomeSerializable := &OutcomeSerializable{
+	previousOutcome.Outcomes = prepOutcomes
+
+	// We need to prune outcomes from previous workflows that are no longer relevant.
+	for workflowID, outcome := range previousOutcome.Outcomes {
+		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
+		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
+			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
+			outcome.LastSeenAt = outctx.SeqNr
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
+			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
+			delete(previousOutcome.Outcomes, workflowID)
+			r.r.UnregisterWorkflowID(workflowID)
+		}
+	}
+
+	outcomeSerializable := &OutcomeSerializable{
 		previousOutcome: previousOutcome,
 		weids:           prepWeids,
 		outcomes:        prepOutcomes,
@@ -299,8 +301,11 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 
 	allExecutionIDs, rawOutcome, err := packToSizeLimit(
 		r.lggr,
-		OutcomeSerializable,
+		outcomeSerializable,
 	)
+
+	previousOutcome.Outcomes = outcomeSerializable.previousOutcome.Outcomes
+	previousOutcome.CurrentReports = outcomeSerializable.previousOutcome.CurrentReports
 
 	if err != nil {
 		r.lggr.Errorw("could not serialize outcomes batch", "error", err)
@@ -324,7 +329,7 @@ func (r *reportingPlugin) OutcomePrep(
 ) ([]*pbtypes.Id, map[string]*pbtypes.AggregationOutcome) {
 	lggr := r.lggr
 	weids := make([]*pbtypes.Id, 0)
-	outcomes := map[string]*pbtypes.AggregationOutcome{}
+	outcomes := make(map[string]*pbtypes.AggregationOutcome, 0)
 	rc := r.r
 	F := r.config.F
 	for _, weid := range q.Ids {

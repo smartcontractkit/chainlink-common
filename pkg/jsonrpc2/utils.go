@@ -3,14 +3,9 @@ package jsonrpc2
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
 )
 
-type Handler struct {
-}
-
-func (*Handler) DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (Request, error) {
+func DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (Request, error) {
 	var request Request
 	err := json.Unmarshal(requestBytes, &request)
 	if err != nil {
@@ -32,34 +27,27 @@ func (*Handler) DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (R
 	return request, nil
 }
 
-func (*Handler) EncodeRequest(request *Request) ([]byte, error) {
+func EncodeRequest(request *Request) ([]byte, error) {
 	return json.Marshal(request)
 }
 
-func (*Handler) DecodeResponse(responseBytes []byte) (Response, error) {
+func DecodeResponse(responseBytes []byte) (Response, error) {
 	var response Response
 	err := json.Unmarshal(responseBytes, &response)
 	if err != nil {
 		return Response{}, err
 	}
-	if response.Error != nil {
-		return Response{}, fmt.Errorf("received non-empty error field: %v", response.Error)
-	}
 	return response, nil
 }
 
-func (*Handler) EncodeResponse(response *Response) ([]byte, error) {
+func EncodeResponse(response *Response) ([]byte, error) {
 	return json.Marshal(response)
 }
 
-func (*Handler) EncodeErrorReponse(id string, err *WireError) ([]byte, error) {
+func EncodeErrorReponse(id string, err *WireError) ([]byte, error) {
 	return json.Marshal(Response{
 		Version: JsonRpcVersion,
 		ID:      id,
 		Error:   err,
 	})
-}
-
-func (r *Request) ServiceName() string {
-	return strings.Split(r.Method, ".")[0]
 }

@@ -1,30 +1,36 @@
 package jsonrpc2
 
-import "encoding/json"
-
-var (
-	// ErrUnknown should be used for all non-coded errors.
-	ErrUnknown = NewWireError(-32001, "JSON RPC unknown error")
-	// ErrParse is used when invalid JSON was received by the server.
-	ErrParse = NewWireError(-32700, "JSON RPC parse error")
-	//ErrInvalidRequest is used when the JSON sent is not a valid Request object.
-	ErrInvalidRequest = NewWireError(-32600, "JSON RPC invalid request")
-	// ErrMethodNotFound should be returned by the handler when the method does
-	// not exist / is not available.
-	ErrMethodNotFound = NewWireError(-32601, "JSON RPC method not found")
-	// ErrInvalidParams should be returned by the handler when method
-	// parameter(s) were invalid.
-	ErrInvalidParams = NewWireError(-32602, "JSON RPC invalid params")
-	// ErrInternal is not currently returned but defined for completeness.
-	ErrInternal = NewWireError(-32603, "JSON RPC internal error")
-
-	//ErrServerOverloaded is returned when a message was refused due to a
-	//server being temporarily unable to accept any new messages.
-	ErrServerOverloaded = NewWireError(-32000, "JSON RPC overloaded")
+import (
+	"encoding/json"
+	"strings"
 )
 
 const (
 	JsonRpcVersion = "2.0"
+
+	// ErrUnknown should be used for all non-coded errors.
+	ErrUnknown int64 = -32001
+
+	// ErrParse is used when invalid JSON was received by the server.
+	ErrParse int64 = -32700
+
+	//ErrInvalidRequest is used when the JSON sent is not a valid Request object.
+	ErrInvalidRequest int64 = -32600
+
+	// ErrMethodNotFound should be returned by the handler when the method does
+	// not exist / is not available.
+	ErrMethodNotFound int64 = -32601
+
+	// ErrInvalidParams should be returned by the handler when method
+	// parameter(s) were invalid.
+	ErrInvalidParams int64 = -32602
+
+	// ErrInternal is not currently returned but defined for completeness.
+	ErrInternal int64 = -32603
+
+	//ErrServerOverloaded is returned when a message was refused due to a
+	//server being temporarily unable to accept any new messages.
+	ErrServerOverloaded int64 = -32000
 )
 
 // Wrapping/unwrapping Message objects into JSON RPC ones folllowing https://www.jsonrpc.org/specification
@@ -36,6 +42,10 @@ type Request struct {
 	// Auth is used to store the JWT token for the request. It is not part of the JSON RPC specification.
 	// JWT token can be part of the request payload or attached to the request header.
 	Auth string `json:"auth,omitempty"`
+}
+
+func (r *Request) ServiceName() string {
+	return strings.Split(r.Method, ".")[0]
 }
 
 type Response struct {
@@ -55,13 +65,6 @@ type WireError struct {
 	Data *json.RawMessage `json:"data,omitempty"`
 }
 
-func (err *WireError) Error() string {
-	return err.Message
-}
-
-func NewWireError(code int64, message string) WireError {
-	return WireError{
-		Code:    code,
-		Message: message,
-	}
+func (w *WireError) Error() string {
+	return w.Message
 }

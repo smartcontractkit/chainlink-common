@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750955645657,
+  "lastUpdate": 1750981859501,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16800,6 +16800,48 @@ window.BENCHMARK_DATA = {
             "value": 28242,
             "unit": "ns/op",
             "extra": "42674 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "pablolagreca@hotmail.com",
+            "name": "pablolagreca",
+            "username": "pablolagreca"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d07b85c7c0872e21c1e904050c05014c0eb03583",
+          "message": "PLEX-250 - WriteReport initial implementation (#1264)\n\n* PLEX-250 - WriteReport initial implementation\n\n* all tests passing\n\n* adding back get tx result\n\n* applying merge to main\n\n* updaing gen code\n\n* adding back commented code and adding TODO item\n\n* updating obs go mods\n\n* rebase\n\n* reverting addition of confirmed state\n\n* changing TxStatus.SUCCESS so it is not the default int value\n\nchanging TxStatus enums so success is not 0\n\nimproving docs\n\n* running latest version of cre-protogen\n\nfixing cap code\n\n* pr feedback",
+          "timestamp": "2025-06-26T16:49:37-07:00",
+          "tree_id": "1f96530a1f7ca6f15615ac4964b510f1d2afb977",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d07b85c7c0872e21c1e904050c05014c0eb03583"
+        },
+        "date": 1750981858315,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.9,
+            "unit": "ns/op",
+            "extra": "3394848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.4,
+            "unit": "ns/op",
+            "extra": "2921973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28136,
+            "unit": "ns/op",
+            "extra": "42675 times\n4 procs"
           }
         ]
       }

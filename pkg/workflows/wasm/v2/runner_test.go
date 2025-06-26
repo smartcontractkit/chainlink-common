@@ -49,6 +49,24 @@ func TestRunner_CreateWorkflows(t *testing.T) {
 	assertEnv(t, getTestRunner(t, subscribeRequest))
 }
 
+func TestRunner_GetSecrets_PassesMaxResponseSize(t *testing.T) {
+	dr := getTestRunner(t, subscribeRequest)
+	dr.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
+		_, err := env.GetSecret(&pb.SecretRequest{Namespace: "Foo", Id: "Bar"}).Await()
+		// This will fail with "buffer cannot be empty" if we fail to pass the maxResponseSize from the
+		// runner to the runtime.
+		assert.ErrorContains(t, err, "secret Foo.Bar not found")
+
+		return sdk.Workflow[string]{
+			sdk.Handler(
+				basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
+				func(env *sdk.Environment[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
+					return 0, nil
+				}),
+		}, nil
+	})
+}
+
 func TestRunner_Run(t *testing.T) {
 	t.Run("runner gathers subscriptions", func(t *testing.T) {
 		dr := getTestRunner(t, subscribeRequest)

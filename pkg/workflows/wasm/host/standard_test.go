@@ -22,13 +22,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // See the README.md in standard_tests for more information.
@@ -330,7 +331,9 @@ func TestSecrets(t *testing.T) {
 	t.Run("returns an error if the secret doesn't exist", func(t *testing.T) {
 		resp := runSecretTest(t, m, &pb.SecretResponse{
 			Response: &pb.SecretResponse_Error{
-				Error: "could not find secret",
+				Error: &pb.SecretError{
+					Error: "could not find secret",
+				},
 			},
 		})
 		assert.ErrorContains(t, errors.New(resp.GetError()), "could not find secret")

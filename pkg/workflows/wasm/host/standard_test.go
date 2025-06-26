@@ -44,7 +44,7 @@ func init() {
 	flag.StringVar(&testPath, "path", "./standard_tests", "Path to the standard tests")
 }
 
-func TestConfig(t *testing.T) {
+func TestStandardConfig(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -53,7 +53,7 @@ func TestConfig(t *testing.T) {
 	require.ElementsMatch(t, anyTestConfig, actualConfig)
 }
 
-func TestErrors(t *testing.T) {
+func TestStandardErrors(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -61,7 +61,7 @@ func TestErrors(t *testing.T) {
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
 }
 
-func TestCapabilityCallsAreAsync(t *testing.T) {
+func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -97,7 +97,7 @@ func TestCapabilityCallsAreAsync(t *testing.T) {
 	assert.Equal(t, "truefalse", result.GetValue().GetStringValue())
 }
 
-func TestModeSwitch(t *testing.T) {
+func TestStandardModeSwitch(t *testing.T) {
 	t.Parallel()
 	t.Run("successful mode switch", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
@@ -144,7 +144,7 @@ func TestModeSwitch(t *testing.T) {
 	})
 }
 
-func TestLogging(t *testing.T) {
+func TestStandardLogging(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -156,7 +156,7 @@ func TestLogging(t *testing.T) {
 	runWithBasicTrigger(t, mockExecutionHelper)
 }
 
-func TestMultipleTriggers(t *testing.T) {
+func TestStandardMultipleTriggers(t *testing.T) {
 	t.Parallel()
 	m := makeTestModule(t)
 	t.Run("test registration", func(t *testing.T) {
@@ -242,7 +242,7 @@ func TestMultipleTriggers(t *testing.T) {
 	})
 }
 
-func TestRandom(t *testing.T) {
+func TestStandardRandom(t *testing.T) {
 	t.Parallel()
 	m := makeTestModule(t)
 
@@ -313,7 +313,7 @@ func TestRandom(t *testing.T) {
 	})
 }
 
-func TestSecrets(t *testing.T) {
+func TestStandardSecrets(t *testing.T) {
 	t.Parallel()
 
 	m := makeTestModule(t)

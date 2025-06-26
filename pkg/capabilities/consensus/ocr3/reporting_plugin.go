@@ -68,7 +68,7 @@ func (r *reportingPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (
 		QueriesSerializable{all},
 	)
 	if err != nil {
-		r.lggr.Errorw("could not retrieve batch", "error", err)
+		r.lggr.Errorw("could not serialize query batch", "error", err)
 		return nil, err
 	}
 
@@ -101,10 +101,14 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 
 	registeredWorkflowIDs := r.r.GetRegisteredWorkflowsIDs()
 
-	allExecutionIDs, obs, _ := packToSizeLimit(
+	allExecutionIDs, obs, err := packToSizeLimit(
 		r.lggr,
 		ObservationSerializable{reqMap, registeredWorkflowIDs},
 	)
+	if err != nil {
+		r.lggr.Errorw("could not serialize observations batch", "error", err)
+		return nil, err
+	}
 
 	r.lggr.Debugw(
 		"Observation complete",
@@ -260,18 +264,75 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		previousOutcome.Outcomes = map[string]*pbtypes.AggregationOutcome{}
 	}
 
+	// We need to prune outcomes from previous workflows that are no longer relevant.
+	for workflowID, outcome := range previousOutcome.Outcomes {
+		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
+		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
+			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
+			outcome.LastSeenAt = outctx.SeqNr
+		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
+			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
+			delete(previousOutcome.Outcomes, workflowID)
+			r.r.UnregisterWorkflowID(workflowID)
+		}
+	}
+
 	// Wipe out the CurrentReports. This gets regenerated
 	// every time since we only want to transmit reports that
 	// are part of the current Query.
 	previousOutcome.CurrentReports = []*pbtypes.Report{}
-	var allExecutionIDs []string
 
+	prepWeids, prepOutcomes := r.OutcomePrep(
+		execIDToOracleObservations,
+		execIDToEncoderShaToCount,
+		shaToEncoder,
+		previousOutcome,
+		q,
+		finalTimestamp,
+	)
+
+	OutcomeSerializable := &OutcomeSerializable{
+		previousOutcome: previousOutcome,
+		weids:           prepWeids,
+		outcomes:        prepOutcomes,
+	}
+
+	allExecutionIDs, rawOutcome, err := packToSizeLimit(
+		r.lggr,
+		OutcomeSerializable,
+	)
+
+	if err != nil {
+		r.lggr.Errorw("could not serialize outcomes batch", "error", err)
+		return nil, err
+	}
+
+	h := sha256.New()
+	h.Write(rawOutcome)
+	outcomeHash := h.Sum(nil)
+	r.lggr.Debugw("Outcome complete", "len", len(previousOutcome.Outcomes), "nAggregatedWorkflowExecutions", len(previousOutcome.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
+	return rawOutcome, err
+}
+
+func (r *reportingPlugin) OutcomePrep(
+	execIDToOracleObservations map[string]map[ocrcommon.OracleID][]values.Value,
+	execIDToEncoderShaToCount map[string]map[string]int,
+	shaToEncoder map[string]encoderConfig,
+	previousOutcome *pbtypes.Outcome,
+	q *pbtypes.Query,
+	finalTimestamp *timestamppb.Timestamp,
+) ([]*pbtypes.Id, map[string]*pbtypes.AggregationOutcome) {
+	lggr := r.lggr
+	weids := make([]*pbtypes.Id, 0)
+	outcomes := map[string]*pbtypes.AggregationOutcome{}
+	rc := r.r
+	F := r.config.F
 	for _, weid := range q.Ids {
 		if weid == nil {
-			r.lggr.Debugw("skipping nil id in query", "query", q)
+			lggr.Debugw("skipping nil id in query", "query", q)
 			continue
 		}
-		lggr := logger.With(r.lggr, "executionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
+		lggr := logger.With(lggr, "executionID", weid.WorkflowExecutionId, "workflowID", weid.WorkflowId)
 		obs, ok := execIDToOracleObservations[weid.WorkflowExecutionId]
 		if !ok {
 			lggr.Debugw("could not find any observations matching weid requested in the query")
@@ -283,18 +344,18 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one")
 		}
 
-		if len(obs) < (2*r.config.F + 1) {
+		if len(obs) < (2*F + 1) {
 			lggr.Debugw("insufficient observations for workflow execution id")
 			continue
 		}
 
-		agg, err2 := r.r.GetAggregator(weid.WorkflowId)
+		agg, err2 := rc.GetAggregator(weid.WorkflowId)
 		if err2 != nil {
 			lggr.Errorw("could not retrieve aggregator for workflow", "error", err2)
 			continue
 		}
 
-		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, obs, r.config.F)
+		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, obs, F)
 		if err2 != nil {
 			lggr.Errorw("error aggregating outcome", "error", err2)
 			continue
@@ -319,7 +380,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 		// we've checked this above when we checked the observations count.
 		var encCfg *encoderConfig
 		for sha, count := range shaToCount {
-			if count >= 2*r.config.F+1 {
+			if count >= 2*F+1 {
 				encoderCfg, ok := shaToEncoder[sha]
 				if !ok {
 					lggr.Debugw("could not find encoder matching sha")
@@ -338,35 +399,10 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			outcome.EncoderConfig = encCfg.config
 		}
 
-		report := &pbtypes.Report{
-			Outcome: outcome,
-			Id:      weid,
-		}
-		previousOutcome.CurrentReports = append(previousOutcome.CurrentReports, report)
-		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
-
-		previousOutcome.Outcomes[weid.WorkflowId] = outcome
+		weids = append(weids, weid)
+		outcomes[weid.WorkflowExecutionId] = outcome
 	}
-
-	// We need to prune outcomes from previous workflows that are no longer relevant.
-	for workflowID, outcome := range previousOutcome.Outcomes {
-		// Update the last seen round for this outcome. But this should only happen if the workflow is seen by F+1 nodes.
-		if seenWorkflowIDs[workflowID] >= (r.config.F + 1) {
-			r.lggr.Debugw("updating last seen round of outcome for workflow", "workflowID", workflowID)
-			outcome.LastSeenAt = outctx.SeqNr
-		} else if outctx.SeqNr-outcome.LastSeenAt > r.outcomePruningThreshold {
-			r.lggr.Debugw("pruning outcome for workflow", "workflowID", workflowID, "SeqNr", outctx.SeqNr, "lastSeenAt", outcome.LastSeenAt)
-			delete(previousOutcome.Outcomes, workflowID)
-			r.r.UnregisterWorkflowID(workflowID)
-		}
-	}
-
-	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(previousOutcome)
-	h := sha256.New()
-	h.Write(rawOutcome)
-	outcomeHash := h.Sum(nil)
-	r.lggr.Debugw("Outcome complete", "len", len(previousOutcome.Outcomes), "nAggregatedWorkflowExecutions", len(previousOutcome.CurrentReports), "allExecutionIDs", allExecutionIDs, "outcomeHash", hex.EncodeToString(outcomeHash), "err", err)
-	return rawOutcome, err
+	return weids, outcomes
 }
 
 func marshalReportInfo(info *pbtypes.ReportInfo, keyID string) ([]byte, error) {

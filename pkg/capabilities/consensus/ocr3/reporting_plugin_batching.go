@@ -70,7 +70,7 @@ type ObservationSerializable struct {
 
 func (o ObservationSerializable) Serialize(lggr logger.Logger) ([]string, []byte, error) {
 	obs := &pbtypes.Observations{}
-	allExecutionIDs := make([]string,0)
+	allExecutionIDs := make([]string, 0)
 
 	weids := make([]string, 0, len(o.reqMap))
 	for k := range o.reqMap {
@@ -165,6 +165,72 @@ func (o ObservationSerializable) Mid(mid int) Serializable {
 	return ObservationSerializable{
 		reqMap: newMap,
 	}
+}
+
+type OutcomeSerializable struct {
+	previousOutcome *pbtypes.Outcome
+	weids           []*pbtypes.Id
+	outcomes        map[string]*pbtypes.AggregationOutcome
+}
+
+func (o OutcomeSerializable) Serialize(_ logger.Logger) ([]string, []byte, error) {
+	currentReports := make([]*pbtypes.Report, 0)
+	var allExecutionIDs []string
+
+	for _, weid := range o.weids {
+		outcome := o.outcomes[weid.WorkflowExecutionId]
+		report := &pbtypes.Report{
+			Outcome: outcome,
+			Id:      weid,
+		}
+		currentReports = append(currentReports, report)
+		allExecutionIDs = append(allExecutionIDs, weid.WorkflowExecutionId)
+
+		o.previousOutcome.Outcomes[weid.WorkflowId] = outcome
+	}
+
+	o.previousOutcome.CurrentReports = currentReports
+	rawOutcome, err := proto.MarshalOptions{Deterministic: true}.Marshal(o.previousOutcome)
+
+	return allExecutionIDs, rawOutcome, err
+}
+
+func (o OutcomeSerializable) Len() int {
+	return len(o.weids)
+}
+
+func (o OutcomeSerializable) Mid(mid int) Serializable {
+	if mid < 0 {
+		return OutcomeSerializable{
+			o.previousOutcome,
+			[]*pbtypes.Id{},
+			make(map[string]*pbtypes.AggregationOutcome),
+		}
+	}
+	if mid >= len(o.outcomes) {
+		return o
+	}
+
+	weids := make([]*pbtypes.Id, 0, len(o.weids))
+	for _, k := range o.weids {
+		weids = append(weids, k)
+	}
+
+	weids = weids[:mid]
+
+	newOutcomes := make(map[string]*pbtypes.AggregationOutcome, len(weids))
+	for _, weid := range weids {
+		if outcome, ok := o.outcomes[weid.WorkflowExecutionId]; ok {
+			newOutcomes[weid.WorkflowExecutionId] = outcome
+		}
+	}
+
+	return OutcomeSerializable{
+		o.previousOutcome,
+		weids,
+		newOutcomes,
+	}
+
 }
 
 // packToSizeLimit function maximizes the number of requests being included in a batch.

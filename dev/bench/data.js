@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750871199597,
+  "lastUpdate": 1750947266998,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16716,6 +16716,48 @@ window.BENCHMARK_DATA = {
             "value": 28417,
             "unit": "ns/op",
             "extra": "41425 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e50b2e7ffe2da8e1e6e010947313801e363343a1",
+          "message": "[chore] Bump protos (#1300)",
+          "timestamp": "2025-06-26T14:12:12Z",
+          "tree_id": "ce8a0d3702d1472c1a484149e55b0e0d0f59a2fa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e50b2e7ffe2da8e1e6e010947313801e363343a1"
+        },
+        "date": 1750947265966,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.1,
+            "unit": "ns/op",
+            "extra": "3365604 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.4,
+            "unit": "ns/op",
+            "extra": "2849208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28142,
+            "unit": "ns/op",
+            "extra": "42199 times\n4 procs"
           }
         ]
       }

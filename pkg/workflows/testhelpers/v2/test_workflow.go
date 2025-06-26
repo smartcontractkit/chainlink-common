@@ -10,7 +10,7 @@ import (
 func RunTestWorkflow(runner sdk.Runner[string]) {
 	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
-			sdk.On(
+			sdk.Handler(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),
 				onTrigger),
 		}, nil
@@ -20,11 +20,11 @@ func RunTestWorkflow(runner sdk.Runner[string]) {
 func RunIdenticalTriggersWorkflow(runner sdk.Runner[string]) {
 	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
-			sdk.On(
+			sdk.Handler(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),
 				onTrigger,
 			),
-			sdk.On(
+			sdk.Handler(
 				basictrigger.Trigger(&basictrigger.Config{
 					Name:   "second-trigger",
 					Number: 200,
@@ -62,7 +62,7 @@ func onTrigger(env *sdk.Environment[string], runtime sdk.Runtime, outputs *basic
 func RunTestSecretsWorkflow(runner sdk.Runner[string]) {
 	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
 		return sdk.Workflow[string]{
-			sdk.On(
+			sdk.Handler(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),
 				func(env *sdk.Environment[string], rt sdk.Runtime, outputs *basictrigger.Outputs) (string, error) {
 					secret, err := env.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()

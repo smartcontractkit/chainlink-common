@@ -111,19 +111,6 @@ service RelayerSet {
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
   rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
 
-  rpc ContractReaderStart(ContractReaderStartRequest) returns (google.protobuf.Empty) {}
-  rpc ContractReaderClose(ContractReaderCloseRequest) returns (google.protobuf.Empty) {}
+  rpc ContractReaderStart(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc ContractReaderClose(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
-
-message ContractReaderStartRequest {
-  string contractReaderId = 1;
-}
-
-message ContractReaderCloseRequest {
-  string contractReaderId = 1;
-}
-
-
-
-
-

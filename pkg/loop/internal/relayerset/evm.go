@@ -15,6 +15,9 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
+const metadataEVMChain = "evm-chain-id"
+const metadataEVMNetwork = "evm-network"
+
 // evmClient wraps the EVMRelayerSetClient to attach RelayerID to EVMClient request.
 type evmClient struct {
 	relayID types.RelayID
@@ -72,11 +75,7 @@ func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransa
 }
 
 func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -90,11 +89,7 @@ func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransa
 }
 
 func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRequest) (*evmpb.CallContractReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,11 +110,7 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 }
 
 func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -138,11 +129,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +143,7 @@ func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest)
 }
 
 func (s *Server) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -179,11 +162,7 @@ func (s *Server) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequ
 }
 
 func (s *Server) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -204,11 +183,7 @@ func (s *Server) GetTransactionByHash(ctx context.Context, request *evmpb.GetTra
 }
 
 func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -229,11 +204,7 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTr
 }
 
 func (s *Server) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*evmpb.LatestAndFinalizedHeadReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -250,11 +221,7 @@ func (s *Server) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (
 }
 
 func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -283,11 +250,7 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrack
 }
 
 func (s *Server) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -305,11 +268,7 @@ func (s *Server) RegisterLogTracking(ctx context.Context, request *evmpb.Registe
 }
 
 func (s *Server) UnregisterLogTracking(ctx context.Context, request *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -322,11 +281,7 @@ func (s *Server) UnregisterLogTracking(ctx context.Context, request *evmpb.Unreg
 }
 
 func (s *Server) GetTransactionStatus(ctx context.Context, request *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
-	relayId, err := readRelayID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	evmService, err := s.getEVMService(ctx, relayId)
+	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +295,11 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *evmpb.GetTra
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
 }
 
-func (s *Server) getEVMService(ctx context.Context, id types.RelayID) (types.EVMService, error) {
+func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {
+	id, err := readRelayID(ctx)
+	if err != nil {
+		return nil, err
+	}
 	idT := relayerset.RelayerId{Network: id.Network, ChainId: id.ChainID}
 	r, err := s.getRelayer(ctx, &idT)
 	if err != nil {
@@ -351,19 +310,19 @@ func (s *Server) getEVMService(ctx context.Context, id types.RelayID) (types.EVM
 }
 
 func appendRelayID(ctx context.Context, id types.RelayID) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, "evm-network", id.Network, "evm-chain-id", id.ChainID)
+	return metadata.AppendToOutgoingContext(ctx, metadataEVMNetwork, id.Network, metadataEVMChain, id.ChainID)
 }
 
 func readRelayID(ctx context.Context) (types.RelayID, error) {
-	network, err := readValue(ctx, "evm-network")
+	network, err := readContextValue(ctx, metadataEVMNetwork)
 	if err != nil {
 		return types.RelayID{}, err
 	}
-	chainID, err := readValue(ctx, "evm-chain-id")
+	chainID, err := readContextValue(ctx, metadataEVMChain)
 	if err != nil {
 		return types.RelayID{}, err
 	}
 	return types.RelayID{
-		network, chainID,
+		Network: network, ChainID: chainID,
 	}, nil
 }

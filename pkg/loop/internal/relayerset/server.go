@@ -2,12 +2,14 @@ package relayerset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -71,9 +73,14 @@ func (s *Server) Close() error {
 	return nil
 }
 
-func (s *Server) getReader(id string) (*readerAndServer, error) {
+func (s *Server) getReader(ctx context.Context) (*readerAndServer, error) {
 	s.readersMux.Lock()
 	defer s.readersMux.Unlock()
+
+	id, err := readContextValue(ctx, metadataContractReader)
+	if err != nil {
+		return nil, err
+	}
 
 	reader, ok := s.readers[id]
 	if !ok {
@@ -299,4 +306,16 @@ func (s *Server) getRelayer(ctx context.Context, relayerID *relayerset.RelayerId
 	}
 
 	return relayer, nil
+}
+
+func readContextValue(ctx context.Context, key string) (string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		contractReaderIds := md.Get(key)
+		if len(contractReaderIds) == 1 {
+			return contractReaderIds[0], nil
+		}
+		return "", fmt.Errorf("num values is not 1 but %d", len(contractReaderIds))
+	}
+	return "", errors.New("could not read ctx metadata")
 }

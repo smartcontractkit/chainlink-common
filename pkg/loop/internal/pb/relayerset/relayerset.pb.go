@@ -930,94 +930,6 @@ func (x *RelayerNameResponse) GetName() string {
 	return ""
 }
 
-type ContractReaderStartRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	ContractReaderId string                 `protobuf:"bytes,1,opt,name=contractReaderId,proto3" json:"contractReaderId,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *ContractReaderStartRequest) Reset() {
-	*x = ContractReaderStartRequest{}
-	mi := &file_relayerset_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ContractReaderStartRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ContractReaderStartRequest) ProtoMessage() {}
-
-func (x *ContractReaderStartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ContractReaderStartRequest.ProtoReflect.Descriptor instead.
-func (*ContractReaderStartRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *ContractReaderStartRequest) GetContractReaderId() string {
-	if x != nil {
-		return x.ContractReaderId
-	}
-	return ""
-}
-
-type ContractReaderCloseRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	ContractReaderId string                 `protobuf:"bytes,1,opt,name=contractReaderId,proto3" json:"contractReaderId,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *ContractReaderCloseRequest) Reset() {
-	*x = ContractReaderCloseRequest{}
-	mi := &file_relayerset_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ContractReaderCloseRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ContractReaderCloseRequest) ProtoMessage() {}
-
-func (x *ContractReaderCloseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_relayerset_proto_msgTypes[19]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ContractReaderCloseRequest.ProtoReflect.Descriptor instead.
-func (*ContractReaderCloseRequest) Descriptor() ([]byte, []int) {
-	return file_relayerset_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *ContractReaderCloseRequest) GetContractReaderId() string {
-	if x != nil {
-		return x.ContractReaderId
-	}
-	return ""
-}
-
 var File_relayerset_proto protoreflect.FileDescriptor
 
 const file_relayerset_proto_rawDesc = "" +
@@ -1081,11 +993,7 @@ const file_relayerset_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\")\n" +
 	"\x13RelayerNameResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"H\n" +
-	"\x1aContractReaderStartRequest\x12*\n" +
-	"\x10contractReaderId\x18\x01 \x01(\tR\x10contractReaderId\"H\n" +
-	"\x1aContractReaderCloseRequest\x12*\n" +
-	"\x10contractReaderId\x18\x01 \x01(\tR\x10contractReaderId2\xa9\t\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name2\xff\b\n" +
 	"\n" +
 	"RelayerSet\x12P\n" +
 	"\x03Get\x12\".loop.relayerset.GetRelayerRequest\x1a#.loop.relayerset.GetRelayerResponse\"\x00\x12[\n" +
@@ -1098,9 +1006,9 @@ const file_relayerset_proto_rawDesc = "" +
 	"\fRelayerReady\x12\x1a.loop.relayerset.RelayerId\x1a\x16.google.protobuf.Empty\"\x00\x12a\n" +
 	"\x13RelayerHealthReport\x12\x1a.loop.relayerset.RelayerId\x1a,.loop.relayerset.RelayerHealthReportResponse\"\x00\x12Q\n" +
 	"\vRelayerName\x12\x1a.loop.relayerset.RelayerId\x1a$.loop.relayerset.RelayerNameResponse\"\x00\x12^\n" +
-	"\x11RelayerLatestHead\x12\".loop.relayerset.LatestHeadRequest\x1a#.loop.relayerset.LatestHeadResponse\"\x00\x12\\\n" +
-	"\x13ContractReaderStart\x12+.loop.relayerset.ContractReaderStartRequest\x1a\x16.google.protobuf.Empty\"\x00\x12\\\n" +
-	"\x13ContractReaderClose\x12+.loop.relayerset.ContractReaderCloseRequest\x1a\x16.google.protobuf.Empty\"\x00BNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
+	"\x11RelayerLatestHead\x12\".loop.relayerset.LatestHeadRequest\x1a#.loop.relayerset.LatestHeadResponse\"\x00\x12G\n" +
+	"\x13ContractReaderStart\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00\x12G\n" +
+	"\x13ContractReaderClose\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00BNZLgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayersetb\x06proto3"
 
 var (
 	file_relayerset_proto_rawDescOnce sync.Once
@@ -1114,7 +1022,7 @@ func file_relayerset_proto_rawDescGZIP() []byte {
 	return file_relayerset_proto_rawDescData
 }
 
-var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_relayerset_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_relayerset_proto_goTypes = []any{
 	(*RelayerId)(nil),                   // 0: loop.relayerset.RelayerId
 	(*GetRelayerRequest)(nil),           // 1: loop.relayerset.GetRelayerRequest
@@ -1134,10 +1042,8 @@ var file_relayerset_proto_goTypes = []any{
 	(*LatestHeadResponse)(nil),          // 15: loop.relayerset.LatestHeadResponse
 	(*RelayerHealthReportResponse)(nil), // 16: loop.relayerset.RelayerHealthReportResponse
 	(*RelayerNameResponse)(nil),         // 17: loop.relayerset.RelayerNameResponse
-	(*ContractReaderStartRequest)(nil),  // 18: loop.relayerset.ContractReaderStartRequest
-	(*ContractReaderCloseRequest)(nil),  // 19: loop.relayerset.ContractReaderCloseRequest
-	nil,                                 // 20: loop.relayerset.RelayerHealthReportResponse.ReportEntry
-	(*emptypb.Empty)(nil),               // 21: google.protobuf.Empty
+	nil,                                 // 18: loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	(*emptypb.Empty)(nil),               // 19: google.protobuf.Empty
 }
 var file_relayerset_proto_depIdxs = []int32{
 	0,  // 0: loop.relayerset.GetRelayerRequest.id:type_name -> loop.relayerset.RelayerId
@@ -1151,7 +1057,7 @@ var file_relayerset_proto_depIdxs = []int32{
 	0,  // 8: loop.relayerset.NewContractReaderRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 9: loop.relayerset.NewContractWriterRequest.relayerId:type_name -> loop.relayerset.RelayerId
 	0,  // 10: loop.relayerset.LatestHeadRequest.relayerId:type_name -> loop.relayerset.RelayerId
-	20, // 11: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
+	18, // 11: loop.relayerset.RelayerHealthReportResponse.report:type_name -> loop.relayerset.RelayerHealthReportResponse.ReportEntry
 	1,  // 12: loop.relayerset.RelayerSet.Get:input_type -> loop.relayerset.GetRelayerRequest
 	3,  // 13: loop.relayerset.RelayerSet.List:input_type -> loop.relayerset.ListAllRelayersRequest
 	8,  // 14: loop.relayerset.RelayerSet.NewPluginProvider:input_type -> loop.relayerset.NewPluginProviderRequest
@@ -1163,21 +1069,21 @@ var file_relayerset_proto_depIdxs = []int32{
 	0,  // 20: loop.relayerset.RelayerSet.RelayerHealthReport:input_type -> loop.relayerset.RelayerId
 	0,  // 21: loop.relayerset.RelayerSet.RelayerName:input_type -> loop.relayerset.RelayerId
 	14, // 22: loop.relayerset.RelayerSet.RelayerLatestHead:input_type -> loop.relayerset.LatestHeadRequest
-	18, // 23: loop.relayerset.RelayerSet.ContractReaderStart:input_type -> loop.relayerset.ContractReaderStartRequest
-	19, // 24: loop.relayerset.RelayerSet.ContractReaderClose:input_type -> loop.relayerset.ContractReaderCloseRequest
+	19, // 23: loop.relayerset.RelayerSet.ContractReaderStart:input_type -> google.protobuf.Empty
+	19, // 24: loop.relayerset.RelayerSet.ContractReaderClose:input_type -> google.protobuf.Empty
 	2,  // 25: loop.relayerset.RelayerSet.Get:output_type -> loop.relayerset.GetRelayerResponse
 	4,  // 26: loop.relayerset.RelayerSet.List:output_type -> loop.relayerset.ListAllRelayersResponse
 	9,  // 27: loop.relayerset.RelayerSet.NewPluginProvider:output_type -> loop.relayerset.NewPluginProviderResponse
 	11, // 28: loop.relayerset.RelayerSet.NewContractReader:output_type -> loop.relayerset.NewContractReaderResponse
 	13, // 29: loop.relayerset.RelayerSet.NewContractWriter:output_type -> loop.relayerset.NewContractWriterResponse
-	21, // 30: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
-	21, // 31: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
-	21, // 32: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
+	19, // 30: loop.relayerset.RelayerSet.StartRelayer:output_type -> google.protobuf.Empty
+	19, // 31: loop.relayerset.RelayerSet.CloseRelayer:output_type -> google.protobuf.Empty
+	19, // 32: loop.relayerset.RelayerSet.RelayerReady:output_type -> google.protobuf.Empty
 	16, // 33: loop.relayerset.RelayerSet.RelayerHealthReport:output_type -> loop.relayerset.RelayerHealthReportResponse
 	17, // 34: loop.relayerset.RelayerSet.RelayerName:output_type -> loop.relayerset.RelayerNameResponse
 	15, // 35: loop.relayerset.RelayerSet.RelayerLatestHead:output_type -> loop.relayerset.LatestHeadResponse
-	21, // 36: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
-	21, // 37: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
+	19, // 36: loop.relayerset.RelayerSet.ContractReaderStart:output_type -> google.protobuf.Empty
+	19, // 37: loop.relayerset.RelayerSet.ContractReaderClose:output_type -> google.protobuf.Empty
 	25, // [25:38] is the sub-list for method output_type
 	12, // [12:25] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
@@ -1196,7 +1102,7 @@ func file_relayerset_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_relayerset_proto_rawDesc), len(file_relayerset_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

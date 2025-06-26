@@ -50,8 +50,8 @@ type RelayerSetClient interface {
 	RelayerHealthReport(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerHealthReportResponse, error)
 	RelayerName(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerNameResponse, error)
 	RelayerLatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadResponse, error)
-	ContractReaderStart(ctx context.Context, in *ContractReaderStartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	ContractReaderClose(ctx context.Context, in *ContractReaderCloseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ContractReaderStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ContractReaderClose(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type relayerSetClient struct {
@@ -172,7 +172,7 @@ func (c *relayerSetClient) RelayerLatestHead(ctx context.Context, in *LatestHead
 	return out, nil
 }
 
-func (c *relayerSetClient) ContractReaderStart(ctx context.Context, in *ContractReaderStartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *relayerSetClient) ContractReaderStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderStart_FullMethodName, in, out, cOpts...)
@@ -182,7 +182,7 @@ func (c *relayerSetClient) ContractReaderStart(ctx context.Context, in *Contract
 	return out, nil
 }
 
-func (c *relayerSetClient) ContractReaderClose(ctx context.Context, in *ContractReaderCloseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *relayerSetClient) ContractReaderClose(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, RelayerSet_ContractReaderClose_FullMethodName, in, out, cOpts...)
@@ -207,8 +207,8 @@ type RelayerSetServer interface {
 	RelayerHealthReport(context.Context, *RelayerId) (*RelayerHealthReportResponse, error)
 	RelayerName(context.Context, *RelayerId) (*RelayerNameResponse, error)
 	RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error)
-	ContractReaderStart(context.Context, *ContractReaderStartRequest) (*emptypb.Empty, error)
-	ContractReaderClose(context.Context, *ContractReaderCloseRequest) (*emptypb.Empty, error)
+	ContractReaderStart(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	ContractReaderClose(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedRelayerSetServer()
 }
 
@@ -252,10 +252,10 @@ func (UnimplementedRelayerSetServer) RelayerName(context.Context, *RelayerId) (*
 func (UnimplementedRelayerSetServer) RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RelayerLatestHead not implemented")
 }
-func (UnimplementedRelayerSetServer) ContractReaderStart(context.Context, *ContractReaderStartRequest) (*emptypb.Empty, error) {
+func (UnimplementedRelayerSetServer) ContractReaderStart(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderStart not implemented")
 }
-func (UnimplementedRelayerSetServer) ContractReaderClose(context.Context, *ContractReaderCloseRequest) (*emptypb.Empty, error) {
+func (UnimplementedRelayerSetServer) ContractReaderClose(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderClose not implemented")
 }
 func (UnimplementedRelayerSetServer) mustEmbedUnimplementedRelayerSetServer() {}
@@ -478,7 +478,7 @@ func _RelayerSet_RelayerLatestHead_Handler(srv interface{}, ctx context.Context,
 }
 
 func _RelayerSet_ContractReaderStart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ContractReaderStartRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -490,13 +490,13 @@ func _RelayerSet_ContractReaderStart_Handler(srv interface{}, ctx context.Contex
 		FullMethod: RelayerSet_ContractReaderStart_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelayerSetServer).ContractReaderStart(ctx, req.(*ContractReaderStartRequest))
+		return srv.(RelayerSetServer).ContractReaderStart(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _RelayerSet_ContractReaderClose_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ContractReaderCloseRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -508,7 +508,7 @@ func _RelayerSet_ContractReaderClose_Handler(srv interface{}, ctx context.Contex
 		FullMethod: RelayerSet_ContractReaderClose_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelayerSetServer).ContractReaderClose(ctx, req.(*ContractReaderCloseRequest))
+		return srv.(RelayerSetServer).ContractReaderClose(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

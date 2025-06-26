@@ -2,18 +2,15 @@ package relayerset
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 )
 
-const contractHead = "contractReaderID"
+const metadataContractReader = "contractReaderID"
 
 type contractReader struct {
 	contractReaderID string
@@ -21,31 +18,35 @@ type contractReader struct {
 }
 
 func (c *contractReader) GetLatestValue(ctx context.Context, in *pb.GetLatestValueRequest, opts ...grpc.CallOption) (*pb.GetLatestValueReply, error) {
-	return c.client.contractReaderClient.GetLatestValue(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.GetLatestValue(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
 }
 
 func (c *contractReader) GetLatestValueWithHeadData(ctx context.Context, in *pb.GetLatestValueRequest, opts ...grpc.CallOption) (*pb.GetLatestValueWithHeadDataReply, error) {
-	return c.client.contractReaderClient.GetLatestValueWithHeadData(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.GetLatestValueWithHeadData(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
 }
 
 func (c *contractReader) BatchGetLatestValues(ctx context.Context, in *pb.BatchGetLatestValuesRequest, opts ...grpc.CallOption) (*pb.BatchGetLatestValuesReply, error) {
-	return c.client.contractReaderClient.BatchGetLatestValues(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.BatchGetLatestValues(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
 }
 
 func (c *contractReader) QueryKey(ctx context.Context, in *pb.QueryKeyRequest, opts ...grpc.CallOption) (*pb.QueryKeyReply, error) {
-	return c.client.contractReaderClient.QueryKey(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.QueryKey(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
 }
 
 func (c *contractReader) QueryKeys(ctx context.Context, in *pb.QueryKeysRequest, opts ...grpc.CallOption) (*pb.QueryKeysReply, error) {
-	return c.client.contractReaderClient.QueryKeys(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.QueryKeys(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
 }
 
 func (c *contractReader) Bind(ctx context.Context, in *pb.BindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return c.client.contractReaderClient.Bind(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.Bind(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
 }
 
 func (c *contractReader) Unbind(ctx context.Context, in *pb.UnbindRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return c.client.contractReaderClient.Unbind(metadata.AppendToOutgoingContext(ctx, contractHead, c.contractReaderID), in, opts...)
+	return c.client.contractReaderClient.Unbind(appendContractReaderID(ctx, c.contractReaderID), in, opts...)
+}
+
+func appendContractReaderID(ctx context.Context, id string) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, metadataContractReader, id)
 }
 
 type contractReaderServiceClient struct {
@@ -58,23 +59,13 @@ func (s *contractReaderServiceClient) ClientConn() grpc.ClientConnInterface {
 }
 
 func (s *contractReaderServiceClient) Start(ctx context.Context) error {
-	_, err := s.client.relayerSetClient.ContractReaderStart(ctx, &relayerset.ContractReaderStartRequest{
-		ContractReaderId: s.contractReaderID,
-	})
-	if err != nil {
-		return fmt.Errorf("error starting contract reader: %w", err)
-	}
-	return nil
+	_, err := s.client.relayerSetClient.ContractReaderStart(appendContractReaderID(ctx, s.contractReaderID), nil)
+	return err
 }
 
 func (s *contractReaderServiceClient) Close() error {
-	_, err := s.client.relayerSetClient.ContractReaderClose(context.Background(), &relayerset.ContractReaderCloseRequest{
-		ContractReaderId: s.contractReaderID,
-	})
-	if err != nil {
-		return fmt.Errorf("error closing contract reader: %w", err)
-	}
-	return nil
+	_, err := s.client.relayerSetClient.ContractReaderClose(appendContractReaderID(context.Background(), s.contractReaderID), &emptypb.Empty{})
+	return err
 }
 
 func (s *contractReaderServiceClient) HealthReport() map[string]error {
@@ -88,8 +79,8 @@ func (s *contractReaderServiceClient) Ready() error {
 	return nil
 }
 
-func (s *Server) ContractReaderStart(ctx context.Context, req *relayerset.ContractReaderStartRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(req.ContractReaderId)
+func (s *Server) ContractReaderStart(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,22 +88,21 @@ func (s *Server) ContractReaderStart(ctx context.Context, req *relayerset.Contra
 	return &emptypb.Empty{}, reader.reader.Start(ctx)
 }
 
-func (s *Server) ContractReaderClose(_ context.Context, req *relayerset.ContractReaderCloseRequest) (*emptypb.Empty, error) {
-	reader, err := s.getReader(req.ContractReaderId)
+func (s *Server) ContractReaderClose(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	s.removeReader(req.ContractReaderId)
+	id, err := readContextValue(ctx, metadataContractReader)
+	if err != nil {
+		return nil, err
+	}
+	s.removeReader(id)
 	return &emptypb.Empty{}, reader.reader.Close()
 }
 
 func (s *Server) GetLatestValue(ctx context.Context, in *pb.GetLatestValueRequest) (*pb.GetLatestValueReply, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +111,7 @@ func (s *Server) GetLatestValue(ctx context.Context, in *pb.GetLatestValueReques
 }
 
 func (s *Server) GetLatestValueWithHeadData(ctx context.Context, in *pb.GetLatestValueRequest) (*pb.GetLatestValueWithHeadDataReply, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,11 +120,7 @@ func (s *Server) GetLatestValueWithHeadData(ctx context.Context, in *pb.GetLates
 }
 
 func (s *Server) GetLatestValues(ctx context.Context, in *pb.BatchGetLatestValuesRequest) (*pb.BatchGetLatestValuesReply, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +129,7 @@ func (s *Server) GetLatestValues(ctx context.Context, in *pb.BatchGetLatestValue
 }
 
 func (s *Server) QueryKeys(ctx context.Context, in *pb.QueryKeysRequest) (*pb.QueryKeysReply, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -160,11 +138,7 @@ func (s *Server) QueryKeys(ctx context.Context, in *pb.QueryKeysRequest) (*pb.Qu
 }
 
 func (s *Server) QueryKey(ctx context.Context, in *pb.QueryKeyRequest) (*pb.QueryKeyReply, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,11 +147,7 @@ func (s *Server) QueryKey(ctx context.Context, in *pb.QueryKeyRequest) (*pb.Quer
 }
 
 func (s *Server) Bind(ctx context.Context, in *pb.BindRequest) (*emptypb.Empty, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -186,30 +156,10 @@ func (s *Server) Bind(ctx context.Context, in *pb.BindRequest) (*emptypb.Empty, 
 }
 
 func (s *Server) Unbind(ctx context.Context, in *pb.UnbindRequest) (*emptypb.Empty, error) {
-	readerId, err := getContractReaderId(ctx)
-	if err != nil {
-		return nil, err
-	}
-	reader, err := s.getReader(readerId)
+	reader, err := s.getReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return reader.server.Unbind(ctx, in)
-}
-
-func getContractReaderId(ctx context.Context) (string, error) {
-	return readValue(ctx, contractHead)
-}
-
-func readValue(ctx context.Context, key string) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		contractReaderIds := md.Get(key)
-		if len(contractReaderIds) == 1 {
-			return contractReaderIds[0], nil
-		}
-		return "", fmt.Errorf("num values is not 1 but %d", len(contractReaderIds))
-	}
-	return "", errors.New("could not read ctx metadata")
 }

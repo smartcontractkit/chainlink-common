@@ -8,6 +8,20 @@ import (
 	consensusRequests "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 )
 
+var (
+	// donTimeStore is a singleton which can be accessed by anyone who needs it
+	donTimeStore          *DonTimeStore
+	once                  sync.Once
+	defaultRequestTimeout = 20 * time.Minute
+)
+
+func GetDonTimeStore() *DonTimeStore {
+	once.Do(func() {
+		donTimeStore = newDonTimeStore(defaultRequestTimeout)
+	})
+	return donTimeStore
+}
+
 type DonTimeStore struct {
 	Requests       *consensusRequests.Store[*DonTimeRequest, DonTimeResponse]
 	requestTimeout time.Duration
@@ -18,7 +32,7 @@ type DonTimeStore struct {
 	mu                   sync.Mutex
 }
 
-func NewDonTimeStore(requestTimeout time.Duration) *DonTimeStore {
+func newDonTimeStore(requestTimeout time.Duration) *DonTimeStore {
 	return &DonTimeStore{
 		Requests:             consensusRequests.NewStore[*DonTimeRequest, DonTimeResponse](),
 		requestTimeout:       requestTimeout,

@@ -40,6 +40,9 @@ func NewWorkflowLibPlugin(store *DonTimeStore, config ocr3types.ReportingPluginC
 	if offchainCfg.MinTimeIncrease <= 0 {
 		return nil, errors.New("minimum time increase must be positive")
 	}
+	if offchainCfg.ExecutionRemovalTime.AsDuration() <= 0 {
+		return nil, errors.New("execution removal time must be positive")
+	}
 
 	return &workflowLibPlugin{
 		store:           store,
@@ -235,7 +238,7 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 			if _, ok := outcome.FinishedExecutionRemovalTimes[id]; ok {
 				continue
 			}
-			outcome.FinishedExecutionRemovalTimes[id] = donTime + int64(defaultRequestExpiry)
+			outcome.FinishedExecutionRemovalTimes[id] = donTime + p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds()
 		}
 	}
 

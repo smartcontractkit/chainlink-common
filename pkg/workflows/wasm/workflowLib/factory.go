@@ -18,7 +18,7 @@ const (
 	defaultMaxReportCount          = 20
 	defaultBatchSize               = 1000
 	defaultOutcomePruningThreshold = 3600
-	defaultRequestExpiry           = 10 * time.Minute // CRE workflow time limit
+	defaultExecutionRemovalTime    = 10 * time.Minute // CRE workflow time limit
 	defaultMinTimeIncrease         = time.Millisecond
 )
 
@@ -66,8 +66,8 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	if configProto.MaxReportCount <= 0 {
 		configProto.MaxReportCount = defaultMaxReportCount
 	}
-	if configProto.RequestTimeout == nil {
-		configProto.RequestTimeout = durationpb.New(defaultRequestExpiry)
+	if configProto.ExecutionRemovalTime == nil {
+		configProto.ExecutionRemovalTime = durationpb.New(defaultExecutionRemovalTime)
 	}
 	if configProto.MinTimeIncrease <= 0 {
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)

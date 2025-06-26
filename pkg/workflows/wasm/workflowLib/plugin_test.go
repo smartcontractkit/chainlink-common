@@ -7,6 +7,7 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
@@ -21,6 +22,7 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 		MaxReportLengthBytes:      defaultMaxPhaseOutputBytes,
 		MaxBatchSize:              defaultBatchSize,
 		MinTimeIncrease:           int64(defaultMinTimeIncrease),
+		ExecutionRemovalTime:      durationpb.New(defaultExecutionRemovalTime),
 	}
 
 	offChainCfgBytes, err := proto.Marshal(offChainCfg)
@@ -40,7 +42,7 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 
 func TestPlugin_Observation(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestExpiry)
+	store := newDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -80,7 +82,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("Valid Observation", func(t *testing.T) {
-		store := NewDonTimeStore(defaultRequestExpiry)
+		store := newDonTimeStore(defaultRequestTimeout)
 		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
 		require.NoError(t, err)
 
@@ -108,7 +110,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	})
 
 	t.Run("Invalid sequence number", func(t *testing.T) {
-		store := NewDonTimeStore(defaultRequestExpiry)
+		store := newDonTimeStore(defaultRequestTimeout)
 		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
 		require.NoError(t, err)
 
@@ -138,7 +140,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 func TestPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestExpiry)
+	store := newDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -217,7 +219,7 @@ func TestPlugin_Outcome(t *testing.T) {
 
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestExpiry)
+	store := newDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -328,4 +330,35 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		require.Contains(t, store.finishedExecutionIDs, "workflow-abc")
 		require.NotContains(t, store.finishedExecutionIDs, "workflow-123")
 	})
+}
+
+func TestPlugin_ExpiredRequest(t *testing.T) {
+	lggr := logger.Test(t)
+	store := newDonTimeStore(0)
+	config := newTestPluginConfig(t)
+	ctx := t.Context()
+
+	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	require.NoError(t, err)
+
+	outcomeCtx := ocr3types.OutcomeContext{
+		PreviousOutcome: []byte(""),
+	}
+
+	query, err := plugin.Query(ctx, outcomeCtx)
+	require.NoError(t, err)
+
+	// Add single request to queue
+	executionID := "workflow-123"
+	timeRequest := store.RequestDonTime(executionID, 0)
+
+	_, err = plugin.Observation(ctx, outcomeCtx, query)
+	require.NoError(t, err)
+
+	select {
+	case donTimeResp := <-timeRequest:
+		require.ErrorContains(t, donTimeResp.Err, "timeout exceeded: could not process request before expiry")
+	case <-ctx.Done():
+		t.Fatal("failed to retrieve donTime from request channel")
+	}
 }

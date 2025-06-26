@@ -1,12 +1,15 @@
 package workflowLib
 
+// TODO: Do we need a Capability , request handler, etc?
+// TODO: Or can we just use the store and the plugin itself can handle the rest?
+/*
 import (
+	"context"
 	"time"
 
 	"github.com/jonboulle/clockwork"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
@@ -24,7 +27,6 @@ type Capability struct {
 	capabilityRegistry core.CapabilitiesRegistry
 }
 
-// TODO: Do we need this to have a capability from pkg/capabilities?
 
 type Config struct {
 	RequestTimeout    *time.Duration
@@ -57,7 +59,7 @@ func NewOCR3(config Config) *Capability {
 	}
 
 	if config.store == nil {
-		config.store = requests.NewStore[*ReportRequest]()
+		config.store = NewDonTimeStore()
 	}
 
 	if config.capability == nil {
@@ -114,3 +116,4 @@ func (o *Capability) Close() error {
 
 	return nil
 }
+*/

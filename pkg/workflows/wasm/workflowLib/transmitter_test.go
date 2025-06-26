@@ -15,7 +15,7 @@ import (
 
 func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestExpiry)
+	store := newDonTimeStore(defaultRequestExpiry)
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
@@ -56,7 +56,7 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 
 func TestTransmitter_ExpiredRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(0) // Expire requests instantly
+	store := newDonTimeStore(0) // Expire requests instantly
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, defaultBatchSize)

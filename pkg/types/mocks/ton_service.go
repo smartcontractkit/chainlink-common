@@ -4,11 +4,9 @@ package mocks
 
 import (
 	context "context"
-	big "math/big"
-
-	mock "github.com/stretchr/testify/mock"
 
 	ton "github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
+	mock "github.com/stretchr/testify/mock"
 
 	types "github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -26,81 +24,24 @@ func (_m *TONService) EXPECT() *TONService_Expecter {
 	return &TONService_Expecter{mock: &_m.Mock}
 }
 
-// GetAccessor provides a mock function with no fields
-func (_m *TONService) GetAccessor() (types.ChainAccessor, error) {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetAccessor")
-	}
-
-	var r0 types.ChainAccessor
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (types.ChainAccessor, error)); ok {
-		return rf()
-	}
-	if rf, ok := ret.Get(0).(func() types.ChainAccessor); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(types.ChainAccessor)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// TONService_GetAccessor_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAccessor'
-type TONService_GetAccessor_Call struct {
-	*mock.Call
-}
-
-// GetAccessor is a helper method to define mock.On call
-func (_e *TONService_Expecter) GetAccessor() *TONService_GetAccessor_Call {
-	return &TONService_GetAccessor_Call{Call: _e.mock.On("GetAccessor")}
-}
-
-func (_c *TONService_GetAccessor_Call) Run(run func()) *TONService_GetAccessor_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *TONService_GetAccessor_Call) Return(_a0 types.ChainAccessor, _a1 error) *TONService_GetAccessor_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *TONService_GetAccessor_Call) RunAndReturn(run func() (types.ChainAccessor, error)) *TONService_GetAccessor_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetAccountBalance provides a mock function with given fields: ctx, address, block
-func (_m *TONService) GetAccountBalance(ctx context.Context, address string, block *ton.BlockIDExt) (*big.Int, error) {
+func (_m *TONService) GetAccountBalance(ctx context.Context, address string, block *ton.BlockIDExt) (*ton.Balance, error) {
 	ret := _m.Called(ctx, address, block)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAccountBalance")
 	}
 
-	var r0 *big.Int
+	var r0 *ton.Balance
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *ton.BlockIDExt) (*big.Int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *ton.BlockIDExt) (*ton.Balance, error)); ok {
 		return rf(ctx, address, block)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *ton.BlockIDExt) *big.Int); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *ton.BlockIDExt) *ton.Balance); ok {
 		r0 = rf(ctx, address, block)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*big.Int)
+			r0 = ret.Get(0).(*ton.Balance)
 		}
 	}
 
@@ -133,12 +74,12 @@ func (_c *TONService_GetAccountBalance_Call) Run(run func(ctx context.Context, a
 	return _c
 }
 
-func (_c *TONService_GetAccountBalance_Call) Return(_a0 *big.Int, _a1 error) *TONService_GetAccountBalance_Call {
+func (_c *TONService_GetAccountBalance_Call) Return(_a0 *ton.Balance, _a1 error) *TONService_GetAccountBalance_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *TONService_GetAccountBalance_Call) RunAndReturn(run func(context.Context, string, *ton.BlockIDExt) (*big.Int, error)) *TONService_GetAccountBalance_Call {
+func (_c *TONService_GetAccountBalance_Call) RunAndReturn(run func(context.Context, string, *ton.BlockIDExt) (*ton.Balance, error)) *TONService_GetAccountBalance_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -202,54 +143,6 @@ func (_c *TONService_GetBlockData_Call) RunAndReturn(run func(context.Context, *
 	return _c
 }
 
-// GetLogs provides a mock function with given fields: ctx
-func (_m *TONService) GetLogs(ctx context.Context) []ton.Log {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetLogs")
-	}
-
-	var r0 []ton.Log
-	if rf, ok := ret.Get(0).(func(context.Context) []ton.Log); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]ton.Log)
-		}
-	}
-
-	return r0
-}
-
-// TONService_GetLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLogs'
-type TONService_GetLogs_Call struct {
-	*mock.Call
-}
-
-// GetLogs is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *TONService_Expecter) GetLogs(ctx interface{}) *TONService_GetLogs_Call {
-	return &TONService_GetLogs_Call{Call: _e.mock.On("GetLogs", ctx)}
-}
-
-func (_c *TONService_GetLogs_Call) Run(run func(ctx context.Context)) *TONService_GetLogs_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *TONService_GetLogs_Call) Return(_a0 []ton.Log) *TONService_GetLogs_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *TONService_GetLogs_Call) RunAndReturn(run func(context.Context) []ton.Log) *TONService_GetLogs_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetMasterchainInfo provides a mock function with given fields: ctx
 func (_m *TONService) GetMasterchainInfo(ctx context.Context) (*ton.BlockIDExt, error) {
 	ret := _m.Called(ctx)
@@ -309,23 +202,23 @@ func (_c *TONService_GetMasterchainInfo_Call) RunAndReturn(run func(context.Cont
 }
 
 // GetTransactionExecutionFees provides a mock function with given fields: ctx, lt
-func (_m *TONService) GetTransactionExecutionFees(ctx context.Context, lt uint64) (*big.Int, error) {
+func (_m *TONService) GetTransactionExecutionFees(ctx context.Context, lt uint64) (*ton.TransactionFee, error) {
 	ret := _m.Called(ctx, lt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTransactionExecutionFees")
 	}
 
-	var r0 *big.Int
+	var r0 *ton.TransactionFee
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint64) (*big.Int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) (*ton.TransactionFee, error)); ok {
 		return rf(ctx, lt)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint64) *big.Int); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) *ton.TransactionFee); ok {
 		r0 = rf(ctx, lt)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*big.Int)
+			r0 = ret.Get(0).(*ton.TransactionFee)
 		}
 	}
 
@@ -357,18 +250,18 @@ func (_c *TONService_GetTransactionExecutionFees_Call) Run(run func(ctx context.
 	return _c
 }
 
-func (_c *TONService_GetTransactionExecutionFees_Call) Return(_a0 *big.Int, _a1 error) *TONService_GetTransactionExecutionFees_Call {
+func (_c *TONService_GetTransactionExecutionFees_Call) Return(_a0 *ton.TransactionFee, _a1 error) *TONService_GetTransactionExecutionFees_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *TONService_GetTransactionExecutionFees_Call) RunAndReturn(run func(context.Context, uint64) (*big.Int, error)) *TONService_GetTransactionExecutionFees_Call {
+func (_c *TONService_GetTransactionExecutionFees_Call) RunAndReturn(run func(context.Context, uint64) (*ton.TransactionFee, error)) *TONService_GetTransactionExecutionFees_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTransactionStatus provides a mock function with given fields: ctx, lt
-func (_m *TONService) GetTransactionStatus(ctx context.Context, lt uint64) (types.TransactionStatus, *int32, error) {
+func (_m *TONService) GetTransactionStatus(ctx context.Context, lt uint64) (types.TransactionStatus, int32, error) {
 	ret := _m.Called(ctx, lt)
 
 	if len(ret) == 0 {
@@ -376,9 +269,9 @@ func (_m *TONService) GetTransactionStatus(ctx context.Context, lt uint64) (type
 	}
 
 	var r0 types.TransactionStatus
-	var r1 *int32
+	var r1 int32
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint64) (types.TransactionStatus, *int32, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) (types.TransactionStatus, int32, error)); ok {
 		return rf(ctx, lt)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, uint64) types.TransactionStatus); ok {
@@ -387,12 +280,10 @@ func (_m *TONService) GetTransactionStatus(ctx context.Context, lt uint64) (type
 		r0 = ret.Get(0).(types.TransactionStatus)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uint64) *int32); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint64) int32); ok {
 		r1 = rf(ctx, lt)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*int32)
-		}
+		r1 = ret.Get(1).(int32)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, uint64) error); ok {
@@ -423,12 +314,12 @@ func (_c *TONService_GetTransactionStatus_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *TONService_GetTransactionStatus_Call) Return(_a0 types.TransactionStatus, _a1 *int32, _a2 error) *TONService_GetTransactionStatus_Call {
+func (_c *TONService_GetTransactionStatus_Call) Return(_a0 types.TransactionStatus, _a1 int32, _a2 error) *TONService_GetTransactionStatus_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *TONService_GetTransactionStatus_Call) RunAndReturn(run func(context.Context, uint64) (types.TransactionStatus, *int32, error)) *TONService_GetTransactionStatus_Call {
+func (_c *TONService_GetTransactionStatus_Call) RunAndReturn(run func(context.Context, uint64) (types.TransactionStatus, int32, error)) *TONService_GetTransactionStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

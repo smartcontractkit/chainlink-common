@@ -25,11 +25,12 @@ type Client struct {
 
 	relayerSetClient    relayerset.RelayerSetClient
 	evmRelayerSetClient relayerset.EVMRelayerSetClient
+	tonRelayerSetClient relayerset.TONRelayerSetClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
-	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn), evmRelayerSetClient: relayerset.NewEVMRelayerSetClient(conn)}
+	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn), evmRelayerSetClient: relayerset.NewEVMRelayerSetClient(conn), tonRelayerSetClient: relayerset.NewTONRelayerSetClient(conn)}
 }
 
 func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, error) {
@@ -123,6 +124,16 @@ func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
 	return rel.NewEVMCClient(&evmClient{
 		relayID: relayID,
 		client:  k.evmRelayerSetClient,
+	}), nil
+}
+
+func (k *Client) TON(relayID types.RelayID) (types.TONService, error) {
+	if k.evmRelayerSetClient == nil {
+		return nil, errors.New("evmRelayerSetClient can't be nil")
+	}
+	return rel.NewTONClient(&tonClient{
+		relayID: relayID,
+		client:  k.tonRelayerSetClient,
 	}), nil
 }
 

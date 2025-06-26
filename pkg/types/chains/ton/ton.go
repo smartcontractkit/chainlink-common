@@ -50,8 +50,16 @@ type Log struct {
 	Error      *string
 }
 
+type TransactionFee struct {
+	TransactionFee *big.Int // Cost of transaction in NanoTONs
+}
+
+type Balance struct {
+	Balance *big.Int // Cost of transaction in NanoTONs
+}
+
 type LiteClient interface {
 	GetMasterchainInfo(ctx context.Context) (*BlockIDExt, error)
 	GetBlockData(ctx context.Context, block *BlockIDExt) (*Block, error)
-	GetAccountBalance(ctx context.Context, address string, block *BlockIDExt) (*big.Int, error)
+	GetAccountBalance(ctx context.Context, address string, block *BlockIDExt) (*Balance, error)
 }

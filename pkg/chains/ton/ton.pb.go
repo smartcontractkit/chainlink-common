@@ -136,6 +136,50 @@ func (x *BlockIDExt) GetSeqno() uint32 {
 	return 0
 }
 
+type GetBlockDataRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Block         *BlockIDExt            `protobuf:"bytes,1,opt,name=block,proto3" json:"block,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBlockDataRequest) Reset() {
+	*x = GetBlockDataRequest{}
+	mi := &file_ton_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBlockDataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBlockDataRequest) ProtoMessage() {}
+
+func (x *GetBlockDataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ton_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBlockDataRequest.ProtoReflect.Descriptor instead.
+func (*GetBlockDataRequest) Descriptor() ([]byte, []int) {
+	return file_ton_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetBlockDataRequest) GetBlock() *BlockIDExt {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
 type Block struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GlobalId      int32                  `protobuf:"varint,1,opt,name=global_id,json=globalId,proto3" json:"global_id,omitempty"`
@@ -145,7 +189,7 @@ type Block struct {
 
 func (x *Block) Reset() {
 	*x = Block{}
-	mi := &file_ton_proto_msgTypes[1]
+	mi := &file_ton_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -157,7 +201,7 @@ func (x *Block) String() string {
 func (*Block) ProtoMessage() {}
 
 func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[1]
+	mi := &file_ton_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -170,7 +214,7 @@ func (x *Block) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Block.ProtoReflect.Descriptor instead.
 func (*Block) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{1}
+	return file_ton_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Block) GetGlobalId() int32 {
@@ -190,7 +234,7 @@ type GetAccountBalanceRequest struct {
 
 func (x *GetAccountBalanceRequest) Reset() {
 	*x = GetAccountBalanceRequest{}
-	mi := &file_ton_proto_msgTypes[2]
+	mi := &file_ton_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -202,7 +246,7 @@ func (x *GetAccountBalanceRequest) String() string {
 func (*GetAccountBalanceRequest) ProtoMessage() {}
 
 func (x *GetAccountBalanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[2]
+	mi := &file_ton_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -215,7 +259,7 @@ func (x *GetAccountBalanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccountBalanceRequest.ProtoReflect.Descriptor instead.
 func (*GetAccountBalanceRequest) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{2}
+	return file_ton_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetAccountBalanceRequest) GetAddress() string {
@@ -232,28 +276,28 @@ func (x *GetAccountBalanceRequest) GetBlock() *BlockIDExt {
 	return nil
 }
 
-type BalanceReply struct {
+type Balance struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Balance       *pb.BigInt             `protobuf:"bytes,1,opt,name=balance,proto3" json:"balance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BalanceReply) Reset() {
-	*x = BalanceReply{}
-	mi := &file_ton_proto_msgTypes[3]
+func (x *Balance) Reset() {
+	*x = Balance{}
+	mi := &file_ton_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BalanceReply) String() string {
+func (x *Balance) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BalanceReply) ProtoMessage() {}
+func (*Balance) ProtoMessage() {}
 
-func (x *BalanceReply) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[3]
+func (x *Balance) ProtoReflect() protoreflect.Message {
+	mi := &file_ton_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -264,12 +308,12 @@ func (x *BalanceReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BalanceReply.ProtoReflect.Descriptor instead.
-func (*BalanceReply) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{3}
+// Deprecated: Use Balance.ProtoReflect.Descriptor instead.
+func (*Balance) Descriptor() ([]byte, []int) {
+	return file_ton_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *BalanceReply) GetBalance() *pb.BigInt {
+func (x *Balance) GetBalance() *pb.BigInt {
 	if x != nil {
 		return x.Balance
 	}
@@ -282,15 +326,15 @@ type Message struct {
 	ToAddress     string                 `protobuf:"bytes,2,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
 	AmountNano    string                 `protobuf:"bytes,3,opt,name=amount_nano,json=amountNano,proto3" json:"amount_nano,omitempty"`
 	Bounce        bool                   `protobuf:"varint,4,opt,name=bounce,proto3" json:"bounce,omitempty"`
-	Body          []byte                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                            // BOC
-	StateInit     []byte                 `protobuf:"bytes,6,opt,name=state_init,json=stateInit,proto3" json:"state_init,omitempty"` // optional BOC
+	Body          []byte                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                                  // BOC
+	StateInit     []byte                 `protobuf:"bytes,6,opt,name=state_init,json=stateInit,proto3,oneof" json:"state_init,omitempty"` // optional BOC
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Message) Reset() {
 	*x = Message{}
-	mi := &file_ton_proto_msgTypes[4]
+	mi := &file_ton_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -302,7 +346,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[4]
+	mi := &file_ton_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,7 +359,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{4}
+	return file_ton_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Message) GetMode() uint32 {
@@ -369,7 +413,7 @@ type SendTransactionRequest struct {
 
 func (x *SendTransactionRequest) Reset() {
 	*x = SendTransactionRequest{}
-	mi := &file_ton_proto_msgTypes[5]
+	mi := &file_ton_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -381,7 +425,7 @@ func (x *SendTransactionRequest) String() string {
 func (*SendTransactionRequest) ProtoMessage() {}
 
 func (x *SendTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[5]
+	mi := &file_ton_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -394,64 +438,12 @@ func (x *SendTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SendTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{5}
+	return file_ton_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SendTransactionRequest) GetMessage() *Message {
 	if x != nil {
 		return x.Message
-	}
-	return nil
-}
-
-type SendTransactionReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	LogicalTime   uint64                 `protobuf:"varint,1,opt,name=logical_time,json=logicalTime,proto3" json:"logical_time,omitempty"`
-	Hash          []byte                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SendTransactionReply) Reset() {
-	*x = SendTransactionReply{}
-	mi := &file_ton_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SendTransactionReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SendTransactionReply) ProtoMessage() {}
-
-func (x *SendTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SendTransactionReply.ProtoReflect.Descriptor instead.
-func (*SendTransactionReply) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *SendTransactionReply) GetLogicalTime() uint64 {
-	if x != nil {
-		return x.LogicalTime
-	}
-	return 0
-}
-
-func (x *SendTransactionReply) GetHash() []byte {
-	if x != nil {
-		return x.Hash
 	}
 	return nil
 }
@@ -503,7 +495,7 @@ func (x *GetTransactionStatusRequest) GetLogicalTime() uint64 {
 type GetTransactionStatusReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        TransactionStatus      `protobuf:"varint,1,opt,name=status,proto3,enum=loop.ton.TransactionStatus" json:"status,omitempty"`
-	ExitCode      int32                  `protobuf:"varint,2,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"` // optional smart contract exit code
+	ExitCode      *int32                 `protobuf:"varint,2,opt,name=exit_code,json=exitCode,proto3,oneof" json:"exit_code,omitempty"` // Optional smart contract exit code
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -546,8 +538,8 @@ func (x *GetTransactionStatusReply) GetStatus() TransactionStatus {
 }
 
 func (x *GetTransactionStatusReply) GetExitCode() int32 {
-	if x != nil {
-		return x.ExitCode
+	if x != nil && x.ExitCode != nil {
+		return *x.ExitCode
 	}
 	return 0
 }
@@ -741,8 +733,8 @@ type Log struct {
 	EventTopic    uint64                 `protobuf:"varint,5,opt,name=event_topic,json=eventTopic,proto3" json:"event_topic,omitempty"`
 	Data          []byte                 `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
 	ReceivedAt    *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	Error         string                 `protobuf:"bytes,9,opt,name=error,proto3" json:"error,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
+	Error         *string                `protobuf:"bytes,9,opt,name=error,proto3,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -834,8 +826,8 @@ func (x *Log) GetExpiresAt() *timestamppb.Timestamp {
 }
 
 func (x *Log) GetError() string {
-	if x != nil {
-		return x.Error
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
 	return ""
 }
@@ -1016,50 +1008,6 @@ func (x *UnregisterFilterRequest) GetName() string {
 	return ""
 }
 
-type GetLogsReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Logs          []*Log                 `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetLogsReply) Reset() {
-	*x = GetLogsReply{}
-	mi := &file_ton_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetLogsReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetLogsReply) ProtoMessage() {}
-
-func (x *GetLogsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_ton_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetLogsReply.ProtoReflect.Descriptor instead.
-func (*GetLogsReply) Descriptor() ([]byte, []int) {
-	return file_ton_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *GetLogsReply) GetLogs() []*Log {
-	if x != nil {
-		return x.Logs
-	}
-	return nil
-}
-
 var File_ton_proto protoreflect.FileDescriptor
 
 const file_ton_proto_rawDesc = "" +
@@ -1069,14 +1017,16 @@ const file_ton_proto_rawDesc = "" +
 	"BlockIDExt\x12\x1c\n" +
 	"\tworkchain\x18\x01 \x01(\x05R\tworkchain\x12\x14\n" +
 	"\x05shard\x18\x02 \x01(\x04R\x05shard\x12\x14\n" +
-	"\x05seqno\x18\x03 \x01(\rR\x05seqno\"$\n" +
+	"\x05seqno\x18\x03 \x01(\rR\x05seqno\"A\n" +
+	"\x13GetBlockDataRequest\x12*\n" +
+	"\x05block\x18\x01 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\"$\n" +
 	"\x05Block\x12\x1b\n" +
 	"\tglobal_id\x18\x01 \x01(\x05R\bglobalId\"`\n" +
 	"\x18GetAccountBalanceRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12*\n" +
-	"\x05block\x18\x02 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\";\n" +
-	"\fBalanceReply\x12+\n" +
-	"\abalance\x18\x01 \x01(\v2\x11.values.v1.BigIntR\abalance\"\xa8\x01\n" +
+	"\x05block\x18\x02 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\"6\n" +
+	"\aBalance\x12+\n" +
+	"\abalance\x18\x01 \x01(\v2\x11.values.v1.BigIntR\abalance\"\xbc\x01\n" +
 	"\aMessage\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\rR\x04mode\x12\x1d\n" +
 	"\n" +
@@ -1084,19 +1034,19 @@ const file_ton_proto_rawDesc = "" +
 	"\vamount_nano\x18\x03 \x01(\tR\n" +
 	"amountNano\x12\x16\n" +
 	"\x06bounce\x18\x04 \x01(\bR\x06bounce\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\fR\x04body\x12\x1d\n" +
+	"\x04body\x18\x05 \x01(\fR\x04body\x12\"\n" +
 	"\n" +
-	"state_init\x18\x06 \x01(\fR\tstateInit\"E\n" +
+	"state_init\x18\x06 \x01(\fH\x00R\tstateInit\x88\x01\x01B\r\n" +
+	"\v_state_init\"E\n" +
 	"\x16SendTransactionRequest\x12+\n" +
-	"\amessage\x18\x01 \x01(\v2\x11.loop.ton.MessageR\amessage\"M\n" +
-	"\x14SendTransactionReply\x12!\n" +
-	"\flogical_time\x18\x01 \x01(\x04R\vlogicalTime\x12\x12\n" +
-	"\x04hash\x18\x02 \x01(\fR\x04hash\"@\n" +
+	"\amessage\x18\x01 \x01(\v2\x11.loop.ton.MessageR\amessage\"@\n" +
 	"\x1bGetTransactionStatusRequest\x12!\n" +
-	"\flogical_time\x18\x01 \x01(\x04R\vlogicalTime\"m\n" +
+	"\flogical_time\x18\x01 \x01(\x04R\vlogicalTime\"\x80\x01\n" +
 	"\x19GetTransactionStatusReply\x123\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x1b.loop.ton.TransactionStatusR\x06status\x12\x1b\n" +
-	"\texit_code\x18\x02 \x01(\x05R\bexitCode\"G\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x1b.loop.ton.TransactionStatusR\x06status\x12 \n" +
+	"\texit_code\x18\x02 \x01(\x05H\x00R\bexitCode\x88\x01\x01B\f\n" +
+	"\n" +
+	"_exit_code\"G\n" +
 	"\"GetTransactionExecutionFeesRequest\x12!\n" +
 	"\flogical_time\x18\x01 \x01(\x04R\vlogicalTime\"T\n" +
 	" GetTransactionExecutionFeesReply\x120\n" +
@@ -1111,7 +1061,7 @@ const file_ton_proto_rawDesc = "" +
 	"\vevent_topic\x18\x05 \x01(\x04R\n" +
 	"eventTopic\x12!\n" +
 	"\fstarting_seq\x18\x06 \x01(\rR\vstartingSeq\x12%\n" +
-	"\x0eretention_secs\x18\a \x01(\x03R\rretentionSecs\"\xa6\x02\n" +
+	"\x0eretention_secs\x18\a \x01(\x03R\rretentionSecs\"\xc9\x02\n" +
 	"\x03Log\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tfilter_id\x18\x02 \x01(\x03R\bfilterId\x12\x15\n" +
@@ -1121,10 +1071,12 @@ const file_ton_proto_rawDesc = "" +
 	"eventTopic\x12\x12\n" +
 	"\x04data\x18\x06 \x01(\fR\x04data\x12;\n" +
 	"\vreceived_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"receivedAt\x129\n" +
+	"receivedAt\x12>\n" +
 	"\n" +
-	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12\x14\n" +
-	"\x05error\x18\t \x01(\tR\x05error\"&\n" +
+	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampH\x00R\texpiresAt\x88\x01\x01\x12\x19\n" +
+	"\x05error\x18\t \x01(\tH\x01R\x05error\x88\x01\x01B\r\n" +
+	"\v_expires_atB\b\n" +
+	"\x06_error\"&\n" +
 	"\x10HasFilterRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"(\n" +
 	"\x0eHasFilterReply\x12\x16\n" +
@@ -1132,25 +1084,22 @@ const file_ton_proto_rawDesc = "" +
 	"\x15RegisterFilterRequest\x12/\n" +
 	"\x06filter\x18\x01 \x01(\v2\x17.loop.ton.LPFilterQueryR\x06filter\"-\n" +
 	"\x17UnregisterFilterRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"1\n" +
-	"\fGetLogsReply\x12!\n" +
-	"\x04logs\x18\x01 \x03(\v2\r.loop.ton.LogR\x04logs*\x94\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name*\x94\x01\n" +
 	"\x11TransactionStatus\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_UNKNOWN\x10\x00\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12 \n" +
 	"\x1cTRANSACTION_STATUS_FINALIZED\x10\x02\x12\x1d\n" +
-	"\x19TRANSACTION_STATUS_FAILED\x10\x032\x9b\x06\n" +
+	"\x19TRANSACTION_STATUS_FAILED\x10\x032\xdc\x05\n" +
 	"\x03TON\x12B\n" +
-	"\x12GetMasterchainInfo\x12\x16.google.protobuf.Empty\x1a\x14.loop.ton.BlockIDExt\x125\n" +
-	"\fGetBlockData\x12\x14.loop.ton.BlockIDExt\x1a\x0f.loop.ton.Block\x12O\n" +
-	"\x11GetAccountBalance\x12\".loop.ton.GetAccountBalanceRequest\x1a\x16.loop.ton.BalanceReply\x12S\n" +
-	"\x0fSendTransaction\x12 .loop.ton.SendTransactionRequest\x1a\x1e.loop.ton.SendTransactionReply\x12b\n" +
+	"\x12GetMasterchainInfo\x12\x16.google.protobuf.Empty\x1a\x14.loop.ton.BlockIDExt\x12>\n" +
+	"\fGetBlockData\x12\x1d.loop.ton.GetBlockDataRequest\x1a\x0f.loop.ton.Block\x12J\n" +
+	"\x11GetAccountBalance\x12\".loop.ton.GetAccountBalanceRequest\x1a\x11.loop.ton.Balance\x12K\n" +
+	"\x0fSendTransaction\x12 .loop.ton.SendTransactionRequest\x1a\x16.google.protobuf.Empty\x12b\n" +
 	"\x14GetTransactionStatus\x12%.loop.ton.GetTransactionStatusRequest\x1a#.loop.ton.GetTransactionStatusReply\x12w\n" +
 	"\x1bGetTransactionExecutionFees\x12,.loop.ton.GetTransactionExecutionFeesRequest\x1a*.loop.ton.GetTransactionExecutionFeesReply\x12A\n" +
 	"\tHasFilter\x12\x1a.loop.ton.HasFilterRequest\x1a\x18.loop.ton.HasFilterReply\x12I\n" +
 	"\x0eRegisterFilter\x12\x1f.loop.ton.RegisterFilterRequest\x1a\x16.google.protobuf.Empty\x12M\n" +
-	"\x10UnregisterFilter\x12!.loop.ton.UnregisterFilterRequest\x1a\x16.google.protobuf.Empty\x129\n" +
-	"\aGetLogs\x12\x16.google.protobuf.Empty\x1a\x16.loop.ton.GetLogsReplyB=Z;github.com/smartcontractkit/chainlink-common/pkg/chains/tonb\x06proto3"
+	"\x10UnregisterFilter\x12!.loop.ton.UnregisterFilterRequest\x1a\x16.google.protobuf.EmptyB=Z;github.com/smartcontractkit/chainlink-common/pkg/chains/tonb\x06proto3"
 
 var (
 	file_ton_proto_rawDescOnce sync.Once
@@ -1165,16 +1114,16 @@ func file_ton_proto_rawDescGZIP() []byte {
 }
 
 var file_ton_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ton_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_ton_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_ton_proto_goTypes = []any{
 	(TransactionStatus)(0),                     // 0: loop.ton.TransactionStatus
 	(*BlockIDExt)(nil),                         // 1: loop.ton.BlockIDExt
-	(*Block)(nil),                              // 2: loop.ton.Block
-	(*GetAccountBalanceRequest)(nil),           // 3: loop.ton.GetAccountBalanceRequest
-	(*BalanceReply)(nil),                       // 4: loop.ton.BalanceReply
-	(*Message)(nil),                            // 5: loop.ton.Message
-	(*SendTransactionRequest)(nil),             // 6: loop.ton.SendTransactionRequest
-	(*SendTransactionReply)(nil),               // 7: loop.ton.SendTransactionReply
+	(*GetBlockDataRequest)(nil),                // 2: loop.ton.GetBlockDataRequest
+	(*Block)(nil),                              // 3: loop.ton.Block
+	(*GetAccountBalanceRequest)(nil),           // 4: loop.ton.GetAccountBalanceRequest
+	(*Balance)(nil),                            // 5: loop.ton.Balance
+	(*Message)(nil),                            // 6: loop.ton.Message
+	(*SendTransactionRequest)(nil),             // 7: loop.ton.SendTransactionRequest
 	(*GetTransactionStatusRequest)(nil),        // 8: loop.ton.GetTransactionStatusRequest
 	(*GetTransactionStatusReply)(nil),          // 9: loop.ton.GetTransactionStatusReply
 	(*GetTransactionExecutionFeesRequest)(nil), // 10: loop.ton.GetTransactionExecutionFeesRequest
@@ -1185,43 +1134,40 @@ var file_ton_proto_goTypes = []any{
 	(*HasFilterReply)(nil),                     // 15: loop.ton.HasFilterReply
 	(*RegisterFilterRequest)(nil),              // 16: loop.ton.RegisterFilterRequest
 	(*UnregisterFilterRequest)(nil),            // 17: loop.ton.UnregisterFilterRequest
-	(*GetLogsReply)(nil),                       // 18: loop.ton.GetLogsReply
-	(*pb.BigInt)(nil),                          // 19: values.v1.BigInt
-	(*timestamppb.Timestamp)(nil),              // 20: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                      // 21: google.protobuf.Empty
+	(*pb.BigInt)(nil),                          // 18: values.v1.BigInt
+	(*timestamppb.Timestamp)(nil),              // 19: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                      // 20: google.protobuf.Empty
 }
 var file_ton_proto_depIdxs = []int32{
-	1,  // 0: loop.ton.GetAccountBalanceRequest.block:type_name -> loop.ton.BlockIDExt
-	19, // 1: loop.ton.BalanceReply.balance:type_name -> values.v1.BigInt
-	5,  // 2: loop.ton.SendTransactionRequest.message:type_name -> loop.ton.Message
-	0,  // 3: loop.ton.GetTransactionStatusReply.status:type_name -> loop.ton.TransactionStatus
-	19, // 4: loop.ton.GetTransactionExecutionFeesReply.total_fees:type_name -> values.v1.BigInt
-	20, // 5: loop.ton.Log.received_at:type_name -> google.protobuf.Timestamp
-	20, // 6: loop.ton.Log.expires_at:type_name -> google.protobuf.Timestamp
-	12, // 7: loop.ton.RegisterFilterRequest.filter:type_name -> loop.ton.LPFilterQuery
-	13, // 8: loop.ton.GetLogsReply.logs:type_name -> loop.ton.Log
-	21, // 9: loop.ton.TON.GetMasterchainInfo:input_type -> google.protobuf.Empty
-	1,  // 10: loop.ton.TON.GetBlockData:input_type -> loop.ton.BlockIDExt
-	3,  // 11: loop.ton.TON.GetAccountBalance:input_type -> loop.ton.GetAccountBalanceRequest
-	6,  // 12: loop.ton.TON.SendTransaction:input_type -> loop.ton.SendTransactionRequest
+	1,  // 0: loop.ton.GetBlockDataRequest.block:type_name -> loop.ton.BlockIDExt
+	1,  // 1: loop.ton.GetAccountBalanceRequest.block:type_name -> loop.ton.BlockIDExt
+	18, // 2: loop.ton.Balance.balance:type_name -> values.v1.BigInt
+	6,  // 3: loop.ton.SendTransactionRequest.message:type_name -> loop.ton.Message
+	0,  // 4: loop.ton.GetTransactionStatusReply.status:type_name -> loop.ton.TransactionStatus
+	18, // 5: loop.ton.GetTransactionExecutionFeesReply.total_fees:type_name -> values.v1.BigInt
+	19, // 6: loop.ton.Log.received_at:type_name -> google.protobuf.Timestamp
+	19, // 7: loop.ton.Log.expires_at:type_name -> google.protobuf.Timestamp
+	12, // 8: loop.ton.RegisterFilterRequest.filter:type_name -> loop.ton.LPFilterQuery
+	20, // 9: loop.ton.TON.GetMasterchainInfo:input_type -> google.protobuf.Empty
+	2,  // 10: loop.ton.TON.GetBlockData:input_type -> loop.ton.GetBlockDataRequest
+	4,  // 11: loop.ton.TON.GetAccountBalance:input_type -> loop.ton.GetAccountBalanceRequest
+	7,  // 12: loop.ton.TON.SendTransaction:input_type -> loop.ton.SendTransactionRequest
 	8,  // 13: loop.ton.TON.GetTransactionStatus:input_type -> loop.ton.GetTransactionStatusRequest
 	10, // 14: loop.ton.TON.GetTransactionExecutionFees:input_type -> loop.ton.GetTransactionExecutionFeesRequest
 	14, // 15: loop.ton.TON.HasFilter:input_type -> loop.ton.HasFilterRequest
 	16, // 16: loop.ton.TON.RegisterFilter:input_type -> loop.ton.RegisterFilterRequest
 	17, // 17: loop.ton.TON.UnregisterFilter:input_type -> loop.ton.UnregisterFilterRequest
-	21, // 18: loop.ton.TON.GetLogs:input_type -> google.protobuf.Empty
-	1,  // 19: loop.ton.TON.GetMasterchainInfo:output_type -> loop.ton.BlockIDExt
-	2,  // 20: loop.ton.TON.GetBlockData:output_type -> loop.ton.Block
-	4,  // 21: loop.ton.TON.GetAccountBalance:output_type -> loop.ton.BalanceReply
-	7,  // 22: loop.ton.TON.SendTransaction:output_type -> loop.ton.SendTransactionReply
-	9,  // 23: loop.ton.TON.GetTransactionStatus:output_type -> loop.ton.GetTransactionStatusReply
-	11, // 24: loop.ton.TON.GetTransactionExecutionFees:output_type -> loop.ton.GetTransactionExecutionFeesReply
-	15, // 25: loop.ton.TON.HasFilter:output_type -> loop.ton.HasFilterReply
-	21, // 26: loop.ton.TON.RegisterFilter:output_type -> google.protobuf.Empty
-	21, // 27: loop.ton.TON.UnregisterFilter:output_type -> google.protobuf.Empty
-	18, // 28: loop.ton.TON.GetLogs:output_type -> loop.ton.GetLogsReply
-	19, // [19:29] is the sub-list for method output_type
-	9,  // [9:19] is the sub-list for method input_type
+	1,  // 18: loop.ton.TON.GetMasterchainInfo:output_type -> loop.ton.BlockIDExt
+	3,  // 19: loop.ton.TON.GetBlockData:output_type -> loop.ton.Block
+	5,  // 20: loop.ton.TON.GetAccountBalance:output_type -> loop.ton.Balance
+	20, // 21: loop.ton.TON.SendTransaction:output_type -> google.protobuf.Empty
+	9,  // 22: loop.ton.TON.GetTransactionStatus:output_type -> loop.ton.GetTransactionStatusReply
+	11, // 23: loop.ton.TON.GetTransactionExecutionFees:output_type -> loop.ton.GetTransactionExecutionFeesReply
+	15, // 24: loop.ton.TON.HasFilter:output_type -> loop.ton.HasFilterReply
+	20, // 25: loop.ton.TON.RegisterFilter:output_type -> google.protobuf.Empty
+	20, // 26: loop.ton.TON.UnregisterFilter:output_type -> google.protobuf.Empty
+	18, // [18:27] is the sub-list for method output_type
+	9,  // [9:18] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1232,13 +1178,16 @@ func file_ton_proto_init() {
 	if File_ton_proto != nil {
 		return
 	}
+	file_ton_proto_msgTypes[5].OneofWrappers = []any{}
+	file_ton_proto_msgTypes[8].OneofWrappers = []any{}
+	file_ton_proto_msgTypes[12].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ton_proto_rawDesc), len(file_ton_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

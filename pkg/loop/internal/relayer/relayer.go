@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -148,6 +149,9 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 		if evmService, ok := r.(types.EVMService); ok {
 			evmpb.RegisterEVMServer(s, newEVMServer(evmService, p.BrokerExt))
 		}
+		if tonService, ok := r.(types.TONService); ok {
+			tonpb.RegisterTONServer(s, newTONServer(tonService, p.BrokerExt))
+		}
 	}, rRes, ksRes, ksCSARes, crRes)
 	if err != nil {
 		return nil, err
@@ -213,11 +217,12 @@ type relayerClient struct {
 
 	relayer   pb.RelayerClient
 	evmClient evmpb.EVMClient
+	tonClient tonpb.TONClient
 }
 
 func newRelayerClient(b *net.BrokerExt, conn grpc.ClientConnInterface) *relayerClient {
 	b = b.WithName("RelayerClient")
-	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), evmpb.NewEVMClient(conn)}
+	return &relayerClient{b, goplugin.NewServiceClient(b, conn), pb.NewRelayerClient(conn), evmpb.NewEVMClient(conn), tonpb.NewTONClient(conn)}
 }
 
 func (r *relayerClient) NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error) {
@@ -402,6 +407,12 @@ func (r *relayerClient) Replay(ctx context.Context, fromBlock string, args map[s
 func (r *relayerClient) EVM() (types.EVMService, error) {
 	return &EVMClient{
 		r.evmClient,
+	}, nil
+}
+
+func (r *relayerClient) TON() (types.TONService, error) {
+	return &TONClient{
+		r.tonClient,
 	}, nil
 }
 

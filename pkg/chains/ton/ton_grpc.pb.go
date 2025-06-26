@@ -29,7 +29,6 @@ const (
 	TON_HasFilter_FullMethodName                   = "/loop.ton.TON/HasFilter"
 	TON_RegisterFilter_FullMethodName              = "/loop.ton.TON/RegisterFilter"
 	TON_UnregisterFilter_FullMethodName            = "/loop.ton.TON/UnregisterFilter"
-	TON_GetLogs_FullMethodName                     = "/loop.ton.TON/GetLogs"
 )
 
 // TONClient is the client API for TON service.
@@ -40,17 +39,16 @@ const (
 type TONClient interface {
 	// LiteClient
 	GetMasterchainInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BlockIDExt, error)
-	GetBlockData(ctx context.Context, in *BlockIDExt, opts ...grpc.CallOption) (*Block, error)
-	GetAccountBalance(ctx context.Context, in *GetAccountBalanceRequest, opts ...grpc.CallOption) (*BalanceReply, error)
-	// TXM
-	SendTransaction(ctx context.Context, in *SendTransactionRequest, opts ...grpc.CallOption) (*SendTransactionReply, error)
+	GetBlockData(ctx context.Context, in *GetBlockDataRequest, opts ...grpc.CallOption) (*Block, error)
+	GetAccountBalance(ctx context.Context, in *GetAccountBalanceRequest, opts ...grpc.CallOption) (*Balance, error)
+	// Transaction Management (TXM)
+	SendTransaction(ctx context.Context, in *SendTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
 	GetTransactionExecutionFees(ctx context.Context, in *GetTransactionExecutionFeesRequest, opts ...grpc.CallOption) (*GetTransactionExecutionFeesReply, error)
-	// LogPoller
+	// Log Poller
 	HasFilter(ctx context.Context, in *HasFilterRequest, opts ...grpc.CallOption) (*HasFilterReply, error)
 	RegisterFilter(ctx context.Context, in *RegisterFilterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterFilter(ctx context.Context, in *UnregisterFilterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLogsReply, error)
 }
 
 type tONClient struct {
@@ -71,7 +69,7 @@ func (c *tONClient) GetMasterchainInfo(ctx context.Context, in *emptypb.Empty, o
 	return out, nil
 }
 
-func (c *tONClient) GetBlockData(ctx context.Context, in *BlockIDExt, opts ...grpc.CallOption) (*Block, error) {
+func (c *tONClient) GetBlockData(ctx context.Context, in *GetBlockDataRequest, opts ...grpc.CallOption) (*Block, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Block)
 	err := c.cc.Invoke(ctx, TON_GetBlockData_FullMethodName, in, out, cOpts...)
@@ -81,9 +79,9 @@ func (c *tONClient) GetBlockData(ctx context.Context, in *BlockIDExt, opts ...gr
 	return out, nil
 }
 
-func (c *tONClient) GetAccountBalance(ctx context.Context, in *GetAccountBalanceRequest, opts ...grpc.CallOption) (*BalanceReply, error) {
+func (c *tONClient) GetAccountBalance(ctx context.Context, in *GetAccountBalanceRequest, opts ...grpc.CallOption) (*Balance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BalanceReply)
+	out := new(Balance)
 	err := c.cc.Invoke(ctx, TON_GetAccountBalance_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -91,9 +89,9 @@ func (c *tONClient) GetAccountBalance(ctx context.Context, in *GetAccountBalance
 	return out, nil
 }
 
-func (c *tONClient) SendTransaction(ctx context.Context, in *SendTransactionRequest, opts ...grpc.CallOption) (*SendTransactionReply, error) {
+func (c *tONClient) SendTransaction(ctx context.Context, in *SendTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendTransactionReply)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, TON_SendTransaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -151,16 +149,6 @@ func (c *tONClient) UnregisterFilter(ctx context.Context, in *UnregisterFilterRe
 	return out, nil
 }
 
-func (c *tONClient) GetLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLogsReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetLogsReply)
-	err := c.cc.Invoke(ctx, TON_GetLogs_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // TONServer is the server API for TON service.
 // All implementations must embed UnimplementedTONServer
 // for forward compatibility.
@@ -169,17 +157,16 @@ func (c *tONClient) GetLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc
 type TONServer interface {
 	// LiteClient
 	GetMasterchainInfo(context.Context, *emptypb.Empty) (*BlockIDExt, error)
-	GetBlockData(context.Context, *BlockIDExt) (*Block, error)
-	GetAccountBalance(context.Context, *GetAccountBalanceRequest) (*BalanceReply, error)
-	// TXM
-	SendTransaction(context.Context, *SendTransactionRequest) (*SendTransactionReply, error)
+	GetBlockData(context.Context, *GetBlockDataRequest) (*Block, error)
+	GetAccountBalance(context.Context, *GetAccountBalanceRequest) (*Balance, error)
+	// Transaction Management (TXM)
+	SendTransaction(context.Context, *SendTransactionRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
 	GetTransactionExecutionFees(context.Context, *GetTransactionExecutionFeesRequest) (*GetTransactionExecutionFeesReply, error)
-	// LogPoller
+	// Log Poller
 	HasFilter(context.Context, *HasFilterRequest) (*HasFilterReply, error)
 	RegisterFilter(context.Context, *RegisterFilterRequest) (*emptypb.Empty, error)
 	UnregisterFilter(context.Context, *UnregisterFilterRequest) (*emptypb.Empty, error)
-	GetLogs(context.Context, *emptypb.Empty) (*GetLogsReply, error)
 	mustEmbedUnimplementedTONServer()
 }
 
@@ -193,13 +180,13 @@ type UnimplementedTONServer struct{}
 func (UnimplementedTONServer) GetMasterchainInfo(context.Context, *emptypb.Empty) (*BlockIDExt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMasterchainInfo not implemented")
 }
-func (UnimplementedTONServer) GetBlockData(context.Context, *BlockIDExt) (*Block, error) {
+func (UnimplementedTONServer) GetBlockData(context.Context, *GetBlockDataRequest) (*Block, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlockData not implemented")
 }
-func (UnimplementedTONServer) GetAccountBalance(context.Context, *GetAccountBalanceRequest) (*BalanceReply, error) {
+func (UnimplementedTONServer) GetAccountBalance(context.Context, *GetAccountBalanceRequest) (*Balance, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccountBalance not implemented")
 }
-func (UnimplementedTONServer) SendTransaction(context.Context, *SendTransactionRequest) (*SendTransactionReply, error) {
+func (UnimplementedTONServer) SendTransaction(context.Context, *SendTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTransaction not implemented")
 }
 func (UnimplementedTONServer) GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error) {
@@ -216,9 +203,6 @@ func (UnimplementedTONServer) RegisterFilter(context.Context, *RegisterFilterReq
 }
 func (UnimplementedTONServer) UnregisterFilter(context.Context, *UnregisterFilterRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterFilter not implemented")
-}
-func (UnimplementedTONServer) GetLogs(context.Context, *emptypb.Empty) (*GetLogsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLogs not implemented")
 }
 func (UnimplementedTONServer) mustEmbedUnimplementedTONServer() {}
 func (UnimplementedTONServer) testEmbeddedByValue()             {}
@@ -260,7 +244,7 @@ func _TON_GetMasterchainInfo_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _TON_GetBlockData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BlockIDExt)
+	in := new(GetBlockDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -272,7 +256,7 @@ func _TON_GetBlockData_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: TON_GetBlockData_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TONServer).GetBlockData(ctx, req.(*BlockIDExt))
+		return srv.(TONServer).GetBlockData(ctx, req.(*GetBlockDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -403,24 +387,6 @@ func _TON_UnregisterFilter_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TON_GetLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TONServer).GetLogs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TON_GetLogs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TONServer).GetLogs(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // TON_ServiceDesc is the grpc.ServiceDesc for TON service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -463,10 +429,6 @@ var TON_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnregisterFilter",
 			Handler:    _TON_UnregisterFilter_Handler,
-		},
-		{
-			MethodName: "GetLogs",
-			Handler:    _TON_GetLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

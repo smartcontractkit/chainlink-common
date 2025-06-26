@@ -1443,32 +1443,30 @@ var EVMRelayerSet_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	TONRelayerSet_SendTransaction_FullMethodName             = "/loop.relayerset.TONRelayerSet/SendTransaction"
-	TONRelayerSet_GetTransactionStatus_FullMethodName        = "/loop.relayerset.TONRelayerSet/GetTransactionStatus"
-	TONRelayerSet_GetTransactionExecutionFees_FullMethodName = "/loop.relayerset.TONRelayerSet/GetTransactionExecutionFees"
 	TONRelayerSet_GetMasterchainInfo_FullMethodName          = "/loop.relayerset.TONRelayerSet/GetMasterchainInfo"
 	TONRelayerSet_GetBlockData_FullMethodName                = "/loop.relayerset.TONRelayerSet/GetBlockData"
 	TONRelayerSet_GetAccountBalance_FullMethodName           = "/loop.relayerset.TONRelayerSet/GetAccountBalance"
+	TONRelayerSet_SendTransaction_FullMethodName             = "/loop.relayerset.TONRelayerSet/SendTransaction"
+	TONRelayerSet_GetTONTransactionStatus_FullMethodName     = "/loop.relayerset.TONRelayerSet/GetTONTransactionStatus"
+	TONRelayerSet_GetTransactionExecutionFees_FullMethodName = "/loop.relayerset.TONRelayerSet/GetTransactionExecutionFees"
 	TONRelayerSet_HasFilter_FullMethodName                   = "/loop.relayerset.TONRelayerSet/HasFilter"
 	TONRelayerSet_RegisterFilter_FullMethodName              = "/loop.relayerset.TONRelayerSet/RegisterFilter"
 	TONRelayerSet_UnregisterFilter_FullMethodName            = "/loop.relayerset.TONRelayerSet/UnregisterFilter"
-	TONRelayerSet_GetLogs_FullMethodName                     = "/loop.relayerset.TONRelayerSet/GetLogs"
 )
 
 // TONRelayerSetClient is the client API for TONRelayerSet service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TONRelayerSetClient interface {
-	SendTransaction(ctx context.Context, in *TONSendTransactionRequest, opts ...grpc.CallOption) (*ton.SendTransactionReply, error)
-	GetTransactionStatus(ctx context.Context, in *TONGetTransactionStatusRequest, opts ...grpc.CallOption) (*ton.GetTransactionStatusReply, error)
-	GetTransactionExecutionFees(ctx context.Context, in *TONGetTransactionExecutionFeesRequest, opts ...grpc.CallOption) (*ton.GetTransactionExecutionFeesReply, error)
 	GetMasterchainInfo(ctx context.Context, in *TONGetMasterchainInfoRequest, opts ...grpc.CallOption) (*ton.BlockIDExt, error)
 	GetBlockData(ctx context.Context, in *TONGetBlockDataRequest, opts ...grpc.CallOption) (*ton.Block, error)
-	GetAccountBalance(ctx context.Context, in *TONGetAccountBalanceRequest, opts ...grpc.CallOption) (*ton.BalanceReply, error)
+	GetAccountBalance(ctx context.Context, in *TONGetAccountBalanceRequest, opts ...grpc.CallOption) (*ton.Balance, error)
+	SendTransaction(ctx context.Context, in *TONSendTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetTONTransactionStatus(ctx context.Context, in *TONGetTransactionStatusRequest, opts ...grpc.CallOption) (*ton.GetTransactionStatusReply, error)
+	GetTransactionExecutionFees(ctx context.Context, in *TONGetTransactionExecutionFeesRequest, opts ...grpc.CallOption) (*ton.GetTransactionExecutionFeesReply, error)
 	HasFilter(ctx context.Context, in *TONHasFilterRequest, opts ...grpc.CallOption) (*ton.HasFilterReply, error)
 	RegisterFilter(ctx context.Context, in *TONRegisterFilterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterFilter(ctx context.Context, in *TONUnregisterFilterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetLogs(ctx context.Context, in *TONGetLogsRequest, opts ...grpc.CallOption) (*ton.GetLogsReply, error)
 }
 
 type tONRelayerSetClient struct {
@@ -1477,36 +1475,6 @@ type tONRelayerSetClient struct {
 
 func NewTONRelayerSetClient(cc grpc.ClientConnInterface) TONRelayerSetClient {
 	return &tONRelayerSetClient{cc}
-}
-
-func (c *tONRelayerSetClient) SendTransaction(ctx context.Context, in *TONSendTransactionRequest, opts ...grpc.CallOption) (*ton.SendTransactionReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ton.SendTransactionReply)
-	err := c.cc.Invoke(ctx, TONRelayerSet_SendTransaction_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tONRelayerSetClient) GetTransactionStatus(ctx context.Context, in *TONGetTransactionStatusRequest, opts ...grpc.CallOption) (*ton.GetTransactionStatusReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ton.GetTransactionStatusReply)
-	err := c.cc.Invoke(ctx, TONRelayerSet_GetTransactionStatus_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tONRelayerSetClient) GetTransactionExecutionFees(ctx context.Context, in *TONGetTransactionExecutionFeesRequest, opts ...grpc.CallOption) (*ton.GetTransactionExecutionFeesReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ton.GetTransactionExecutionFeesReply)
-	err := c.cc.Invoke(ctx, TONRelayerSet_GetTransactionExecutionFees_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *tONRelayerSetClient) GetMasterchainInfo(ctx context.Context, in *TONGetMasterchainInfoRequest, opts ...grpc.CallOption) (*ton.BlockIDExt, error) {
@@ -1529,10 +1497,40 @@ func (c *tONRelayerSetClient) GetBlockData(ctx context.Context, in *TONGetBlockD
 	return out, nil
 }
 
-func (c *tONRelayerSetClient) GetAccountBalance(ctx context.Context, in *TONGetAccountBalanceRequest, opts ...grpc.CallOption) (*ton.BalanceReply, error) {
+func (c *tONRelayerSetClient) GetAccountBalance(ctx context.Context, in *TONGetAccountBalanceRequest, opts ...grpc.CallOption) (*ton.Balance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ton.BalanceReply)
+	out := new(ton.Balance)
 	err := c.cc.Invoke(ctx, TONRelayerSet_GetAccountBalance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tONRelayerSetClient) SendTransaction(ctx context.Context, in *TONSendTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, TONRelayerSet_SendTransaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tONRelayerSetClient) GetTONTransactionStatus(ctx context.Context, in *TONGetTransactionStatusRequest, opts ...grpc.CallOption) (*ton.GetTransactionStatusReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ton.GetTransactionStatusReply)
+	err := c.cc.Invoke(ctx, TONRelayerSet_GetTONTransactionStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tONRelayerSetClient) GetTransactionExecutionFees(ctx context.Context, in *TONGetTransactionExecutionFeesRequest, opts ...grpc.CallOption) (*ton.GetTransactionExecutionFeesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ton.GetTransactionExecutionFeesReply)
+	err := c.cc.Invoke(ctx, TONRelayerSet_GetTransactionExecutionFees_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1569,30 +1567,19 @@ func (c *tONRelayerSetClient) UnregisterFilter(ctx context.Context, in *TONUnreg
 	return out, nil
 }
 
-func (c *tONRelayerSetClient) GetLogs(ctx context.Context, in *TONGetLogsRequest, opts ...grpc.CallOption) (*ton.GetLogsReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ton.GetLogsReply)
-	err := c.cc.Invoke(ctx, TONRelayerSet_GetLogs_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // TONRelayerSetServer is the server API for TONRelayerSet service.
 // All implementations must embed UnimplementedTONRelayerSetServer
 // for forward compatibility.
 type TONRelayerSetServer interface {
-	SendTransaction(context.Context, *TONSendTransactionRequest) (*ton.SendTransactionReply, error)
-	GetTransactionStatus(context.Context, *TONGetTransactionStatusRequest) (*ton.GetTransactionStatusReply, error)
-	GetTransactionExecutionFees(context.Context, *TONGetTransactionExecutionFeesRequest) (*ton.GetTransactionExecutionFeesReply, error)
 	GetMasterchainInfo(context.Context, *TONGetMasterchainInfoRequest) (*ton.BlockIDExt, error)
 	GetBlockData(context.Context, *TONGetBlockDataRequest) (*ton.Block, error)
-	GetAccountBalance(context.Context, *TONGetAccountBalanceRequest) (*ton.BalanceReply, error)
+	GetAccountBalance(context.Context, *TONGetAccountBalanceRequest) (*ton.Balance, error)
+	SendTransaction(context.Context, *TONSendTransactionRequest) (*emptypb.Empty, error)
+	GetTONTransactionStatus(context.Context, *TONGetTransactionStatusRequest) (*ton.GetTransactionStatusReply, error)
+	GetTransactionExecutionFees(context.Context, *TONGetTransactionExecutionFeesRequest) (*ton.GetTransactionExecutionFeesReply, error)
 	HasFilter(context.Context, *TONHasFilterRequest) (*ton.HasFilterReply, error)
 	RegisterFilter(context.Context, *TONRegisterFilterRequest) (*emptypb.Empty, error)
 	UnregisterFilter(context.Context, *TONUnregisterFilterRequest) (*emptypb.Empty, error)
-	GetLogs(context.Context, *TONGetLogsRequest) (*ton.GetLogsReply, error)
 	mustEmbedUnimplementedTONRelayerSetServer()
 }
 
@@ -1603,23 +1590,23 @@ type TONRelayerSetServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTONRelayerSetServer struct{}
 
-func (UnimplementedTONRelayerSetServer) SendTransaction(context.Context, *TONSendTransactionRequest) (*ton.SendTransactionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendTransaction not implemented")
-}
-func (UnimplementedTONRelayerSetServer) GetTransactionStatus(context.Context, *TONGetTransactionStatusRequest) (*ton.GetTransactionStatusReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
-}
-func (UnimplementedTONRelayerSetServer) GetTransactionExecutionFees(context.Context, *TONGetTransactionExecutionFeesRequest) (*ton.GetTransactionExecutionFeesReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionExecutionFees not implemented")
-}
 func (UnimplementedTONRelayerSetServer) GetMasterchainInfo(context.Context, *TONGetMasterchainInfoRequest) (*ton.BlockIDExt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMasterchainInfo not implemented")
 }
 func (UnimplementedTONRelayerSetServer) GetBlockData(context.Context, *TONGetBlockDataRequest) (*ton.Block, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlockData not implemented")
 }
-func (UnimplementedTONRelayerSetServer) GetAccountBalance(context.Context, *TONGetAccountBalanceRequest) (*ton.BalanceReply, error) {
+func (UnimplementedTONRelayerSetServer) GetAccountBalance(context.Context, *TONGetAccountBalanceRequest) (*ton.Balance, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccountBalance not implemented")
+}
+func (UnimplementedTONRelayerSetServer) SendTransaction(context.Context, *TONSendTransactionRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendTransaction not implemented")
+}
+func (UnimplementedTONRelayerSetServer) GetTONTransactionStatus(context.Context, *TONGetTransactionStatusRequest) (*ton.GetTransactionStatusReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTONTransactionStatus not implemented")
+}
+func (UnimplementedTONRelayerSetServer) GetTransactionExecutionFees(context.Context, *TONGetTransactionExecutionFeesRequest) (*ton.GetTransactionExecutionFeesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionExecutionFees not implemented")
 }
 func (UnimplementedTONRelayerSetServer) HasFilter(context.Context, *TONHasFilterRequest) (*ton.HasFilterReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasFilter not implemented")
@@ -1629,9 +1616,6 @@ func (UnimplementedTONRelayerSetServer) RegisterFilter(context.Context, *TONRegi
 }
 func (UnimplementedTONRelayerSetServer) UnregisterFilter(context.Context, *TONUnregisterFilterRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnregisterFilter not implemented")
-}
-func (UnimplementedTONRelayerSetServer) GetLogs(context.Context, *TONGetLogsRequest) (*ton.GetLogsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLogs not implemented")
 }
 func (UnimplementedTONRelayerSetServer) mustEmbedUnimplementedTONRelayerSetServer() {}
 func (UnimplementedTONRelayerSetServer) testEmbeddedByValue()                       {}
@@ -1652,60 +1636,6 @@ func RegisterTONRelayerSetServer(s grpc.ServiceRegistrar, srv TONRelayerSetServe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&TONRelayerSet_ServiceDesc, srv)
-}
-
-func _TONRelayerSet_SendTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TONSendTransactionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TONRelayerSetServer).SendTransaction(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TONRelayerSet_SendTransaction_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TONRelayerSetServer).SendTransaction(ctx, req.(*TONSendTransactionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TONRelayerSet_GetTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TONGetTransactionStatusRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TONRelayerSetServer).GetTransactionStatus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TONRelayerSet_GetTransactionStatus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TONRelayerSetServer).GetTransactionStatus(ctx, req.(*TONGetTransactionStatusRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TONRelayerSet_GetTransactionExecutionFees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TONGetTransactionExecutionFeesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TONRelayerSetServer).GetTransactionExecutionFees(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TONRelayerSet_GetTransactionExecutionFees_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TONRelayerSetServer).GetTransactionExecutionFees(ctx, req.(*TONGetTransactionExecutionFeesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _TONRelayerSet_GetMasterchainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1758,6 +1688,60 @@ func _TONRelayerSet_GetAccountBalance_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TONRelayerSetServer).GetAccountBalance(ctx, req.(*TONGetAccountBalanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TONRelayerSet_SendTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TONSendTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TONRelayerSetServer).SendTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TONRelayerSet_SendTransaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TONRelayerSetServer).SendTransaction(ctx, req.(*TONSendTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TONRelayerSet_GetTONTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TONGetTransactionStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TONRelayerSetServer).GetTONTransactionStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TONRelayerSet_GetTONTransactionStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TONRelayerSetServer).GetTONTransactionStatus(ctx, req.(*TONGetTransactionStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TONRelayerSet_GetTransactionExecutionFees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TONGetTransactionExecutionFeesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TONRelayerSetServer).GetTransactionExecutionFees(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TONRelayerSet_GetTransactionExecutionFees_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TONRelayerSetServer).GetTransactionExecutionFees(ctx, req.(*TONGetTransactionExecutionFeesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1816,24 +1800,6 @@ func _TONRelayerSet_UnregisterFilter_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TONRelayerSet_GetLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TONGetLogsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TONRelayerSetServer).GetLogs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TONRelayerSet_GetLogs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TONRelayerSetServer).GetLogs(ctx, req.(*TONGetLogsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // TONRelayerSet_ServiceDesc is the grpc.ServiceDesc for TONRelayerSet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1841,18 +1807,6 @@ var TONRelayerSet_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "loop.relayerset.TONRelayerSet",
 	HandlerType: (*TONRelayerSetServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "SendTransaction",
-			Handler:    _TONRelayerSet_SendTransaction_Handler,
-		},
-		{
-			MethodName: "GetTransactionStatus",
-			Handler:    _TONRelayerSet_GetTransactionStatus_Handler,
-		},
-		{
-			MethodName: "GetTransactionExecutionFees",
-			Handler:    _TONRelayerSet_GetTransactionExecutionFees_Handler,
-		},
 		{
 			MethodName: "GetMasterchainInfo",
 			Handler:    _TONRelayerSet_GetMasterchainInfo_Handler,
@@ -1866,6 +1820,18 @@ var TONRelayerSet_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TONRelayerSet_GetAccountBalance_Handler,
 		},
 		{
+			MethodName: "SendTransaction",
+			Handler:    _TONRelayerSet_SendTransaction_Handler,
+		},
+		{
+			MethodName: "GetTONTransactionStatus",
+			Handler:    _TONRelayerSet_GetTONTransactionStatus_Handler,
+		},
+		{
+			MethodName: "GetTransactionExecutionFees",
+			Handler:    _TONRelayerSet_GetTransactionExecutionFees_Handler,
+		},
+		{
 			MethodName: "HasFilter",
 			Handler:    _TONRelayerSet_HasFilter_Handler,
 		},
@@ -1876,10 +1842,6 @@ var TONRelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnregisterFilter",
 			Handler:    _TONRelayerSet_UnregisterFilter_Handler,
-		},
-		{
-			MethodName: "GetLogs",
-			Handler:    _TONRelayerSet_GetLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

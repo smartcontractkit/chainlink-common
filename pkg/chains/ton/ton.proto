@@ -11,19 +11,18 @@ import "values/v1/values.proto";
 service TON {
   // LiteClient
   rpc GetMasterchainInfo(google.protobuf.Empty) returns (BlockIDExt);
-  rpc GetBlockData(BlockIDExt) returns (Block);
-  rpc GetAccountBalance(GetAccountBalanceRequest) returns (BalanceReply);
+  rpc GetBlockData(GetBlockDataRequest) returns (Block);
+  rpc GetAccountBalance(GetAccountBalanceRequest) returns (Balance);
 
-  // TXM
-  rpc SendTransaction(SendTransactionRequest) returns (SendTransactionReply);
+  // Transaction Management (TXM)
+  rpc SendTransaction(SendTransactionRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
   rpc GetTransactionExecutionFees(GetTransactionExecutionFeesRequest) returns (GetTransactionExecutionFeesReply);
 
-  // LogPoller
+  // Log Poller
   rpc HasFilter(HasFilterRequest) returns (HasFilterReply);
   rpc RegisterFilter(RegisterFilterRequest) returns (google.protobuf.Empty);
   rpc UnregisterFilter(UnregisterFilterRequest) returns (google.protobuf.Empty);
-  rpc GetLogs(google.protobuf.Empty) returns (GetLogsReply);
 }
 
 // ---- LiteClient Types ----
@@ -32,6 +31,10 @@ message BlockIDExt {
   int32 workchain = 1;
   uint64 shard = 2;
   uint32 seqno = 3;
+}
+
+message GetBlockDataRequest {
+  BlockIDExt block = 1;
 }
 
 message Block {
@@ -43,7 +46,7 @@ message GetAccountBalanceRequest {
   BlockIDExt block = 2;
 }
 
-message BalanceReply {
+message Balance {
   values.v1.BigInt balance = 1;
 }
 
@@ -54,17 +57,12 @@ message Message {
   string to_address = 2;
   string amount_nano = 3;
   bool bounce = 4;
-  bytes body = 5;       // BOC
-  bytes state_init = 6; // optional BOC
+  bytes body = 5;                  // BOC
+  optional bytes state_init = 6;  // optional BOC
 }
 
 message SendTransactionRequest {
   Message message = 1;
-}
-
-message SendTransactionReply {
-  uint64 logical_time = 1;
-  bytes hash = 2;
 }
 
 message GetTransactionStatusRequest {
@@ -73,7 +71,7 @@ message GetTransactionStatusRequest {
 
 message GetTransactionStatusReply {
   TransactionStatus status = 1;
-  int32 exit_code = 2; // optional smart contract exit code
+  optional int32 exit_code = 2; // Optional smart contract exit code
 }
 
 message GetTransactionExecutionFeesRequest {
@@ -111,13 +109,14 @@ message Log {
   uint64 event_topic = 5;
   bytes data = 6;
   google.protobuf.Timestamp received_at = 7;
-  google.protobuf.Timestamp expires_at = 8;
-  string error = 9;
+  optional google.protobuf.Timestamp expires_at = 8;
+  optional string error = 9;
 }
 
 message HasFilterRequest {
   string name = 1;
 }
+
 message HasFilterReply {
   bool exists = 1;
 }
@@ -128,8 +127,4 @@ message RegisterFilterRequest {
 
 message UnregisterFilterRequest {
   string name = 1;
-}
-
-message GetLogsReply {
-  repeated Log logs = 1;
 }

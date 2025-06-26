@@ -73,6 +73,17 @@ func (p *ProtocGen) Generate(file, from string) error {
 	return nil
 }
 
+func (p *ProtocGen) GenerateMany(fileToFrom map[string]string) map[string]error {
+	errors := map[string]error{}
+	for file, from := range fileToFrom {
+		if err := p.Generate(file, from); err != nil {
+			errors[file] = err
+		}
+	}
+
+	return errors
+}
+
 func (p *ProtocGen) doInit() error {
 	if p.init {
 		return nil

@@ -85,8 +85,8 @@ func Test_runtimeInternals_UsesSeeds(t *testing.T) {
 		donSeed:  anyDonSeed,
 		nodeSeed: anyNodeSeed,
 	}}
-	assertRnd(t, helper, sdkpb.Mode_DON, anyDonSeed)
-	assertRnd(t, helper, sdkpb.Mode_Node, anyNodeSeed)
+	assertRnd(t, helper, sdkpb.Mode_MODE_DON, anyDonSeed)
+	assertRnd(t, helper, sdkpb.Mode_MODE_NODE, anyNodeSeed)
 }
 
 func assertRnd(t *testing.T, helper *runtimeHelper, mode sdkpb.Mode, seed int64) {
@@ -142,7 +142,7 @@ func newTestRuntime(t *testing.T, callCapabilityErr bool, awaitResponseOverride 
 		internals.secrets[secretKey(s.Namespace, s.Id)] = s
 	}
 
-	runtime := newRuntime(internals, sdkpb.Mode_DON)
+	runtime := newRuntime(internals, sdkpb.Mode_MODE_DON)
 	runtime.MaxResponseSize = sdk.DefaultMaxResponseSizeBytes
 	return runtime
 }

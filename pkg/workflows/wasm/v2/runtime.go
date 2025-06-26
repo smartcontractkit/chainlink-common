@@ -35,7 +35,7 @@ type runtimeHelper struct {
 
 func (r *runtimeHelper) GetSource(mode sdkpb.Mode) rand.Source {
 	switch mode {
-	case sdkpb.Mode_DON:
+	case sdkpb.Mode_MODE_DON:
 		if r.donSource == nil {
 			seed := r.getSeed(int32(mode))
 			r.donSource = rand.NewSource(seed)

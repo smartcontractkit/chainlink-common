@@ -421,7 +421,7 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 							Fields: map[string]*pb.ConsensusDescriptor{
 								"OutputThing": {
 									Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-										Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
+										Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 									},
 								},
 							},

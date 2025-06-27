@@ -40,7 +40,7 @@ message FilterLogTriggerRequest {
 // Any positive value is treated as an explicit block height.
 message CallContractRequest {
   CallMsg call = 1;
-  values.BigInt block_number = 2;
+  values.v1.BigInt block_number = 2;
 }
 
 message CallContractReply {
@@ -63,7 +63,7 @@ message Log {
   bytes block_hash = 4; // hash of the block containing the log, in [32]byte fix-sized array format
   bytes data = 5; // solidity-spec abi encoded log Data
   bytes eventSig = 6; // keccak256 of event signature, in [32]byte fix-sized array format
-  values.BigInt block_number = 7;  // block number containing the log
+  values.v1.BigInt block_number = 7;  // block number containing the log
   uint32 tx_index = 8;  // index of transaction emmited the log
   uint32 index = 9;  // index of the Log within the intire block
   bool removed = 10;  // flag if the log was removed during reorg
@@ -79,8 +79,8 @@ message CallMsg {
 // represents evm-style filter query
 message FilterQuery {
   bytes block_hash = 1; // exact block (cant use from/to), in [32]byte fix-sized array format
-  values.BigInt fromBlock = 2; // start block range
-  values.BigInt toBlock = 3; // end block range
+  values.v1.BigInt fromBlock = 2; // start block range
+  values.v1.BigInt toBlock = 3; // end block range
   repeated bytes addresses = 4; // contract(s) to filter logs from in evm address [20]byte fix-sized array format
   repeated Topics topics = 5;  // filter log by event signature and indexed args
 }
@@ -220,8 +220,14 @@ message GasConfig {
   uint64 gas_limit = 1;
 }
 
+enum TxStatus {
+  TX_FATAL = 0;
+  TX_REVERTED = 1;
+  TX_SUCCESS = 2;
+}
+
 message WriteReportReply {
-  loop.evm.TxStatus tx_status = 1;
+  TxStatus tx_status = 1;
   optional ReceiverContractExecutionStatus receiver_contract_execution_status = 2;
   optional bytes tx_hash = 3;
   optional values.v1.BigInt transaction_fee = 4;

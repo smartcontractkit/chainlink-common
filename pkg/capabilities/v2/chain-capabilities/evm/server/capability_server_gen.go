@@ -40,7 +40,7 @@ type ClientCapability interface {
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 
-	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.WriteReportRequest) (*evm1.WriteReportReply, error)
+	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -219,9 +219,9 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "WriteReport":
-		input := &evm1.WriteReportRequest{}
+		input := &evm.WriteReportRequest{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm1.WriteReportRequest, _ *emptypb.Empty) (*evm1.WriteReportReply, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, error) {
 			return c.ClientCapability.WriteReport(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

@@ -55,7 +55,7 @@ type TransactionFee struct {
 }
 
 type Balance struct {
-	Balance *big.Int // Cost of transaction in NanoTONs
+	Balance *big.Int // Balance in NanoTONs
 }
 
 type LiteClient interface {

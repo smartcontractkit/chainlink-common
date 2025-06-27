@@ -128,8 +128,8 @@ func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
 }
 
 func (k *Client) TON(relayID types.RelayID) (types.TONService, error) {
-	if k.evmRelayerSetClient == nil {
-		return nil, errors.New("evmRelayerSetClient can't be nil")
+	if k.tonRelayerSetClient == nil {
+		return nil, errors.New("tonRelayerSetClient can't be nil")
 	}
 	return rel.NewTONClient(&tonClient{
 		relayID: relayID,

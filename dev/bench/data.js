@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750981859501,
+  "lastUpdate": 1750984255204,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16842,6 +16842,48 @@ window.BENCHMARK_DATA = {
             "value": 28136,
             "unit": "ns/op",
             "extra": "42675 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cbb7418aaa59b90512dd88ddb4a882743fc20eb",
+          "message": "jsonrpc2 library simplification (#1293)\n\n* Make auth optional\n\n* refactoring\n\n* json rpc library refactoring",
+          "timestamp": "2025-06-27T00:29:29Z",
+          "tree_id": "4bde46fcee16b3382a3859e83b03162031328cb9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2cbb7418aaa59b90512dd88ddb4a882743fc20eb"
+        },
+        "date": 1750984254134,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3399536 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410,
+            "unit": "ns/op",
+            "extra": "2935530 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28180,
+            "unit": "ns/op",
+            "extra": "42651 times\n4 procs"
           }
         ]
       }

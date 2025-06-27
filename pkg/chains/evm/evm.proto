@@ -308,11 +308,16 @@ enum RequestType {
   REQUEST_TYPE_AGGREGATABLE = 3;
 }
 
+message AggregatableObservation {
+  string method = 1;
+  values.v1.Decimal value = 2;
+}
+
 message RequestObservation {
   oneof observation {
     google.protobuf.Empty lockableToBlock = 1;
     bytes eventuallyConsistent = 2;
-    values.v1.Decimal aggregatable = 3;
+    AggregatableObservation aggregatable = 3;
   }
 }
 

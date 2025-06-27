@@ -20,6 +20,26 @@ type evmClient struct {
 	client  relayerset.EVMRelayerSetClient
 }
 
+func (e *evmClient) CalculateTransactionFee(ctx context.Context, in *evmpb.CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.CalculateTransactionFeeReply, error) {
+	return e.client.CalculateTransactionFee(ctx, &relayerset.CalculateTransactionFeeRequest{
+		RelayerId: &relayerset.RelayerId{
+			Network: e.relayID.Network,
+			ChainId: e.relayID.ChainID,
+		},
+		Request: in},
+		opts...)
+}
+
+func (e *evmClient) SubmitTransaction(ctx context.Context, in *evmpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*evmpb.SubmitTransactionReply, error) {
+	return e.client.SubmitTransaction(ctx, &relayerset.SubmitTransactionRequest{
+		RelayerId: &relayerset.RelayerId{
+			Network: e.relayID.Network,
+			ChainId: e.relayID.ChainID,
+		},
+		Request: in},
+		opts...)
+}
+
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
 func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
@@ -360,6 +380,46 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *relayerset.G
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (s *Server) SubmitTransaction(ctx context.Context, request *relayerset.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	txResult, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
+		To:        evm.Address(request.GetRequest().To),
+		Data:      evm.ABIPayload(request.GetRequest().Data),
+		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetRequest().GetGasConfig()),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.SubmitTransactionReply{
+		TxHash:   txResult.TxHash[:],
+		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+	}, nil
+}
+
+func (s *Server) CalculateTransactionFee(ctx context.Context, request *relayerset.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	evmService, err := s.getEVMService(ctx, request.GetRelayerId())
+	if err != nil {
+		return nil, err
+	}
+
+	fee, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
+		GasUsed:           request.GetRequest().GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GetRequest().GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(fee.TransactionFee),
+	}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context, id *relayerset.RelayerId) (types.EVMService, error) {

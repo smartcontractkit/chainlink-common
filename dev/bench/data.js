@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751027645823,
+  "lastUpdate": 1751038550350,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16926,6 +16926,48 @@ window.BENCHMARK_DATA = {
             "value": 28233,
             "unit": "ns/op",
             "extra": "42694 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ed6ed7b7fcd76d8e81925ad0a9e0ed895629ec12",
+          "message": "Copy EVM protos to CRE so it can stand alone, remove QueryTrackedLogsRequest as it was going to be removed soon anyway (#1291)",
+          "timestamp": "2025-06-27T16:34:34+01:00",
+          "tree_id": "b88de1452a6b27a4a40ea43e6f129a5fff1de69a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ed6ed7b7fcd76d8e81925ad0a9e0ed895629ec12"
+        },
+        "date": 1751038548827,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.9,
+            "unit": "ns/op",
+            "extra": "3335142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.6,
+            "unit": "ns/op",
+            "extra": "2913228 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28174,
+            "unit": "ns/op",
+            "extra": "42646 times\n4 procs"
           }
         ]
       }

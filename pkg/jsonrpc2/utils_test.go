@@ -2,9 +2,10 @@ package jsonrpc2
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -12,7 +13,6 @@ const (
 )
 
 func TestHandler_DecodeRequest(t *testing.T) {
-	handler := &Handler{}
 	var paramsStr string = "params"
 	rawParams, err := json.Marshal(paramsStr)
 	if err != nil {
@@ -27,7 +27,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 	reqBytes, _ := json.Marshal(validReq)
 
 	t.Run("valid request with jwt", func(t *testing.T) {
-		got, err := handler.DecodeRequest(reqBytes, testJWT)
+		got, err := DecodeRequest(reqBytes, testJWT)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -54,7 +54,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req := validReq
 		req.Auth = "body.jwt"
 		reqBytes, _ := json.Marshal(req)
-		got, err := handler.DecodeRequest(reqBytes, "")
+		got, err := DecodeRequest(reqBytes, "")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -67,8 +67,8 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req := validReq
 		req.Params = nil
 		reqBytes, _ := json.Marshal(req)
-		_, err := handler.DecodeRequest(reqBytes, testJWT)
-		if err == nil || err.Error() != ErrInvalidParams.Error() {
+		_, err := DecodeRequest(reqBytes, testJWT)
+		if err == nil || err.Error() != "invalid params" {
 			t.Errorf("expected missing params error, got %v", err)
 		}
 	})
@@ -77,7 +77,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req := validReq
 		req.Method = ""
 		reqBytes, _ := json.Marshal(req)
-		_, err := handler.DecodeRequest(reqBytes, testJWT)
+		_, err := DecodeRequest(reqBytes, testJWT)
 		if err == nil || err.Error() != "empty method field" {
 			t.Errorf("expected empty method error, got %v", err)
 		}
@@ -87,7 +87,7 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req := validReq
 		req.Version = "1.0"
 		reqBytes, _ := json.Marshal(req)
-		_, err := handler.DecodeRequest(reqBytes, testJWT)
+		_, err := DecodeRequest(reqBytes, testJWT)
 		if err == nil || err.Error() != "incorrect jsonrpc version" {
 			t.Errorf("expected version error, got %v", err)
 		}
@@ -97,14 +97,17 @@ func TestHandler_DecodeRequest(t *testing.T) {
 		req := validReq
 		req.Auth = ""
 		reqBytes, _ := json.Marshal(req)
-		_, err := handler.DecodeRequest(reqBytes, "")
-		if err == nil || err.Error() != "missing auth token" {
-			t.Errorf("expected missing auth token error, got %v", err)
+		got, err := DecodeRequest(reqBytes, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.Auth != "" {
+			t.Errorf("unexpected auth token")
 		}
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
-		_, err := handler.DecodeRequest([]byte("{invalid"), testJWT)
+		_, err := DecodeRequest([]byte("{invalid"), testJWT)
 		if err == nil {
 			t.Errorf("expected json unmarshal error")
 		}
@@ -112,7 +115,6 @@ func TestHandler_DecodeRequest(t *testing.T) {
 }
 
 func TestHandler_EncodeRequest(t *testing.T) {
-	handler := &Handler{}
 	var paramsStr string = "params"
 	rawParams, err := json.Marshal(paramsStr)
 	if err != nil {
@@ -124,7 +126,7 @@ func TestHandler_EncodeRequest(t *testing.T) {
 		Params:  rawParams,
 		Auth:    testJWT,
 	}
-	data, err := handler.EncodeRequest(req)
+	data, err := EncodeRequest(req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -138,39 +140,41 @@ func TestHandler_EncodeRequest(t *testing.T) {
 }
 
 func TestHandler_DecodeResponse(t *testing.T) {
-	handler := &Handler{}
+	result, err := json.Marshal(`"key": "value"`)
+	require.NoError(t, err)
 	resp := Response{
 		Version: JsonRpcVersion,
 		ID:      "1",
-		Result:  []byte{},
+		Result:  result,
 	}
 	data, _ := json.Marshal(resp)
 
 	t.Run("valid response", func(t *testing.T) {
-		got, err := handler.DecodeResponse(data)
+		decodedResponse, err := DecodeResponse(data)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(got.Result) != 0 {
-			t.Errorf("expected result ok, got %v", got.Result)
+		if !reflect.DeepEqual(decodedResponse, resp) {
+			t.Errorf("expected %v, got %v", resp, decodedResponse)
 		}
 	})
 
 	t.Run("response with error", func(t *testing.T) {
-		resp := Response{
+		resp = Response{
 			Version: JsonRpcVersion,
 			ID:      "1",
 			Error:   &WireError{Code: 123, Message: "fail"},
 		}
-		data, _ := json.Marshal(resp)
-		_, err := handler.DecodeResponse(data)
-		if err == nil || !errors.Is(err, err) {
-			t.Errorf("expected error, got %v", err)
+		respBytes, _ := json.Marshal(resp)
+		decodedResponse, err := DecodeResponse(respBytes)
+		require.NoError(t, err)
+		if !reflect.DeepEqual(decodedResponse, resp) {
+			t.Errorf("expected %v, got %v", resp, decodedResponse)
 		}
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
-		_, err := handler.DecodeResponse([]byte("{invalid"))
+		_, err = DecodeResponse([]byte("{invalid"))
 		if err == nil {
 			t.Errorf("expected json unmarshal error")
 		}
@@ -178,9 +182,7 @@ func TestHandler_DecodeResponse(t *testing.T) {
 }
 
 func TestHandler_EncodeResponse(t *testing.T) {
-	handler := &Handler{}
-	var resultStr string = "result"
-	rawResult, err := json.Marshal(resultStr)
+	rawResult, err := json.Marshal("result")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -189,12 +191,12 @@ func TestHandler_EncodeResponse(t *testing.T) {
 		ID:      "1",
 		Result:  rawResult,
 	}
-	data, err := handler.EncodeResponse(resp)
+	data, err := EncodeResponse(resp)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	var got Response
-	if err := json.Unmarshal(data, &got); err != nil {
+	if err = json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("unmarshal failed: %v", err)
 	}
 	if !reflect.DeepEqual(got, *resp) {
@@ -203,9 +205,8 @@ func TestHandler_EncodeResponse(t *testing.T) {
 }
 
 func TestRequest_EncodeErrorReponse(t *testing.T) {
-	req := &Request{ID: "abc"}
 	wireErr := &WireError{Code: 1, Message: "fail"}
-	data, err := req.EncodeErrorReponse(wireErr)
+	data, err := EncodeErrorReponse("abc", wireErr)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -213,8 +214,8 @@ func TestRequest_EncodeErrorReponse(t *testing.T) {
 	if err := json.Unmarshal(data, &resp); err != nil {
 		t.Fatalf("unmarshal failed: %v", err)
 	}
-	if resp.Error == nil || resp.Error.Message != "fail" {
-		t.Errorf("expected error message 'fail', got %v", resp.Error)
+	if !reflect.DeepEqual(resp.Error, wireErr) {
+		t.Errorf("expected %v, got %v", wireErr, resp.Error)
 	}
 	if resp.ID != "abc" {
 		t.Errorf("expected id 'abc', got %v", resp.ID)

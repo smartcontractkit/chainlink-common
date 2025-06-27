@@ -492,3 +492,51 @@ func putGeneralPrimitive(exp *Expression, p *chaincommonpb.Primitive) {
 func putEVMPrimitive(exp *Expression, p *Primitive) {
 	exp.Evaluator = &Expression_Primitive{Primitive: &Primitive{Primitive: p.Primitive}}
 }
+
+func ConvertGasConfigToProto(gasConfig *evmtypes.GasConfig) *GasConfig {
+	if gasConfig == nil {
+		return nil
+	}
+	return &GasConfig{
+		GasLimit: *gasConfig.GasLimit,
+	}
+}
+
+func ConvertGasConfigFromProto(gasConfig *GasConfig) *evmtypes.GasConfig {
+	if gasConfig == nil {
+		return nil
+	}
+	return &evmtypes.GasConfig{
+		GasLimit: &gasConfig.GasLimit,
+	}
+}
+
+func ConvertTxStatusFromProto(txStatus TxStatus) evmtypes.TransactionStatus {
+	switch txStatus {
+	case TxStatus_TX_SUCCESS:
+		return evmtypes.TxSuccess
+	case TxStatus_TX_REVERTED:
+		return evmtypes.TxReverted
+	default:
+		return evmtypes.TxFatal
+	}
+}
+
+func ConvertTxStatusToProto(txStatus evmtypes.TransactionStatus) TxStatus {
+	switch txStatus {
+	case evmtypes.TxSuccess:
+		return TxStatus_TX_SUCCESS
+	case evmtypes.TxReverted:
+		return TxStatus_TX_REVERTED
+	default:
+		return TxStatus_TX_FATAL
+	}
+}
+
+func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionRequest) evmtypes.SubmitTransactionRequest {
+	return evmtypes.SubmitTransactionRequest{
+		To:        evmtypes.Address(txRequest.To),
+		Data:      evmtypes.ABIPayload(txRequest.Data),
+		GasConfig: ConvertGasConfigFromProto(txRequest.GasConfig),
+	}
+}

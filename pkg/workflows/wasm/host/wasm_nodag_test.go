@@ -7,8 +7,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (

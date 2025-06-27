@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751038550350,
+  "lastUpdate": 1751043475797,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16968,6 +16968,48 @@ window.BENCHMARK_DATA = {
             "value": 28174,
             "unit": "ns/op",
             "extra": "42646 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "731d426aa846bc036d3fe9e923dbdad247b90d50",
+          "message": "Fix chainlink-common version. (#1305)",
+          "timestamp": "2025-06-27T16:55:44Z",
+          "tree_id": "d6cc124390a4a10fe0bdf82cfc1f6bdd76b553ac",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/731d426aa846bc036d3fe9e923dbdad247b90d50"
+        },
+        "date": 1751043474960,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.6,
+            "unit": "ns/op",
+            "extra": "3382960 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.2,
+            "unit": "ns/op",
+            "extra": "2872814 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28436,
+            "unit": "ns/op",
+            "extra": "42637 times\n4 procs"
           }
         ]
       }

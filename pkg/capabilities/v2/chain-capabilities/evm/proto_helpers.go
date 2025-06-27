@@ -71,8 +71,8 @@ func ConvertHeadFromProto(head *Head) (evmtypes.Head, error) {
 	}
 	return evmtypes.Head{
 		Timestamp:  head.GetTimestamp(),
-		Hash:       evmtypes.Hash(head.GetHash()[:]),
-		ParentHash: evmtypes.Hash(head.GetParentHash()[:]),
+		Hash:       evmtypes.Hash(head.GetHash()),
+		ParentHash: evmtypes.Hash(head.GetParentHash()),
 		Number:     valuespb.NewIntFromBigInt(head.GetBlockNumber()),
 	}, nil
 }

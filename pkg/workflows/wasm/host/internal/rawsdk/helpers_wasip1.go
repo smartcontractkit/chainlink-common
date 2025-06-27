@@ -97,6 +97,16 @@ func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, in
 	Await(DoRequestAsync(capabilityId, method, mode, input), output)
 }
 
+func DoRequestErr[I proto.Message](capabilityId, method string, mode pb.Mode, input I) error {
+	callbackId := DoRequestAsync(capabilityId, method, mode, input)
+
+	resp := &pb.AwaitCapabilitiesResponse{}
+	await(&pb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
+
+	errMsg := resp.Responses[callbackId].GetError()
+	return errors.New(errMsg)
+}
+
 func GetSecret(id string) (string, error) {
 	callbackId := donCall
 	donCall++

@@ -21,7 +21,7 @@ func main() {
 	input := &nodeaction.NodeInputs{InputThing: true}
 	rawsdk.DoRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, input, result)
 	if result.OutputThing < 100 {
-		msg := []byte(strconv.FormatUint(nr.Uint64(), 10))
+		msg := []byte("***" + strconv.FormatUint(nr.Uint64(), 10))
 		rawsdk.Log(rawsdk.BufferToPointerLen(msg))
 	}
 

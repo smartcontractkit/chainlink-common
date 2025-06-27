@@ -126,6 +126,16 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("node runtime in don mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+			response := values.NewString("hi")
+			payload, err := anypb.New(values.Proto(response))
+			require.NoError(t, err)
+			return &pb.CapabilityResponse{
+				Response: &pb.CapabilityResponse_Payload{
+					Payload: payload,
+				},
+			}, nil
+		}).Once()
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -136,6 +146,22 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("don runtime in node mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
+			input := &pb.SimpleConsensusInputs{}
+			require.NoError(t, request.Payload.UnmarshalTo(input))
+
+			var errMsg string
+			switch msg := input.Observation.(type) {
+			case *pb.SimpleConsensusInputs_Error:
+				errMsg = msg.Error
+			default:
+				require.Fail(t, "observation must be an error")
+			}
+			return &pb.CapabilityResponse{
+				Response: &pb.CapabilityResponse_Error{Error: errMsg},
+			}, nil
+		}).Once()
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -188,7 +214,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 		expected := &pb.TriggerSubscriptionRequest{
 			Subscriptions: []*pb.TriggerSubscription{
 				{
-					Id:      "basic-trigger@1.0.0",
+					Id:      "basic-test-trigger@1.0.0",
 					Payload: payload0,
 					Method:  "Trigger",
 				},
@@ -198,7 +224,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 					Method:  "Trigger",
 				},
 				{
-					Id:      "basic-trigger@1.0.0",
+					Id:      "basic-test-trigger@1.0.0",
 					Payload: payload2,
 					Method:  "Trigger",
 				},
@@ -281,7 +307,8 @@ func TestStandardRandom(t *testing.T) {
 
 		lt100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 99))
 		lt100Exec.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
-			_, err = strconv.ParseUint(s, 10, 64)
+			parts := strings.Split(s, "***")
+			_, err = strconv.ParseUint(parts[1], 10, 64)
 			require.NoError(t, err)
 			return nil
 		}).Once()

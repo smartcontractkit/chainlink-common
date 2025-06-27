@@ -24,7 +24,7 @@ func subscribe() {
 	subscription := &pb.TriggerSubscriptionRequest{
 		Subscriptions: []*pb.TriggerSubscription{
 			{
-				Id: "basic-trigger@1.0.0",
+				Id: "basic-test-trigger@1.0.0",
 				Payload: rawsdk.Must(anypb.New(&basictrigger.Config{
 					Name:   "first-trigger",
 					Number: 100,
@@ -40,7 +40,7 @@ func subscribe() {
 				Method: "Trigger",
 			},
 			{
-				Id: "basic-trigger@1.0.0",
+				Id: "basic-test-trigger@1.0.0",
 				Payload: rawsdk.Must(anypb.New(&basictrigger.Config{
 					Name:   "third-trigger",
 					Number: 200,

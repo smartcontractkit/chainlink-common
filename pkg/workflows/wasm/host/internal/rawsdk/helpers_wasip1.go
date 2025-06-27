@@ -61,7 +61,7 @@ var NodeOutputConsensusDescriptor = &pb.ConsensusDescriptor{
 			Fields: map[string]*pb.ConsensusDescriptor{
 				"OutputThing": {
 					Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-						Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
+						Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 					},
 				},
 			},

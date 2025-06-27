@@ -31,6 +31,7 @@ type Server struct {
 
 	relayerset.UnimplementedRelayerSetServer
 	relayerset.UnimplementedEVMRelayerSetServer
+	relayerset.UnimplementedTONRelayerSetServer
 
 	impl   core.RelayerSet
 	broker *net.BrokerExt
@@ -46,6 +47,7 @@ type Server struct {
 
 var _ relayerset.RelayerSetServer = (*Server)(nil)
 var _ relayerset.EVMRelayerSetServer = (*Server)(nil)
+var _ relayerset.TONRelayerSetServer = (*Server)(nil)
 
 func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *net.BrokerExt) (*Server, net.Resource) {
 	pluginProviderServers := make(net.Resources, 0)

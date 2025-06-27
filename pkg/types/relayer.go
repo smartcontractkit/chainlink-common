@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
@@ -151,12 +152,28 @@ type EVMService interface {
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
 }
 
+type TONService interface {
+	ton.LiteClient
+
+	// TXM
+	SendTransaction(ctx context.Context, msg ton.Message) error
+	GetTransactionStatus(ctx context.Context, lt uint64) (TransactionStatus, ton.ExitCode, error)
+	GetTransactionExecutionFees(ctx context.Context, lt uint64) (*ton.TransactionFee, error)
+
+	// LogPoller
+	HasFilter(ctx context.Context, name string) bool
+	RegisterFilter(ctx context.Context, filter ton.LPFilterQuery) error
+	UnregisterFilter(ctx context.Context, name string) error
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
 
 	// EVM returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
+	// TON returns TONService that provides access to TON specific functionalities
+	TON() (TONService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)

@@ -22,6 +22,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
@@ -52,13 +54,22 @@ type TracingConfig struct {
 	AuthHeaders map[string]string
 }
 
+type GRPCOptsConfig struct {
+	Registerer prometheus.Registerer // leave nil to use default prometheus.Registerer
+}
+
+func (c GRPCOptsConfig) New(lggr logger.Logger) GRPCOpts {
+	if c.Registerer == nil {
+		c.Registerer = prometheus.DefaultRegisterer
+	}
+	return GRPCOpts{DialOpts: dialOptions(lggr, c.Registerer), NewServer: newServerFn(lggr, c.Registerer)}
+}
+
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
 // It is called from the host and each plugin - intended as there is bidirectional communication
+// Deprecated: Use GRPCOptsConfig.New
 func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
-	if registerer == nil {
-		registerer = prometheus.DefaultRegisterer
-	}
-	return GRPCOpts{DialOpts: dialOptions(registerer), NewServer: newServerFn(registerer)}
+	return GRPCOptsConfig{registerer}.New(logger.Nop())
 }
 
 // SetupTracing initializes open telemetry with the provided config.
@@ -149,7 +160,7 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 var grpcpromBuckets = []float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}
 
 // dialOptions returns [grpc.DialOption]s to intercept and reports telemetry.
-func dialOptions(r prometheus.Registerer) []grpc.DialOption {
+func dialOptions(lggr logger.Logger, r prometheus.Registerer, ) []grpc.DialOption {
 	cm := grpcprom.NewClientMetrics(
 		grpcprom.WithClientHandlingTimeHistogram(grpcprom.WithHistogramBuckets(grpcpromBuckets)),
 	)
@@ -157,6 +168,7 @@ func dialOptions(r prometheus.Registerer) []grpc.DialOption {
 	ctxExemplar := grpcprom.WithExemplarFromContext(exemplarFromContext)
 	return []grpc.DialOption{
 		// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
+		grpc.WithStatsHandler(contexts.NewCREStatsHandler(lggr)),
 		grpc.WithChainUnaryInterceptor(
 			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
 			otelgrpc.UnaryClientInterceptor(), //nolint:staticcheck
@@ -171,7 +183,7 @@ func dialOptions(r prometheus.Registerer) []grpc.DialOption {
 }
 
 // newServerFn return a func for constructing [*grpc.Server]s that intercepts and reports telemetry.
-func newServerFn(r prometheus.Registerer) func(opts []grpc.ServerOption) *grpc.Server {
+func newServerFn(lggr logger.Logger, r prometheus.Registerer) func(opts []grpc.ServerOption) *grpc.Server {
 	srvMetrics := grpcprom.NewServerMetrics(
 		grpcprom.WithServerHandlingTimeHistogram(grpcprom.WithHistogramBuckets(grpcpromBuckets)),
 	)
@@ -179,6 +191,7 @@ func newServerFn(r prometheus.Registerer) func(opts []grpc.ServerOption) *grpc.S
 	ctxExemplar := grpcprom.WithExemplarFromContext(exemplarFromContext)
 	interceptors := []grpc.ServerOption{
 		// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
+		grpc.StatsHandler(contexts.NewCREStatsHandler(lggr)),
 		grpc.ChainUnaryInterceptor(
 			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
 			otelgrpc.UnaryServerInterceptor(), //nolint:staticcheck

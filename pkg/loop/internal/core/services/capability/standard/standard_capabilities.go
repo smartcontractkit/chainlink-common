@@ -162,7 +162,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 		RelayerSetId:       relayerSetID,
 		OracleFactoryId:    oracleFactoryID,
 		GatewayConnectorId: gatewayConnectorID,
-		KeyStoreId:         keyStoreID,
+		KeystoreId:         keyStoreID,
 	})
 
 	if err != nil {
@@ -250,10 +250,10 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: keyValueStoreConn, Name: "KeyValueStoreConn"})
 	keyValueStore := keyvalue.NewClient(keyValueStoreConn)
 
-	keystoreConn, err := s.Dial(request.KeyStoreId)
+	keystoreConn, err := s.Dial(request.KeystoreId)
 	if err != nil {
 		s.CloseAll(resources...)
-		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeyStoreId, Err: err}
+		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreId, Err: err}
 	}
 	resources = append(resources, net.Resource{Closer: keystoreConn, Name: "KeystoreConn"})
 	keyStore := keystoreservice.NewClient(keystoreConn)

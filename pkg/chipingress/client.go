@@ -262,7 +262,7 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	}
 
 	if val, ok := attributes["recordedtime"].(t.Time); ok {
-		event.SetExtension("recordedtime", val)
+		event.SetExtension("recordedtime", val.UTC())
 	} else {
 		event.SetExtension("recordedtime", ce.Timestamp{Time: t.Now().UTC()})
 	}

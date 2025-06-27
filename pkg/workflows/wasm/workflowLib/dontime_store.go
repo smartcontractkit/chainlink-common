@@ -116,7 +116,7 @@ func (s *DonTimeStore) GetDonTimes(executionID string) ([]int64, error) {
 	return []int64{}, fmt.Errorf("no don time for executionID %s", executionID)
 }
 
-func (s *DonTimeStore) SetDonTimes(executionID string, donTimes []int64) {
+func (s *DonTimeStore) setDonTimes(executionID string, donTimes []int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.donTimes[executionID] = donTimes
@@ -128,7 +128,7 @@ func (s *DonTimeStore) GetLastObservedDonTime() int64 {
 	return s.lastObservedDonTime
 }
 
-func (s *DonTimeStore) SetLastObservedDonTime(observedDonTime int64) {
+func (s *DonTimeStore) setLastObservedDonTime(observedDonTime int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.lastObservedDonTime = observedDonTime

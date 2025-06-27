@@ -36,9 +36,9 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 	}
 
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
-		t.store.SetDonTimes(id, observedDonTimes.Timestamps)
+		t.store.setDonTimes(id, observedDonTimes.Timestamps)
 	}
-	t.store.SetLastObservedDonTime(outcome.Timestamp)
+	t.store.setLastObservedDonTime(outcome.Timestamp)
 
 	requests, err := t.store.Requests.FirstN(t.batchSize)
 	if err != nil {

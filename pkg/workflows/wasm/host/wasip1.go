@@ -36,11 +36,10 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 		return nil, err
 	}
 
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
-		"clock_time_get",
-		clockTimeGet,
+		"get_time",
+		exec.getTime,
 	)
 	if err != nil {
 		return nil, err

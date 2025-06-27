@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1750984255204,
+  "lastUpdate": 1751027645823,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -16884,6 +16884,48 @@ window.BENCHMARK_DATA = {
             "value": 28180,
             "unit": "ns/op",
             "extra": "42651 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "95f07da6c2df3b27060878f2e8df4ac6431bad00",
+          "message": "[PRIV-77] Mock implementation of the Vault (#1304)",
+          "timestamp": "2025-06-27T12:32:42Z",
+          "tree_id": "496465ce7b814cf8dc2206454248076d62cf691b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/95f07da6c2df3b27060878f2e8df4ac6431bad00"
+        },
+        "date": 1751027644337,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.1,
+            "unit": "ns/op",
+            "extra": "3362709 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.3,
+            "unit": "ns/op",
+            "extra": "2859624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28233,
+            "unit": "ns/op",
+            "extra": "42694 times\n4 procs"
           }
         ]
       }

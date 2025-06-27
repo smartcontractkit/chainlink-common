@@ -32,9 +32,19 @@ const (
 //
 // ChipIngress service provides a way for senders to produce CloudEvents messages to Kafka
 type ChipIngressClient interface {
+	// Publish sends a single CloudEvent to the ChipIngress service.
 	Publish(ctx context.Context, in *pb.CloudEvent, opts ...grpc.CallOption) (*PublishResponse, error)
+	// PublishBatch sends a batch of CloudEvents to the ChipIngress service.
+	// This method is atomic, meaning it will either succeed or fail for the entire batch.
+	// When the server receives a batch of events, it will open a kafka transaction, and begin producing each event sequentially in order received.
+	// If any 1 message fails, all previous messages in the same batch that were already produced won't be marked as committed,
+	// and the server will respond with an error.
+	// Consumers can set isolation.level=read_committed to only read committed records
 	PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error)
+	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
+	// This API is experimental and may change in the future.
 	StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error)
 }
 
@@ -95,9 +105,19 @@ type ChipIngress_StreamEventsClient = grpc.BidiStreamingClient[StreamEventsReque
 //
 // ChipIngress service provides a way for senders to produce CloudEvents messages to Kafka
 type ChipIngressServer interface {
+	// Publish sends a single CloudEvent to the ChipIngress service.
 	Publish(context.Context, *pb.CloudEvent) (*PublishResponse, error)
+	// PublishBatch sends a batch of CloudEvents to the ChipIngress service.
+	// This method is atomic, meaning it will either succeed or fail for the entire batch.
+	// When the server receives a batch of events, it will open a kafka transaction, and begin producing each event sequentially in order received.
+	// If any 1 message fails, all previous messages in the same batch that were already produced won't be marked as committed,
+	// and the server will respond with an error.
+	// Consumers can set isolation.level=read_committed to only read committed records
 	PublishBatch(context.Context, *CloudEventBatch) (*PublishResponse, error)
+	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(context.Context, *EmptyRequest) (*PingResponse, error)
+	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
+	// This API is experimental and may change in the future.
 	StreamEvents(grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]) error
 	mustEmbedUnimplementedChipIngressServer()
 }

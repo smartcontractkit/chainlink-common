@@ -33,7 +33,7 @@ func main() {
 	}
 
 	cresult := &valuespb.Value{}
-	rawsdk.DoRequest("consensus@1.0.0", "Simple", pb.Mode_MODE_DON, consensus, cresult)
+	rawsdk.DoRequest("consensus@1.0.0-alpha", "Simple", pb.Mode_MODE_DON, consensus, cresult)
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
 	total += dr.Uint64()
 	rawsdk.SendResponse(total)

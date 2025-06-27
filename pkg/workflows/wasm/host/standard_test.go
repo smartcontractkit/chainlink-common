@@ -120,7 +120,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
 		require.NoError(t, err)
-		require.Equal(t, "test555", result.GetValue().GetStringValue())
+		require.Equal(t, "test556", result.GetValue().GetStringValue())
 	})
 
 	t.Run("node runtime in don mode", func(t *testing.T) {
@@ -409,10 +409,9 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			if err != nil {
 				require.Fail(t, err.Error())
 			}
-		case "consensus@1.0.0":
+		case "consensus@1.0.0-alpha":
 			input := &pb.SimpleConsensusInputs{}
 			require.NoError(t, request.Payload.UnmarshalTo(input))
-
 			expectedObservation := wrapValue(t, nodeResponse)
 			expectedInput := &pb.SimpleConsensusInputs{
 				Observation: &pb.SimpleConsensusInputs_Value{Value: expectedObservation},
@@ -432,7 +431,9 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 				Default: wrapValue(t, &nodeaction.NodeOutputs{OutputThing: 123}),
 			}
 			assertProto(t, expectedInput, input)
-			payload, err = anypb.New(expectedObservation)
+			cResponse := &nodeaction.NodeOutputs{OutputThing: output + 1}
+			response := wrapValue(t, cResponse)
+			payload, err = anypb.New(response)
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)

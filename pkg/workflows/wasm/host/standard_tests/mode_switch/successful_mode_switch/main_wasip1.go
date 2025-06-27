@@ -7,6 +7,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 )
 
@@ -28,8 +29,11 @@ func main() {
 		Default:     values.Proto(rawsdk.Must(values.Wrap(dft))),
 	}
 
+	cresult := &valuespb.Value{}
+	rawsdk.DoRequest("consensus@1.0.0-alpha", "Simple", pb.Mode_MODE_DON, consensus, cresult)
+
 	coutput := &nodeaction.NodeOutputs{}
-	if err := rawsdk.Must(values.FromProto(consensus.GetValue())).UnwrapTo(coutput); err != nil {
+	if err := rawsdk.Must(values.FromProto(cresult)).UnwrapTo(coutput); err != nil {
 		rawsdk.SendError(fmt.Errorf("failed to unwrap consensus output: %w", err))
 	}
 

@@ -18,7 +18,7 @@ func InstallProtocGenToDir(pkgName, sameVersion string) error {
 	}
 	version := strings.TrimSpace(string(out))
 
-	fmt.Printf("Downloading protoc-gen-cre version %s\n", version)
+	fmt.Printf("Downloading plugin version %s\n", version)
 	cmd = exec.Command("go", "mod", "download", "-json", fmt.Sprintf("%s@%s\n", pkgName, version))
 	out, err = cmd.Output()
 	if err != nil {

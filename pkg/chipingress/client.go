@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -68,34 +69,32 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
 func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error) {
 
-	if address == "" {
-		return nil, fmt.Errorf("address for chip ingress service is empty")
-	}
-	if !strings.Contains(address, ":") {
-		return nil, fmt.Errorf("address is invalid, it must contain a port")
+	// Validate address
+	_, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid address format: %v", err)
 	}
 
-	cfg := defaultConfig()
-
+	// Defaults
+	cfg := chipIngressClientConfig{
+		log:                  zap.NewNop(),
+		transportCredentials: insecure.NewCredentials(),
+		headerProvider:       nil,
+	}
 	// Apply configuration options
 	for _, opt := range opts {
 		opt(&cfg)
 	}
-
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
 		grpc.WithAuthority(cfg.authority),
 	}
-
 	// Add headers as a unary interceptor
 	if cfg.headerProvider != nil {
 		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
 	}
 
-	conn, err := grpc.NewClient(
-		address,
-		grpcOpts...,
-	)
+	conn, err := grpc.NewClient(address, grpcOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -178,15 +177,6 @@ func (c *chipIngressClient) Close() error {
 
 	c.log.Info("Closed connection to ChipIngress service")
 	return nil
-}
-
-// defaultConfig returns the default configuration for the ChipIngress service.
-func defaultConfig() chipIngressClientConfig {
-	return chipIngressClientConfig{
-		log:                  zap.NewNop(),
-		transportCredentials: insecure.NewCredentials(),
-		headerProvider:       nil,
-	}
 }
 
 // WithLogger sets the logger for the ChipIngress service.
@@ -304,4 +294,3 @@ func NewEventWithAttributes(domain, entity string, payload []byte, attributes ma
 
 	return event, nil
 }
-

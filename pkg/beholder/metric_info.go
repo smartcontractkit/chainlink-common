@@ -26,6 +26,15 @@ func (m MetricInfo) NewInt64Gauge(meter metric.Meter) (metric.Int64Gauge, error)
 	)
 }
 
+// NewInt64Histogram creates a new Int64Histogram metric
+func (m MetricInfo) NewInt64Histogram(meter metric.Meter) (metric.Int64Histogram, error) {
+	return meter.Int64Histogram(
+		m.Name,
+		metric.WithUnit(m.Unit),
+		metric.WithDescription(m.Description),
+	)
+}
+
 // NewFloat64Gauge creates a new Float64Gauge metric
 func (m MetricInfo) NewFloat64Gauge(meter metric.Meter) (metric.Float64Gauge, error) {
 	return meter.Float64Gauge(

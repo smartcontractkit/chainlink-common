@@ -129,13 +129,14 @@ func (p *workflowLibPlugin) ValidateObservation(ctx context.Context, oc ocr3type
 	// A DON time beyond the expected number of requests is invalid, as there was never consensus on the prior request, which should be blocking.
 	var err error
 	for id, requestedSeqNumber := range observation.Requests {
-		if _, ok := priorOutcome.ObservedDonTimes[id]; !ok {
+		times, ok := priorOutcome.ObservedDonTimes[id]
+		if !ok {
 			if requestedSeqNumber != 0 {
 				err = errors.Join(err, newInvalidRequestError(requestedSeqNumber, id, 0))
 			}
 			continue
 		}
-		seqNum := len(priorOutcome.ObservedDonTimes[id].Timestamps)
+		seqNum := len(times.Timestamps)
 		if requestedSeqNumber > int64(seqNum) {
 			err = errors.Join(err, newInvalidRequestError(requestedSeqNumber, id, seqNum))
 		}

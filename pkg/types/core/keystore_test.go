@@ -37,8 +37,8 @@ func TestMultiAccountSigner_NewMultiAccountSigner(t *testing.T) {
 	accounts := []string{"account1", "account2"}
 	signers := []crypto.Signer{&mockSigner{}, &mockSigner{}}
 
-	multiSigner := core.NewMultiAccountSigner(accounts, signers)
-
+	multiSigner, err := core.NewMultiAccountSigner(accounts, signers)
+	require.NoError(t, err)
 	assert.NotNil(t, multiSigner)
 }
 
@@ -47,7 +47,8 @@ func TestMultiAccountSigner_Accounts(t *testing.T) {
 		expectedAccounts := []string{"account1", "account2", "account3"}
 		signers := []crypto.Signer{&mockSigner{}, &mockSigner{}, &mockSigner{}}
 
-		multiSigner := core.NewMultiAccountSigner(expectedAccounts, signers)
+		multiSigner, err := core.NewMultiAccountSigner(expectedAccounts, signers)
+		require.NoError(t, err)
 
 		ctx := context.Background()
 		accounts, err := multiSigner.Accounts(ctx)
@@ -57,7 +58,7 @@ func TestMultiAccountSigner_Accounts(t *testing.T) {
 	})
 
 	t.Run("returns empty slice when no accounts", func(t *testing.T) {
-		multiSigner := core.NewMultiAccountSigner([]string{}, []crypto.Signer{})
+		multiSigner, _ := core.NewMultiAccountSigner([]string{}, []crypto.Signer{})
 
 		ctx := context.Background()
 		accounts, err := multiSigner.Accounts(ctx)
@@ -76,7 +77,7 @@ func TestMultiAccountSigner_Sign(t *testing.T) {
 			&mockSigner{signData: []byte("other_signature")},
 		}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		data := []byte("test_data")
@@ -94,7 +95,7 @@ func TestMultiAccountSigner_Sign(t *testing.T) {
 			&mockSigner{signData: expectedSignature},
 		}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		data := []byte("test_data")
@@ -108,7 +109,7 @@ func TestMultiAccountSigner_Sign(t *testing.T) {
 		accounts := []string{"account1", "account2"}
 		signers := []crypto.Signer{&mockSigner{}, &mockSigner{}}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		data := []byte("test_data")
@@ -126,7 +127,7 @@ func TestMultiAccountSigner_Sign(t *testing.T) {
 			&mockSigner{signError: expectedError},
 		}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		data := []byte("test_data")
@@ -144,7 +145,7 @@ func TestMultiAccountSigner_Sign(t *testing.T) {
 			&mockSigner{signData: expectedSignature},
 		}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		signature, err := multiSigner.Sign(ctx, "account1", []byte{})
@@ -160,7 +161,7 @@ func TestMultiAccountSigner_Sign(t *testing.T) {
 			&mockSigner{signData: expectedSignature},
 		}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		signature, err := multiSigner.Sign(ctx, "account1", nil)
@@ -185,7 +186,7 @@ func TestMultiAccountSigner_Integration(t *testing.T) {
 		accounts := []string{"key1", "key2"}
 		signers := []crypto.Signer{signer1, signer2}
 
-		multiSigner := core.NewMultiAccountSigner(accounts, signers)
+		multiSigner, _ := core.NewMultiAccountSigner(accounts, signers)
 
 		ctx := context.Background()
 		testData := []byte("integration test data")

@@ -21,11 +21,11 @@ import (
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 )

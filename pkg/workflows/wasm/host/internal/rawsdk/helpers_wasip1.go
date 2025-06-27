@@ -7,8 +7,8 @@ import (
 	"os"
 	"unsafe"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )

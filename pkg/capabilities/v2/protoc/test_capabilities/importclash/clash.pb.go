@@ -7,9 +7,9 @@
 package importclash
 
 import (
-	p1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1"
-	p2 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2"
-	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
+	p1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/importclash/p1"
+	p2 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/importclash/p2"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

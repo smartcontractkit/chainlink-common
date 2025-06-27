@@ -4,10 +4,10 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 )
 

@@ -7,7 +7,6 @@
 package pb
 
 import (
-	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
@@ -25,7 +24,7 @@ const (
 
 type CapabilityMetadata struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Mode          pb.Mode                `protobuf:"varint,1,opt,name=mode,proto3,enum=sdk.v1alpha.Mode" json:"mode,omitempty"`
+	Mode          Mode                   `protobuf:"varint,1,opt,name=mode,proto3,enum=sdk.v1alpha.Mode" json:"mode,omitempty"`
 	CapabilityId  string                 `protobuf:"bytes,2,opt,name=capability_id,json=capabilityId,proto3" json:"capability_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -61,11 +60,11 @@ func (*CapabilityMetadata) Descriptor() ([]byte, []int) {
 	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CapabilityMetadata) GetMode() pb.Mode {
+func (x *CapabilityMetadata) GetMode() Mode {
 	if x != nil {
 		return x.Mode
 	}
-	return pb.Mode(0)
+	return Mode_MODE_UNSPECIFIED
 }
 
 func (x *CapabilityMetadata) GetCapabilityId() string {
@@ -181,7 +180,7 @@ var file_tools_generator_v1alpha_cre_metadata_proto_msgTypes = make([]protoimpl.
 var file_tools_generator_v1alpha_cre_metadata_proto_goTypes = []any{
 	(*CapabilityMetadata)(nil),          // 0: tools.generator.v1alpha.CapabilityMetadata
 	(*CapabilityMethodMetadata)(nil),    // 1: tools.generator.v1alpha.CapabilityMethodMetadata
-	(pb.Mode)(0),                        // 2: sdk.v1alpha.Mode
+	(Mode)(0),                           // 2: sdk.v1alpha.Mode
 	(*descriptorpb.ServiceOptions)(nil), // 3: google.protobuf.ServiceOptions
 	(*descriptorpb.MethodOptions)(nil),  // 4: google.protobuf.MethodOptions
 }
@@ -203,6 +202,7 @@ func file_tools_generator_v1alpha_cre_metadata_proto_init() {
 	if File_tools_generator_v1alpha_cre_metadata_proto != nil {
 		return
 	}
+	file_sdk_v1alpha_sdk_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

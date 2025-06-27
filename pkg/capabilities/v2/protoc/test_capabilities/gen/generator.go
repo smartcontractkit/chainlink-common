@@ -58,8 +58,8 @@ func GenerateMany(dirToConfig map[string]*CapabilityConfig) error {
 
 func createGenerator() *pkg.ProtocGen {
 	gen := &pkg.ProtocGen{}
-	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
-	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "sdk/v1alpha/sdk.proto"})
+	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
+	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb", Proto: "sdk/v1alpha/sdk.proto"})
 	return gen
 }
 

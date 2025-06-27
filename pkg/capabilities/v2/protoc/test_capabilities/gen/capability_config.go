@@ -22,7 +22,7 @@ func (c *CapabilityConfig) FullGoPackageName() string {
 	if len(parts) > 1 {
 		name = strings.Join(parts[1:], "/") + "/" + name
 	}
-	base := "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/" + name
+	base := "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/" + name
 
 	if c.MajorVersion == 1 {
 		return base

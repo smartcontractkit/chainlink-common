@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/actionandtrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"

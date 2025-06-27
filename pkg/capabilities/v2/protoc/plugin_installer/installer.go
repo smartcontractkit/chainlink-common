@@ -1,4 +1,4 @@
-package protoc
+package plugin_installer
 
 import (
 	"encoding/json"

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

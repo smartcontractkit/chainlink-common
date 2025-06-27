@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
 )
 
 type execution[T any] struct {

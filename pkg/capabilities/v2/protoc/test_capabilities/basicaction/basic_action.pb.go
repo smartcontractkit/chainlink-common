@@ -7,7 +7,7 @@
 package basicaction
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

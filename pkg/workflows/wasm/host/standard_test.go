@@ -365,7 +365,7 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionRe
 // To re-use a binary, an outer test can create the module and use t.Run to run subtests using that module.
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
-	testName := strcase.ToSnake(t.Name()[len("Test"):])
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
 	return makeTestModuleByName(t, testName)
 }
 

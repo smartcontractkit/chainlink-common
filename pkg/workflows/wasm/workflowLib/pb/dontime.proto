@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pb";
+
+message Observation {
+  int64 timestamp = 1;
+  map<string, int64> requests = 2;
+  repeated string finished = 3;
+}
+
+message Observations {
+  // batched observations for multiple workflow execution IDs
+  repeated Observation observations = 1;
+}
+
+message ObservedDonTimes {
+repeated int64 timestamps = 1;
+}
+
+message Outcome {
+int64 timestamp = 1;
+map<string, ObservedDonTimes> observed_don_times = 2;
+map<string, int64> finished_execution_removal_times = 3;
+map<string, bool> removedExecutionIDs = 4;
+}

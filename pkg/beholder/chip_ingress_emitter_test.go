@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -12,7 +12,7 @@ import (
 
 func TestNewChipIngressEmitter(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		clientMock := &mocks.ChipIngressClient{}
+		clientMock := mocks.NewChipIngressClient(t)
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
 		require.NoError(t, err)
 		assert.NotNil(t, emitter)

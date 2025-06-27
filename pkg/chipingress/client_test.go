@@ -35,14 +35,14 @@ func TestClient(t *testing.T) {
 	t.Run("NewClient errors when address is empty", func(t *testing.T) {
 		client, err := NewChipIngressClient("")
 		assert.Nil(t, client)
-		assert.ErrorContains(t, err, "is empty")
+		assert.ErrorContains(t, err, "invalid address format: missing port in address")
 	})
 
 	t.Run("invalid address format", func(t *testing.T) {
 		// Address without port will cause net.SplitHostPort to fail
 		client, err := NewChipIngressClient("invalid-address-format")
 		assert.Nil(t, client)
-		assert.ErrorContains(t, err, "address is invalid, it must contain a port")
+		assert.ErrorContains(t, err, "missing port in address")
 	})
 
 	t.Run("valid address with port", func(t *testing.T) {

@@ -24,8 +24,10 @@ import (
 type HeaderProvider interface {
 	GetHeaders() map[string]string
 }
+
 // Opt defines a function type for configuring the ChipIngressClient.
 type Opt func(*chipIngressClientConfig)
+
 // chipIngressClientConfig is the configuration for the ChipIngressClient.
 type chipIngressClientConfig struct {
 	transportCredentials credentials.TransportCredentials
@@ -64,18 +66,22 @@ func NewChipIngressClient(address string, opts ...Opt) (pb.ChipIngressClient, er
 	}
 	return pb.NewChipIngressClient(conn), nil
 }
+
 // WithTransportCredentials sets the transport credentials for the ChipIngress service.
 func WithTransportCredentials(creds credentials.TransportCredentials) Opt {
 	return func(c *chipIngressClientConfig) { c.transportCredentials = creds }
 }
+
 // WithHeaderProvider sets a dynamic header provider for requests
 func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *chipIngressClientConfig) { c.headerProvider = provider }
 }
+
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).
 func WithInsecureConnection() Opt {
 	return func(config *chipIngressClientConfig) { config.transportCredentials = insecure.NewCredentials() }
 }
+
 // Add a new option function for TLS with HTTP/2
 func WithTLSAndHTTP2(serverName string) Opt {
 	return func(config *chipIngressClientConfig) {
@@ -86,10 +92,12 @@ func WithTLSAndHTTP2(serverName string) Opt {
 		config.transportCredentials = credentials.NewTLS(tlsCfg)
 	}
 }
+
 // WithAuthority sets the authority for the gRPC connection.
 func WithAuthority(authority string) Opt {
 	return func(c *chipIngressClientConfig) { c.authority = authority }
 }
+
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
 func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -102,6 +110,7 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
+
 // NewEvent creates a new CloudEvent with the specified domain, entity, and payload.
 func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
 
@@ -117,6 +126,7 @@ func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
 
 	return event, nil
 }
+
 // NewEventWithAttributes creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
 func NewEventWithAttributes(domain, entity string, payload []byte, attributes map[string]any) (*cepb.CloudEvent, error) {
 

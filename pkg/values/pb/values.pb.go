@@ -12,6 +12,7 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -22,11 +23,8 @@ const (
 )
 
 type Value struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Value:
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Value:
 	//
 	//	*Value_StringValue
 	//	*Value_BoolValue
@@ -38,7 +36,9 @@ type Value struct {
 	//	*Value_BigintValue
 	//	*Value_TimeValue
 	//	*Value_Float64Value
-	Value isValue_Value `protobuf_oneof:"value"`
+	Value         isValue_Value `protobuf_oneof:"value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Value) Reset() {
@@ -71,79 +71,99 @@ func (*Value) Descriptor() ([]byte, []int) {
 	return file_values_v1_values_proto_rawDescGZIP(), []int{0}
 }
 
-func (m *Value) GetValue() isValue_Value {
-	if m != nil {
-		return m.Value
+func (x *Value) GetValue() isValue_Value {
+	if x != nil {
+		return x.Value
 	}
 	return nil
 }
 
 func (x *Value) GetStringValue() string {
-	if x, ok := x.GetValue().(*Value_StringValue); ok {
-		return x.StringValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_StringValue); ok {
+			return x.StringValue
+		}
 	}
 	return ""
 }
 
 func (x *Value) GetBoolValue() bool {
-	if x, ok := x.GetValue().(*Value_BoolValue); ok {
-		return x.BoolValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_BoolValue); ok {
+			return x.BoolValue
+		}
 	}
 	return false
 }
 
 func (x *Value) GetBytesValue() []byte {
-	if x, ok := x.GetValue().(*Value_BytesValue); ok {
-		return x.BytesValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_BytesValue); ok {
+			return x.BytesValue
+		}
 	}
 	return nil
 }
 
 func (x *Value) GetMapValue() *Map {
-	if x, ok := x.GetValue().(*Value_MapValue); ok {
-		return x.MapValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_MapValue); ok {
+			return x.MapValue
+		}
 	}
 	return nil
 }
 
 func (x *Value) GetListValue() *List {
-	if x, ok := x.GetValue().(*Value_ListValue); ok {
-		return x.ListValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_ListValue); ok {
+			return x.ListValue
+		}
 	}
 	return nil
 }
 
 func (x *Value) GetDecimalValue() *Decimal {
-	if x, ok := x.GetValue().(*Value_DecimalValue); ok {
-		return x.DecimalValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_DecimalValue); ok {
+			return x.DecimalValue
+		}
 	}
 	return nil
 }
 
 func (x *Value) GetInt64Value() int64 {
-	if x, ok := x.GetValue().(*Value_Int64Value); ok {
-		return x.Int64Value
+	if x != nil {
+		if x, ok := x.Value.(*Value_Int64Value); ok {
+			return x.Int64Value
+		}
 	}
 	return 0
 }
 
 func (x *Value) GetBigintValue() *BigInt {
-	if x, ok := x.GetValue().(*Value_BigintValue); ok {
-		return x.BigintValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_BigintValue); ok {
+			return x.BigintValue
+		}
 	}
 	return nil
 }
 
 func (x *Value) GetTimeValue() *timestamppb.Timestamp {
-	if x, ok := x.GetValue().(*Value_TimeValue); ok {
-		return x.TimeValue
+	if x != nil {
+		if x, ok := x.Value.(*Value_TimeValue); ok {
+			return x.TimeValue
+		}
 	}
 	return nil
 }
 
 func (x *Value) GetFloat64Value() float64 {
-	if x, ok := x.GetValue().(*Value_Float64Value); ok {
-		return x.Float64Value
+	if x != nil {
+		if x, ok := x.Value.(*Value_Float64Value); ok {
+			return x.Float64Value
+		}
 	}
 	return 0
 }
@@ -213,12 +233,11 @@ func (*Value_TimeValue) isValue_Value() {}
 func (*Value_Float64Value) isValue_Value() {}
 
 type BigInt struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AbsVal        []byte                 `protobuf:"bytes,1,opt,name=abs_val,json=absVal,proto3" json:"abs_val,omitempty"`
+	Sign          int64                  `protobuf:"varint,2,opt,name=sign,proto3" json:"sign,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	AbsVal []byte `protobuf:"bytes,1,opt,name=abs_val,json=absVal,proto3" json:"abs_val,omitempty"`
-	Sign   int64  `protobuf:"varint,2,opt,name=sign,proto3" json:"sign,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BigInt) Reset() {
@@ -266,11 +285,10 @@ func (x *BigInt) GetSign() int64 {
 }
 
 type Map struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fields        map[string]*Value      `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
-
-	Fields map[string]*Value `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Map) Reset() {
@@ -311,11 +329,10 @@ func (x *Map) GetFields() map[string]*Value {
 }
 
 type List struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fields        []*Value               `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Fields []*Value `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *List) Reset() {
@@ -356,12 +373,11 @@ func (x *List) GetFields() []*Value {
 }
 
 type Decimal struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Coefficient   *BigInt                `protobuf:"bytes,1,opt,name=coefficient,proto3" json:"coefficient,omitempty"`
+	Exponent      int32                  `protobuf:"varint,2,opt,name=exponent,proto3" json:"exponent,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Coefficient *BigInt `protobuf:"bytes,1,opt,name=coefficient,proto3" json:"coefficient,omitempty"`
-	Exponent    int32   `protobuf:"varint,2,opt,name=exponent,proto3" json:"exponent,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Decimal) Reset() {

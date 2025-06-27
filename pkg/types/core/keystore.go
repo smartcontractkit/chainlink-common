@@ -80,8 +80,11 @@ type multiAccountSigner struct {
 
 var _ Keystore = &multiAccountSigner{}
 
-func NewMultiAccountSigner(accounts []string, signers []crypto.Signer) *multiAccountSigner {
-	return &multiAccountSigner{accounts: accounts, signers: signers}
+func NewMultiAccountSigner(accounts []string, signers []crypto.Signer) (*multiAccountSigner, error) {
+	if len(accounts) != len(signers) {
+		return nil, fmt.Errorf("mismatched lengths: accounts (%d) and signers (%d)", len(accounts), len(signers))
+	}
+	return &multiAccountSigner{accounts: accounts, signers: signers}, nil
 }
 func (c *multiAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
 	return c.accounts, nil

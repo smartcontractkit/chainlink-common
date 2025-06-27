@@ -1005,6 +1005,7 @@ type InitialiseRequest struct {
 	RelayerSetId       uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
 	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
 	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
+	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1098,6 +1099,13 @@ func (x *InitialiseRequest) GetOracleFactoryId() uint32 {
 func (x *InitialiseRequest) GetGatewayConnectorId() uint32 {
 	if x != nil {
 		return x.GatewayConnectorId
+	}
+	return 0
+}
+
+func (x *InitialiseRequest) GetKeystoreId() uint32 {
+	if x != nil {
+		return x.KeystoreId
 	}
 	return 0
 }
@@ -1219,7 +1227,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xf4\x02\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x95\x03\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1230,7 +1238,10 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x10keyValueStore_id\x18\x06 \x01(\rR\x0fkeyValueStoreId\x12$\n" +
 	"\x0erelayer_set_id\x18\a \x01(\rR\frelayerSetId\x12*\n" +
 	"\x11oracle_factory_id\x18\b \x01(\rR\x0foracleFactoryId\x120\n" +
-	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\"O\n" +
+	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\x12\x1f\n" +
+	"\vkeystore_id\x18\n" +
+	" \x01(\rR\n" +
+	"keystoreId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +

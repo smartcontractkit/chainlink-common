@@ -1005,7 +1005,7 @@ type InitialiseRequest struct {
 	RelayerSetId       uint32                 `protobuf:"varint,7,opt,name=relayer_set_id,json=relayerSetId,proto3" json:"relayer_set_id,omitempty"`
 	OracleFactoryId    uint32                 `protobuf:"varint,8,opt,name=oracle_factory_id,json=oracleFactoryId,proto3" json:"oracle_factory_id,omitempty"`
 	GatewayConnectorId uint32                 `protobuf:"varint,9,opt,name=gateway_connector_id,json=gatewayConnectorId,proto3" json:"gateway_connector_id,omitempty"`
-	KeyStoreId         uint32                 `protobuf:"varint,10,opt,name=keyStore_id,json=keyStoreId,proto3" json:"keyStore_id,omitempty"`
+	KeystoreId         uint32                 `protobuf:"varint,10,opt,name=keystore_id,json=keystoreId,proto3" json:"keystore_id,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1103,9 +1103,9 @@ func (x *InitialiseRequest) GetGatewayConnectorId() uint32 {
 	return 0
 }
 
-func (x *InitialiseRequest) GetKeyStoreId() uint32 {
+func (x *InitialiseRequest) GetKeystoreId() uint32 {
 	if x != nil {
-		return x.KeyStoreId
+		return x.KeystoreId
 	}
 	return 0
 }
@@ -1239,9 +1239,9 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x0erelayer_set_id\x18\a \x01(\rR\frelayerSetId\x12*\n" +
 	"\x11oracle_factory_id\x18\b \x01(\rR\x0foracleFactoryId\x120\n" +
 	"\x14gateway_connector_id\x18\t \x01(\rR\x12gatewayConnectorId\x12\x1f\n" +
-	"\vkeyStore_id\x18\n" +
+	"\vkeystore_id\x18\n" +
 	" \x01(\rR\n" +
-	"keyStoreId\"O\n" +
+	"keystoreId\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos*\xbf\x01\n" +
 	"\x0eCapabilityType\x12\x1b\n" +

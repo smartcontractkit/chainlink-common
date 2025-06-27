@@ -165,7 +165,7 @@ message InitialiseRequest {
   uint32 relayer_set_id = 7;
   uint32 oracle_factory_id = 8;
   uint32 gateway_connector_id = 9;
-  uint32 keyStore_id = 10;
+  uint32 keystore_id = 10;
 }
 
 message CapabilityInfosReply {

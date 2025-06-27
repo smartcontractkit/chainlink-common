@@ -20,6 +20,8 @@ service EVM{
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
+  rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply);
 }
 
 // represents simplified evm-style CallMsg
@@ -238,12 +240,40 @@ message QueryTrackedLogsReply {
   repeated Log logs = 1;
 }
 
-message GetTransactionStatusRequest {
-  string transaction_id = 1;
+enum TxStatus {
+  TX_FATAL = 0;
+  TX_REVERTED = 1;
+  TX_SUCCESS = 2;
 }
 
-message GetTransactionStatusReply {
-  TransactionStatus transaction_status = 1;
+message GasConfig {
+  uint64 gas_limit = 1;
+}
+
+message CalculateTransactionFeeRequest {
+  ReceiptGasInfo gas_info = 1;
+}
+
+// represents evm-style receipt
+message ReceiptGasInfo {
+  uint64 gas_used = 1; // gas used by this transaction (in gas units)
+  values.v1.BigInt effective_gas_price = 2; // actual gas price paid in wei (include after EIP-1559)
+}
+
+
+message CalculateTransactionFeeReply {
+  values.v1.BigInt transaction_fee = 1;
+}
+
+message SubmitTransactionRequest {
+  bytes to  = 1;
+  bytes data = 2;
+  optional GasConfig gas_config = 3;
+}
+
+message SubmitTransactionReply {
+  bytes txHash = 1;
+  TxStatus txStatus = 2;
 }
 
 // TransactionStatus is an enum for the status of a transaction.
@@ -255,6 +285,14 @@ enum TransactionStatus {
   TRANSACTION_STATUS_FINALIZED = 3;
   TRANSACTION_STATUS_FAILED = 4;
   TRANSACTION_STATUS_FATAL = 5;
+}
+
+message GetTransactionStatusRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionStatusReply {
+  TransactionStatus transaction_status = 1;
 }
 
 message ChainHeight {
@@ -270,10 +308,17 @@ enum RequestType {
   REQUEST_TYPE_AGGREGATABLE = 3;
 }
 
+message AggregatableObservation {
+  string method = 1;
+  values.v1.Decimal value = 2;
+}
+
 message RequestObservation {
-  // Request type is needed to ensure all honest nodes, even if they have not received a request, can produce an outcome.
-  RequestType requestType = 2;
-  bytes value = 3;
+  oneof observation {
+    google.protobuf.Empty lockableToBlock = 1;
+    bytes eventuallyConsistent = 2;
+    AggregatableObservation aggregatable = 3;
+  }
 }
 
 message Observation {
@@ -283,8 +328,11 @@ message Observation {
 
 message RequestOutcome {
   string requestID = 1;
-  RequestType requestType = 2;
-  bytes value = 3;
+  oneof outcome {
+    google.protobuf.Empty lockableToBlock = 2;
+    bytes eventuallyConsistent = 3;
+    values.v1.Decimal aggregatable = 4;
+  }
 }
 
 message Outcome {
@@ -294,9 +342,9 @@ message Outcome {
 
 message RequestReport {
   string requestID = 1;
-  RequestType requestType = 2;
-  oneof payload {
-    bytes value = 3;
-    ChainHeight height = 4;
+  oneof report {
+    ChainHeight lockableToBlock = 2;
+    bytes eventuallyConsistent = 3;
+    values.v1.Decimal aggregatable = 4;
   }
 }

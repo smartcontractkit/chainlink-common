@@ -1,4 +1,4 @@
-package plugin_installer
+package installer
 
 import (
 	"encoding/json"

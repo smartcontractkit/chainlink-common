@@ -27,6 +27,14 @@ type evmClient struct {
 
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
+func (e *evmClient) CalculateTransactionFee(ctx context.Context, in *evmpb.CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.CalculateTransactionFeeReply, error) {
+	return e.client.CalculateTransactionFee(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e *evmClient) SubmitTransaction(ctx context.Context, in *evmpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*evmpb.SubmitTransactionReply, error) {
+	return e.client.SubmitTransaction(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
 func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
 	return e.client.GetTransactionFee(appendRelayID(ctx, e.relayID), in, opts...)
 }
@@ -294,6 +302,46 @@ func (s *Server) GetTransactionStatus(ctx context.Context, request *evmpb.GetTra
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (s *Server) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	evmService, err := s.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	txResult, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
+		To:        evm.Address(request.To),
+		Data:      evm.ABIPayload(request.Data),
+		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetGasConfig()),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.SubmitTransactionReply{
+		TxHash:   txResult.TxHash[:],
+		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+	}, nil
+}
+
+func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	evmService, err := s.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fee, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
+		GasUsed:           request.GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(fee.TransactionFee),
+	}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {

@@ -291,7 +291,6 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
 
-
 	t.Run("LogStreamingEnabled true creates logger", func(t *testing.T) {
 		cfg := beholder.Config{
 			OtelExporterGRPCEndpoint: "grpc-endpoint",
@@ -323,7 +322,6 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 		}()
 		client.Logger.Emit(context.Background(), log.Record{})
 	})
-
 
 	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{

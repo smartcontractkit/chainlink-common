@@ -24,6 +24,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TxStatus int32
+
+const (
+	TxStatus_TX_FATAL    TxStatus = 0
+	TxStatus_TX_REVERTED TxStatus = 1
+	TxStatus_TX_SUCCESS  TxStatus = 2
+)
+
+// Enum value maps for TxStatus.
+var (
+	TxStatus_name = map[int32]string{
+		0: "TX_FATAL",
+		1: "TX_REVERTED",
+		2: "TX_SUCCESS",
+	}
+	TxStatus_value = map[string]int32{
+		"TX_FATAL":    0,
+		"TX_REVERTED": 1,
+		"TX_SUCCESS":  2,
+	}
+)
+
+func (x TxStatus) Enum() *TxStatus {
+	p := new(TxStatus)
+	*p = x
+	return p
+}
+
+func (x TxStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TxStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_evm_proto_enumTypes[0].Descriptor()
+}
+
+func (TxStatus) Type() protoreflect.EnumType {
+	return &file_evm_proto_enumTypes[0]
+}
+
+func (x TxStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TxStatus.Descriptor instead.
+func (TxStatus) EnumDescriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{0}
+}
+
 // TransactionStatus is an enum for the status of a transaction.
 // This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
 type TransactionStatus int32
@@ -68,11 +117,11 @@ func (x TransactionStatus) String() string {
 }
 
 func (TransactionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_evm_proto_enumTypes[0].Descriptor()
+	return file_evm_proto_enumTypes[1].Descriptor()
 }
 
 func (TransactionStatus) Type() protoreflect.EnumType {
-	return &file_evm_proto_enumTypes[0]
+	return &file_evm_proto_enumTypes[1]
 }
 
 func (x TransactionStatus) Number() protoreflect.EnumNumber {
@@ -81,7 +130,7 @@ func (x TransactionStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TransactionStatus.Descriptor instead.
 func (TransactionStatus) EnumDescriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{0}
+	return file_evm_proto_rawDescGZIP(), []int{1}
 }
 
 type RequestType int32
@@ -120,11 +169,11 @@ func (x RequestType) String() string {
 }
 
 func (RequestType) Descriptor() protoreflect.EnumDescriptor {
-	return file_evm_proto_enumTypes[1].Descriptor()
+	return file_evm_proto_enumTypes[2].Descriptor()
 }
 
 func (RequestType) Type() protoreflect.EnumType {
-	return &file_evm_proto_enumTypes[1]
+	return &file_evm_proto_enumTypes[2]
 }
 
 func (x RequestType) Number() protoreflect.EnumNumber {
@@ -133,7 +182,7 @@ func (x RequestType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RequestType.Descriptor instead.
 func (RequestType) EnumDescriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{1}
+	return file_evm_proto_rawDescGZIP(), []int{2}
 }
 
 // represents simplified evm-style CallMsg
@@ -2210,6 +2259,303 @@ func (x *QueryTrackedLogsReply) GetLogs() []*Log {
 	return nil
 }
 
+type GasConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GasLimit      uint64                 `protobuf:"varint,1,opt,name=gas_limit,json=gasLimit,proto3" json:"gas_limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GasConfig) Reset() {
+	*x = GasConfig{}
+	mi := &file_evm_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GasConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GasConfig) ProtoMessage() {}
+
+func (x *GasConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
+func (*GasConfig) Descriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *GasConfig) GetGasLimit() uint64 {
+	if x != nil {
+		return x.GasLimit
+	}
+	return 0
+}
+
+type CalculateTransactionFeeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GasInfo       *ReceiptGasInfo        `protobuf:"bytes,1,opt,name=gas_info,json=gasInfo,proto3" json:"gas_info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CalculateTransactionFeeRequest) Reset() {
+	*x = CalculateTransactionFeeRequest{}
+	mi := &file_evm_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CalculateTransactionFeeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CalculateTransactionFeeRequest) ProtoMessage() {}
+
+func (x *CalculateTransactionFeeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CalculateTransactionFeeRequest.ProtoReflect.Descriptor instead.
+func (*CalculateTransactionFeeRequest) Descriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *CalculateTransactionFeeRequest) GetGasInfo() *ReceiptGasInfo {
+	if x != nil {
+		return x.GasInfo
+	}
+	return nil
+}
+
+// represents evm-style receipt
+type ReceiptGasInfo struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	GasUsed           uint64                 `protobuf:"varint,1,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`                                // gas used by this transaction (in gas units)
+	EffectiveGasPrice *pb.BigInt             `protobuf:"bytes,2,opt,name=effective_gas_price,json=effectiveGasPrice,proto3" json:"effective_gas_price,omitempty"` // actual gas price paid in wei (include after EIP-1559)
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ReceiptGasInfo) Reset() {
+	*x = ReceiptGasInfo{}
+	mi := &file_evm_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReceiptGasInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReceiptGasInfo) ProtoMessage() {}
+
+func (x *ReceiptGasInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReceiptGasInfo.ProtoReflect.Descriptor instead.
+func (*ReceiptGasInfo) Descriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ReceiptGasInfo) GetGasUsed() uint64 {
+	if x != nil {
+		return x.GasUsed
+	}
+	return 0
+}
+
+func (x *ReceiptGasInfo) GetEffectiveGasPrice() *pb.BigInt {
+	if x != nil {
+		return x.EffectiveGasPrice
+	}
+	return nil
+}
+
+type CalculateTransactionFeeReply struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TransactionFee *pb.BigInt             `protobuf:"bytes,1,opt,name=transaction_fee,json=transactionFee,proto3" json:"transaction_fee,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CalculateTransactionFeeReply) Reset() {
+	*x = CalculateTransactionFeeReply{}
+	mi := &file_evm_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CalculateTransactionFeeReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CalculateTransactionFeeReply) ProtoMessage() {}
+
+func (x *CalculateTransactionFeeReply) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CalculateTransactionFeeReply.ProtoReflect.Descriptor instead.
+func (*CalculateTransactionFeeReply) Descriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *CalculateTransactionFeeReply) GetTransactionFee() *pb.BigInt {
+	if x != nil {
+		return x.TransactionFee
+	}
+	return nil
+}
+
+type SubmitTransactionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	To            []byte                 `protobuf:"bytes,1,opt,name=to,proto3" json:"to,omitempty"`
+	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	GasConfig     *GasConfig             `protobuf:"bytes,3,opt,name=gas_config,json=gasConfig,proto3,oneof" json:"gas_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitTransactionRequest) Reset() {
+	*x = SubmitTransactionRequest{}
+	mi := &file_evm_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitTransactionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitTransactionRequest) ProtoMessage() {}
+
+func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
+func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *SubmitTransactionRequest) GetTo() []byte {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *SubmitTransactionRequest) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *SubmitTransactionRequest) GetGasConfig() *GasConfig {
+	if x != nil {
+		return x.GasConfig
+	}
+	return nil
+}
+
+type SubmitTransactionReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TxHash        []byte                 `protobuf:"bytes,1,opt,name=txHash,proto3" json:"txHash,omitempty"`
+	TxStatus      TxStatus               `protobuf:"varint,2,opt,name=txStatus,proto3,enum=loop.evm.TxStatus" json:"txStatus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitTransactionReply) Reset() {
+	*x = SubmitTransactionReply{}
+	mi := &file_evm_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitTransactionReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitTransactionReply) ProtoMessage() {}
+
+func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
+	mi := &file_evm_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitTransactionReply.ProtoReflect.Descriptor instead.
+func (*SubmitTransactionReply) Descriptor() ([]byte, []int) {
+	return file_evm_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *SubmitTransactionReply) GetTxHash() []byte {
+	if x != nil {
+		return x.TxHash
+	}
+	return nil
+}
+
+func (x *SubmitTransactionReply) GetTxStatus() TxStatus {
+	if x != nil {
+		return x.TxStatus
+	}
+	return TxStatus_TX_FATAL
+}
+
 type GetTransactionStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TransactionId string                 `protobuf:"bytes,1,opt,name=transaction_id,json=transactionId,proto3" json:"transaction_id,omitempty"`
@@ -2219,7 +2565,7 @@ type GetTransactionStatusRequest struct {
 
 func (x *GetTransactionStatusRequest) Reset() {
 	*x = GetTransactionStatusRequest{}
-	mi := &file_evm_proto_msgTypes[35]
+	mi := &file_evm_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2231,7 +2577,7 @@ func (x *GetTransactionStatusRequest) String() string {
 func (*GetTransactionStatusRequest) ProtoMessage() {}
 
 func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[35]
+	mi := &file_evm_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2244,7 +2590,7 @@ func (x *GetTransactionStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionStatusRequest) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{35}
+	return file_evm_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetTransactionStatusRequest) GetTransactionId() string {
@@ -2263,7 +2609,7 @@ type GetTransactionStatusReply struct {
 
 func (x *GetTransactionStatusReply) Reset() {
 	*x = GetTransactionStatusReply{}
-	mi := &file_evm_proto_msgTypes[36]
+	mi := &file_evm_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2275,7 +2621,7 @@ func (x *GetTransactionStatusReply) String() string {
 func (*GetTransactionStatusReply) ProtoMessage() {}
 
 func (x *GetTransactionStatusReply) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[36]
+	mi := &file_evm_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2288,7 +2634,7 @@ func (x *GetTransactionStatusReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionStatusReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionStatusReply) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{36}
+	return file_evm_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetTransactionStatusReply) GetTransactionStatus() TransactionStatus {
@@ -2309,7 +2655,7 @@ type ChainHeight struct {
 
 func (x *ChainHeight) Reset() {
 	*x = ChainHeight{}
-	mi := &file_evm_proto_msgTypes[37]
+	mi := &file_evm_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2321,7 +2667,7 @@ func (x *ChainHeight) String() string {
 func (*ChainHeight) ProtoMessage() {}
 
 func (x *ChainHeight) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[37]
+	mi := &file_evm_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2334,7 +2680,7 @@ func (x *ChainHeight) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChainHeight.ProtoReflect.Descriptor instead.
 func (*ChainHeight) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{37}
+	return file_evm_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ChainHeight) GetLatest() int64 {
@@ -2372,7 +2718,7 @@ type RequestObservation struct {
 
 func (x *RequestObservation) Reset() {
 	*x = RequestObservation{}
-	mi := &file_evm_proto_msgTypes[38]
+	mi := &file_evm_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2384,7 +2730,7 @@ func (x *RequestObservation) String() string {
 func (*RequestObservation) ProtoMessage() {}
 
 func (x *RequestObservation) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[38]
+	mi := &file_evm_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2397,7 +2743,7 @@ func (x *RequestObservation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestObservation.ProtoReflect.Descriptor instead.
 func (*RequestObservation) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{38}
+	return file_evm_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *RequestObservation) GetObservation() isRequestObservation_Observation {
@@ -2466,7 +2812,7 @@ type Observation struct {
 
 func (x *Observation) Reset() {
 	*x = Observation{}
-	mi := &file_evm_proto_msgTypes[39]
+	mi := &file_evm_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2478,7 +2824,7 @@ func (x *Observation) String() string {
 func (*Observation) ProtoMessage() {}
 
 func (x *Observation) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[39]
+	mi := &file_evm_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2491,7 +2837,7 @@ func (x *Observation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Observation.ProtoReflect.Descriptor instead.
 func (*Observation) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{39}
+	return file_evm_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *Observation) GetChainHeight() *ChainHeight {
@@ -2523,7 +2869,7 @@ type RequestOutcome struct {
 
 func (x *RequestOutcome) Reset() {
 	*x = RequestOutcome{}
-	mi := &file_evm_proto_msgTypes[40]
+	mi := &file_evm_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2535,7 +2881,7 @@ func (x *RequestOutcome) String() string {
 func (*RequestOutcome) ProtoMessage() {}
 
 func (x *RequestOutcome) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[40]
+	mi := &file_evm_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2548,7 +2894,7 @@ func (x *RequestOutcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestOutcome.ProtoReflect.Descriptor instead.
 func (*RequestOutcome) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{40}
+	return file_evm_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *RequestOutcome) GetRequestID() string {
@@ -2624,7 +2970,7 @@ type Outcome struct {
 
 func (x *Outcome) Reset() {
 	*x = Outcome{}
-	mi := &file_evm_proto_msgTypes[41]
+	mi := &file_evm_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2636,7 +2982,7 @@ func (x *Outcome) String() string {
 func (*Outcome) ProtoMessage() {}
 
 func (x *Outcome) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[41]
+	mi := &file_evm_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2649,7 +2995,7 @@ func (x *Outcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outcome.ProtoReflect.Descriptor instead.
 func (*Outcome) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{41}
+	return file_evm_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *Outcome) GetChainHeight() *ChainHeight {
@@ -2681,7 +3027,7 @@ type RequestReport struct {
 
 func (x *RequestReport) Reset() {
 	*x = RequestReport{}
-	mi := &file_evm_proto_msgTypes[42]
+	mi := &file_evm_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2693,7 +3039,7 @@ func (x *RequestReport) String() string {
 func (*RequestReport) ProtoMessage() {}
 
 func (x *RequestReport) ProtoReflect() protoreflect.Message {
-	mi := &file_evm_proto_msgTypes[42]
+	mi := &file_evm_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2706,7 +3052,7 @@ func (x *RequestReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestReport.ProtoReflect.Descriptor instead.
 func (*RequestReport) Descriptor() ([]byte, []int) {
-	return file_evm_proto_rawDescGZIP(), []int{42}
+	return file_evm_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *RequestReport) GetRequestID() string {
@@ -2916,7 +3262,25 @@ const file_evm_proto_rawDesc = "" +
 	"\x0elimit_and_sort\x18\x02 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\x12H\n" +
 	"\x10confidence_level\x18\x03 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\x0fconfidenceLevel\":\n" +
 	"\x15QueryTrackedLogsReply\x12!\n" +
-	"\x04logs\x18\x01 \x03(\v2\r.loop.evm.LogR\x04logs\"D\n" +
+	"\x04logs\x18\x01 \x03(\v2\r.loop.evm.LogR\x04logs\"(\n" +
+	"\tGasConfig\x12\x1b\n" +
+	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"U\n" +
+	"\x1eCalculateTransactionFeeRequest\x123\n" +
+	"\bgas_info\x18\x01 \x01(\v2\x18.loop.evm.ReceiptGasInfoR\agasInfo\"n\n" +
+	"\x0eReceiptGasInfo\x12\x19\n" +
+	"\bgas_used\x18\x01 \x01(\x04R\agasUsed\x12A\n" +
+	"\x13effective_gas_price\x18\x02 \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\"Z\n" +
+	"\x1cCalculateTransactionFeeReply\x12:\n" +
+	"\x0ftransaction_fee\x18\x01 \x01(\v2\x11.values.v1.BigIntR\x0etransactionFee\"\x86\x01\n" +
+	"\x18SubmitTransactionRequest\x12\x0e\n" +
+	"\x02to\x18\x01 \x01(\fR\x02to\x12\x12\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\x127\n" +
+	"\n" +
+	"gas_config\x18\x03 \x01(\v2\x13.loop.evm.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
+	"\v_gas_config\"`\n" +
+	"\x16SubmitTransactionReply\x12\x16\n" +
+	"\x06txHash\x18\x01 \x01(\fR\x06txHash\x12.\n" +
+	"\btxStatus\x18\x02 \x01(\x0e2\x12.loop.evm.TxStatusR\btxStatus\"D\n" +
 	"\x1bGetTransactionStatusRequest\x12%\n" +
 	"\x0etransaction_id\x18\x01 \x01(\tR\rtransactionId\"g\n" +
 	"\x19GetTransactionStatusReply\x12J\n" +
@@ -2950,7 +3314,12 @@ const file_evm_proto_rawDesc = "" +
 	"\x0flockableToBlock\x18\x02 \x01(\v2\x15.loop.evm.ChainHeightH\x00R\x0flockableToBlock\x124\n" +
 	"\x14eventuallyConsistent\x18\x03 \x01(\fH\x00R\x14eventuallyConsistent\x128\n" +
 	"\faggregatable\x18\x04 \x01(\v2\x12.values.v1.DecimalH\x00R\faggregatableB\b\n" +
-	"\x06report*\xd6\x01\n" +
+	"\x06report*9\n" +
+	"\bTxStatus\x12\f\n" +
+	"\bTX_FATAL\x10\x00\x12\x0f\n" +
+	"\vTX_REVERTED\x10\x01\x12\x0e\n" +
+	"\n" +
+	"TX_SUCCESS\x10\x02*\xd6\x01\n" +
 	"\x11TransactionStatus\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_UNKNOWN\x10\x00\x12\x1e\n" +
 	"\x1aTRANSACTION_STATUS_PENDING\x10\x01\x12\"\n" +
@@ -2962,7 +3331,7 @@ const file_evm_proto_rawDesc = "" +
 	"\x14REQUEST_TYPE_UNKNOWN\x10\x00\x12&\n" +
 	"\"REQUEST_TYPE_EVENTUALLY_CONSISTENT\x10\x01\x12\"\n" +
 	"\x1eREQUEST_TYPE_LOCKABLE_TO_BLOCK\x10\x02\x12\x1d\n" +
-	"\x19REQUEST_TYPE_AGGREGATABLE\x10\x032\x8e\b\n" +
+	"\x19REQUEST_TYPE_AGGREGATABLE\x10\x032\xd6\t\n" +
 	"\x03EVM\x12[\n" +
 	"\x11GetTransactionFee\x12\".loop.evm.GetTransactionFeeRequest\x1a .loop.evm.GetTransactionFeeReply\"\x00\x12J\n" +
 	"\fCallContract\x12\x1d.loop.evm.CallContractRequest\x1a\x1b.loop.evm.CallContractReply\x12D\n" +
@@ -2976,7 +3345,9 @@ const file_evm_proto_rawDesc = "" +
 	"\x10QueryTrackedLogs\x12!.loop.evm.QueryTrackedLogsRequest\x1a\x1f.loop.evm.QueryTrackedLogsReply\x12S\n" +
 	"\x13RegisterLogTracking\x12$.loop.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
 	"\x15UnregisterLogTracking\x12&.loop.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12b\n" +
-	"\x14GetTransactionStatus\x12%.loop.evm.GetTransactionStatusRequest\x1a#.loop.evm.GetTransactionStatusReplyB=Z;github.com/smartcontractkit/chainlink-common/pkg/chains/evmb\x06proto3"
+	"\x14GetTransactionStatus\x12%.loop.evm.GetTransactionStatusRequest\x1a#.loop.evm.GetTransactionStatusReply\x12Y\n" +
+	"\x11SubmitTransaction\x12\".loop.evm.SubmitTransactionRequest\x1a .loop.evm.SubmitTransactionReply\x12k\n" +
+	"\x17CalculateTransactionFee\x12(.loop.evm.CalculateTransactionFeeRequest\x1a&.loop.evm.CalculateTransactionFeeReplyB=Z;github.com/smartcontractkit/chainlink-common/pkg/chains/evmb\x06proto3"
 
 var (
 	file_evm_proto_rawDescOnce sync.Once
@@ -2990,145 +3361,161 @@ func file_evm_proto_rawDescGZIP() []byte {
 	return file_evm_proto_rawDescData
 }
 
-var file_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_evm_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_evm_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_evm_proto_goTypes = []any{
-	(TransactionStatus)(0),               // 0: loop.evm.TransactionStatus
-	(RequestType)(0),                     // 1: loop.evm.RequestType
-	(*CallMsg)(nil),                      // 2: loop.evm.CallMsg
-	(*Topics)(nil),                       // 3: loop.evm.Topics
-	(*Log)(nil),                          // 4: loop.evm.Log
-	(*FilterQuery)(nil),                  // 5: loop.evm.FilterQuery
-	(*Transaction)(nil),                  // 6: loop.evm.Transaction
-	(*Receipt)(nil),                      // 7: loop.evm.Receipt
-	(*LPFilter)(nil),                     // 8: loop.evm.LPFilter
-	(*Head)(nil),                         // 9: loop.evm.Head
-	(*Expression)(nil),                   // 10: loop.evm.Expression
-	(*BooleanExpression)(nil),            // 11: loop.evm.BooleanExpression
-	(*And)(nil),                          // 12: loop.evm.And
-	(*Or)(nil),                           // 13: loop.evm.Or
-	(*HashValueComparator)(nil),          // 14: loop.evm.HashValueComparator
-	(*EventByWord)(nil),                  // 15: loop.evm.EventByWord
-	(*EventByTopic)(nil),                 // 16: loop.evm.EventByTopic
-	(*Primitive)(nil),                    // 17: loop.evm.Primitive
-	(*LatestAndFinalizedHeadReply)(nil),  // 18: loop.evm.LatestAndFinalizedHeadReply
-	(*CallContractRequest)(nil),          // 19: loop.evm.CallContractRequest
-	(*CallContractReply)(nil),            // 20: loop.evm.CallContractReply
-	(*GetTransactionFeeRequest)(nil),     // 21: loop.evm.GetTransactionFeeRequest
-	(*GetTransactionFeeReply)(nil),       // 22: loop.evm.GetTransactionFeeReply
-	(*FilterLogsRequest)(nil),            // 23: loop.evm.FilterLogsRequest
-	(*FilterLogsReply)(nil),              // 24: loop.evm.FilterLogsReply
-	(*BalanceAtRequest)(nil),             // 25: loop.evm.BalanceAtRequest
-	(*BalanceAtReply)(nil),               // 26: loop.evm.BalanceAtReply
-	(*EstimateGasRequest)(nil),           // 27: loop.evm.EstimateGasRequest
-	(*EstimateGasReply)(nil),             // 28: loop.evm.EstimateGasReply
-	(*GetTransactionByHashRequest)(nil),  // 29: loop.evm.GetTransactionByHashRequest
-	(*GetTransactionByHashReply)(nil),    // 30: loop.evm.GetTransactionByHashReply
-	(*GetTransactionReceiptRequest)(nil), // 31: loop.evm.GetTransactionReceiptRequest
-	(*GetTransactionReceiptReply)(nil),   // 32: loop.evm.GetTransactionReceiptReply
-	(*RegisterLogTrackingRequest)(nil),   // 33: loop.evm.RegisterLogTrackingRequest
-	(*UnregisterLogTrackingRequest)(nil), // 34: loop.evm.UnregisterLogTrackingRequest
-	(*QueryTrackedLogsRequest)(nil),      // 35: loop.evm.QueryTrackedLogsRequest
-	(*QueryTrackedLogsReply)(nil),        // 36: loop.evm.QueryTrackedLogsReply
-	(*GetTransactionStatusRequest)(nil),  // 37: loop.evm.GetTransactionStatusRequest
-	(*GetTransactionStatusReply)(nil),    // 38: loop.evm.GetTransactionStatusReply
-	(*ChainHeight)(nil),                  // 39: loop.evm.ChainHeight
-	(*RequestObservation)(nil),           // 40: loop.evm.RequestObservation
-	(*Observation)(nil),                  // 41: loop.evm.Observation
-	(*RequestOutcome)(nil),               // 42: loop.evm.RequestOutcome
-	(*Outcome)(nil),                      // 43: loop.evm.Outcome
-	(*RequestReport)(nil),                // 44: loop.evm.RequestReport
-	nil,                                  // 45: loop.evm.Observation.ObservationsEntry
-	(*pb.BigInt)(nil),                    // 46: values.v1.BigInt
-	(chain_common.BooleanOperator)(0),    // 47: loop.chain.common.BooleanOperator
-	(chain_common.ComparisonOperator)(0), // 48: loop.chain.common.ComparisonOperator
-	(*chain_common.Primitive)(nil),       // 49: loop.chain.common.Primitive
-	(*chain_common.LimitAndSort)(nil),    // 50: loop.chain.common.LimitAndSort
-	(chain_common.Confidence)(0),         // 51: loop.chain.common.Confidence
-	(*emptypb.Empty)(nil),                // 52: google.protobuf.Empty
-	(*pb.Decimal)(nil),                   // 53: values.v1.Decimal
+	(TxStatus)(0),                          // 0: loop.evm.TxStatus
+	(TransactionStatus)(0),                 // 1: loop.evm.TransactionStatus
+	(RequestType)(0),                       // 2: loop.evm.RequestType
+	(*CallMsg)(nil),                        // 3: loop.evm.CallMsg
+	(*Topics)(nil),                         // 4: loop.evm.Topics
+	(*Log)(nil),                            // 5: loop.evm.Log
+	(*FilterQuery)(nil),                    // 6: loop.evm.FilterQuery
+	(*Transaction)(nil),                    // 7: loop.evm.Transaction
+	(*Receipt)(nil),                        // 8: loop.evm.Receipt
+	(*LPFilter)(nil),                       // 9: loop.evm.LPFilter
+	(*Head)(nil),                           // 10: loop.evm.Head
+	(*Expression)(nil),                     // 11: loop.evm.Expression
+	(*BooleanExpression)(nil),              // 12: loop.evm.BooleanExpression
+	(*And)(nil),                            // 13: loop.evm.And
+	(*Or)(nil),                             // 14: loop.evm.Or
+	(*HashValueComparator)(nil),            // 15: loop.evm.HashValueComparator
+	(*EventByWord)(nil),                    // 16: loop.evm.EventByWord
+	(*EventByTopic)(nil),                   // 17: loop.evm.EventByTopic
+	(*Primitive)(nil),                      // 18: loop.evm.Primitive
+	(*LatestAndFinalizedHeadReply)(nil),    // 19: loop.evm.LatestAndFinalizedHeadReply
+	(*CallContractRequest)(nil),            // 20: loop.evm.CallContractRequest
+	(*CallContractReply)(nil),              // 21: loop.evm.CallContractReply
+	(*GetTransactionFeeRequest)(nil),       // 22: loop.evm.GetTransactionFeeRequest
+	(*GetTransactionFeeReply)(nil),         // 23: loop.evm.GetTransactionFeeReply
+	(*FilterLogsRequest)(nil),              // 24: loop.evm.FilterLogsRequest
+	(*FilterLogsReply)(nil),                // 25: loop.evm.FilterLogsReply
+	(*BalanceAtRequest)(nil),               // 26: loop.evm.BalanceAtRequest
+	(*BalanceAtReply)(nil),                 // 27: loop.evm.BalanceAtReply
+	(*EstimateGasRequest)(nil),             // 28: loop.evm.EstimateGasRequest
+	(*EstimateGasReply)(nil),               // 29: loop.evm.EstimateGasReply
+	(*GetTransactionByHashRequest)(nil),    // 30: loop.evm.GetTransactionByHashRequest
+	(*GetTransactionByHashReply)(nil),      // 31: loop.evm.GetTransactionByHashReply
+	(*GetTransactionReceiptRequest)(nil),   // 32: loop.evm.GetTransactionReceiptRequest
+	(*GetTransactionReceiptReply)(nil),     // 33: loop.evm.GetTransactionReceiptReply
+	(*RegisterLogTrackingRequest)(nil),     // 34: loop.evm.RegisterLogTrackingRequest
+	(*UnregisterLogTrackingRequest)(nil),   // 35: loop.evm.UnregisterLogTrackingRequest
+	(*QueryTrackedLogsRequest)(nil),        // 36: loop.evm.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),          // 37: loop.evm.QueryTrackedLogsReply
+	(*GasConfig)(nil),                      // 38: loop.evm.GasConfig
+	(*CalculateTransactionFeeRequest)(nil), // 39: loop.evm.CalculateTransactionFeeRequest
+	(*ReceiptGasInfo)(nil),                 // 40: loop.evm.ReceiptGasInfo
+	(*CalculateTransactionFeeReply)(nil),   // 41: loop.evm.CalculateTransactionFeeReply
+	(*SubmitTransactionRequest)(nil),       // 42: loop.evm.SubmitTransactionRequest
+	(*SubmitTransactionReply)(nil),         // 43: loop.evm.SubmitTransactionReply
+	(*GetTransactionStatusRequest)(nil),    // 44: loop.evm.GetTransactionStatusRequest
+	(*GetTransactionStatusReply)(nil),      // 45: loop.evm.GetTransactionStatusReply
+	(*ChainHeight)(nil),                    // 46: loop.evm.ChainHeight
+	(*RequestObservation)(nil),             // 47: loop.evm.RequestObservation
+	(*Observation)(nil),                    // 48: loop.evm.Observation
+	(*RequestOutcome)(nil),                 // 49: loop.evm.RequestOutcome
+	(*Outcome)(nil),                        // 50: loop.evm.Outcome
+	(*RequestReport)(nil),                  // 51: loop.evm.RequestReport
+	nil,                                    // 52: loop.evm.Observation.ObservationsEntry
+	(*pb.BigInt)(nil),                      // 53: values.v1.BigInt
+	(chain_common.BooleanOperator)(0),      // 54: loop.chain.common.BooleanOperator
+	(chain_common.ComparisonOperator)(0),   // 55: loop.chain.common.ComparisonOperator
+	(*chain_common.Primitive)(nil),         // 56: loop.chain.common.Primitive
+	(*chain_common.LimitAndSort)(nil),      // 57: loop.chain.common.LimitAndSort
+	(chain_common.Confidence)(0),           // 58: loop.chain.common.Confidence
+	(*emptypb.Empty)(nil),                  // 59: google.protobuf.Empty
+	(*pb.Decimal)(nil),                     // 60: values.v1.Decimal
 }
 var file_evm_proto_depIdxs = []int32{
-	46, // 0: loop.evm.Log.block_number:type_name -> values.v1.BigInt
-	46, // 1: loop.evm.FilterQuery.fromBlock:type_name -> values.v1.BigInt
-	46, // 2: loop.evm.FilterQuery.toBlock:type_name -> values.v1.BigInt
-	3,  // 3: loop.evm.FilterQuery.topics:type_name -> loop.evm.Topics
-	46, // 4: loop.evm.Transaction.value:type_name -> values.v1.BigInt
-	46, // 5: loop.evm.Transaction.gas_price:type_name -> values.v1.BigInt
-	4,  // 6: loop.evm.Receipt.logs:type_name -> loop.evm.Log
-	46, // 7: loop.evm.Receipt.effective_gas_price:type_name -> values.v1.BigInt
-	46, // 8: loop.evm.Receipt.block_number:type_name -> values.v1.BigInt
-	46, // 9: loop.evm.Head.block_number:type_name -> values.v1.BigInt
-	17, // 10: loop.evm.Expression.primitive:type_name -> loop.evm.Primitive
-	11, // 11: loop.evm.Expression.boolean_expression:type_name -> loop.evm.BooleanExpression
-	47, // 12: loop.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
-	10, // 13: loop.evm.BooleanExpression.expression:type_name -> loop.evm.Expression
-	10, // 14: loop.evm.And.expr:type_name -> loop.evm.Expression
-	10, // 15: loop.evm.Or.expr:type_name -> loop.evm.Expression
-	48, // 16: loop.evm.HashValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
-	14, // 17: loop.evm.EventByWord.hashed_value_comparers:type_name -> loop.evm.HashValueComparator
-	14, // 18: loop.evm.EventByTopic.hashed_value_comparers:type_name -> loop.evm.HashValueComparator
-	49, // 19: loop.evm.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
-	15, // 20: loop.evm.Primitive.event_by_word:type_name -> loop.evm.EventByWord
-	16, // 21: loop.evm.Primitive.event_by_topic:type_name -> loop.evm.EventByTopic
-	9,  // 22: loop.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.evm.Head
-	9,  // 23: loop.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.evm.Head
-	2,  // 24: loop.evm.CallContractRequest.call:type_name -> loop.evm.CallMsg
-	46, // 25: loop.evm.CallContractRequest.block_number:type_name -> values.v1.BigInt
-	46, // 26: loop.evm.GetTransactionFeeReply.transaction_fee:type_name -> values.v1.BigInt
-	5,  // 27: loop.evm.FilterLogsRequest.filter_query:type_name -> loop.evm.FilterQuery
-	4,  // 28: loop.evm.FilterLogsReply.logs:type_name -> loop.evm.Log
-	46, // 29: loop.evm.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
-	46, // 30: loop.evm.BalanceAtReply.balance:type_name -> values.v1.BigInt
-	2,  // 31: loop.evm.EstimateGasRequest.msg:type_name -> loop.evm.CallMsg
-	6,  // 32: loop.evm.GetTransactionByHashReply.transaction:type_name -> loop.evm.Transaction
-	7,  // 33: loop.evm.GetTransactionReceiptReply.receipt:type_name -> loop.evm.Receipt
-	8,  // 34: loop.evm.RegisterLogTrackingRequest.filter:type_name -> loop.evm.LPFilter
-	10, // 35: loop.evm.QueryTrackedLogsRequest.expression:type_name -> loop.evm.Expression
-	50, // 36: loop.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	51, // 37: loop.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.chain.common.Confidence
-	4,  // 38: loop.evm.QueryTrackedLogsReply.logs:type_name -> loop.evm.Log
-	0,  // 39: loop.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.evm.TransactionStatus
-	52, // 40: loop.evm.RequestObservation.lockableToBlock:type_name -> google.protobuf.Empty
-	53, // 41: loop.evm.RequestObservation.aggregatable:type_name -> values.v1.Decimal
-	39, // 42: loop.evm.Observation.chainHeight:type_name -> loop.evm.ChainHeight
-	45, // 43: loop.evm.Observation.observations:type_name -> loop.evm.Observation.ObservationsEntry
-	52, // 44: loop.evm.RequestOutcome.lockableToBlock:type_name -> google.protobuf.Empty
-	53, // 45: loop.evm.RequestOutcome.aggregatable:type_name -> values.v1.Decimal
-	39, // 46: loop.evm.Outcome.chainHeight:type_name -> loop.evm.ChainHeight
-	42, // 47: loop.evm.Outcome.outcomes:type_name -> loop.evm.RequestOutcome
-	39, // 48: loop.evm.RequestReport.lockableToBlock:type_name -> loop.evm.ChainHeight
-	53, // 49: loop.evm.RequestReport.aggregatable:type_name -> values.v1.Decimal
-	40, // 50: loop.evm.Observation.ObservationsEntry.value:type_name -> loop.evm.RequestObservation
-	21, // 51: loop.evm.EVM.GetTransactionFee:input_type -> loop.evm.GetTransactionFeeRequest
-	19, // 52: loop.evm.EVM.CallContract:input_type -> loop.evm.CallContractRequest
-	23, // 53: loop.evm.EVM.FilterLogs:input_type -> loop.evm.FilterLogsRequest
-	25, // 54: loop.evm.EVM.BalanceAt:input_type -> loop.evm.BalanceAtRequest
-	27, // 55: loop.evm.EVM.EstimateGas:input_type -> loop.evm.EstimateGasRequest
-	29, // 56: loop.evm.EVM.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
-	31, // 57: loop.evm.EVM.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
-	52, // 58: loop.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	35, // 59: loop.evm.EVM.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
-	33, // 60: loop.evm.EVM.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
-	34, // 61: loop.evm.EVM.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
-	37, // 62: loop.evm.EVM.GetTransactionStatus:input_type -> loop.evm.GetTransactionStatusRequest
-	22, // 63: loop.evm.EVM.GetTransactionFee:output_type -> loop.evm.GetTransactionFeeReply
-	20, // 64: loop.evm.EVM.CallContract:output_type -> loop.evm.CallContractReply
-	24, // 65: loop.evm.EVM.FilterLogs:output_type -> loop.evm.FilterLogsReply
-	26, // 66: loop.evm.EVM.BalanceAt:output_type -> loop.evm.BalanceAtReply
-	28, // 67: loop.evm.EVM.EstimateGas:output_type -> loop.evm.EstimateGasReply
-	30, // 68: loop.evm.EVM.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
-	32, // 69: loop.evm.EVM.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
-	18, // 70: loop.evm.EVM.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
-	36, // 71: loop.evm.EVM.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
-	52, // 72: loop.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
-	52, // 73: loop.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
-	38, // 74: loop.evm.EVM.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
-	63, // [63:75] is the sub-list for method output_type
-	51, // [51:63] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	53, // 0: loop.evm.Log.block_number:type_name -> values.v1.BigInt
+	53, // 1: loop.evm.FilterQuery.fromBlock:type_name -> values.v1.BigInt
+	53, // 2: loop.evm.FilterQuery.toBlock:type_name -> values.v1.BigInt
+	4,  // 3: loop.evm.FilterQuery.topics:type_name -> loop.evm.Topics
+	53, // 4: loop.evm.Transaction.value:type_name -> values.v1.BigInt
+	53, // 5: loop.evm.Transaction.gas_price:type_name -> values.v1.BigInt
+	5,  // 6: loop.evm.Receipt.logs:type_name -> loop.evm.Log
+	53, // 7: loop.evm.Receipt.effective_gas_price:type_name -> values.v1.BigInt
+	53, // 8: loop.evm.Receipt.block_number:type_name -> values.v1.BigInt
+	53, // 9: loop.evm.Head.block_number:type_name -> values.v1.BigInt
+	18, // 10: loop.evm.Expression.primitive:type_name -> loop.evm.Primitive
+	12, // 11: loop.evm.Expression.boolean_expression:type_name -> loop.evm.BooleanExpression
+	54, // 12: loop.evm.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	11, // 13: loop.evm.BooleanExpression.expression:type_name -> loop.evm.Expression
+	11, // 14: loop.evm.And.expr:type_name -> loop.evm.Expression
+	11, // 15: loop.evm.Or.expr:type_name -> loop.evm.Expression
+	55, // 16: loop.evm.HashValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	15, // 17: loop.evm.EventByWord.hashed_value_comparers:type_name -> loop.evm.HashValueComparator
+	15, // 18: loop.evm.EventByTopic.hashed_value_comparers:type_name -> loop.evm.HashValueComparator
+	56, // 19: loop.evm.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
+	16, // 20: loop.evm.Primitive.event_by_word:type_name -> loop.evm.EventByWord
+	17, // 21: loop.evm.Primitive.event_by_topic:type_name -> loop.evm.EventByTopic
+	10, // 22: loop.evm.LatestAndFinalizedHeadReply.latest:type_name -> loop.evm.Head
+	10, // 23: loop.evm.LatestAndFinalizedHeadReply.finalized:type_name -> loop.evm.Head
+	3,  // 24: loop.evm.CallContractRequest.call:type_name -> loop.evm.CallMsg
+	53, // 25: loop.evm.CallContractRequest.block_number:type_name -> values.v1.BigInt
+	53, // 26: loop.evm.GetTransactionFeeReply.transaction_fee:type_name -> values.v1.BigInt
+	6,  // 27: loop.evm.FilterLogsRequest.filter_query:type_name -> loop.evm.FilterQuery
+	5,  // 28: loop.evm.FilterLogsReply.logs:type_name -> loop.evm.Log
+	53, // 29: loop.evm.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
+	53, // 30: loop.evm.BalanceAtReply.balance:type_name -> values.v1.BigInt
+	3,  // 31: loop.evm.EstimateGasRequest.msg:type_name -> loop.evm.CallMsg
+	7,  // 32: loop.evm.GetTransactionByHashReply.transaction:type_name -> loop.evm.Transaction
+	8,  // 33: loop.evm.GetTransactionReceiptReply.receipt:type_name -> loop.evm.Receipt
+	9,  // 34: loop.evm.RegisterLogTrackingRequest.filter:type_name -> loop.evm.LPFilter
+	11, // 35: loop.evm.QueryTrackedLogsRequest.expression:type_name -> loop.evm.Expression
+	57, // 36: loop.evm.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	58, // 37: loop.evm.QueryTrackedLogsRequest.confidence_level:type_name -> loop.chain.common.Confidence
+	5,  // 38: loop.evm.QueryTrackedLogsReply.logs:type_name -> loop.evm.Log
+	40, // 39: loop.evm.CalculateTransactionFeeRequest.gas_info:type_name -> loop.evm.ReceiptGasInfo
+	53, // 40: loop.evm.ReceiptGasInfo.effective_gas_price:type_name -> values.v1.BigInt
+	53, // 41: loop.evm.CalculateTransactionFeeReply.transaction_fee:type_name -> values.v1.BigInt
+	38, // 42: loop.evm.SubmitTransactionRequest.gas_config:type_name -> loop.evm.GasConfig
+	0,  // 43: loop.evm.SubmitTransactionReply.txStatus:type_name -> loop.evm.TxStatus
+	1,  // 44: loop.evm.GetTransactionStatusReply.transaction_status:type_name -> loop.evm.TransactionStatus
+	59, // 45: loop.evm.RequestObservation.lockableToBlock:type_name -> google.protobuf.Empty
+	60, // 46: loop.evm.RequestObservation.aggregatable:type_name -> values.v1.Decimal
+	46, // 47: loop.evm.Observation.chainHeight:type_name -> loop.evm.ChainHeight
+	52, // 48: loop.evm.Observation.observations:type_name -> loop.evm.Observation.ObservationsEntry
+	59, // 49: loop.evm.RequestOutcome.lockableToBlock:type_name -> google.protobuf.Empty
+	60, // 50: loop.evm.RequestOutcome.aggregatable:type_name -> values.v1.Decimal
+	46, // 51: loop.evm.Outcome.chainHeight:type_name -> loop.evm.ChainHeight
+	49, // 52: loop.evm.Outcome.outcomes:type_name -> loop.evm.RequestOutcome
+	46, // 53: loop.evm.RequestReport.lockableToBlock:type_name -> loop.evm.ChainHeight
+	60, // 54: loop.evm.RequestReport.aggregatable:type_name -> values.v1.Decimal
+	47, // 55: loop.evm.Observation.ObservationsEntry.value:type_name -> loop.evm.RequestObservation
+	22, // 56: loop.evm.EVM.GetTransactionFee:input_type -> loop.evm.GetTransactionFeeRequest
+	20, // 57: loop.evm.EVM.CallContract:input_type -> loop.evm.CallContractRequest
+	24, // 58: loop.evm.EVM.FilterLogs:input_type -> loop.evm.FilterLogsRequest
+	26, // 59: loop.evm.EVM.BalanceAt:input_type -> loop.evm.BalanceAtRequest
+	28, // 60: loop.evm.EVM.EstimateGas:input_type -> loop.evm.EstimateGasRequest
+	30, // 61: loop.evm.EVM.GetTransactionByHash:input_type -> loop.evm.GetTransactionByHashRequest
+	32, // 62: loop.evm.EVM.GetTransactionReceipt:input_type -> loop.evm.GetTransactionReceiptRequest
+	59, // 63: loop.evm.EVM.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
+	36, // 64: loop.evm.EVM.QueryTrackedLogs:input_type -> loop.evm.QueryTrackedLogsRequest
+	34, // 65: loop.evm.EVM.RegisterLogTracking:input_type -> loop.evm.RegisterLogTrackingRequest
+	35, // 66: loop.evm.EVM.UnregisterLogTracking:input_type -> loop.evm.UnregisterLogTrackingRequest
+	44, // 67: loop.evm.EVM.GetTransactionStatus:input_type -> loop.evm.GetTransactionStatusRequest
+	42, // 68: loop.evm.EVM.SubmitTransaction:input_type -> loop.evm.SubmitTransactionRequest
+	39, // 69: loop.evm.EVM.CalculateTransactionFee:input_type -> loop.evm.CalculateTransactionFeeRequest
+	23, // 70: loop.evm.EVM.GetTransactionFee:output_type -> loop.evm.GetTransactionFeeReply
+	21, // 71: loop.evm.EVM.CallContract:output_type -> loop.evm.CallContractReply
+	25, // 72: loop.evm.EVM.FilterLogs:output_type -> loop.evm.FilterLogsReply
+	27, // 73: loop.evm.EVM.BalanceAt:output_type -> loop.evm.BalanceAtReply
+	29, // 74: loop.evm.EVM.EstimateGas:output_type -> loop.evm.EstimateGasReply
+	31, // 75: loop.evm.EVM.GetTransactionByHash:output_type -> loop.evm.GetTransactionByHashReply
+	33, // 76: loop.evm.EVM.GetTransactionReceipt:output_type -> loop.evm.GetTransactionReceiptReply
+	19, // 77: loop.evm.EVM.LatestAndFinalizedHead:output_type -> loop.evm.LatestAndFinalizedHeadReply
+	37, // 78: loop.evm.EVM.QueryTrackedLogs:output_type -> loop.evm.QueryTrackedLogsReply
+	59, // 79: loop.evm.EVM.RegisterLogTracking:output_type -> google.protobuf.Empty
+	59, // 80: loop.evm.EVM.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	45, // 81: loop.evm.EVM.GetTransactionStatus:output_type -> loop.evm.GetTransactionStatusReply
+	43, // 82: loop.evm.EVM.SubmitTransaction:output_type -> loop.evm.SubmitTransactionReply
+	41, // 83: loop.evm.EVM.CalculateTransactionFee:output_type -> loop.evm.CalculateTransactionFeeReply
+	70, // [70:84] is the sub-list for method output_type
+	56, // [56:70] is the sub-list for method input_type
+	56, // [56:56] is the sub-list for extension type_name
+	56, // [56:56] is the sub-list for extension extendee
+	0,  // [0:56] is the sub-list for field type_name
 }
 
 func init() { file_evm_proto_init() }
@@ -3147,17 +3534,18 @@ func file_evm_proto_init() {
 		(*Primitive_EventByWord)(nil),
 		(*Primitive_EventByTopic)(nil),
 	}
-	file_evm_proto_msgTypes[38].OneofWrappers = []any{
+	file_evm_proto_msgTypes[39].OneofWrappers = []any{}
+	file_evm_proto_msgTypes[44].OneofWrappers = []any{
 		(*RequestObservation_LockableToBlock)(nil),
 		(*RequestObservation_EventuallyConsistent)(nil),
 		(*RequestObservation_Aggregatable)(nil),
 	}
-	file_evm_proto_msgTypes[40].OneofWrappers = []any{
+	file_evm_proto_msgTypes[46].OneofWrappers = []any{
 		(*RequestOutcome_LockableToBlock)(nil),
 		(*RequestOutcome_EventuallyConsistent)(nil),
 		(*RequestOutcome_Aggregatable)(nil),
 	}
-	file_evm_proto_msgTypes[42].OneofWrappers = []any{
+	file_evm_proto_msgTypes[48].OneofWrappers = []any{
 		(*RequestReport_LockableToBlock)(nil),
 		(*RequestReport_EventuallyConsistent)(nil),
 		(*RequestReport_Aggregatable)(nil),
@@ -3167,8 +3555,8 @@ func file_evm_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_evm_proto_rawDesc), len(file_evm_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   44,
+			NumEnums:      3,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -20,6 +20,36 @@ type EVMClient struct {
 	grpcClient evmpb.EVMClient
 }
 
+// CalculateTransactionFee implements types.EVMService.
+func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
+	reply, err := e.grpcClient.CalculateTransactionFee(ctx, &evmpb.CalculateTransactionFeeRequest{GasInfo: &evmpb.ReceiptGasInfo{
+		GasUsed:           receiptGasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewBigIntFromInt(receiptGasInfo.EffectiveGasPrice),
+	}})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransactionFee())}, nil
+}
+
+// SubmitTransaction implements types.EVMService.
+func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
+	reply, err := e.grpcClient.SubmitTransaction(ctx, &evmpb.SubmitTransactionRequest{
+		To:        txRequest.To[:],
+		Data:      txRequest.Data,
+		GasConfig: evmpb.ConvertGasConfigToProto(txRequest.GasConfig),
+	})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.TransactionResult{
+		TxStatus: evmpb.ConvertTxStatusFromProto(reply.TxStatus),
+		TxHash:   evmtypes.Hash(reply.TxHash),
+	}, nil
+}
+
 func NewEVMCClient(grpcClient evmpb.EVMClient) *EVMClient {
 	return &EVMClient{
 		grpcClient: grpcClient,
@@ -330,4 +360,28 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	txResult, err := e.impl.SubmitTransaction(ctx, evmpb.ConvertSubmitTransactionRequestFromProto(request))
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.SubmitTransactionReply{
+		TxHash:   txResult.TxHash[:],
+		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+	}, nil
+}
+
+func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	txFee, err := e.impl.CalculateTransactionFee(ctx, evmtypes.ReceiptGasInfo{
+		GasUsed:           request.GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(txFee.TransactionFee),
+	}, nil
 }

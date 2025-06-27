@@ -107,7 +107,11 @@ func (rh *runtimeHelpers) GetSecrets(req *pb.GetSecretsRequest, _ uint64) error 
 		if !ok {
 			resp = append(resp, &pb.SecretResponse{
 				Response: &pb.SecretResponse_Error{
-					Error: "could not find secret " + key,
+					Error: &pb.SecretError{
+						Id:        secret.Id,
+						Namespace: secret.Namespace,
+						Error:     "could not find secret " + key,
+					},
 				},
 			})
 		} else {

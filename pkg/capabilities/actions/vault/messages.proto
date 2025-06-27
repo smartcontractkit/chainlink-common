@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault";
+
+package vault;
+
+message SecretRequest {
+    string id = 1;
+    string namespace = 2;
+    string owner = 3;
+    repeated string encryption_keys = 4;
+}
+
+message EncryptedShares {
+    repeated string shares = 1;
+}
+
+message SecretResponse {
+    string id = 1;
+    string namespace = 2;
+    string owner = 3;
+    string encrypted_value = 4;
+    repeated EncryptedShares encrypted_decryption_key_shares = 5;
+    string error = 6;
+}
+
+message GetSecretsRequest {
+  repeated SecretRequest requests = 1;
+}
+
+message GetSecretsResponse {
+  repeated SecretResponse responses = 1;
+}
+
+

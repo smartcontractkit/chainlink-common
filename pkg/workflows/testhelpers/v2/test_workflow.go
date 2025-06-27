@@ -61,6 +61,10 @@ func onTrigger(env *sdk.Environment[string], runtime sdk.Runtime, outputs *basic
 
 func RunTestSecretsWorkflow(runner sdk.Runner[string]) {
 	runner.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
+		_, err := env.GetSecret(&pb.SecretRequest{Id: "Foo"}).Await()
+		if err != nil {
+			return nil, err
+		}
 		return sdk.Workflow[string]{
 			sdk.Handler(
 				basictrigger.Trigger(TestWorkflowTriggerConfig()),

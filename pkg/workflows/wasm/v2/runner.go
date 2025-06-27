@@ -32,12 +32,15 @@ func newRunner[C Config](parse func(configBytes []byte) (C, error), runnerIntern
 		&subscriber[C, sdk.Runtime]{
 			sp:              drt,
 			runnerInternals: runnerInternals,
+			setRuntime: func(maxResponseSize uint64) {
+				drt.MaxResponseSize = maxResponseSize
+			},
 		},
 		&runner[C, sdk.Runtime]{
 			sp:              drt,
 			runtime:         drt,
 			runnerInternals: runnerInternals,
-			setRuntime: func(config []byte, maxResponseSize uint64) {
+			setRuntime: func(maxResponseSize uint64) {
 				drt.MaxResponseSize = maxResponseSize
 			},
 		}),
@@ -49,7 +52,7 @@ type runner[C, T any] struct {
 	trigger    *pb.Trigger
 	id         string
 	runtime    T
-	setRuntime func(config []byte, maxResponseSize uint64)
+	setRuntime func(maxResponseSize uint64)
 	config     C
 	sp         sdk.SecretsProvider
 }
@@ -96,9 +99,10 @@ func (r *runner[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
 
 type subscriber[C, T any] struct {
 	runnerInternals
-	id     string
-	config C
-	sp     sdk.SecretsProvider
+	id         string
+	config     C
+	sp         sdk.SecretsProvider
+	setRuntime func(maxResponseSize uint64)
 }
 
 var _ baseRunner[any, sdk.Runtime] = &subscriber[any, sdk.Runtime]{}
@@ -182,11 +186,12 @@ func getRunner[C, T any](parse func(configBytes []byte) (C, error), subscribe *s
 	switch req := execRequest.Request.(type) {
 	case *pb.ExecuteRequest_Subscribe:
 		subscribe.config = c
+		subscribe.setRuntime(execRequest.MaxResponseSize)
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
 		run.config = c
-		run.setRuntime(execRequest.Config, execRequest.MaxResponseSize)
+		run.setRuntime(execRequest.MaxResponseSize)
 		return run
 	}
 

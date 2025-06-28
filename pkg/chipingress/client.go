@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"strings"
+	t "time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -248,12 +249,36 @@ func validateEvents(events []ce.Event) error {
 	return nil
 }
 
-func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
+func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (ce.Event, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)
 	event.SetID(uuid.New().String())
+
+	// Set optional attributes if provided
+	if attributes == nil {
+		attributes = make(map[string]any)
+	}
+
+	if val, ok := attributes["recordedtime"].(t.Time); ok {
+		event.SetExtension("recordedtime", val.UTC())
+	} else {
+		event.SetExtension("recordedtime", ce.Timestamp{Time: t.Now().UTC()})
+	}
+
+	if val, ok := attributes["time"].(t.Time); ok {
+		event.SetTime(val.UTC())
+	}
+	if val, ok := attributes["datacontenttype"].(string); ok {
+		event.SetDataContentType(val)
+	}
+	if val, ok := attributes["dataschema"].(string); ok {
+		event.SetDataSchema(val)
+	}
+	if val, ok := attributes["subject"].(string); ok {
+		event.SetSubject(val)
+	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
 	if err != nil {

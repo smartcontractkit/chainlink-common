@@ -31,33 +31,46 @@ type Opt func(*chipIngressClientConfig)
 // chipIngressClientConfig is the configuration for the ChipIngressClient.
 type chipIngressClientConfig struct {
 	transportCredentials credentials.TransportCredentials
+	perRPCCredentials    credentials.PerRPCCredentials
 	headerProvider       HeaderProvider
-	authority            string
+	insecureConnection   bool
+	host                 string
+}
+
+func newChipIngressConfig(host string) *chipIngressClientConfig {
+	cfg := &chipIngressClientConfig{
+		headerProvider:    nil,
+		perRPCCredentials: nil,
+		host:              host,
+	}
+	WithInsecureConnection()(cfg) // Default to insecure connection
+	return cfg
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
 func NewChipIngressClient(address string, opts ...Opt) (pb.ChipIngressClient, error) {
 	// Validate address
-	_, _, err := net.SplitHostPort(address)
+	host, _, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, fmt.Errorf("invalid address format: %v", err)
 	}
-	// Defaults
-	cfg := chipIngressClientConfig{
-		transportCredentials: insecure.NewCredentials(),
-		headerProvider:       nil,
-	}
+	cfg := newChipIngressConfig(host)
+
 	// Apply configuration options
 	for _, opt := range opts {
-		opt(&cfg)
+		opt(cfg)
 	}
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
-		grpc.WithAuthority(cfg.authority),
 	}
-	// Add headers as a unary interceptor
+	// Auth
+	if cfg.perRPCCredentials != nil {
+		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))
+	}
+	// Add headers as a unary interceptor, use for non-auth headers
 	if cfg.headerProvider != nil {
 		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
+		// NOTE: not supporting streaming interceptors
 	}
 
 	conn, err := grpc.NewClient(address, grpcOpts...)
@@ -67,35 +80,53 @@ func NewChipIngressClient(address string, opts ...Opt) (pb.ChipIngressClient, er
 	return pb.NewChipIngressClient(conn), nil
 }
 
-// WithTransportCredentials sets the transport credentials for the ChipIngress service.
+// WithBasicAuth sets the basic-auth credentials for the ChipIngress service.
+// Default is to require TLS for security.
+func WithBasicAuth(user, pass string) Opt {
+	return func(c *chipIngressClientConfig) {
+		requireTLS := !c.insecureConnection
+		c.perRPCCredentials = newBasicAuthCredentials(user, pass, requireTLS)
+	}
+}
+
+// WithTokenAuth sets the token-based credentials for the ChipIngress service.
+// Use for CSA-Key based authentication.
+func WithTokenAuth(tokenProvider HeaderProvider) Opt {
+	return func(c *chipIngressClientConfig) {
+		requireTLS := !c.insecureConnection
+		c.perRPCCredentials = newTokenAuthCredentials(tokenProvider, requireTLS)
+	}
+}
+
+// WithTransportCredentials sets the transport custom credentials for the ChipIngress service.
 func WithTransportCredentials(creds credentials.TransportCredentials) Opt {
 	return func(c *chipIngressClientConfig) { c.transportCredentials = creds }
 }
 
 // WithHeaderProvider sets a dynamic header provider for requests
+// NOTE: for CSA-Key based authentication, use WithTokenAuth instead.
 func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *chipIngressClientConfig) { c.headerProvider = provider }
 }
 
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).
 func WithInsecureConnection() Opt {
-	return func(config *chipIngressClientConfig) { config.transportCredentials = insecure.NewCredentials() }
-}
-
-// Add a new option function for TLS with HTTP/2
-func WithTLSAndHTTP2(serverName string) Opt {
 	return func(config *chipIngressClientConfig) {
-		tlsCfg := &tls.Config{
-			ServerName: serverName,     // must match your server's host (SNI + cert SAN)
-			NextProtos: []string{"h2"}, // force HTTP/2
-		}
-		config.transportCredentials = credentials.NewTLS(tlsCfg)
+		config.insecureConnection = true
+		config.transportCredentials = insecure.NewCredentials() // Use insecure credentials
 	}
 }
 
-// WithAuthority sets the authority for the gRPC connection.
-func WithAuthority(authority string) Opt {
-	return func(c *chipIngressClientConfig) { c.authority = authority }
+// Add a new option function for TLS with HTTP/2
+func WithTLS() Opt {
+	return func(config *chipIngressClientConfig) {
+		config.insecureConnection = false
+		tlsCfg := &tls.Config{
+			ServerName: config.host,    // must match your server's host (SNI + cert SAN)
+			NextProtos: []string{"h2"}, // force HTTP/2
+		}
+		config.transportCredentials = credentials.NewTLS(tlsCfg) // Use TLS
+	}
 }
 
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider

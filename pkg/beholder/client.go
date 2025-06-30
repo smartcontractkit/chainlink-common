@@ -220,28 +220,21 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 
 	if cfg.ChipIngressEmitterEnabled {
 		chipIngressOpts := make([]chipingress.Opt, 0, 2)
-		chipIngressEndpoint := cfg.ChipIngressEmitterGRPCEndpoint
-		chipIngressHost, err := getHost(chipIngressEndpoint)
-		if err != nil {
-			return nil, fmt.Errorf("failed to extract host from address '%s': %w", chipIngressEndpoint, err)
-		}
-		// Set Authority
-		chipIngressOpts = append(chipIngressOpts, chipingress.WithAuthority(chipIngressHost))
 
 		if cfg.ChipIngressInsecureConnection {
 			// Use insecure credentials when TLS is not required
 			chipIngressOpts = append(chipIngressOpts, chipingress.WithInsecureConnection())
 		} else {
-			chipIngressOpts = append(chipIngressOpts, chipingress.WithTLSAndHTTP2(chipIngressHost))
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithTLS())
 		}
 		// Only add headers if they exist
 		if len(cfg.AuthHeaders) > 0 {
 			headerProvider := NewStaticAuthHeaderProvider(cfg.AuthHeaders)
-			chipIngressOpts = append(chipIngressOpts, chipingress.WithHeaderProvider(headerProvider))
+			chipIngressOpts = append(chipIngressOpts, chipingress.WithTokenAuth(headerProvider))
 		}
 
 		chipIngressClient, err := chipingress.NewChipIngressClient(
-			chipIngressEndpoint,
+			cfg.ChipIngressEmitterGRPCEndpoint,
 			chipIngressOpts...,
 		)
 

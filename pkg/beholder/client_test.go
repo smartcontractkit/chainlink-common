@@ -409,3 +409,67 @@ func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
 		assert.Contains(t, err.Error(), "missing port in address")
 	})
 }
+
+func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
+	t.Run("chip ingress emitter enabled with insecure connection and auth headers", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer my-secret-token",
+			},
+		}
+
+		// Mock the otlploggrpc.New function to avoid creating a real exporter
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+
+		assert.NotNil(t, client.Emitter)
+		// Check that the emitter is a dualSourceEmitter
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress emitter enabled with tls connection", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  false, // Use TLS
+		}
+
+		// Mock the otlploggrpc.New function
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+		assert.NotNil(t, client.Emitter)
+	})
+}
+
+// mockLogExporter is a no-op exporter for testing purposes.
+type mockLogExporter struct{}
+
+func (m *mockLogExporter) Export(ctx context.Context, logs []sdklog.Record) error {
+	return nil
+}
+
+func (m *mockLogExporter) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
+	return nil
+}

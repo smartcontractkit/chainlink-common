@@ -17,8 +17,10 @@ import (
 var (
 	defaultCfg = chipIngressClientConfig{
 		transportCredentials: insecure.NewCredentials(),
+		insecureConnection:   true, // Default to insecure connection
+		host:                 "localhost",
+		perRPCCredentials:    nil, // No per-RPC credentials by default
 		headerProvider:       nil,
-		authority:            "",
 	}
 )
 
@@ -94,6 +96,21 @@ func TestOptions(t *testing.T) {
 		WithHeaderProvider(mockProvider)(&config)
 		assert.Equal(t, mockProvider, config.headerProvider)
 	})
+
+	t.Run("WithBasicAuth", func(t *testing.T) {
+		config := defaultCfg
+		WithBasicAuth("user", "pass")(&config)
+		assert.NotNil(t, config.perRPCCredentials)
+	})
+
+	t.Run("WithTokenAuth", func(t *testing.T) {
+		mockProvider := &mockHeaderProvider{
+			headers: map[string]string{"Authorization": "Bearer token"},
+		}
+		config := defaultCfg
+		WithTokenAuth(mockProvider)(&config)
+		assert.NotNil(t, config.perRPCCredentials)
+	})
 }
 
 func TestHeaderInterceptor(t *testing.T) {
@@ -141,20 +158,14 @@ func (m *mockHeaderProvider) GetHeaders() map[string]string {
 	return m.headers
 }
 
-func TestWithTLSAndHTTP2(t *testing.T) {
+func TestWithTLS(t *testing.T) {
 	serverName := "example.com"
 	config := defaultCfg
-	WithTLSAndHTTP2(serverName)(&config)
+	config.host = serverName // Set host for SNI
+	WithTLS()(&config)
 	assert.NotNil(t, config.transportCredentials)
 	// Verify it's TLS credentials (we can't easily inspect the internal config)
 	assert.IsType(t, credentials.NewTLS(nil), config.transportCredentials)
-}
-
-func TestWithAuthority(t *testing.T) {
-	authority := "custom-authority.example.com"
-	config := defaultCfg
-	WithAuthority(authority)(&config)
-	assert.Equal(t, authority, config.authority)
 }
 
 func TestWithInsecureConnection(t *testing.T) {
@@ -163,31 +174,17 @@ func TestWithInsecureConnection(t *testing.T) {
 	assert.Equal(t, insecure.NewCredentials(), config.transportCredentials)
 }
 
-func TestNewChipIngressClientWithTLSAndHTTP2(t *testing.T) {
+func TestNewChipIngressClientWithTLS(t *testing.T) {
 	// This test verifies the option is applied, but doesn't test actual connection
 	// since we'd need a real gRPC server for that
 	client, err := NewChipIngressClient(
 		"example.com:443",
-		WithTLSAndHTTP2("example.com"),
+		WithTLS(),
 	)
 	// The client creation should succeed even if connection fails
 	// We're testing the option application, not the actual connection
 	if err != nil {
 		// Connection errors are expected in unit tests
-		assert.Contains(t, err.Error(), "connection")
-	} else {
-		assert.NotNil(t, client)
-	}
-}
-
-func TestNewChipIngressClientWithAuthority(t *testing.T) {
-	client, err := NewChipIngressClient(
-		"localhost:8080",
-		WithAuthority("custom-authority.example.com"),
-		WithInsecureConnection(),
-	)
-	// Connection might fail in unit tests, but option should be applied
-	if err != nil {
 		assert.Contains(t, err.Error(), "connection")
 	} else {
 		assert.NotNil(t, client)

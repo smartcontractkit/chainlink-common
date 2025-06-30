@@ -3,7 +3,7 @@ module github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/i
 go 1.24.2
 
 require (
-	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630175531-753ed49c99e7
+	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630184732-499257035a0b
 	github.com/stretchr/testify v1.10.0
 )
 

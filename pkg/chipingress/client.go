@@ -20,6 +20,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
+// Exports the types to chipingress package
+type Client = pb.ChipIngressClient
+
 // HeaderProvider defines an interface for providing headers
 type HeaderProvider interface {
 	GetHeaders() map[string]string
@@ -36,7 +39,7 @@ type chipIngressClientConfig struct {
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
-func NewChipIngressClient(address string, opts ...Opt) (pb.ChipIngressClient, error) {
+func NewChipIngressClient(address string, opts ...Opt) (Client, error) {
 	// Validate address
 	_, _, err := net.SplitHostPort(address)
 	if err != nil {

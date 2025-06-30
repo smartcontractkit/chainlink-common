@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	ch "github.com/smartcontractkit/chainlink-common/pkg/chipingress"
-	chpb "github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type ChipIngressEmitter struct {
-	client chpb.ChipIngressClient
+	client chipingress.Client
 }
 
-func NewChipIngressEmitter(client chpb.ChipIngressClient) (Emitter, error) {
+func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
@@ -28,7 +27,7 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	event, err := ch.NewEventWithAttributes(sourceDomain, entityType, body, nil)
+	event, err := chipingress.NewEventWithAttributes(sourceDomain, entityType, body, nil)
 	if err != nil {
 		return err
 	}

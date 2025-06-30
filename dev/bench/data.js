@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751303413055,
+  "lastUpdate": 1751306498649,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17094,6 +17094,48 @@ window.BENCHMARK_DATA = {
             "value": 28412,
             "unit": "ns/op",
             "extra": "42104 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f216eaa9aa54fc23a6b1f90586bb5941803baba3",
+          "message": "Add beholder metrics helper struct and GetChainInfo to relayer and relayerset (#1276)\n\n* Add beholder metrics helper struct\n\n* Add NewFloat64Histogram to MetricInfo\n\n* Add NewInt64Histogram\n\n* Add GetChainInfo to relayer and relayerset",
+          "timestamp": "2025-06-30T20:00:21+02:00",
+          "tree_id": "d92bfb884155e0545f89d75d2c310d9498dd98bb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f216eaa9aa54fc23a6b1f90586bb5941803baba3"
+        },
+        "date": 1751306497364,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.5,
+            "unit": "ns/op",
+            "extra": "3396824 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.2,
+            "unit": "ns/op",
+            "extra": "2888931 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28127,
+            "unit": "ns/op",
+            "extra": "42693 times\n4 procs"
           }
         ]
       }

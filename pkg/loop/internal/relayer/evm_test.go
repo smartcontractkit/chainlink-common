@@ -145,7 +145,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, txFee, fee.TransactionFee)
 	})
-	
+
 	t.Run("GetTransactionStatus", func(t *testing.T) {
 		evmService.staticGetTransactionStatus = func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
 			require.Equal(t, txId, transactionID)
@@ -383,7 +383,7 @@ func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName
 func generateFixtureQuery() []query.Expression {
 	exprs := make([]query.Expression, 0)
 
-	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed, primitives.Safe}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}

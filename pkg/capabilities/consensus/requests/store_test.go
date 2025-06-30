@@ -65,6 +65,27 @@ func TestOCR3Store(t *testing.T) {
 		assert.Len(t, items, 10)
 	})
 
+	t.Run("rangeN", func(t *testing.T) {
+		r, err := s.RangeN(0, 1)
+		assert.NoError(t, err)
+		assert.Len(t, r, 0)
+	})
+
+	t.Run("rangeN, zero batch size", func(t *testing.T) {
+		_, err := s.RangeN(0, 0)
+		assert.ErrorContains(t, err, "batchSize must greater than 0")
+	})
+
+	t.Run("rangeN, batchSize larger than queue", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
+			require.NoError(t, err)
+		}
+		items, err := s.RangeN(5, 100)
+		require.NoError(t, err)
+		assert.Len(t, items, 5)
+	})
+
 	t.Run("getByIDs", func(t *testing.T) {
 		rid2 := uuid.New().String()
 		err := s.Add(req)

@@ -73,8 +73,11 @@ func (s *Store[T, R]) RangeN(start, batchSize int) ([]T, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if start < 0 || batchSize < 0 {
-		return nil, fmt.Errorf("start and count must be non-negative")
+	if start < 0 {
+		return nil, fmt.Errorf("start must be non-negative")
+	}
+	if batchSize <= 0 {
+		return nil, fmt.Errorf("batchSize must greater than 0")
 	}
 	if start >= len(s.requestIDs) {
 		return nil, fmt.Errorf("start index out of bounds: start=%d, len=%d", start, len(s.requestIDs))

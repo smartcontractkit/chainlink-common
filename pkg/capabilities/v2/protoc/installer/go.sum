@@ -2,8 +2,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630184732-499257035a0b h1:2fxj0tENbSBZI9+Lmb1R01uQZ07hp0i0nRArzQoc7Ho=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630184732-499257035a0b/go.mod h1:QUEPHdSkH19Or+E1iMGG+rDQ6jpCTIbm//9Osa6MXDE=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630193954-65985e6645e4 h1:pruknTBOf7w6YA8vL8BCbhVeR66FlKVmRSjPflcGsEs=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630193954-65985e6645e4/go.mod h1:QUEPHdSkH19Or+E1iMGG+rDQ6jpCTIbm//9Osa6MXDE=
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=

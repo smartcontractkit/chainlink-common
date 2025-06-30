@@ -7,6 +7,7 @@ package loop.relayerset;
 import "google/protobuf/empty.proto";
 import "loop/internal/pb/contract_reader.proto";
 import "loop/internal/pb/contract_writer.proto";
+import "loop/internal/pb/relayer.proto";
 import "chains/evm/evm.proto";
 
 message RelayerId {
@@ -89,6 +90,10 @@ message LatestHeadResponse {
   uint64 timestamp = 3;
 }
 
+message GetChainInfoRequest {
+  RelayerId relayerId = 1;
+}
+
 message RelayerHealthReportResponse {
   map<string, string> report = 1;
 }
@@ -110,6 +115,7 @@ service RelayerSet {
   rpc RelayerHealthReport(RelayerId) returns (RelayerHealthReportResponse) {}
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
   rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
+  rpc RelayerGetChainInfo(GetChainInfoRequest) returns (GetChainInfoReply) {}
 
   rpc ContractReaderStart(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc ContractReaderClose(google.protobuf.Empty) returns (google.protobuf.Empty) {}

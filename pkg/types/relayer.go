@@ -75,6 +75,14 @@ type ChainStatus struct {
 	Config  string // TOML
 }
 
+type ChainInfo struct {
+	FamilyName  string
+	ChainID     string
+	NetworkName string
+	// NetworkNameFull has network testnet, mainnet or devnet identifier attached.
+	NetworkNameFull string
+}
+
 type NodeStatus struct {
 	ChainID string
 	Name    string
@@ -88,6 +96,8 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// GetChainInfo returns the ChainInfo for this Relayer.
+	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.

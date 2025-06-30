@@ -3,6 +3,7 @@ package installer
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -77,6 +78,10 @@ func buildPlugin(pluginDir string) error {
 	toolsDir, err := filepath.Abs(".tools")
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path for .tools: %w", err)
+	}
+
+	if err = os.MkdirAll(toolsDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create .tools directory: %w", err)
 	}
 
 	fmt.Println("Building plugin")

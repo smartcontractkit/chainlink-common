@@ -16,20 +16,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type workflowLibPlugin struct {
+type Plugin struct {
 	mu sync.RWMutex
 
 	store          *Store
 	config         ocr3types.ReportingPluginConfig
-	offChainConfig *pb.WorkflowLibConfig
+	offChainConfig *pb.Config
 	lggr           logger.Logger
 
 	batchSize       int
 	minTimeIncrease int64
 }
 
-func NewWorkflowLibPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*workflowLibPlugin, error) {
-	offchainCfg := &pb.WorkflowLibConfig{}
+var _ ocr3types.ReportingPlugin[struct{}] = (*Plugin)(nil)
+
+func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*Plugin, error) {
+	offchainCfg := &pb.Config{}
 	err := proto.Unmarshal(config.OffchainConfig, offchainCfg)
 	if err != nil {
 		return nil, err
@@ -44,7 +46,7 @@ func NewWorkflowLibPlugin(store *Store, config ocr3types.ReportingPluginConfig, 
 		return nil, errors.New("execution removal time must be positive")
 	}
 
-	return &workflowLibPlugin{
+	return &Plugin{
 		store:           store,
 		config:          config,
 		offChainConfig:  offchainCfg,
@@ -54,13 +56,11 @@ func NewWorkflowLibPlugin(store *Store, config ocr3types.ReportingPluginConfig, 
 	}, nil
 }
 
-var _ ocr3types.ReportingPlugin[struct{}] = (*workflowLibPlugin)(nil)
-
-func (p *workflowLibPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Query, error) {
+func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Query, error) {
 	return nil, nil
 }
 
-func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
+func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
 	previousOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, previousOutcome); err != nil {
 		return nil, err
@@ -81,6 +81,7 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 	}
 
 	timeoutCheck := time.Now()
+	// TODO: Read one by one until collecting batchsize of non-expired requests (or run out of pending)
 	for _, req := range nextRequestsBatch {
 		if req.ExpiryTime().Before(timeoutCheck) {
 			// Request has been sitting in queue too long
@@ -100,7 +101,7 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 	return proto.Marshal(observation)
 }
 
-func (p *workflowLibPlugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
+func (p *Plugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
 	observation := &pb.Observation{}
 	if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 		return err
@@ -137,11 +138,11 @@ func (p *workflowLibPlugin) ValidateObservation(_ context.Context, oc ocr3types.
 	return err
 }
 
-func (p *workflowLibPlugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (quorumReached bool, err error) {
+func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (quorumReached bool, err error) {
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
-func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	NumFinishedRequests := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	finishedNodes := map[string]int64{}       // counts number of nodes finished with the workflow for executionID
 	var times []int64
@@ -188,9 +189,6 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 	if outcome.ObservedDonTimes == nil {
 		outcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
 	}
-	if outcome.RemovedExecutionIDs == nil {
-		outcome.RemovedExecutionIDs = make(map[string]bool)
-	}
 
 	// Compare with prior outcome to ensure DON time never goes backward.
 	if donTime < outcome.Timestamp+p.minTimeIncrease {
@@ -225,15 +223,15 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 
 	for id, removeAt := range outcome.FinishedExecutionRemovalTimes {
 		if removeAt <= donTime {
-			outcome.RemovedExecutionIDs[id] = true
 			delete(outcome.FinishedExecutionRemovalTimes, id)
+			p.store.deleteExecutionID(id)
 		}
 	}
 
 	return proto.Marshal(outcome)
 }
 
-func (p *workflowLibPlugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[struct{}], error) {
+func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[struct{}], error) {
 	return []ocr3types.ReportPlus[struct{}]{
 		{
 			ReportWithInfo: ocr3types.ReportWithInfo[struct{}]{
@@ -245,14 +243,14 @@ func (p *workflowLibPlugin) Reports(_ context.Context, _ uint64, outcome ocr3typ
 	}, nil
 }
 
-func (p *workflowLibPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
+func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
 	return true, nil
 }
 
-func (p *workflowLibPlugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
+func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
 	return true, nil
 }
 
-func (p *workflowLibPlugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
 }

@@ -32,35 +32,26 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 	}
 
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
-		t.store.SetDonTimes(id, observedDonTimes.Timestamps)
+		t.store.setDonTimes(id, observedDonTimes.Timestamps)
 	}
-	t.store.SetLastObservedDonTime(outcome.Timestamp)
+	t.store.setLastObservedDonTime(outcome.Timestamp)
 
-	// TODO: iterate over what you have in your outcome not requests batch
-	requests, err := t.store.requests.FirstN(t.batchSize)
-	if err != nil {
-		return err
-	}
-
-	for _, request := range requests {
-		id := request.WorkflowExecutionID
-		if _, ok := outcome.ObservedDonTimes[id]; !ok {
+	for executionID, donTimes := range outcome.ObservedDonTimes {
+		request := t.store.GetRequest(executionID)
+		if request == nil {
 			continue
 		}
-		if len(outcome.ObservedDonTimes[id].Timestamps) > request.SeqNum {
-			donTime := outcome.ObservedDonTimes[id].Timestamps[request.SeqNum]
-			t.store.requests.Evict(id) // Make space for next request before delivering
+
+		if len(donTimes.Timestamps) > request.SeqNum {
+			donTime := donTimes.Timestamps[request.SeqNum]
+			t.store.requests.Evict(executionID) // Make space for next request before delivering
 			request.SendResponse(ctx, DonTimeResponse{
-				WorkflowExecutionID: id,
+				WorkflowExecutionID: executionID,
 				SeqNum:              request.SeqNum,
 				Timestamp:           donTime,
 				Err:                 nil,
 			})
 		}
-	}
-
-	for id := range outcome.RemovedExecutionIDs {
-		t.store.deleteExecutionID(id)
 	}
 
 	return nil

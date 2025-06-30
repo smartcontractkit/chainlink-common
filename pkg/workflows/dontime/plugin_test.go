@@ -16,7 +16,7 @@ import (
 )
 
 func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
-	offChainCfg := &pb.WorkflowLibConfig{
+	offChainCfg := &pb.Config{
 		MaxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
 		MaxObservationLengthBytes: defaultMaxPhaseOutputBytes,
 		MaxReportLengthBytes:      defaultMaxPhaseOutputBytes,
@@ -46,7 +46,7 @@ func TestPlugin_Observation(t *testing.T) {
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -83,7 +83,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 	t.Run("Valid Observation", func(t *testing.T) {
 		store := NewDonTimeStore(defaultRequestTimeout)
-		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+		plugin, err := NewPlugin(store, config, lggr)
 		require.NoError(t, err)
 
 		outcomeCtx := ocr3types.OutcomeContext{
@@ -111,7 +111,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 	t.Run("Invalid sequence number", func(t *testing.T) {
 		store := NewDonTimeStore(defaultRequestTimeout)
-		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+		plugin, err := NewPlugin(store, config, lggr)
 		require.NoError(t, err)
 
 		outcomeCtx := ocr3types.OutcomeContext{
@@ -144,7 +144,7 @@ func TestPlugin_Outcome(t *testing.T) {
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
@@ -201,7 +201,6 @@ func TestPlugin_Outcome(t *testing.T) {
 			executionID: {Timestamps: []int64{}},
 		},
 		FinishedExecutionRemovalTimes: make(map[string]int64),
-		RemovedExecutionIDs:           make(map[string]bool),
 	}
 
 	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -224,7 +223,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
@@ -241,7 +240,6 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 			FinishedExecutionRemovalTimes: map[string]int64{
 				"workflow-123": time.Now().UnixMilli(),
 			},
-			RemovedExecutionIDs: nil,
 		}
 
 		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -304,7 +302,6 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 			FinishedExecutionRemovalTimes: map[string]int64{
 				"workflow-123": timestamp - int64(time.Second),
 			},
-			RemovedExecutionIDs: make(map[string]bool),
 		}
 
 		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -315,10 +312,10 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 		err = proto.Unmarshal(outcome, outcomeProto)
 		require.NoError(t, err)
+		// workflow-abc should be scheduled for removal
 		require.Contains(t, outcomeProto.FinishedExecutionRemovalTimes, "workflow-abc")
-		// workflow-123 should be considered removed now and will be deleted from store during transmit
+		// workflow-123 should be fully deleted now
 		require.NotContains(t, outcomeProto.FinishedExecutionRemovalTimes, "workflow-123")
-		require.Contains(t, outcomeProto.RemovedExecutionIDs, "workflow-123")
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
@@ -338,7 +335,7 @@ func TestPlugin_ExpiredRequest(t *testing.T) {
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{

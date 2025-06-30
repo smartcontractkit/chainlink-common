@@ -8,19 +8,7 @@ import (
 	consensusRequests "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 )
 
-var (
-	// donTimeStore is a singleton which can be accessed by anyone who needs it
-	donTimeStore          *Store
-	once                  sync.Once
-	defaultRequestTimeout = 20 * time.Minute
-)
-
-func GetDonTimeStore() *Store {
-	once.Do(func() {
-		donTimeStore = NewDonTimeStore(defaultRequestTimeout)
-	})
-	return donTimeStore
-}
+var defaultRequestTimeout = 20 * time.Minute
 
 type Store struct {
 	requests       *consensusRequests.Store[*Request, DonTimeResponse]
@@ -56,6 +44,10 @@ func (s *Store) GetFinishedExecutionIDs() map[string]bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.finishedExecutionIDs
+}
+
+func (s *Store) GetRequest(executionID string) *Request {
+	return s.requests.Get(executionID)
 }
 
 // RequestDonTime adds a don time request to the queue or return the dontime if we have it yet.
@@ -115,7 +107,7 @@ func (s *Store) GetDonTimes(executionID string) ([]int64, error) {
 	return []int64{}, fmt.Errorf("no don time for executionID %s", executionID)
 }
 
-func (s *Store) SetDonTimes(executionID string, donTimes []int64) {
+func (s *Store) setDonTimes(executionID string, donTimes []int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.donTimes[executionID] = donTimes
@@ -127,7 +119,7 @@ func (s *Store) GetLastObservedDonTime() int64 {
 	return s.lastObservedDonTime
 }
 
-func (s *Store) SetLastObservedDonTime(observedDonTime int64) {
+func (s *Store) setLastObservedDonTime(observedDonTime int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.lastObservedDonTime = observedDonTime

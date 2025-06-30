@@ -21,7 +21,7 @@ const (
 	defaultMinTimeIncrease      = time.Millisecond
 )
 
-type factory struct {
+type Factory struct {
 	store                   *Store
 	batchSize               int
 	outcomePruningThreshold uint64
@@ -30,15 +30,15 @@ type factory struct {
 	services.StateMachine
 }
 
-func newFactory(s *Store, lggr logger.Logger) (*factory, error) {
-	return &factory{
+func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
+	return &Factory{
 		store: s,
 		lggr:  logger.Named(lggr, "OCR3WorkflowLibFactory"),
 	}, nil
 }
 
-func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[struct{}], ocr3types.ReportingPluginInfo, error) {
-	var configProto pb.WorkflowLibConfig
+func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[struct{}], ocr3types.ReportingPluginInfo, error) {
+	var configProto pb.Config
 	err := proto.Unmarshal(config.OffchainConfig, &configProto)
 	if err != nil {
 		// an empty byte array will be unmarshalled into zero values without error
@@ -69,7 +69,7 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)
 	}
 
-	plugin, err := NewWorkflowLibPlugin(o.store, config, o.lggr)
+	plugin, err := NewPlugin(o.store, config, o.lggr)
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{
@@ -83,20 +83,20 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	return plugin, pluginInfo, err
 }
 
-func (o *factory) Start(ctx context.Context) error {
+func (o *Factory) Start(ctx context.Context) error {
 	return o.StartOnce("OCR3WorkflowLibPlugin", func() error {
 		return nil
 	})
 }
 
-func (o *factory) Close() error {
+func (o *Factory) Close() error {
 	return o.StopOnce("OCR3WorkflowLibPlugin", func() error {
 		return nil
 	})
 }
 
-func (o *factory) Name() string { return o.lggr.Name() }
+func (o *Factory) Name() string { return o.lggr.Name() }
 
-func (o *factory) HealthReport() map[string]error {
+func (o *Factory) HealthReport() map[string]error {
 	return map[string]error{o.Name(): o.Healthy()}
 }

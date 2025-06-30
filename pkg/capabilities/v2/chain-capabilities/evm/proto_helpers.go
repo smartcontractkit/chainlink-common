@@ -2,20 +2,10 @@ package evm
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-
-	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
-	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
@@ -247,27 +237,12 @@ func ConvertLogsToProto(logs []*evmtypes.Log) []*Log {
 	return protoLogs
 }
 
-func ConvertHashFromProto(protoHash []byte) (evmtypes.Hash, error) {
-	if len(protoHash) == 0 {
-		return evmtypes.Hash{}, nil
-	}
-	if len(protoHash) != 32 {
-		return evmtypes.Hash{}, fmt.Errorf("invalid hash: got %d bytes, expected 32", len(protoHash))
-	}
-	return evmtypes.Hash(protoHash), nil
-}
-
 func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, error) {
 	if protoFilter == nil {
 		return evmtypes.FilterQuery{}, errEmptyFilter
 	}
-	hash, err := ConvertHashFromProto(protoFilter.GetBlockHash())
-	if err != nil {
-		return evmtypes.FilterQuery{}, err
-	}
-
 	return evmtypes.FilterQuery{
-		BlockHash: hash,
+		BlockHash: evmtypes.Hash(protoFilter.GetBlockHash()),
 		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
 		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
 		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),
@@ -327,232 +302,5 @@ func ConvertLogToProto(log *evmtypes.Log) *Log {
 		// TODO tx index
 		//TxIndex: log.TxIndex
 		Removed: log.Removed,
-	}
-}
-
-func ConvertHashedValueComparatorsToProto(hashedValueComparators []evmprimitives.HashedValueComparator) []*HashValueComparator {
-	protoHashedValueComparators := make([]*HashValueComparator, 0, len(hashedValueComparators))
-	for _, hvc := range hashedValueComparators {
-		var values [][]byte
-		for _, value := range hvc.Values {
-			values = append(values, value[:])
-		}
-		protoHashedValueComparators = append(protoHashedValueComparators,
-			&HashValueComparator{
-				//nolint: gosec // G115
-				Operator: chaincommonpb.ComparisonOperator(hvc.Operator),
-				Values:   values,
-			})
-	}
-	return protoHashedValueComparators
-}
-
-func ConvertHashedValueComparatorsFromProto(protoHashedValueComparators []*HashValueComparator) []evmprimitives.HashedValueComparator {
-	hashedValueComparators := make([]evmprimitives.HashedValueComparator, 0, len(protoHashedValueComparators))
-	for _, protoHvc := range protoHashedValueComparators {
-		values := make([]evmtypes.Hash, 0, len(protoHvc.GetValues()))
-		for _, value := range protoHvc.GetValues() {
-			values = append(values, evmtypes.Hash(value))
-		}
-		hashedValueComparators = append(hashedValueComparators,
-			evmprimitives.HashedValueComparator{
-				Values:   values,
-				Operator: primitives.ComparisonOperator(protoHvc.GetOperator()),
-			})
-	}
-	return hashedValueComparators
-}
-
-func ConvertExpressionsToProto(expressions []query.Expression) ([]*Expression, error) {
-	protoExpressions := make([]*Expression, 0, len(expressions))
-	for _, expr := range expressions {
-		protoExpression, err := convertExpressionToProto(expr)
-		if err != nil {
-			return nil, err
-		}
-		protoExpressions = append(protoExpressions, protoExpression)
-	}
-	return protoExpressions, nil
-}
-
-func ConvertExpressionsFromProto(protoExpressions []*Expression) ([]query.Expression, error) {
-	expressions := make([]query.Expression, 0, len(protoExpressions))
-	for idx, protoExpression := range protoExpressions {
-		expr, err := convertExpressionFromProto(protoExpression)
-		if err != nil {
-			return nil, fmt.Errorf("err to convert expr idx %d err: %w", idx, err)
-		}
-
-		expressions = append(expressions, expr)
-	}
-	return expressions, nil
-}
-
-func convertExpressionToProto(expression query.Expression) (*Expression, error) {
-	pbExpression := &Expression{}
-	if expression.IsPrimitive() {
-		ep := &Primitive{}
-		switch primitive := expression.Primitive.(type) {
-		case *evmprimitives.Address:
-			ep.Primitive = &Primitive_ContractAddress{ContractAddress: primitive.Address[:]}
-
-			putEVMPrimitive(pbExpression, ep)
-		case *evmprimitives.EventByTopic:
-			ep.Primitive = &Primitive_EventByTopic{
-				EventByTopic: &EventByTopic{
-					Topic:                primitive.Topic,
-					HashedValueComparers: ConvertHashedValueComparatorsToProto(primitive.HashedValueComparers),
-				},
-			}
-
-			putEVMPrimitive(pbExpression, ep)
-		case *evmprimitives.EventByWord:
-			ep.Primitive = &Primitive_EventByWord{
-				EventByWord: &EventByWord{
-					//nolint: gosec // G115
-					WordIndex:            uint32(primitive.WordIndex),
-					HashedValueComparers: ConvertHashedValueComparatorsToProto(primitive.HashedValueComparers),
-				},
-			}
-
-			putEVMPrimitive(pbExpression, ep)
-		case *evmprimitives.EventSig:
-			ep.Primitive = &Primitive_EventSig{
-				EventSig: primitive.EventSig[:],
-			}
-
-			putEVMPrimitive(pbExpression, ep)
-		default:
-			generalPrimitive, err := chaincommonpb.ConvertPrimitiveToProto(primitive, func(value any) (*codecpb.VersionedBytes, error) {
-				return nil, fmt.Errorf("unsupported primitive type: %T", value)
-			})
-			if err != nil {
-				return nil, err
-			}
-			putGeneralPrimitive(pbExpression, generalPrimitive)
-		}
-		return pbExpression, nil
-	}
-
-	pbExpression.Evaluator = &Expression_BooleanExpression{BooleanExpression: &BooleanExpression{}}
-	expressions := make([]*Expression, 0)
-	for _, expr := range expression.BoolExpression.Expressions {
-		pbExpr, err := convertExpressionToProto(expr)
-		if err != nil {
-			return nil, err
-		}
-		expressions = append(expressions, pbExpr)
-	}
-	pbExpression.Evaluator = &Expression_BooleanExpression{
-		BooleanExpression: &BooleanExpression{
-			//nolint: gosec // G115
-			BooleanOperator: chaincommonpb.BooleanOperator(expression.BoolExpression.BoolOperator),
-			Expression:      expressions,
-		}}
-
-	return pbExpression, nil
-}
-
-func convertExpressionFromProto(protoExpression *Expression) (query.Expression, error) {
-	switch protoEvaluatedExpr := protoExpression.GetEvaluator().(type) {
-	case *Expression_BooleanExpression:
-		var expressions []query.Expression
-		for _, expression := range protoEvaluatedExpr.BooleanExpression.GetExpression() {
-			convertedExpression, err := convertExpressionFromProto(expression)
-			if err != nil {
-				return query.Expression{}, err
-			}
-			expressions = append(expressions, convertedExpression)
-		}
-		if protoEvaluatedExpr.BooleanExpression.GetBooleanOperator() == chaincommonpb.BooleanOperator_AND {
-			return query.And(expressions...), nil
-		}
-		return query.Or(expressions...), nil
-
-	case *Expression_Primitive:
-		switch primitive := protoEvaluatedExpr.Primitive.GetPrimitive().(type) {
-		case *Primitive_GeneralPrimitive:
-			return chaincommonpb.ConvertPrimitiveFromProto(primitive.GeneralPrimitive, func(_ string, _ bool) (any, error) {
-				return nil, fmt.Errorf("unsupported primitive type: %T", primitive)
-			})
-		default:
-			return convertEVMExpressionToProto(protoEvaluatedExpr.Primitive)
-		}
-	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown expression type: %T", protoExpression)
-	}
-}
-
-func convertEVMExpressionToProto(protoPrimitive *Primitive) (query.Expression, error) {
-	switch primitive := protoPrimitive.GetPrimitive().(type) {
-	case *Primitive_ContractAddress:
-		address := evmtypes.Address(primitive.ContractAddress)
-		return evmprimitives.NewAddressFilter(address), nil
-	case *Primitive_EventSig:
-		return evmprimitives.NewEventSigFilter(evmtypes.Hash(primitive.EventSig)), nil
-	case *Primitive_EventByTopic:
-		return evmprimitives.NewEventByTopicFilter(primitive.EventByTopic.GetTopic(),
-			ConvertHashedValueComparatorsFromProto(primitive.EventByTopic.GetHashedValueComparers())), nil
-	case *Primitive_EventByWord:
-		return evmprimitives.NewEventByWordFilter(int(primitive.EventByWord.GetWordIndex()),
-			ConvertHashedValueComparatorsFromProto(primitive.EventByWord.GetHashedValueComparers())), nil
-	default:
-		return query.Expression{}, status.Errorf(codes.InvalidArgument, "Unknown primitive type: %T", primitive)
-	}
-}
-
-func putGeneralPrimitive(exp *Expression, p *chaincommonpb.Primitive) {
-	exp.Evaluator = &Expression_Primitive{Primitive: &Primitive{Primitive: &Primitive_GeneralPrimitive{GeneralPrimitive: p}}}
-}
-
-func putEVMPrimitive(exp *Expression, p *Primitive) {
-	exp.Evaluator = &Expression_Primitive{Primitive: &Primitive{Primitive: p.Primitive}}
-}
-
-func ConvertGasConfigToProto(gasConfig *evmtypes.GasConfig) *GasConfig {
-	if gasConfig == nil {
-		return nil
-	}
-	return &GasConfig{
-		GasLimit: *gasConfig.GasLimit,
-	}
-}
-
-func ConvertGasConfigFromProto(gasConfig *GasConfig) *evmtypes.GasConfig {
-	if gasConfig == nil {
-		return nil
-	}
-	return &evmtypes.GasConfig{
-		GasLimit: &gasConfig.GasLimit,
-	}
-}
-
-func ConvertTxStatusFromProto(txStatus TxStatus) evmtypes.TransactionStatus {
-	switch txStatus {
-	case TxStatus_TX_SUCCESS:
-		return evmtypes.TxSuccess
-	case TxStatus_TX_REVERTED:
-		return evmtypes.TxReverted
-	default:
-		return evmtypes.TxFatal
-	}
-}
-
-func ConvertTxStatusToProto(txStatus evmtypes.TransactionStatus) TxStatus {
-	switch txStatus {
-	case evmtypes.TxSuccess:
-		return TxStatus_TX_SUCCESS
-	case evmtypes.TxReverted:
-		return TxStatus_TX_REVERTED
-	default:
-		return TxStatus_TX_FATAL
-	}
-}
-
-func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionRequest) evmtypes.SubmitTransactionRequest {
-	return evmtypes.SubmitTransactionRequest{
-		To:        evmtypes.Address(txRequest.To),
-		Data:      evmtypes.ABIPayload(txRequest.Data),
-		GasConfig: ConvertGasConfigFromProto(txRequest.GasConfig),
 	}
 }

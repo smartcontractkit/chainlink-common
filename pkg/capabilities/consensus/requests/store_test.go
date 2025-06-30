@@ -76,7 +76,7 @@ func TestOCR3Store(t *testing.T) {
 		assert.ErrorContains(t, err, "batchSize must greater than 0")
 	})
 
-	t.Run("rangeN, batchSize larger than queue", func(t *testing.T) {
+	t.Run("rangeN, batchSize larger than queue with start offset", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)

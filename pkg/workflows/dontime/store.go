@@ -8,7 +8,7 @@ import (
 	consensusRequests "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 )
 
-var defaultRequestTimeout = 20 * time.Minute
+var DefaultRequestTimeout = 20 * time.Minute
 
 type Store struct {
 	requests       *consensusRequests.Store[*Request, DonTimeResponse]
@@ -22,7 +22,7 @@ type Store struct {
 	mu                  sync.Mutex
 }
 
-func NewDonTimeStore(requestTimeout time.Duration) *Store {
+func NewStore(requestTimeout time.Duration) *Store {
 	return &Store{
 		requests:             consensusRequests.NewStore[*Request, DonTimeResponse](),
 		requestTimeout:       requestTimeout,

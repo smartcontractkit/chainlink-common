@@ -123,18 +123,13 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 		// Add single request to queue
 		executionID := "workflow-123"
-		_ = store.RequestDonTime(executionID, 1)
+		requestCh := store.RequestDonTime(executionID, 1)
 
-		observation, err := plugin.Observation(ctx, outcomeCtx, query)
+		_, err = plugin.Observation(ctx, outcomeCtx, query)
 		require.NoError(t, err)
 
-		ao := types.AttributedObservation{
-			Observation: observation,
-			Observer:    commontypes.OracleID(1),
-		}
-
-		err = plugin.ValidateObservation(ctx, outcomeCtx, query, ao)
-		require.ErrorContains(t, err, "request number 1 for id workflow-123 is greater than the number of observed don times 0")
+		response := <-requestCh
+		require.ErrorContains(t, response.Err, "requested seqNum 1 for executionID workflow-123 is greater than the number of observed don times 0")
 	})
 }
 

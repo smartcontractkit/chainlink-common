@@ -89,10 +89,32 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 		for _, req := range batch {
 			if req.ExpiryTime().Before(timeoutCheck) {
 				// Request has been sitting in queue too long
-				p.store.requests.Evict(req.ID())
+				p.store.requests.Evict(req.WorkflowExecutionID)
 				req.SendTimeout(ctx)
 				continue
 			}
+
+			// Validate request sequence number
+			numObservedDonTimes := 0
+			times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
+			if ok {
+				// We have seen this workflow before so check against the sequence
+				numObservedDonTimes = len(times.Timestamps)
+			}
+
+			if req.SeqNum > numObservedDonTimes {
+				p.store.requests.Evict(req.WorkflowExecutionID)
+				req.SendResponse(ctx,
+					DonTimeResponse{
+						WorkflowExecutionID: req.WorkflowExecutionID,
+						SeqNum:              req.SeqNum,
+						Timestamp:           0,
+						Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
+							req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
+					})
+				continue
+			}
+
 			requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 			batchOffset++
 		}
@@ -108,49 +130,16 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 }
 
 func (p *Plugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
-	observation := &pb.Observation{}
-	if err := proto.Unmarshal(ao.Observation, observation); err != nil {
-		return err
-	}
-
-	priorOutcome := &pb.Outcome{}
-	if err := proto.Unmarshal(oc.PreviousOutcome, priorOutcome); err != nil {
-		return err
-	}
-	if priorOutcome.ObservedDonTimes == nil {
-		priorOutcome.ObservedDonTimes = map[string]*pb.ObservedDonTimes{}
-	}
-
-	newInvalidRequestError := func(requestSeqNum int64, id string, currSeqNum int) error {
-		return fmt.Errorf("request number %d for id %s is greater than the number of observed don times %d", requestSeqNum, id, currSeqNum)
-	}
-
-	// A DON time beyond the expected number of requests is invalid, as there was never consensus on the prior request, which should be blocking.
-	var err error
-	for id, requestedSeqNumber := range observation.Requests {
-		times, ok := priorOutcome.ObservedDonTimes[id]
-		if !ok {
-			if requestedSeqNumber != 0 {
-				err = errors.Join(err, newInvalidRequestError(requestedSeqNumber, id, 0))
-			}
-			continue
-		}
-		seqNum := len(times.Timestamps)
-		if requestedSeqNumber > int64(seqNum) {
-			err = errors.Join(err, newInvalidRequestError(requestedSeqNumber, id, seqNum))
-		}
-	}
-
-	return err
+	return nil
 }
 
 func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (quorumReached bool, err error) {
 	return quorumhelper.ObservationCountReachesObservationQuorum(quorumhelper.QuorumTwoFPlusOne, p.config.N, p.config.F, aos), nil
 }
 
-func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	NumFinishedRequests := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-	finishedNodes := map[string]int64{}       // counts number of nodes finished with the workflow for executionID
+func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
+	finishedNodes := map[string]int64{}     // counts number of nodes finished with the workflow for executionID
 	var times []int64
 
 	prevOutcome := &pb.Outcome{}
@@ -164,12 +153,18 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 			return nil, err
 		}
 
-		for id, currSeqNum := range observation.Requests {
+		for id, requestSeqNum := range observation.Requests {
 			if _, ok := prevOutcome.ObservedDonTimes[id]; !ok {
 				prevOutcome.ObservedDonTimes[id] = &pb.ObservedDonTimes{}
 			}
-			if currSeqNum == int64(len(prevOutcome.ObservedDonTimes[id].Timestamps)) {
-				NumFinishedRequests[id]++
+			// We only count requests for the next sequence number and ignore all other ones.
+			currSeqNum := int64(len(prevOutcome.ObservedDonTimes[id].Timestamps))
+			if requestSeqNum == currSeqNum {
+				observationCounts[id]++
+			} else if requestSeqNum > currSeqNum {
+				// This should never happen since we don't include out of sequence requests in the Observation phase
+				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the number of observed don times %d",
+					requestSeqNum, id, currSeqNum)
 			}
 		}
 
@@ -205,8 +200,7 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 	p.lggr.Infow("New DON Time", "donTime", donTime)
 	outcome.Timestamp = donTime
 
-	for id, numRequests := range NumFinishedRequests {
-		p.lggr.Debugw("Checking finished requests", "executionID", id, "numRequests", numRequests)
+	for id, numRequests := range observationCounts {
 		if numRequests > int64(p.config.F) {
 			observedDonTimes, ok := outcome.ObservedDonTimes[id]
 			if !ok {

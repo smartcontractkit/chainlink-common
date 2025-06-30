@@ -10,6 +10,11 @@ import (
 	"strings"
 )
 
+var values = Packages{
+	Go:    "github.com/smartcontractkit/chainlink-common/pkg/values/pb",
+	Proto: "values/v1/values.proto",
+}
+
 type ProtocGen struct {
 	packageNames map[string]string
 	sources      []string
@@ -83,6 +88,7 @@ func (p *ProtocGen) doInit() error {
 	if p.init {
 		return nil
 	}
+	p.LinkPackage(values)
 
 	root, err := run("git", ".", "rev-parse", "--show-toplevel")
 	if err != nil {

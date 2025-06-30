@@ -11,8 +11,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evm1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
-	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
@@ -44,15 +43,13 @@ type ClientCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	LatestAndFinalizedHead func(ctx context.Context, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	QueryTrackedLogs func(ctx context.Context, input *evm.QueryTrackedLogsRequest) (*evm.QueryTrackedLogsReply, error)
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	RegisterLogTracking func(ctx context.Context, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
 	UnregisterLogTracking func(ctx context.Context, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
-	LogTrigger func(ctx context.Context, input *evm1.FilterLogTriggerRequest) (*evm.Log, error)
+	LogTrigger func(ctx context.Context, input *evm.FilterLogTriggerRequest) (*evm.Log, error)
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	WriteReport func(ctx context.Context, input *evm1.WriteReportRequest) (*evm1.WriteReportReply, error)
+	WriteReport func(ctx context.Context, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 }
 
 func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
@@ -212,28 +209,6 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			}
 		}
-	case "QueryTrackedLogs":
-		input := &evm.QueryTrackedLogsRequest{}
-		if err := request.Payload.UnmarshalTo(input); err != nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-			break
-		}
-
-		if cap.QueryTrackedLogs == nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: "no stub provided for QueryTrackedLogs"}
-			break
-		}
-		resp, err := cap.QueryTrackedLogs(ctx, input)
-		if err != nil {
-			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-		} else {
-			payload, err := anypb.New(resp)
-			if err == nil {
-				capResp.Response = &sdkpb.CapabilityResponse_Payload{Payload: payload}
-			} else {
-				capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
-			}
-		}
 	case "RegisterLogTracking":
 		input := &evm.RegisterLogTrackingRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
@@ -279,7 +254,7 @@ func (cap *ClientCapability) Invoke(ctx context.Context, request *sdkpb.Capabili
 			}
 		}
 	case "WriteReport":
-		input := &evm1.WriteReportRequest{}
+		input := &evm.WriteReportRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break
@@ -310,7 +285,7 @@ func (cap *ClientCapability) InvokeTrigger(ctx context.Context, request *sdkpb.T
 	trigger := &sdkpb.Trigger{}
 	switch request.Method {
 	case "LogTrigger":
-		input := &evm1.FilterLogTriggerRequest{}
+		input := &evm.FilterLogTriggerRequest{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			return nil, err
 		}

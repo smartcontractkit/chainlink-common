@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type WorkflowLibConfig struct {
+type Config struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// These fields are shadowing the `ReportingPluginLimits` fields.
 	// See: https://github.com/smartcontractkit/libocr/blob/master/offchainreporting2plus/ocr3types/plugin.go#L296
@@ -33,26 +33,25 @@ type WorkflowLibConfig struct {
 	MaxReportCount            uint32               `protobuf:"varint,5,opt,name=maxReportCount,proto3" json:"maxReportCount,omitempty"`
 	MaxBatchSize              uint32               `protobuf:"varint,6,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
 	MinTimeIncrease           int64                `protobuf:"varint,7,opt,name=minTimeIncrease,proto3" json:"minTimeIncrease,omitempty"`
-	OutcomePruningThreshold   uint64               `protobuf:"varint,8,opt,name=outcomePruningThreshold,proto3" json:"outcomePruningThreshold,omitempty"`
-	ExecutionRemovalTime      *durationpb.Duration `protobuf:"bytes,9,opt,name=executionRemovalTime,proto3" json:"executionRemovalTime,omitempty"`
+	ExecutionRemovalTime      *durationpb.Duration `protobuf:"bytes,8,opt,name=executionRemovalTime,proto3" json:"executionRemovalTime,omitempty"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
 
-func (x *WorkflowLibConfig) Reset() {
-	*x = WorkflowLibConfig{}
+func (x *Config) Reset() {
+	*x = Config{}
 	mi := &file_config_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WorkflowLibConfig) String() string {
+func (x *Config) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WorkflowLibConfig) ProtoMessage() {}
+func (*Config) ProtoMessage() {}
 
-func (x *WorkflowLibConfig) ProtoReflect() protoreflect.Message {
+func (x *Config) ProtoReflect() protoreflect.Message {
 	mi := &file_config_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -64,68 +63,61 @@ func (x *WorkflowLibConfig) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WorkflowLibConfig.ProtoReflect.Descriptor instead.
-func (*WorkflowLibConfig) Descriptor() ([]byte, []int) {
+// Deprecated: Use Config.ProtoReflect.Descriptor instead.
+func (*Config) Descriptor() ([]byte, []int) {
 	return file_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *WorkflowLibConfig) GetMaxQueryLengthBytes() uint32 {
+func (x *Config) GetMaxQueryLengthBytes() uint32 {
 	if x != nil {
 		return x.MaxQueryLengthBytes
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetMaxObservationLengthBytes() uint32 {
+func (x *Config) GetMaxObservationLengthBytes() uint32 {
 	if x != nil {
 		return x.MaxObservationLengthBytes
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetMaxOutcomeLengthBytes() uint32 {
+func (x *Config) GetMaxOutcomeLengthBytes() uint32 {
 	if x != nil {
 		return x.MaxOutcomeLengthBytes
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetMaxReportLengthBytes() uint32 {
+func (x *Config) GetMaxReportLengthBytes() uint32 {
 	if x != nil {
 		return x.MaxReportLengthBytes
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetMaxReportCount() uint32 {
+func (x *Config) GetMaxReportCount() uint32 {
 	if x != nil {
 		return x.MaxReportCount
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetMaxBatchSize() uint32 {
+func (x *Config) GetMaxBatchSize() uint32 {
 	if x != nil {
 		return x.MaxBatchSize
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetMinTimeIncrease() int64 {
+func (x *Config) GetMinTimeIncrease() int64 {
 	if x != nil {
 		return x.MinTimeIncrease
 	}
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetOutcomePruningThreshold() uint64 {
-	if x != nil {
-		return x.OutcomePruningThreshold
-	}
-	return 0
-}
-
-func (x *WorkflowLibConfig) GetExecutionRemovalTime() *durationpb.Duration {
+func (x *Config) GetExecutionRemovalTime() *durationpb.Duration {
 	if x != nil {
 		return x.ExecutionRemovalTime
 	}
@@ -136,17 +128,16 @@ var File_config_proto protoreflect.FileDescriptor
 
 const file_config_proto_rawDesc = "" +
 	"\n" +
-	"\fconfig.proto\x1a\x1egoogle/protobuf/duration.proto\"\xec\x03\n" +
-	"\x11WorkflowLibConfig\x120\n" +
+	"\fconfig.proto\x1a\x1egoogle/protobuf/duration.proto\"\xa7\x03\n" +
+	"\x06Config\x120\n" +
 	"\x13maxQueryLengthBytes\x18\x01 \x01(\rR\x13maxQueryLengthBytes\x12<\n" +
 	"\x19maxObservationLengthBytes\x18\x02 \x01(\rR\x19maxObservationLengthBytes\x124\n" +
 	"\x15maxOutcomeLengthBytes\x18\x03 \x01(\rR\x15maxOutcomeLengthBytes\x122\n" +
 	"\x14maxReportLengthBytes\x18\x04 \x01(\rR\x14maxReportLengthBytes\x12&\n" +
 	"\x0emaxReportCount\x18\x05 \x01(\rR\x0emaxReportCount\x12\"\n" +
 	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSize\x12(\n" +
-	"\x0fminTimeIncrease\x18\a \x01(\x03R\x0fminTimeIncrease\x128\n" +
-	"\x17outcomePruningThreshold\x18\b \x01(\x04R\x17outcomePruningThreshold\x12M\n" +
-	"\x14executionRemovalTime\x18\t \x01(\v2\x19.google.protobuf.DurationR\x14executionRemovalTimeBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pbb\x06proto3"
+	"\x0fminTimeIncrease\x18\a \x01(\x03R\x0fminTimeIncrease\x12M\n" +
+	"\x14executionRemovalTime\x18\b \x01(\v2\x19.google.protobuf.DurationR\x14executionRemovalTimeBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pbb\x06proto3"
 
 var (
 	file_config_proto_rawDescOnce sync.Once
@@ -162,11 +153,11 @@ func file_config_proto_rawDescGZIP() []byte {
 
 var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_config_proto_goTypes = []any{
-	(*WorkflowLibConfig)(nil),   // 0: WorkflowLibConfig
+	(*Config)(nil),              // 0: Config
 	(*durationpb.Duration)(nil), // 1: google.protobuf.Duration
 }
 var file_config_proto_depIdxs = []int32{
-	1, // 0: WorkflowLibConfig.executionRemovalTime:type_name -> google.protobuf.Duration
+	1, // 0: Config.executionRemovalTime:type_name -> google.protobuf.Duration
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

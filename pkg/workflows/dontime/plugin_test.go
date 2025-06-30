@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"testing"
@@ -10,13 +10,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
-	offChainCfg := &pb.WorkflowLibConfig{
+	offChainCfg := &pb.Config{
 		MaxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
 		MaxObservationLengthBytes: defaultMaxPhaseOutputBytes,
 		MaxReportLengthBytes:      defaultMaxPhaseOutputBytes,
@@ -42,11 +42,11 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 
 func TestPlugin_Observation(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -82,8 +82,8 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("Valid Observation", func(t *testing.T) {
-		store := newDonTimeStore(defaultRequestTimeout)
-		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+		store := NewDonTimeStore(defaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, lggr)
 		require.NoError(t, err)
 
 		outcomeCtx := ocr3types.OutcomeContext{
@@ -110,8 +110,8 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	})
 
 	t.Run("Invalid sequence number", func(t *testing.T) {
-		store := newDonTimeStore(defaultRequestTimeout)
-		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+		store := NewDonTimeStore(defaultRequestTimeout)
+		plugin, err := NewPlugin(store, config, lggr)
 		require.NoError(t, err)
 
 		outcomeCtx := ocr3types.OutcomeContext{
@@ -123,28 +123,23 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 		// Add single request to queue
 		executionID := "workflow-123"
-		_ = store.RequestDonTime(executionID, 1)
+		requestCh := store.RequestDonTime(executionID, 1)
 
-		observation, err := plugin.Observation(ctx, outcomeCtx, query)
+		_, err = plugin.Observation(ctx, outcomeCtx, query)
 		require.NoError(t, err)
 
-		ao := types.AttributedObservation{
-			Observation: observation,
-			Observer:    commontypes.OracleID(1),
-		}
-
-		err = plugin.ValidateObservation(ctx, outcomeCtx, query, ao)
-		require.ErrorContains(t, err, "request number 1 for id workflow-123 is greater than the number of observed don times 0")
+		response := <-requestCh
+		require.ErrorContains(t, response.Err, "requested seqNum 1 for executionID workflow-123 is greater than the number of observed don times 0")
 	})
 }
 
 func TestPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
@@ -201,7 +196,6 @@ func TestPlugin_Outcome(t *testing.T) {
 			executionID: {Timestamps: []int64{}},
 		},
 		FinishedExecutionRemovalTimes: make(map[string]int64),
-		RemovedExecutionIDs:           make(map[string]bool),
 	}
 
 	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -219,12 +213,12 @@ func TestPlugin_Outcome(t *testing.T) {
 
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
@@ -241,7 +235,6 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 			FinishedExecutionRemovalTimes: map[string]int64{
 				"workflow-123": time.Now().UnixMilli(),
 			},
-			RemovedExecutionIDs: nil,
 		}
 
 		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -304,7 +297,6 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 			FinishedExecutionRemovalTimes: map[string]int64{
 				"workflow-123": timestamp - int64(time.Second),
 			},
-			RemovedExecutionIDs: make(map[string]bool),
 		}
 
 		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -315,10 +307,10 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 		err = proto.Unmarshal(outcome, outcomeProto)
 		require.NoError(t, err)
+		// workflow-abc should be scheduled for removal
 		require.Contains(t, outcomeProto.FinishedExecutionRemovalTimes, "workflow-abc")
-		// workflow-123 should be considered removed now and will be deleted from store during transmit
+		// workflow-123 should be fully deleted now
 		require.NotContains(t, outcomeProto.FinishedExecutionRemovalTimes, "workflow-123")
-		require.Contains(t, outcomeProto.RemovedExecutionIDs, "workflow-123")
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
@@ -334,11 +326,11 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 func TestPlugin_ExpiredRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(0)
+	store := NewDonTimeStore(0)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewWorkflowLibPlugin(store, config, lggr)
+	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{

@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
@@ -18,21 +17,21 @@ type Client struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Client) CallContract(runtime sdk.Runtime, input *evm.CallContractRequest) sdk.Promise[*evm.CallContractReply] {
+func (c *Client) CallContract(runtime sdk.Runtime, input *CallContractRequest) sdk.Promise[*CallContractReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.CallContractReply](nil, err)
+		return sdk.PromiseFromResult[*CallContractReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "CallContract",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.CallContractReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*CallContractReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.CallContractReply{}
+			output := &CallContractReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -41,21 +40,21 @@ func (c *Client) CallContract(runtime sdk.Runtime, input *evm.CallContractReques
 	})
 }
 
-func (c *Client) FilterLogs(runtime sdk.Runtime, input *evm.FilterLogsRequest) sdk.Promise[*evm.FilterLogsReply] {
+func (c *Client) FilterLogs(runtime sdk.Runtime, input *FilterLogsRequest) sdk.Promise[*FilterLogsReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.FilterLogsReply](nil, err)
+		return sdk.PromiseFromResult[*FilterLogsReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "FilterLogs",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.FilterLogsReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*FilterLogsReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.FilterLogsReply{}
+			output := &FilterLogsReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -64,21 +63,21 @@ func (c *Client) FilterLogs(runtime sdk.Runtime, input *evm.FilterLogsRequest) s
 	})
 }
 
-func (c *Client) BalanceAt(runtime sdk.Runtime, input *evm.BalanceAtRequest) sdk.Promise[*evm.BalanceAtReply] {
+func (c *Client) BalanceAt(runtime sdk.Runtime, input *BalanceAtRequest) sdk.Promise[*BalanceAtReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.BalanceAtReply](nil, err)
+		return sdk.PromiseFromResult[*BalanceAtReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "BalanceAt",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.BalanceAtReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*BalanceAtReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.BalanceAtReply{}
+			output := &BalanceAtReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -87,21 +86,21 @@ func (c *Client) BalanceAt(runtime sdk.Runtime, input *evm.BalanceAtRequest) sdk
 	})
 }
 
-func (c *Client) EstimateGas(runtime sdk.Runtime, input *evm.EstimateGasRequest) sdk.Promise[*evm.EstimateGasReply] {
+func (c *Client) EstimateGas(runtime sdk.Runtime, input *EstimateGasRequest) sdk.Promise[*EstimateGasReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.EstimateGasReply](nil, err)
+		return sdk.PromiseFromResult[*EstimateGasReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "EstimateGas",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.EstimateGasReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*EstimateGasReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.EstimateGasReply{}
+			output := &EstimateGasReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -110,21 +109,21 @@ func (c *Client) EstimateGas(runtime sdk.Runtime, input *evm.EstimateGasRequest)
 	})
 }
 
-func (c *Client) GetTransactionByHash(runtime sdk.Runtime, input *evm.GetTransactionByHashRequest) sdk.Promise[*evm.GetTransactionByHashReply] {
+func (c *Client) GetTransactionByHash(runtime sdk.Runtime, input *GetTransactionByHashRequest) sdk.Promise[*GetTransactionByHashReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.GetTransactionByHashReply](nil, err)
+		return sdk.PromiseFromResult[*GetTransactionByHashReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "GetTransactionByHash",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.GetTransactionByHashReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*GetTransactionByHashReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.GetTransactionByHashReply{}
+			output := &GetTransactionByHashReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -133,21 +132,21 @@ func (c *Client) GetTransactionByHash(runtime sdk.Runtime, input *evm.GetTransac
 	})
 }
 
-func (c *Client) GetTransactionReceipt(runtime sdk.Runtime, input *evm.GetTransactionReceiptRequest) sdk.Promise[*evm.GetTransactionReceiptReply] {
+func (c *Client) GetTransactionReceipt(runtime sdk.Runtime, input *GetTransactionReceiptRequest) sdk.Promise[*GetTransactionReceiptReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.GetTransactionReceiptReply](nil, err)
+		return sdk.PromiseFromResult[*GetTransactionReceiptReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "GetTransactionReceipt",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.GetTransactionReceiptReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*GetTransactionReceiptReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.GetTransactionReceiptReply{}
+			output := &GetTransactionReceiptReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -156,21 +155,21 @@ func (c *Client) GetTransactionReceipt(runtime sdk.Runtime, input *evm.GetTransa
 	})
 }
 
-func (c *Client) LatestAndFinalizedHead(runtime sdk.Runtime, input *emptypb.Empty) sdk.Promise[*evm.LatestAndFinalizedHeadReply] {
+func (c *Client) LatestAndFinalizedHead(runtime sdk.Runtime, input *emptypb.Empty) sdk.Promise[*LatestAndFinalizedHeadReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*evm.LatestAndFinalizedHeadReply](nil, err)
+		return sdk.PromiseFromResult[*LatestAndFinalizedHeadReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
 		Method:  "LatestAndFinalizedHead",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.LatestAndFinalizedHeadReply, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*LatestAndFinalizedHeadReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.LatestAndFinalizedHeadReply{}
+			output := &LatestAndFinalizedHeadReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:
@@ -179,30 +178,7 @@ func (c *Client) LatestAndFinalizedHead(runtime sdk.Runtime, input *emptypb.Empt
 	})
 }
 
-func (c *Client) QueryTrackedLogs(runtime sdk.Runtime, input *evm.QueryTrackedLogsRequest) sdk.Promise[*evm.QueryTrackedLogsReply] {
-	wrapped, err := anypb.New(input)
-	if err != nil {
-		return sdk.PromiseFromResult[*evm.QueryTrackedLogsReply](nil, err)
-	}
-	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "evm@1.0.0",
-		Payload: wrapped,
-		Method:  "QueryTrackedLogs",
-	}), func(i *sdkpb.CapabilityResponse) (*evm.QueryTrackedLogsReply, error) {
-		switch payload := i.Response.(type) {
-		case *sdkpb.CapabilityResponse_Error:
-			return nil, errors.New(payload.Error)
-		case *sdkpb.CapabilityResponse_Payload:
-			output := &evm.QueryTrackedLogsReply{}
-			err = payload.Payload.UnmarshalTo(output)
-			return output, err
-		default:
-			return nil, errors.New("unexpected response type")
-		}
-	})
-}
-
-func (c *Client) RegisterLogTracking(runtime sdk.Runtime, input *evm.RegisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
+func (c *Client) RegisterLogTracking(runtime sdk.Runtime, input *RegisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
@@ -225,7 +201,7 @@ func (c *Client) RegisterLogTracking(runtime sdk.Runtime, input *evm.RegisterLog
 	})
 }
 
-func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.UnregisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
+func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *UnregisterLogTrackingRequest) sdk.Promise[*emptypb.Empty] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
 		return sdk.PromiseFromResult[*emptypb.Empty](nil, err)
@@ -248,7 +224,7 @@ func (c *Client) UnregisterLogTracking(runtime sdk.Runtime, input *evm.Unregiste
 	})
 }
 
-func LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*evm.Log, *evm.Log] {
+func LogTrigger(config *FilterLogTriggerRequest) sdk.Trigger[*Log, *Log] {
 	configAny, _ := anypb.New(config)
 	return &clientLogTrigger{
 		config: configAny,
@@ -261,8 +237,8 @@ type clientLogTrigger struct {
 
 func (*clientLogTrigger) IsTrigger() {}
 
-func (*clientLogTrigger) NewT() *evm.Log {
-	return &evm.Log{}
+func (*clientLogTrigger) NewT() *Log {
+	return &Log{}
 }
 
 func (*clientLogTrigger) CapabilityID() string {
@@ -277,6 +253,29 @@ func (t *clientLogTrigger) ConfigAsAny() *anypb.Any {
 	return t.config
 }
 
-func (t *clientLogTrigger) Adapt(trigger *evm.Log) (*evm.Log, error) {
+func (t *clientLogTrigger) Adapt(trigger *Log) (*Log, error) {
 	return trigger, nil
+}
+
+func (c *Client) WriteReport(runtime sdk.Runtime, input *WriteReportRequest) sdk.Promise[*WriteReportReply] {
+	wrapped, err := anypb.New(input)
+	if err != nil {
+		return sdk.PromiseFromResult[*WriteReportReply](nil, err)
+	}
+	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
+		Id:      "evm@1.0.0",
+		Payload: wrapped,
+		Method:  "WriteReport",
+	}), func(i *sdkpb.CapabilityResponse) (*WriteReportReply, error) {
+		switch payload := i.Response.(type) {
+		case *sdkpb.CapabilityResponse_Error:
+			return nil, errors.New(payload.Error)
+		case *sdkpb.CapabilityResponse_Payload:
+			output := &WriteReportReply{}
+			err = payload.Payload.UnmarshalTo(output)
+			return output, err
+		default:
+			return nil, errors.New("unexpected response type")
+		}
+	})
 }

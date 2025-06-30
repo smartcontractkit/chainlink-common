@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"testing"
@@ -8,14 +8,14 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	ctx := t.Context()
 
 	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
@@ -31,7 +31,6 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 			executionID: {Timestamps: []int64{timestamp - int64(time.Second), timestamp}},
 		},
 		FinishedExecutionRemovalTimes: make(map[string]int64),
-		RemovedExecutionIDs:           make(map[string]bool),
 	}
 
 	r := ocr3types.ReportWithInfo[struct{}]{}
@@ -51,5 +50,5 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 		t.Fatal("failed to retrieve donTime from request channel")
 	}
 
-	require.Empty(t, store.Requests.Get(executionID))
+	require.Empty(t, store.requests.Get(executionID))
 }

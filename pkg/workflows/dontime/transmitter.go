@@ -1,11 +1,11 @@
-package workflowLib
+package dontime
 
 import (
 	"context"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
@@ -17,19 +17,15 @@ var _ ocr3types.ContractTransmitter[struct{}] = (*Transmitter)(nil)
 // and handle deletion of finished executionIDs.
 type Transmitter struct {
 	lggr      logger.Logger
-	store     *DonTimeStore
+	store     *Store
 	batchSize int
 }
 
-func NewTransmitter(lggr logger.Logger, store *DonTimeStore, batchSize int) *Transmitter {
+func NewTransmitter(lggr logger.Logger, store *Store, batchSize int) *Transmitter {
 	return &Transmitter{lggr: lggr, store: store, batchSize: batchSize}
 }
 
 func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[struct{}], _ []types.AttributedOnchainSignature) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
 		return err
@@ -40,30 +36,22 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 	}
 	t.store.setLastObservedDonTime(outcome.Timestamp)
 
-	requests, err := t.store.Requests.FirstN(t.batchSize)
-	if err != nil {
-		return err
-	}
-
-	for _, request := range requests {
-		id := request.WorkflowExecutionID
-		if _, ok := outcome.ObservedDonTimes[id]; !ok {
+	for executionID, donTimes := range outcome.ObservedDonTimes {
+		request := t.store.GetRequest(executionID)
+		if request == nil {
 			continue
 		}
-		if len(outcome.ObservedDonTimes[id].Timestamps) > request.SeqNum {
-			donTime := outcome.ObservedDonTimes[id].Timestamps[request.SeqNum]
-			t.store.Requests.Evict(id) // Make space for next request before delivering
+
+		if len(donTimes.Timestamps) > request.SeqNum {
+			donTime := donTimes.Timestamps[request.SeqNum]
+			t.store.requests.Evict(executionID) // Make space for next request before delivering
 			request.SendResponse(ctx, DonTimeResponse{
-				WorkflowExecutionID: id,
+				WorkflowExecutionID: executionID,
 				SeqNum:              request.SeqNum,
 				Timestamp:           donTime,
 				Err:                 nil,
 			})
 		}
-	}
-
-	for id := range outcome.RemovedExecutionIDs {
-		t.store.deleteExecutionID(id)
 	}
 
 	return nil

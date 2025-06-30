@@ -67,6 +67,44 @@ func (s *Store[T, R]) FirstN(batchSize int) ([]T, error) {
 	return got, nil
 }
 
+// RangeN retrieves up to `batchSize` requests starting at index `start`.
+// It deep-copies each request before returning.
+func (s *Store[T, R]) RangeN(start, batchSize int) ([]T, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if start < 0 {
+		return nil, fmt.Errorf("start must be non-negative")
+	}
+	if batchSize <= 0 {
+		return nil, fmt.Errorf("batchSize must greater than 0")
+	}
+	if start >= len(s.requestIDs) {
+		return nil, fmt.Errorf("start index out of bounds: start=%d, len=%d", start, len(s.requestIDs))
+	}
+
+	end := start + batchSize
+	if end > len(s.requestIDs) {
+		end = len(s.requestIDs)
+	}
+
+	got := make([]T, 0, end-start)
+	for _, r := range s.requestIDs[start:end] {
+		gr, ok := s.requests[r]
+		if !ok {
+			continue
+		}
+		got = append(got, gr.Copy())
+	}
+	return got, nil
+}
+
+func (s *Store[T, R]) Len() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.requestIDs)
+}
+
 // Add adds a new request to the store.
 func (s *Store[T, R]) Add(req T) error {
 	s.mu.Lock()

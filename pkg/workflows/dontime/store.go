@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"fmt"
@@ -8,33 +8,23 @@ import (
 	consensusRequests "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 )
 
-var (
-	// donTimeStore is a singleton which can be accessed by anyone who needs it
-	donTimeStore          *DonTimeStore
-	once                  sync.Once
-	defaultRequestTimeout = 20 * time.Minute
-)
+var defaultRequestTimeout = 20 * time.Minute
 
-func GetDonTimeStore() *DonTimeStore {
-	once.Do(func() {
-		donTimeStore = newDonTimeStore(defaultRequestTimeout)
-	})
-	return donTimeStore
-}
-
-type DonTimeStore struct {
-	Requests       *consensusRequests.Store[*DonTimeRequest, DonTimeResponse]
+type Store struct {
+	requests       *consensusRequests.Store[*Request, DonTimeResponse]
 	requestTimeout time.Duration
 
 	finishedExecutionIDs map[string]bool
-	donTimes             map[string][]int64 // ExecutionID --> [timestamp-0, timestamp-1 , ...]
-	lastObservedDonTime  int64
-	mu                   sync.Mutex
+	// donTimes holds ordered sequence timestamps generated for consecutive workflow requests
+	// i.e. ExecutionID --> [timestamp-0, timestamp-1 , ...]
+	donTimes            map[string][]int64
+	lastObservedDonTime int64
+	mu                  sync.Mutex
 }
 
-func newDonTimeStore(requestTimeout time.Duration) *DonTimeStore {
-	return &DonTimeStore{
-		Requests:             consensusRequests.NewStore[*DonTimeRequest, DonTimeResponse](),
+func NewDonTimeStore(requestTimeout time.Duration) *Store {
+	return &Store{
+		requests:             consensusRequests.NewStore[*Request, DonTimeResponse](),
 		requestTimeout:       requestTimeout,
 		finishedExecutionIDs: make(map[string]bool),
 		donTimes:             make(map[string][]int64),
@@ -46,20 +36,24 @@ func newDonTimeStore(requestTimeout time.Duration) *DonTimeStore {
 // ExecutionFinished marks a workflow execution as finished for this node
 // Once consensus is reached that the execution has finished, the executionID
 // will be marked for deletion after some time.
-func (s *DonTimeStore) ExecutionFinished(executionID string) {
+func (s *Store) ExecutionFinished(executionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.finishedExecutionIDs[executionID] = true
 }
 
-func (s *DonTimeStore) GetFinishedExecutionIDs() map[string]bool {
+func (s *Store) GetFinishedExecutionIDs() map[string]bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.finishedExecutionIDs
 }
 
+func (s *Store) GetRequest(executionID string) *Request {
+	return s.requests.Get(executionID)
+}
+
 // RequestDonTime adds a don time request to the queue or return the dontime if we have it yet.
-func (s *DonTimeStore) RequestDonTime(executionID string, seqNum int) <-chan DonTimeResponse {
+func (s *Store) RequestDonTime(executionID string, seqNum int) <-chan DonTimeResponse {
 	ch := make(chan DonTimeResponse, 1)
 	dontime := s.GetDonTimeForSeqNum(executionID, seqNum)
 	if dontime != nil {
@@ -74,28 +68,27 @@ func (s *DonTimeStore) RequestDonTime(executionID string, seqNum int) <-chan Don
 	}
 
 	// Submit request and return channel
-	err := s.Requests.Add(&DonTimeRequest{
+	err := s.requests.Add(&Request{
 		ExpiresAt:           time.Now().Add(s.requestTimeout),
 		CallbackCh:          ch,
 		WorkflowExecutionID: executionID,
 		SeqNum:              seqNum,
 	})
 	if err != nil {
-		DonTimeRequestErr := fmt.Errorf(
-			"failed to queue DON Time request (executionID=%s, sequenceNumber=%d): %w",
-			executionID, seqNum, err)
 		ch <- DonTimeResponse{
 			WorkflowExecutionID: executionID,
 			SeqNum:              seqNum,
 			Timestamp:           0,
-			Err:                 DonTimeRequestErr,
+			Err: fmt.Errorf(
+				"failed to queue DON Time request (executionID=%s, sequenceNumber=%d): %w",
+				executionID, seqNum, err),
 		}
 		close(ch)
 	}
 	return ch
 }
 
-func (s *DonTimeStore) GetDonTimeForSeqNum(executionID string, seqNum int) *int64 {
+func (s *Store) GetDonTimeForSeqNum(executionID string, seqNum int) *int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if times, ok := s.donTimes[executionID]; ok {
@@ -106,7 +99,7 @@ func (s *DonTimeStore) GetDonTimeForSeqNum(executionID string, seqNum int) *int6
 	return nil
 }
 
-func (s *DonTimeStore) GetDonTimes(executionID string) ([]int64, error) {
+func (s *Store) GetDonTimes(executionID string) ([]int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -116,25 +109,25 @@ func (s *DonTimeStore) GetDonTimes(executionID string) ([]int64, error) {
 	return []int64{}, fmt.Errorf("no don time for executionID %s", executionID)
 }
 
-func (s *DonTimeStore) setDonTimes(executionID string, donTimes []int64) {
+func (s *Store) setDonTimes(executionID string, donTimes []int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.donTimes[executionID] = donTimes
 }
 
-func (s *DonTimeStore) GetLastObservedDonTime() int64 {
+func (s *Store) GetLastObservedDonTime() int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.lastObservedDonTime
 }
 
-func (s *DonTimeStore) setLastObservedDonTime(observedDonTime int64) {
+func (s *Store) setLastObservedDonTime(observedDonTime int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.lastObservedDonTime = observedDonTime
 }
 
-func (s *DonTimeStore) deleteExecutionID(executionID string) {
+func (s *Store) deleteExecutionID(executionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.donTimes, executionID)

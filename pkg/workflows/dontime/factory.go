@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"context"
@@ -9,21 +9,20 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 const (
-	defaultMaxPhaseOutputBytes     = 1000000 // 1 MB
-	defaultMaxReportCount          = 20
-	defaultBatchSize               = 1000
-	defaultOutcomePruningThreshold = 3600
-	defaultExecutionRemovalTime    = 10 * time.Minute // CRE workflow time limit
-	defaultMinTimeIncrease         = time.Millisecond
+	defaultMaxPhaseOutputBytes  = 1000000 // 1 MB
+	defaultMaxReportCount       = 1
+	defaultBatchSize            = 10000
+	defaultExecutionRemovalTime = 10 * time.Minute // CRE workflow time limit
+	defaultMinTimeIncrease      = time.Millisecond
 )
 
 type Factory struct {
-	store                   *DonTimeStore
+	store                   *Store
 	batchSize               int
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
@@ -31,7 +30,7 @@ type Factory struct {
 	services.StateMachine
 }
 
-func NewFactory(s *DonTimeStore, lggr logger.Logger) (*Factory, error) {
+func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
 	return &Factory{
 		store: s,
 		lggr:  logger.Named(lggr, "OCR3WorkflowLibFactory"),
@@ -39,7 +38,7 @@ func NewFactory(s *DonTimeStore, lggr logger.Logger) (*Factory, error) {
 }
 
 func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[struct{}], ocr3types.ReportingPluginInfo, error) {
-	var configProto pb.WorkflowLibConfig
+	var configProto pb.Config
 	err := proto.Unmarshal(config.OffchainConfig, &configProto)
 	if err != nil {
 		// an empty byte array will be unmarshalled into zero values without error
@@ -60,9 +59,6 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	if configProto.MaxBatchSize <= 0 {
 		configProto.MaxBatchSize = defaultBatchSize
 	}
-	if configProto.OutcomePruningThreshold <= 0 {
-		configProto.OutcomePruningThreshold = defaultOutcomePruningThreshold
-	}
 	if configProto.MaxReportCount <= 0 {
 		configProto.MaxReportCount = defaultMaxReportCount
 	}
@@ -73,7 +69,7 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)
 	}
 
-	plugin, err := NewWorkflowLibPlugin(o.store, config, o.lggr)
+	plugin, err := NewPlugin(o.store, config, o.lggr)
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "OCR3 Capability Plugin",
 		Limits: ocr3types.ReportingPluginLimits{

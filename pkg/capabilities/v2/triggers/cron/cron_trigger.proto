@@ -4,7 +4,7 @@ package cron_trigger.v1;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron";
 
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 import "google/protobuf/timestamp.proto";
 
 message Config {
@@ -21,15 +21,15 @@ message LegacyPayload {
 }
 
 service Cron {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "cron-trigger@1.0.0"
   };
 
   rpc Trigger(Config) returns (stream Payload);
 
   rpc LegacyTrigger(Config) returns (stream LegacyPayload) {
-    option (cre.metadata.method) = {
+    option (tools.generator.v1alpha.method) = {
       map_to_untyped_api: true
     };
     option deprecated = true;

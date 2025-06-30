@@ -122,6 +122,8 @@ func (r *runtimeInternalsTestHook) awaitCapabilities(awaitRequest unsafe.Pointer
 }
 
 func (r *runtimeInternalsTestHook) getSecrets(req unsafe.Pointer, reqLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64 {
+	require.Greater(r.testTb, maxResponseLen, int32(0))
+
 	reqBuff := unsafe.Slice((*byte)(req), reqLen)
 	request := sdkpb.GetSecretsRequest{}
 	err := proto.Unmarshal(reqBuff, &request)
@@ -142,7 +144,11 @@ func (r *runtimeInternalsTestHook) getSecrets(req unsafe.Pointer, reqLen int32, 
 			} else {
 				resp = &sdkpb.SecretResponse{
 					Response: &sdkpb.SecretResponse_Error{
-						Error: fmt.Sprintf("secret %s not found", key),
+						Error: &sdkpb.SecretError{
+							Namespace: req.Namespace,
+							Id:        req.Id,
+							Error:     fmt.Sprintf("secret %s not found", key),
+						},
 					},
 				}
 			}
@@ -164,6 +170,8 @@ func (r *runtimeInternalsTestHook) getSecrets(req unsafe.Pointer, reqLen int32, 
 }
 
 func (r *runtimeInternalsTestHook) awaitSecrets(awaitRequest unsafe.Pointer, awaitRequestLen int32, responseBuffer unsafe.Pointer, maxResponseLen int32) int64 {
+	require.Greater(r.testTb, maxResponseLen, int32(0))
+
 	response := unsafe.Slice((*byte)(responseBuffer), maxResponseLen)
 
 	awaitRequestBuff := unsafe.Slice((*byte)(awaitRequest), awaitRequestLen)
@@ -216,7 +224,7 @@ func (r *runtimeInternalsTestHook) switchModes(_ int32) {}
 
 func (r *runtimeInternalsTestHook) getSeed(mode int32) int64 {
 	switch mode {
-	case int32(sdkpb.Mode_DON):
+	case int32(sdkpb.Mode_MODE_DON):
 		return r.donSeed
 	default:
 		return r.nodeSeed

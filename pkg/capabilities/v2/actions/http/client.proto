@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http";
 
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
 
 message Request {
   string url = 1;
@@ -20,8 +20,8 @@ message Response {
 }
 
 service Client {
-  option (cre.metadata.capability) = {
-    mode: Node
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_NODE
     capability_id: "http-actions@0.1.0"
   };
   rpc SendRequest (Request) returns (Response);

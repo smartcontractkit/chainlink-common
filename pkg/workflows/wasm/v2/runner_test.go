@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/testhelpers/v2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -16,7 +16,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
 var (
@@ -37,7 +36,7 @@ var (
 		Config:          anyConfig,
 		MaxResponseSize: anyMaxResponseSize,
 		Request: &pb.ExecuteRequest_Trigger{
-			Trigger: &sdkpb.Trigger{
+			Trigger: &pb.Trigger{
 				Id:      uint64(triggerIndex),
 				Payload: mustAny(testhelpers.TestWorkflowTrigger()),
 			},
@@ -50,12 +49,30 @@ func TestRunner_CreateWorkflows(t *testing.T) {
 	assertEnv(t, getTestRunner(t, subscribeRequest))
 }
 
+func TestRunner_GetSecrets_PassesMaxResponseSize(t *testing.T) {
+	dr := getTestRunner(t, subscribeRequest)
+	dr.Run(func(env *sdk.Environment[string]) (sdk.Workflow[string], error) {
+		_, err := env.GetSecret(&pb.SecretRequest{Namespace: "Foo", Id: "Bar"}).Await()
+		// This will fail with "buffer cannot be empty" if we fail to pass the maxResponseSize from the
+		// runner to the runtime.
+		assert.ErrorContains(t, err, "secret Foo.Bar not found")
+
+		return sdk.Workflow[string]{
+			sdk.Handler(
+				basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
+				func(env *sdk.Environment[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
+					return 0, nil
+				}),
+		}, nil
+	})
+}
+
 func TestRunner_Run(t *testing.T) {
 	t.Run("runner gathers subscriptions", func(t *testing.T) {
 		dr := getTestRunner(t, subscribeRequest)
 		dr.Run(func(_ *sdk.Environment[string]) (sdk.Workflow[string], error) {
 			return sdk.Workflow[string]{
-				sdk.On(
+				sdk.Handler(
 					basictrigger.Trigger(testhelpers.TestWorkflowTriggerConfig()),
 					func(_ *sdk.Environment[string], _ sdk.Runtime, _ *basictrigger.Outputs) (int, error) {
 						require.Fail(t, "Must not be called during registration to tiggers")
@@ -109,7 +126,7 @@ func TestRunner_Run(t *testing.T) {
 			Config:          anyConfig,
 			MaxResponseSize: anyMaxResponseSize,
 			Request: &pb.ExecuteRequest_Trigger{
-				Trigger: &sdkpb.Trigger{
+				Trigger: &pb.Trigger{
 					Id:      uint64(triggerIndex + 1),
 					Payload: mustAny(testhelpers.TestWorkflowTrigger()),
 				},
@@ -167,9 +184,9 @@ func testRunnerInternals(tb testing.TB, request *pb.ExecuteRequest) *runnerInter
 func testRuntimeInternals(tb testing.TB) *runtimeInternalsTestHook {
 	return &runtimeInternalsTestHook{
 		testTb:                  tb,
-		outstandingCalls:        map[int32]sdk.Promise[*sdkpb.CapabilityResponse]{},
-		outstandingSecretsCalls: map[int32]sdk.Promise[[]*sdkpb.SecretResponse]{},
-		secrets:                 map[string]*sdkpb.Secret{},
+		outstandingCalls:        map[int32]sdk.Promise[*pb.CapabilityResponse]{},
+		outstandingSecretsCalls: map[int32]sdk.Promise[[]*pb.SecretResponse]{},
+		secrets:                 map[string]*pb.Secret{},
 	}
 }
 

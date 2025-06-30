@@ -22,7 +22,7 @@ type Store struct {
 	mu                  sync.Mutex
 }
 
-func NewDonTimeStore(requestTimeout time.Duration) *Store {
+func NewStore(requestTimeout time.Duration) *Store {
 	return &Store{
 		requests:             consensusRequests.NewStore[*Request, DonTimeResponse](),
 		requestTimeout:       requestTimeout,

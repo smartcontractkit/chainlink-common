@@ -42,7 +42,7 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 
 func TestPlugin_Observation(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestTimeout)
+	store := NewStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -82,7 +82,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("Valid Observation", func(t *testing.T) {
-		store := NewDonTimeStore(defaultRequestTimeout)
+		store := NewStore(defaultRequestTimeout)
 		plugin, err := NewPlugin(store, config, lggr)
 		require.NoError(t, err)
 
@@ -110,7 +110,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	})
 
 	t.Run("Invalid sequence number", func(t *testing.T) {
-		store := NewDonTimeStore(defaultRequestTimeout)
+		store := NewStore(defaultRequestTimeout)
 		plugin, err := NewPlugin(store, config, lggr)
 		require.NoError(t, err)
 
@@ -135,7 +135,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 func TestPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestTimeout)
+	store := NewStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -213,7 +213,7 @@ func TestPlugin_Outcome(t *testing.T) {
 
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(defaultRequestTimeout)
+	store := NewStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -326,7 +326,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 func TestPlugin_ExpiredRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := NewDonTimeStore(0)
+	store := NewStore(0)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 

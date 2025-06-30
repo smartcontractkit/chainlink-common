@@ -1,16 +1,16 @@
-package installer_test
+package pkg_test
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/installer"
+	"github.com/smartcontractkit/chainlink-common/pkg/values/installer/pkg"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFullProtoFiles(t *testing.T) {
 	t.Run("Production version", func(t *testing.T) {
-		config := &installer.CapabilityConfig{
+		config := &pkg.CapabilityConfig{
 			Category:     "data",
 			Pkg:          "analytics",
 			MajorVersion: 2,
@@ -26,7 +26,7 @@ func TestFullProtoFiles(t *testing.T) {
 	})
 
 	t.Run("Prerelease version", func(t *testing.T) {
-		config := &installer.CapabilityConfig{
+		config := &pkg.CapabilityConfig{
 			Category:      "data",
 			Pkg:           "analytics",
 			MajorVersion:  2,
@@ -46,12 +46,12 @@ func TestFullProtoFiles(t *testing.T) {
 func TestCapabilityConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
-		cfg     installer.CapabilityConfig
+		cfg     pkg.CapabilityConfig
 		wantErr string
 	}{
 		{
 			name: "valid config",
-			cfg: installer.CapabilityConfig{
+			cfg: pkg.CapabilityConfig{
 				Category:     "scheduler",
 				Pkg:          "cron",
 				MajorVersion: 1,
@@ -61,7 +61,7 @@ func TestCapabilityConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "missing category",
-			cfg: installer.CapabilityConfig{
+			cfg: pkg.CapabilityConfig{
 				Pkg:          "cron",
 				MajorVersion: 1,
 				Files:        []string{"a.proto"},
@@ -70,7 +70,7 @@ func TestCapabilityConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "missing pkg",
-			cfg: installer.CapabilityConfig{
+			cfg: pkg.CapabilityConfig{
 				Category:     "scheduler",
 				MajorVersion: 1,
 				Files:        []string{"a.proto"},
@@ -79,7 +79,7 @@ func TestCapabilityConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "invalid major version",
-			cfg: installer.CapabilityConfig{
+			cfg: pkg.CapabilityConfig{
 				Category: "scheduler",
 				Pkg:      "cron",
 				Files:    []string{"a.proto"},
@@ -88,7 +88,7 @@ func TestCapabilityConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "missing files",
-			cfg: installer.CapabilityConfig{
+			cfg: pkg.CapabilityConfig{
 				Category:     "scheduler",
 				Pkg:          "cron",
 				MajorVersion: 1,

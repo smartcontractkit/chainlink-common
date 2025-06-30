@@ -1,4 +1,4 @@
-package installer
+package pkg
 
 import (
 	"errors"
@@ -6,8 +6,6 @@ import (
 	"os"
 	"path"
 	"strings"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/values/installer/pkg"
 )
 
 type Generator struct {
@@ -64,20 +62,20 @@ func (g *Generator) GenerateMany(dirToConfig map[string]*CapabilityConfig) error
 	return nil
 }
 
-func (g *Generator) createGenerator() *pkg.ProtocGen {
+func (g *Generator) createGenerator() *ProtocGen {
 	// protoc plugin names are in the form protoc-gen-<plugin-name>
 	pluginParts := strings.Split(g.PluginName(), "-")
 	pluginShortName := pluginParts[len(pluginParts)-1]
 
-	gen := &pkg.ProtocGen{Plugins: []pkg.Plugin{{Name: pluginShortName, Path: ".tools"}}}
-	gen.LinkPackage(pkg.Packages{Go: g.SdkPgk(), Proto: "tools/generator/v1alpha/cre_metadata.proto"})
-	gen.LinkPackage(pkg.Packages{Go: g.SdkPgk(), Proto: "sdk/v1alpha/sdk.proto"})
+	gen := &ProtocGen{Plugins: []Plugin{{Name: pluginShortName, Path: ".tools"}}}
+	gen.LinkPackage(Packages{Go: g.SdkPgk(), Proto: "tools/generator/v1alpha/cre_metadata.proto"})
+	gen.LinkPackage(Packages{Go: g.SdkPgk(), Proto: "sdk/v1alpha/sdk.proto"})
 	return gen
 }
 
-func (g *Generator) link(gen *pkg.ProtocGen, config *CapabilityConfig) {
+func (g *Generator) link(gen *ProtocGen, config *CapabilityConfig) {
 	for _, file := range config.FullProtoFiles() {
 		goPkg := g.FullGoPackageName(config)
-		gen.LinkPackage(pkg.Packages{Go: goPkg, Proto: file})
+		gen.LinkPackage(Packages{Go: goPkg, Proto: file})
 	}
 }

@@ -1,4 +1,4 @@
-package installer
+package pkg
 
 // GeneratorHelper defines parameters for generating capability code with a protoc plugin.
 type GeneratorHelper interface {

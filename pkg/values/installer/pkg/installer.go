@@ -1,4 +1,4 @@
-package installer
+package pkg
 
 import (
 	"encoding/json"
@@ -22,29 +22,7 @@ func installProtocGenToDir(pkgName, sameVersion string) error {
 		return err
 	}
 
-	if err = verifyValuesVersionsMatch(pluginDir); err != nil {
-		return err
-	}
-
 	return buildPlugin(pluginDir)
-}
-
-func verifyValuesVersionsMatch(pluginDir string) error {
-	fmt.Printf("Verifying values versions match")
-	pluginValues, err := getVersion("github.com/smartcontractkit/chainlink-common/pkg/values", pluginDir)
-	if err != nil {
-		return err
-	}
-	myValues, err := getVersion("github.com/smartcontractkit/chainlink-common/pkg/values", ".")
-	if err != nil {
-		return err
-	}
-
-	if pluginValues != myValues {
-		return fmt.Errorf("version mismatch: plugin uses %s, but current project uses %s", pluginValues, myValues)
-	}
-
-	return nil
 }
 
 func getVersion(of, dir string) (string, error) {

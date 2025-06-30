@@ -1,11 +1,10 @@
-package main
+package pkg
 
 import (
 	"errors"
 	"fmt"
 	"path"
 	"strconv"
-	"strings"
 )
 
 type CapabilityConfig struct {
@@ -14,20 +13,6 @@ type CapabilityConfig struct {
 	MajorVersion  int
 	PreReleaseTag string
 	Files         []string
-}
-
-func (c *CapabilityConfig) FullGoPackageName() string {
-	parts := strings.Split(c.Category, "/")
-	name := c.Pkg
-	if len(parts) > 1 {
-		name = strings.Join(parts[1:], "/") + "/" + name
-	}
-	base := "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/test_capabilities/" + name
-
-	if c.MajorVersion == 1 {
-		return base
-	}
-	return fmt.Sprintf("%s/v%d", base, c.MajorVersion)
 }
 
 func (c *CapabilityConfig) FullProtoFiles() []string {

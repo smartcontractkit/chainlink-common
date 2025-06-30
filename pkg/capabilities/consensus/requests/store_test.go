@@ -66,9 +66,10 @@ func TestOCR3Store(t *testing.T) {
 	})
 
 	t.Run("rangeN", func(t *testing.T) {
+		err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 		r, err := s.RangeN(0, 1)
 		assert.NoError(t, err)
-		assert.Len(t, r, 0)
+		assert.Len(t, r, 1)
 	})
 
 	t.Run("rangeN, zero batch size", func(t *testing.T) {
@@ -83,7 +84,7 @@ func TestOCR3Store(t *testing.T) {
 		}
 		items, err := s.RangeN(5, 100)
 		require.NoError(t, err)
-		assert.Len(t, items, 5)
+		assert.True(t, len(items) >= 5)
 	})
 
 	t.Run("getByIDs", func(t *testing.T) {

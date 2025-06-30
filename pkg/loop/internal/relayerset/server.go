@@ -282,6 +282,27 @@ func (s *Server) RelayerName(ctx context.Context, relayID *relayerset.RelayerId)
 	return &relayerset.RelayerNameResponse{Name: relayer.Name()}, nil
 }
 
+func (s *Server) RelayerGetChainInfo(ctx context.Context, req *relayerset.GetChainInfoRequest) (*pb.GetChainInfoReply, error) {
+	relayer, err := s.getRelayer(ctx, req.RelayerId)
+	if err != nil {
+		return nil, err
+	}
+
+	chainInfo, err := relayer.GetChainInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetChainInfoReply{
+		ChainInfo: &pb.ChainInfo{
+			FamilyName:      chainInfo.FamilyName,
+			ChainId:         chainInfo.ChainID,
+			NetworkName:     chainInfo.NetworkName,
+			NetworkNameFull: chainInfo.NetworkNameFull,
+		},
+	}, nil
+}
+
 func (s *Server) RelayerLatestHead(ctx context.Context, req *relayerset.LatestHeadRequest) (*relayerset.LatestHeadResponse, error) {
 	relayer, err := s.getRelayer(ctx, req.RelayerId)
 	if err != nil {

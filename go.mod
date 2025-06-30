@@ -35,7 +35,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
-	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250626180857-b23e8853469e
+	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250630175531-753ed49c99e7
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250612182447-1c32d2efe48f
 	github.com/smartcontractkit/freeport v0.1.1
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7

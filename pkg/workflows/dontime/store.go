@@ -15,9 +15,11 @@ type Store struct {
 	requestTimeout time.Duration
 
 	finishedExecutionIDs map[string]bool
-	donTimes             map[string][]int64 // ExecutionID --> [timestamp-0, timestamp-1 , ...]
-	lastObservedDonTime  int64
-	mu                   sync.Mutex
+	// donTimes holds ordered sequence timestamps generated for consecutive workflow requests
+	// i.e. ExecutionID --> [timestamp-0, timestamp-1 , ...]
+	donTimes            map[string][]int64
+	lastObservedDonTime int64
+	mu                  sync.Mutex
 }
 
 func NewDonTimeStore(requestTimeout time.Duration) *Store {

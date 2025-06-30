@@ -74,22 +74,28 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 		}
 	}
 
+	// Collect up to batchSize unexpired requests
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	nextRequestsBatch, err := p.store.requests.FirstN(p.batchSize)
-	if err != nil {
-		return nil, err
-	}
-
-	timeoutCheck := time.Now()
-	// TODO: Read one by one until collecting batchsize of non-expired requests (or run out of pending)
-	for _, req := range nextRequestsBatch {
-		if req.ExpiryTime().Before(timeoutCheck) {
-			// Request has been sitting in queue too long
-			p.store.requests.Evict(req.ID())
-			req.SendTimeout(ctx)
-			continue
+	for batchOffset := 0; batchOffset < p.store.requests.Len() && len(requests) < p.batchSize; {
+		batch, err := p.store.requests.RangeN(batchOffset, p.batchSize)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get request batch: %w", err)
 		}
-		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
+		if len(batch) == 0 {
+			break
+		}
+
+		timeoutCheck := time.Now()
+		for _, req := range batch {
+			if req.ExpiryTime().Before(timeoutCheck) {
+				// Request has been sitting in queue too long
+				p.store.requests.Evict(req.ID())
+				req.SendTimeout(ctx)
+				continue
+			}
+			requests[req.WorkflowExecutionID] = int64(req.SeqNum)
+			batchOffset++
+		}
 	}
 
 	observation := &pb.Observation{

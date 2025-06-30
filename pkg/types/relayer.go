@@ -75,6 +75,14 @@ type ChainStatus struct {
 	Config  string // TOML
 }
 
+type ChainInfo struct {
+	FamilyName  string
+	ChainID     string
+	NetworkName string
+	// NetworkNameFull has network testnet, mainnet or devnet identifier attached.
+	NetworkNameFull string
+}
+
 type NodeStatus struct {
 	ChainID string
 	Name    string
@@ -88,6 +96,8 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// GetChainInfo returns the ChainInfo for this Relayer.
+	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.
@@ -107,16 +117,16 @@ type GethClient interface {
 	//   FinalizedBlockNumber(-3) → last finalized block (“finalized”)
 	//
 	// Any positive value is treated as an explicit block height.
+}
+
+type EVMService interface {
+	GethClient
 	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-}
-
-type EVMService interface {
-	GethClient
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected
@@ -140,6 +150,12 @@ type EVMService interface {
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
+
+	// Submits a transaction to the EVM chain. It will return once the transaction is included in a block or an error occurs.
+	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
+
+	// Utility function to calculate the total fee based on a tx receipt
+	CalculateTransactionFee(ctx context.Context, receiptGasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error)
 
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)

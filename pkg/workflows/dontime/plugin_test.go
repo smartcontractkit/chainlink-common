@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
@@ -42,7 +42,7 @@ func newTestPluginConfig(t *testing.T) ocr3types.ReportingPluginConfig {
 
 func TestPlugin_Observation(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -82,7 +82,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("Valid Observation", func(t *testing.T) {
-		store := newDonTimeStore(defaultRequestTimeout)
+		store := NewDonTimeStore(defaultRequestTimeout)
 		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
 		require.NoError(t, err)
 
@@ -110,7 +110,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 	})
 
 	t.Run("Invalid sequence number", func(t *testing.T) {
-		store := newDonTimeStore(defaultRequestTimeout)
+		store := NewDonTimeStore(defaultRequestTimeout)
 		plugin, err := NewWorkflowLibPlugin(store, config, lggr)
 		require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 func TestPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -219,7 +219,7 @@ func TestPlugin_Outcome(t *testing.T) {
 
 func TestPlugin_FinishedExecutions(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(defaultRequestTimeout)
+	store := NewDonTimeStore(defaultRequestTimeout)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
@@ -334,7 +334,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 func TestPlugin_ExpiredRequest(t *testing.T) {
 	lggr := logger.Test(t)
-	store := newDonTimeStore(0)
+	store := NewDonTimeStore(0)
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 

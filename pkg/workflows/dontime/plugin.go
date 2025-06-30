@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
@@ -19,7 +19,7 @@ import (
 type workflowLibPlugin struct {
 	mu sync.RWMutex
 
-	store          *DonTimeStore
+	store          *Store
 	config         ocr3types.ReportingPluginConfig
 	offChainConfig *pb.WorkflowLibConfig
 	lggr           logger.Logger
@@ -28,7 +28,7 @@ type workflowLibPlugin struct {
 	minTimeIncrease int64
 }
 
-func NewWorkflowLibPlugin(store *DonTimeStore, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*workflowLibPlugin, error) {
+func NewWorkflowLibPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*workflowLibPlugin, error) {
 	offchainCfg := &pb.WorkflowLibConfig{}
 	err := proto.Unmarshal(config.OffchainConfig, offchainCfg)
 	if err != nil {
@@ -61,25 +61,21 @@ func (p *workflowLibPlugin) Query(_ context.Context, _ ocr3types.OutcomeContext)
 }
 
 func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
-	priorOutcome := &pb.Outcome{}
-	if err := proto.Unmarshal(outctx.PreviousOutcome, priorOutcome); err != nil {
+	previousOutcome := &pb.Outcome{}
+	if err := proto.Unmarshal(outctx.PreviousOutcome, previousOutcome); err != nil {
 		return nil, err
 	}
 
 	finishedExecutionIDs := p.store.GetFinishedExecutionIDs()
 	var unscheduledFinishedExecutionIDs []string
 	for id := range finishedExecutionIDs {
-		if _, ok := priorOutcome.FinishedExecutionRemovalTimes[id]; !ok {
+		if _, ok := previousOutcome.FinishedExecutionRemovalTimes[id]; !ok {
 			unscheduledFinishedExecutionIDs = append(unscheduledFinishedExecutionIDs, id)
 		}
 	}
 
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	nextRequestsBatch, err := p.store.Requests.FirstN(p.batchSize)
+	nextRequestsBatch, err := p.store.requests.FirstN(p.batchSize)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +84,7 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 	for _, req := range nextRequestsBatch {
 		if req.ExpiryTime().Before(timeoutCheck) {
 			// Request has been sitting in queue too long
-			p.store.Requests.Evict(req.ID())
+			p.store.requests.Evict(req.ID())
 			req.SendTimeout(ctx)
 			continue
 		}
@@ -104,11 +100,7 @@ func (p *workflowLibPlugin) Observation(ctx context.Context, outctx ocr3types.Ou
 	return proto.Marshal(observation)
 }
 
-func (p *workflowLibPlugin) ValidateObservation(ctx context.Context, oc ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-
+func (p *workflowLibPlugin) ValidateObservation(_ context.Context, oc ocr3types.OutcomeContext, _ types.Query, ao types.AttributedObservation) error {
 	observation := &pb.Observation{}
 	if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 		return err
@@ -150,13 +142,14 @@ func (p *workflowLibPlugin) ObservationQuorum(_ context.Context, _ ocr3types.Out
 }
 
 func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
 	NumFinishedRequests := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	finishedNodes := map[string]int64{}       // counts number of nodes finished with the workflow for executionID
 	var times []int64
+
+	prevOutcome := &pb.Outcome{}
+	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
+		return nil, err
+	}
 
 	for _, ao := range aos {
 		observation := &pb.Observation{}
@@ -164,15 +157,7 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 			return nil, err
 		}
 
-		prevOutcome := &pb.Outcome{}
-		if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
-			return nil, err
-		}
-
 		for id, currSeqNum := range observation.Requests {
-			if err := ctx.Err(); err != nil {
-				return nil, err
-			}
 			if _, ok := prevOutcome.ObservedDonTimes[id]; !ok {
 				prevOutcome.ObservedDonTimes[id] = &pb.ObservedDonTimes{}
 			}
@@ -191,10 +176,6 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 	p.lggr.Debugw("Observed Node Timestamps", "timestamps", times)
 	slices.Sort(times)
 	donTime := times[len(times)/2]
-
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
 
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, outcome); err != nil {
@@ -221,7 +202,6 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 	outcome.Timestamp = donTime
 
 	for id, numRequests := range NumFinishedRequests {
-		fmt.Println("NumRequests: ", id, numRequests)
 		p.lggr.Debugw("Checking finished requests", "executionID", id, "numRequests", numRequests)
 		if numRequests > int64(p.config.F) {
 			observedDonTimes, ok := outcome.ObservedDonTimes[id]
@@ -253,8 +233,16 @@ func (p *workflowLibPlugin) Outcome(ctx context.Context, outctx ocr3types.Outcom
 	return proto.Marshal(outcome)
 }
 
-func (p *workflowLibPlugin) Reports(ctx context.Context, seqNr uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[struct{}], error) {
-	return nil, nil
+func (p *workflowLibPlugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[struct{}], error) {
+	return []ocr3types.ReportPlus[struct{}]{
+		{
+			ReportWithInfo: ocr3types.ReportWithInfo[struct{}]{
+				Report: types.Report(outcome),
+				Info:   struct{}{},
+			},
+			TransmissionScheduleOverride: nil,
+		},
+	}, nil
 }
 
 func (p *workflowLibPlugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {

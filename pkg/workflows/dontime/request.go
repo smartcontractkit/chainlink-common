@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type DonTimeRequest struct {
+type Request struct {
 	ExpiresAt time.Time
 
 	// CallbackCh is a channel to send a response back to the requester
@@ -17,15 +17,15 @@ type DonTimeRequest struct {
 	SeqNum              int
 }
 
-func (r *DonTimeRequest) ID() string {
+func (r *Request) ID() string {
 	return r.WorkflowExecutionID
 }
 
-func (r *DonTimeRequest) ExpiryTime() time.Time {
+func (r *Request) ExpiryTime() time.Time {
 	return r.ExpiresAt
 }
 
-func (r *DonTimeRequest) SendResponse(ctx context.Context, resp DonTimeResponse) {
+func (r *Request) SendResponse(ctx context.Context, resp DonTimeResponse) {
 	select {
 	case <-ctx.Done():
 		return
@@ -34,7 +34,7 @@ func (r *DonTimeRequest) SendResponse(ctx context.Context, resp DonTimeResponse)
 	}
 }
 
-func (r *DonTimeRequest) SendTimeout(ctx context.Context) {
+func (r *Request) SendTimeout(ctx context.Context) {
 	timeoutResponse := DonTimeResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		SeqNum:              r.SeqNum,
@@ -43,8 +43,8 @@ func (r *DonTimeRequest) SendTimeout(ctx context.Context) {
 	r.SendResponse(ctx, timeoutResponse)
 }
 
-func (r *DonTimeRequest) Copy() *DonTimeRequest {
-	return &DonTimeRequest{
+func (r *Request) Copy() *Request {
+	return &Request{
 		ExpiresAt:           r.ExpiresAt,
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		SeqNum:              r.SeqNum,

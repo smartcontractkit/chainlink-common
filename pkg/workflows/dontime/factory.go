@@ -1,4 +1,4 @@
-package workflowLib
+package dontime
 
 import (
 	"context"
@@ -9,21 +9,20 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/workflowLib/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 const (
-	defaultMaxPhaseOutputBytes     = 1000000 // 1 MB
-	defaultMaxReportCount          = 20
-	defaultBatchSize               = 1000
-	defaultOutcomePruningThreshold = 3600
-	defaultExecutionRemovalTime    = 10 * time.Minute // CRE workflow time limit
-	defaultMinTimeIncrease         = time.Millisecond
+	defaultMaxPhaseOutputBytes  = 1000000 // 1 MB
+	defaultMaxReportCount       = 1
+	defaultBatchSize            = 10000
+	defaultExecutionRemovalTime = 10 * time.Minute // CRE workflow time limit
+	defaultMinTimeIncrease      = time.Millisecond
 )
 
 type factory struct {
-	store                   *DonTimeStore
+	store                   *Store
 	batchSize               int
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
@@ -31,7 +30,7 @@ type factory struct {
 	services.StateMachine
 }
 
-func newFactory(s *DonTimeStore, lggr logger.Logger) (*factory, error) {
+func newFactory(s *Store, lggr logger.Logger) (*factory, error) {
 	return &factory{
 		store: s,
 		lggr:  logger.Named(lggr, "OCR3WorkflowLibFactory"),
@@ -59,9 +58,6 @@ func (o *factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	}
 	if configProto.MaxBatchSize <= 0 {
 		configProto.MaxBatchSize = defaultBatchSize
-	}
-	if configProto.OutcomePruningThreshold <= 0 {
-		configProto.OutcomePruningThreshold = defaultOutcomePruningThreshold
 	}
 	if configProto.MaxReportCount <= 0 {
 		configProto.MaxReportCount = defaultMaxReportCount

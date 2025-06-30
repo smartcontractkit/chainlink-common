@@ -14,12 +14,12 @@ message Observations {
 }
 
 message ObservedDonTimes {
-repeated int64 timestamps = 1;
+  repeated int64 timestamps = 1;
 }
 
 message Outcome {
-int64 timestamp = 1;
-map<string, ObservedDonTimes> observed_don_times = 2;
-map<string, int64> finished_execution_removal_times = 3;
-map<string, bool> removedExecutionIDs = 4;
+  int64 timestamp = 1;
+  map<string, ObservedDonTimes> observed_don_times = 2;
+  map<string, int64> finished_execution_removal_times = 3;
+  map<string, bool> removedExecutionIDs = 4;
 }

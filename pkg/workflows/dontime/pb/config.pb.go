@@ -33,8 +33,7 @@ type WorkflowLibConfig struct {
 	MaxReportCount            uint32               `protobuf:"varint,5,opt,name=maxReportCount,proto3" json:"maxReportCount,omitempty"`
 	MaxBatchSize              uint32               `protobuf:"varint,6,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
 	MinTimeIncrease           int64                `protobuf:"varint,7,opt,name=minTimeIncrease,proto3" json:"minTimeIncrease,omitempty"`
-	OutcomePruningThreshold   uint64               `protobuf:"varint,8,opt,name=outcomePruningThreshold,proto3" json:"outcomePruningThreshold,omitempty"`
-	ExecutionRemovalTime      *durationpb.Duration `protobuf:"bytes,9,opt,name=executionRemovalTime,proto3" json:"executionRemovalTime,omitempty"`
+	ExecutionRemovalTime      *durationpb.Duration `protobuf:"bytes,8,opt,name=executionRemovalTime,proto3" json:"executionRemovalTime,omitempty"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -118,13 +117,6 @@ func (x *WorkflowLibConfig) GetMinTimeIncrease() int64 {
 	return 0
 }
 
-func (x *WorkflowLibConfig) GetOutcomePruningThreshold() uint64 {
-	if x != nil {
-		return x.OutcomePruningThreshold
-	}
-	return 0
-}
-
 func (x *WorkflowLibConfig) GetExecutionRemovalTime() *durationpb.Duration {
 	if x != nil {
 		return x.ExecutionRemovalTime
@@ -136,7 +128,7 @@ var File_config_proto protoreflect.FileDescriptor
 
 const file_config_proto_rawDesc = "" +
 	"\n" +
-	"\fconfig.proto\x1a\x1egoogle/protobuf/duration.proto\"\xec\x03\n" +
+	"\fconfig.proto\x1a\x1egoogle/protobuf/duration.proto\"\xb2\x03\n" +
 	"\x11WorkflowLibConfig\x120\n" +
 	"\x13maxQueryLengthBytes\x18\x01 \x01(\rR\x13maxQueryLengthBytes\x12<\n" +
 	"\x19maxObservationLengthBytes\x18\x02 \x01(\rR\x19maxObservationLengthBytes\x124\n" +
@@ -144,9 +136,8 @@ const file_config_proto_rawDesc = "" +
 	"\x14maxReportLengthBytes\x18\x04 \x01(\rR\x14maxReportLengthBytes\x12&\n" +
 	"\x0emaxReportCount\x18\x05 \x01(\rR\x0emaxReportCount\x12\"\n" +
 	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSize\x12(\n" +
-	"\x0fminTimeIncrease\x18\a \x01(\x03R\x0fminTimeIncrease\x128\n" +
-	"\x17outcomePruningThreshold\x18\b \x01(\x04R\x17outcomePruningThreshold\x12M\n" +
-	"\x14executionRemovalTime\x18\t \x01(\v2\x19.google.protobuf.DurationR\x14executionRemovalTimeBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pbb\x06proto3"
+	"\x0fminTimeIncrease\x18\a \x01(\x03R\x0fminTimeIncrease\x12M\n" +
+	"\x14executionRemovalTime\x18\b \x01(\v2\x19.google.protobuf.DurationR\x14executionRemovalTimeBQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pbb\x06proto3"
 
 var (
 	file_config_proto_rawDescOnce sync.Once

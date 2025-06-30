@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: pkg/chipingress/pb/chip_ingress_write.proto
+// source: chip_ingress.proto
 
 package pb
 
@@ -23,6 +23,7 @@ const (
 	ChipIngress_Publish_FullMethodName      = "/chipingress.pb.ChipIngress/Publish"
 	ChipIngress_PublishBatch_FullMethodName = "/chipingress.pb.ChipIngress/PublishBatch"
 	ChipIngress_Ping_FullMethodName         = "/chipingress.pb.ChipIngress/Ping"
+	ChipIngress_StreamEvents_FullMethodName = "/chipingress.pb.ChipIngress/StreamEvents"
 )
 
 // ChipIngressClient is the client API for ChipIngress service.
@@ -31,9 +32,20 @@ const (
 //
 // ChipIngress service provides a way for senders to produce CloudEvents messages to Kafka
 type ChipIngressClient interface {
+	// Publish sends a single CloudEvent to the ChipIngress service.
 	Publish(ctx context.Context, in *pb.CloudEvent, opts ...grpc.CallOption) (*PublishResponse, error)
+	// PublishBatch sends a batch of CloudEvents to the ChipIngress service.
+	// This method is atomic, meaning it will either succeed or fail for the entire batch.
+	// When the server receives a batch of events, it will open a kafka transaction, and begin producing each event sequentially in order received.
+	// If any 1 message fails, all previous messages in the same batch that were already produced won't be marked as committed,
+	// and the server will respond with an error.
+	// Consumers can set isolation.level=read_committed to only read committed records
 	PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error)
+	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
+	// This API is experimental and may change in the future.
+	StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error)
 }
 
 type chipIngressClient struct {
@@ -74,15 +86,39 @@ func (c *chipIngressClient) Ping(ctx context.Context, in *EmptyRequest, opts ...
 	return out, nil
 }
 
+func (c *chipIngressClient) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ChipIngress_ServiceDesc.Streams[0], ChipIngress_StreamEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StreamEventsRequest, StreamEventsResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ChipIngress_StreamEventsClient = grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse]
+
 // ChipIngressServer is the server API for ChipIngress service.
 // All implementations must embed UnimplementedChipIngressServer
 // for forward compatibility.
 //
 // ChipIngress service provides a way for senders to produce CloudEvents messages to Kafka
 type ChipIngressServer interface {
+	// Publish sends a single CloudEvent to the ChipIngress service.
 	Publish(context.Context, *pb.CloudEvent) (*PublishResponse, error)
+	// PublishBatch sends a batch of CloudEvents to the ChipIngress service.
+	// This method is atomic, meaning it will either succeed or fail for the entire batch.
+	// When the server receives a batch of events, it will open a kafka transaction, and begin producing each event sequentially in order received.
+	// If any 1 message fails, all previous messages in the same batch that were already produced won't be marked as committed,
+	// and the server will respond with an error.
+	// Consumers can set isolation.level=read_committed to only read committed records
 	PublishBatch(context.Context, *CloudEventBatch) (*PublishResponse, error)
+	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(context.Context, *EmptyRequest) (*PingResponse, error)
+	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
+	// This API is experimental and may change in the future.
+	StreamEvents(grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]) error
 	mustEmbedUnimplementedChipIngressServer()
 }
 
@@ -101,6 +137,9 @@ func (UnimplementedChipIngressServer) PublishBatch(context.Context, *CloudEventB
 }
 func (UnimplementedChipIngressServer) Ping(context.Context, *EmptyRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedChipIngressServer) StreamEvents(grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamEvents not implemented")
 }
 func (UnimplementedChipIngressServer) mustEmbedUnimplementedChipIngressServer() {}
 func (UnimplementedChipIngressServer) testEmbeddedByValue()                     {}
@@ -177,6 +216,13 @@ func _ChipIngress_Ping_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChipIngress_StreamEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ChipIngressServer).StreamEvents(&grpc.GenericServerStream[StreamEventsRequest, StreamEventsResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ChipIngress_StreamEventsServer = grpc.BidiStreamingServer[StreamEventsRequest, StreamEventsResponse]
+
 // ChipIngress_ServiceDesc is the grpc.ServiceDesc for ChipIngress service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -197,6 +243,13 @@ var ChipIngress_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ChipIngress_Ping_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "pkg/chipingress/pb/chip_ingress_write.proto",
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamEvents",
+			Handler:       _ChipIngress_StreamEvents_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "chip_ingress.proto",
 }

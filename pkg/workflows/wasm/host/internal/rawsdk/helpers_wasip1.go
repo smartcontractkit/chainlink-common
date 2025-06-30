@@ -145,7 +145,7 @@ func GetSecret(id string) (string, error) {
 	case *pb.SecretResponse_Secret:
 		return r.Secret.Value, nil
 	case *pb.SecretResponse_Error:
-		return "", errors.New(r.Error.Error)
+		return "", errors.New(r.Error)
 	default:
 		SendError(fmt.Errorf("unexpected response type: %T", r))
 	}

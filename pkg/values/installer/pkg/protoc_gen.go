@@ -10,11 +10,6 @@ import (
 	"strings"
 )
 
-var valuesPkg = Packages{
-	Go:    "github.com/smartcontractkit/chainlink-common/pkg/values/pb",
-	Proto: "values/v1/values.proto",
-}
-
 type ProtocGen struct {
 	packageNames map[string]string
 	sources      []string
@@ -34,7 +29,7 @@ func (p *ProtocGen) AddSourceDirectories(sources ...string) {
 }
 
 func (p *ProtocGen) Generate(file, from string) error {
-	if err := p.DoInit(); err != nil {
+	if err := p.doInit(); err != nil {
 		return err
 	}
 
@@ -84,7 +79,7 @@ func (p *ProtocGen) GenerateMany(fileToFrom map[string]string) map[string]error 
 	return errors
 }
 
-func (p *ProtocGen) DoInit() error {
+func (p *ProtocGen) doInit() error {
 	if p.init {
 		return nil
 	}
@@ -105,7 +100,6 @@ func (p *ProtocGen) DoInit() error {
 	}
 
 	p.Plugins = append(p.Plugins, Plugin{Name: "go"})
-	p.LinkPackage(valuesPkg)
 	p.AddSourceDirectories(path.Join(clProtos, "cre"))
 	p.init = true
 	return nil

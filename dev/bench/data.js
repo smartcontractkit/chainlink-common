@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751290971468,
+  "lastUpdate": 1751303413055,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17052,6 +17052,48 @@ window.BENCHMARK_DATA = {
             "value": 28560,
             "unit": "ns/op",
             "extra": "41900 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "42331373+hendoxc@users.noreply.github.com",
+            "name": "Hagen H",
+            "username": "hendoxc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "49f54f1c379d380b0279045068efb9a8f2b0a132",
+          "message": "Update chip ingress client (#1306)\n\n* Adds `NewEventWithAttributes`\n\n- marks `NewEvent` as deprecated\n\n* Removes default cfg func\n\nRemoves default cfg func\n\n* Upgrades cloud events version\n\n* Regenerate chip protos\n\n- adds generate.go\n\n* Makes removes grpc client wrapper indirection\n\n* Updates chip-ingress in beholder client\n\nRemoves mockery entry\n\nFixes test\n\nRuns `fmt`\n\n* Removes generate.go",
+          "timestamp": "2025-06-30T13:08:04-04:00",
+          "tree_id": "1a8c8bed8d3091f7d393c3b7691aeeb943214820",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/49f54f1c379d380b0279045068efb9a8f2b0a132"
+        },
+        "date": 1751303412074,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.6,
+            "unit": "ns/op",
+            "extra": "3383908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.8,
+            "unit": "ns/op",
+            "extra": "2957082 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28412,
+            "unit": "ns/op",
+            "extra": "42104 times\n4 procs"
           }
         ]
       }

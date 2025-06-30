@@ -274,7 +274,7 @@ func TestNewClient(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Equal(t, "failed to extract host from address '': missing port in address", err.Error())
+		assert.Equal(t, "invalid address format: missing port in address", err.Error())
 	})
 }
 
@@ -320,7 +320,7 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
 			}
 		}()
-		client.Logger.Emit(context.Background(), log.Record{})
+		client.Logger.Emit(t.Context(), log.Record{})
 	})
 
 	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
@@ -393,7 +393,7 @@ func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "failed to extract host from address '': missing port in address")
+		assert.Contains(t, err.Error(), "invalid address format: missing port in address")
 	})
 
 	t.Run("errors when ChipIngress enabled with whitespace-only endpoint", func(t *testing.T) {
@@ -405,7 +405,7 @@ func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, client)
 		// The whitespace is preserved in the address, so the error includes the spaces
-		assert.Contains(t, err.Error(), "failed to extract host from address '   '")
+		assert.Contains(t, err.Error(), "invalid address format: address")
 		assert.Contains(t, err.Error(), "missing port in address")
 	})
 }

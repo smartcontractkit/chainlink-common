@@ -7,7 +7,7 @@ import (
 
 func TestBasicAuth(t *testing.T) {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	t.Run("AuthHeaderIsReturnedCorrectly", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestBasicAuth(t *testing.T) {
 
 	t.Run("HandlesEmptyCredentials", func(t *testing.T) {
 		credentials := newBasicAuthCredentials("", "", false)
-		meta, err := credentials.GetRequestMetadata(context.Background())
+		meta, err := credentials.GetRequestMetadata(t.Context())
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -60,7 +60,7 @@ func (p *testHeaderProvider) GetHeaders() map[string]string {
 }
 
 func TestTokenAuth(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	t.Run("AuthTokenIsReturnedCorrectly", func(t *testing.T) {

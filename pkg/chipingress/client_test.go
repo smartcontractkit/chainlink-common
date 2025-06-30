@@ -134,7 +134,7 @@ func TestHeaderInterceptor(t *testing.T) {
 	interceptor := newHeaderInterceptor(mockProvider)
 
 	// Call the interceptor
-	err := interceptor(context.Background(), "testMethod", nil, nil, nil, mockInvoker)
+	err := interceptor(t.Context(), "testMethod", nil, nil, nil, mockInvoker)
 	assert.NoError(t, err)
 
 	// Extract metadata from context and verify headers were added

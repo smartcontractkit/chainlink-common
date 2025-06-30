@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751306498649,
+  "lastUpdate": 1751320978160,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17136,6 +17136,48 @@ window.BENCHMARK_DATA = {
             "value": 28127,
             "unit": "ns/op",
             "extra": "42693 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e903795cfa47ba37b5114564fad91ef488c29563",
+          "message": "add cache settings to http action. introduce gateway types for http trigger (#1301)",
+          "timestamp": "2025-06-30T22:01:42Z",
+          "tree_id": "734ca4b1e438194b0af748977473e2208a67f8dc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e903795cfa47ba37b5114564fad91ef488c29563"
+        },
+        "date": 1751320977046,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.7,
+            "unit": "ns/op",
+            "extra": "3417962 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.7,
+            "unit": "ns/op",
+            "extra": "2919402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28180,
+            "unit": "ns/op",
+            "extra": "42549 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751043475797,
+  "lastUpdate": 1751290971468,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17010,6 +17010,48 @@ window.BENCHMARK_DATA = {
             "value": 28436,
             "unit": "ns/op",
             "extra": "42637 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "836c9fc4f3925e171c605323b33d1a99d494950f",
+          "message": "[CRE-494] Use same API in RelayerSet and Relayer (#1295)",
+          "timestamp": "2025-06-30T15:41:37+02:00",
+          "tree_id": "b3e92b8ba45762274fa30b0a68ba711bc0da16a8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/836c9fc4f3925e171c605323b33d1a99d494950f"
+        },
+        "date": 1751290970509,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.2,
+            "unit": "ns/op",
+            "extra": "3267613 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 423.5,
+            "unit": "ns/op",
+            "extra": "2846156 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28560,
+            "unit": "ns/op",
+            "extra": "41900 times\n4 procs"
           }
         ]
       }

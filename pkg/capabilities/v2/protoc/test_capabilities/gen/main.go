@@ -4,10 +4,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/values/installer/pkg"
 )
 
 func main() {
-	internalProtos := []*CapabilityConfig{
+	internalProtos := []*pkg.CapabilityConfig{
 		{
 			Category:      "internal",
 			Pkg:           "consensus",
@@ -59,7 +61,7 @@ func main() {
 		},
 	}
 
-	internalProtosToDir := map[string]*CapabilityConfig{}
+	internalProtosToDir := map[string]*pkg.CapabilityConfig{}
 
 	for _, proto := range internalProtos {
 		key := proto.Pkg
@@ -75,7 +77,8 @@ func main() {
 		}
 	}
 
-	if err := GenerateMany(internalProtosToDir); err != nil {
+	gen := &pkg.ProtocGen{ProtocHelper: protocHelper{}}
+	if err := gen.GenerateMany(internalProtosToDir); err != nil {
 		panic(err)
 	}
 }

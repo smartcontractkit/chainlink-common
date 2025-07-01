@@ -24,6 +24,7 @@ type ProtocGen struct {
 	Plugins      []Plugin
 }
 
+// LinkPackage directly links a package and does not require ProtocHelper to be set
 func (p *ProtocGen) LinkPackage(pkgs Packages) {
 	if p.packageNames == nil {
 		p.packageNames = make(map[string]string)
@@ -42,6 +43,8 @@ func (p *ProtocGen) AddSourceDirectories(sources ...string) {
 	p.sources = append(p.sources, sources...)
 }
 
+// GenerateFile generates a single file using protoc with the provided plugins and sources.
+// Calling this method directly does not require ProtocHelper to be set.
 func (p *ProtocGen) GenerateFile(file, from string) error {
 	if err := p.doInit(); err != nil {
 		return err
@@ -143,6 +146,11 @@ func (p *ProtocGen) doInit() error {
 		return nil
 	}
 	p.LinkPackage(values)
+
+	if p.ProtocHelper != nil {
+		p.LinkPackage(Packages{Go: p.SdkPgk(), Proto: "sdk/v1alpha/sdk.proto"})
+		p.LinkPackage(Packages{Go: p.SdkPgk(), Proto: "tools/generator/v1alpha/cre_metadata.proto"})
+	}
 
 	root, err := run("git", ".", "rev-parse", "--show-toplevel")
 	if err != nil {

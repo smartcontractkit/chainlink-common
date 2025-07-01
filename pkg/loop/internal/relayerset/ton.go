@@ -6,13 +6,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
+
+const metadataTONChain = "ton-chain-id"
+const metadataTONNetwork = "ton-network"
 
 // tonClient wraps the TONRelayerSetClient by attaching a RelayerID to TONClient requests.
 // The attached RelayerID is stored in the context metadata.
@@ -23,54 +24,45 @@ type tonClient struct {
 
 var _ tonpb.TONClient = (*tonClient)(nil)
 
+var tonMetadata = relayerMetadata{
+	chain:   metadataTONChain,
+	network: metadataTONNetwork,
+}
+
 func (t tonClient) GetMasterchainInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*tonpb.BlockIDExt, error) {
-	return t.client.GetMasterchainInfo(ctx, in, opts...)
+	return t.client.GetMasterchainInfo(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) GetBlockData(ctx context.Context, in *tonpb.GetBlockDataRequest, opts ...grpc.CallOption) (*tonpb.Block, error) {
-	return t.client.GetBlockData(ctx, in, opts...)
+	return t.client.GetBlockData(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) GetAccountBalance(ctx context.Context, in *tonpb.GetAccountBalanceRequest, opts ...grpc.CallOption) (*tonpb.Balance, error) {
-	return t.client.GetAccountBalance(ctx, in, opts...)
+	return t.client.GetAccountBalance(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) SendTx(ctx context.Context, in *tonpb.SendTxRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return t.client.SendTx(ctx, in, opts...)
+	return t.client.SendTx(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) GetTxStatus(ctx context.Context, in *tonpb.GetTxStatusRequest, opts ...grpc.CallOption) (*tonpb.GetTxStatusReply, error) {
-	return t.client.GetTxStatus(ctx, in, opts...)
+	return t.client.GetTxStatus(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) GetTxExecutionFees(ctx context.Context, in *tonpb.GetTxExecutionFeesRequest, opts ...grpc.CallOption) (*tonpb.GetTxExecutionFeesReply, error) {
-	return t.client.GetTxExecutionFees(ctx, in, opts...)
+	return t.client.GetTxExecutionFees(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) HasFilter(ctx context.Context, in *tonpb.HasFilterRequest, opts ...grpc.CallOption) (*tonpb.HasFilterReply, error) {
-	return t.client.HasFilter(ctx, in, opts...)
+	return t.client.HasFilter(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) RegisterFilter(ctx context.Context, in *tonpb.RegisterFilterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return t.client.RegisterFilter(ctx, in, opts...)
+	return t.client.RegisterFilter(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (t tonClient) UnregisterFilter(ctx context.Context, in *tonpb.UnregisterFilterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return t.client.UnregisterFilter(ctx, in, opts...)
-}
-
-func (s *Server) GetTxFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
-	evmService, err := s.getEVMService(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	reply, err := evmService.GetTransactionFee(ctx, request.TransactionId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
+	return t.client.UnregisterFilter(tonMetadata.appendRelayID(ctx, t.relayID), in, opts...)
 }
 
 func (s *Server) GetMasterchainInfo(ctx context.Context, request *emptypb.Empty) (*tonpb.BlockIDExt, error) {
@@ -215,7 +207,7 @@ func (s *Server) UnregisterFilter(ctx context.Context, request *tonpb.Unregister
 }
 
 func (s *Server) getTONService(ctx context.Context) (types.TONService, error) {
-	id, err := readRelayID(ctx)
+	id, err := tonMetadata.readRelayID(ctx)
 	if err != nil {
 		return nil, err
 	}

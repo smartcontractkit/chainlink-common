@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
@@ -27,60 +26,65 @@ type evmClient struct {
 
 var _ evmpb.EVMClient = (*evmClient)(nil)
 
+var evmMetadata = relayerMetadata{
+	chain:   metadataEVMChain,
+	network: metadataEVMNetwork,
+}
+
 func (e *evmClient) CalculateTransactionFee(ctx context.Context, in *evmpb.CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.CalculateTransactionFeeReply, error) {
-	return e.client.CalculateTransactionFee(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.CalculateTransactionFee(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e *evmClient) SubmitTransaction(ctx context.Context, in *evmpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*evmpb.SubmitTransactionReply, error) {
-	return e.client.SubmitTransaction(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.SubmitTransaction(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
-	return e.client.GetTransactionFee(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.GetTransactionFee(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
-	return e.client.CallContract(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.CallContract(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
-	return e.client.FilterLogs(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.FilterLogs(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
-	return e.client.BalanceAt(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.BalanceAt(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest, opts ...grpc.CallOption) (*evmpb.EstimateGasReply, error) {
-	return e.client.EstimateGas(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.EstimateGas(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionByHashReply, error) {
-	return e.client.GetTransactionByHash(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.GetTransactionByHash(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionReceiptReply, error) {
-	return e.client.GetTransactionReceipt(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.GetTransactionReceipt(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
-	return e.client.LatestAndFinalizedHead(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.LatestAndFinalizedHead(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmpb.QueryTrackedLogsReply, error) {
-	return e.client.QueryTrackedLogs(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.QueryTrackedLogs(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return e.client.RegisterLogTracking(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.RegisterLogTracking(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return e.client.UnregisterLogTracking(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.UnregisterLogTracking(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
-	return e.client.GetTransactionStatus(appendRelayID(ctx, e.relayID), in, opts...)
+	return e.client.GetTransactionStatus(evmMetadata.appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) GetForwarderForEOA(ctx context.Context, in *evmpb.GetForwarderForEOARequest, opts ...grpc.CallOption) (*evmpb.GetForwarderForEOAReply, error) {
@@ -362,7 +366,7 @@ func (s *Server) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwa
 }
 
 func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {
-	id, err := readRelayID(ctx)
+	id, err := evmMetadata.readRelayID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -373,22 +377,4 @@ func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {
 	}
 
 	return r.EVM()
-}
-
-func appendRelayID(ctx context.Context, id types.RelayID) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, metadataEVMNetwork, id.Network, metadataEVMChain, id.ChainID)
-}
-
-func readRelayID(ctx context.Context) (types.RelayID, error) {
-	network, err := readContextValue(ctx, metadataEVMNetwork)
-	if err != nil {
-		return types.RelayID{}, err
-	}
-	chainID, err := readContextValue(ctx, metadataEVMChain)
-	if err != nil {
-		return types.RelayID{}, err
-	}
-	return types.RelayID{
-		Network: network, ChainID: chainID,
-	}, nil
 }

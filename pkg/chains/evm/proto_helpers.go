@@ -247,27 +247,12 @@ func ConvertLogsToProto(logs []*evmtypes.Log) []*Log {
 	return protoLogs
 }
 
-func ConvertHashFromProto(protoHash []byte) (evmtypes.Hash, error) {
-	if len(protoHash) == 0 {
-		return evmtypes.Hash{}, nil
-	}
-	if len(protoHash) != 32 {
-		return evmtypes.Hash{}, fmt.Errorf("invalid hash: got %d bytes, expected 32", len(protoHash))
-	}
-	return evmtypes.Hash(protoHash), nil
-}
-
 func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, error) {
 	if protoFilter == nil {
 		return evmtypes.FilterQuery{}, errEmptyFilter
 	}
-	hash, err := ConvertHashFromProto(protoFilter.GetBlockHash())
-	if err != nil {
-		return evmtypes.FilterQuery{}, err
-	}
-
 	return evmtypes.FilterQuery{
-		BlockHash: hash,
+		BlockHash: evmtypes.Hash(protoFilter.GetBlockHash()),
 		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
 		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
 		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),

@@ -14,7 +14,7 @@ func ConvertBlockIDExtToProto(block *types.BlockIDExt) *BlockIDExt {
 	return &BlockIDExt{
 		Workchain: block.Workchain,
 		Shard:     block.Shard,
-		Seqno:     block.Seqno,
+		SeqNo:     block.SeqNo,
 	}
 }
 
@@ -25,7 +25,7 @@ func ConvertBlockIDExtFromProto(pb *BlockIDExt) *types.BlockIDExt {
 	return &types.BlockIDExt{
 		Workchain: pb.Workchain,
 		Shard:     pb.Shard,
-		Seqno:     pb.Seqno,
+		SeqNo:     pb.SeqNo,
 	}
 }
 

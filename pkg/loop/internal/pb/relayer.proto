@@ -49,6 +49,8 @@ service Relayer {
 
   rpc LatestHead (LatestHeadRequest) returns (LatestHeadReply) {}
   rpc GetChainStatus (GetChainStatusRequest) returns (GetChainStatusReply) {}
+  rpc GetChainInfo (GetChainInfoRequest) returns (GetChainInfoReply) {}
+
   rpc ListNodeStatuses (ListNodeStatusesRequest) returns (ListNodeStatusesReply) {}
   rpc Transact (TransactionRequest) returns (google.protobuf.Empty) {}
   rpc Replay (ReplayRequest) returns (google.protobuf.Empty) {}
@@ -126,12 +128,26 @@ message GetChainStatusReply {
   ChainStatus chain = 1;
 }
 
+message GetChainInfoRequest {}
+
+// GetChainInfoReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.GetChainInfo].
+message GetChainInfoReply {
+  ChainInfo chain_info = 1;
+}
 
 // ChainStatus represents [github.com/smartcontractkit/chainlink-common/pkg/types.ChainStatus].
 message ChainStatus {
   string id = 1;
   bool enabled = 2;
   string config = 3; // TOML
+}
+
+// ChainInfo represents [github.com/smartcontractkit/chainlink-common/pkg/types.ChainInfo].
+message ChainInfo {
+  string family_name = 1;
+  string chain_id = 2;
+  string network_name = 3;
+  string network_name_full = 4;
 }
 
 // ListNodeStatusesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.ListNodeStatuses].

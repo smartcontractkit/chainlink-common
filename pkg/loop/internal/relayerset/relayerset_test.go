@@ -101,6 +101,17 @@ func Test_RelayerSet(t *testing.T) {
 	require.Equal(t, "error1", healthReport["stat1"].Error())
 	relayer1.AssertCalled(t, "HealthReport")
 
+	chainInfo := types.ChainInfo{
+		FamilyName:      "familyName",
+		ChainID:         "123",
+		NetworkName:     "someNetwork",
+		NetworkNameFull: "someNetwork-full",
+	}
+	relayer1.On("GetChainInfo", mock.Anything).Return(chainInfo, nil)
+	chainInfoReply, err := relayerClient.GetChainInfo(ctx)
+	require.NoError(t, err)
+	require.Equal(t, chainInfo, chainInfoReply)
+
 	relayer1.On("Name").Return("test-relayer")
 	name := relayerClient.Name()
 	require.Equal(t, "test-relayer", name)

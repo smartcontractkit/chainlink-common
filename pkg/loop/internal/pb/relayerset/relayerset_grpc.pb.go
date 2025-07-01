@@ -8,6 +8,7 @@ package relayerset
 
 import (
 	context "context"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -31,6 +32,7 @@ const (
 	RelayerSet_RelayerHealthReport_FullMethodName = "/loop.relayerset.RelayerSet/RelayerHealthReport"
 	RelayerSet_RelayerName_FullMethodName         = "/loop.relayerset.RelayerSet/RelayerName"
 	RelayerSet_RelayerLatestHead_FullMethodName   = "/loop.relayerset.RelayerSet/RelayerLatestHead"
+	RelayerSet_RelayerGetChainInfo_FullMethodName = "/loop.relayerset.RelayerSet/RelayerGetChainInfo"
 	RelayerSet_ContractReaderStart_FullMethodName = "/loop.relayerset.RelayerSet/ContractReaderStart"
 	RelayerSet_ContractReaderClose_FullMethodName = "/loop.relayerset.RelayerSet/ContractReaderClose"
 )
@@ -50,6 +52,7 @@ type RelayerSetClient interface {
 	RelayerHealthReport(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerHealthReportResponse, error)
 	RelayerName(ctx context.Context, in *RelayerId, opts ...grpc.CallOption) (*RelayerNameResponse, error)
 	RelayerLatestHead(ctx context.Context, in *LatestHeadRequest, opts ...grpc.CallOption) (*LatestHeadResponse, error)
+	RelayerGetChainInfo(ctx context.Context, in *GetChainInfoRequest, opts ...grpc.CallOption) (*pb.GetChainInfoReply, error)
 	ContractReaderStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ContractReaderClose(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -172,6 +175,16 @@ func (c *relayerSetClient) RelayerLatestHead(ctx context.Context, in *LatestHead
 	return out, nil
 }
 
+func (c *relayerSetClient) RelayerGetChainInfo(ctx context.Context, in *GetChainInfoRequest, opts ...grpc.CallOption) (*pb.GetChainInfoReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(pb.GetChainInfoReply)
+	err := c.cc.Invoke(ctx, RelayerSet_RelayerGetChainInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *relayerSetClient) ContractReaderStart(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -207,6 +220,7 @@ type RelayerSetServer interface {
 	RelayerHealthReport(context.Context, *RelayerId) (*RelayerHealthReportResponse, error)
 	RelayerName(context.Context, *RelayerId) (*RelayerNameResponse, error)
 	RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error)
+	RelayerGetChainInfo(context.Context, *GetChainInfoRequest) (*pb.GetChainInfoReply, error)
 	ContractReaderStart(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	ContractReaderClose(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedRelayerSetServer()
@@ -251,6 +265,9 @@ func (UnimplementedRelayerSetServer) RelayerName(context.Context, *RelayerId) (*
 }
 func (UnimplementedRelayerSetServer) RelayerLatestHead(context.Context, *LatestHeadRequest) (*LatestHeadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RelayerLatestHead not implemented")
+}
+func (UnimplementedRelayerSetServer) RelayerGetChainInfo(context.Context, *GetChainInfoRequest) (*pb.GetChainInfoReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RelayerGetChainInfo not implemented")
 }
 func (UnimplementedRelayerSetServer) ContractReaderStart(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContractReaderStart not implemented")
@@ -477,6 +494,24 @@ func _RelayerSet_RelayerLatestHead_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RelayerSet_RelayerGetChainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetChainInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelayerSetServer).RelayerGetChainInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RelayerSet_RelayerGetChainInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelayerSetServer).RelayerGetChainInfo(ctx, req.(*GetChainInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RelayerSet_ContractReaderStart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -563,6 +598,10 @@ var RelayerSet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RelayerLatestHead",
 			Handler:    _RelayerSet_RelayerLatestHead_Handler,
+		},
+		{
+			MethodName: "RelayerGetChainInfo",
+			Handler:    _RelayerSet_RelayerGetChainInfo_Handler,
 		},
 		{
 			MethodName: "ContractReaderStart",

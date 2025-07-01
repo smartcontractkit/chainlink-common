@@ -95,6 +95,10 @@ func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus,
 	return r.Service.GetChainStatus(ctx)
 }
 
+func (r *RelayerService) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	return r.Service.GetChainInfo(ctx)
+}
+
 func (r *RelayerService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, "", -1, err

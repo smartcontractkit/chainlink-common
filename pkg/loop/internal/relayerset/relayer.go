@@ -87,6 +87,15 @@ func (r *relayer) Name() string {
 	return name
 }
 
+func (r *relayer) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	chainInfo, err := r.relayerSetClient.RelayerGetChainInfo(ctx, r.relayerID)
+	if err != nil {
+		r.log.Error("error getting chain info", "error", err)
+		return types.ChainInfo{}, err
+	}
+	return chainInfo, nil
+}
+
 func (r *relayer) LatestHead(ctx context.Context) (types.Head, error) {
 	latestHead, err := r.relayerSetClient.RelayerLatestHead(ctx, r.relayerID)
 	if err != nil {

@@ -4,11 +4,15 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 package vault;
 
-message SecretRequest {
+message SecretIdentifier {
     string id = 1;
     string namespace = 2;
     string owner = 3;
-    repeated string encryption_keys = 4;
+}
+
+message SecretRequest {
+    SecretIdentifier id = 1;
+    repeated string encryption_keys = 2;
 }
 
 message EncryptedShares {
@@ -16,12 +20,10 @@ message EncryptedShares {
 }
 
 message SecretResponse {
-    string id = 1;
-    string namespace = 2;
-    string owner = 3;
-    string encrypted_value = 4;
-    repeated EncryptedShares encrypted_decryption_key_shares = 5;
-    string error = 6;
+    SecretIdentifier id = 1;
+    string encrypted_value = 2;
+    repeated EncryptedShares encrypted_decryption_key_shares = 3;
+    string error = 4;
 }
 
 message GetSecretsRequest {
@@ -32,4 +34,39 @@ message GetSecretsResponse {
   repeated SecretResponse responses = 1;
 }
 
+message CreateSecretRequest {
+  // Unique identifier for the request
+  string request_id = 1;
+  // ID of the secret to be created
+  SecretIdentifier id = 2;
+  string encrypted_secret = 5;
+}
 
+message CreateSecretResponse {
+}
+
+message UpdateSecretRequest {
+  string request_id = 1;
+  SecretIdentifier id = 2;
+  string encrypted_secret = 3;
+}
+
+message UpdateSecretResponse {
+}
+
+message DeleteSecretRequest {
+  string request_id = 1;
+  SecretIdentifier id = 2;
+}
+
+message DeleteSecretResponse {
+}
+
+message ListSecretIdentifiers {
+  string owner = 1;
+  string namespace = 2;
+}
+
+message ListSecretIdentifiersResponse {
+  repeated SecretIdentifier identifiers = 1;
+}

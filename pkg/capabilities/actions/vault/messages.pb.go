@@ -177,19 +177,73 @@ func (x *EncryptedShares) GetShares() []string {
 	return nil
 }
 
-type SecretResponse struct {
+type SecretData struct {
 	state                        protoimpl.MessageState `protogen:"open.v1"`
-	Id                           *SecretIdentifier      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	EncryptedValue               string                 `protobuf:"bytes,2,opt,name=encrypted_value,json=encryptedValue,proto3" json:"encrypted_value,omitempty"`
 	EncryptedDecryptionKeyShares []*EncryptedShares     `protobuf:"bytes,3,rep,name=encrypted_decryption_key_shares,json=encryptedDecryptionKeyShares,proto3" json:"encrypted_decryption_key_shares,omitempty"`
-	Error                        string                 `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields                protoimpl.UnknownFields
 	sizeCache                    protoimpl.SizeCache
 }
 
+func (x *SecretData) Reset() {
+	*x = SecretData{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SecretData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SecretData) ProtoMessage() {}
+
+func (x *SecretData) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SecretData.ProtoReflect.Descriptor instead.
+func (*SecretData) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SecretData) GetEncryptedValue() string {
+	if x != nil {
+		return x.EncryptedValue
+	}
+	return ""
+}
+
+func (x *SecretData) GetEncryptedDecryptionKeyShares() []*EncryptedShares {
+	if x != nil {
+		return x.EncryptedDecryptionKeyShares
+	}
+	return nil
+}
+
+type SecretResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    *SecretIdentifier      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Types that are valid to be assigned to Result:
+	//
+	//	*SecretResponse_Data
+	//	*SecretResponse_Error
+	Result        isSecretResponse_Result `protobuf_oneof:"result"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
 func (x *SecretResponse) Reset() {
 	*x = SecretResponse{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[3]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +255,7 @@ func (x *SecretResponse) String() string {
 func (*SecretResponse) ProtoMessage() {}
 
 func (x *SecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[3]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +268,7 @@ func (x *SecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecretResponse.ProtoReflect.Descriptor instead.
 func (*SecretResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SecretResponse) GetId() *SecretIdentifier {
@@ -224,26 +278,46 @@ func (x *SecretResponse) GetId() *SecretIdentifier {
 	return nil
 }
 
-func (x *SecretResponse) GetEncryptedValue() string {
+func (x *SecretResponse) GetResult() isSecretResponse_Result {
 	if x != nil {
-		return x.EncryptedValue
+		return x.Result
 	}
-	return ""
+	return nil
 }
 
-func (x *SecretResponse) GetEncryptedDecryptionKeyShares() []*EncryptedShares {
+func (x *SecretResponse) GetData() *SecretData {
 	if x != nil {
-		return x.EncryptedDecryptionKeyShares
+		if x, ok := x.Result.(*SecretResponse_Data); ok {
+			return x.Data
+		}
 	}
 	return nil
 }
 
 func (x *SecretResponse) GetError() string {
 	if x != nil {
-		return x.Error
+		if x, ok := x.Result.(*SecretResponse_Error); ok {
+			return x.Error
+		}
 	}
 	return ""
 }
+
+type isSecretResponse_Result interface {
+	isSecretResponse_Result()
+}
+
+type SecretResponse_Data struct {
+	Data *SecretData `protobuf:"bytes,2,opt,name=data,proto3,oneof"`
+}
+
+type SecretResponse_Error struct {
+	Error string `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
+}
+
+func (*SecretResponse_Data) isSecretResponse_Result() {}
+
+func (*SecretResponse_Error) isSecretResponse_Result() {}
 
 type GetSecretsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -254,7 +328,7 @@ type GetSecretsRequest struct {
 
 func (x *GetSecretsRequest) Reset() {
 	*x = GetSecretsRequest{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[4]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -266,7 +340,7 @@ func (x *GetSecretsRequest) String() string {
 func (*GetSecretsRequest) ProtoMessage() {}
 
 func (x *GetSecretsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[4]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -279,7 +353,7 @@ func (x *GetSecretsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSecretsRequest.ProtoReflect.Descriptor instead.
 func (*GetSecretsRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{4}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetSecretsRequest) GetRequests() []*SecretRequest {
@@ -298,7 +372,7 @@ type GetSecretsResponse struct {
 
 func (x *GetSecretsResponse) Reset() {
 	*x = GetSecretsResponse{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[5]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -310,7 +384,7 @@ func (x *GetSecretsResponse) String() string {
 func (*GetSecretsResponse) ProtoMessage() {}
 
 func (x *GetSecretsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[5]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -323,7 +397,7 @@ func (x *GetSecretsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSecretsResponse.ProtoReflect.Descriptor instead.
 func (*GetSecretsResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{5}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetSecretsResponse) GetResponses() []*SecretResponse {
@@ -346,7 +420,7 @@ type CreateSecretRequest struct {
 
 func (x *CreateSecretRequest) Reset() {
 	*x = CreateSecretRequest{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[6]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +432,7 @@ func (x *CreateSecretRequest) String() string {
 func (*CreateSecretRequest) ProtoMessage() {}
 
 func (x *CreateSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[6]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +445,7 @@ func (x *CreateSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSecretRequest.ProtoReflect.Descriptor instead.
 func (*CreateSecretRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{6}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CreateSecretRequest) GetRequestId() string {
@@ -403,7 +477,7 @@ type CreateSecretResponse struct {
 
 func (x *CreateSecretResponse) Reset() {
 	*x = CreateSecretResponse{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[7]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +489,7 @@ func (x *CreateSecretResponse) String() string {
 func (*CreateSecretResponse) ProtoMessage() {}
 
 func (x *CreateSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[7]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +502,7 @@ func (x *CreateSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSecretResponse.ProtoReflect.Descriptor instead.
 func (*CreateSecretResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{7}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{8}
 }
 
 type UpdateSecretRequest struct {
@@ -442,7 +516,7 @@ type UpdateSecretRequest struct {
 
 func (x *UpdateSecretRequest) Reset() {
 	*x = UpdateSecretRequest{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[8]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -454,7 +528,7 @@ func (x *UpdateSecretRequest) String() string {
 func (*UpdateSecretRequest) ProtoMessage() {}
 
 func (x *UpdateSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[8]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -467,7 +541,7 @@ func (x *UpdateSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSecretRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSecretRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{8}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateSecretRequest) GetRequestId() string {
@@ -499,7 +573,7 @@ type UpdateSecretResponse struct {
 
 func (x *UpdateSecretResponse) Reset() {
 	*x = UpdateSecretResponse{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[9]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -511,7 +585,7 @@ func (x *UpdateSecretResponse) String() string {
 func (*UpdateSecretResponse) ProtoMessage() {}
 
 func (x *UpdateSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[9]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -524,7 +598,7 @@ func (x *UpdateSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSecretResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSecretResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{9}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{10}
 }
 
 type DeleteSecretRequest struct {
@@ -537,7 +611,7 @@ type DeleteSecretRequest struct {
 
 func (x *DeleteSecretRequest) Reset() {
 	*x = DeleteSecretRequest{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[10]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -549,7 +623,7 @@ func (x *DeleteSecretRequest) String() string {
 func (*DeleteSecretRequest) ProtoMessage() {}
 
 func (x *DeleteSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[10]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -562,7 +636,7 @@ func (x *DeleteSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSecretRequest.ProtoReflect.Descriptor instead.
 func (*DeleteSecretRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{10}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DeleteSecretRequest) GetRequestId() string {
@@ -587,7 +661,7 @@ type DeleteSecretResponse struct {
 
 func (x *DeleteSecretResponse) Reset() {
 	*x = DeleteSecretResponse{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[11]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -599,7 +673,7 @@ func (x *DeleteSecretResponse) String() string {
 func (*DeleteSecretResponse) ProtoMessage() {}
 
 func (x *DeleteSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[11]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +686,7 @@ func (x *DeleteSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSecretResponse.ProtoReflect.Descriptor instead.
 func (*DeleteSecretResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{11}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{12}
 }
 
 type ListSecretIdentifiers struct {
@@ -625,7 +699,7 @@ type ListSecretIdentifiers struct {
 
 func (x *ListSecretIdentifiers) Reset() {
 	*x = ListSecretIdentifiers{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[12]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +711,7 @@ func (x *ListSecretIdentifiers) String() string {
 func (*ListSecretIdentifiers) ProtoMessage() {}
 
 func (x *ListSecretIdentifiers) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[12]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +724,7 @@ func (x *ListSecretIdentifiers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSecretIdentifiers.ProtoReflect.Descriptor instead.
 func (*ListSecretIdentifiers) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{12}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListSecretIdentifiers) GetOwner() string {
@@ -676,7 +750,7 @@ type ListSecretIdentifiersResponse struct {
 
 func (x *ListSecretIdentifiersResponse) Reset() {
 	*x = ListSecretIdentifiersResponse{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[13]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +762,7 @@ func (x *ListSecretIdentifiersResponse) String() string {
 func (*ListSecretIdentifiersResponse) ProtoMessage() {}
 
 func (x *ListSecretIdentifiersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[13]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +775,7 @@ func (x *ListSecretIdentifiersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSecretIdentifiersResponse.ProtoReflect.Descriptor instead.
 func (*ListSecretIdentifiersResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{13}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListSecretIdentifiersResponse) GetIdentifiers() []*SecretIdentifier {
@@ -724,12 +798,16 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\")\n" +
 	"\x0fEncryptedShares\x12\x16\n" +
-	"\x06shares\x18\x01 \x03(\tR\x06shares\"\xd7\x01\n" +
+	"\x06shares\x18\x01 \x03(\tR\x06shares\"\x94\x01\n" +
+	"\n" +
+	"SecretData\x12'\n" +
+	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\x12]\n" +
+	"\x1fencrypted_decryption_key_shares\x18\x03 \x03(\v2\x16.vault.EncryptedSharesR\x1cencryptedDecryptionKeyShares\"\x84\x01\n" +
 	"\x0eSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\x12]\n" +
-	"\x1fencrypted_decryption_key_shares\x18\x03 \x03(\v2\x16.vault.EncryptedSharesR\x1cencryptedDecryptionKeyShares\x12\x14\n" +
-	"\x05error\x18\x04 \x01(\tR\x05error\"E\n" +
+	"\x04data\x18\x02 \x01(\v2\x11.vault.SecretDataH\x00R\x04data\x12\x16\n" +
+	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
+	"\x06result\"E\n" +
 	"\x11GetSecretsRequest\x120\n" +
 	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\"I\n" +
 	"\x12GetSecretsResponse\x123\n" +
@@ -769,38 +847,40 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 	return file_capabilities_actions_vault_messages_proto_rawDescData
 }
 
-var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(*SecretIdentifier)(nil),              // 0: vault.SecretIdentifier
 	(*SecretRequest)(nil),                 // 1: vault.SecretRequest
 	(*EncryptedShares)(nil),               // 2: vault.EncryptedShares
-	(*SecretResponse)(nil),                // 3: vault.SecretResponse
-	(*GetSecretsRequest)(nil),             // 4: vault.GetSecretsRequest
-	(*GetSecretsResponse)(nil),            // 5: vault.GetSecretsResponse
-	(*CreateSecretRequest)(nil),           // 6: vault.CreateSecretRequest
-	(*CreateSecretResponse)(nil),          // 7: vault.CreateSecretResponse
-	(*UpdateSecretRequest)(nil),           // 8: vault.UpdateSecretRequest
-	(*UpdateSecretResponse)(nil),          // 9: vault.UpdateSecretResponse
-	(*DeleteSecretRequest)(nil),           // 10: vault.DeleteSecretRequest
-	(*DeleteSecretResponse)(nil),          // 11: vault.DeleteSecretResponse
-	(*ListSecretIdentifiers)(nil),         // 12: vault.ListSecretIdentifiers
-	(*ListSecretIdentifiersResponse)(nil), // 13: vault.ListSecretIdentifiersResponse
+	(*SecretData)(nil),                    // 3: vault.SecretData
+	(*SecretResponse)(nil),                // 4: vault.SecretResponse
+	(*GetSecretsRequest)(nil),             // 5: vault.GetSecretsRequest
+	(*GetSecretsResponse)(nil),            // 6: vault.GetSecretsResponse
+	(*CreateSecretRequest)(nil),           // 7: vault.CreateSecretRequest
+	(*CreateSecretResponse)(nil),          // 8: vault.CreateSecretResponse
+	(*UpdateSecretRequest)(nil),           // 9: vault.UpdateSecretRequest
+	(*UpdateSecretResponse)(nil),          // 10: vault.UpdateSecretResponse
+	(*DeleteSecretRequest)(nil),           // 11: vault.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),          // 12: vault.DeleteSecretResponse
+	(*ListSecretIdentifiers)(nil),         // 13: vault.ListSecretIdentifiers
+	(*ListSecretIdentifiersResponse)(nil), // 14: vault.ListSecretIdentifiersResponse
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
-	0, // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
-	0, // 1: vault.SecretResponse.id:type_name -> vault.SecretIdentifier
-	2, // 2: vault.SecretResponse.encrypted_decryption_key_shares:type_name -> vault.EncryptedShares
-	1, // 3: vault.GetSecretsRequest.requests:type_name -> vault.SecretRequest
-	3, // 4: vault.GetSecretsResponse.responses:type_name -> vault.SecretResponse
-	0, // 5: vault.CreateSecretRequest.id:type_name -> vault.SecretIdentifier
-	0, // 6: vault.UpdateSecretRequest.id:type_name -> vault.SecretIdentifier
-	0, // 7: vault.DeleteSecretRequest.id:type_name -> vault.SecretIdentifier
-	0, // 8: vault.ListSecretIdentifiersResponse.identifiers:type_name -> vault.SecretIdentifier
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	0,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
+	2,  // 1: vault.SecretData.encrypted_decryption_key_shares:type_name -> vault.EncryptedShares
+	0,  // 2: vault.SecretResponse.id:type_name -> vault.SecretIdentifier
+	3,  // 3: vault.SecretResponse.data:type_name -> vault.SecretData
+	1,  // 4: vault.GetSecretsRequest.requests:type_name -> vault.SecretRequest
+	4,  // 5: vault.GetSecretsResponse.responses:type_name -> vault.SecretResponse
+	0,  // 6: vault.CreateSecretRequest.id:type_name -> vault.SecretIdentifier
+	0,  // 7: vault.UpdateSecretRequest.id:type_name -> vault.SecretIdentifier
+	0,  // 8: vault.DeleteSecretRequest.id:type_name -> vault.SecretIdentifier
+	0,  // 9: vault.ListSecretIdentifiersResponse.identifiers:type_name -> vault.SecretIdentifier
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }
@@ -808,13 +888,17 @@ func file_capabilities_actions_vault_messages_proto_init() {
 	if File_capabilities_actions_vault_messages_proto != nil {
 		return
 	}
+	file_capabilities_actions_vault_messages_proto_msgTypes[4].OneofWrappers = []any{
+		(*SecretResponse_Data)(nil),
+		(*SecretResponse_Error)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -19,11 +19,18 @@ message EncryptedShares {
     repeated string shares = 1;
 }
 
-message SecretResponse {
-    SecretIdentifier id = 1;
+message SecretData {
     string encrypted_value = 2;
     repeated EncryptedShares encrypted_decryption_key_shares = 3;
-    string error = 4;
+}
+
+message SecretResponse {
+    SecretIdentifier id = 1;
+
+    oneof result {
+      SecretData data = 2;
+      string error = 3;
+    }
 }
 
 message GetSecretsRequest {

@@ -4,6 +4,8 @@ import (
 	"context"
 )
 
+// TODO: Consolidate CommitPluginCodec, ExecutePluginCodec, MessageHasher, ExtraDataCodec into a single Codec interface.
+
 type CommitPluginCodec interface {
 	Encode(context.Context, CommitPluginReport) ([]byte, error)
 	Decode(context.Context, []byte) (CommitPluginReport, error)
@@ -18,6 +20,11 @@ type MessageHasher interface {
 	Hash(context.Context, Message) (Bytes32, error)
 }
 
+type AddressCodec interface {
+	AddressBytesToString(UnknownAddress, ChainSelector) (string, error)
+	AddressStringToBytes(string, ChainSelector) (UnknownAddress, error)
+}
+
 // RMNCrypto provides a chain-agnostic interface for verifying RMN signatures.
 // For example, on EVM, RMN reports are abi-encoded prior to being signed.
 // On Solana, they would be borsh encoded instead, etc.
@@ -28,7 +35,7 @@ type RMNCrypto interface {
 		ctx context.Context,
 		sigs []RMNECDSASignature,
 		report RMNReport,
-		signerAddresses []Bytes,
+		signerAddresses []UnknownAddress,
 	) error
 }
 
@@ -37,4 +44,10 @@ type RMNCrypto interface {
 // should be added to that interface and implemented in the downstream repositories (e.g. chainlink-ccip, chainlink).
 type TokenDataEncoder interface {
 	EncodeUSDC(ctx context.Context, message Bytes, attestation Bytes) (Bytes, error)
+}
+
+// EstimateProvider is used to estimate the gas cost of a message or a merkle tree.
+type EstimateProvider interface {
+	CalculateMerkleTreeGas(numRequests int) uint64
+	CalculateMessageMaxGas(msg Message) uint64
 }

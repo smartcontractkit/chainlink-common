@@ -111,7 +111,7 @@ func (s *Store[T]) Evict(requestID string) (T, bool) {
 		delete(s.requests, requestID)
 	}
 
-	newRequestIDs := make([]string, 0, len(s.requestIDs)-1)
+	newRequestIDs := make([]string, 0, len(s.requestIDs))
 	for _, rid := range s.requestIDs {
 		if rid != requestID {
 			newRequestIDs = append(newRequestIDs, rid)

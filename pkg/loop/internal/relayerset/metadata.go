@@ -7,21 +7,19 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type relayerMetadata struct {
-	chain   string
-	network string
+const metadataChain = "relay-chain-id"
+const metadataNetwork = "relay-network"
+
+func appendRelayID(ctx context.Context, id types.RelayID) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, metadataNetwork, id.Network, metadataChain, id.ChainID)
 }
 
-func (rm *relayerMetadata) appendRelayID(ctx context.Context, id types.RelayID) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, rm.network, id.Network, rm.chain, id.ChainID)
-}
-
-func (rm *relayerMetadata) readRelayID(ctx context.Context) (types.RelayID, error) {
-	network, err := readContextValue(ctx, rm.network)
+func readRelayID(ctx context.Context) (types.RelayID, error) {
+	network, err := readContextValue(ctx, metadataNetwork)
 	if err != nil {
 		return types.RelayID{}, err
 	}
-	chainID, err := readContextValue(ctx, rm.chain)
+	chainID, err := readContextValue(ctx, metadataChain)
 	if err != nil {
 		return types.RelayID{}, err
 	}

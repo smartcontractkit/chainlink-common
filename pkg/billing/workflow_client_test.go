@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
@@ -26,15 +27,26 @@ import (
 
 // testWorkflowServer implements pb.WorkflowServiceServer for testing.
 type testWorkflowServer struct {
-	pb.UnimplementedWorkflowServiceServer
+	pb.UnsafeCreditReservationServiceServer
 }
 
-func (s *testWorkflowServer) GetAccountCredits(_ context.Context, _ *pb.GetAccountCreditsRequest) (*pb.GetAccountCreditsResponse, error) {
-	return &pb.GetAccountCreditsResponse{
-		Credits: []*pb.AccountCredits{
-			{CreditType: "TEST", Credits: 100},
+func (s *testWorkflowServer) GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error) {
+	return &pb.GetOrganizationCreditsByWorkflowResponse{}, nil
+}
+
+func (s *testWorkflowServer) GetRateCard(_ context.Context, _ *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error) {
+	return &pb.GetRateCardResponse{
+		Entries: []*pb.RateCardEntry{
+			{ResourceType: pb.ResourceType_RESOURCE_TYPE_COMPUTE, MeasurementUnit: pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, UnitsPerCredit: "0.00001"},
 		},
 	}, nil
+}
+
+func (s *testWorkflowServer) ReserveCredits(ctx context.Context, req *pb.ReserveCreditsRequest) (*pb.ReserveCreditsResponse, error) {
+	return &pb.ReserveCreditsResponse{}, nil
+}
+func (s *testWorkflowServer) SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
 }
 
 // ---------- Test for Sign and VerifySignature ----------
@@ -93,7 +105,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	require.NoError(t, err)
 	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
 	testSrv := &testWorkflowServer{}
-	pb.RegisterWorkflowServiceServer(grpcServer, testSrv)
+	pb.RegisterCreditReservationServiceServer(grpcServer, testSrv)
 	go func() {
 		_ = grpcServer.Serve(lis)
 	}()
@@ -132,10 +144,12 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	// Call a method to verify that the client and server communicate over TLS.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := wc.GetAccountCredits(ctx, &pb.GetAccountCreditsRequest{AccountId: "test-account"})
+	resp, err := wc.GetRateCard(ctx, &pb.GetRateCardRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	assert.Equal(t, "TEST", resp.Credits[0].CreditType)
+	assert.Equal(t, pb.ResourceType_RESOURCE_TYPE_COMPUTE, resp.Entries[0].ResourceType)
+	assert.Equal(t, pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, resp.Entries[0].MeasurementUnit)
+	assert.Equal(t, "0.00001", resp.Entries[0].UnitsPerCredit)
 }
 
 func TestIntegration_GRPC_Insecure(t *testing.T) {
@@ -155,7 +169,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	require.NoError(t, err)
 	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
 	testSrv := &testWorkflowServer{}
-	pb.RegisterWorkflowServiceServer(grpcServer, testSrv)
+	pb.RegisterCreditReservationServiceServer(grpcServer, testSrv)
 	go func() {
 		_ = grpcServer.Serve(lis)
 	}()
@@ -173,7 +187,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, wc)
 
-	_, err = wc.ConsumeCredits(t.Context(), nil)
+	_, err = wc.GetRateCard(t.Context(), nil)
 
 	require.Error(t, err)
 }
@@ -289,7 +303,7 @@ func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 	require.NotNil(t, wc)
 	require.NoError(t, err)
 
-	_, err = wc.ConsumeCredits(t.Context(), nil)
+	_, err = wc.GetRateCard(t.Context(), nil)
 
 	require.Error(t, err, "Expected error when dialing an invalid address")
 }
@@ -357,7 +371,7 @@ func TestWorkflowClient_DialUnreachable(t *testing.T) {
 	require.NotNil(t, wc)
 	require.NoError(t, err)
 
-	_, err = wc.ConsumeCredits(t.Context(), nil)
+	_, err = wc.GetRateCard(t.Context(), nil)
 
 	require.Error(t, err, "Expected dialing an unreachable address to fail")
 }

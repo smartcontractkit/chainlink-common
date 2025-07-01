@@ -80,7 +80,7 @@ type BlockIDExt struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Workchain     int32                  `protobuf:"varint,1,opt,name=workchain,proto3" json:"workchain,omitempty"`
 	Shard         uint64                 `protobuf:"varint,2,opt,name=shard,proto3" json:"shard,omitempty"`
-	Seqno         uint32                 `protobuf:"varint,3,opt,name=seqno,proto3" json:"seqno,omitempty"`
+	SeqNo         uint32                 `protobuf:"varint,3,opt,name=seq_no,json=seqNo,proto3" json:"seq_no,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -129,9 +129,9 @@ func (x *BlockIDExt) GetShard() uint64 {
 	return 0
 }
 
-func (x *BlockIDExt) GetSeqno() uint32 {
+func (x *BlockIDExt) GetSeqNo() uint32 {
 	if x != nil {
-		return x.Seqno
+		return x.SeqNo
 	}
 	return 0
 }
@@ -1012,12 +1012,12 @@ var File_ton_proto protoreflect.FileDescriptor
 
 const file_ton_proto_rawDesc = "" +
 	"\n" +
-	"\tton.proto\x12\bloop.ton\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16values/v1/values.proto\"V\n" +
+	"\tton.proto\x12\bloop.ton\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16values/v1/values.proto\"W\n" +
 	"\n" +
 	"BlockIDExt\x12\x1c\n" +
 	"\tworkchain\x18\x01 \x01(\x05R\tworkchain\x12\x14\n" +
-	"\x05shard\x18\x02 \x01(\x04R\x05shard\x12\x14\n" +
-	"\x05seqno\x18\x03 \x01(\rR\x05seqno\"A\n" +
+	"\x05shard\x18\x02 \x01(\x04R\x05shard\x12\x15\n" +
+	"\x06seq_no\x18\x03 \x01(\rR\x05seqNo\"A\n" +
 	"\x13GetBlockDataRequest\x12*\n" +
 	"\x05block\x18\x01 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\"$\n" +
 	"\x05Block\x12\x1b\n" +

@@ -30,7 +30,7 @@ service TON {
 message BlockIDExt {
   int32 workchain = 1;
   uint64 shard = 2;
-  uint32 seqno = 3;
+  uint32 seq_no = 3;
 }
 
 message GetBlockDataRequest {

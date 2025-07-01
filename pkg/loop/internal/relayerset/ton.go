@@ -68,7 +68,7 @@ func (s *Server) GetMasterchainInfo(ctx context.Context, request *emptypb.Empty)
 		return nil, err
 	}
 
-	return &tonpb.BlockIDExt{Workchain: blockIdExt.Workchain, Shard: blockIdExt.Shard, Seqno: blockIdExt.Seqno}, nil
+	return &tonpb.BlockIDExt{Workchain: blockIdExt.Workchain, Shard: blockIdExt.Shard, SeqNo: blockIdExt.SeqNo}, nil
 }
 
 func (s *Server) GetBlockData(ctx context.Context, request *tonpb.GetBlockDataRequest) (*tonpb.Block, error) {

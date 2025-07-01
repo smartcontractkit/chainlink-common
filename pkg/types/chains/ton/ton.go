@@ -13,7 +13,7 @@ type BOC = []byte
 type BlockIDExt struct {
 	Workchain int32
 	Shard     uint64
-	Seqno     uint32
+	SeqNo     uint32
 }
 type Block struct {
 	GlobalID int32 // Represents EVM-equivalent ChainID for TVM

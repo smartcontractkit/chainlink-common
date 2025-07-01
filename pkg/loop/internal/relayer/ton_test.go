@@ -41,7 +41,7 @@ func Test_TONDomainRoundTripThroughGRPC(t *testing.T) {
 
 	client := &TONClient{grpcClient: tonpb.NewTONClient(conn)}
 
-	blockID := &tontypes.BlockIDExt{Workchain: -1, Shard: 0x8000000000000000, Seqno: 12345}
+	blockID := &tontypes.BlockIDExt{Workchain: -1, Shard: 0x8000000000000000, SeqNo: 12345}
 	balance := &tontypes.Balance{Balance: big.NewInt(987654321)}
 	txStatus := types.Finalized
 	t.Run("GetMasterchainInfo", func(t *testing.T) {

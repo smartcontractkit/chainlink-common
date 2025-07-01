@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751399417301,
+  "lastUpdate": 1751403800818,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17304,6 +17304,48 @@ window.BENCHMARK_DATA = {
             "value": 28132,
             "unit": "ns/op",
             "extra": "42723 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "31e037fcea7449b4761488db44b3edf40d3b5709",
+          "message": "pkg/types: add UnimplementedRelayer (#1316)",
+          "timestamp": "2025-07-01T16:02:01-05:00",
+          "tree_id": "aca8501057b24c99a3350a2313d931cb0d782bb8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/31e037fcea7449b4761488db44b3edf40d3b5709"
+        },
+        "date": 1751403799206,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.6,
+            "unit": "ns/op",
+            "extra": "3380480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412,
+            "unit": "ns/op",
+            "extra": "2926221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28131,
+            "unit": "ns/op",
+            "extra": "42709 times\n4 procs"
           }
         ]
       }

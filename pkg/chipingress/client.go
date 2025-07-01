@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	ceformat "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
-	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	ce "github.com/cloudevents/sdk-go/v2"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
@@ -48,7 +47,7 @@ func newChipIngressConfig(host string) *chipIngressClientConfig {
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
-func NewChipIngressClient(address string, opts ...Opt) (pb.ChipIngressClient, error) {
+func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error) {
 	// Validate address
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
@@ -143,7 +142,7 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 }
 
 // NewEvent creates a new CloudEvent with the specified domain, entity, and payload.
-func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
+func NewEvent(domain, entity string, payload []byte) (CloudEvent, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)
@@ -152,14 +151,14 @@ func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
 	if err != nil {
-		return ce.Event{}, fmt.Errorf("could not set data on event: %w", err)
+		return CloudEvent{}, fmt.Errorf("could not set data on event: %w", err)
 	}
 
 	return event, nil
 }
 
 // NewEventWithAttributes creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
-func NewEventWithAttributes(domain, entity string, payload []byte, attributes map[string]any) (*cepb.CloudEvent, error) {
+func NewEventWithAttributes(domain, entity string, payload []byte, attributes map[string]any) (*CloudEventPb, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)

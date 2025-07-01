@@ -117,16 +117,16 @@ type GethClient interface {
 	//   FinalizedBlockNumber(-3) → last finalized block (“finalized”)
 	//
 	// Any positive value is treated as an explicit block height.
-}
-
-type EVMService interface {
-	GethClient
 	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
 	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+}
+
+type EVMService interface {
+	GethClient
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected

@@ -188,3 +188,28 @@ func EventToProto(event CloudEvent) (*CloudEventPb, error) {
 	}
 	return eventPb, nil
 }
+
+func ProtoToEvent(eventPb *CloudEventPb) (CloudEvent, error) {
+	if eventPb == nil {
+		return CloudEvent{}, fmt.Errorf("could not convert proto to event: eventPb is nil")
+	}
+	event, err := ceformat.FromProto(eventPb)
+	if err != nil {
+		return CloudEvent{}, fmt.Errorf("could not convert proto to event: %w", err)
+	}
+	return *event, nil
+}
+
+func EventsToBatch(events []CloudEvent) (*CloudEventBatch, error) {
+	batch := &CloudEventBatch{
+		Events: make([]*CloudEventPb, 0, len(events)),
+	}
+	for _, event := range events {
+		eventPb, err := EventToProto(event)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert event to proto: %w", err)
+		}
+		batch.Events = append(batch.Events, eventPb)
+	}
+	return batch, nil
+}

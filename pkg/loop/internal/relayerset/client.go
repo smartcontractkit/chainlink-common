@@ -108,6 +108,25 @@ func (k *Client) RelayerName(ctx context.Context, relayID types.RelayID) (string
 	return resp.Name, nil
 }
 
+func (k *Client) RelayerGetChainInfo(ctx context.Context, relayID types.RelayID) (types.ChainInfo, error) {
+	req := &relayerset.GetChainInfoRequest{
+		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+	}
+
+	chainInfoReply, err := k.relayerSetClient.RelayerGetChainInfo(ctx, req)
+	if err != nil {
+		return types.ChainInfo{}, fmt.Errorf("error getting chain info from relayerset client for relayer: %w", err)
+	}
+
+	chainInfo := chainInfoReply.GetChainInfo()
+	return types.ChainInfo{
+		FamilyName:      chainInfo.GetFamilyName(),
+		ChainID:         chainInfo.GetChainId(),
+		NetworkName:     chainInfo.GetNetworkName(),
+		NetworkNameFull: chainInfo.GetNetworkNameFull(),
+	}, nil
+}
+
 func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (types.Head, error) {
 	req := &relayerset.LatestHeadRequest{
 		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},

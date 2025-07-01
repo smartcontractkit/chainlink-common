@@ -61,7 +61,7 @@ var NodeOutputConsensusDescriptor = &pb.ConsensusDescriptor{
 			Fields: map[string]*pb.ConsensusDescriptor{
 				"OutputThing": {
 					Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-						Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
+						Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 					},
 				},
 			},
@@ -95,6 +95,16 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 
 func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {
 	Await(DoRequestAsync(capabilityId, method, mode, input), output)
+}
+
+func DoRequestErr[I proto.Message](capabilityId, method string, mode pb.Mode, input I) error {
+	callbackId := DoRequestAsync(capabilityId, method, mode, input)
+
+	resp := &pb.AwaitCapabilitiesResponse{}
+	await(&pb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
+
+	errMsg := resp.Responses[callbackId].GetError()
+	return errors.New(errMsg)
 }
 
 func GetSecret(id string) (string, error) {

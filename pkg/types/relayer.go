@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -189,4 +191,108 @@ type Relayer interface {
 	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
+}
+
+var _ Relayer = &UnimplementedRelayer{}
+
+// UnimplementedRelayer implements the Relayer interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real Relayer implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement Relayer (through use of an unexported method).
+type UnimplementedRelayer struct{}
+
+func (u *UnimplementedRelayer) Name() string {
+	panic("method Name not implemented")
+}
+
+func (u *UnimplementedRelayer) Start(ctx context.Context) error {
+	return status.Errorf(codes.Unimplemented, "method Start not implemented")
+}
+
+func (u *UnimplementedRelayer) Close() error {
+	return status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
+
+func (u *UnimplementedRelayer) Ready() error {
+	return status.Errorf(codes.Unimplemented, "method Ready not implemented")
+}
+
+func (u *UnimplementedRelayer) HealthReport() map[string]error {
+	panic("method HealthReport not implemented")
+}
+
+func (u *UnimplementedRelayer) LatestHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedRelayer) GetChainInfo(ctx context.Context) (ChainInfo, error) {
+	return ChainInfo{}, status.Errorf(codes.Unimplemented, "method GetChainInfo not implemented")
+}
+
+func (u *UnimplementedRelayer) GetChainStatus(ctx context.Context) (ChainStatus, error) {
+	return ChainStatus{}, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
+}
+
+func (u *UnimplementedRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error) {
+	return []NodeStatus{}, "", -1, status.Errorf(codes.Unimplemented, "method ListNodeStatuses not implemented")
+}
+
+func (u *UnimplementedRelayer) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
+	return status.Errorf(codes.Unimplemented, "method Transact not implemented")
+}
+
+func (u *UnimplementedRelayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	return status.Errorf(codes.Unimplemented, "method Replay not implemented")
+}
+
+func (u *UnimplementedRelayer) EVM() (EVMService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
+}
+
+func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
+}
+
+func (u *UnimplementedRelayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
+}
+
+func (u *UnimplementedRelayer) NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewConfigProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMedianProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewFunctionsProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAutomationProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewLLOProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (LLOProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewLLOProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPCommitProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPCommitProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPExecProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPExecProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewOCR3CapabilityProvider not implemented")
 }

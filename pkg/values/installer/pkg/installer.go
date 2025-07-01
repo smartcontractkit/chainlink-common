@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// installProtocGenToDir installs the pkg plugin to .tools. It'll download it from the same commit as sameVersion.
-func installProtocGenToDir(pkgName, sameVersion string) error {
+// InstallProtocGenToDir installs the pkg plugin to .tools. It'll download it from the same commit as sameVersion.
+func InstallProtocGenToDir(pkgName, sameVersion string) error {
 	fmt.Printf("Finding version to use for %s\n.", pkgName)
 	pluginVersion, err := getVersion(sameVersion, ".")
 	if err != nil {

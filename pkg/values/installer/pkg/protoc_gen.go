@@ -2,6 +2,7 @@ package pkg
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ var values = Packages{
 }
 
 type ProtocGen struct {
+	ProtocHelper
 	packageNames map[string]string
 	sources      []string
 	init         bool
@@ -29,11 +31,18 @@ func (p *ProtocGen) LinkPackage(pkgs Packages) {
 	p.packageNames[pkgs.Proto] = pkgs.Go
 }
 
+func (p *ProtocGen) LinkCapabilities(config *CapabilityConfig) {
+	for _, file := range config.FullProtoFiles() {
+		goPkg := p.FullGoPackageName(config)
+		p.LinkPackage(Packages{Go: goPkg, Proto: file})
+	}
+}
+
 func (p *ProtocGen) AddSourceDirectories(sources ...string) {
 	p.sources = append(p.sources, sources...)
 }
 
-func (p *ProtocGen) Generate(file, from string) error {
+func (p *ProtocGen) GenerateFile(file, from string) error {
 	if err := p.doInit(); err != nil {
 		return err
 	}
@@ -73,15 +82,60 @@ func (p *ProtocGen) Generate(file, from string) error {
 	return nil
 }
 
-func (p *ProtocGen) GenerateMany(fileToFrom map[string]string) map[string]error {
-	errors := map[string]error{}
-	for file, from := range fileToFrom {
-		if err := p.Generate(file, from); err != nil {
-			errors[file] = err
+func (p *ProtocGen) Generate(config *CapabilityConfig) error {
+	return p.GenerateMany(map[string]*CapabilityConfig{".": config})
+}
+
+func (p *ProtocGen) GenerateMany(dirToConfig map[string]*CapabilityConfig) error {
+	for _, config := range dirToConfig {
+		p.LinkCapabilities(config)
+	}
+
+	fmt.Println("Generating capabilities")
+	errMap := map[string]error{}
+	for from, config := range dirToConfig {
+		for _, file := range config.FullProtoFiles() {
+			if err := p.GenerateFile(file, from); err != nil {
+				errMap[file] = err
+			}
 		}
 	}
 
-	return errors
+	if len(errMap) > 0 {
+		var errStrings []string
+		for file, err := range errMap {
+			if err != nil {
+				errStrings = append(errStrings, fmt.Sprintf("file %s\n%v\n", file, err))
+			}
+		}
+
+		return errors.New(strings.Join(errStrings, ""))
+	}
+
+	err := p.moveGeneratedFiles(dirToConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *ProtocGen) moveGeneratedFiles(dirToConfig map[string]*CapabilityConfig) error {
+	fmt.Println("Moving generated files to correct locations")
+	for from, config := range dirToConfig {
+		for i, file := range config.FullProtoFiles() {
+			file = strings.Replace(file, ".proto", ".pb.go", 1)
+			to := strings.Replace(config.Files[i], ".proto", ".pb.go", 1)
+			if err := os.Rename(path.Join(from, file), path.Join(from, to)); err != nil {
+				return fmt.Errorf("failed to move generated file %s: %w", file, err)
+			}
+		}
+
+		if err := os.RemoveAll(path.Join(from, "capabilities")); err != nil {
+			return fmt.Errorf("failed to remove capabilities directory %w", err)
+		}
+	}
+	return nil
 }
 
 func (p *ProtocGen) doInit() error {

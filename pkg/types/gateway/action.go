@@ -6,8 +6,9 @@ const (
 
 // CacheSettings defines cache control options for outbound HTTP requests.
 type CacheSettings struct {
-	Enabled bool  `json:"enabled,omitempty"` // Whether caching is enabled. Defaults to false.
-	TTLms   int32 `json:"ttlMs,omitempty"`   // Time-to-live for the cache entry in milliseconds.
+	ReadFromCache bool  `json:"readFromCache,omitempty"` // If true, attempt to read a cached response for the request
+	StoreInCache  bool  `json:"storeInCache,omitempty"`  // If true, store the response in cache for the given TTL
+	Ttlms         int32 `json:"ttlMs,omitempty"`         // Time-to-live for the cache entry in milliseconds. Only applicable if StoreInCache is true.
 }
 
 // OutboundHTTPRequest represents an HTTP request to be sent from workflow node to the gateway.

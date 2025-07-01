@@ -3,6 +3,7 @@ package beholder_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -129,7 +130,10 @@ func TestClient(t *testing.T) {
 
 			client := tc.mustNewGrpcClient(t, exporterMock)
 
+			// Set error handler and ensure it's reset after test
+			originalHandler := otel.GetErrorHandler()
 			otel.SetErrorHandler(otelMustNotErr(t))
+			defer otel.SetErrorHandler(originalHandler)
 			// Number of exported messages
 			exportedMessageCount := 0
 
@@ -217,7 +221,24 @@ func TestClient_ForPackage(t *testing.T) {
 }
 
 func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
-	return func(err error) { t.Fatalf("otel error: %v", err) }
+	// Create a context that will be canceled when the test completes
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Use t.Cleanup to cancel the context when test completes
+	t.Cleanup(cancel)
+
+	return func(err error) {
+		// Check if test context is still valid
+		select {
+		case <-ctx.Done():
+			// Test has completed, just log the error instead of failing
+			fmt.Printf("otel error after test completion: %v\n", err)
+			return
+		default:
+			// Test is still active, safe to call t.Fatalf
+			t.Fatalf("otel error: %v", err)
+		}
+	}
 }
 
 func TestNewClient(t *testing.T) {

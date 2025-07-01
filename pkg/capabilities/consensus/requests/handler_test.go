@@ -12,15 +12,16 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
 func Test_Handler_SendsResponse(t *testing.T) {
 	lggr := logger.Test(t)
 	ctx := t.Context()
 
-	h := requests.NewHandler(lggr, requests.NewStore[*ocr3.ReportRequest, ocr3.ReportResponse](), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
+	h := requests.NewHandler(lggr, requests.NewStore[*ocr3.ReportRequest](), clockwork.NewFakeClockAt(time.Now()), 1*time.Second)
 	servicetest.Run(t, h)
 
 	responseCh := make(chan ocr3.ReportResponse, 10)

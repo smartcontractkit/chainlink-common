@@ -7,9 +7,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	rel "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
@@ -23,13 +25,20 @@ type Client struct {
 
 	log logger.Logger
 
-	relayerSetClient    relayerset.RelayerSetClient
-	evmRelayerSetClient relayerset.EVMRelayerSetClient
+	relayerSetClient     relayerset.RelayerSetClient
+	contractReaderClient pb.ContractReaderClient
+	evmRelayerSetClient  evm.EVMClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
 	b = b.WithName("ChainRelayerClient")
-	return &Client{log: log, BrokerExt: b, ServiceClient: goplugin.NewServiceClient(b, conn), relayerSetClient: relayerset.NewRelayerSetClient(conn), evmRelayerSetClient: relayerset.NewEVMRelayerSetClient(conn)}
+	return &Client{
+		log:                  log,
+		BrokerExt:            b,
+		ServiceClient:        goplugin.NewServiceClient(b, conn),
+		relayerSetClient:     relayerset.NewRelayerSetClient(conn),
+		evmRelayerSetClient:  evm.NewEVMClient(conn),
+		contractReaderClient: pb.NewContractReaderClient(conn)}
 }
 
 func (k *Client) Get(ctx context.Context, relayID types.RelayID) (core.Relayer, error) {
@@ -97,6 +106,25 @@ func (k *Client) RelayerName(ctx context.Context, relayID types.RelayID) (string
 	}
 
 	return resp.Name, nil
+}
+
+func (k *Client) RelayerGetChainInfo(ctx context.Context, relayID types.RelayID) (types.ChainInfo, error) {
+	req := &relayerset.GetChainInfoRequest{
+		RelayerId: &relayerset.RelayerId{ChainId: relayID.ChainID, Network: relayID.Network},
+	}
+
+	chainInfoReply, err := k.relayerSetClient.RelayerGetChainInfo(ctx, req)
+	if err != nil {
+		return types.ChainInfo{}, fmt.Errorf("error getting chain info from relayerset client for relayer: %w", err)
+	}
+
+	chainInfo := chainInfoReply.GetChainInfo()
+	return types.ChainInfo{
+		FamilyName:      chainInfo.GetFamilyName(),
+		ChainID:         chainInfo.GetChainId(),
+		NetworkName:     chainInfo.GetNetworkName(),
+		NetworkNameFull: chainInfo.GetNetworkNameFull(),
+	}, nil
 }
 
 func (k *Client) RelayerLatestHead(ctx context.Context, relayID types.RelayID) (types.Head, error) {

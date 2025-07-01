@@ -356,6 +356,21 @@ func (r *relayerClient) GetChainStatus(ctx context.Context) (types.ChainStatus, 
 	}, nil
 }
 
+func (r *relayerClient) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	chainInfoReply, err := r.relayer.GetChainInfo(ctx, &pb.GetChainInfoRequest{})
+	if err != nil {
+		return types.ChainInfo{}, err
+	}
+
+	chainInfo := chainInfoReply.GetChainInfo()
+	return types.ChainInfo{
+		FamilyName:      chainInfo.GetFamilyName(),
+		ChainID:         chainInfo.GetChainId(),
+		NetworkName:     chainInfo.GetNetworkName(),
+		NetworkNameFull: chainInfo.GetNetworkNameFull(),
+	}, nil
+}
+
 func (r *relayerClient) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
 	reply, err := r.relayer.ListNodeStatuses(ctx, &pb.ListNodeStatusesRequest{
 		PageSize:  pageSize,
@@ -740,6 +755,22 @@ func (r *relayerServer) GetChainStatus(ctx context.Context, request *pb.GetChain
 		Enabled: chain.Enabled,
 		Config:  chain.Config,
 	}}, nil
+}
+
+func (r *relayerServer) GetChainInfo(ctx context.Context, _ *pb.GetChainInfoRequest) (*pb.GetChainInfoReply, error) {
+	chainInfo, err := r.impl.GetChainInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetChainInfoReply{
+		ChainInfo: &pb.ChainInfo{
+			FamilyName:      chainInfo.FamilyName,
+			ChainId:         chainInfo.ChainID,
+			NetworkName:     chainInfo.NetworkName,
+			NetworkNameFull: chainInfo.NetworkNameFull,
+		},
+	}, nil
 }
 
 func (r *relayerServer) ListNodeStatuses(ctx context.Context, request *pb.ListNodeStatusesRequest) (*pb.ListNodeStatusesReply, error) {

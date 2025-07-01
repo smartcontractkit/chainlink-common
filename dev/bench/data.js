@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751387896079,
+  "lastUpdate": 1751394592051,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17220,6 +17220,48 @@ window.BENCHMARK_DATA = {
             "value": 28159,
             "unit": "ns/op",
             "extra": "42715 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "168561091+engnke@users.noreply.github.com",
+            "name": "engnke",
+            "username": "engnke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "36c47e10fbe9af88f2db1cd21cd141d8f31cd12e",
+          "message": "Update chip-ingress client to accept and extract additional attributes (#1283)\n\n* Update chip-ingress client to accept and extract additional attributes\n\n* update test cases to include attributes\n\n* minor refactoring\n\n* update to accept recordedtime attribute\n\n* time attributes in utc\n\n---------\n\nCo-authored-by: Kiryll Kuzniecow <kiryll.kuzniecow@gmail.com>",
+          "timestamp": "2025-07-01T14:28:40-04:00",
+          "tree_id": "d84d5a52b9812d3e619ee15ea697e7c7ec010929",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/36c47e10fbe9af88f2db1cd21cd141d8f31cd12e"
+        },
+        "date": 1751394590912,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.3,
+            "unit": "ns/op",
+            "extra": "3363525 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.1,
+            "unit": "ns/op",
+            "extra": "2934543 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28353,
+            "unit": "ns/op",
+            "extra": "42730 times\n4 procs"
           }
         ]
       }

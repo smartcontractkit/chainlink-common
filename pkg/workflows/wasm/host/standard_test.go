@@ -359,7 +359,9 @@ func TestStandardSecrets(t *testing.T) {
 	t.Run("returns an error if the secret doesn't exist", func(t *testing.T) {
 		resp := runSecretTest(t, m, &pb.SecretResponse{
 			Response: &pb.SecretResponse_Error{
-				Error: "could not find secret",
+				Error: &pb.SecretError{
+					Error: "could not find secret",
+				},
 			},
 		})
 		assert.ErrorContains(t, errors.New(resp.GetError()), "could not find secret")

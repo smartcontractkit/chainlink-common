@@ -141,24 +141,8 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	}
 }
 
-// NewEvent creates a new CloudEvent with the specified domain, entity, and payload.
-func NewEvent(domain, entity string, payload []byte) (CloudEvent, error) {
-
-	event := ce.NewEvent()
-	event.SetSource(domain)
-	event.SetType(entity)
-	event.SetID(uuid.New().String())
-
-	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
-	if err != nil {
-		return CloudEvent{}, fmt.Errorf("could not set data on event: %w", err)
-	}
-
-	return event, nil
-}
-
-// NewEventWithAttributes creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
-func NewEventWithAttributes(domain, entity string, payload []byte, attributes map[string]any) (*CloudEventPb, error) {
+// NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
+func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)
@@ -191,8 +175,16 @@ func NewEventWithAttributes(domain, entity string, payload []byte, attributes ma
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
 	if err != nil {
-		return nil, fmt.Errorf("could not set data on event: %w", err)
+		return ce.Event{}, fmt.Errorf("could not set data on event: %w", err)
 	}
 
-	return ceformat.ToProto(&event)
+	return event, nil
+}
+
+func EventToProto(event CloudEvent) (*CloudEventPb, error) {
+	eventPb, err := ceformat.ToProto(&event)
+	if err != nil {
+		return nil, fmt.Errorf("could not convert event to proto: %w", err)
+	}
+	return eventPb, nil
 }

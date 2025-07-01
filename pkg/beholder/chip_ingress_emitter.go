@@ -28,11 +28,15 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	event, err := ch.NewEventWithAttributes(sourceDomain, entityType, body, nil)
+	event, err := ch.NewEvent(sourceDomain, entityType, body, nil)
 	if err != nil {
 		return err
 	}
-	_, err = c.client.Publish(ctx, event)
+	eventPb, err := ch.EventToProto(event)
+	if err != nil {
+		return fmt.Errorf("failed to convert event to proto: %w", err)
+	}
+	_, err = c.client.Publish(ctx, eventPb)
 	if err != nil {
 		return err
 	}

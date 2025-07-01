@@ -61,7 +61,7 @@ func TestNewEvent(t *testing.T) {
 	testProto := pb.PingResponse{Message: "testing"}
 	protoBytes, err := proto.Marshal(&testProto)
 	assert.NoError(t, err)
-	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes)
+	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes, nil)
 	assert.NoError(t, err)
 
 	// There should be no validation errors

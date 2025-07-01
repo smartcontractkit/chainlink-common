@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751394592051,
+  "lastUpdate": 1751399417301,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17262,6 +17262,48 @@ window.BENCHMARK_DATA = {
             "value": 28353,
             "unit": "ns/op",
             "extra": "42730 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "94ad8428563ac696dfe1e14dc20beb400d421850",
+          "message": "Bump chainlink protos to 37bd0d618b58951f039b509dc49c92da68bd0808 for billing client protos (#1319)",
+          "timestamp": "2025-07-01T19:48:00Z",
+          "tree_id": "c9395e5d06c2f9af77e6c5d9dc051064c0cca400",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/94ad8428563ac696dfe1e14dc20beb400d421850"
+        },
+        "date": 1751399415762,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.7,
+            "unit": "ns/op",
+            "extra": "3427426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.9,
+            "unit": "ns/op",
+            "extra": "2875963 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28132,
+            "unit": "ns/op",
+            "extra": "42723 times\n4 procs"
           }
         ]
       }

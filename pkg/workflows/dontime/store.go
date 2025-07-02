@@ -23,7 +23,7 @@ type Store struct {
 
 func NewStore(requestTimeout time.Duration) *Store {
 	return &Store{
-		requests:            consensusRequests.NewStore[*Request, Response](),
+		requests:            consensusRequests.NewStore[*Request](),
 		requestTimeout:      requestTimeout,
 		donTimes:            make(map[string][]int64),
 		lastObservedDonTime: 0,

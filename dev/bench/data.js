@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751471592665,
+  "lastUpdate": 1751476247640,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17556,6 +17556,48 @@ window.BENCHMARK_DATA = {
             "value": 28429,
             "unit": "ns/op",
             "extra": "42201 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6a64336cce57e81cb176207af0d3d56e37357b93",
+          "message": "Update values in the main mod and respect the renamed funtion (#1325)",
+          "timestamp": "2025-07-02T10:08:28-07:00",
+          "tree_id": "1498e59ac06bcfcabf5213c1482f33f7dc88ad8f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6a64336cce57e81cb176207af0d3d56e37357b93"
+        },
+        "date": 1751476246040,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.9,
+            "unit": "ns/op",
+            "extra": "3363859 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.6,
+            "unit": "ns/op",
+            "extra": "2890342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28554,
+            "unit": "ns/op",
+            "extra": "42232 times\n4 procs"
           }
         ]
       }

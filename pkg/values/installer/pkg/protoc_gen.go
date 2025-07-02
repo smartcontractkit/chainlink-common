@@ -190,10 +190,14 @@ func checkoutClProtosRef(repoPath string) error {
 		}
 	}
 
-	// TODO check why this didn't fetch...
+	// Reset to head so that fetch and checkout won't fail
+	if _, err := run("git", repoPath, "reset", "--hard", "HEAD"); err != nil {
+		return fmt.Errorf("failed to reset chainlink-protos repo: %v", err)
+	}
+
 	if _, err := run("git", repoPath, "rev-parse", "--verify", "--quiet", chainlinkProtosVersion); err != nil {
-		if out, err := run("git", repoPath, "fetch", "origin"); err != nil {
-			return fmt.Errorf("failed to fetch: %v\n%s", err, out)
+		if out, err := run("git", repoPath, "fetch"); err != nil {
+			return fmt.Errorf("failed to fetch: %v\nIf you're not working on the main branch, you may need to track that branch in proto_vendor/chainlink-protos, this tool will not do that for you to avoid accidental non-main commits\n%s", err, out)
 		}
 	}
 

@@ -11,7 +11,7 @@ import (
 var DefaultRequestTimeout = 20 * time.Minute
 
 type Store struct {
-	requests       *consensusRequests.Store[*Request, Response]
+	requests       *consensusRequests.Store[*Request]
 	requestTimeout time.Duration
 
 	// donTimes holds ordered sequence timestamps generated for consecutive workflow requests

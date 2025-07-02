@@ -75,14 +75,15 @@ func TestPlugin_Observation(t *testing.T) {
 			executionID: 0,
 		}
 		require.Equal(t, expectedRequests, obsProto.Requests)
+		store.deleteExecutionID("workflow-123")
 	})
 
 	t.Run("Batching with expired requests", func(t *testing.T) {
 		// Generate request queue: 1-2(expired)-3-4(expired)-5-6(expired)
-		var expiredRequestChs []chan DonTimeResponse
+		var expiredRequestChs []chan Response
 		for i := range 6 {
 			executionID := fmt.Sprintf("workflow-%d", i)
-			ch := make(chan DonTimeResponse, 1)
+			ch := make(chan Response, 1)
 			request := &Request{
 				ExpiresAt:           time.Now().Add(defaultExecutionRemovalTime),
 				CallbackCh:          ch,

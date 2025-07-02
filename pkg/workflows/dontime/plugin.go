@@ -99,7 +99,7 @@ func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext,
 			if req.SeqNum > numObservedDonTimes {
 				p.store.requests.Evict(req.WorkflowExecutionID)
 				req.SendResponse(nil,
-					DonTimeResponse{
+					Response{
 						WorkflowExecutionID: req.WorkflowExecutionID,
 						SeqNum:              req.SeqNum,
 						Timestamp:           0,

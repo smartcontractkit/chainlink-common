@@ -30,7 +30,6 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
 			executionID: {Timestamps: []int64{timestamp - int64(time.Second), timestamp}},
 		},
-		FinishedExecutionRemovalTimes: make(map[string]int64),
 	}
 
 	r := ocr3types.ReportWithInfo[struct{}]{}

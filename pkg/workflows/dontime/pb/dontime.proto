@@ -5,7 +5,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/
 message Observation {
   int64 timestamp = 1;
   map<string, int64> requests = 2;
-  repeated string finished = 3;
 }
 
 message Observations {
@@ -20,5 +19,4 @@ message ObservedDonTimes {
 message Outcome {
   int64 timestamp = 1;
   map<string, ObservedDonTimes> observed_don_times = 2;
-  map<string, int64> finished_execution_removal_times = 3;
 }

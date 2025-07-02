@@ -25,7 +25,7 @@ func NewTransmitter(lggr logger.Logger, store *Store, batchSize int) *Transmitte
 	return &Transmitter{lggr: lggr, store: store, batchSize: batchSize}
 }
 
-func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[struct{}], _ []types.AttributedOnchainSignature) error {
+func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[struct{}], _ []types.AttributedOnchainSignature) error {
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
 		return err
@@ -42,10 +42,12 @@ func (t *Transmitter) Transmit(ctx context.Context, _ types.ConfigDigest, _ uint
 			continue
 		}
 
+		// Nodes behind on multiple requests may wait one OCR round per request.
+		// Caching future times locally could be added as an optimization.
 		if len(donTimes.Timestamps) > request.SeqNum {
 			donTime := donTimes.Timestamps[request.SeqNum]
 			t.store.requests.Evict(executionID) // Make space for next request before delivering
-			request.SendResponse(ctx, DonTimeResponse{
+			request.SendResponse(nil, Response{
 				WorkflowExecutionID: executionID,
 				SeqNum:              request.SeqNum,
 				Timestamp:           donTime,

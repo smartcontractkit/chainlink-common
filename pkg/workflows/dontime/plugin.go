@@ -60,18 +60,10 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 	return nil, nil
 }
 
-func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
+func (p *Plugin) Observation(_ context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
 	previousOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, previousOutcome); err != nil {
-		return nil, err
-	}
-
-	finishedExecutionIDs := p.store.GetFinishedExecutionIDs()
-	var unscheduledFinishedExecutionIDs []string
-	for id := range finishedExecutionIDs {
-		if _, ok := previousOutcome.FinishedExecutionRemovalTimes[id]; !ok {
-			unscheduledFinishedExecutionIDs = append(unscheduledFinishedExecutionIDs, id)
-		}
+		p.lggr.Errorf("failed to unmarshal previous outcome in Observation phase")
 	}
 
 	// Collect up to batchSize unexpired requests
@@ -79,7 +71,9 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 	for batchOffset := 0; batchOffset < p.store.requests.Len() && len(requests) < p.batchSize; {
 		batch, err := p.store.requests.RangeN(batchOffset, p.batchSize)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get request batch: %w", err)
+			p.lggr.Errorf("failed to get request batch at offset %d: %v", batchOffset, err)
+			batchOffset += p.batchSize
+			continue
 		}
 		if len(batch) == 0 {
 			break
@@ -90,7 +84,7 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 			if req.ExpiryTime().Before(timeoutCheck) {
 				// Request has been sitting in queue too long
 				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendTimeout(ctx)
+				req.SendTimeout(nil)
 				continue
 			}
 
@@ -104,8 +98,8 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 
 			if req.SeqNum > numObservedDonTimes {
 				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendResponse(ctx,
-					DonTimeResponse{
+				req.SendResponse(nil,
+					Response{
 						WorkflowExecutionID: req.WorkflowExecutionID,
 						SeqNum:              req.SeqNum,
 						Timestamp:           0,
@@ -123,7 +117,6 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 	observation := &pb.Observation{
 		Timestamp: time.Now().UTC().UnixMilli(),
 		Requests:  requests,
-		Finished:  unscheduledFinishedExecutionIDs,
 	}
 
 	return proto.Marshal(observation)
@@ -139,18 +132,21 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 
 func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
 	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-	finishedNodes := map[string]int64{}     // counts number of nodes finished with the workflow for executionID
 	var times []int64
 
 	prevOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
-		return nil, err
+		p.lggr.Errorf("failed to unmarshal previous outcome in Outcome phase")
+	}
+	if prevOutcome.ObservedDonTimes == nil {
+		prevOutcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
 	}
 
 	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
-			return nil, err
+			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
+			continue
 		}
 
 		for id, requestSeqNum := range observation.Requests {
@@ -168,10 +164,6 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 			}
 		}
 
-		for _, id := range observation.Finished {
-			finishedNodes[id]++
-		}
-
 		times = append(times, observation.Timestamp)
 	}
 
@@ -179,17 +171,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	slices.Sort(times)
 	donTime := times[len(times)/2]
 
-	outcome := &pb.Outcome{}
-	if err := proto.Unmarshal(outctx.PreviousOutcome, outcome); err != nil {
-		return nil, err
-	}
-
-	if outcome.FinishedExecutionRemovalTimes == nil {
-		outcome.FinishedExecutionRemovalTimes = make(map[string]int64)
-	}
-	if outcome.ObservedDonTimes == nil {
-		outcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
-	}
+	outcome := prevOutcome
 
 	// Compare with prior outcome to ensure DON time never goes backward.
 	if donTime < outcome.Timestamp+p.minTimeIncrease {
@@ -211,20 +193,13 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 		}
 	}
 
-	// Check if consensus is reached on the workflow execution being finished
-	for id, numFinished := range finishedNodes {
-		if numFinished >= int64(p.config.F) {
-			if _, ok := outcome.FinishedExecutionRemovalTimes[id]; ok {
-				continue
+	// Remove expired workflow executions
+	for id, observedTimes := range outcome.ObservedDonTimes {
+		if observedTimes != nil && len(observedTimes.Timestamps) > 0 {
+			if donTime >= observedTimes.Timestamps[0]+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
+				delete(outcome.ObservedDonTimes, id)
+				p.store.deleteExecutionID(id)
 			}
-			outcome.FinishedExecutionRemovalTimes[id] = donTime + p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds()
-		}
-	}
-
-	for id, removeAt := range outcome.FinishedExecutionRemovalTimes {
-		if removeAt <= donTime {
-			delete(outcome.FinishedExecutionRemovalTimes, id)
-			p.store.deleteExecutionID(id)
 		}
 	}
 

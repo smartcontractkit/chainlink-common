@@ -11,10 +11,9 @@ import (
 var DefaultRequestTimeout = 20 * time.Minute
 
 type Store struct {
-	requests       *consensusRequests.Store[*Request, DonTimeResponse]
+	requests       *consensusRequests.Store[*Request, Response]
 	requestTimeout time.Duration
 
-	finishedExecutionIDs map[string]bool
 	// donTimes holds ordered sequence timestamps generated for consecutive workflow requests
 	// i.e. ExecutionID --> [timestamp-0, timestamp-1 , ...]
 	donTimes            map[string][]int64
@@ -24,28 +23,12 @@ type Store struct {
 
 func NewStore(requestTimeout time.Duration) *Store {
 	return &Store{
-		requests:             consensusRequests.NewStore[*Request, DonTimeResponse](),
-		requestTimeout:       requestTimeout,
-		finishedExecutionIDs: make(map[string]bool),
-		donTimes:             make(map[string][]int64),
-		lastObservedDonTime:  0,
-		mu:                   sync.Mutex{},
+		requests:            consensusRequests.NewStore[*Request, Response](),
+		requestTimeout:      requestTimeout,
+		donTimes:            make(map[string][]int64),
+		lastObservedDonTime: 0,
+		mu:                  sync.Mutex{},
 	}
-}
-
-// ExecutionFinished marks a workflow execution as finished for this node
-// Once consensus is reached that the execution has finished, the executionID
-// will be marked for deletion after some time.
-func (s *Store) ExecutionFinished(executionID string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.finishedExecutionIDs[executionID] = true
-}
-
-func (s *Store) GetFinishedExecutionIDs() map[string]bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.finishedExecutionIDs
 }
 
 func (s *Store) GetRequest(executionID string) *Request {
@@ -53,11 +36,11 @@ func (s *Store) GetRequest(executionID string) *Request {
 }
 
 // RequestDonTime adds a don time request to the queue or return the dontime if we have it yet.
-func (s *Store) RequestDonTime(executionID string, seqNum int) <-chan DonTimeResponse {
-	ch := make(chan DonTimeResponse, 1)
+func (s *Store) RequestDonTime(executionID string, seqNum int) <-chan Response {
+	ch := make(chan Response, 1)
 	dontime := s.GetDonTimeForSeqNum(executionID, seqNum)
 	if dontime != nil {
-		ch <- DonTimeResponse{
+		ch <- Response{
 			WorkflowExecutionID: executionID,
 			SeqNum:              seqNum,
 			Timestamp:           *dontime,
@@ -75,7 +58,7 @@ func (s *Store) RequestDonTime(executionID string, seqNum int) <-chan DonTimeRes
 		SeqNum:              seqNum,
 	})
 	if err != nil {
-		ch <- DonTimeResponse{
+		ch <- Response{
 			WorkflowExecutionID: executionID,
 			SeqNum:              seqNum,
 			Timestamp:           0,
@@ -131,5 +114,5 @@ func (s *Store) deleteExecutionID(executionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.donTimes, executionID)
-	delete(s.finishedExecutionIDs, executionID)
+	s.requests.Evict(executionID)
 }

@@ -74,7 +74,7 @@ func (s *Store[T]) FirstN(batchSize int) ([]T, error) {
 
 // RangeN retrieves up to `batchSize` requests starting at index `start`.
 // It deep-copies each request before returning.
-func (s *Store[T, R]) RangeN(start, batchSize int) ([]T, error) {
+func (s *Store[T]) RangeN(start, batchSize int) ([]T, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -104,7 +104,7 @@ func (s *Store[T, R]) RangeN(start, batchSize int) ([]T, error) {
 	return got, nil
 }
 
-func (s *Store[T, R]) Len() int {
+func (s *Store[T]) Len() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.requestIDs)

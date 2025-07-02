@@ -30,7 +30,7 @@ func main() {
 		}
 
 		if !d.IsDir() && strings.HasSuffix(d.Name(), ".proto") {
-			if genErr := gen.Generate(d.Name(), filepath.Dir(path)); genErr != nil {
+			if genErr := gen.GenerateFile(d.Name(), filepath.Dir(path)); genErr != nil {
 				errors[path] = genErr
 			}
 		}

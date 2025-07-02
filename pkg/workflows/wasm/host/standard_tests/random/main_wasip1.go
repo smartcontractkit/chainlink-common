@@ -21,7 +21,7 @@ func main() {
 	input := &nodeaction.NodeInputs{InputThing: true}
 	rawsdk.DoRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, input, result)
 	if result.OutputThing < 100 {
-		msg := []byte(strconv.FormatUint(nr.Uint64(), 10))
+		msg := []byte("***" + strconv.FormatUint(nr.Uint64(), 10))
 		rawsdk.Log(rawsdk.BufferToPointerLen(msg))
 	}
 
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	cresult := &valuespb.Value{}
-	rawsdk.DoRequest("consensus@1.0.0", "Simple", pb.Mode_MODE_DON, consensus, cresult)
+	rawsdk.DoRequest("consensus@1.0.0-alpha", "Simple", pb.Mode_MODE_DON, consensus, cresult)
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
 	total += dr.Uint64()
 	rawsdk.SendResponse(total)

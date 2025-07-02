@@ -2,6 +2,7 @@ package beholder_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
@@ -30,6 +31,12 @@ func TestChipIngressEmit(t *testing.T) {
 	body := []byte("test body")
 	domain := "test-domain"
 	entity := "test-entity"
+	attributes := map[string]any{
+		"datacontenttype": "application/protobuf",
+		"dataschema":      "/schemas/ids/1001",
+		"subject":         "example-subject",
+		"time":            time.Now(),
+	}
 
 	t.Run("happy path", func(t *testing.T) {
 
@@ -42,7 +49,7 @@ func TestChipIngressEmit(t *testing.T) {
 		emitter, err := beholder.NewChipIngressEmitter(clientMock)
 		require.NoError(t, err)
 
-		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
+		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity, attributes)
 		require.NoError(t, err)
 
 		clientMock.AssertExpectations(t)
@@ -214,6 +221,50 @@ func TestExtractSourceAndType(t *testing.T) {
 			if entity != tt.wantEntity {
 				t.Errorf("extractSourceAndType() entity = %v, want %v", entity, tt.wantEntity)
 			}
+		})
+	}
+}
+
+func TestExtractAttributes(t *testing.T) {
+	now := time.Now()
+	tests := []struct {
+		name           string
+		attrs          []any
+		wantAttributes map[string]any
+		wantErr        bool
+		expectedError  string
+	}{
+		{
+			name: "valid attributes with specific keys",
+			attrs: []any{map[string]any{
+				"datacontenttype": "application/protobuf",
+				"dataschema":      "/schemas/ids/1001",
+				"subject":         "example-subject",
+				"time":            now,
+				"recordedtime":    now,
+			}},
+			wantAttributes: map[string]any{
+				"datacontenttype": "application/protobuf",
+				"dataschema":      "/schemas/ids/1001",
+				"subject":         "example-subject",
+				"time":            now,
+				"recordedtime":    now,
+			},
+			wantErr: false,
+		},
+		{
+			name:           "happy path - empty attributes",
+			attrs:          []any{},
+			wantAttributes: map[string]any{},
+			wantErr:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotAttributes := beholder.ExtractAttributes(tt.attrs...)
+
+			assert.Equal(t, tt.wantAttributes, gotAttributes)
 		})
 	}
 }

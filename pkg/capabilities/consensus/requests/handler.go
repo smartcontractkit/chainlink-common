@@ -31,7 +31,7 @@ type Handler[T ConsensusRequest[T, R], R ConsensusResponse] struct {
 	services.Service
 	eng *services.Engine
 
-	store *Store[T, R]
+	store *Store[T]
 
 	pendingRequests map[string]T
 
@@ -44,7 +44,7 @@ type Handler[T ConsensusRequest[T, R], R ConsensusResponse] struct {
 	clock clockwork.Clock
 }
 
-func NewHandler[T ConsensusRequest[T, R], R ConsensusResponse](lggr logger.Logger, s *Store[T, R], clock clockwork.Clock, responseExpiryTime time.Duration) *Handler[T, R] {
+func NewHandler[T ConsensusRequest[T, R], R ConsensusResponse](lggr logger.Logger, s *Store[T], clock clockwork.Clock, responseExpiryTime time.Duration) *Handler[T, R] {
 	h := &Handler[T, R]{
 		store:           s,
 		pendingRequests: map[string]T{},

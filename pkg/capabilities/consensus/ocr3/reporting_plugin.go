@@ -21,10 +21,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
+	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 var _ ocr3types.ReportingPlugin[[]byte] = (*reportingPlugin)(nil)
@@ -39,14 +40,14 @@ type CapabilityIface interface {
 
 type reportingPlugin struct {
 	batchSize               int
-	s                       *requests.Store[*ReportRequest, ReportResponse]
+	s                       *requests.Store[*ReportRequest]
 	r                       CapabilityIface
 	config                  ocr3types.ReportingPluginConfig
 	outcomePruningThreshold uint64
 	lggr                    logger.Logger
 }
 
-func NewReportingPlugin(s *requests.Store[*ReportRequest, ReportResponse], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
+func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, batchSize int, config ocr3types.ReportingPluginConfig,
 	outcomePruningThreshold uint64, lggr logger.Logger) (*reportingPlugin, error) {
 	return &reportingPlugin{
 		s:                       s,

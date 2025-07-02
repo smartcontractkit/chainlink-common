@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751479646340,
+  "lastUpdate": 1751487328448,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17640,6 +17640,48 @@ window.BENCHMARK_DATA = {
             "value": 28592,
             "unit": "ns/op",
             "extra": "41995 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07178aa9534526233d34f11a7211b7cb6b45f36f",
+          "message": "Consensus capability API change to support both mode-switch and report-gen (#1320)",
+          "timestamp": "2025-07-02T14:13:10-06:00",
+          "tree_id": "43a49eb0f7e7b73baee960822697ba37e4de4208",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/07178aa9534526233d34f11a7211b7cb6b45f36f"
+        },
+        "date": 1751487327309,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.6,
+            "unit": "ns/op",
+            "extra": "3322035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.8,
+            "unit": "ns/op",
+            "extra": "2800374 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28582,
+            "unit": "ns/op",
+            "extra": "42236 times\n4 procs"
           }
         ]
       }

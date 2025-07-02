@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751457179856,
+  "lastUpdate": 1751463041532,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17430,6 +17430,48 @@ window.BENCHMARK_DATA = {
             "value": 28468,
             "unit": "ns/op",
             "extra": "42237 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bcb803f251d407e0d44a447be31000c5c6f4b777",
+          "message": "Update CRE SDK standard tests to make more realistic calls so that real SDKs can use them (#1317)",
+          "timestamp": "2025-07-02T14:29:27+01:00",
+          "tree_id": "32f0af31908f4e6b624ff4d4446826937363430c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bcb803f251d407e0d44a447be31000c5c6f4b777"
+        },
+        "date": 1751463040253,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 469.4,
+            "unit": "ns/op",
+            "extra": "2491471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 430.3,
+            "unit": "ns/op",
+            "extra": "2748583 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28589,
+            "unit": "ns/op",
+            "extra": "42151 times\n4 procs"
           }
         ]
       }

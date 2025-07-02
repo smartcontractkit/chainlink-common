@@ -25,6 +25,22 @@ func InstallProtocGenToDir(pkgName, sameVersion string) error {
 	return buildPlugin(pluginDir)
 }
 
+// InstallProtocGenFromThisMod installs the pkg plugin to .tools. It'll download it from the latest git commit of the current module.
+func InstallProtocGenFromThisMod(pkgName string) error {
+	pluginVersion, err := run("git", ".", "log", "-n", "1", "--pretty=format:%H")
+	if err != nil {
+		return fmt.Errorf("failed to get current commit hash: %w", err)
+	}
+
+	pluginVersion = strings.TrimSpace(pluginVersion)
+	pluginDir, err := downloadPlugin(pkgName, pluginVersion)
+	if err != nil {
+		return err
+	}
+
+	return buildPlugin(pluginDir)
+}
+
 func getVersion(of, dir string) (string, error) {
 	cmd := exec.Command("go", "list", "-m", "-f", "{{.Version}}", of)
 	cmd.Dir = dir

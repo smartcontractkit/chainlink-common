@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751403800818,
+  "lastUpdate": 1751451011714,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17346,6 +17346,48 @@ window.BENCHMARK_DATA = {
             "value": 28131,
             "unit": "ns/op",
             "extra": "42709 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "455da707ca1b946fe4b4f6e1c4d6f3355eff3df8",
+          "message": "Add messages for CRUDL operations (#1314)\n\n* Add messages for CRUDL operations\n\n* Add messages for CRUDL operations",
+          "timestamp": "2025-07-02T10:08:59Z",
+          "tree_id": "cef58b7ea5b06a91c848eb03cbdf51593e482b5f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/455da707ca1b946fe4b4f6e1c4d6f3355eff3df8"
+        },
+        "date": 1751451010621,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.5,
+            "unit": "ns/op",
+            "extra": "3405841 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.8,
+            "unit": "ns/op",
+            "extra": "2936966 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28096,
+            "unit": "ns/op",
+            "extra": "42484 times\n4 procs"
           }
         ]
       }

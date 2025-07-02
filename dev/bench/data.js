@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751463041532,
+  "lastUpdate": 1751466673184,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17472,6 +17472,48 @@ window.BENCHMARK_DATA = {
             "value": 28589,
             "unit": "ns/op",
             "extra": "42151 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f9ce5ef305d14b379fb0a03c836ed114cf2a5649",
+          "message": "Consensus for Lockable to a Block Methods (#1273)\n\n* Observations and outcome for block height for supported tags\n\n* Make ProtoToBigInt public\n\n* Protos for consensus reads\n\n* Generic list\n\n* Improve naming\n\n* added hash validation\n\n* added aggregatable request\n\n* added test for list & note that it's copy of container/list\n\n* extend protos\n\n* revert merge issues\n\n* proto gen\n\n* replicate safe conversion to v2/chaincapabilities\n\n* move read consensus types to a capabilities repo\n\n* rollback evm proto helpers\n\n* Decouple requests.Store from requests.Handler\n\n* fix allocation",
+          "timestamp": "2025-07-02T14:29:54Z",
+          "tree_id": "1fd4ed9c434c77d871a8cc61139236b47318c8e5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f9ce5ef305d14b379fb0a03c836ed114cf2a5649"
+        },
+        "date": 1751466671591,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.3,
+            "unit": "ns/op",
+            "extra": "3385888 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.9,
+            "unit": "ns/op",
+            "extra": "2881717 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28475,
+            "unit": "ns/op",
+            "extra": "42032 times\n4 procs"
           }
         ]
       }

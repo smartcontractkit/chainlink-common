@@ -9,8 +9,8 @@ import (
 
 type (
 	// Cloudevents types
-	CloudEvent          = ce.Event
-	CloudEventPb        = cepb.CloudEvent
+	CloudEvent   = ce.Event
+	CloudEventPb = cepb.CloudEvent
 
 	// Client
 	ChipIngressClient              = pb.ChipIngressClient

@@ -19,7 +19,7 @@ func main() {
 	errors := map[string]error{}
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".proto") {
-			if err = gen.Generate(entry.Name(), ""); err != nil {
+			if err = gen.GenerateFile(entry.Name(), ""); err != nil {
 				errors[entry.Name()] = err
 			}
 		}

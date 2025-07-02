@@ -2,10 +2,12 @@ package evm
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
-	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
+	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 )
 
 func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
@@ -241,8 +243,13 @@ func ConvertFilterFromProto(protoFilter *FilterQuery) (evmtypes.FilterQuery, err
 	if protoFilter == nil {
 		return evmtypes.FilterQuery{}, errEmptyFilter
 	}
+	hash, err := ConvertHashFromProto(protoFilter.GetBlockHash())
+	if err != nil {
+		return evmtypes.FilterQuery{}, err
+	}
+
 	return evmtypes.FilterQuery{
-		BlockHash: evmtypes.Hash(protoFilter.GetBlockHash()),
+		BlockHash: hash,
 		FromBlock: valuespb.NewIntFromBigInt(protoFilter.GetFromBlock()),
 		ToBlock:   valuespb.NewIntFromBigInt(protoFilter.GetToBlock()),
 		Addresses: ConvertAddressesFromProto(protoFilter.GetAddresses()),
@@ -303,4 +310,14 @@ func ConvertLogToProto(log *evmtypes.Log) *Log {
 		//TxIndex: log.TxIndex
 		Removed: log.Removed,
 	}
+}
+
+func ConvertHashFromProto(protoHash []byte) (evmtypes.Hash, error) {
+	if len(protoHash) == 0 {
+		return evmtypes.Hash{}, nil
+	}
+	if len(protoHash) != 32 {
+		return evmtypes.Hash{}, fmt.Errorf("invalid hash: got %d bytes, expected 32", len(protoHash))
+	}
+	return evmtypes.Hash(protoHash), nil
 }

@@ -112,12 +112,36 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 }
 
 // NewEvent creates a new CloudEvent with the specified domain, entity, and payload.
-func NewEvent(domain, entity string, payload []byte) (ce.Event, error) {
+func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (ce.Event, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)
 	event.SetID(uuid.New().String())
+
+	// Set optional attributes if provided
+	if attributes == nil {
+		attributes = make(map[string]any)
+	}
+
+	if val, ok := attributes["recordedtime"].(time.Time); ok {
+		event.SetExtension("recordedtime", val.UTC())
+	} else {
+		event.SetExtension("recordedtime", ce.Timestamp{Time: time.Now().UTC()})
+	}
+
+	if val, ok := attributes["time"].(time.Time); ok {
+		event.SetTime(val.UTC())
+	}
+	if val, ok := attributes["datacontenttype"].(string); ok {
+		event.SetDataContentType(val)
+	}
+	if val, ok := attributes["dataschema"].(string); ok {
+		event.SetDataSchema(val)
+	}
+	if val, ok := attributes["subject"].(string); ok {
+		event.SetSubject(val)
+	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
 	if err != nil {

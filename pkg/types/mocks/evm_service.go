@@ -324,6 +324,67 @@ func (_c *EVMService_FilterLogs_Call) RunAndReturn(run func(context.Context, evm
 	return _c
 }
 
+// GetForwarderForEOA provides a mock function with given fields: ctx, eoa, ocr2AggregatorID, pluginType
+func (_m *EVMService) GetForwarderForEOA(ctx context.Context, eoa [20]byte, ocr2AggregatorID [20]byte, pluginType string) ([20]byte, error) {
+	ret := _m.Called(ctx, eoa, ocr2AggregatorID, pluginType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetForwarderForEOA")
+	}
+
+	var r0 [20]byte
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, [20]byte, [20]byte, string) ([20]byte, error)); ok {
+		return rf(ctx, eoa, ocr2AggregatorID, pluginType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, [20]byte, [20]byte, string) [20]byte); ok {
+		r0 = rf(ctx, eoa, ocr2AggregatorID, pluginType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([20]byte)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, [20]byte, [20]byte, string) error); ok {
+		r1 = rf(ctx, eoa, ocr2AggregatorID, pluginType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_GetForwarderForEOA_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetForwarderForEOA'
+type EVMService_GetForwarderForEOA_Call struct {
+	*mock.Call
+}
+
+// GetForwarderForEOA is a helper method to define mock.On call
+//   - ctx context.Context
+//   - eoa [20]byte
+//   - ocr2AggregatorID [20]byte
+//   - pluginType string
+func (_e *EVMService_Expecter) GetForwarderForEOA(ctx interface{}, eoa interface{}, ocr2AggregatorID interface{}, pluginType interface{}) *EVMService_GetForwarderForEOA_Call {
+	return &EVMService_GetForwarderForEOA_Call{Call: _e.mock.On("GetForwarderForEOA", ctx, eoa, ocr2AggregatorID, pluginType)}
+}
+
+func (_c *EVMService_GetForwarderForEOA_Call) Run(run func(ctx context.Context, eoa [20]byte, ocr2AggregatorID [20]byte, pluginType string)) *EVMService_GetForwarderForEOA_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([20]byte), args[2].([20]byte), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *EVMService_GetForwarderForEOA_Call) Return(forwarder [20]byte, err error) *EVMService_GetForwarderForEOA_Call {
+	_c.Call.Return(forwarder, err)
+	return _c
+}
+
+func (_c *EVMService_GetForwarderForEOA_Call) RunAndReturn(run func(context.Context, [20]byte, [20]byte, string) ([20]byte, error)) *EVMService_GetForwarderForEOA_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTransactionByHash provides a mock function with given fields: ctx, hash
 func (_m *EVMService) GetTransactionByHash(ctx context.Context, hash [32]byte) (*evm.Transaction, error) {
 	ret := _m.Called(ctx, hash)

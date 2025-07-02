@@ -83,6 +83,10 @@ func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransa
 	return e.client.GetTransactionStatus(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
+func (e evmClient) GetForwarderForEOA(ctx context.Context, in *evmpb.GetForwarderForEOARequest, opts ...grpc.CallOption) (*evmpb.GetForwarderForEOAReply, error) {
+	return e.client.GetForwarderForEOA(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
 func (s *Server) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
 	evmService, err := s.getEVMService(ctx)
 	if err != nil {
@@ -342,6 +346,19 @@ func (s *Server) CalculateTransactionFee(ctx context.Context, request *evmpb.Cal
 	return &evmpb.CalculateTransactionFeeReply{
 		TransactionFee: valuespb.NewBigIntFromInt(fee.TransactionFee),
 	}, nil
+}
+
+func (s *Server) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	evmService, err := s.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	forwarder, err := evmService.GetForwarderForEOA(ctx, evm.Address(request.GetAddr()), evm.Address(request.GetAggr()), request.PluginType)
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
 }
 
 func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {

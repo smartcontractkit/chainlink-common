@@ -8,13 +8,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	evmprimitives "github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives/evm"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {

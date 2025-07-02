@@ -2594,9 +2594,9 @@ func (x *GetTransactionStatusReply) GetTransactionStatus() TransactionStatus {
 
 type GetForwarderForEOARequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`                               // eoa address in evm address [20]byte fix-sized array format
+	Addr          []byte                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`                               // eoa address in evm address [20]byte fix-sized array format. Required.
 	Aggr          []byte                 `protobuf:"bytes,2,opt,name=aggr,proto3" json:"aggr,omitempty"`                               // aggregator address in evm address [20]byte fix-sized array format. Can be empty; if set, forwarder is searched among ocr2 aggregators based on the plugin_type.
-	PluginType    string                 `protobuf:"bytes,3,opt,name=plugin_type,json=pluginType,proto3" json:"plugin_type,omitempty"` // type of plugin to be used when searching for a forwarder. Can be empty.
+	PluginType    string                 `protobuf:"bytes,3,opt,name=plugin_type,json=pluginType,proto3" json:"plugin_type,omitempty"` // type of plugin to be used when searching for a forwarder. Can be empty; suggested values to use - pkg/types.OCR2PluginType.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

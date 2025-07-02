@@ -278,6 +278,205 @@ func TestMerkleRoot(t *testing.T) {
 	})
 }
 
+func TestMessage_IsPseudoDeleted(t *testing.T) {
+	tests := []struct {
+		name     string
+		msg      Message
+		expected bool
+	}{
+		{
+			name: "all fields zero/empty",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: true,
+		},
+		{
+			name: "non-zero DestChainSelector",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   1,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-zero SourceChainSelector",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 1,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-empty OnRamp",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              []byte{1, 2, 3},
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-empty Receiver",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: []byte{1},
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-empty Sender",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   []byte{1},
+			},
+			expected: false,
+		},
+		{
+			name: "all fields non-zero/non-empty",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   1,
+					SourceChainSelector: 2,
+					OnRamp:              []byte{1, 2, 3},
+				},
+				Receiver: []byte{4, 5},
+				Sender:   []byte{6, 7},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.msg.IsPseudoDeleted()
+			if got != tc.expected {
+				t.Errorf("IsPseudoDeleted() = %v, want %v", got, tc.expected)
+			}
+		})
+	}
+}
+
+func TestSeqNum_IsWithinRanges(t *testing.T) {
+	tests := []struct {
+		name   string
+		seq    SeqNum
+		ranges []SeqNumRange
+		want   bool
+	}{
+		{
+			name:   "empty ranges",
+			seq:    5,
+			ranges: nil,
+			want:   false,
+		},
+		{
+			name:   "single range contains seq",
+			seq:    5,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 10)},
+			want:   true,
+		},
+		{
+			name:   "single range does not contain seq",
+			seq:    15,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 10)},
+			want:   false,
+		},
+		{
+			name:   "multiple ranges, one contains seq",
+			seq:    7,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5), NewSeqNumRange(6, 10)},
+			want:   true,
+		},
+		{
+			name:   "multiple ranges, none contain seq",
+			seq:    20,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5), NewSeqNumRange(6, 10)},
+			want:   false,
+		},
+		{
+			name:   "seq at start of range",
+			seq:    1,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5)},
+			want:   true,
+		},
+		{
+			name:   "seq at end of range",
+			seq:    5,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5)},
+			want:   true,
+		},
+		{
+			name:   "empty range, seq matches",
+			seq:    3,
+			ranges: []SeqNumRange{NewSeqNumRange(3, 3)},
+			want:   true,
+		},
+		{
+			name:   "empty range, seq does not match",
+			seq:    4,
+			ranges: []SeqNumRange{NewSeqNumRange(3, 3)},
+			want:   false,
+		},
+		{
+			name:   "multiple ranges, seq in last range",
+			seq:    15,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5), NewSeqNumRange(10, 20)},
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.seq.IsWithinRanges(tt.ranges)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestTokenPriceMap_ToSortedSlice(t *testing.T) {
+	m := TokenPriceMap{
+		UnknownEncodedAddress("b"): BigInt{big.NewInt(2)},
+		UnknownEncodedAddress("a"): BigInt{big.NewInt(1)},
+		UnknownEncodedAddress("c"): BigInt{big.NewInt(3)},
+	}
+	sorted := m.ToSortedSlice()
+	require.Equal(t, 3, len(sorted))
+	assert.Equal(t, UnknownEncodedAddress("a"), sorted[0].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("b"), sorted[1].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("c"), sorted[2].TokenID)
+}
+
 func mustNewBytes32(t *testing.T, s string) Bytes32 {
 	b32, err := NewBytes32FromString(s)
 	require.NoError(t, err)

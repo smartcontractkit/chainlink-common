@@ -168,3 +168,133 @@ func TestNewBytesFromString(t *testing.T) {
 		})
 	}
 }
+
+func TestBytes_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   []byte
+		want    Bytes
+		wantErr bool
+	}{
+		{
+			name:    "valid hex",
+			input:   []byte(`"0x20"`),
+			want:    Bytes{0x20},
+			wantErr: false,
+		},
+		{
+			name:    "valid long hex",
+			input:   []byte(`"0x201020"`),
+			want:    Bytes{0x20, 0x10, 0x20},
+			wantErr: false,
+		},
+		{
+			name:    "empty hex",
+			input:   []byte(`"0x"`),
+			want:    Bytes{},
+			wantErr: false,
+		},
+		{
+			name:    "missing quotes",
+			input:   []byte(`0x20`),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "no 0x prefix",
+			input:   []byte(`"20"`),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "invalid hex chars",
+			input:   []byte(`"0x2g"`),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "too short",
+			input:   []byte(`"0"`),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "empty string",
+			input:   []byte(`""`),
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var b Bytes
+			err := b.UnmarshalJSON(tc.input)
+			if tc.wantErr {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if !assert.ObjectsAreEqual(tc.want, b) {
+					t.Errorf("expected %v, got %v", tc.want, b)
+				}
+			}
+		})
+	}
+}
+
+func TestUnknownAddress_IsZeroOrEmpty(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    UnknownAddress
+		expected bool
+	}{
+		{
+			name:     "empty slice",
+			input:    UnknownAddress{},
+			expected: true,
+		},
+		{
+			name:     "all zero bytes",
+			input:    UnknownAddress{0, 0, 0},
+			expected: true,
+		},
+		{
+			name:     "non-zero byte at start",
+			input:    UnknownAddress{1, 0, 0},
+			expected: false,
+		},
+		{
+			name:     "non-zero byte in middle",
+			input:    UnknownAddress{0, 2, 0},
+			expected: false,
+		},
+		{
+			name:     "non-zero byte at end",
+			input:    UnknownAddress{0, 0, 3},
+			expected: false,
+		},
+		{
+			name:     "single non-zero byte",
+			input:    UnknownAddress{4},
+			expected: false,
+		},
+		{
+			name:     "single zero byte",
+			input:    UnknownAddress{0},
+			expected: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.input.IsZeroOrEmpty()
+			if result != tc.expected {
+				t.Errorf("IsZeroOrEmpty() = %v, want %v", result, tc.expected)
+			}
+		})
+	}
+}

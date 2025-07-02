@@ -35,10 +35,10 @@ type client struct {
 }
 
 // Opt defines a function type for configuring the ChipIngressClient.
-type Opt func(*chipIngressClientConfig)
+type Opt func(*clientConfig)
 
-// chipIngressClientConfig is the configuration for the ChipIngressClient.
-type chipIngressClientConfig struct {
+// clientConfig is the configuration for the ChipIngressClient.
+type clientConfig struct {
 	transportCredentials credentials.TransportCredentials
 	perRPCCredentials    credentials.PerRPCCredentials
 	headerProvider       HeaderProvider
@@ -46,8 +46,8 @@ type chipIngressClientConfig struct {
 	host                 string
 }
 
-func newChipIngressConfig(host string) *chipIngressClientConfig {
-	cfg := &chipIngressClientConfig{
+func newClientConfig(host string) *clientConfig {
+	cfg := &clientConfig{
 		headerProvider:    nil,
 		perRPCCredentials: nil,
 		host:              host,
@@ -56,14 +56,14 @@ func newChipIngressConfig(host string) *chipIngressClientConfig {
 	return cfg
 }
 
-// NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
-func NewChipIngressClient(address string, opts ...Opt) (Client, error) {
+// NewClient creates a new client for the Chip Ingress service with optional configuration.
+func NewClient(address string, opts ...Opt) (Client, error) {
 	// Validate address
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, fmt.Errorf("invalid address format: %v", err)
 	}
-	cfg := newChipIngressConfig(host)
+	cfg := newClientConfig(host)
 
 	// Apply configuration options
 	for _, opt := range opts {
@@ -113,7 +113,7 @@ func (c *client) Close() error {
 // WithBasicAuth sets the basic-auth credentials for the ChipIngress service.
 // Default is to require TLS for security.
 func WithBasicAuth(user, pass string) Opt {
-	return func(c *chipIngressClientConfig) {
+	return func(c *clientConfig) {
 		requireTLS := !c.insecureConnection
 		c.perRPCCredentials = newBasicAuthCredentials(user, pass, requireTLS)
 	}
@@ -122,7 +122,7 @@ func WithBasicAuth(user, pass string) Opt {
 // WithTokenAuth sets the token-based credentials for the ChipIngress service.
 // Use for CSA-Key based authentication.
 func WithTokenAuth(tokenProvider HeaderProvider) Opt {
-	return func(c *chipIngressClientConfig) {
+	return func(c *clientConfig) {
 		requireTLS := !c.insecureConnection
 		c.perRPCCredentials = newTokenAuthCredentials(tokenProvider, requireTLS)
 	}
@@ -130,18 +130,18 @@ func WithTokenAuth(tokenProvider HeaderProvider) Opt {
 
 // WithTransportCredentials sets the transport custom credentials for the ChipIngress service.
 func WithTransportCredentials(creds credentials.TransportCredentials) Opt {
-	return func(c *chipIngressClientConfig) { c.transportCredentials = creds }
+	return func(c *clientConfig) { c.transportCredentials = creds }
 }
 
 // WithHeaderProvider sets a dynamic header provider for requests
 // NOTE: for CSA-Key based authentication, use WithTokenAuth instead.
 func WithHeaderProvider(provider HeaderProvider) Opt {
-	return func(c *chipIngressClientConfig) { c.headerProvider = provider }
+	return func(c *clientConfig) { c.headerProvider = provider }
 }
 
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).
 func WithInsecureConnection() Opt {
-	return func(config *chipIngressClientConfig) {
+	return func(config *clientConfig) {
 		config.insecureConnection = true
 		config.transportCredentials = insecure.NewCredentials() // Use insecure credentials
 	}
@@ -149,7 +149,7 @@ func WithInsecureConnection() Opt {
 
 // Add a new option function for TLS with HTTP/2
 func WithTLS() Opt {
-	return func(config *chipIngressClientConfig) {
+	return func(config *clientConfig) {
 		config.insecureConnection = false
 		tlsCfg := &tls.Config{
 			ServerName: config.host,    // must match your server's host (SNI + cert SAN)

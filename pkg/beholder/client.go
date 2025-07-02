@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -233,7 +231,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			chipIngressOpts = append(chipIngressOpts, chipingress.WithTokenAuth(headerProvider))
 		}
 
-		chipIngressClient, err := chipingress.NewChipIngressClient(
+		chipIngressClient, err := chipingress.NewClient(
 			cfg.ChipIngressEmitterGRPCEndpoint,
 			chipIngressOpts...,
 		)
@@ -417,12 +415,4 @@ func newMeterProvider(config Config, resource *sdkresource.Resource, creds crede
 		sdkmetric.WithView(config.MetricViews...),
 	)
 	return mp, nil
-}
-
-func getHost(address string) (string, error) {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return "", err
-	}
-	return host, nil
 }

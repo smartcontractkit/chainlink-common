@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	defaultCfg = chipIngressClientConfig{
+	defaultCfg = clientConfig{
 		transportCredentials: insecure.NewCredentials(),
 		insecureConnection:   true, // Default to insecure connection
 		host:                 "localhost",
@@ -31,27 +31,27 @@ func TestClient(t *testing.T) {
 
 	t.Run("NewClient", func(t *testing.T) {
 		// Create new client
-		client, err := NewChipIngressClient("localhost:8080",
+		client, err := NewClient("localhost:8080",
 			WithTransportCredentials(insecure.NewCredentials()))
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 	})
 
 	t.Run("NewClient errors when address is empty", func(t *testing.T) {
-		client, err := NewChipIngressClient("")
+		client, err := NewClient("")
 		assert.Nil(t, client)
 		assert.ErrorContains(t, err, "invalid address format: missing port in address")
 	})
 
 	t.Run("invalid address format", func(t *testing.T) {
 		// Address without port will cause net.SplitHostPort to fail
-		client, err := NewChipIngressClient("invalid-address-format")
+		client, err := NewClient("invalid-address-format")
 		assert.Nil(t, client)
 		assert.ErrorContains(t, err, "missing port in address")
 	})
 
 	t.Run("valid address with port", func(t *testing.T) {
-		client, err := NewChipIngressClient("localhost:8080")
+		client, err := NewClient("localhost:8080")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 	})
@@ -604,10 +604,10 @@ func TestWithInsecureConnection(t *testing.T) {
 	assert.Equal(t, insecure.NewCredentials(), config.transportCredentials)
 }
 
-func TestNewChipIngressClientWithTLS(t *testing.T) {
+func TestNewClientWithTLS(t *testing.T) {
 	// This test verifies the option is applied, but doesn't test actual connection
 	// since we'd need a real gRPC server for that
-	client, err := NewChipIngressClient(
+	client, err := NewClient(
 		"example.com:443",
 		WithTLS(),
 	)

@@ -42,6 +42,8 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 			continue
 		}
 
+		// Nodes behind on multiple requests may wait one OCR round per request.
+		// Caching future times locally could be added as an optimization.
 		if len(donTimes.Timestamps) > request.SeqNum {
 			donTime := donTimes.Timestamps[request.SeqNum]
 			t.store.requests.Evict(executionID) // Make space for next request before delivering

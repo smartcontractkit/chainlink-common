@@ -21,7 +21,8 @@ service EVM{
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
-  rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply); 
+  rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply);
+  rpc GetForwarderForEOA(GetForwarderForEOARequest) returns (GetForwarderForEOAReply);
 }
 
 // represents simplified evm-style CallMsg
@@ -295,3 +296,12 @@ message GetTransactionStatusReply {
   TransactionStatus transaction_status = 1;
 }
 
+message GetForwarderForEOARequest {
+  bytes addr = 1; // eoa address in evm address [20]byte fix-sized array format. Required.
+  bytes aggr = 2; // aggregator address in evm address [20]byte fix-sized array format. Can be empty; if set, forwarder is searched among ocr2 aggregators based on the plugin_type.
+  string plugin_type = 3; // type of plugin to be used when searching for a forwarder. Can be empty; suggested values to use - pkg/types.OCR2PluginType.
+}
+
+message GetForwarderForEOAReply {
+  bytes addr = 1; // forwarder address in evm address [20]byte fix-sized array format.
+}

@@ -133,7 +133,8 @@ func TestSingleAccountSigner_Sign(t *testing.T) {
 func TestSingleAccountSigner_Integration(t *testing.T) {
 	t.Run("real ed25519 keys integration", func(t *testing.T) {
 		privKey := ed25519.NewKeyFromSeed([]byte("test_seed_that_is_32_bytes_long!"))
-		singleSigner, _ := core.NewSingleAccountSigner("key1", privKey)
+		singleSigner, err := core.NewSingleAccountSigner("key1", privKey)
+		require.NoError(t, err)
 
 		ctx := context.Background()
 		testData := []byte("integration test data")

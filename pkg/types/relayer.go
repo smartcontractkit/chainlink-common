@@ -269,6 +269,10 @@ func (u *UnimplementedRelayer) EVM() (EVMService, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
 }
 
+func (u *UnimplementedRelayer) TON() (TONService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
+}
+
 func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
 }

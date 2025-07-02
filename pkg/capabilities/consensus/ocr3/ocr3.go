@@ -32,7 +32,7 @@ type Config struct {
 	EncoderFactory    types.EncoderFactory
 	SendBufferSize    int
 
-	store      *requests.Store[*ReportRequest, ReportResponse]
+	store      *requests.Store[*ReportRequest]
 	capability *capability
 	clock      clockwork.Clock
 }

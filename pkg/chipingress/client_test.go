@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -61,8 +63,15 @@ func TestNewEvent(t *testing.T) {
 	// Create new event
 	testProto := pb.PingResponse{Message: "testing"}
 	protoBytes, err := proto.Marshal(&testProto)
+	attributes := map[string]any{
+		"datacontenttype": "application/protobuf",
+		"dataschema":      "https://example.com/schema",
+		"subject":         "example-subject",
+		"time":            time.Now(),
+	}
 	assert.NoError(t, err)
-	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes, nil)
+
+	event, err := NewEvent("some-domain_here", "platform.on_chain.forwarder.ReportProcessed", protoBytes, attributes)
 	assert.NoError(t, err)
 
 	// There should be no validation errors
@@ -73,6 +82,13 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, "some-domain_here", event.Source())
 	assert.Equal(t, "platform.on_chain.forwarder.ReportProcessed", event.Type())
 	assert.NotEmpty(t, event.ID())
+	assert.Equal(t, "application/protobuf", event.DataContentType())
+	assert.Equal(t, "https://example.com/schema", event.DataSchema())
+	assert.Equal(t, "example-subject", event.Subject())
+	assert.Equal(t, attributes["time"].(time.Time).UTC(), event.Time())
+	assert.NotEmpty(t, event.Extensions()["recordedtime"])
+	assert.NotEmpty(t, event.Extensions()["recordedtime"])
+	assert.True(t, event.Extensions()["recordedtime"].(ce.Timestamp).Time.After(attributes["time"].(time.Time)))
 
 	// Assert the event data was set as expected
 	var resultProto pb.PingResponse

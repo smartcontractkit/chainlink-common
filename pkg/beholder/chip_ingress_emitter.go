@@ -26,17 +26,17 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 	if err != nil {
 		return err
 	}
-	
+
 	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
 	if err != nil {
 		return err
 	}
-	
+
 	eventPb, err := chipingress.EventToProto(event)
 	if err != nil {
 		return fmt.Errorf("failed to convert event to proto: %w", err)
 	}
-	
+
 	_, err = c.client.Publish(ctx, eventPb)
 	if err != nil {
 		return err
@@ -77,4 +77,15 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 	}
 
 	return sourceDomain, entityType, nil
+}
+
+func ExtractAttributes(attrKVs ...any) map[string]any {
+	attributes := newAttributes(attrKVs...)
+
+	attributesMap := make(map[string]any)
+	for key, value := range attributes {
+		attributesMap[key] = value
+	}
+
+	return attributesMap
 }

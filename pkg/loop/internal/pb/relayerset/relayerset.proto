@@ -9,7 +9,6 @@ import "loop/internal/pb/contract_reader.proto";
 import "loop/internal/pb/contract_writer.proto";
 import "loop/internal/pb/relayer.proto";
 import "chains/evm/evm.proto";
-import "chains/ton/ton.proto";
 
 message RelayerId {
   string network = 1;

@@ -19,6 +19,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
+	tontypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 	mocks2 "github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
@@ -484,6 +486,170 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 	}
 }
 
+func Test_RelayerSet_TONService(t *testing.T) {
+	ctx := t.Context()
+	stopCh := make(chan struct{})
+	log := logger.Test(t)
+
+	relayer1 := mocks.NewRelayer(t)
+	relayers := map[types.RelayID]core.Relayer{
+		{Network: "N1", ChainID: "C1"}: relayer1,
+	}
+
+	pluginName := "ton-relayerset-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRelaySetPlugin{
+				log:  log,
+				impl: &TestRelayerSet{relayers: relayers},
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: log,
+					},
+				},
+			},
+		},
+	)
+	defer client.Close()
+	defer server.Stop()
+
+	relayerSetClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+	rc, ok := relayerSetClient.(*Client)
+	require.True(t, ok)
+
+	retrievedRelayer, err := rc.Get(ctx, types.RelayID{Network: "N1", ChainID: "C1"})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService)
+	}{
+		{
+			name: "GetMasterchainInfo",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				blockIDExt := &tontypes.BlockIDExt{
+					Workchain: 0,
+					Shard:     123,
+					SeqNo:     1,
+				}
+				mockTON.EXPECT().GetMasterchainInfo(mock.Anything).Return(blockIDExt, nil)
+				out, err := ton.GetMasterchainInfo(ctx)
+				require.NoError(t, err)
+				require.Equal(t, blockIDExt, out)
+			},
+		},
+		{
+			name: "GetBlockData",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				blockIDExt := &tontypes.BlockIDExt{Workchain: 0, Shard: 1, SeqNo: 100}
+				block := &tontypes.Block{GlobalID: -217}
+				mockTON.EXPECT().GetBlockData(mock.Anything, blockIDExt).Return(block, nil)
+				out, err := ton.GetBlockData(ctx, blockIDExt)
+				require.NoError(t, err)
+				require.Equal(t, block, out)
+			},
+		},
+		{
+			name: "GetAccountBalance",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				addr := "0:abc123"
+				blockID := &tontypes.BlockIDExt{Workchain: 0, Shard: 1, SeqNo: 100}
+				balance := &tontypes.Balance{}
+				mockTON.EXPECT().GetAccountBalance(mock.Anything, addr, blockID).Return(balance, nil)
+				out, err := ton.GetAccountBalance(ctx, addr, blockID)
+				require.NoError(t, err)
+				require.Equal(t, balance, out)
+			},
+		},
+		{
+			name: "SendTx",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				addr := "0:abc123"
+				body := []byte("body")
+				stateInit := []byte("state-init")
+				msg := tontypes.Message{
+					Mode:       1,
+					ToAddress:  addr,
+					AmountNano: "1.0",
+					Bounce:     false,
+					Body:       body,
+					StateInit:  stateInit,
+				}
+				mockTON.EXPECT().SendTx(mock.Anything, msg).Return(nil)
+				err := ton.SendTx(ctx, msg)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "GetTxStatus",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				lt := uint64(123456)
+				status := types.Finalized
+				exitCode := tontypes.ExitCode(0)
+				mockTON.EXPECT().GetTxStatus(mock.Anything, lt).Return(status, exitCode, nil)
+				s, c, err := ton.GetTxStatus(ctx, lt)
+				require.NoError(t, err)
+				require.Equal(t, status, s)
+				require.Equal(t, exitCode, c)
+			},
+		},
+		{
+			name: "GetTxExecutionFees",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				lt := uint64(123456)
+				fees := &tontypes.TransactionFee{TransactionFee: big.NewInt(100)}
+				mockTON.EXPECT().GetTxExecutionFees(mock.Anything, lt).Return(fees, nil)
+				out, err := ton.GetTxExecutionFees(ctx, lt)
+				require.NoError(t, err)
+				require.Equal(t, fees, out)
+			},
+		},
+		{
+			name: "HasFilter",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				filterName := "myFilter"
+				mockTON.EXPECT().HasFilter(mock.Anything, filterName).Return(true)
+				ok := ton.HasFilter(ctx, filterName)
+				require.True(t, ok)
+			},
+		},
+		{
+			name: "RegisterFilter",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				filter := tontypes.LPFilterQuery{Name: "filter1"}
+				mockTON.EXPECT().RegisterFilter(mock.Anything, filter).Return(nil)
+				err := ton.RegisterFilter(ctx, filter)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "UnregisterFilter",
+			run: func(t *testing.T, ton types.TONService, mockTON *mocks2.TONService) {
+				filterName := "filter1"
+				mockTON.EXPECT().UnregisterFilter(mock.Anything, filterName).Return(nil)
+				err := ton.UnregisterFilter(ctx, filterName)
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mockTON := mocks2.NewTONService(t)
+			relayer1.On("TON", mock.Anything, mock.Anything).Return(mockTON, nil).Once()
+
+			fetchedTON, err := retrievedRelayer.TON()
+			require.NoError(t, err)
+
+			tc.run(t, fetchedTON, mockTON)
+		})
+	}
+}
+
 type TestContractReader struct {
 	types.UnimplementedContractReader
 	mockedContractReader *mocks2.ContractReader
@@ -601,6 +767,48 @@ func (t TestEVM) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID e
 }
 
 var _ types.EVMService = (*TestEVM)(nil)
+
+type TestTON struct {
+	mockedTONService *mocks2.TONService
+}
+
+func (t *TestTON) GetMasterchainInfo(ctx context.Context) (*tontypes.BlockIDExt, error) {
+	return t.mockedTONService.GetMasterchainInfo(ctx)
+}
+
+func (t *TestTON) GetBlockData(ctx context.Context, block *tontypes.BlockIDExt) (*tontypes.Block, error) {
+	return t.mockedTONService.GetBlockData(ctx, block)
+}
+
+func (t *TestTON) GetAccountBalance(ctx context.Context, address string, block *tontypes.BlockIDExt) (*tontypes.Balance, error) {
+	return t.mockedTONService.GetAccountBalance(ctx, address, block)
+}
+
+func (t *TestTON) SendTx(ctx context.Context, msg ton.Message) error {
+	return t.mockedTONService.SendTx(ctx, msg)
+}
+
+func (t *TestTON) GetTxStatus(ctx context.Context, lt uint64) (types.TransactionStatus, ton.ExitCode, error) {
+	return t.mockedTONService.GetTxStatus(ctx, lt)
+}
+
+func (t *TestTON) GetTxExecutionFees(ctx context.Context, lt uint64) (*ton.TransactionFee, error) {
+	return t.mockedTONService.GetTxExecutionFees(ctx, lt)
+}
+
+func (t *TestTON) HasFilter(ctx context.Context, name string) bool {
+	return t.mockedTONService.HasFilter(ctx, name)
+}
+
+func (t *TestTON) RegisterFilter(ctx context.Context, filter ton.LPFilterQuery) error {
+	return t.mockedTONService.RegisterFilter(ctx, filter)
+}
+
+func (t *TestTON) UnregisterFilter(ctx context.Context, name string) error {
+	return t.mockedTONService.UnregisterFilter(ctx, name)
+}
+
+var _ types.TONService = (*TestTON)(nil)
 
 type TestRelayerSet struct {
 	relayers map[types.RelayID]core.Relayer

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751451011714,
+  "lastUpdate": 1751457179856,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17388,6 +17388,48 @@ window.BENCHMARK_DATA = {
             "value": 28096,
             "unit": "ns/op",
             "extra": "42484 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "93959a95eba4a3477f82c5e1c363432a4fa32419",
+          "message": "[CRE-494] Expose GetForwarderForEOA* methods. (#1271)",
+          "timestamp": "2025-07-02T13:51:40+02:00",
+          "tree_id": "8815c8eb3f667a4a6e8b93099c7622525261c4a8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/93959a95eba4a3477f82c5e1c363432a4fa32419"
+        },
+        "date": 1751457178250,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358,
+            "unit": "ns/op",
+            "extra": "3337725 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.9,
+            "unit": "ns/op",
+            "extra": "2896960 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28468,
+            "unit": "ns/op",
+            "extra": "42237 times\n4 procs"
           }
         ]
       }

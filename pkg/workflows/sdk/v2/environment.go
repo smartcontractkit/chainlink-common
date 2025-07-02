@@ -17,7 +17,15 @@ type SecretsProvider interface {
 	GetSecret(*sdkpb.SecretRequest) Promise[*sdkpb.Secret]
 }
 
+type ReportGenerator interface {
+	GenerateReport(
+		encodedPayload []byte,
+		encoderName, signingAlgo, hashingAlgo string,
+	) Promise[*sdkpb.ConsensusOutputs]
+}
+
 type Environment[C any] struct {
 	NodeEnvironment[C]
 	SecretsProvider
+	ReportGenerator
 }

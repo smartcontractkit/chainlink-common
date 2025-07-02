@@ -1,6 +1,7 @@
 package sdkimpl
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -43,9 +44,11 @@ type RuntimeBase struct {
 	nextCallId int32
 }
 
-var _ sdk.RuntimeBase = (*RuntimeBase)(nil)
-var _ rand.Source = (*RuntimeBase)(nil)
-var _ rand.Source64 = (*RuntimeBase)(nil)
+var (
+	_ sdk.RuntimeBase = (*RuntimeBase)(nil)
+	_ rand.Source     = (*RuntimeBase)(nil)
+	_ rand.Source64   = (*RuntimeBase)(nil)
+)
 
 func (r *RuntimeBase) CallCapability(request *pb.CapabilityRequest) sdk.Promise[*pb.CapabilityResponse] {
 	if r.Mode == pb.Mode_MODE_DON {
@@ -166,6 +169,33 @@ func (d *Runtime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleC
 			return nil, fmt.Errorf("missing payload in consensus response")
 		}
 		return values.FromProto(payload)
+	})
+}
+
+func (d *Runtime) GenerateReport(
+	encodedPayload []byte,
+	encoderName, signingAlgo, hashingAlgo string,
+) sdk.Promise[*pb.ConsensusOutputs] {
+	d.nextCallId++ // Question: do I increment here?
+
+	observation := &pb.SimpleConsensusInputs{
+		Observation: &pb.SimpleConsensusInputs_Value{
+			Value: &valuespb.Value{
+				Value: &valuespb.Value_BytesValue{
+					BytesValue: encodedPayload,
+				},
+			},
+		},
+		Descriptors: &pb.ConsensusDescriptor{
+			EncoderName: encoderName,
+			SigningAlgo: signingAlgo,
+			HashingAlgo: hashingAlgo,
+		},
+	}
+	c := &consensus.Consensus{}
+
+	return sdk.Then(c.Simple(d, observation), func(result *pb.ConsensusOutputs) (*pb.ConsensusOutputs, error) {
+		return result, errors.New("not implemented")
 	})
 }
 

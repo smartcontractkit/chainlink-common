@@ -27,8 +27,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var anyTrigger = &basictrigger.Outputs{CoolOutput: "cool"}
-var anyConfig = &basictrigger.Config{Name: "name", Number: 123}
+var (
+	anyTrigger = &basictrigger.Outputs{CoolOutput: "cool"}
+	anyConfig  = &basictrigger.Config{Name: "name", Number: 123}
+)
 
 func TestRuntime_CallCapability(t *testing.T) {
 	t.Run("runs async", func(t *testing.T) {
@@ -315,6 +317,21 @@ func TestRuntime_ReturnsConfig(t *testing.T) {
 	assert.Equal(t, anyConfig, result)
 }
 
+func TestRuntime_GenerateReport(t *testing.T) {
+	var (
+		encodedPayload                        []byte
+		encoderName, signingAlgo, hashingAlgo string
+	)
+	test := func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (*pb.ConsensusOutputs, error) {
+		output, err := env.GenerateReport(encodedPayload, encoderName, signingAlgo, hashingAlgo).Await()
+		return output, err
+	}
+
+	ran, _, err := testRuntime(t, test)
+	assert.True(t, ran, "Failed to run test runtime")
+	require.ErrorContains(t, err, "not implemented")
+}
+
 func testRuntime[T any](t *testing.T, testFn func(env *sdk.Environment[string], rt sdk.Runtime, _ *basictrigger.Outputs) (T, error)) (bool, any, error) {
 	trigger, err := basictriggermock.NewBasicCapability(t)
 	require.NoError(t, err)
@@ -323,7 +340,7 @@ func testRuntime[T any](t *testing.T, testFn func(env *sdk.Environment[string], 
 		return anyTrigger, nil
 	}
 
-	runner := testutils.NewRunner[string](t, "unused")
+	runner := testutils.NewRunner(t, "unused")
 	require.NoError(t, err)
 
 	runner.Run(func(workflowContext *sdk.Environment[string]) (sdk.Workflow[string], error) {

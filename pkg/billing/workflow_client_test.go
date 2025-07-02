@@ -224,7 +224,6 @@ func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 	req := MockRequest{Field: "test request"}
 	expectedToken := "mock.jwt.token"
 
-	// Set expectations - client should call JWT manager
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Once()
 
 	wc := &workflowClient{
@@ -232,7 +231,6 @@ func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 		jwtManager: mockJWT,
 	}
 
-	// Test that client calls JWT manager and adds token to header
 	ctx := context.Background()
 	newCtx, err := wc.addJWTAuth(ctx, req)
 	require.NoError(t, err)
@@ -253,12 +251,12 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 	req := MockRequest{Field: "test"}
 	wc := &workflowClient{
 		logger: logger.Test(t),
-		// jwtManager is nil
+		jwtManager: nil,
 	}
 	newCtx, err := wc.addJWTAuth(ctx, req)
 	require.NoError(t, err)
 
-	// Should return the same context since no JWT manager is provided
+	// Should return the same context
 	assert.Equal(t, ctx, newCtx)
 }
 
@@ -267,7 +265,6 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 	mockJWT := mocks.NewJWTManager(t)
 	req := MockRequest{Field: "test"}
 
-	// Set expectation for error
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", fmt.Errorf("mock JWT creation error")).Once()
 
 	wc := &workflowClient{
@@ -286,7 +283,7 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 	req := MockRequest{Field: "repeatable"}
 	expectedToken := "consistent.jwt.token"
 
-	// Expect the same call twice - client should call JWT manager each time
+	// Expect the same call twice 
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Times(2)
 
 	wc := &workflowClient{

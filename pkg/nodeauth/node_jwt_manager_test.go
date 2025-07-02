@@ -58,7 +58,7 @@ func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, jwtToken)
 
-	// verify the JWT token structure
+	// verify expected values
 	token, _, err := new(jwt.Parser).ParseUnverified(jwtToken, &NodeJWTClaims{})
 	require.NoError(t, err)
 
@@ -66,7 +66,6 @@ func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, "workflowDON", claims.Issuer)
 
-	// verify expected values
 	expectedP2PIdHex := hex.EncodeToString(p2pId[:])
 	expectedPublicKeyHex := hex.EncodeToString(publicKey[:])
 
@@ -101,11 +100,9 @@ func TestNodeJWTManager_DigestTampering(t *testing.T) {
 
 	mockSig.EXPECT().Sign(mock.AnythingOfType("[]uint8")).Return([]byte("mock-signature"), nil).Maybe()
 
-	// Create JWT for original request
+	// Create JWT for original and altered request
 	jwtToken, err := jwtManager.CreateJWTForRequest(req)
 	require.NoError(t, err)
-
-	// Create digest for altered request
 	reqAltered := mockRequest{Field: "tampered"}
 	digestAltered := jwtManager.DigestFromRequest(reqAltered)
 
@@ -137,7 +134,6 @@ func TestNodeJWTManager_SigningError(t *testing.T) {
 
 	req := mockRequest{Field: "test request"}
 
-	// Set up mock to return error
 	mockSig.EXPECT().Sign(mock.AnythingOfType("[]uint8")).Return(nil, fmt.Errorf("mock signing error")).Maybe()
 
 	_, err := jwtManager.CreateJWTForRequest(req)

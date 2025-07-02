@@ -218,9 +218,9 @@ type SourceAccessor interface {
 }
 
 type RMNAccessor interface {
-	// GetRmnCurseInfo returns rmn curse/pausing information about the provided chains
+	// GetRMNCurseInfo returns rmn curse/pausing information about the provided chains
 	// from the destination chain RMN remote contract. Caller should be able to access destination.
-	GetRmnCurseInfo(ctx context.Context) (CurseInfo, error)
+	GetRMNCurseInfo(ctx context.Context) (CurseInfo, error)
 }
 
 ////////////////////////////////////////////////////////////////

@@ -24,6 +24,16 @@ type HeaderProvider interface {
 	GetHeaders() map[string]string
 }
 
+type Client interface {
+	pb.ChipIngressClient
+	Close() error
+}
+
+type client struct {
+	client pb.ChipIngressClient
+	conn   *grpc.ClientConn
+}
+
 // Opt defines a function type for configuring the ChipIngressClient.
 type Opt func(*chipIngressClientConfig)
 
@@ -47,7 +57,7 @@ func newChipIngressConfig(host string) *chipIngressClientConfig {
 }
 
 // NewChipIngressClient creates a new client for the Chip Ingress service with optional configuration.
-func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error) {
+func NewChipIngressClient(address string, opts ...Opt) (Client, error) {
 	// Validate address
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
@@ -76,7 +86,28 @@ func NewChipIngressClient(address string, opts ...Opt) (ChipIngressClient, error
 	if err != nil {
 		return nil, err
 	}
-	return pb.NewChipIngressClient(conn), nil
+	return &client{pb.NewChipIngressClient(conn), conn}, nil
+}
+
+func (c *client) Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	return c.client.Ping(ctx, in, opts...)
+}
+
+func (c *client) Publish(ctx context.Context, in *CloudEventPb, opts ...grpc.CallOption) (*PublishResponse, error) {
+	return c.client.Publish(ctx, in, opts...)
+}
+
+func (c *client) PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error) {
+	return c.client.PublishBatch(ctx, in, opts...)
+}
+
+// StreamEvents - Experimental, this API is subject to change.
+func (c *client) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error) {
+	return c.client.StreamEvents(ctx, opts...)
+}
+
+func (c *client) Close() error {
+	return c.conn.Close()
 }
 
 // WithBasicAuth sets the basic-auth credentials for the ChipIngress service.

@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	ch "github.com/smartcontractkit/chainlink-common/pkg/chipingress"
-	chpb "github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type ChipIngressEmitter struct {
-	client chpb.ChipIngressClient
+	client chipingress.Client
 }
 
-func NewChipIngressEmitter(client chpb.ChipIngressClient) (Emitter, error) {
+func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
@@ -27,15 +26,17 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 	if err != nil {
 		return err
 	}
-
-	event, err := ch.NewEvent(sourceDomain, entityType, body, nil)
+	
+	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
 	if err != nil {
 		return err
 	}
-	eventPb, err := ch.EventToProto(event)
+	
+	eventPb, err := chipingress.EventToProto(event)
 	if err != nil {
 		return fmt.Errorf("failed to convert event to proto: %w", err)
 	}
+	
 	_, err = c.client.Publish(ctx, eventPb)
 	if err != nil {
 		return err

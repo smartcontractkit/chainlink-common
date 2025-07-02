@@ -164,7 +164,7 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 	e.mode = sdkpb.Mode(mode)
 }
 
-func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+func (e *execution[T]) clockGetTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
 	var donTime time.Time
 	switch e.mode {
 	case sdkpb.Mode_MODE_DON:
@@ -184,4 +184,76 @@ func (e *execution[T]) getTime(caller *wasmtime.Caller, resultTimestamp int32) i
 	binary.LittleEndian.PutUint64(trg, uint64(donTime.UnixNano()))
 	wasmWrite(caller, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
+}
+
+func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) (*wasmtime.Trap, int32) {
+	if nsubscriptions == 0 {
+		return nil, ErrnoInval
+	}
+
+	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
+	if err != nil {
+		return nil, ErrnoFault
+	}
+
+	events := make([]byte, nsubscriptions*eventsLen)
+	timeout := time.Duration(0)
+
+	for i := int32(0); i < nsubscriptions; i++ {
+		inOffset := i * subscriptionLen
+		userData := subs[inOffset : inOffset+8]
+		eventType := subs[inOffset+8]
+		argBuf := subs[inOffset+8+8:]
+
+		slot, err := getSlot(events, i)
+		if err != nil {
+			return nil, ErrnoFault
+		}
+
+		switch eventType {
+		case eventTypeClock:
+			newTimeout := binary.LittleEndian.Uint64(argBuf[8:16])
+			flag := binary.LittleEndian.Uint16(argBuf[24:32])
+
+			var errno Errno
+			switch flag {
+			case 0: // relative
+				errno = ErrnoSuccess
+				if timeout < time.Duration(newTimeout) {
+					timeout = time.Duration(newTimeout)
+				}
+			default:
+				errno = ErrnoNotsup
+			}
+			writeEvent(slot, userData, errno, eventTypeClock)
+
+		case eventTypeFDRead, eventTypeFDWrite:
+			writeEvent(slot, userData, ErrnoBadf, int(eventType))
+
+		default:
+			writeEvent(slot, userData, ErrnoInval, int(eventType))
+		}
+	}
+
+	if timeout > 0 {
+		select {
+		case <-time.After(timeout):
+		case <-e.ctx.Done():
+			return wasmtime.NewTrap("execution timeout"), 0
+		}
+	}
+
+	// Write number of events
+	uint32Size := int32(4)
+	rne := make([]byte, uint32Size)
+	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))
+
+	if wasmWrite(caller, rne, resultNevents, uint32Size) == -1 {
+		return nil, ErrnoFault
+	}
+	if wasmWrite(caller, events, eventsptr, nsubscriptions*eventsLen) == -1 {
+		return nil, ErrnoFault
+	}
+
+	return nil, ErrnoSuccess
 }

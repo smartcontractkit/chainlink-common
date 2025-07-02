@@ -11,7 +11,7 @@ import (
 var DefaultRequestTimeout = 20 * time.Minute
 
 type Store struct {
-	requests       *consensusRequests.Store[*Request, Response]
+	requests       *consensusRequests.Store[*Request]
 	requestTimeout time.Duration
 
 	// donTimes holds ordered sequence timestamps generated for consecutive workflow requests
@@ -23,7 +23,7 @@ type Store struct {
 
 func NewStore(requestTimeout time.Duration) *Store {
 	return &Store{
-		requests:            consensusRequests.NewStore[*Request, Response](),
+		requests:            consensusRequests.NewStore[*Request](),
 		requestTimeout:      requestTimeout,
 		donTimes:            make(map[string][]int64),
 		lastObservedDonTime: 0,

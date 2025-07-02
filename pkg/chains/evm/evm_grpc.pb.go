@@ -34,6 +34,7 @@ const (
 	EVM_GetTransactionStatus_FullMethodName    = "/loop.evm.EVM/GetTransactionStatus"
 	EVM_SubmitTransaction_FullMethodName       = "/loop.evm.EVM/SubmitTransaction"
 	EVM_CalculateTransactionFee_FullMethodName = "/loop.evm.EVM/CalculateTransactionFee"
+	EVM_GetForwarderForEOA_FullMethodName      = "/loop.evm.EVM/GetForwarderForEOA"
 )
 
 // EVMClient is the client API for EVM service.
@@ -54,6 +55,7 @@ type EVMClient interface {
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionReply, error)
 	CalculateTransactionFee(ctx context.Context, in *CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*CalculateTransactionFeeReply, error)
+	GetForwarderForEOA(ctx context.Context, in *GetForwarderForEOARequest, opts ...grpc.CallOption) (*GetForwarderForEOAReply, error)
 }
 
 type eVMClient struct {
@@ -204,6 +206,16 @@ func (c *eVMClient) CalculateTransactionFee(ctx context.Context, in *CalculateTr
 	return out, nil
 }
 
+func (c *eVMClient) GetForwarderForEOA(ctx context.Context, in *GetForwarderForEOARequest, opts ...grpc.CallOption) (*GetForwarderForEOAReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetForwarderForEOAReply)
+	err := c.cc.Invoke(ctx, EVM_GetForwarderForEOA_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EVMServer is the server API for EVM service.
 // All implementations must embed UnimplementedEVMServer
 // for forward compatibility.
@@ -222,6 +234,7 @@ type EVMServer interface {
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionReply, error)
 	CalculateTransactionFee(context.Context, *CalculateTransactionFeeRequest) (*CalculateTransactionFeeReply, error)
+	GetForwarderForEOA(context.Context, *GetForwarderForEOARequest) (*GetForwarderForEOAReply, error)
 	mustEmbedUnimplementedEVMServer()
 }
 
@@ -273,6 +286,9 @@ func (UnimplementedEVMServer) SubmitTransaction(context.Context, *SubmitTransact
 }
 func (UnimplementedEVMServer) CalculateTransactionFee(context.Context, *CalculateTransactionFeeRequest) (*CalculateTransactionFeeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CalculateTransactionFee not implemented")
+}
+func (UnimplementedEVMServer) GetForwarderForEOA(context.Context, *GetForwarderForEOARequest) (*GetForwarderForEOAReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
 }
 func (UnimplementedEVMServer) mustEmbedUnimplementedEVMServer() {}
 func (UnimplementedEVMServer) testEmbeddedByValue()             {}
@@ -547,6 +563,24 @@ func _EVM_CalculateTransactionFee_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EVM_GetForwarderForEOA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetForwarderForEOARequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMServer).GetForwarderForEOA(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVM_GetForwarderForEOA_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMServer).GetForwarderForEOA(ctx, req.(*GetForwarderForEOARequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EVM_ServiceDesc is the grpc.ServiceDesc for EVM service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -609,6 +643,10 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CalculateTransactionFee",
 			Handler:    _EVM_CalculateTransactionFee_Handler,
+		},
+		{
+			MethodName: "GetForwarderForEOA",
+			Handler:    _EVM_GetForwarderForEOA_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

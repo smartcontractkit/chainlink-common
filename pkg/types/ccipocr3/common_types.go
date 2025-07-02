@@ -203,5 +203,5 @@ func (b BigInt) IsEmpty() bool {
 }
 
 func (b BigInt) IsPositive() bool {
-	return b.Int != nil && b.Int.Cmp(big.NewInt(0)) > 0
+	return b.Int != nil && b.Int.Sign() > 0
 }

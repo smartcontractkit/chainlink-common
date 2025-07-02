@@ -25,7 +25,6 @@ type Observation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp     int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Requests      map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Finished      []string               `protobuf:"bytes,3,rep,name=finished,proto3" json:"finished,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -70,13 +69,6 @@ func (x *Observation) GetTimestamp() int64 {
 func (x *Observation) GetRequests() map[string]int64 {
 	if x != nil {
 		return x.Requests
-	}
-	return nil
-}
-
-func (x *Observation) GetFinished() []string {
-	if x != nil {
-		return x.Finished
 	}
 	return nil
 }
@@ -171,12 +163,11 @@ func (x *ObservedDonTimes) GetTimestamps() []int64 {
 }
 
 type Outcome struct {
-	state                         protoimpl.MessageState       `protogen:"open.v1"`
-	Timestamp                     int64                        `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	ObservedDonTimes              map[string]*ObservedDonTimes `protobuf:"bytes,2,rep,name=observed_don_times,json=observedDonTimes,proto3" json:"observed_don_times,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	FinishedExecutionRemovalTimes map[string]int64             `protobuf:"bytes,3,rep,name=finished_execution_removal_times,json=finishedExecutionRemovalTimes,proto3" json:"finished_execution_removal_times,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state            protoimpl.MessageState       `protogen:"open.v1"`
+	Timestamp        int64                        `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	ObservedDonTimes map[string]*ObservedDonTimes `protobuf:"bytes,2,rep,name=observed_don_times,json=observedDonTimes,proto3" json:"observed_don_times,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Outcome) Reset() {
@@ -223,22 +214,14 @@ func (x *Outcome) GetObservedDonTimes() map[string]*ObservedDonTimes {
 	return nil
 }
 
-func (x *Outcome) GetFinishedExecutionRemovalTimes() map[string]int64 {
-	if x != nil {
-		return x.FinishedExecutionRemovalTimes
-	}
-	return nil
-}
-
 var File_dontime_proto protoreflect.FileDescriptor
 
 const file_dontime_proto_rawDesc = "" +
 	"\n" +
-	"\rdontime.proto\"\xbc\x01\n" +
+	"\rdontime.proto\"\xa0\x01\n" +
 	"\vObservation\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x126\n" +
-	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x12\x1a\n" +
-	"\bfinished\x18\x03 \x03(\tR\bfinished\x1a;\n" +
+	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x1a;\n" +
 	"\rRequestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"@\n" +
@@ -247,17 +230,13 @@ const file_dontime_proto_rawDesc = "" +
 	"\x10ObservedDonTimes\x12\x1e\n" +
 	"\n" +
 	"timestamps\x18\x01 \x03(\x03R\n" +
-	"timestamps\"\x95\x03\n" +
+	"timestamps\"\xcd\x01\n" +
 	"\aOutcome\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12L\n" +
-	"\x12observed_don_times\x18\x02 \x03(\v2\x1e.Outcome.ObservedDonTimesEntryR\x10observedDonTimes\x12t\n" +
-	" finished_execution_removal_times\x18\x03 \x03(\v2+.Outcome.FinishedExecutionRemovalTimesEntryR\x1dfinishedExecutionRemovalTimes\x1aV\n" +
+	"\x12observed_don_times\x18\x02 \x03(\v2\x1e.Outcome.ObservedDonTimesEntryR\x10observedDonTimes\x1aV\n" +
 	"\x15ObservedDonTimesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
-	"\x05value\x18\x02 \x01(\v2\x11.ObservedDonTimesR\x05value:\x028\x01\x1aP\n" +
-	"\"FinishedExecutionRemovalTimesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01BQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pbb\x06proto3"
+	"\x05value\x18\x02 \x01(\v2\x11.ObservedDonTimesR\x05value:\x028\x01BQZOgithub.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pbb\x06proto3"
 
 var (
 	file_dontime_proto_rawDescOnce sync.Once
@@ -271,7 +250,7 @@ func file_dontime_proto_rawDescGZIP() []byte {
 	return file_dontime_proto_rawDescData
 }
 
-var file_dontime_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_dontime_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_dontime_proto_goTypes = []any{
 	(*Observation)(nil),      // 0: Observation
 	(*Observations)(nil),     // 1: Observations
@@ -279,19 +258,17 @@ var file_dontime_proto_goTypes = []any{
 	(*Outcome)(nil),          // 3: Outcome
 	nil,                      // 4: Observation.RequestsEntry
 	nil,                      // 5: Outcome.ObservedDonTimesEntry
-	nil,                      // 6: Outcome.FinishedExecutionRemovalTimesEntry
 }
 var file_dontime_proto_depIdxs = []int32{
 	4, // 0: Observation.requests:type_name -> Observation.RequestsEntry
 	0, // 1: Observations.observations:type_name -> Observation
 	5, // 2: Outcome.observed_don_times:type_name -> Outcome.ObservedDonTimesEntry
-	6, // 3: Outcome.finished_execution_removal_times:type_name -> Outcome.FinishedExecutionRemovalTimesEntry
-	2, // 4: Outcome.ObservedDonTimesEntry.value:type_name -> ObservedDonTimes
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2, // 3: Outcome.ObservedDonTimesEntry.value:type_name -> ObservedDonTimes
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_dontime_proto_init() }
@@ -305,7 +282,7 @@ func file_dontime_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dontime_proto_rawDesc), len(file_dontime_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -73,7 +73,6 @@ func TestPlugin_Observation(t *testing.T) {
 		executionID: 0,
 	}
 	require.Equal(t, expectedRequests, obsProto.Requests)
-	require.Empty(t, obsProto.Finished)
 }
 
 func TestPlugin_ValidateObservation(t *testing.T) {
@@ -155,28 +154,24 @@ func TestPlugin_Outcome(t *testing.T) {
 			Requests: map[string]int64{
 				executionID: 0,
 			},
-			Finished: []string{"workflow-abc"},
 		},
 		{
 			Timestamp: timestamp - int64(time.Second),
 			Requests: map[string]int64{
 				executionID: 0,
 			},
-			Finished: []string{"workflow-abc"},
 		},
 		{
 			Timestamp: timestamp + int64(time.Second),
 			Requests: map[string]int64{
 				executionID: 0,
 			},
-			Finished: []string{"workflow-abc"},
 		},
 		{
 			Timestamp: timestamp,
 			Requests: map[string]int64{
 				executionID: 0,
 			},
-			Finished: []string{"workflow-abc"},
 		},
 	}
 
@@ -195,7 +190,6 @@ func TestPlugin_Outcome(t *testing.T) {
 		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
 			executionID: {Timestamps: []int64{}},
 		},
-		FinishedExecutionRemovalTimes: make(map[string]int64),
 	}
 
 	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
@@ -222,62 +216,26 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	require.NoError(t, err)
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
-
-	store.ExecutionFinished("workflow-123")
-	store.ExecutionFinished("workflow-abc")
 	outcomeProto := &pb.Outcome{}
 
-	t.Run("Observation: new finished executionIDs", func(t *testing.T) {
-		prevOutcome := &pb.Outcome{
-			Timestamp:        0,
-			ObservedDonTimes: nil,
-			// We have already scheduled workflow-123 for removal
-			FinishedExecutionRemovalTimes: map[string]int64{
-				"workflow-123": time.Now().UnixMilli(),
-			},
-		}
-
-		prevOutcomeBytes, err := proto.Marshal(prevOutcome)
-		require.NoError(t, err)
-		outcomeCtx := ocr3types.OutcomeContext{
-			PreviousOutcome: prevOutcomeBytes,
-		}
-
-		query, err := plugin.Query(ctx, outcomeCtx)
-		require.NoError(t, err)
-
-		observation, err := plugin.Observation(ctx, outcomeCtx, query)
-		require.NoError(t, err)
-
-		obsProto := &pb.Observation{}
-		err = proto.Unmarshal(observation, obsProto)
-		require.NoError(t, err)
-		require.Equal(t, []string{"workflow-abc"}, obsProto.Finished)
-
-	})
-
-	t.Run("Outcome: schedule for removal", func(t *testing.T) {
+	t.Run("Outcome: remove expired workflow executions", func(t *testing.T) {
 		timestamp := time.Now().UnixMilli()
 		observations := []*pb.Observation{
 			{
 				Timestamp: timestamp,
 				Requests:  map[string]int64{},
-				Finished:  []string{"workflow-abc"},
 			},
 			{
 				Timestamp: timestamp - int64(time.Second),
 				Requests:  map[string]int64{},
-				Finished:  []string{"workflow-abc"},
 			},
 			{
 				Timestamp: timestamp + int64(time.Second),
 				Requests:  map[string]int64{},
-				Finished:  []string{"workflow-abc"},
 			},
 			{
 				Timestamp: timestamp,
 				Requests:  map[string]int64{},
-				Finished:  []string{"workflow-abc"},
 			},
 		}
 
@@ -291,11 +249,14 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 			}
 		}
 
+		// Set workflow-123 as expired
+		prevDonTime := timestamp - int64(time.Second)
 		prevOutcome := &pb.Outcome{
-			Timestamp:        0,
-			ObservedDonTimes: map[string]*pb.ObservedDonTimes{},
-			FinishedExecutionRemovalTimes: map[string]int64{
-				"workflow-123": timestamp - int64(time.Second),
+			Timestamp: prevDonTime,
+			ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+				"workflow-123": {
+					Timestamps: []int64{prevDonTime - defaultExecutionRemovalTime.Milliseconds()},
+				},
 			},
 		}
 
@@ -307,20 +268,16 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 
 		err = proto.Unmarshal(outcome, outcomeProto)
 		require.NoError(t, err)
-		// workflow-abc should be scheduled for removal
-		require.Contains(t, outcomeProto.FinishedExecutionRemovalTimes, "workflow-abc")
-		// workflow-123 should be fully deleted now
-		require.NotContains(t, outcomeProto.FinishedExecutionRemovalTimes, "workflow-123")
+		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-123")
 	})
 
+	// TODO: Transmit should just delete expired requests
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
 		r := ocr3types.ReportWithInfo[struct{}]{}
 		r.Report, err = proto.Marshal(outcomeProto)
 		require.NoError(t, err)
 		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})
 		require.NoError(t, err)
-		require.Contains(t, store.finishedExecutionIDs, "workflow-abc")
-		require.NotContains(t, store.finishedExecutionIDs, "workflow-123")
 	})
 }
 

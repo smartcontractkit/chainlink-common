@@ -17,7 +17,7 @@ const (
 	defaultMaxPhaseOutputBytes  = 1000000 // 1 MB
 	defaultMaxReportCount       = 1
 	defaultBatchSize            = 10000
-	defaultExecutionRemovalTime = 10 * time.Minute // CRE workflow time limit
+	defaultExecutionRemovalTime = 20 * time.Minute // 2x CRE workflow time limit
 	defaultMinTimeIncrease      = time.Millisecond
 )
 

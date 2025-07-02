@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751466673184,
+  "lastUpdate": 1751471592665,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17514,6 +17514,48 @@ window.BENCHMARK_DATA = {
             "value": 28475,
             "unit": "ns/op",
             "extra": "42032 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5a4d0bc777136ebf3b982bb1339e29f10b97b765",
+          "message": "Add/refactor the code generation for from values.Value package. (#1318)",
+          "timestamp": "2025-07-02T15:51:59Z",
+          "tree_id": "cfcf6171f0e6609c5814521b200bb5ea061a2fd5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5a4d0bc777136ebf3b982bb1339e29f10b97b765"
+        },
+        "date": 1751471591617,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.8,
+            "unit": "ns/op",
+            "extra": "3372822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.3,
+            "unit": "ns/op",
+            "extra": "2907788 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28429,
+            "unit": "ns/op",
+            "extra": "42201 times\n4 procs"
           }
         ]
       }

@@ -63,7 +63,7 @@ func (p *Plugin) Query(_ context.Context, _ ocr3types.OutcomeContext) (types.Que
 func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query) (types.Observation, error) {
 	previousOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, previousOutcome); err != nil {
-		return nil, err
+		p.lggr.Errorf("failed to unmarshal previous outcome in Observation phase")
 	}
 
 	finishedExecutionIDs := p.store.GetFinishedExecutionIDs()
@@ -79,7 +79,9 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 	for batchOffset := 0; batchOffset < p.store.requests.Len() && len(requests) < p.batchSize; {
 		batch, err := p.store.requests.RangeN(batchOffset, p.batchSize)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get request batch: %w", err)
+			p.lggr.Errorf("failed to get request batch at offset %d: %v", batchOffset, err)
+			batchOffset += p.batchSize
+			continue
 		}
 		if len(batch) == 0 {
 			break
@@ -90,7 +92,7 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 			if req.ExpiryTime().Before(timeoutCheck) {
 				// Request has been sitting in queue too long
 				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendTimeout(ctx)
+				req.SendTimeout(nil)
 				continue
 			}
 
@@ -104,7 +106,7 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 
 			if req.SeqNum > numObservedDonTimes {
 				p.store.requests.Evict(req.WorkflowExecutionID)
-				req.SendResponse(ctx,
+				req.SendResponse(nil,
 					DonTimeResponse{
 						WorkflowExecutionID: req.WorkflowExecutionID,
 						SeqNum:              req.SeqNum,
@@ -144,13 +146,14 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	prevOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
-		return nil, err
+		p.lggr.Errorf("failed to unmarshal previous outcome in Outcome phase")
 	}
 
 	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
-			return nil, err
+			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
+			continue
 		}
 
 		for id, requestSeqNum := range observation.Requests {
@@ -213,7 +216,7 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 
 	// Check if consensus is reached on the workflow execution being finished
 	for id, numFinished := range finishedNodes {
-		if numFinished >= int64(p.config.F) {
+		if numFinished > int64(p.config.F) {
 			if _, ok := outcome.FinishedExecutionRemovalTimes[id]; ok {
 				continue
 			}

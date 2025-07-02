@@ -25,22 +25,21 @@ func (r *Request) ExpiryTime() time.Time {
 	return r.ExpiresAt
 }
 
-func (r *Request) SendResponse(ctx context.Context, resp DonTimeResponse) {
+func (r *Request) SendResponse(_ context.Context, resp DonTimeResponse) {
 	select {
-	case <-ctx.Done():
-		return
 	case r.CallbackCh <- resp:
 		close(r.CallbackCh)
+	default: // Don't block trying to send
 	}
 }
 
-func (r *Request) SendTimeout(ctx context.Context) {
+func (r *Request) SendTimeout(_ context.Context) {
 	timeoutResponse := DonTimeResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		SeqNum:              r.SeqNum,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
 	}
-	r.SendResponse(ctx, timeoutResponse)
+	r.SendResponse(nil, timeoutResponse)
 }
 
 func (r *Request) Copy() *Request {

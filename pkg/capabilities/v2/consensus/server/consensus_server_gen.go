@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb1 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -20,7 +19,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs) (*pb.Value, error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs) (*pb1.ConsensusOutputs, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -122,7 +121,7 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	case "Simple":
 		input := &pb1.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs, _ *emptypb.Empty) (*pb1.ConsensusOutputs, error) {
 			return c.ConsensusCapability.Simple(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

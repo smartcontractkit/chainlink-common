@@ -9,6 +9,7 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"google.golang.org/protobuf/proto"
 )
 
 type RuntimeHelpers interface {
@@ -154,8 +155,17 @@ func (d *Runtime) RunInNodeMode(fn func(nodeRuntime sdk.NodeRuntime) *pb.SimpleC
 	d.modeErr = nil
 	d.nextNodeCallId = nrt.nextCallId
 	c := &consensus.Consensus{}
-	return sdk.Then(c.Simple(d, observation), func(result *valuespb.Value) (values.Value, error) {
-		return values.FromProto(result)
+	return sdk.Then(c.Simple(d, observation), func(result *pb.ConsensusOutputs) (values.Value, error) {
+		var mapProto valuespb.Map
+		err := proto.Unmarshal(result.RawReport, &mapProto)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal raw report: %w", err)
+		}
+		payload, ok := mapProto.Fields[sdk.ConsensusResponseMapKeyPayload]
+		if !ok || payload == nil {
+			return nil, fmt.Errorf("missing payload in consensus response")
+		}
+		return values.FromProto(payload)
 	})
 }
 

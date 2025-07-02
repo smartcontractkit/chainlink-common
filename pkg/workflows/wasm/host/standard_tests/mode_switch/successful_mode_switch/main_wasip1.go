@@ -30,7 +30,7 @@ func main() {
 	}
 
 	cresult := &valuespb.Value{}
-	rawsdk.DoRequest("consensus@1.0.0-alpha", "Simple", pb.Mode_MODE_DON, consensus, cresult)
+	rawsdk.DoConsensusRequest("consensus@1.0.0-alpha", consensus, cresult)
 
 	coutput := &nodeaction.NodeOutputs{}
 	if err := rawsdk.Must(values.FromProto(cresult)).UnwrapTo(coutput); err != nil {

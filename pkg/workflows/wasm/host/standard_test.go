@@ -22,6 +22,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -127,7 +128,13 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			response := values.NewString("hi")
-			payload, err := anypb.New(values.Proto(response))
+			mapProto := &valuespb.Map{
+				Fields: map[string]*valuespb.Value{
+					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					sdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
+				},
+			}
+			payload, err := anypb.New(mapProto)
 			require.NoError(t, err)
 			return &pb.CapabilityResponse{
 				Response: &pb.CapabilityResponse_Payload{
@@ -141,7 +148,6 @@ func TestStandardModeSwitch(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, result.GetError(), "cannot use NodeRuntime outside RunInNodeMode")
 	})
-
 	t.Run("don runtime in node mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -454,7 +460,13 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			assertProto(t, expectedInput, input)
 			cResponse := &nodeaction.NodeOutputs{OutputThing: output + 1}
 			response := wrapValue(t, cResponse)
-			payload, err = anypb.New(response)
+			mapProto := &valuespb.Map{
+				Fields: map[string]*valuespb.Value{
+					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					sdk.ConsensusResponseMapKeyPayload:  response,
+				},
+			}
+			payload, err = anypb.New(mapProto)
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)

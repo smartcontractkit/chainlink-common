@@ -13,5 +13,5 @@ service Consensus {
     mode: MODE_DON
     capability_id: "consensus@1.0.0"
   };
-  rpc Simple (sdk.v1alpha.SimpleConsensusInputs) returns (values.v1.Value);
+  rpc Simple (sdk.v1alpha.SimpleConsensusInputs) returns (sdk.v1alpha.ConsensusOutputs);
 }

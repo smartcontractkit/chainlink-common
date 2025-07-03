@@ -2,6 +2,7 @@ package nodeauth
 
 import (
 	"context"
+	"crypto/ed25519"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -39,7 +40,6 @@ type NodeTopologyProvider interface {
 	// IsNodeAuthorized checks if a node is authorized
 	// Usually, this is done by checking the node aginst DON's on-chain topology.
 	// The check can be done aginst on-chain contracts or cache, depending on the each service's implementation.
-	IsNodeAuthorized(ctx context.Context, p2pId string, publicKey [32]byte) (bool, error)
+
+	IsNodeAuthorized(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey) (bool, error)
 }
-
-

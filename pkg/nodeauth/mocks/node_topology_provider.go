@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+	ed25519 "crypto/ed25519"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -22,7 +23,7 @@ func (_m *NodeTopologyProvider) EXPECT() *NodeTopologyProvider_Expecter {
 }
 
 // IsNodeAuthorized provides a mock function with given fields: ctx, p2pId, publicKey
-func (_m *NodeTopologyProvider) IsNodeAuthorized(ctx context.Context, p2pId string, publicKey [32]byte) (bool, error) {
+func (_m *NodeTopologyProvider) IsNodeAuthorized(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey) (bool, error) {
 	ret := _m.Called(ctx, p2pId, publicKey)
 
 	if len(ret) == 0 {
@@ -31,16 +32,16 @@ func (_m *NodeTopologyProvider) IsNodeAuthorized(ctx context.Context, p2pId stri
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, [32]byte) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ed25519.PublicKey, ed25519.PublicKey) (bool, error)); ok {
 		return rf(ctx, p2pId, publicKey)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, [32]byte) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ed25519.PublicKey, ed25519.PublicKey) bool); ok {
 		r0 = rf(ctx, p2pId, publicKey)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, [32]byte) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, ed25519.PublicKey, ed25519.PublicKey) error); ok {
 		r1 = rf(ctx, p2pId, publicKey)
 	} else {
 		r1 = ret.Error(1)
@@ -56,15 +57,15 @@ type NodeTopologyProvider_IsNodeAuthorized_Call struct {
 
 // IsNodeAuthorized is a helper method to define mock.On call
 //   - ctx context.Context
-//   - p2pId string
-//   - publicKey [32]byte
+//   - p2pId ed25519.PublicKey
+//   - publicKey ed25519.PublicKey
 func (_e *NodeTopologyProvider_Expecter) IsNodeAuthorized(ctx interface{}, p2pId interface{}, publicKey interface{}) *NodeTopologyProvider_IsNodeAuthorized_Call {
 	return &NodeTopologyProvider_IsNodeAuthorized_Call{Call: _e.mock.On("IsNodeAuthorized", ctx, p2pId, publicKey)}
 }
 
-func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) Run(run func(ctx context.Context, p2pId string, publicKey [32]byte)) *NodeTopologyProvider_IsNodeAuthorized_Call {
+func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) Run(run func(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey)) *NodeTopologyProvider_IsNodeAuthorized_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].([32]byte))
+		run(args[0].(context.Context), args[1].(ed25519.PublicKey), args[2].(ed25519.PublicKey))
 	})
 	return _c
 }
@@ -74,7 +75,7 @@ func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) Return(_a0 bool, _a1 error
 	return _c
 }
 
-func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) RunAndReturn(run func(context.Context, string, [32]byte) (bool, error)) *NodeTopologyProvider_IsNodeAuthorized_Call {
+func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) RunAndReturn(run func(context.Context, ed25519.PublicKey, ed25519.PublicKey) (bool, error)) *NodeTopologyProvider_IsNodeAuthorized_Call {
 	_c.Call.Return(run)
 	return _c
 }

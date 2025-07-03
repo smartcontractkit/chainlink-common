@@ -85,7 +85,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	addr := lis.Addr().String()
 
 	// Create mock JWT manager for testing
-	mockJWT := mocks.NewJWTManager(t)
+	mockJWT := mocks.NewJWTGenerator(t)
 	// Since we're making a real call, expect JWT creation
 	mockJWT.EXPECT().CreateJWTForRequest(&pb.GetAccountCreditsRequest{AccountId: "test-account"}).Return("test.jwt.token", nil).Once()
 
@@ -220,7 +220,7 @@ func TestWorkflowClient_DialUnreachable(t *testing.T) {
 
 func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 
-	mockJWT := mocks.NewJWTManager(t)
+	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "test request"}
 	expectedToken := "mock.jwt.token"
 
@@ -262,7 +262,7 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 
 // Test that client handles JWT manager errors properly
 func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
-	mockJWT := mocks.NewJWTManager(t)
+	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "test"}
 
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", fmt.Errorf("mock JWT creation error")).Once()
@@ -279,7 +279,7 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 }
 
 func TestWorkflowClient_RepeatedSign(t *testing.T) {
-	mockJWT := mocks.NewJWTManager(t)
+	mockJWT := mocks.NewJWTGenerator(t)
 	req := MockRequest{Field: "repeatable"}
 	expectedToken := "consistent.jwt.token"
 

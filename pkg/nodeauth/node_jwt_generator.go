@@ -1,6 +1,7 @@
 package nodeauth
 
 import (
+	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -14,24 +15,26 @@ import (
 // It is used to generate JWT tokens for node-initiated requests.
 type NodeJWTGenerator struct {
 	environment EnvironmentName
-	signer      Signer   // Each node must implement the Signer interface in node_jwt_signer.go.
-	p2pId       [32]byte // p2pId is the on-chain P2P ID of the node.
-	publicKey   [32]byte // Node's public key to verify JWT's signature.
+	privateKey  ed25519.PrivateKey // The ed25519 private key(csa) of the node to sign the JWT.
+	publicKey   ed25519.PublicKey  // the ed25519 public key (csa counterpart) of the node to verify the JWT's signature.
+	p2pId       ed25519.PublicKey  // the ed25519 public key (node p2pId to identify this node on-chain)
+
 }
 
 // NewNodeJWTGenerator creates a new node JWT generator
-func NewNodeJWTGenerator(signer Signer, p2pId [32]byte, publicKey [32]byte) *NodeJWTGenerator {
+func NewNodeJWTGenerator(privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey, p2pId ed25519.PublicKey, environment EnvironmentName) *NodeJWTGenerator {
 	return &NodeJWTGenerator{
-		signer:    signer,
-		p2pId:     p2pId,
-		publicKey: publicKey,
+		environment: environment,
+		privateKey:  privateKey,
+		publicKey:   publicKey,
+		p2pId:       p2pId,
 	}
 }
 
 // CreateJWTForRequest creates a JWT token for the given request
 func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
-	if m.signer == nil {
-		return "", fmt.Errorf("no signer configured")
+	if m.privateKey == nil {
+		return "", fmt.Errorf("no private key configured")
 	}
 
 	// Create request digest for integrity
@@ -40,21 +43,21 @@ func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 	// Create JWT claims
 	now := time.Now()
 	claims := NodeJWTClaims{
-		P2PId:       hex.EncodeToString(m.p2pId[:]),     // P2PId: Node's on-chain P2P ID for on-chain verification of node-DON relationship.
-		PublicKey:   hex.EncodeToString(m.publicKey[:]), // PublicKey: Node's public key to proof JWT's signature.
-		Environment: string(m.environment),              // Environment: Environment for which the JWT token is generated.
-		Digest:      digest,                             // Digest: Request integrity hash
+		P2PId:       hex.EncodeToString(m.p2pId),     // P2PId: Node's on-chain P2P ID for on-chain verification of node-DON relationship.
+		PublicKey:   hex.EncodeToString(m.publicKey), // PublicKey: Node's public key to proof JWT's signature.
+		Environment: string(m.environment),           // Environment: Environment for which the JWT token is generated.
+		Digest:      digest,                          // Digest: Request integrity hash
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hex.EncodeToString(m.p2pId[:]),    // Issuer: Node's P2P ID  // TODO: change to DON ID if node is aware of its DON ID
-			Subject:   hex.EncodeToString(m.p2pId[:]),    // Subject: Node's P2P ID for on-chain verification of node-DON relationship.
+			Issuer:    hex.EncodeToString(m.p2pId), // Issuer: Node's P2P ID  // TODO: change to DON ID if node is aware of its DON ID
+			Subject:   hex.EncodeToString(m.p2pId), // Subject: Node's P2P ID for on-chain verification of node-DON relationship.
 			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
-	// Create token with claims (using node-specific signing method)
-	token := jwt.NewWithClaims(&NodeJWTSigningMethod{}, claims)
+	// Create token with claims using Ed25519(EdDSASigningMethod) signing method
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 
-	// Sign the token - pass the signer as the key
-	return token.SignedString(m.signer)
+	// Sign the token with the private key
+	return token.SignedString(m.privateKey)
 }

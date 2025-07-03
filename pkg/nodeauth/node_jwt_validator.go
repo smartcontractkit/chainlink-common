@@ -49,7 +49,13 @@ func (v *NodeJWTValidator) ValidateJWT(ctx context.Context, tokenString string, 
 		return false, fmt.Errorf("invalid public key format: %w", err)
 	}
 
-	// Verify JWT signature aginst the public key
+	// Extract p2pId from JWT claim
+	p2pId, err := v.decodeP2PId(claims.P2PId)
+	if err != nil {
+		return false, fmt.Errorf("invalid p2pId format: %w", err)
+	}
+
+	// Verify JWT signature against the public key
 	if err := v.verifyJWTSignature(tokenString, publicKey); err != nil {
 		return false, fmt.Errorf("JWT signature verification failed: %w", err)
 	}
@@ -65,7 +71,7 @@ func (v *NodeJWTValidator) ValidateJWT(ctx context.Context, tokenString string, 
 	}
 
 	// Node Specific Validation: Validate node against topology provider
-	isValid, err := v.nodeTopologyProvider.IsNodeAuthorized(ctx, claims.P2PId, publicKey)
+	isValid, err := v.nodeTopologyProvider.IsNodeAuthorized(ctx, p2pId, publicKey)
 	if err != nil {
 		v.logger.Error("Node validation failed",
 			"p2pId", claims.P2PId,
@@ -103,21 +109,37 @@ func (v *NodeJWTValidator) parseJWTClaims(tokenString string) (*NodeJWTClaims, e
 	return claims, nil
 }
 
-// decodePublicKey converts hex-encoded public key in the JWT claim to [32]byte array
-func (v *NodeJWTValidator) decodePublicKey(publicKeyHex string) ([32]byte, error) {
+// decodePublicKey converts hex-encoded public key in the JWT claim to ed25519.PublicKey
+func (v *NodeJWTValidator) decodePublicKey(publicKeyHex string) (ed25519.PublicKey, error) {
 	publicKeyBytes, err := hex.DecodeString(publicKeyHex)
 	if err != nil {
-		return [32]byte{}, fmt.Errorf("invalid hex encoding: %w", err)
+		return nil, fmt.Errorf("invalid hex encoding: %w", err)
 	}
 
-	var publicKey [32]byte
-	copy(publicKey[:], publicKeyBytes)
-	return publicKey, nil
+	if len(publicKeyBytes) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("invalid public key size: expected %d bytes, got %d", ed25519.PublicKeySize, len(publicKeyBytes))
+	}
+
+	return ed25519.PublicKey(publicKeyBytes), nil
+}
+
+// decodeP2PId converts hex-encoded p2pId in the JWT claim to ed25519.PublicKey
+func (v *NodeJWTValidator) decodeP2PId(p2pIdHex string) (ed25519.PublicKey, error) {
+	p2pIdBytes, err := hex.DecodeString(p2pIdHex)
+	if err != nil {
+		return nil, fmt.Errorf("invalid hex encoding: %w", err)
+	}
+
+	if len(p2pIdBytes) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("invalid p2pId size: expected %d bytes, got %d", ed25519.PublicKeySize, len(p2pIdBytes))
+	}
+
+	return ed25519.PublicKey(p2pIdBytes), nil
 }
 
 // verifyJWTSignature prove the JWT signature is signed by the node's private key.
 // DEV NOTE: The designed JWT method is asymmetric Ed25519, @nodeauth/node_jwt_signer.go.
-func (v *NodeJWTValidator) verifyJWTSignature(tokenString string, publicKey [32]byte) error {
+func (v *NodeJWTValidator) verifyJWTSignature(tokenString string, publicKey ed25519.PublicKey) error {
 
 	token, err := v.parser.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Ensure the signing method is Ed25519
@@ -126,7 +148,7 @@ func (v *NodeJWTValidator) verifyJWTSignature(tokenString string, publicKey [32]
 		}
 
 		// DEV NOTE: Internally, the JWT parser's callback use the returned value here to verify the signature.
-		return ed25519.PublicKey(publicKey[:]), nil
+		return publicKey, nil
 	})
 
 	if err != nil {

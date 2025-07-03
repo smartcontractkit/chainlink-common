@@ -14,22 +14,14 @@ import (
 )
 
 var (
-	ErrInvalidConfig         = errors.New("invalid config")
-	ErrInsufficientConsensus = errors.New("insufficient consensus")
-	ErrEmptyObservation      = errors.New("empty observation")
-	ErrNoEthReportFound      = errors.New("no eth report found")
+	ErrNoEthReportFound = errors.New("no eth report found")
 )
 
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
-// This aggregator is designed to pick out a specific report (hardcoded to "eth" for now),
-// verify its signatures, and reattest it.
+// This aggregator is designed to pick out a specific report (hardcoded to "eth" for now).
 type SecureMintAggregatorConfig struct {
 	// TargetFeedID is the feed ID to look for (hardcoded to "eth" for now)
 	TargetFeedID string `mapstructure:"targetFeedId"`
-	// AllowedSigners are the signers that are allowed to sign reports
-	AllowedSigners [][]byte `mapstructure:"allowedSigners"`
-	// MinRequiredSignatures is the minimum number of signatures required
-	MinRequiredSignatures int `mapstructure:"minRequiredSignatures"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -79,12 +71,11 @@ func NewSecureMintAggregator(config values.Map, reportCodec datastreams.ReportCo
 // This implementation:
 // 1. Extracts reports from observations
 // 2. Finds the target "eth" report
-// 3. Verifies signatures on the report
-// 4. Reattests the report by returning it
+// 3. Returns the report
 func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "SecureMintAggregator")
 	if len(observations) == 0 {
-		return nil, ErrEmptyObservation
+		return nil, errors.New("empty observation")
 	}
 
 	// Extract reports from all observations
@@ -99,19 +90,8 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 		return nil, fmt.Errorf("failed to find target report: %w", err)
 	}
 
-	// Verify signatures on the target report
-	if err := a.verifySignatures(lggr, targetReport); err != nil {
-		return nil, fmt.Errorf("failed to verify signatures: %w", err)
-	}
-
-	// Reattest the report by returning it
-	reattestedReport, err := a.reattestReport(lggr, targetReport)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reattest report: %w", err)
-	}
-
 	// Create the aggregation outcome
-	outcome, err := a.createOutcome(lggr, reattestedReport)
+	outcome, err := a.createOutcome(lggr, targetReport)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create outcome: %w", err)
 	}
@@ -163,30 +143,6 @@ func (a *SecureMintAggregator) findTargetReport(lggr logger.Logger, reports []da
 	return nil, fmt.Errorf("%w: no report found for target feed ID %s", ErrNoEthReportFound, a.config.TargetFeedID)
 }
 
-// verifySignatures verifies the signatures on the target report
-func (a *SecureMintAggregator) verifySignatures(lggr logger.Logger, report *datastreams.FeedReport) error {
-	// Use the report codec to validate signatures
-	if err := a.reportCodec.Validate(*report, a.config.AllowedSigners, a.config.MinRequiredSignatures); err != nil {
-		return fmt.Errorf("signature validation failed: %w", err)
-	}
-
-	lggr.Debugw("signatures verified successfully", "feedID", report.FeedID, "nSignatures", len(report.Signatures))
-	return nil
-}
-
-// reattestReport reattests the verified report
-// For now, this simply returns the report as-is, but could be extended to add new signatures or modify the report
-func (a *SecureMintAggregator) reattestReport(lggr logger.Logger, report *datastreams.FeedReport) (*datastreams.FeedReport, error) {
-	// For now, we simply return the report as-is
-	// In a real implementation, this might involve:
-	// - Adding new signatures
-	// - Modifying the report content
-	// - Adding additional metadata
-
-	lggr.Debugw("report reattested", "feedID", report.FeedID)
-	return report, nil
-}
-
 // createOutcome creates the final aggregation outcome
 func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *datastreams.FeedReport) (*types.AggregationOutcome, error) {
 	// Create the output in the same format as the feeds aggregator
@@ -230,15 +186,7 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 
 	// Validate configuration
 	if parsedConfig.TargetFeedID == "" {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("%w: targetFeedId is required", ErrInvalidConfig)
-	}
-
-	if len(parsedConfig.AllowedSigners) == 0 {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("%w: allowedSigners is required", ErrInvalidConfig)
-	}
-
-	if parsedConfig.MinRequiredSignatures <= 0 {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("%w: minRequiredSignatures must be greater than 0", ErrInvalidConfig)
+		return SecureMintAggregatorConfig{}, fmt.Errorf("targetFeedId is required")
 	}
 
 	return parsedConfig, nil

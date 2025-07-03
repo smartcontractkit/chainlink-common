@@ -1,3 +1,3 @@
 package pkg
 
-const chainlinkProtosVersion = "cre-sdk/v1alpha.3"
+const chainlinkProtosVersion = "cre-sdk/v1alpha.4"

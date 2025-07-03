@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -20,15 +21,15 @@ type GRPCPluginKeystore struct {
 
 	PluginServer core.Keystore
 
-	pluginClient *keystoreClient
+	pluginClient *keystore.Client
 }
 
 func (p *GRPCPluginKeystore) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
-	pb.RegisterKeystoreServer(server, &keystoreServer{impl: p.PluginServer})
+	pb.RegisterKeystoreServer(server, keystore.NewServer(p.PluginServer))
 	return nil
 }
 
 func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
-	p.pluginClient = newKeystoreClient(conn)
+	p.pluginClient = keystore.NewClient(conn)
 	return core.Keystore(p.pluginClient), nil
 }

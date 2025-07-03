@@ -82,7 +82,7 @@ func (s *Store[T]) RangeN(start, batchSize int) ([]T, error) {
 		return nil, fmt.Errorf("start must be non-negative")
 	}
 	if batchSize <= 0 {
-		return nil, fmt.Errorf("batchSize must greater than 0")
+		return nil, fmt.Errorf("batchSize must be greater than 0")
 	}
 	if start >= len(s.requestIDs) {
 		return nil, fmt.Errorf("start index out of bounds: start=%d, len=%d", start, len(s.requestIDs))

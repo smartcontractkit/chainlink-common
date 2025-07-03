@@ -2,15 +2,18 @@ package relayerset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -30,7 +33,8 @@ type Server struct {
 	log logger.Logger
 
 	relayerset.UnimplementedRelayerSetServer
-	relayerset.UnimplementedEVMRelayerSetServer
+	evmpb.UnimplementedEVMServer
+	pb.ContractReaderServer
 
 	impl   core.RelayerSet
 	broker *net.BrokerExt
@@ -45,7 +49,8 @@ type Server struct {
 }
 
 var _ relayerset.RelayerSetServer = (*Server)(nil)
-var _ relayerset.EVMRelayerSetServer = (*Server)(nil)
+var _ evmpb.EVMServer = (*Server)(nil)
+var _ pb.ContractReaderServer = (*Server)(nil)
 
 func NewRelayerSetServer(log logger.Logger, underlying core.RelayerSet, broker *net.BrokerExt) (*Server, net.Resource) {
 	pluginProviderServers := make(net.Resources, 0)
@@ -68,9 +73,14 @@ func (s *Server) Close() error {
 	return nil
 }
 
-func (s *Server) getReader(id string) (*readerAndServer, error) {
+func (s *Server) getReader(ctx context.Context) (*readerAndServer, error) {
 	s.readersMux.Lock()
 	defer s.readersMux.Unlock()
+
+	id, err := readContextValue(ctx, metadataContractReader)
+	if err != nil {
+		return nil, err
+	}
 
 	reader, ok := s.readers[id]
 	if !ok {
@@ -272,6 +282,27 @@ func (s *Server) RelayerName(ctx context.Context, relayID *relayerset.RelayerId)
 	return &relayerset.RelayerNameResponse{Name: relayer.Name()}, nil
 }
 
+func (s *Server) RelayerGetChainInfo(ctx context.Context, req *relayerset.GetChainInfoRequest) (*pb.GetChainInfoReply, error) {
+	relayer, err := s.getRelayer(ctx, req.RelayerId)
+	if err != nil {
+		return nil, err
+	}
+
+	chainInfo, err := relayer.GetChainInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetChainInfoReply{
+		ChainInfo: &pb.ChainInfo{
+			FamilyName:      chainInfo.FamilyName,
+			ChainId:         chainInfo.ChainID,
+			NetworkName:     chainInfo.NetworkName,
+			NetworkNameFull: chainInfo.NetworkNameFull,
+		},
+	}, nil
+}
+
 func (s *Server) RelayerLatestHead(ctx context.Context, req *relayerset.LatestHeadRequest) (*relayerset.LatestHeadResponse, error) {
 	relayer, err := s.getRelayer(ctx, req.RelayerId)
 	if err != nil {
@@ -296,4 +327,16 @@ func (s *Server) getRelayer(ctx context.Context, relayerID *relayerset.RelayerId
 	}
 
 	return relayer, nil
+}
+
+func readContextValue(ctx context.Context, key string) (string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		contractReaderIds := md.Get(key)
+		if len(contractReaderIds) == 1 {
+			return contractReaderIds[0], nil
+		}
+		return "", fmt.Errorf("num values is not 1 but %d", len(contractReaderIds))
+	}
+	return "", errors.New("could not read ctx metadata")
 }

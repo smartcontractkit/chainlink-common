@@ -204,6 +204,14 @@ func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID stri
 	return types.TransactionStatus(reply.GetTransactionStatus()), nil
 }
 
+func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evmtypes.Address, pluginType string) (forwarder evmtypes.Address, err error) {
+	reply, err := e.grpcClient.GetForwarderForEOA(ctx, &evmpb.GetForwarderForEOARequest{Addr: eoa[:], Aggr: ocr2AggregatorID[:], PluginType: pluginType})
+	if err != nil {
+		return evmtypes.Address{}, net.WrapRPCErr(err)
+	}
+	return evmtypes.Address(reply.GetAddr()), nil
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 
@@ -384,4 +392,12 @@ func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.
 	return &evmpb.CalculateTransactionFeeReply{
 		TransactionFee: valuespb.NewBigIntFromInt(txFee.TransactionFee),
 	}, nil
+}
+
+func (e *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	forwarder, err := e.impl.GetForwarderForEOA(ctx, evmtypes.Address(request.GetAddr()), evmtypes.Address(request.GetAggr()), request.GetPluginType())
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
 }

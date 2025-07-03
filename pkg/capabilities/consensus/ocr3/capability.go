@@ -9,13 +9,14 @@ import (
 	"github.com/jonboulle/clockwork"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/metering"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 const (
@@ -63,7 +64,7 @@ type capability struct {
 var _ CapabilityIface = (*capability)(nil)
 var _ capabilities.ExecutableCapability = (*capability)(nil)
 
-func NewCapability(s *requests.Store[*ReportRequest, ReportResponse], clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
+func NewCapability(s *requests.Store[*ReportRequest], clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,

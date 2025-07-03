@@ -281,11 +281,11 @@ func fromDecimalValueProto(dec *pb.Decimal) *Decimal {
 		return nil
 	}
 
-	dc := decimal.NewFromBigInt(protoToBigInt(dec.Coefficient), dec.Exponent)
+	dc := decimal.NewFromBigInt(ProtoToBigInt(dec.Coefficient), dec.Exponent)
 	return NewDecimal(dc)
 }
 
-func protoToBigInt(biv *pb.BigInt) *big.Int {
+func ProtoToBigInt(biv *pb.BigInt) *big.Int {
 	if biv == nil {
 		return nil
 	}
@@ -301,7 +301,7 @@ func protoToBigInt(biv *pb.BigInt) *big.Int {
 }
 
 func fromBigIntValueProto(biv *pb.BigInt) *BigInt {
-	return NewBigInt(protoToBigInt(biv))
+	return NewBigInt(ProtoToBigInt(biv))
 }
 
 func CreateMapFromStruct(v any) (*Map, error) {

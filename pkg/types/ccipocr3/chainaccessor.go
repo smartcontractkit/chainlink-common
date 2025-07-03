@@ -104,7 +104,7 @@ type DestinationAccessor interface {
 	ExecutedMessages(
 		ctx context.Context,
 		ranges map[ChainSelector][]SeqNumRange,
-		confidence ConfidenceLevel,
+		confidence primitives.ConfidenceLevel,
 	) (map[ChainSelector][]SeqNum, error)
 
 	// NextSeqNum reads the source chain config to get the next expected
@@ -144,15 +144,6 @@ type DestinationAccessor interface {
 	// Contract: OffRamp
 	// Confidence: Unconfirmed
 	GetLatestPriceSeqNr(ctx context.Context) (uint64, error)
-
-	// GetEnabledSourceChains returns a slice of chain selectors that are
-	// enabled for this destination chain. For EVM chains, this is fetched
-	// from the OffRamp contract.
-	//
-	// Access Type: Method(GetEnabledSourceChains)
-	// Contract: chain-dependent
-	// Confidence: Unconfirmed
-	GetEnabledSourceChains(ctx context.Context) ([]ChainSelector, error)
 }
 
 type SourceAccessor interface {
@@ -232,17 +223,6 @@ type RMNAccessor interface {
 // Random types. These are defined here mainly to bring focus to types which should
 // probably be removed or replaced.
 
-// ConfidenceLevel represents how likely it is that the data could be impacted by a reorg.
-type ConfidenceLevel = primitives.ConfidenceLevel
-
-const (
-	// Finalized data is not expected to change, even if there is a reorg.
-	Finalized ConfidenceLevel = "finalized"
-
-	// Unconfirmed data may be modified by a reorged.
-	Unconfirmed ConfidenceLevel = "unconfirmed"
-)
-
 type TimestampedBig struct {
 	Timestamp time.Time `json:"timestamp"`
 	Value     BigInt    `json:"value"`
@@ -253,8 +233,10 @@ type TimestampedBig struct {
 //
 //nolint:lll //url
 type TimestampedUnixBig struct {
-	Value     *big.Int `json:"value"`
-	Timestamp uint32   `json:"timestamp"`
+	// Value in uint224, can contain several packed fields
+	Value *big.Int `json:"value"`
+	// Timestamp in seconds since epoch of most recent update
+	Timestamp uint32 `json:"timestamp"`
 }
 
 func NewTimestampedBig(value int64, timestamp time.Time) TimestampedBig {

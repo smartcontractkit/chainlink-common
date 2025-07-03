@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751557963815,
+  "lastUpdate": 1751562131553,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17850,6 +17850,48 @@ window.BENCHMARK_DATA = {
             "value": 28645,
             "unit": "ns/op",
             "extra": "42190 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bb77f59474b395abc4f64685be6087fa143e54b1",
+          "message": "introduce read_from_cache and store_in_cache to cache_settings for cl… (#1321)\n\n* introduce read_from_cache and store_in_cache to cache_settings for clarity\n\n* add hash() to OutboundHTTPRequest method",
+          "timestamp": "2025-07-03T17:00:50Z",
+          "tree_id": "b81fa950b3fb4d4267ab26cae4852c87a26899fb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bb77f59474b395abc4f64685be6087fa143e54b1"
+        },
+        "date": 1751562129997,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.3,
+            "unit": "ns/op",
+            "extra": "3299054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 421.4,
+            "unit": "ns/op",
+            "extra": "2948121 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28455,
+            "unit": "ns/op",
+            "extra": "42180 times\n4 procs"
           }
         ]
       }

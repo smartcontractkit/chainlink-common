@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751539211140,
+  "lastUpdate": 1751551951183,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17724,6 +17724,48 @@ window.BENCHMARK_DATA = {
             "value": 28455,
             "unit": "ns/op",
             "extra": "41950 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e7b4552635a968261130e337ced9c84732831152",
+          "message": "Add a file lock so that protoc generation waits when run in parallel (#1329)",
+          "timestamp": "2025-07-03T10:11:04-04:00",
+          "tree_id": "589b9554bf4aa4e84372f0c29942d06352bf3293",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e7b4552635a968261130e337ced9c84732831152"
+        },
+        "date": 1751551949556,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 376.2,
+            "unit": "ns/op",
+            "extra": "3290689 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.6,
+            "unit": "ns/op",
+            "extra": "2911696 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28528,
+            "unit": "ns/op",
+            "extra": "42087 times\n4 procs"
           }
         ]
       }

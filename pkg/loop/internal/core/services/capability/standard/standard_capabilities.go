@@ -34,7 +34,7 @@ type StandardCapabilities interface {
 	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
 		capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
 		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory,
-		gatewayConnector core.GatewayConnector, keyStore core.Keystore) error
+		gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 
@@ -63,7 +63,7 @@ func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabili
 func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService,
 	keyValueStore core.KeyValueStore, capabilitiesRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
 	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory,
-	gatewayConnector core.GatewayConnector, keyStore core.Keystore) error {
+	gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
 	telemetryID, telemetryRes, err := c.ServeNew("Telemetry", func(s *grpc.Server) {
 		pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 	})
@@ -75,7 +75,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	resources = append(resources, telemetryRes)
 
 	keyStoreID, keyStoreRes, err := c.ServeNew("KeyStore", func(s *grpc.Server) {
-		pb.RegisterKeystoreServer(s, keystoreservice.NewServer(keyStore))
+		pb.RegisterKeystoreServer(s, keystoreservice.NewServer(p2pKeystore))
 	})
 	if err != nil {
 		c.CloseAll(resources...)

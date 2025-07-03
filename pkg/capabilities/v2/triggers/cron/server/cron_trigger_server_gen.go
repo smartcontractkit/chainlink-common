@@ -31,7 +31,7 @@ type CronCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, keyStore core.Keystore) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error
 }
 
 func NewCronServer(capability CronCapability) *CronServer {
@@ -48,8 +48,8 @@ type CronServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, keyStore core.Keystore) error {
-	if err := cs.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, keyStore); err != nil {
+func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := cs.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 

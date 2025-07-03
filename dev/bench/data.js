@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751487328448,
+  "lastUpdate": 1751539211140,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17682,6 +17682,48 @@ window.BENCHMARK_DATA = {
             "value": 28582,
             "unit": "ns/op",
             "extra": "42236 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "pablolagreca@hotmail.com",
+            "name": "pablolagreca",
+            "username": "pablolagreca"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4a44e000b62f4ae3f8e7b5679a083936ad2af82c",
+          "message": "PLEX-250 - Reverting undesired change from initial write report commit (#1315)",
+          "timestamp": "2025-07-03T10:39:00Z",
+          "tree_id": "86a021306bdc076bad935578787b3a7621523b41",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4a44e000b62f4ae3f8e7b5679a083936ad2af82c"
+        },
+        "date": 1751539210253,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357,
+            "unit": "ns/op",
+            "extra": "3363696 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.6,
+            "unit": "ns/op",
+            "extra": "2907735 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28455,
+            "unit": "ns/op",
+            "extra": "41950 times\n4 procs"
           }
         ]
       }

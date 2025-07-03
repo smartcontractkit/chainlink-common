@@ -20,7 +20,7 @@ func main() {
 	}
 
 	cresult := &valuespb.Value{}
-	rawsdk.DoRequest("consensus@1.0.0-alpha", "Simple", pb.Mode_MODE_DON, consensus, cresult)
+	rawsdk.DoConsensusRequest("consensus@1.0.0-alpha", consensus, cresult)
 
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
 	rawsdk.SendError(errors.New("cannot use NodeRuntime outside RunInNodeMode"))

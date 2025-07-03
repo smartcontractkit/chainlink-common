@@ -8,7 +8,7 @@ package consensus
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	pb1 "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -27,17 +27,17 @@ var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x10sdk.v2.consensus\x1a\x16values/v1/values.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x15sdk/v1alpha/sdk.proto2d\n" +
-	"\tConsensus\x12>\n" +
-	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x10.values.v1.Value\x1a\x17\x82\xb5\x18\x13\b\x01\x12\x0fconsensus@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
+	"\x0fconsensus.proto\x12\x10sdk.v2.consensus\x1a\x16values/v1/values.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x15sdk/v1alpha/sdk.proto2q\n" +
+	"\tConsensus\x12K\n" +
+	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x1d.sdk.v1alpha.ConsensusOutputs\x1a\x17\x82\xb5\x18\x13\b\x01\x12\x0fconsensus@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
 
 var file_consensus_proto_goTypes = []any{
 	(*pb.SimpleConsensusInputs)(nil), // 0: sdk.v1alpha.SimpleConsensusInputs
-	(*pb1.Value)(nil),                // 1: values.v1.Value
+	(*pb.ConsensusOutputs)(nil),      // 1: sdk.v1alpha.ConsensusOutputs
 }
 var file_consensus_proto_depIdxs = []int32{
 	0, // 0: sdk.v2.consensus.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
-	1, // 1: sdk.v2.consensus.Consensus.Simple:output_type -> values.v1.Value
+	1, // 1: sdk.v2.consensus.Consensus.Simple:output_type -> sdk.v1alpha.ConsensusOutputs
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

@@ -6,7 +6,7 @@ func main() {
 	gen := pkg.ProtocGen{Plugins: []pkg.Plugin{{Name: "go-grpc"}}}
 	gen.AddSourceDirectories(".", "../../../../")
 
-	if err := gen.Generate("relayerset.proto", "."); err != nil {
+	if err := gen.GenerateFile("relayerset.proto", "."); err != nil {
 		panic(err)
 	}
 }

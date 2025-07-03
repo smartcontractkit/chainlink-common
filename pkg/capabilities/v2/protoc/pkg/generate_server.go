@@ -30,7 +30,7 @@ func (s ServerLanguage) Validate() error {
 //go:embed templates/server.go.tmpl
 var goServerTemplate string
 
-var serverTemplates = map[ServerLanguage]templateGenerator{
+var serverTemplates = map[ServerLanguage]TemplateGenerator{
 	ServerLangaugeGo: {
 		Name:             "go_server",
 		Template:         goServerTemplate,

@@ -22,6 +22,66 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type CacheSettings struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReadFromCache bool                   `protobuf:"varint,1,opt,name=read_from_cache,json=readFromCache,proto3" json:"read_from_cache,omitempty"` // If true, attempt to read a cached response for the request.
+	StoreInCache  bool                   `protobuf:"varint,2,opt,name=store_in_cache,json=storeInCache,proto3" json:"store_in_cache,omitempty"`    // If true, store the response in cache for the given TTL.
+	TtlMs         int32                  `protobuf:"varint,3,opt,name=ttl_ms,json=ttlMs,proto3" json:"ttl_ms,omitempty"`                           // Time-to-live for the cache entry in milliseconds.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CacheSettings) Reset() {
+	*x = CacheSettings{}
+	mi := &file_client_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CacheSettings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CacheSettings) ProtoMessage() {}
+
+func (x *CacheSettings) ProtoReflect() protoreflect.Message {
+	mi := &file_client_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CacheSettings.ProtoReflect.Descriptor instead.
+func (*CacheSettings) Descriptor() ([]byte, []int) {
+	return file_client_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CacheSettings) GetReadFromCache() bool {
+	if x != nil {
+		return x.ReadFromCache
+	}
+	return false
+}
+
+func (x *CacheSettings) GetStoreInCache() bool {
+	if x != nil {
+		return x.StoreInCache
+	}
+	return false
+}
+
+func (x *CacheSettings) GetTtlMs() int32 {
+	if x != nil {
+		return x.TtlMs
+	}
+	return 0
+}
+
 type Request struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
@@ -29,13 +89,14 @@ type Request struct {
 	Headers       map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	TimeoutMs     int32                  `protobuf:"varint,5,opt,name=timeout_ms,json=timeoutMs,proto3" json:"timeout_ms,omitempty"`
+	CacheSettings *CacheSettings         `protobuf:"bytes,6,opt,name=cache_settings,json=cacheSettings,proto3" json:"cache_settings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_client_proto_msgTypes[0]
+	mi := &file_client_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +108,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[0]
+	mi := &file_client_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +121,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{0}
+	return file_client_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Request) GetUrl() string {
@@ -98,19 +159,25 @@ func (x *Request) GetTimeoutMs() int32 {
 	return 0
 }
 
+func (x *Request) GetCacheSettings() *CacheSettings {
+	if x != nil {
+		return x.CacheSettings
+	}
+	return nil
+}
+
 type Response struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	StatusCode    uint32                 `protobuf:"varint,2,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
-	Headers       map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	StatusCode    uint32                 `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
+	Headers       map[string]string      `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Body          []byte                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Response) Reset() {
 	*x = Response{}
-	mi := &file_client_proto_msgTypes[1]
+	mi := &file_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -122,7 +189,7 @@ func (x *Response) String() string {
 func (*Response) ProtoMessage() {}
 
 func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[1]
+	mi := &file_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,14 +202,7 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Response) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
+	return file_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Response) GetStatusCode() uint32 {
@@ -170,23 +230,27 @@ var File_client_proto protoreflect.FileDescriptor
 
 const file_client_proto_rawDesc = "" +
 	"\n" +
-	"\fclient.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"\xd3\x01\n" +
+	"\fclient.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"t\n" +
+	"\rCacheSettings\x12&\n" +
+	"\x0fread_from_cache\x18\x01 \x01(\bR\rreadFromCache\x12$\n" +
+	"\x0estore_in_cache\x18\x02 \x01(\bR\fstoreInCache\x12\x15\n" +
+	"\x06ttl_ms\x18\x03 \x01(\x05R\x05ttlMs\"\x8a\x02\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12/\n" +
 	"\aheaders\x18\x03 \x03(\v2\x15.Request.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1d\n" +
 	"\n" +
-	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x1a:\n" +
+	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x125\n" +
+	"\x0ecache_settings\x18\x06 \x01(\v2\x0e.CacheSettingsR\rcacheSettings\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd2\x01\n" +
-	"\bResponse\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\x12\x1f\n" +
-	"\vstatus_code\x18\x02 \x01(\rR\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xad\x01\n" +
+	"\bResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\rR\n" +
 	"statusCode\x120\n" +
-	"\aheaders\x18\x03 \x03(\v2\x16.Response.HeadersEntryR\aheaders\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\x1a:\n" +
+	"\aheaders\x18\x02 \x03(\v2\x16.Response.HeadersEntryR\aheaders\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012H\n" +
@@ -205,23 +269,25 @@ func file_client_proto_rawDescGZIP() []byte {
 	return file_client_proto_rawDescData
 }
 
-var file_client_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_client_proto_goTypes = []any{
-	(*Request)(nil),  // 0: Request
-	(*Response)(nil), // 1: Response
-	nil,              // 2: Request.HeadersEntry
-	nil,              // 3: Response.HeadersEntry
+	(*CacheSettings)(nil), // 0: CacheSettings
+	(*Request)(nil),       // 1: Request
+	(*Response)(nil),      // 2: Response
+	nil,                   // 3: Request.HeadersEntry
+	nil,                   // 4: Response.HeadersEntry
 }
 var file_client_proto_depIdxs = []int32{
-	2, // 0: Request.headers:type_name -> Request.HeadersEntry
-	3, // 1: Response.headers:type_name -> Response.HeadersEntry
-	0, // 2: Client.SendRequest:input_type -> Request
-	1, // 3: Client.SendRequest:output_type -> Response
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 0: Request.headers:type_name -> Request.HeadersEntry
+	0, // 1: Request.cache_settings:type_name -> CacheSettings
+	4, // 2: Response.headers:type_name -> Response.HeadersEntry
+	1, // 3: Client.SendRequest:input_type -> Request
+	2, // 4: Client.SendRequest:output_type -> Response
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_client_proto_init() }
@@ -235,7 +301,7 @@ func file_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_client_proto_rawDesc), len(file_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

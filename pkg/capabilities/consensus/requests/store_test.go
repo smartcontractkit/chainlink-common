@@ -74,7 +74,7 @@ func TestOCR3Store(t *testing.T) {
 
 	t.Run("rangeN, zero batch size", func(t *testing.T) {
 		_, err := s.RangeN(0, 0)
-		assert.ErrorContains(t, err, "batchSize must greater than 0")
+		assert.ErrorContains(t, err, "batchSize must be greater than 0")
 	})
 
 	t.Run("rangeN, batchSize larger than queue with start offset", func(t *testing.T) {

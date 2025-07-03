@@ -8,6 +8,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.3.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/sys v0.33.0
 	google.golang.org/protobuf v1.36.6
 )
 

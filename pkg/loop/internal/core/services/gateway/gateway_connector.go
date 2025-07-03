@@ -70,7 +70,7 @@ func (c GatewayConnectorClient) AwaitConnection(ctx context.Context, gatewayID s
 	return err
 }
 
-func (c GatewayConnectorClient) SendToGateway(ctx context.Context, gatewayID string, resp *jsonrpc.Response) error {
+func (c GatewayConnectorClient) SendToGateway(ctx context.Context, gatewayID string, resp *jsonrpc.Response[any]) error {
 	data, err := json.Marshal(resp)
 	if err != nil {
 		return fmt.Errorf("failed to encode response: %w", err)
@@ -128,7 +128,7 @@ func (s GatewayConnectorServer) AddHandler(ctx context.Context, req *pb.AddHandl
 }
 
 func (s GatewayConnectorServer) SendToGateway(ctx context.Context, req *pb.SendMessageRequest) (*emptypb.Empty, error) {
-	var resp jsonrpc.Response
+	var resp jsonrpc.Response[any]
 	err := json.Unmarshal(req.Message, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)

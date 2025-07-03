@@ -9,6 +9,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/sys/unix"
 )
 
 var values = Packages{
@@ -145,6 +147,7 @@ func (p *ProtocGen) doInit() error {
 	if p.init {
 		return nil
 	}
+
 	p.LinkPackage(values)
 
 	if p.ProtocHelper != nil {
@@ -160,6 +163,12 @@ func (p *ProtocGen) doInit() error {
 	protoDir := path.Join(root, "proto_vendor")
 	if err = os.MkdirAll(protoDir, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create proto vendor directory: %v", err)
+	}
+
+	// Ensure that multiple generations running in parallel do not interfere with each other.
+	// This can happen if both try to reset hard at once, clone the repo at once, or checkout different versions.
+	if err = lockProtos(protoDir); err != nil {
+		return fmt.Errorf("failed to lock protos: %v", err)
 	}
 
 	clProtos := path.Join(protoDir, "chainlink-protos")
@@ -220,5 +229,23 @@ func cloneClProtosRepo(repo string) error {
 			return fmt.Errorf("failed to clone chainlink-protos repo: %v", err)
 		}
 	}
+	return nil
+}
+
+func lockProtos(protoRepo string) error {
+	lockPath := path.Join(protoRepo, "protos.lock")
+
+	// Open or create the lock file
+	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		return fmt.Errorf("failed to open protos.lock file: %w", err)
+	}
+
+	fmt.Println("Waiting for lock...")
+	if err = unix.Flock(int(f.Fd()), unix.LOCK_EX); err != nil {
+		panic(fmt.Sprintf("Failed to acquire lock: %v", err))
+	}
+	fmt.Println("Acquired lock")
+
 	return nil
 }

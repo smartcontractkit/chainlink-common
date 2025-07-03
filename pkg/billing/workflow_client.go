@@ -46,7 +46,7 @@ type workflowClient struct {
 	serverName string
 
 	// JWT-based authentication
-	jwtManager auth.JWTManager
+	jwtGenerator auth.JWTGenerator
 }
 
 type workflowConfig struct {
@@ -54,7 +54,7 @@ type workflowConfig struct {
 	transportCredentials credentials.TransportCredentials
 	tlsCert              string
 	serverName           string
-	jwtManager           auth.JWTManager
+	jwtGenerator         auth.JWTGenerator
 }
 
 type WorkflowClientOpt func(*workflowConfig)
@@ -68,7 +68,7 @@ func defaultWorkflowConfig() workflowConfig {
 		tlsCert:              "",
 		// Default to "localhost" if not overridden.
 		serverName: "localhost",
-		jwtManager: nil,
+		jwtGenerator: nil,
 	}
 }
 
@@ -84,10 +84,10 @@ func WithWorkflowLogger(l logger.Logger) WorkflowClientOpt {
 	}
 }
 
-// WithJWTManager sets the JWT manager for authentication.
-func WithJWTManager(jwtManager auth.JWTManager) WorkflowClientOpt {
+// WithJWTGenerator sets the JWT generator for authentication.
+func WithJWTGenerator(jwtGenerator auth.JWTGenerator) WorkflowClientOpt {
 	return func(cfg *workflowConfig) {
-		cfg.jwtManager = jwtManager
+		cfg.jwtGenerator = jwtGenerator
 	}
 }
 
@@ -117,7 +117,7 @@ func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClien
 		tlsCert:    cfg.tlsCert,
 		creds:      cfg.transportCredentials,
 		serverName: cfg.serverName,
-		jwtManager: cfg.jwtManager,
+		jwtGenerator: cfg.jwtGenerator,
 	}
 
 	err := wc.initGrpcConn()
@@ -143,12 +143,12 @@ func (wc *workflowClient) Close() error {
 // addJWTAuth creates and signs a JWT token, then adds it to the context
 func (wc *workflowClient) addJWTAuth(ctx context.Context, req any) (context.Context, error) {
 	// Skip authentication if no JWT manager provided
-	if wc.jwtManager == nil {
+	if wc.jwtGenerator == nil {
 		return ctx, nil
 	}
 
 	// Create JWT token using the JWT manager
-	jwtToken, err := wc.jwtManager.CreateJWTForRequest(req)
+	jwtToken, err := wc.jwtGenerator.CreateJWTForRequest(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create JWT: %w", err)
 	}

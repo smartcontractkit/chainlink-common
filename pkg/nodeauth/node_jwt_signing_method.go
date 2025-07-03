@@ -12,16 +12,16 @@ type Signer interface {
 	Sign(msg []byte) (signature []byte, err error)
 }
 
-// NodeJWTSigningMethod is an implementation of the jwt.SigningMethod interface that allows nodes to use their native signing mechanisms (e.g., ECDSA) to generate JWT tokens.
+// NodeJWTSigningMethod is an implementation of the jwt.SigningMethod interface that allows nodes to use their native signing mechanisms (e.g., Ed25519) to generate JWT tokens.
 // All nodes will implement the Signer interface.
 // This is a wrapper around the Signer interface to be compatible with the jwt.SigningMethod interface.
 // jwt.SigningMethod interface: https://pkg.go.dev/github.com/golang-jwt/jwt/v5#SigningMethod
 type NodeJWTSigningMethod struct{}
 
 func (d *NodeJWTSigningMethod) Verify(signingString string, signature []byte, key interface{}) error {
-	// Verification is handled server-side through blockchain signature recovery
+	// Verification is handled server-side through Ed25519 signature verification
 	// This method is required by the jwt.SigningMethod interface but not used in our client flow
-	return fmt.Errorf("verification not supported - handled by server-side signature recovery")
+	return fmt.Errorf("verification not supported - handled by server-side Ed25519 verification")
 }
 
 // Sign() uses the node's signer implementation to sign and generate a JWT token.
@@ -45,5 +45,5 @@ func (d *NodeJWTSigningMethod) Sign(signingString string, key interface{}) ([]by
 }
 
 func (d *NodeJWTSigningMethod) Alg() string {
-	return "ES256K" // ECDSA algorithm on secp256k1 curve (Ethereum-style)
+	return "EdDSA" // Ed25519 algorithm
 }

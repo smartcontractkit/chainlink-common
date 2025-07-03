@@ -93,7 +93,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	wc, err := NewWorkflowClient(addr,
 		WithWorkflowTransportCredentials(clientCreds), // Provided but may be overridden by TLS cert.
 		WithWorkflowTLSCert(string(certBytes)),
-		WithJWTManager(mockJWT),
+		WithJWTGenerator(mockJWT),
 		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
@@ -228,7 +228,7 @@ func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 
 	wc := &workflowClient{
 		logger:     logger.Test(t),
-		jwtManager: mockJWT,
+		jwtGenerator: mockJWT,
 	}
 
 	ctx := context.Background()
@@ -251,7 +251,7 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 	req := MockRequest{Field: "test"}
 	wc := &workflowClient{
 		logger: logger.Test(t),
-		jwtManager: nil,
+		jwtGenerator: nil,
 	}
 	newCtx, err := wc.addJWTAuth(ctx, req)
 	require.NoError(t, err)
@@ -269,7 +269,7 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 
 	wc := &workflowClient{
 		logger:     logger.Test(t),
-		jwtManager: mockJWT,
+		jwtGenerator: mockJWT,
 	}
 
 	ctx := context.Background()
@@ -288,7 +288,7 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 
 	wc := &workflowClient{
 		logger:     logger.Test(t),
-		jwtManager: mockJWT,
+		jwtGenerator: mockJWT,
 	}
 
 	ctx1 := context.Background()

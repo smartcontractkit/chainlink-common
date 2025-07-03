@@ -11,11 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
 )
 
 func init() {
 	// Register the custom signing method with the JWT library for testing
-	jwt.RegisterSigningMethod("ES256K", func() jwt.SigningMethod {
+	jwt.RegisterSigningMethod("EdDSA", func() jwt.SigningMethod {
 		return &NodeJWTSigningMethod{}
 	})
 }
@@ -41,7 +42,7 @@ func createTestData() ([32]byte, [32]byte) {
 	return p2pId, publicKey
 }
 
-func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
+func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 	// prepare test data
 	mockSig := mocks.NewSigner(t)
 	p2pId, publicKey := createTestData()
@@ -52,9 +53,9 @@ func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
 	signature[64] = 0x1b
 	mockSig.EXPECT().Sign(mock.AnythingOfType("[]uint8")).Return(signature, nil).Once()
 
-	jwtManager := NewNodeJWTManager(mockSig, p2pId, publicKey)
+	jwtGenerator := NewNodeJWTGenerator(mockSig, p2pId, publicKey)
 
-	jwtToken, err := jwtManager.CreateJWTForRequest(req)
+	jwtToken, err := jwtGenerator.CreateJWTForRequest(req)
 	require.NoError(t, err)
 	require.NotEmpty(t, jwtToken)
 
@@ -64,7 +65,7 @@ func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
 
 	claims, ok := token.Claims.(*NodeJWTClaims)
 	require.True(t, ok)
-	assert.Equal(t, "workflowDON", claims.Issuer)
+	assert.Equal(t, hex.EncodeToString(p2pId[:]), claims.Issuer)
 
 	expectedP2PIdHex := hex.EncodeToString(p2pId[:])
 	expectedPublicKeyHex := hex.EncodeToString(publicKey[:])
@@ -73,7 +74,7 @@ func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
 	assert.Equal(t, expectedP2PIdHex, claims.P2PId)
 	assert.Equal(t, expectedPublicKeyHex, claims.PublicKey)
 
-	expectedDigest := jwtManager.DigestFromRequest(req)
+	expectedDigest := utils.CalculateRequestDigest(req)
 	assert.Equal(t, expectedDigest, claims.Digest)
 
 	assert.NotNil(t, claims.ExpiresAt)
@@ -92,19 +93,19 @@ func TestNodeJWTManager_CreateJWTForRequest(t *testing.T) {
 	assert.Equal(t, publicKey, decodedPublicKeyArray, "Decoded public key should match original")
 }
 
-func TestNodeJWTManager_DigestTampering(t *testing.T) {
+func TestNodeJWTGenerator_DigestTampering(t *testing.T) {
 	mockSig := mocks.NewSigner(t)
 	p2pId, publicKey := createTestData()
-	jwtManager := NewNodeJWTManager(mockSig, p2pId, publicKey)
+	jwtGenerator := NewNodeJWTGenerator(mockSig, p2pId, publicKey)
 	req := mockRequest{Field: "original"}
 
 	mockSig.EXPECT().Sign(mock.AnythingOfType("[]uint8")).Return([]byte("mock-signature"), nil).Maybe()
 
 	// Create JWT for original and altered request
-	jwtToken, err := jwtManager.CreateJWTForRequest(req)
+	jwtToken, err := jwtGenerator.CreateJWTForRequest(req)
 	require.NoError(t, err)
 	reqAltered := mockRequest{Field: "tampered"}
-	digestAltered := jwtManager.DigestFromRequest(reqAltered)
+	digestAltered := utils.CalculateRequestDigest(reqAltered)
 
 	token, _, err := new(jwt.Parser).ParseUnverified(jwtToken, &NodeJWTClaims{})
 	require.NoError(t, err)
@@ -116,27 +117,27 @@ func TestNodeJWTManager_DigestTampering(t *testing.T) {
 	assert.NotEqual(t, digestAltered, claims.Digest, "Expected JWT digest to not match altered request")
 }
 
-func TestNodeJWTManager_NoSigner(t *testing.T) {
+func TestNodeJWTGenerator_NoSigner(t *testing.T) {
 	p2pId, publicKey := createTestData()
-	jwtManager := NewNodeJWTManager(nil, p2pId, publicKey)
+	jwtGenerator := NewNodeJWTGenerator(nil, p2pId, publicKey)
 
 	req := mockRequest{Field: "test request"}
 
-	_, err := jwtManager.CreateJWTForRequest(req)
+	_, err := jwtGenerator.CreateJWTForRequest(req)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no signer configured")
 }
 
-func TestNodeJWTManager_SigningError(t *testing.T) {
+func TestNodeJWTGenerator_SigningError(t *testing.T) {
 	mockSig := mocks.NewSigner(t)
 	p2pId, publicKey := createTestData()
-	jwtManager := NewNodeJWTManager(mockSig, p2pId, publicKey)
+	jwtGenerator := NewNodeJWTGenerator(mockSig, p2pId, publicKey)
 
 	req := mockRequest{Field: "test request"}
 
 	mockSig.EXPECT().Sign(mock.AnythingOfType("[]uint8")).Return(nil, fmt.Errorf("mock signing error")).Maybe()
 
-	_, err := jwtManager.CreateJWTForRequest(req)
+	_, err := jwtGenerator.CreateJWTForRequest(req)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "mock signing error")
 }

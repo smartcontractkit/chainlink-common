@@ -57,5 +57,7 @@ packages:
           dir: "{{.InterfaceDir}}"
   github.com/smartcontractkit/chainlink-common/pkg/nodeauth:
     interfaces:
-      JWTManager:
+      JWTGenerator:
+      JWTValidator:
+      NodeTopologyProvider:
       Signer:

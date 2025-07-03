@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751555188912,
+  "lastUpdate": 1751557963815,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17808,6 +17808,48 @@ window.BENCHMARK_DATA = {
             "value": 28451,
             "unit": "ns/op",
             "extra": "42225 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "92018fa568d3e1bbb6ae1ce0fe908d344f6fb137",
+          "message": "WorkflowLib OCR Plugin for DON Time  (#1288)\n\n* Create WorkflowLib Plugin\n\n* Add test coverage\n\n* Update plugin.go\n\n* Update config\n\n* Update ocr3.go\n\n* Extract transmitter\n\n* Handle request expiry\n\n* Make DonTimeResponse fields public\n\n* Update plugin\n\n* close channel on error\n\n* Fix map read",
+          "timestamp": "2025-07-03T10:51:35-05:00",
+          "tree_id": "1a7493072ae993e69f02f9ce465636a09c12724e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/92018fa568d3e1bbb6ae1ce0fe908d344f6fb137"
+        },
+        "date": 1751557962910,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.4,
+            "unit": "ns/op",
+            "extra": "3295051 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 427.8,
+            "unit": "ns/op",
+            "extra": "2935549 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28645,
+            "unit": "ns/op",
+            "extra": "42190 times\n4 procs"
           }
         ]
       }

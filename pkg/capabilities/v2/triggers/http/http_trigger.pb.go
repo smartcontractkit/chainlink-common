@@ -27,18 +27,18 @@ type KeyType int32
 
 const (
 	KeyType_KEY_TYPE_UNSPECIFIED KeyType = 0
-	KeyType_ECDSA                KeyType = 1
+	KeyType_KEY_TYPE_ECDSA       KeyType = 1
 )
 
 // Enum value maps for KeyType.
 var (
 	KeyType_name = map[int32]string{
 		0: "KEY_TYPE_UNSPECIFIED",
-		1: "ECDSA",
+		1: "KEY_TYPE_ECDSA",
 	}
 	KeyType_value = map[string]int32{
 		"KEY_TYPE_UNSPECIFIED": 0,
-		"ECDSA":                1,
+		"KEY_TYPE_ECDSA":       1,
 	}
 )
 
@@ -234,12 +234,12 @@ const file_http_trigger_proto_rawDesc = "" +
 	"\rAuthorizedKey\x12,\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x18.http_trigger.v1.KeyTypeR\x04type\x12\x1d\n" +
 	"\n" +
-	"public_key\x18\x02 \x01(\tR\tpublicKey*.\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey*7\n" +
 	"\aKeyType\x12\x18\n" +
-	"\x14KEY_TYPE_UNSPECIFIED\x10\x00\x12\t\n" +
-	"\x05ECDSA\x10\x012j\n" +
-	"\x04HTTP\x12F\n" +
-	"\aTrigger\x12\x17.http_trigger.v1.Config\x1a\x18.http_trigger.v1.Payload\"\x06\x8a\xb5\x18\x02\b\x010\x01\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-trigger@0.1.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/httpb\x06proto3"
+	"\x14KEY_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eKEY_TYPE_ECDSA\x10\x012b\n" +
+	"\x04HTTP\x12>\n" +
+	"\aTrigger\x12\x17.http_trigger.v1.Config\x1a\x18.http_trigger.v1.Payload0\x01\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12http-trigger@0.1.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/httpb\x06proto3"
 
 var (
 	file_http_trigger_proto_rawDescOnce sync.Once

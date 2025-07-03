@@ -5,8 +5,9 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 import "tools/generator/v1alpha/cre_metadata.proto";
 
 message CacheSettings {
-  bool enabled = 1;  // Whether caching is enabled. Defaults to false.
-  int32 ttl_ms = 2;  // Time-to-live for the cache entry in milliseconds.
+  bool read_from_cache = 1;  // If true, attempt to read a cached response for the request.
+  bool store_in_cache = 2; // If true, store the response in cache for the given TTL.
+  int32 ttl_ms = 3;  // Time-to-live for the cache entry in milliseconds.
 }
 
 message Request {

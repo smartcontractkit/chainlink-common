@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// TODO: Consolidate CommitPluginCodec, ExecutePluginCodec, MessageHasher, ExtraDataCodec into a single Codec interface.
+// TODO: Consolidate CommitPluginCodec, ExecutePluginCodec, ExtraDataCodec into a single Codec interface.
 
 type CommitPluginCodec interface {
 	Encode(context.Context, CommitPluginReport) ([]byte, error)

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751551951183,
+  "lastUpdate": 1751555188912,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17766,6 +17766,48 @@ window.BENCHMARK_DATA = {
             "value": 28528,
             "unit": "ns/op",
             "extra": "42087 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "135b4a985265b94e71bf509d613252ad89b2a855",
+          "message": "Generate a local copy of sdk and metadata for the template generator, since the SDK will be removed from this repo (#1330)",
+          "timestamp": "2025-07-03T18:05:08+03:00",
+          "tree_id": "d7e43d03d1465f69c924462c6aabbe2f12f69332",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/135b4a985265b94e71bf509d613252ad89b2a855"
+        },
+        "date": 1751555187445,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.1,
+            "unit": "ns/op",
+            "extra": "3329284 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.3,
+            "unit": "ns/op",
+            "extra": "2900637 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28451,
+            "unit": "ns/op",
+            "extra": "42225 times\n4 procs"
           }
         ]
       }

@@ -8,6 +8,8 @@ import (
 	"unsafe"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -91,6 +93,12 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 	}
 
 	return callbackId
+}
+
+func DoConsensusRequest(capabilityId string, input *pb.SimpleConsensusInputs, output *valuespb.Value) {
+	protoMap := &valuespb.Map{}
+	Await(DoRequestAsync(capabilityId, "Simple", pb.Mode_MODE_DON, input), protoMap)
+	output.Value = protoMap.Fields[sdk.ConsensusResponseMapKeyPayload].Value
 }
 
 func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {

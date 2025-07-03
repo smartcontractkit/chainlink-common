@@ -18,7 +18,7 @@ var goActionMethodTemplate string
 //go:embed templates/mock.go.tmpl
 var goMockTemplate string
 
-var clientTemplates = []templateGenerator{
+var clientTemplates = []TemplateGenerator{
 	{
 		Name:             "go_sdk",
 		Template:         goClientBaseTemplate,

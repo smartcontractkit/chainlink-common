@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-package cre.sdk.v2.consensus;
+package sdk.v2.consensus;
 
 option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensus";
 
-import "values/pb/values.proto";
-import "capabilities/v2/protoc/pkg/pb/cre_metadata.proto";
-import "workflows/sdk/v2/pb/sdk.proto";
+import "values/v1/values.proto";
+import "tools/generator/v1alpha/cre_metadata.proto";
+import "sdk/v1alpha/sdk.proto";
 
 service Consensus {
-  option (cre.metadata.capability) = {
-    mode: DON
+  option (tools.generator.v1alpha.capability) = {
+    mode: MODE_DON
     capability_id: "consensus@1.0.0"
   };
-  rpc Simple (cre.sdk.v2.SimpleConsensusInputs) returns (values.Value);
+  rpc Simple (sdk.v1alpha.SimpleConsensusInputs) returns (sdk.v1alpha.ConsensusOutputs);
 }

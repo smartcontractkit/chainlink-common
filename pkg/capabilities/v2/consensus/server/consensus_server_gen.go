@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb1 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -20,7 +19,7 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs) (*pb.Value, error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs) (*pb1.ConsensusOutputs, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -28,7 +27,7 @@ type ConsensusCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
 }
 
 func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
@@ -45,8 +44,8 @@ type ConsensusServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
-	if err := cs.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+func (cs *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
+	if err := cs.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
@@ -122,7 +121,7 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	case "Simple":
 		input := &pb1.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb1.SimpleConsensusInputs, _ *emptypb.Empty) (*pb1.ConsensusOutputs, error) {
 			return c.ConsensusCapability.Simple(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

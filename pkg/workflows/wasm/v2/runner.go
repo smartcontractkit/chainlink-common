@@ -12,8 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type Config any
@@ -27,14 +26,21 @@ type runnerInternals interface {
 
 func newRunner[C Config](parse func(configBytes []byte) (C, error), runnerInternals runnerInternals, runtimeInternals runtimeInternals) sdk.Runner[C] {
 	runnerInternals.versionV2()
-	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, sdkpb.Mode_DON)}
+	drt := &sdkimpl.Runtime{RuntimeBase: newRuntime(runtimeInternals, pb.Mode_MODE_DON)}
 	return runnerWrapper[C]{baseRunner: getRunner(
 		parse,
-		&subscriber[C, sdk.Runtime]{runnerInternals: runnerInternals},
+		&subscriber[C, sdk.Runtime]{
+			sp:              drt,
+			runnerInternals: runnerInternals,
+			setRuntime: func(maxResponseSize uint64) {
+				drt.MaxResponseSize = maxResponseSize
+			},
+		},
 		&runner[C, sdk.Runtime]{
+			sp:              drt,
 			runtime:         drt,
 			runnerInternals: runnerInternals,
-			setRuntime: func(config []byte, maxResponseSize uint64) {
+			setRuntime: func(maxResponseSize uint64) {
 				drt.MaxResponseSize = maxResponseSize
 			},
 		}),
@@ -43,11 +49,12 @@ func newRunner[C Config](parse func(configBytes []byte) (C, error), runnerIntern
 
 type runner[C, T any] struct {
 	runnerInternals
-	trigger    *sdkpb.Trigger
+	trigger    *pb.Trigger
 	id         string
 	runtime    T
-	setRuntime func(config []byte, maxResponseSize uint64)
+	setRuntime func(maxResponseSize uint64)
 	config     C
+	sp         sdk.SecretsProvider
 }
 
 var _ baseRunner[any, sdk.Runtime] = (*runner[any, sdk.Runtime])(nil)
@@ -56,15 +63,22 @@ func (r *runner[C, T]) cfg() C {
 	return r.config
 }
 
+func (r *runner[C, T]) secretsProvider() sdk.SecretsProvider {
+	return r.sp
+}
+
 func (r *runner[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
-	wcx := &sdk.WorkflowContext[C]{
-		Config:    r.config,
-		LogWriter: &writer{},
-		Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+	env := &sdk.Environment[C]{
+		NodeEnvironment: sdk.NodeEnvironment[C]{
+			Config:    r.config,
+			LogWriter: &writer{},
+			Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+		},
+		SecretsProvider: r.secretsProvider(),
 	}
 	for idx, handler := range wfs {
 		if uint64(idx) == r.trigger.Id {
-			response, err := handler.Callback()(wcx, r.runtime, r.trigger.Payload)
+			response, err := handler.Callback()(env, r.runtime, r.trigger.Payload)
 			execResponse := &pb.ExecutionResult{}
 			if err == nil {
 				wrapped, err := values.Wrap(response)
@@ -85,8 +99,10 @@ func (r *runner[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
 
 type subscriber[C, T any] struct {
 	runnerInternals
-	id     string
-	config C
+	id         string
+	config     C
+	sp         sdk.SecretsProvider
+	setRuntime func(maxResponseSize uint64)
 }
 
 var _ baseRunner[any, sdk.Runtime] = &subscriber[any, sdk.Runtime]{}
@@ -95,16 +111,20 @@ func (s *subscriber[C, T]) cfg() C {
 	return s.config
 }
 
+func (s *subscriber[C, T]) secretsProvider() sdk.SecretsProvider {
+	return s.sp
+}
+
 func (s *subscriber[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
-	subscriptions := make([]*sdkpb.TriggerSubscription, len(wfs))
+	subscriptions := make([]*pb.TriggerSubscription, len(wfs))
 	for i, handler := range wfs {
-		subscriptions[i] = &sdkpb.TriggerSubscription{
+		subscriptions[i] = &pb.TriggerSubscription{
 			Id:      handler.CapabilityID(),
 			Payload: handler.TriggerCfg(),
 			Method:  handler.Method(),
 		}
 	}
-	triggerSubscription := &sdkpb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
+	triggerSubscription := &pb.TriggerSubscriptionRequest{Subscriptions: subscriptions}
 
 	execResponse := &pb.ExecutionResult{
 		Result: &pb.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: triggerSubscription},
@@ -119,11 +139,14 @@ func (s *subscriber[C, T]) run(wfs []sdk.ExecutionHandler[C, T]) {
 	}
 }
 
-func getWorkflows[C any](config C, initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) sdk.Workflow[C] {
-	wfs, err := initFn(&sdk.WorkflowContext[C]{
-		Config:    config,
-		LogWriter: &writer{},
-		Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+func getWorkflows[C any](config C, secretsProvider sdk.SecretsProvider, initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) sdk.Workflow[C] {
+	wfs, err := initFn(&sdk.Environment[C]{
+		NodeEnvironment: sdk.NodeEnvironment[C]{
+			Config:    config,
+			LogWriter: &writer{},
+			Logger:    slog.New(slog.NewTextHandler(&writer{}, nil)),
+		},
+		SecretsProvider: secretsProvider,
 	})
 	if err != nil {
 		exitErr(err.Error())
@@ -163,11 +186,12 @@ func getRunner[C, T any](parse func(configBytes []byte) (C, error), subscribe *s
 	switch req := execRequest.Request.(type) {
 	case *pb.ExecuteRequest_Subscribe:
 		subscribe.config = c
+		subscribe.setRuntime(execRequest.MaxResponseSize)
 		return subscribe
 	case *pb.ExecuteRequest_Trigger:
 		run.trigger = req.Trigger
 		run.config = c
-		run.setRuntime(execRequest.Config, execRequest.MaxResponseSize)
+		run.setRuntime(execRequest.MaxResponseSize)
 		return run
 	}
 
@@ -181,6 +205,7 @@ func exitErr(msg string) {
 }
 
 type baseRunner[C, T any] interface {
+	secretsProvider() sdk.SecretsProvider
 	cfg() C
 	run([]sdk.ExecutionHandler[C, T])
 }
@@ -189,7 +214,7 @@ type runnerWrapper[C any] struct {
 	baseRunner[C, sdk.Runtime]
 }
 
-func (r runnerWrapper[C]) Run(initFn func(wcx *sdk.WorkflowContext[C]) (sdk.Workflow[C], error)) {
-	wfs := getWorkflows(r.baseRunner.cfg(), initFn)
+func (r runnerWrapper[C]) Run(initFn func(env *sdk.Environment[C]) (sdk.Workflow[C], error)) {
+	wfs := getWorkflows(r.baseRunner.cfg(), r.baseRunner.secretsProvider(), initFn)
 	r.baseRunner.run(wfs)
 }

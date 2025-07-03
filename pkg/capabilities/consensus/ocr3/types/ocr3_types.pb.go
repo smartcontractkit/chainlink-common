@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/consensus/ocr3/types/ocr3_types.proto
+// source: ocr3_types.proto
 
 package types
 
@@ -39,7 +39,7 @@ type AggregationOutcome struct {
 
 func (x *AggregationOutcome) Reset() {
 	*x = AggregationOutcome{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[0]
+	mi := &file_ocr3_types_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *AggregationOutcome) String() string {
 func (*AggregationOutcome) ProtoMessage() {}
 
 func (x *AggregationOutcome) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[0]
+	mi := &file_ocr3_types_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *AggregationOutcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregationOutcome.ProtoReflect.Descriptor instead.
 func (*AggregationOutcome) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{0}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AggregationOutcome) GetEncodableOutcome() *pb.Map {
@@ -126,7 +126,7 @@ type Query struct {
 
 func (x *Query) Reset() {
 	*x = Query{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[1]
+	mi := &file_ocr3_types_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +138,7 @@ func (x *Query) String() string {
 func (*Query) ProtoMessage() {}
 
 func (x *Query) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[1]
+	mi := &file_ocr3_types_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +151,7 @@ func (x *Query) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Query.ProtoReflect.Descriptor instead.
 func (*Query) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{1}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Query) GetIds() []*Id {
@@ -177,7 +177,7 @@ type Id struct {
 
 func (x *Id) Reset() {
 	*x = Id{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[2]
+	mi := &file_ocr3_types_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -189,7 +189,7 @@ func (x *Id) String() string {
 func (*Id) ProtoMessage() {}
 
 func (x *Id) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[2]
+	mi := &file_ocr3_types_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,7 +202,7 @@ func (x *Id) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Id.ProtoReflect.Descriptor instead.
 func (*Id) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{2}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Id) GetWorkflowExecutionId() string {
@@ -274,7 +274,7 @@ type Observation struct {
 
 func (x *Observation) Reset() {
 	*x = Observation{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[3]
+	mi := &file_ocr3_types_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +286,7 @@ func (x *Observation) String() string {
 func (*Observation) ProtoMessage() {}
 
 func (x *Observation) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[3]
+	mi := &file_ocr3_types_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +299,7 @@ func (x *Observation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Observation.ProtoReflect.Descriptor instead.
 func (*Observation) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{3}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Observation) GetId() *Id {
@@ -344,7 +344,7 @@ type Observations struct {
 
 func (x *Observations) Reset() {
 	*x = Observations{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[4]
+	mi := &file_ocr3_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -356,7 +356,7 @@ func (x *Observations) String() string {
 func (*Observations) ProtoMessage() {}
 
 func (x *Observations) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[4]
+	mi := &file_ocr3_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -369,7 +369,7 @@ func (x *Observations) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Observations.ProtoReflect.Descriptor instead.
 func (*Observations) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{4}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Observations) GetObservations() []*Observation {
@@ -403,7 +403,7 @@ type Report struct {
 
 func (x *Report) Reset() {
 	*x = Report{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[5]
+	mi := &file_ocr3_types_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +415,7 @@ func (x *Report) String() string {
 func (*Report) ProtoMessage() {}
 
 func (x *Report) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[5]
+	mi := &file_ocr3_types_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +428,7 @@ func (x *Report) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Report.ProtoReflect.Descriptor instead.
 func (*Report) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{5}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Report) GetId() *Id {
@@ -455,7 +455,7 @@ type ReportInfo struct {
 
 func (x *ReportInfo) Reset() {
 	*x = ReportInfo{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[6]
+	mi := &file_ocr3_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -467,7 +467,7 @@ func (x *ReportInfo) String() string {
 func (*ReportInfo) ProtoMessage() {}
 
 func (x *ReportInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[6]
+	mi := &file_ocr3_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,7 +480,7 @@ func (x *ReportInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportInfo.ProtoReflect.Descriptor instead.
 func (*ReportInfo) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{6}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReportInfo) GetId() *Id {
@@ -507,7 +507,7 @@ type Outcome struct {
 
 func (x *Outcome) Reset() {
 	*x = Outcome{}
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[7]
+	mi := &file_ocr3_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -519,7 +519,7 @@ func (x *Outcome) String() string {
 func (*Outcome) ProtoMessage() {}
 
 func (x *Outcome) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes[7]
+	mi := &file_ocr3_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -532,7 +532,7 @@ func (x *Outcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outcome.ProtoReflect.Descriptor instead.
 func (*Outcome) Descriptor() ([]byte, []int) {
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP(), []int{7}
+	return file_ocr3_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Outcome) GetOutcomes() map[string]*AggregationOutcome {
@@ -549,22 +549,22 @@ func (x *Outcome) GetCurrentReports() []*Report {
 	return nil
 }
 
-var File_capabilities_consensus_ocr3_types_ocr3_types_proto protoreflect.FileDescriptor
+var File_ocr3_types_proto protoreflect.FileDescriptor
 
-const file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc = "" +
+const file_ocr3_types_proto_rawDesc = "" +
 	"\n" +
-	"2capabilities/consensus/ocr3/types/ocr3_types.proto\x12\n" +
-	"ocr3_types\x1a\x16values/pb/values.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbc\x02\n" +
-	"\x12AggregationOutcome\x127\n" +
-	"\x10encodableOutcome\x18\x01 \x01(\v2\v.values.MapR\x10encodableOutcome\x12\x1a\n" +
+	"\x10ocr3_types.proto\x12\n" +
+	"ocr3_types\x1a\x16values/v1/values.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc2\x02\n" +
+	"\x12AggregationOutcome\x12:\n" +
+	"\x10encodableOutcome\x18\x01 \x01(\v2\x0e.values.v1.MapR\x10encodableOutcome\x12\x1a\n" +
 	"\bmetadata\x18\x02 \x01(\fR\bmetadata\x12\"\n" +
 	"\fshouldReport\x18\x03 \x01(\bR\fshouldReport\x12\x1e\n" +
 	"\n" +
 	"lastSeenAt\x18\x04 \x01(\x04R\n" +
 	"lastSeenAt\x128\n" +
 	"\ttimestamp\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12 \n" +
-	"\vencoderName\x18\x06 \x01(\tR\vencoderName\x121\n" +
-	"\rencoderConfig\x18\a \x01(\v2\v.values.MapR\rencoderConfig\")\n" +
+	"\vencoderName\x18\x06 \x01(\tR\vencoderName\x124\n" +
+	"\rencoderConfig\x18\a \x01(\v2\x0e.values.v1.MapR\rencoderConfig\")\n" +
 	"\x05Query\x12 \n" +
 	"\x03ids\x18\x01 \x03(\v2\x0e.ocr3_types.IdR\x03ids\"\xba\x02\n" +
 	"\x02Id\x120\n" +
@@ -577,12 +577,12 @@ const file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc = "" +
 	"\breportId\x18\x06 \x01(\tR\breportId\x12$\n" +
 	"\rworkflowDonId\x18\a \x01(\rR\rworkflowDonId\x12:\n" +
 	"\x18workflowDonConfigVersion\x18\b \x01(\rR\x18workflowDonConfigVersion\x12\x14\n" +
-	"\x05keyId\x18\t \x01(\tR\x05keyIdJ\x04\b\x05\x10\x06\"\xdc\x01\n" +
+	"\x05keyId\x18\t \x01(\tR\x05keyIdJ\x04\b\x05\x10\x06\"\xe2\x01\n" +
 	"\vObservation\x12\x1e\n" +
-	"\x02id\x18\x01 \x01(\v2\x0e.ocr3_types.IdR\x02id\x120\n" +
-	"\fobservations\x18\x04 \x01(\v2\f.values.ListR\fobservations\x124\n" +
-	"\x15overriddenEncoderName\x18\x05 \x01(\tR\x15overriddenEncoderName\x12E\n" +
-	"\x17overriddenEncoderConfig\x18\x06 \x01(\v2\v.values.MapR\x17overriddenEncoderConfig\"\xbb\x01\n" +
+	"\x02id\x18\x01 \x01(\v2\x0e.ocr3_types.IdR\x02id\x123\n" +
+	"\fobservations\x18\x04 \x01(\v2\x0f.values.v1.ListR\fobservations\x124\n" +
+	"\x15overriddenEncoderName\x18\x05 \x01(\tR\x15overriddenEncoderName\x12H\n" +
+	"\x17overriddenEncoderConfig\x18\x06 \x01(\v2\x0e.values.v1.MapR\x17overriddenEncoderConfig\"\xbb\x01\n" +
 	"\fObservations\x12;\n" +
 	"\fobservations\x18\x01 \x03(\v2\x17.ocr3_types.ObservationR\fobservations\x124\n" +
 	"\x15registeredWorkflowIds\x18\x02 \x03(\tR\x15registeredWorkflowIds\x128\n" +
@@ -602,19 +602,19 @@ const file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1e.ocr3_types.AggregationOutcomeR\x05value:\x028\x01B#Z!capabilities/consensus/ocr3/typesb\x06proto3"
 
 var (
-	file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescOnce sync.Once
-	file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescData []byte
+	file_ocr3_types_proto_rawDescOnce sync.Once
+	file_ocr3_types_proto_rawDescData []byte
 )
 
-func file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescGZIP() []byte {
-	file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescOnce.Do(func() {
-		file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc), len(file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc)))
+func file_ocr3_types_proto_rawDescGZIP() []byte {
+	file_ocr3_types_proto_rawDescOnce.Do(func() {
+		file_ocr3_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_ocr3_types_proto_rawDesc), len(file_ocr3_types_proto_rawDesc)))
 	})
-	return file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDescData
+	return file_ocr3_types_proto_rawDescData
 }
 
-var file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
-var file_capabilities_consensus_ocr3_types_ocr3_types_proto_goTypes = []any{
+var file_ocr3_types_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_ocr3_types_proto_goTypes = []any{
 	(*AggregationOutcome)(nil),    // 0: ocr3_types.AggregationOutcome
 	(*Query)(nil),                 // 1: ocr3_types.Query
 	(*Id)(nil),                    // 2: ocr3_types.Id
@@ -624,18 +624,18 @@ var file_capabilities_consensus_ocr3_types_ocr3_types_proto_goTypes = []any{
 	(*ReportInfo)(nil),            // 6: ocr3_types.ReportInfo
 	(*Outcome)(nil),               // 7: ocr3_types.Outcome
 	nil,                           // 8: ocr3_types.Outcome.OutcomesEntry
-	(*pb.Map)(nil),                // 9: values.Map
+	(*pb.Map)(nil),                // 9: values.v1.Map
 	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*pb.List)(nil),               // 11: values.List
+	(*pb.List)(nil),               // 11: values.v1.List
 }
-var file_capabilities_consensus_ocr3_types_ocr3_types_proto_depIdxs = []int32{
-	9,  // 0: ocr3_types.AggregationOutcome.encodableOutcome:type_name -> values.Map
+var file_ocr3_types_proto_depIdxs = []int32{
+	9,  // 0: ocr3_types.AggregationOutcome.encodableOutcome:type_name -> values.v1.Map
 	10, // 1: ocr3_types.AggregationOutcome.timestamp:type_name -> google.protobuf.Timestamp
-	9,  // 2: ocr3_types.AggregationOutcome.encoderConfig:type_name -> values.Map
+	9,  // 2: ocr3_types.AggregationOutcome.encoderConfig:type_name -> values.v1.Map
 	2,  // 3: ocr3_types.Query.ids:type_name -> ocr3_types.Id
 	2,  // 4: ocr3_types.Observation.id:type_name -> ocr3_types.Id
-	11, // 5: ocr3_types.Observation.observations:type_name -> values.List
-	9,  // 6: ocr3_types.Observation.overriddenEncoderConfig:type_name -> values.Map
+	11, // 5: ocr3_types.Observation.observations:type_name -> values.v1.List
+	9,  // 6: ocr3_types.Observation.overriddenEncoderConfig:type_name -> values.v1.Map
 	3,  // 7: ocr3_types.Observations.observations:type_name -> ocr3_types.Observation
 	10, // 8: ocr3_types.Observations.timestamp:type_name -> google.protobuf.Timestamp
 	2,  // 9: ocr3_types.Report.id:type_name -> ocr3_types.Id
@@ -651,26 +651,26 @@ var file_capabilities_consensus_ocr3_types_ocr3_types_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_consensus_ocr3_types_ocr3_types_proto_init() }
-func file_capabilities_consensus_ocr3_types_ocr3_types_proto_init() {
-	if File_capabilities_consensus_ocr3_types_ocr3_types_proto != nil {
+func init() { file_ocr3_types_proto_init() }
+func file_ocr3_types_proto_init() {
+	if File_ocr3_types_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc), len(file_capabilities_consensus_ocr3_types_ocr3_types_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ocr3_types_proto_rawDesc), len(file_ocr3_types_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_capabilities_consensus_ocr3_types_ocr3_types_proto_goTypes,
-		DependencyIndexes: file_capabilities_consensus_ocr3_types_ocr3_types_proto_depIdxs,
-		MessageInfos:      file_capabilities_consensus_ocr3_types_ocr3_types_proto_msgTypes,
+		GoTypes:           file_ocr3_types_proto_goTypes,
+		DependencyIndexes: file_ocr3_types_proto_depIdxs,
+		MessageInfos:      file_ocr3_types_proto_msgTypes,
 	}.Build()
-	File_capabilities_consensus_ocr3_types_ocr3_types_proto = out.File
-	file_capabilities_consensus_ocr3_types_ocr3_types_proto_goTypes = nil
-	file_capabilities_consensus_ocr3_types_ocr3_types_proto_depIdxs = nil
+	File_ocr3_types_proto = out.File
+	file_ocr3_types_proto_goTypes = nil
+	file_ocr3_types_proto_depIdxs = nil
 }

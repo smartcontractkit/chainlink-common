@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: capabilities/pb/capabilities.proto
+// source: capabilities.proto
 
 package pb
 
@@ -118,7 +118,7 @@ var BaseCapability_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "capabilities/pb/capabilities.proto",
+	Metadata: "capabilities.proto",
 }
 
 const (
@@ -262,7 +262,7 @@ var TriggerExecutable_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "capabilities/pb/capabilities.proto",
+	Metadata: "capabilities.proto",
 }
 
 const (
@@ -444,7 +444,7 @@ var Executable_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "capabilities/pb/capabilities.proto",
+	Metadata: "capabilities.proto",
 }
 
 const (
@@ -584,5 +584,5 @@ var StandardCapabilities_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "capabilities/pb/capabilities.proto",
+	Metadata: "capabilities.proto",
 }

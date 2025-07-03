@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault";
+
+package vault;
+
+message SecretIdentifier {
+    string key = 1;
+    string namespace = 2;
+    string owner = 3;
+}
+
+message SecretRequest {
+    SecretIdentifier id = 1;
+    repeated string encryption_keys = 2;
+}
+
+message EncryptedShares {
+    repeated string shares = 1;
+}
+
+message SecretData {
+    string encrypted_value = 2;
+    repeated EncryptedShares encrypted_decryption_key_shares = 3;
+}
+
+message SecretResponse {
+    SecretIdentifier id = 1;
+
+    oneof result {
+      SecretData data = 2;
+      string error = 3;
+    }
+}
+
+message GetSecretsRequest {
+  repeated SecretRequest requests = 1;
+}
+
+message GetSecretsResponse {
+  repeated SecretResponse responses = 1;
+}
+
+message CreateSecretRequest {
+  // Unique identifier for the request
+  string request_id = 1;
+  // ID of the secret to be created
+  SecretIdentifier id = 2;
+  string encrypted_secret = 5;
+}
+
+message CreateSecretResponse {
+}
+
+message UpdateSecretRequest {
+  string request_id = 1;
+  SecretIdentifier id = 2;
+  string encrypted_secret = 3;
+}
+
+message UpdateSecretResponse {
+}
+
+message DeleteSecretRequest {
+  string request_id = 1;
+  SecretIdentifier id = 2;
+}
+
+message DeleteSecretResponse {
+}
+
+message ListSecretIdentifiers {
+  string owner = 1;
+  string namespace = 2;
+}
+
+message ListSecretIdentifiersResponse {
+  repeated SecretIdentifier identifiers = 1;
+}

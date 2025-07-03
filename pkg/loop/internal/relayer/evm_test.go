@@ -22,28 +22,30 @@ import (
 )
 
 var (
-	txId         = "txid1"
-	txIndex      = 10
-	txFee        = big.NewInt(12345)
-	balance      = big.NewInt(1222345)
-	gasPrice     = big.NewInt(12344)
-	abi          = []byte("data")
-	respAbi      = []byte("response")
-	address      = evm.Address{1, 2, 3}
-	address1     = evm.Address{10, 11, 14}
-	blockHash    = evm.Hash{22, 33, 44}
-	parentHash   = evm.Hash{01, 33, 44}
-	fromBlock    = big.NewInt(10)
-	blockNum     = big.NewInt(101)
-	toBlock      = big.NewInt(145)
-	topic        = evm.Hash{21, 3, 4}
-	topic2       = evm.Hash{33, 1, 33}
-	topic3       = evm.Hash{20, 19, 17}
-	gas          = uint64(10)
-	txHash       = evm.Hash{5, 3, 44}
-	eventSigHash = evm.Hash{14, 16, 29}
-	filterName   = "f name 1"
-	retention    = time.Second
+	txId             = "txid1"
+	txIndex          = 10
+	txFee            = big.NewInt(12345)
+	balance          = big.NewInt(1222345)
+	gasPrice         = big.NewInt(12344)
+	abi              = []byte("data")
+	respAbi          = []byte("response")
+	address          = evm.Address{1, 2, 3}
+	address1         = evm.Address{10, 11, 14}
+	address2         = evm.Address{13, 15, 16}
+	blockHash        = evm.Hash{22, 33, 44}
+	parentHash       = evm.Hash{01, 33, 44}
+	fromBlock        = big.NewInt(10)
+	blockNum         = big.NewInt(101)
+	toBlock          = big.NewInt(145)
+	topic            = evm.Hash{21, 3, 4}
+	topic2           = evm.Hash{33, 1, 33}
+	topic3           = evm.Hash{20, 19, 17}
+	gas              = uint64(10)
+	txHash           = evm.Hash{5, 3, 44}
+	eventSigHash     = evm.Hash{14, 16, 29}
+	filterName       = "f name 1"
+	retention        = time.Second
+	medianPluginType = string(types.Median)
 )
 
 func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
@@ -305,21 +307,36 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, expLog, got)
 
 	})
+
+	t.Run("GetForwarderForEOA", func(t *testing.T) {
+		evmService.staticGetForwarderForEOA = func(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (evm.Address, error) {
+			require.Equal(t, address, eoa)
+			require.Equal(t, address2, ocr2AggregatorID)
+			require.Equal(t, pluginType, medianPluginType)
+			return address1, nil
+		}
+		got, err := client.GetForwarderForEOA(ctx, address, address2, medianPluginType)
+		require.NoError(t, err)
+		require.Equal(t, address1, got)
+	})
 }
 
 type staticEVMService struct {
-	staticCallContract           func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	staticFilterLogs             func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	staticBalanceAt              func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
-	staticEstimateGas            func(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	staticGetTransactionByHash   func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	staticGetTransactionReceipt  func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-	staticGetTransactionFee      func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
-	staticQueryTrackedLogs       func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	staticLatestAndFinalizedHead func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
-	staticRegisterLogTracking    func(ctx context.Context, filter evm.LPFilterQuery) error
-	staticUnregisterLogTracking  func(ctx context.Context, filterName string) error
-	staticGetTransactionStatus   func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
+	staticCallContract            func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
+	staticFilterLogs              func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
+	staticBalanceAt               func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
+	staticEstimateGas             func(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	staticGetTransactionByHash    func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	staticGetTransactionReceipt   func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+	staticGetTransactionFee       func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
+	staticQueryTrackedLogs        func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	staticLatestAndFinalizedHead  func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
+	staticRegisterLogTracking     func(ctx context.Context, filter evm.LPFilterQuery) error
+	staticUnregisterLogTracking   func(ctx context.Context, filterName string) error
+	staticGetTransactionStatus    func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
+	staticSubmitTransaction       func(ctx context.Context, submitTransactionRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
+	staticCalculateTransactionFee func(ctx context.Context, gasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error)
+	staticGetForwarderForEOA      func(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error)
 }
 
 func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -362,12 +379,24 @@ func (s *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.L
 	return s.staticRegisterLogTracking(ctx, filter)
 }
 
+func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
+	return s.staticGetTransactionStatus(ctx, transactionID)
+}
+
+func (s *staticEVMService) CalculateTransactionFee(ctx context.Context, gasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error) {
+	return s.staticCalculateTransactionFee(ctx, gasInfo)
+}
+
+func (s *staticEVMService) SubmitTransaction(ctx context.Context, submitTransactionRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error) {
+	return s.staticSubmitTransaction(ctx, submitTransactionRequest)
+}
+
 func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
 	return s.staticUnregisterLogTracking(ctx, filterName)
 }
 
-func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-	return s.staticGetTransactionStatus(ctx, transactionID)
+func (s *staticEVMService) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error) {
+	return s.staticGetForwarderForEOA(ctx, eoa, ocr2AggregatorID, pluginType)
 }
 
 func generateFixtureQuery() []query.Expression {

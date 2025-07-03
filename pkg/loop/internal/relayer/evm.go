@@ -20,6 +20,36 @@ type EVMClient struct {
 	grpcClient evmpb.EVMClient
 }
 
+// CalculateTransactionFee implements types.EVMService.
+func (e *EVMClient) CalculateTransactionFee(ctx context.Context, receiptGasInfo evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
+	reply, err := e.grpcClient.CalculateTransactionFee(ctx, &evmpb.CalculateTransactionFeeRequest{GasInfo: &evmpb.ReceiptGasInfo{
+		GasUsed:           receiptGasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewBigIntFromInt(receiptGasInfo.EffectiveGasPrice),
+	}})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransactionFee())}, nil
+}
+
+// SubmitTransaction implements types.EVMService.
+func (e *EVMClient) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
+	reply, err := e.grpcClient.SubmitTransaction(ctx, &evmpb.SubmitTransactionRequest{
+		To:        txRequest.To[:],
+		Data:      txRequest.Data,
+		GasConfig: evmpb.ConvertGasConfigToProto(txRequest.GasConfig),
+	})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return &evmtypes.TransactionResult{
+		TxStatus: evmpb.ConvertTxStatusFromProto(reply.TxStatus),
+		TxHash:   evmtypes.Hash(reply.TxHash),
+	}, nil
+}
+
 func NewEVMCClient(grpcClient evmpb.EVMClient) *EVMClient {
 	return &EVMClient{
 		grpcClient: grpcClient,
@@ -172,6 +202,14 @@ func (e *EVMClient) GetTransactionStatus(ctx context.Context, transactionID stri
 	}
 
 	return types.TransactionStatus(reply.GetTransactionStatus()), nil
+}
+
+func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evmtypes.Address, pluginType string) (forwarder evmtypes.Address, err error) {
+	reply, err := e.grpcClient.GetForwarderForEOA(ctx, &evmpb.GetForwarderForEOARequest{Addr: eoa[:], Aggr: ocr2AggregatorID[:], PluginType: pluginType})
+	if err != nil {
+		return evmtypes.Address{}, net.WrapRPCErr(err)
+	}
+	return evmtypes.Address(reply.GetAddr()), nil
 }
 
 type evmServer struct {
@@ -330,4 +368,36 @@ func (e *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.Get
 
 	//nolint: gosec // G115
 	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (e *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	txResult, err := e.impl.SubmitTransaction(ctx, evmpb.ConvertSubmitTransactionRequestFromProto(request))
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.SubmitTransactionReply{
+		TxHash:   txResult.TxHash[:],
+		TxStatus: evmpb.ConvertTxStatusToProto(txResult.TxStatus),
+	}, nil
+}
+
+func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	txFee, err := e.impl.CalculateTransactionFee(ctx, evmtypes.ReceiptGasInfo{
+		GasUsed:           request.GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(txFee.TransactionFee),
+	}, nil
+}
+
+func (e *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	forwarder, err := e.impl.GetForwarderForEOA(ctx, evmtypes.Address(request.GetAddr()), evmtypes.Address(request.GetAggr()), request.GetPluginType())
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
 }

@@ -102,6 +102,10 @@ func (r *relayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error)
 	return types.ChainStatus{}, errors.New("unimplemented")
 }
 
+func (r *relayer) GetChainInfo(_ context.Context) (types.ChainInfo, error) {
+	return types.ChainInfo{}, errors.New("unimplemented")
+}
+
 func (r *relayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []types.NodeStatus, nextPageToken string, total int, err error) {
 	return nil, "", -1, errors.New("unimplemented")
 }

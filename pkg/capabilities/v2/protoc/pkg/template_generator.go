@@ -7,13 +7,11 @@ import (
 	"strings"
 	"text/template"
 
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
 )
 
 type TemplateGenerator struct {
@@ -172,9 +170,9 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			}
 
 			switch md.Mode {
-			case sdkpb.Mode_MODE_NODE:
+			case pb.Mode_MODE_NODE:
 				return "Node", nil
-			case sdkpb.Mode_MODE_DON:
+			case pb.Mode_MODE_DON:
 				return "", nil
 			default:
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)

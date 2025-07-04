@@ -152,7 +152,7 @@ func (p *ProtocGen) doInit() error {
 
 	if p.ProtocHelper != nil {
 		p.LinkPackage(Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "sdk/v1alpha/sdk.proto"})
-		p.LinkPackage(Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
+		p.LinkPackage(Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
 	}
 
 	root, err := run("git", ".", "rev-parse", "--show-toplevel")

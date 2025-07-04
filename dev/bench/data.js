@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751632633951,
+  "lastUpdate": 1751633635934,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18018,6 +18018,48 @@ window.BENCHMARK_DATA = {
             "value": 28732,
             "unit": "ns/op",
             "extra": "42108 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "Chris Cushman",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "72b7395771bc77ead0840311d58e43ea4a4c1d92",
+          "message": "Keystore capability service (#1285)\n\n* Add keystore as standardcapabilities service\n\n* Add multi-account signer\n\n* Add multiaccountsigner tests\n\n* Update genn'd servers\n\n* update post-gatewayconnector\n\n* update naming\n\n* revert values.pb.go\n\n* revert meteringdetail.pb.go\n\n* fix generated casing\n\n* fix whitespace\n\n* Update pkg/types/core/keystore.go\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* update casing\n\n* casing\n\n* handle multiSigner err\n\n* Switch from multiAccountSigner -> singleAccountSigner\n\n* test naming\n\n* fix test lint\n\n* use pointer for account name for better behavior\n\n* name change: keyStore -> p2pKeystore\n\n* Move redundant keystore client and server out of relayer.go\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2025-07-04T13:52:36+01:00",
+          "tree_id": "73e09eea1a8f027300c24c38d7c65a8f32a8dd1c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/72b7395771bc77ead0840311d58e43ea4a4c1d92"
+        },
+        "date": 1751633634321,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 375.3,
+            "unit": "ns/op",
+            "extra": "3264601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.3,
+            "unit": "ns/op",
+            "extra": "2874978 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28168,
+            "unit": "ns/op",
+            "extra": "42751 times\n4 procs"
           }
         ]
       }

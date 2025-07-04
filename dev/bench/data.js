@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751659859202,
+  "lastUpdate": 1751661633016,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18354,6 +18354,48 @@ window.BENCHMARK_DATA = {
             "value": 28344,
             "unit": "ns/op",
             "extra": "42595 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "af56933301a8babe9ee848b415d14644ab6bc9d1",
+          "message": "Add the metadata to the sdk module so it can be consumed with it always (#1343)",
+          "timestamp": "2025-07-04T20:39:33Z",
+          "tree_id": "a3186c5007716cc9917c4c51d7467305d18bd11e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/af56933301a8babe9ee848b415d14644ab6bc9d1"
+        },
+        "date": 1751661632088,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.5,
+            "unit": "ns/op",
+            "extra": "3354184 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.3,
+            "unit": "ns/op",
+            "extra": "2888710 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28245,
+            "unit": "ns/op",
+            "extra": "42656 times\n4 procs"
           }
         ]
       }

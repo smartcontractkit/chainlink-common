@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/anypb"
 
-	pb3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb"
-	pb4 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
@@ -17,21 +17,21 @@ type BasicAction struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *BasicAction) PerformAction(runtime sdk.Runtime, input *pb3.Inputs) sdk.Promise[*pb4.Outputs] {
+func (c *BasicAction) PerformAction(runtime sdk.Runtime, input *p1.Item) sdk.Promise[*p2.Item] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*pb4.Outputs](nil, err)
+		return sdk.PromiseFromResult[*p2.Item](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "import-clash@1.0.0",
 		Payload: wrapped,
 		Method:  "PerformAction",
-	}), func(i *sdkpb.CapabilityResponse) (*pb4.Outputs, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*p2.Item, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &pb4.Outputs{}
+			output := &p2.Item{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

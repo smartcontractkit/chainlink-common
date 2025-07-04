@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: node_action.proto
+// source: capabilities/internal/nodeaction/v1/node_action.proto
 
 package nodeaction
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -31,7 +31,7 @@ type NodeInputs struct {
 
 func (x *NodeInputs) Reset() {
 	*x = NodeInputs{}
-	mi := &file_node_action_proto_msgTypes[0]
+	mi := &file_capabilities_internal_nodeaction_v1_node_action_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *NodeInputs) String() string {
 func (*NodeInputs) ProtoMessage() {}
 
 func (x *NodeInputs) ProtoReflect() protoreflect.Message {
-	mi := &file_node_action_proto_msgTypes[0]
+	mi := &file_capabilities_internal_nodeaction_v1_node_action_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *NodeInputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeInputs.ProtoReflect.Descriptor instead.
 func (*NodeInputs) Descriptor() ([]byte, []int) {
-	return file_node_action_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NodeInputs) GetInputThing() bool {
@@ -75,7 +75,7 @@ type NodeOutputs struct {
 
 func (x *NodeOutputs) Reset() {
 	*x = NodeOutputs{}
-	mi := &file_node_action_proto_msgTypes[1]
+	mi := &file_capabilities_internal_nodeaction_v1_node_action_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +87,7 @@ func (x *NodeOutputs) String() string {
 func (*NodeOutputs) ProtoMessage() {}
 
 func (x *NodeOutputs) ProtoReflect() protoreflect.Message {
-	mi := &file_node_action_proto_msgTypes[1]
+	mi := &file_capabilities_internal_nodeaction_v1_node_action_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +100,7 @@ func (x *NodeOutputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeOutputs.ProtoReflect.Descriptor instead.
 func (*NodeOutputs) Descriptor() ([]byte, []int) {
-	return file_node_action_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NodeOutputs) GetOutputThing() int32 {
@@ -110,40 +110,40 @@ func (x *NodeOutputs) GetOutputThing() int32 {
 	return 0
 }
 
-var File_node_action_proto protoreflect.FileDescriptor
+var File_capabilities_internal_nodeaction_v1_node_action_proto protoreflect.FileDescriptor
 
-const file_node_action_proto_rawDesc = "" +
+const file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc = "" +
 	"\n" +
-	"\x11node_action.proto\x12\x19basic_test_node_action.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"-\n" +
+	"5capabilities/internal/nodeaction/v1/node_action.proto\x12#capabilities.internal.nodeaction.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"-\n" +
 	"\n" +
 	"NodeInputs\x12\x1f\n" +
 	"\vinput_thing\x18\x01 \x01(\bR\n" +
 	"inputThing\"0\n" +
 	"\vNodeOutputs\x12!\n" +
-	"\foutput_thing\x18\x01 \x01(\x05R\voutputThing2\x93\x01\n" +
-	"\vBasicAction\x12^\n" +
-	"\rPerformAction\x12%.basic_test_node_action.v1.NodeInputs\x1a&.basic_test_node_action.v1.NodeOutputs\x1a$\x82\xb5\x18 \b\x02\x12\x1cbasic-test-node-action@1.0.0BjZhgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeactionb\x06proto3"
+	"\foutput_thing\x18\x01 \x01(\x05R\voutputThing2\xa7\x01\n" +
+	"\vBasicAction\x12r\n" +
+	"\rPerformAction\x12/.capabilities.internal.nodeaction.v1.NodeInputs\x1a0.capabilities.internal.nodeaction.v1.NodeOutputs\x1a$\x82\xb5\x18 \b\x02\x12\x1cbasic-test-node-action@1.0.0b\x06proto3"
 
 var (
-	file_node_action_proto_rawDescOnce sync.Once
-	file_node_action_proto_rawDescData []byte
+	file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescOnce sync.Once
+	file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescData []byte
 )
 
-func file_node_action_proto_rawDescGZIP() []byte {
-	file_node_action_proto_rawDescOnce.Do(func() {
-		file_node_action_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_node_action_proto_rawDesc), len(file_node_action_proto_rawDesc)))
+func file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescGZIP() []byte {
+	file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescOnce.Do(func() {
+		file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc), len(file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc)))
 	})
-	return file_node_action_proto_rawDescData
+	return file_capabilities_internal_nodeaction_v1_node_action_proto_rawDescData
 }
 
-var file_node_action_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_node_action_proto_goTypes = []any{
-	(*NodeInputs)(nil),  // 0: basic_test_node_action.v1.NodeInputs
-	(*NodeOutputs)(nil), // 1: basic_test_node_action.v1.NodeOutputs
+var file_capabilities_internal_nodeaction_v1_node_action_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_capabilities_internal_nodeaction_v1_node_action_proto_goTypes = []any{
+	(*NodeInputs)(nil),  // 0: capabilities.internal.nodeaction.v1.NodeInputs
+	(*NodeOutputs)(nil), // 1: capabilities.internal.nodeaction.v1.NodeOutputs
 }
-var file_node_action_proto_depIdxs = []int32{
-	0, // 0: basic_test_node_action.v1.BasicAction.PerformAction:input_type -> basic_test_node_action.v1.NodeInputs
-	1, // 1: basic_test_node_action.v1.BasicAction.PerformAction:output_type -> basic_test_node_action.v1.NodeOutputs
+var file_capabilities_internal_nodeaction_v1_node_action_proto_depIdxs = []int32{
+	0, // 0: capabilities.internal.nodeaction.v1.BasicAction.PerformAction:input_type -> capabilities.internal.nodeaction.v1.NodeInputs
+	1, // 1: capabilities.internal.nodeaction.v1.BasicAction.PerformAction:output_type -> capabilities.internal.nodeaction.v1.NodeOutputs
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -151,26 +151,26 @@ var file_node_action_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_node_action_proto_init() }
-func file_node_action_proto_init() {
-	if File_node_action_proto != nil {
+func init() { file_capabilities_internal_nodeaction_v1_node_action_proto_init() }
+func file_capabilities_internal_nodeaction_v1_node_action_proto_init() {
+	if File_capabilities_internal_nodeaction_v1_node_action_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_node_action_proto_rawDesc), len(file_node_action_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc), len(file_capabilities_internal_nodeaction_v1_node_action_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_node_action_proto_goTypes,
-		DependencyIndexes: file_node_action_proto_depIdxs,
-		MessageInfos:      file_node_action_proto_msgTypes,
+		GoTypes:           file_capabilities_internal_nodeaction_v1_node_action_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_nodeaction_v1_node_action_proto_depIdxs,
+		MessageInfos:      file_capabilities_internal_nodeaction_v1_node_action_proto_msgTypes,
 	}.Build()
-	File_node_action_proto = out.File
-	file_node_action_proto_goTypes = nil
-	file_node_action_proto_depIdxs = nil
+	File_capabilities_internal_nodeaction_v1_node_action_proto = out.File
+	file_capabilities_internal_nodeaction_v1_node_action_proto_goTypes = nil
+	file_capabilities_internal_nodeaction_v1_node_action_proto_depIdxs = nil
 }

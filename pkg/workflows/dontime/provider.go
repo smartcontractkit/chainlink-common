@@ -10,10 +10,11 @@ import (
 // Provider wraps an existing OCR3 plugin provider (from the relayer)
 // and overrides the plugin factory and contract transmitter for DonTime.
 type Provider struct {
-	provider    services.Service
-	factory     ocr3types.ReportingPluginFactory[struct{}]
-	transmitter ocr3types.ContractTransmitter[struct{}]
+	Factory     ocr3types.ReportingPluginFactory[struct{}]
+	Transmitter ocr3types.ContractTransmitter[struct{}]
 }
+
+var _ services.Service = &Provider{}
 
 func (p *Provider) Start(_ context.Context) error {
 	return nil
@@ -36,9 +37,9 @@ func (p *Provider) Ready() error {
 }
 
 func (p *Provider) ReportingPluginFactory() ocr3types.ReportingPluginFactory[struct{}] {
-	return p.factory
+	return p.Factory
 }
 
 func (p *Provider) ContractTransmitter() ocr3types.ContractTransmitter[struct{}] {
-	return p.transmitter
+	return p.Transmitter
 }

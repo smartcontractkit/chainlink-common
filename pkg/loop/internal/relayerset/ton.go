@@ -77,13 +77,13 @@ func (s *Server) GetBlockData(ctx context.Context, request *tonpb.GetBlockDataRe
 		return nil, err
 	}
 
-	blockIdExt := tonpb.ConvertBlockIDExtFromProto(request.GetBlock())
+	blockIdExt := request.GetBlock().AsBlockIDExt()
 	block, err := tonService.GetBlockData(ctx, blockIdExt)
 	if err != nil {
 		return nil, err
 	}
 
-	return tonpb.ConvertBlockToProto(block), nil
+	return tonpb.NewBlock(block), nil
 }
 
 func (s *Server) GetAccountBalance(ctx context.Context, request *tonpb.GetAccountBalanceRequest) (*tonpb.Balance, error) {
@@ -92,13 +92,13 @@ func (s *Server) GetAccountBalance(ctx context.Context, request *tonpb.GetAccoun
 		return nil, err
 	}
 
-	blockIdExt := tonpb.ConvertBlockIDExtFromProto(request.GetBlock())
+	blockIdExt := request.GetBlock().AsBlockIDExt()
 	balance, err := tonService.GetAccountBalance(ctx, request.GetAddress(), blockIdExt)
 	if err != nil {
 		return nil, err
 	}
 
-	return tonpb.ConvertBalanceToProto(balance), nil
+	return tonpb.NewBalance(balance), nil
 }
 
 func (s *Server) SendTx(ctx context.Context, request *tonpb.SendTxRequest) (*emptypb.Empty, error) {
@@ -107,7 +107,7 @@ func (s *Server) SendTx(ctx context.Context, request *tonpb.SendTxRequest) (*emp
 		return nil, err
 	}
 
-	msg := tonpb.ConvertMessageFromProto(request.GetMessage())
+	msg := request.GetMessage().AsMessage()
 	err = tonService.SendTx(ctx, *msg)
 	if err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func (s *Server) RegisterFilter(ctx context.Context, request *tonpb.RegisterFilt
 		return nil, err
 	}
 
-	lpFilterQuery := tonpb.ConvertLPFilterFromProto(request.GetFilter())
+	lpFilterQuery := request.GetFilter().AsLPFilter()
 	err = tonService.RegisterFilter(ctx, lpFilterQuery)
 	if err != nil {
 		return nil, err

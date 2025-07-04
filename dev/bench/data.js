@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751647617011,
+  "lastUpdate": 1751655903814,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18270,6 +18270,48 @@ window.BENCHMARK_DATA = {
             "value": 28603,
             "unit": "ns/op",
             "extra": "42728 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e078f7ed0818500e3c68ecfdbb2d984b38a8aeb",
+          "message": "New go mod for sdk's pb file... (#1340)",
+          "timestamp": "2025-07-04T20:04:07+01:00",
+          "tree_id": "b07daf191a490140c73d2de6ffc1c3fee072dc9b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0e078f7ed0818500e3c68ecfdbb2d984b38a8aeb"
+        },
+        "date": 1751655902878,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.5,
+            "unit": "ns/op",
+            "extra": "3362986 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 420.1,
+            "unit": "ns/op",
+            "extra": "2841176 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28196,
+            "unit": "ns/op",
+            "extra": "42603 times\n4 procs"
           }
         ]
       }

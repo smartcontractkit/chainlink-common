@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751634368685,
+  "lastUpdate": 1751635613841,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18102,6 +18102,48 @@ window.BENCHMARK_DATA = {
             "value": 28164,
             "unit": "ns/op",
             "extra": "42577 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "deividas.karzinauskas@gmail.com",
+            "name": "Deividas Karžinauskas",
+            "username": "DeividasK"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "297ef736ccd7f71b765a8def426dabbae8a4ac75",
+          "message": "any => json.RawMessage (#1332)\n\n* any => json.RawMessage\n\n* Additional fixes",
+          "timestamp": "2025-07-04T13:25:34Z",
+          "tree_id": "82d25788620fe7a0ca2d4e8422cfea7bf65d3a6a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/297ef736ccd7f71b765a8def426dabbae8a4ac75"
+        },
+        "date": 1751635612326,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372.2,
+            "unit": "ns/op",
+            "extra": "3232886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.8,
+            "unit": "ns/op",
+            "extra": "2895020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28161,
+            "unit": "ns/op",
+            "extra": "42585 times\n4 procs"
           }
         ]
       }

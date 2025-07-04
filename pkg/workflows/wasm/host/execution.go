@@ -164,7 +164,7 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 	e.mode = sdkpb.Mode(mode)
 }
 
-func (e *execution[T]) clockGetTime(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
 	var donTime time.Time
 	switch e.mode {
 	case sdkpb.Mode_MODE_DON:

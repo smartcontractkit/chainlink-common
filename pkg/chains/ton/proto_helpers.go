@@ -7,7 +7,7 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
-func ConvertBlockIDExtToProto(block *types.BlockIDExt) *BlockIDExt {
+func NewBlockIDExt(block *types.BlockIDExt) *BlockIDExt {
 	if block == nil {
 		return nil
 	}
@@ -18,7 +18,7 @@ func ConvertBlockIDExtToProto(block *types.BlockIDExt) *BlockIDExt {
 	}
 }
 
-func ConvertBlockIDExtFromProto(pb *BlockIDExt) *types.BlockIDExt {
+func (pb *BlockIDExt) AsBlockIDExt() *types.BlockIDExt {
 	if pb == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func ConvertBlockIDExtFromProto(pb *BlockIDExt) *types.BlockIDExt {
 	}
 }
 
-func ConvertBlockToProto(block *types.Block) *Block {
+func NewBlock(block *types.Block) *Block {
 	if block == nil {
 		return nil
 	}
@@ -38,7 +38,7 @@ func ConvertBlockToProto(block *types.Block) *Block {
 	}
 }
 
-func ConvertBlockFromProto(pb *Block) *types.Block {
+func (pb *Block) AsBlock() *types.Block {
 	if pb == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func ConvertBlockFromProto(pb *Block) *types.Block {
 	}
 }
 
-func ConvertBalanceToProto(balance *types.Balance) *Balance {
+func NewBalance(balance *types.Balance) *Balance {
 	if balance == nil {
 		return nil
 	}
@@ -56,7 +56,7 @@ func ConvertBalanceToProto(balance *types.Balance) *Balance {
 	}
 }
 
-func ConvertBalanceFromProto(pb *Balance) *types.Balance {
+func (pb *Balance) AsBalance() *types.Balance {
 	if pb == nil {
 		return nil
 	}
@@ -65,7 +65,7 @@ func ConvertBalanceFromProto(pb *Balance) *types.Balance {
 	}
 }
 
-func ConvertMessageToProto(msg *types.Message) *Message {
+func NewMessage(msg *types.Message) *Message {
 	if msg == nil {
 		return nil
 	}
@@ -79,7 +79,7 @@ func ConvertMessageToProto(msg *types.Message) *Message {
 	}
 }
 
-func ConvertMessageFromProto(pb *Message) *types.Message {
+func (pb *Message) AsMessage() *types.Message {
 	if pb == nil {
 		return nil
 	}
@@ -93,7 +93,7 @@ func ConvertMessageFromProto(pb *Message) *types.Message {
 	}
 }
 
-func ConvertLPFilterToProto(f types.LPFilterQuery) *LPFilterQuery {
+func NewLPFilter(f types.LPFilterQuery) *LPFilterQuery {
 	return &LPFilterQuery{
 		Id:            f.ID,
 		Name:          f.Name,
@@ -105,7 +105,7 @@ func ConvertLPFilterToProto(f types.LPFilterQuery) *LPFilterQuery {
 	}
 }
 
-func ConvertLPFilterFromProto(pb *LPFilterQuery) types.LPFilterQuery {
+func (pb *LPFilterQuery) AsLPFilter() types.LPFilterQuery {
 	return types.LPFilterQuery{
 		ID:          pb.Id,
 		Name:        pb.Name,

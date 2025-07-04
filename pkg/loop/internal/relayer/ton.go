@@ -31,11 +31,11 @@ func (c *TONClient) GetMasterchainInfo(ctx context.Context) (*tontypes.BlockIDEx
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return tonpb.ConvertBlockIDExtFromProto(block), nil
+	return block.AsBlockIDExt(), nil
 }
 
 func (c *TONClient) GetBlockData(ctx context.Context, block *tontypes.BlockIDExt) (*tontypes.Block, error) {
-	req := &tonpb.GetBlockDataRequest{Block: tonpb.ConvertBlockIDExtToProto(block)}
+	req := &tonpb.GetBlockDataRequest{Block: tonpb.NewBlockIDExt(block)}
 	resp, err := c.grpcClient.GetBlockData(ctx, req)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -48,7 +48,7 @@ func (c *TONClient) GetBlockData(ctx context.Context, block *tontypes.BlockIDExt
 func (c *TONClient) GetAccountBalance(ctx context.Context, addr string, block *tontypes.BlockIDExt) (*tontypes.Balance, error) {
 	req := &tonpb.GetAccountBalanceRequest{
 		Address: addr,
-		Block:   tonpb.ConvertBlockIDExtToProto(block),
+		Block:   tonpb.NewBlockIDExt(block),
 	}
 	resp, err := c.grpcClient.GetAccountBalance(ctx, req)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *TONClient) GetAccountBalance(ctx context.Context, addr string, block *t
 
 func (c *TONClient) SendTx(ctx context.Context, msg tontypes.Message) error {
 	req := &tonpb.SendTxRequest{
-		Message: tonpb.ConvertMessageToProto(&msg),
+		Message: tonpb.NewMessage(&msg),
 	}
 	_, err := c.grpcClient.SendTx(ctx, req)
 	return net.WrapRPCErr(err)
@@ -105,7 +105,7 @@ func (c *TONClient) HasFilter(ctx context.Context, name string) bool {
 
 func (c *TONClient) RegisterFilter(ctx context.Context, filter tontypes.LPFilterQuery) error {
 	req := &tonpb.RegisterFilterRequest{
-		Filter: tonpb.ConvertLPFilterToProto(filter),
+		Filter: tonpb.NewLPFilter(filter),
 	}
 	_, err := c.grpcClient.RegisterFilter(ctx, req)
 	return net.WrapRPCErr(err)
@@ -134,11 +134,11 @@ func (s *tonServer) GetMasterchainInfo(ctx context.Context, _ *emptypb.Empty) (*
 	if err != nil {
 		return nil, err
 	}
-	return tonpb.ConvertBlockIDExtToProto(block), nil
+	return tonpb.NewBlockIDExt(block), nil
 }
 
 func (s *tonServer) GetBlockData(ctx context.Context, req *tonpb.GetBlockDataRequest) (*tonpb.Block, error) {
-	block, err := s.impl.GetBlockData(ctx, tonpb.ConvertBlockIDExtFromProto(req.Block))
+	block, err := s.impl.GetBlockData(ctx, req.Block.AsBlockIDExt())
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (s *tonServer) GetBlockData(ctx context.Context, req *tonpb.GetBlockDataReq
 }
 
 func (s *tonServer) GetAccountBalance(ctx context.Context, req *tonpb.GetAccountBalanceRequest) (*tonpb.Balance, error) {
-	bal, err := s.impl.GetAccountBalance(ctx, req.Address, tonpb.ConvertBlockIDExtFromProto(req.Block))
+	bal, err := s.impl.GetAccountBalance(ctx, req.Address, req.Block.AsBlockIDExt())
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (s *tonServer) GetAccountBalance(ctx context.Context, req *tonpb.GetAccount
 }
 
 func (s *tonServer) SendTx(ctx context.Context, req *tonpb.SendTxRequest) (*emptypb.Empty, error) {
-	msg := tonpb.ConvertMessageFromProto(req.Message)
+	msg := req.Message.AsMessage()
 	return nil, s.impl.SendTx(ctx, *msg)
 }
 
@@ -183,7 +183,7 @@ func (s *tonServer) HasFilter(ctx context.Context, req *tonpb.HasFilterRequest) 
 }
 
 func (s *tonServer) RegisterFilter(ctx context.Context, req *tonpb.RegisterFilterRequest) (*emptypb.Empty, error) {
-	f := tonpb.ConvertLPFilterFromProto(req.Filter)
+	f := req.Filter.AsLPFilter()
 	return nil, s.impl.RegisterFilter(ctx, f)
 }
 

@@ -50,20 +50,18 @@ func NewSecureMintConfig(m values.Map) (SecureMintAggregatorConfig, error) {
 var _ types.Aggregator = (*SecureMintAggregator)(nil)
 
 type SecureMintAggregator struct {
-	config      SecureMintAggregatorConfig
-	reportCodec datastreams.ReportCodec
+	config SecureMintAggregatorConfig
 }
 
 // NewSecureMintAggregator creates a new SecureMintAggregator instance based on the provided configuration.
 // The config should be a [values.Map] that represents the [SecureMintAggregatorConfig]. See [SecureMintAggregatorConfig.ToMap]
-func NewSecureMintAggregator(config values.Map, reportCodec datastreams.ReportCodec) (types.Aggregator, error) {
+func NewSecureMintAggregator(config values.Map) (types.Aggregator, error) {
 	parsedConfig, err := parseSecureMintConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config (%+v): %w", config, err)
 	}
 	return &SecureMintAggregator{
-		config:      parsedConfig,
-		reportCodec: reportCodec,
+		config: parsedConfig,
 	}, nil
 }
 
@@ -118,7 +116,14 @@ func (a *SecureMintAggregator) extractReports(lggr logger.Logger, observations m
 		}
 
 		// Extract reports from the observation
-		reports, err := a.reportCodec.Unwrap(nodeObservations[0])
+		observation := nodeObservations[0]
+		observationMap, ok := observation.(*values.Map)
+		if !ok {
+			lggr.Warn("observation is not a map")
+			continue
+		}
+
+		reports, err := datastreams.UnwrapStreamsTriggerEventToFeedReportList(observationMap)
 		if err != nil {
 			lggr.Warnw("could not unwrap reports", "err", err)
 			continue

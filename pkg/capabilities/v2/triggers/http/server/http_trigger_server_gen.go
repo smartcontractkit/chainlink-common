@@ -28,7 +28,7 @@ type HTTPCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error
 }
 
 func NewHTTPServer(capability HTTPCapability) *HTTPServer {
@@ -45,8 +45,8 @@ type HTTPServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *HTTPServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
-	if err := cs.HTTPCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
+func (cs *HTTPServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := cs.HTTPCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
@@ -102,7 +102,7 @@ const HTTPID = "http-trigger@0.1.0"
 
 func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
-	case "":
+	case "Trigger":
 		input := &http.Config{}
 		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@0.1.0", request, input, c.HTTPCapability.RegisterTrigger)
 	default:
@@ -112,7 +112,7 @@ func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabiliti
 
 func (c *hTTPCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
 	switch request.Method {
-	case "":
+	case "Trigger":
 		input := &http.Config{}
 		_, err := capabilities.FromValueOrAny(request.Config, request.Payload, input)
 		if err != nil {

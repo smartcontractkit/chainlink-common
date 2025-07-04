@@ -70,3 +70,30 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 	}
 	return s.signFn(ctx, s.account, digest)
 }
+
+var P2PAccountKey = "P2P_SIGNER"
+
+// singleAccountSigner implements Keystore for a single account.
+type singleAccountSigner struct {
+	account *string
+	signer  crypto.Signer
+}
+
+var _ Keystore = &singleAccountSigner{}
+
+func NewSingleAccountSigner(account *string, signer crypto.Signer) (*singleAccountSigner, error) {
+	return &singleAccountSigner{account: account, signer: signer}, nil
+}
+func (c *singleAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
+	if c.account == nil {
+		return nil, fmt.Errorf("account is nil")
+	}
+
+	return []string{*c.account}, nil
+}
+func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+	if c.account != nil && *c.account == account {
+		return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
+	}
+	return nil, fmt.Errorf("account not found: %s", account)
+}

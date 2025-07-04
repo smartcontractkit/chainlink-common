@@ -51,12 +51,9 @@ func (c SecureMintAggregatorConfig) ToMap() (*values.Map, error) {
 }
 
 func NewSecureMintConfig(m values.Map) (SecureMintAggregatorConfig, error) {
-	// Create a default SecureMintAggregatorConfig
-	config := SecureMintAggregatorConfig{
-		TargetChainSelector: 1, // default to Ethereum mainnet
-	}
+	var config SecureMintAggregatorConfig
 	if err := m.UnwrapTo(&config); err != nil {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map to SecureMintAggregatorConfig: %w", err)
+		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map %+v to SecureMintAggregatorConfig: %w", m, err)
 	}
 
 	return config, nil
@@ -137,12 +134,17 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 		lggr = logger.With(lggr, "nodeID", nodeID)
 
 		for _, observation := range nodeObservations {
+			lggr.Debugw("processing observation", "observation", observation)
+			lggr.Debugf("processing observation %+v", observation)
+
 			// Extract OCRTriggerEvent from the observation
 			triggerEvent := &capabilities.OCRTriggerEvent{}
 			if err := observation.UnwrapTo(triggerEvent); err != nil {
 				lggr.Warnw("could not unwrap OCRTriggerEvent", "err", err, "observation", observation)
 				continue
 			}
+
+			lggr.Debugw("triggerEvent", "triggerEvent", triggerEvent)
 
 			// Deserialize the ReportWithInfo
 			var reportWithInfo ocr3types.ReportWithInfo[chainSelector]

@@ -5,20 +5,20 @@ import (
 	"errors"
 )
 
-func DecodeRequest[Params any](requestBytes []byte, jwtTokenFromHeader string) (Request[Params], error) {
-	var request Request[Params]
+func DecodeRequest(requestBytes []byte, jwtTokenFromHeader string) (Request, error) {
+	var request Request
 	err := json.Unmarshal(requestBytes, &request)
 	if err != nil {
-		return Request[Params]{}, err
+		return Request{}, err
 	}
 	if request.Version != JsonRpcVersion {
-		return Request[Params]{}, errors.New("incorrect jsonrpc version")
+		return Request{}, errors.New("incorrect jsonrpc version")
 	}
 	if request.Method == "" {
-		return Request[Params]{}, errors.New("empty method field")
+		return Request{}, errors.New("empty method field")
 	}
 	if request.Params == nil {
-		return Request[Params]{}, errors.New("invalid params")
+		return Request{}, errors.New("invalid params")
 	}
 	if request.Auth != "" {
 		return request, nil
@@ -27,25 +27,25 @@ func DecodeRequest[Params any](requestBytes []byte, jwtTokenFromHeader string) (
 	return request, nil
 }
 
-func EncodeRequest[Params any](request *Request[Params]) ([]byte, error) {
+func EncodeRequest(request *Request) ([]byte, error) {
 	return json.Marshal(request)
 }
 
-func DecodeResponse[Result any](responseBytes []byte) (Response[Result], error) {
-	var response Response[Result]
+func DecodeResponse(responseBytes []byte) (Response, error) {
+	var response Response
 	err := json.Unmarshal(responseBytes, &response)
 	if err != nil {
-		return Response[Result]{}, err
+		return Response{}, err
 	}
 	return response, nil
 }
 
-func EncodeResponse[Result any](response *Response[Result]) ([]byte, error) {
+func EncodeResponse(response *Response) ([]byte, error) {
 	return json.Marshal(response)
 }
 
-func EncodeErrorReponse[ErrorData any](id string, err *WireError) ([]byte, error) {
-	return json.Marshal(Response[any]{
+func EncodeErrorReponse(id string, err *WireError) ([]byte, error) {
+	return json.Marshal(Response{
 		Version: JsonRpcVersion,
 		ID:      id,
 		Error:   err,

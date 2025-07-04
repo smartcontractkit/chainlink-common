@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751642372397,
+  "lastUpdate": 1751647617011,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18228,6 +18228,48 @@ window.BENCHMARK_DATA = {
             "value": 28248,
             "unit": "ns/op",
             "extra": "42690 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "289652749db95ded7e06c426f84319172d0fd073",
+          "message": "Use the protos from chainlink-protos for the server and sdk (#1336)",
+          "timestamp": "2025-07-04T17:44:39+01:00",
+          "tree_id": "7a2ec0877003745d9aa9610a868212f2c3fb579d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/289652749db95ded7e06c426f84319172d0fd073"
+        },
+        "date": 1751647615365,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.4,
+            "unit": "ns/op",
+            "extra": "3336158 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.8,
+            "unit": "ns/op",
+            "extra": "2860518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28603,
+            "unit": "ns/op",
+            "extra": "42728 times\n4 procs"
           }
         ]
       }

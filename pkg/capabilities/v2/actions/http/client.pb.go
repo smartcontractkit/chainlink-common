@@ -24,8 +24,9 @@ const (
 
 type CacheSettings struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`          // Whether caching is enabled. Defaults to false.
-	TtlMs         int32                  `protobuf:"varint,2,opt,name=ttl_ms,json=ttlMs,proto3" json:"ttl_ms,omitempty"` // Time-to-live for the cache entry in milliseconds.
+	ReadFromCache bool                   `protobuf:"varint,1,opt,name=read_from_cache,json=readFromCache,proto3" json:"read_from_cache,omitempty"` // If true, attempt to read a cached response for the request.
+	StoreInCache  bool                   `protobuf:"varint,2,opt,name=store_in_cache,json=storeInCache,proto3" json:"store_in_cache,omitempty"`    // If true, store the response in cache for the given TTL.
+	TtlMs         int32                  `protobuf:"varint,3,opt,name=ttl_ms,json=ttlMs,proto3" json:"ttl_ms,omitempty"`                           // Time-to-live for the cache entry in milliseconds.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,9 +61,16 @@ func (*CacheSettings) Descriptor() ([]byte, []int) {
 	return file_client_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CacheSettings) GetEnabled() bool {
+func (x *CacheSettings) GetReadFromCache() bool {
 	if x != nil {
-		return x.Enabled
+		return x.ReadFromCache
+	}
+	return false
+}
+
+func (x *CacheSettings) GetStoreInCache() bool {
+	if x != nil {
+		return x.StoreInCache
 	}
 	return false
 }
@@ -222,10 +230,11 @@ var File_client_proto protoreflect.FileDescriptor
 
 const file_client_proto_rawDesc = "" +
 	"\n" +
-	"\fclient.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"@\n" +
-	"\rCacheSettings\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x15\n" +
-	"\x06ttl_ms\x18\x02 \x01(\x05R\x05ttlMs\"\x8a\x02\n" +
+	"\fclient.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"t\n" +
+	"\rCacheSettings\x12&\n" +
+	"\x0fread_from_cache\x18\x01 \x01(\bR\rreadFromCache\x12$\n" +
+	"\x0estore_in_cache\x18\x02 \x01(\bR\fstoreInCache\x12\x15\n" +
+	"\x06ttl_ms\x18\x03 \x01(\x05R\x05ttlMs\"\x8a\x02\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12/\n" +

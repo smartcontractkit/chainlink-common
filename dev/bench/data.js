@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751562131553,
+  "lastUpdate": 1751611812482,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -17892,6 +17892,48 @@ window.BENCHMARK_DATA = {
             "value": 28455,
             "unit": "ns/op",
             "extra": "42180 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "deividas.karzinauskas@gmail.com",
+            "name": "Deividas Karžinauskas",
+            "username": "DeividasK"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c693c79b285f27ede6473188fc5933a40cd988f",
+          "message": "Use generics in Request and add Request.Digest() method (#1328)",
+          "timestamp": "2025-07-04T09:48:02+03:00",
+          "tree_id": "57840881b16528ca0a84d93f424625c8455af290",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9c693c79b285f27ede6473188fc5933a40cd988f"
+        },
+        "date": 1751611811572,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.5,
+            "unit": "ns/op",
+            "extra": "3389904 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409.1,
+            "unit": "ns/op",
+            "extra": "2925765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29021,
+            "unit": "ns/op",
+            "extra": "42188 times\n4 procs"
           }
         ]
       }

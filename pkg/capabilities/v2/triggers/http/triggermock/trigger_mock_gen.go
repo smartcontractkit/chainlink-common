@@ -69,5 +69,5 @@ func (cap *HTTPCapability) InvokeTrigger(ctx context.Context, request *sdkpb.Tri
 }
 
 func (cap *HTTPCapability) ID() string {
-	return "http-trigger@0.1.0"
+	return "http-trigger@1.0.0-alpha"
 }

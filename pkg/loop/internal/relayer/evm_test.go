@@ -409,7 +409,7 @@ func (s *staticEVMService) GetForwarderForEOA(ctx context.Context, eoa, ocr2Aggr
 func generateFixtureQuery() []query.Expression {
 	exprs := make([]query.Expression, 0)
 
-	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed, primitives.Safe}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}

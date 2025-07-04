@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: client.proto
+// source: capabilities/networking/http/v1alpha/client.proto
 
 package http
 
@@ -33,7 +33,7 @@ type CacheSettings struct {
 
 func (x *CacheSettings) Reset() {
 	*x = CacheSettings{}
-	mi := &file_client_proto_msgTypes[0]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *CacheSettings) String() string {
 func (*CacheSettings) ProtoMessage() {}
 
 func (x *CacheSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[0]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *CacheSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CacheSettings.ProtoReflect.Descriptor instead.
 func (*CacheSettings) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CacheSettings) GetReadFromCache() bool {
@@ -96,7 +96,7 @@ type Request struct {
 
 func (x *Request) Reset() {
 	*x = Request{}
-	mi := &file_client_proto_msgTypes[1]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -108,7 +108,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[1]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -121,7 +121,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Request) GetUrl() string {
@@ -177,7 +177,7 @@ type Response struct {
 
 func (x *Response) Reset() {
 	*x = Response{}
-	mi := &file_client_proto_msgTypes[2]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -189,7 +189,7 @@ func (x *Response) String() string {
 func (*Response) ProtoMessage() {}
 
 func (x *Response) ProtoReflect() protoreflect.Message {
-	mi := &file_client_proto_msgTypes[2]
+	mi := &file_capabilities_networking_http_v1alpha_client_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,7 +202,7 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
-	return file_client_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Response) GetStatusCode() uint32 {
@@ -226,63 +226,63 @@ func (x *Response) GetBody() []byte {
 	return nil
 }
 
-var File_client_proto protoreflect.FileDescriptor
+var File_capabilities_networking_http_v1alpha_client_proto protoreflect.FileDescriptor
 
-const file_client_proto_rawDesc = "" +
+const file_capabilities_networking_http_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	"\fclient.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"t\n" +
+	"1capabilities/networking/http/v1alpha/client.proto\x12$capabilities.networking.http.v1alpha\x1a*tools/generator/v1alpha/cre_metadata.proto\"t\n" +
 	"\rCacheSettings\x12&\n" +
 	"\x0fread_from_cache\x18\x01 \x01(\bR\rreadFromCache\x12$\n" +
 	"\x0estore_in_cache\x18\x02 \x01(\bR\fstoreInCache\x12\x15\n" +
-	"\x06ttl_ms\x18\x03 \x01(\x05R\x05ttlMs\"\x8a\x02\n" +
+	"\x06ttl_ms\x18\x03 \x01(\x05R\x05ttlMs\"\xd4\x02\n" +
 	"\aRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12/\n" +
-	"\aheaders\x18\x03 \x03(\v2\x15.Request.HeadersEntryR\aheaders\x12\x12\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12T\n" +
+	"\aheaders\x18\x03 \x03(\v2:.capabilities.networking.http.v1alpha.Request.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1d\n" +
 	"\n" +
-	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x125\n" +
-	"\x0ecache_settings\x18\x06 \x01(\v2\x0e.CacheSettingsR\rcacheSettings\x1a:\n" +
+	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x12Z\n" +
+	"\x0ecache_settings\x18\x06 \x01(\v23.capabilities.networking.http.v1alpha.CacheSettingsR\rcacheSettings\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xad\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd2\x01\n" +
 	"\bResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\rR\n" +
-	"statusCode\x120\n" +
-	"\aheaders\x18\x02 \x03(\v2\x16.Response.HeadersEntryR\aheaders\x12\x12\n" +
+	"statusCode\x12U\n" +
+	"\aheaders\x18\x02 \x03(\v2;.capabilities.networking.http.v1alpha.Response.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04body\x18\x03 \x01(\fR\x04body\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012H\n" +
-	"\x06Client\x12\"\n" +
-	"\vSendRequest\x12\b.Request\x1a\t.Response\x1a\x1a\x82\xb5\x18\x16\b\x02\x12\x12http-actions@0.1.0BOZMgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/httpb\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012\x98\x01\n" +
+	"\x06Client\x12l\n" +
+	"\vSendRequest\x12-.capabilities.networking.http.v1alpha.Request\x1a..capabilities.networking.http.v1alpha.Response\x1a \x82\xb5\x18\x1c\b\x02\x12\x18http-actions@1.0.0-alphab\x06proto3"
 
 var (
-	file_client_proto_rawDescOnce sync.Once
-	file_client_proto_rawDescData []byte
+	file_capabilities_networking_http_v1alpha_client_proto_rawDescOnce sync.Once
+	file_capabilities_networking_http_v1alpha_client_proto_rawDescData []byte
 )
 
-func file_client_proto_rawDescGZIP() []byte {
-	file_client_proto_rawDescOnce.Do(func() {
-		file_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_client_proto_rawDesc), len(file_client_proto_rawDesc)))
+func file_capabilities_networking_http_v1alpha_client_proto_rawDescGZIP() []byte {
+	file_capabilities_networking_http_v1alpha_client_proto_rawDescOnce.Do(func() {
+		file_capabilities_networking_http_v1alpha_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_networking_http_v1alpha_client_proto_rawDesc), len(file_capabilities_networking_http_v1alpha_client_proto_rawDesc)))
 	})
-	return file_client_proto_rawDescData
+	return file_capabilities_networking_http_v1alpha_client_proto_rawDescData
 }
 
-var file_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_client_proto_goTypes = []any{
-	(*CacheSettings)(nil), // 0: CacheSettings
-	(*Request)(nil),       // 1: Request
-	(*Response)(nil),      // 2: Response
-	nil,                   // 3: Request.HeadersEntry
-	nil,                   // 4: Response.HeadersEntry
+var file_capabilities_networking_http_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_capabilities_networking_http_v1alpha_client_proto_goTypes = []any{
+	(*CacheSettings)(nil), // 0: capabilities.networking.http.v1alpha.CacheSettings
+	(*Request)(nil),       // 1: capabilities.networking.http.v1alpha.Request
+	(*Response)(nil),      // 2: capabilities.networking.http.v1alpha.Response
+	nil,                   // 3: capabilities.networking.http.v1alpha.Request.HeadersEntry
+	nil,                   // 4: capabilities.networking.http.v1alpha.Response.HeadersEntry
 }
-var file_client_proto_depIdxs = []int32{
-	3, // 0: Request.headers:type_name -> Request.HeadersEntry
-	0, // 1: Request.cache_settings:type_name -> CacheSettings
-	4, // 2: Response.headers:type_name -> Response.HeadersEntry
-	1, // 3: Client.SendRequest:input_type -> Request
-	2, // 4: Client.SendRequest:output_type -> Response
+var file_capabilities_networking_http_v1alpha_client_proto_depIdxs = []int32{
+	3, // 0: capabilities.networking.http.v1alpha.Request.headers:type_name -> capabilities.networking.http.v1alpha.Request.HeadersEntry
+	0, // 1: capabilities.networking.http.v1alpha.Request.cache_settings:type_name -> capabilities.networking.http.v1alpha.CacheSettings
+	4, // 2: capabilities.networking.http.v1alpha.Response.headers:type_name -> capabilities.networking.http.v1alpha.Response.HeadersEntry
+	1, // 3: capabilities.networking.http.v1alpha.Client.SendRequest:input_type -> capabilities.networking.http.v1alpha.Request
+	2, // 4: capabilities.networking.http.v1alpha.Client.SendRequest:output_type -> capabilities.networking.http.v1alpha.Response
 	4, // [4:5] is the sub-list for method output_type
 	3, // [3:4] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -290,26 +290,26 @@ var file_client_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_client_proto_init() }
-func file_client_proto_init() {
-	if File_client_proto != nil {
+func init() { file_capabilities_networking_http_v1alpha_client_proto_init() }
+func file_capabilities_networking_http_v1alpha_client_proto_init() {
+	if File_capabilities_networking_http_v1alpha_client_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_client_proto_rawDesc), len(file_client_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_networking_http_v1alpha_client_proto_rawDesc), len(file_capabilities_networking_http_v1alpha_client_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_client_proto_goTypes,
-		DependencyIndexes: file_client_proto_depIdxs,
-		MessageInfos:      file_client_proto_msgTypes,
+		GoTypes:           file_capabilities_networking_http_v1alpha_client_proto_goTypes,
+		DependencyIndexes: file_capabilities_networking_http_v1alpha_client_proto_depIdxs,
+		MessageInfos:      file_capabilities_networking_http_v1alpha_client_proto_msgTypes,
 	}.Build()
-	File_client_proto = out.File
-	file_client_proto_goTypes = nil
-	file_client_proto_depIdxs = nil
+	File_capabilities_networking_http_v1alpha_client_proto = out.File
+	file_capabilities_networking_http_v1alpha_client_proto_goTypes = nil
+	file_capabilities_networking_http_v1alpha_client_proto_depIdxs = nil
 }

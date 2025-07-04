@@ -31,7 +31,7 @@ type ClientCapability interface {
 
 	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
 
-	HeaderByNumber(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
+	LatestAndFinalizedHead(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
 
 	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
 
@@ -197,11 +197,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 			return c.ClientCapability.GetTransactionReceipt(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
-	case "HeaderByNumber":
-		input := &evm.HeaderByNumberRequest{}
+	case "LatestAndFinalizedHead":
+		input := &emptypb.Empty{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, error) {
-			return c.ClientCapability.HeaderByNumber(ctx, metadata, input)
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty, _ *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error) {
+			return c.ClientCapability.LatestAndFinalizedHead(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	case "RegisterLogTracking":

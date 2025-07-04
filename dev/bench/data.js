@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751633635934,
+  "lastUpdate": 1751634368685,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18060,6 +18060,48 @@ window.BENCHMARK_DATA = {
             "value": 28168,
             "unit": "ns/op",
             "extra": "42751 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "iva.brajer@smartcontract.com",
+            "name": "Iva Brajer",
+            "username": "ibrajer"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be1bb3326a1549539b75a0255309ce141ab557c9",
+          "message": "Bump chainlink proto version (#1335)",
+          "timestamp": "2025-07-04T13:04:50Z",
+          "tree_id": "7d9ca7cbeedb65f6a42ae358510b4a630e7f5bd1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/be1bb3326a1549539b75a0255309ce141ab557c9"
+        },
+        "date": 1751634367698,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.4,
+            "unit": "ns/op",
+            "extra": "3364382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.1,
+            "unit": "ns/op",
+            "extra": "2802860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28164,
+            "unit": "ns/op",
+            "extra": "42577 times\n4 procs"
           }
         ]
       }

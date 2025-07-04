@@ -15,7 +15,7 @@ service EVM{
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
   rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
   rpc GetTransactionReceipt(GetTransactionReceiptRequest) returns (GetTransactionReceiptReply);
-  rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
+  rpc HeaderByNumber(HeaderByNumberRequest) returns (HeaderByNumberReply);
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
@@ -97,7 +97,7 @@ message LPFilter {
   repeated bytes topic4 = 9; // list of possible values for topic4, in [32]byte fix-sized array format
 }
 
-message Head {
+message Header {
   uint64 timestamp = 1; // unix timestamp
   values.v1.BigInt block_number = 2;
   bytes hash = 3; // in [32]byte fix-sized array format
@@ -152,20 +152,36 @@ message Primitive {
 }
 
 // ----- Request/Reply Wrappers -----
-message LatestAndFinalizedHeadReply {
-  Head latest = 1;
-  Head finalized = 2;
+// HeaderByNumberRequest - returns block information without full transaction data and uncle headers
+message HeaderByNumberRequest {
+  // block_number - defines block at which call will be executed:
+  //  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.)
+  //  positive value - execute as specified height with confidence level
+  values.v1.BigInt block_number = 2;
+  // confidence_level - defines at which confidence level request will be executed
+  //    Unconfirmed - return the most recent data.
+  //    Finalized - returned data was finalized.
+  //    Safe - returned data is highly unlikely to be reorged.
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
-// CallContractRequest has arguments for reading a contract as specified in the call message at a block height defined by blockNumber where:
-// blockNumber :
-//	nil (default) or (-2) → use the latest mined block (“latest”)
-//	FinalizedBlockNumber(-3) → last finalized block (“finalized”)
-//
-// Any positive value is treated as an explicit block height.
+message HeaderByNumberReply {
+  Header header = 1;
+}
+
+// CallContract executes a message call transaction, which is directly executed in the VM
+// of the node, but never mined into the blockchain.
 message CallContractRequest {
   CallMsg call = 1;
+  // block_number - defines block at which call will be executed:
+  //  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
+  //  positive value - execute as specified height with confidence level;
   values.v1.BigInt block_number = 2;
+  // confidence_level - defines at which confidence level request will be executed:
+  //    Unconfirmed - returns the most recent data
+  //    Finalized - returned data was finalized;
+  //    Safe - returned data is highly unlikely to be reorged;
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message CallContractReply {
@@ -184,6 +200,11 @@ message GetTransactionFeeReply {
 
 message FilterLogsRequest {
   FilterQuery filter_query = 1;
+  // confidence_level - defines at which confidence level request will be executed
+  //    Unconfirmed - return the most recent data.
+  //    Finalized - returned data was finalized.
+  //    Safe - returned data is highly unlikely to be reorged.
+  loop.chain.common.Confidence confidence_level = 2;
 }
 
 message FilterLogsReply {
@@ -192,7 +213,15 @@ message FilterLogsReply {
 
 message BalanceAtRequest {
   bytes account = 1; // in evm address [20]byte fix-sized array format
+  // block_number - defines block at which call will be executed:
+  //  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
+  //  positive value - execute as specified height with confidence level;
   values.v1.BigInt block_number = 2;
+  // confidence_level - defines at which confidence level request will be executed:
+  //    Unconfirmed - return the most recent data.
+  //    Finalized - returned data was finalized.
+  //    Safe - returned data is highly unlikely to be reorged.
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message BalanceAtReply {

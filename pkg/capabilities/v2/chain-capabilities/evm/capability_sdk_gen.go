@@ -155,21 +155,21 @@ func (c *Client) GetTransactionReceipt(runtime sdk.Runtime, input *GetTransactio
 	})
 }
 
-func (c *Client) LatestAndFinalizedHead(runtime sdk.Runtime, input *emptypb.Empty) sdk.Promise[*LatestAndFinalizedHeadReply] {
+func (c *Client) HeaderByNumber(runtime sdk.Runtime, input *HeaderByNumberRequest) sdk.Promise[*HeaderByNumberReply] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*LatestAndFinalizedHeadReply](nil, err)
+		return sdk.PromiseFromResult[*HeaderByNumberReply](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "evm@1.0.0",
 		Payload: wrapped,
-		Method:  "LatestAndFinalizedHead",
-	}), func(i *sdkpb.CapabilityResponse) (*LatestAndFinalizedHeadReply, error) {
+		Method:  "HeaderByNumber",
+	}), func(i *sdkpb.CapabilityResponse) (*HeaderByNumberReply, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &LatestAndFinalizedHeadReply{}
+			output := &HeaderByNumberReply{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

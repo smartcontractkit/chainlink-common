@@ -1330,28 +1330,33 @@ func (x *Receipt) GetContractAddress() []byte {
 }
 
 // ----- Request/Reply Wrappers -----
-type LatestAndFinalizedHeadReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Latest        *Head                  `protobuf:"bytes,1,opt,name=latest,proto3" json:"latest,omitempty"`
-	Finalized     *Head                  `protobuf:"bytes,2,opt,name=finalized,proto3" json:"finalized,omitempty"`
+// HeaderByNumberRequest - returns a block without full transaction data and uncle headers.
+type HeaderByNumberRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// block_number - defines block number to return.
+	// null (default) or -2 - returns latest known block
+	// -3 - latest finalized block
+	// -4 - latest safe block
+	// positive value - block at that specified height.
+	BlockNumber   *pb.BigInt `protobuf:"bytes,1,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LatestAndFinalizedHeadReply) Reset() {
-	*x = LatestAndFinalizedHeadReply{}
+func (x *HeaderByNumberRequest) Reset() {
+	*x = HeaderByNumberRequest{}
 	mi := &file_capability_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LatestAndFinalizedHeadReply) String() string {
+func (x *HeaderByNumberRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LatestAndFinalizedHeadReply) ProtoMessage() {}
+func (*HeaderByNumberRequest) ProtoMessage() {}
 
-func (x *LatestAndFinalizedHeadReply) ProtoReflect() protoreflect.Message {
+func (x *HeaderByNumberRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_capability_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1363,26 +1368,63 @@ func (x *LatestAndFinalizedHeadReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LatestAndFinalizedHeadReply.ProtoReflect.Descriptor instead.
-func (*LatestAndFinalizedHeadReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use HeaderByNumberRequest.ProtoReflect.Descriptor instead.
+func (*HeaderByNumberRequest) Descriptor() ([]byte, []int) {
 	return file_capability_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *LatestAndFinalizedHeadReply) GetLatest() *Head {
+func (x *HeaderByNumberRequest) GetBlockNumber() *pb.BigInt {
 	if x != nil {
-		return x.Latest
+		return x.BlockNumber
 	}
 	return nil
 }
 
-func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
+type HeaderByNumberReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Header        *Header                `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeaderByNumberReply) Reset() {
+	*x = HeaderByNumberReply{}
+	mi := &file_capability_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeaderByNumberReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeaderByNumberReply) ProtoMessage() {}
+
+func (x *HeaderByNumberReply) ProtoReflect() protoreflect.Message {
+	mi := &file_capability_proto_msgTypes[21]
 	if x != nil {
-		return x.Finalized
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeaderByNumberReply.ProtoReflect.Descriptor instead.
+func (*HeaderByNumberReply) Descriptor() ([]byte, []int) {
+	return file_capability_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *HeaderByNumberReply) GetHeader() *Header {
+	if x != nil {
+		return x.Header
 	}
 	return nil
 }
 
-type Head struct {
+type Header struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp     uint64                 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // unix timestamp
 	BlockNumber   *pb.BigInt             `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
@@ -1392,21 +1434,21 @@ type Head struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Head) Reset() {
-	*x = Head{}
-	mi := &file_capability_proto_msgTypes[21]
+func (x *Header) Reset() {
+	*x = Header{}
+	mi := &file_capability_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Head) String() string {
+func (x *Header) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Head) ProtoMessage() {}
+func (*Header) ProtoMessage() {}
 
-func (x *Head) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[21]
+func (x *Header) ProtoReflect() protoreflect.Message {
+	mi := &file_capability_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1417,33 +1459,33 @@ func (x *Head) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Head.ProtoReflect.Descriptor instead.
-func (*Head) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{21}
+// Deprecated: Use Header.ProtoReflect.Descriptor instead.
+func (*Header) Descriptor() ([]byte, []int) {
+	return file_capability_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *Head) GetTimestamp() uint64 {
+func (x *Header) GetTimestamp() uint64 {
 	if x != nil {
 		return x.Timestamp
 	}
 	return 0
 }
 
-func (x *Head) GetBlockNumber() *pb.BigInt {
+func (x *Header) GetBlockNumber() *pb.BigInt {
 	if x != nil {
 		return x.BlockNumber
 	}
 	return nil
 }
 
-func (x *Head) GetHash() []byte {
+func (x *Header) GetHash() []byte {
 	if x != nil {
 		return x.Hash
 	}
 	return nil
 }
 
-func (x *Head) GetParentHash() []byte {
+func (x *Header) GetParentHash() []byte {
 	if x != nil {
 		return x.ParentHash
 	}
@@ -1459,7 +1501,7 @@ type RegisterLogTrackingRequest struct {
 
 func (x *RegisterLogTrackingRequest) Reset() {
 	*x = RegisterLogTrackingRequest{}
-	mi := &file_capability_proto_msgTypes[22]
+	mi := &file_capability_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1471,7 +1513,7 @@ func (x *RegisterLogTrackingRequest) String() string {
 func (*RegisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[22]
+	mi := &file_capability_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1484,7 +1526,7 @@ func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{22}
+	return file_capability_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *RegisterLogTrackingRequest) GetFilter() *LPFilter {
@@ -1511,7 +1553,7 @@ type LPFilter struct {
 
 func (x *LPFilter) Reset() {
 	*x = LPFilter{}
-	mi := &file_capability_proto_msgTypes[23]
+	mi := &file_capability_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1523,7 +1565,7 @@ func (x *LPFilter) String() string {
 func (*LPFilter) ProtoMessage() {}
 
 func (x *LPFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[23]
+	mi := &file_capability_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1536,7 +1578,7 @@ func (x *LPFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LPFilter.ProtoReflect.Descriptor instead.
 func (*LPFilter) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{23}
+	return file_capability_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *LPFilter) GetMaxLogsKept() uint64 {
@@ -1611,7 +1653,7 @@ type UnregisterLogTrackingRequest struct {
 
 func (x *UnregisterLogTrackingRequest) Reset() {
 	*x = UnregisterLogTrackingRequest{}
-	mi := &file_capability_proto_msgTypes[24]
+	mi := &file_capability_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1623,7 +1665,7 @@ func (x *UnregisterLogTrackingRequest) String() string {
 func (*UnregisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[24]
+	mi := &file_capability_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1636,7 +1678,7 @@ func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{24}
+	return file_capability_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UnregisterLogTrackingRequest) GetFilterName() string {
@@ -1658,7 +1700,7 @@ type SignedReport struct {
 
 func (x *SignedReport) Reset() {
 	*x = SignedReport{}
-	mi := &file_capability_proto_msgTypes[25]
+	mi := &file_capability_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1670,7 +1712,7 @@ func (x *SignedReport) String() string {
 func (*SignedReport) ProtoMessage() {}
 
 func (x *SignedReport) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[25]
+	mi := &file_capability_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1683,7 +1725,7 @@ func (x *SignedReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignedReport.ProtoReflect.Descriptor instead.
 func (*SignedReport) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{25}
+	return file_capability_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *SignedReport) GetRawReport() []byte {
@@ -1725,7 +1767,7 @@ type WriteReportRequest struct {
 
 func (x *WriteReportRequest) Reset() {
 	*x = WriteReportRequest{}
-	mi := &file_capability_proto_msgTypes[26]
+	mi := &file_capability_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1737,7 +1779,7 @@ func (x *WriteReportRequest) String() string {
 func (*WriteReportRequest) ProtoMessage() {}
 
 func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[26]
+	mi := &file_capability_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1750,7 +1792,7 @@ func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
 func (*WriteReportRequest) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{26}
+	return file_capability_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *WriteReportRequest) GetReceiver() []byte {
@@ -1783,7 +1825,7 @@ type GasConfig struct {
 
 func (x *GasConfig) Reset() {
 	*x = GasConfig{}
-	mi := &file_capability_proto_msgTypes[27]
+	mi := &file_capability_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1795,7 +1837,7 @@ func (x *GasConfig) String() string {
 func (*GasConfig) ProtoMessage() {}
 
 func (x *GasConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[27]
+	mi := &file_capability_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1808,7 +1850,7 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
 func (*GasConfig) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{27}
+	return file_capability_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GasConfig) GetGasLimit() uint64 {
@@ -1831,7 +1873,7 @@ type WriteReportReply struct {
 
 func (x *WriteReportReply) Reset() {
 	*x = WriteReportReply{}
-	mi := &file_capability_proto_msgTypes[28]
+	mi := &file_capability_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1843,7 +1885,7 @@ func (x *WriteReportReply) String() string {
 func (*WriteReportReply) ProtoMessage() {}
 
 func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capability_proto_msgTypes[28]
+	mi := &file_capability_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1856,7 +1898,7 @@ func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
 func (*WriteReportReply) Descriptor() ([]byte, []int) {
-	return file_capability_proto_rawDescGZIP(), []int{28}
+	return file_capability_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *WriteReportReply) GetTxStatus() TxStatus {
@@ -1978,11 +2020,12 @@ const file_capability_proto_rawDesc = "" +
 	"\x13effective_gas_price\x18\b \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\x124\n" +
 	"\fblock_number\x18\t \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12)\n" +
 	"\x10contract_address\x18\n" +
-	" \x01(\fR\x0fcontractAddress\"\x7f\n" +
-	"\x1bLatestAndFinalizedHeadReply\x12,\n" +
-	"\x06latest\x18\x01 \x01(\v2\x14.cre.sdk.v2.evm.HeadR\x06latest\x122\n" +
-	"\tfinalized\x18\x02 \x01(\v2\x14.cre.sdk.v2.evm.HeadR\tfinalized\"\x8f\x01\n" +
-	"\x04Head\x12\x1c\n" +
+	" \x01(\fR\x0fcontractAddress\"M\n" +
+	"\x15HeaderByNumberRequest\x124\n" +
+	"\fblock_number\x18\x01 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\"E\n" +
+	"\x13HeaderByNumberReply\x12.\n" +
+	"\x06header\x18\x01 \x01(\v2\x16.cre.sdk.v2.evm.HeaderR\x06header\"\x91\x01\n" +
+	"\x06Header\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x124\n" +
 	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12\x12\n" +
 	"\x04hash\x18\x03 \x01(\fR\x04hash\x12\x1f\n" +
@@ -2043,7 +2086,7 @@ const file_capability_proto_rawDesc = "" +
 	"\bTX_FATAL\x10\x00\x12\x0f\n" +
 	"\vTX_REVERTED\x10\x01\x12\x0e\n" +
 	"\n" +
-	"TX_SUCCESS\x10\x022\x88\b\n" +
+	"TX_SUCCESS\x10\x022\x87\b\n" +
 	"\x06Client\x12V\n" +
 	"\fCallContract\x12#.cre.sdk.v2.evm.CallContractRequest\x1a!.cre.sdk.v2.evm.CallContractReply\x12P\n" +
 	"\n" +
@@ -2051,8 +2094,8 @@ const file_capability_proto_rawDesc = "" +
 	"\tBalanceAt\x12 .cre.sdk.v2.evm.BalanceAtRequest\x1a\x1e.cre.sdk.v2.evm.BalanceAtReply\x12S\n" +
 	"\vEstimateGas\x12\".cre.sdk.v2.evm.EstimateGasRequest\x1a .cre.sdk.v2.evm.EstimateGasReply\x12n\n" +
 	"\x14GetTransactionByHash\x12+.cre.sdk.v2.evm.GetTransactionByHashRequest\x1a).cre.sdk.v2.evm.GetTransactionByHashReply\x12q\n" +
-	"\x15GetTransactionReceipt\x12,.cre.sdk.v2.evm.GetTransactionReceiptRequest\x1a*.cre.sdk.v2.evm.GetTransactionReceiptReply\x12]\n" +
-	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a+.cre.sdk.v2.evm.LatestAndFinalizedHeadReply\x12Y\n" +
+	"\x15GetTransactionReceipt\x12,.cre.sdk.v2.evm.GetTransactionReceiptRequest\x1a*.cre.sdk.v2.evm.GetTransactionReceiptReply\x12\\\n" +
+	"\x0eHeaderByNumber\x12%.cre.sdk.v2.evm.HeaderByNumberRequest\x1a#.cre.sdk.v2.evm.HeaderByNumberReply\x12Y\n" +
 	"\x13RegisterLogTracking\x12*.cre.sdk.v2.evm.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12]\n" +
 	"\x15UnregisterLogTracking\x12,.cre.sdk.v2.evm.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12L\n" +
 	"\n" +
@@ -2072,7 +2115,7 @@ func file_capability_proto_rawDescGZIP() []byte {
 }
 
 var file_capability_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_capability_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_capability_proto_goTypes = []any{
 	(ConfidenceLevel)(0),                 // 0: cre.sdk.v2.evm.ConfidenceLevel
 	(ReceiverContractExecutionStatus)(0), // 1: cre.sdk.v2.evm.ReceiverContractExecutionStatus
@@ -2097,70 +2140,71 @@ var file_capability_proto_goTypes = []any{
 	(*GetTransactionReceiptRequest)(nil), // 20: cre.sdk.v2.evm.GetTransactionReceiptRequest
 	(*GetTransactionReceiptReply)(nil),   // 21: cre.sdk.v2.evm.GetTransactionReceiptReply
 	(*Receipt)(nil),                      // 22: cre.sdk.v2.evm.Receipt
-	(*LatestAndFinalizedHeadReply)(nil),  // 23: cre.sdk.v2.evm.LatestAndFinalizedHeadReply
-	(*Head)(nil),                         // 24: cre.sdk.v2.evm.Head
-	(*RegisterLogTrackingRequest)(nil),   // 25: cre.sdk.v2.evm.RegisterLogTrackingRequest
-	(*LPFilter)(nil),                     // 26: cre.sdk.v2.evm.LPFilter
-	(*UnregisterLogTrackingRequest)(nil), // 27: cre.sdk.v2.evm.UnregisterLogTrackingRequest
-	(*SignedReport)(nil),                 // 28: cre.sdk.v2.evm.SignedReport
-	(*WriteReportRequest)(nil),           // 29: cre.sdk.v2.evm.WriteReportRequest
-	(*GasConfig)(nil),                    // 30: cre.sdk.v2.evm.GasConfig
-	(*WriteReportReply)(nil),             // 31: cre.sdk.v2.evm.WriteReportReply
-	(*pb.BigInt)(nil),                    // 32: values.v1.BigInt
-	(*emptypb.Empty)(nil),                // 33: google.protobuf.Empty
+	(*HeaderByNumberRequest)(nil),        // 23: cre.sdk.v2.evm.HeaderByNumberRequest
+	(*HeaderByNumberReply)(nil),          // 24: cre.sdk.v2.evm.HeaderByNumberReply
+	(*Header)(nil),                       // 25: cre.sdk.v2.evm.Header
+	(*RegisterLogTrackingRequest)(nil),   // 26: cre.sdk.v2.evm.RegisterLogTrackingRequest
+	(*LPFilter)(nil),                     // 27: cre.sdk.v2.evm.LPFilter
+	(*UnregisterLogTrackingRequest)(nil), // 28: cre.sdk.v2.evm.UnregisterLogTrackingRequest
+	(*SignedReport)(nil),                 // 29: cre.sdk.v2.evm.SignedReport
+	(*WriteReportRequest)(nil),           // 30: cre.sdk.v2.evm.WriteReportRequest
+	(*GasConfig)(nil),                    // 31: cre.sdk.v2.evm.GasConfig
+	(*WriteReportReply)(nil),             // 32: cre.sdk.v2.evm.WriteReportReply
+	(*pb.BigInt)(nil),                    // 33: values.v1.BigInt
+	(*emptypb.Empty)(nil),                // 34: google.protobuf.Empty
 }
 var file_capability_proto_depIdxs = []int32{
 	3,  // 0: cre.sdk.v2.evm.FilterLogTriggerRequest.topics:type_name -> cre.sdk.v2.evm.TopicValues
 	0,  // 1: cre.sdk.v2.evm.FilterLogTriggerRequest.Confidence:type_name -> cre.sdk.v2.evm.ConfidenceLevel
 	10, // 2: cre.sdk.v2.evm.CallContractRequest.call:type_name -> cre.sdk.v2.evm.CallMsg
-	32, // 3: cre.sdk.v2.evm.CallContractRequest.block_number:type_name -> values.v1.BigInt
+	33, // 3: cre.sdk.v2.evm.CallContractRequest.block_number:type_name -> values.v1.BigInt
 	11, // 4: cre.sdk.v2.evm.FilterLogsRequest.filter_query:type_name -> cre.sdk.v2.evm.FilterQuery
 	9,  // 5: cre.sdk.v2.evm.FilterLogsReply.logs:type_name -> cre.sdk.v2.evm.Log
-	32, // 6: cre.sdk.v2.evm.Log.block_number:type_name -> values.v1.BigInt
-	32, // 7: cre.sdk.v2.evm.FilterQuery.fromBlock:type_name -> values.v1.BigInt
-	32, // 8: cre.sdk.v2.evm.FilterQuery.toBlock:type_name -> values.v1.BigInt
+	33, // 6: cre.sdk.v2.evm.Log.block_number:type_name -> values.v1.BigInt
+	33, // 7: cre.sdk.v2.evm.FilterQuery.fromBlock:type_name -> values.v1.BigInt
+	33, // 8: cre.sdk.v2.evm.FilterQuery.toBlock:type_name -> values.v1.BigInt
 	12, // 9: cre.sdk.v2.evm.FilterQuery.topics:type_name -> cre.sdk.v2.evm.Topics
-	32, // 10: cre.sdk.v2.evm.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
-	32, // 11: cre.sdk.v2.evm.BalanceAtReply.balance:type_name -> values.v1.BigInt
+	33, // 10: cre.sdk.v2.evm.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
+	33, // 11: cre.sdk.v2.evm.BalanceAtReply.balance:type_name -> values.v1.BigInt
 	10, // 12: cre.sdk.v2.evm.EstimateGasRequest.msg:type_name -> cre.sdk.v2.evm.CallMsg
 	19, // 13: cre.sdk.v2.evm.GetTransactionByHashReply.transaction:type_name -> cre.sdk.v2.evm.Transaction
-	32, // 14: cre.sdk.v2.evm.Transaction.value:type_name -> values.v1.BigInt
-	32, // 15: cre.sdk.v2.evm.Transaction.gas_price:type_name -> values.v1.BigInt
+	33, // 14: cre.sdk.v2.evm.Transaction.value:type_name -> values.v1.BigInt
+	33, // 15: cre.sdk.v2.evm.Transaction.gas_price:type_name -> values.v1.BigInt
 	22, // 16: cre.sdk.v2.evm.GetTransactionReceiptReply.receipt:type_name -> cre.sdk.v2.evm.Receipt
 	9,  // 17: cre.sdk.v2.evm.Receipt.logs:type_name -> cre.sdk.v2.evm.Log
-	32, // 18: cre.sdk.v2.evm.Receipt.effective_gas_price:type_name -> values.v1.BigInt
-	32, // 19: cre.sdk.v2.evm.Receipt.block_number:type_name -> values.v1.BigInt
-	24, // 20: cre.sdk.v2.evm.LatestAndFinalizedHeadReply.latest:type_name -> cre.sdk.v2.evm.Head
-	24, // 21: cre.sdk.v2.evm.LatestAndFinalizedHeadReply.finalized:type_name -> cre.sdk.v2.evm.Head
-	32, // 22: cre.sdk.v2.evm.Head.block_number:type_name -> values.v1.BigInt
-	26, // 23: cre.sdk.v2.evm.RegisterLogTrackingRequest.filter:type_name -> cre.sdk.v2.evm.LPFilter
-	28, // 24: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
-	30, // 25: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
+	33, // 18: cre.sdk.v2.evm.Receipt.effective_gas_price:type_name -> values.v1.BigInt
+	33, // 19: cre.sdk.v2.evm.Receipt.block_number:type_name -> values.v1.BigInt
+	33, // 20: cre.sdk.v2.evm.HeaderByNumberRequest.block_number:type_name -> values.v1.BigInt
+	25, // 21: cre.sdk.v2.evm.HeaderByNumberReply.header:type_name -> cre.sdk.v2.evm.Header
+	33, // 22: cre.sdk.v2.evm.Header.block_number:type_name -> values.v1.BigInt
+	27, // 23: cre.sdk.v2.evm.RegisterLogTrackingRequest.filter:type_name -> cre.sdk.v2.evm.LPFilter
+	29, // 24: cre.sdk.v2.evm.WriteReportRequest.report:type_name -> cre.sdk.v2.evm.SignedReport
+	31, // 25: cre.sdk.v2.evm.WriteReportRequest.gas_config:type_name -> cre.sdk.v2.evm.GasConfig
 	2,  // 26: cre.sdk.v2.evm.WriteReportReply.tx_status:type_name -> cre.sdk.v2.evm.TxStatus
 	1,  // 27: cre.sdk.v2.evm.WriteReportReply.receiver_contract_execution_status:type_name -> cre.sdk.v2.evm.ReceiverContractExecutionStatus
-	32, // 28: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
+	33, // 28: cre.sdk.v2.evm.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
 	5,  // 29: cre.sdk.v2.evm.Client.CallContract:input_type -> cre.sdk.v2.evm.CallContractRequest
 	7,  // 30: cre.sdk.v2.evm.Client.FilterLogs:input_type -> cre.sdk.v2.evm.FilterLogsRequest
 	13, // 31: cre.sdk.v2.evm.Client.BalanceAt:input_type -> cre.sdk.v2.evm.BalanceAtRequest
 	15, // 32: cre.sdk.v2.evm.Client.EstimateGas:input_type -> cre.sdk.v2.evm.EstimateGasRequest
 	17, // 33: cre.sdk.v2.evm.Client.GetTransactionByHash:input_type -> cre.sdk.v2.evm.GetTransactionByHashRequest
 	20, // 34: cre.sdk.v2.evm.Client.GetTransactionReceipt:input_type -> cre.sdk.v2.evm.GetTransactionReceiptRequest
-	33, // 35: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	25, // 36: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> cre.sdk.v2.evm.RegisterLogTrackingRequest
-	27, // 37: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> cre.sdk.v2.evm.UnregisterLogTrackingRequest
+	23, // 35: cre.sdk.v2.evm.Client.HeaderByNumber:input_type -> cre.sdk.v2.evm.HeaderByNumberRequest
+	26, // 36: cre.sdk.v2.evm.Client.RegisterLogTracking:input_type -> cre.sdk.v2.evm.RegisterLogTrackingRequest
+	28, // 37: cre.sdk.v2.evm.Client.UnregisterLogTracking:input_type -> cre.sdk.v2.evm.UnregisterLogTrackingRequest
 	4,  // 38: cre.sdk.v2.evm.Client.LogTrigger:input_type -> cre.sdk.v2.evm.FilterLogTriggerRequest
-	29, // 39: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
+	30, // 39: cre.sdk.v2.evm.Client.WriteReport:input_type -> cre.sdk.v2.evm.WriteReportRequest
 	6,  // 40: cre.sdk.v2.evm.Client.CallContract:output_type -> cre.sdk.v2.evm.CallContractReply
 	8,  // 41: cre.sdk.v2.evm.Client.FilterLogs:output_type -> cre.sdk.v2.evm.FilterLogsReply
 	14, // 42: cre.sdk.v2.evm.Client.BalanceAt:output_type -> cre.sdk.v2.evm.BalanceAtReply
 	16, // 43: cre.sdk.v2.evm.Client.EstimateGas:output_type -> cre.sdk.v2.evm.EstimateGasReply
 	18, // 44: cre.sdk.v2.evm.Client.GetTransactionByHash:output_type -> cre.sdk.v2.evm.GetTransactionByHashReply
 	21, // 45: cre.sdk.v2.evm.Client.GetTransactionReceipt:output_type -> cre.sdk.v2.evm.GetTransactionReceiptReply
-	23, // 46: cre.sdk.v2.evm.Client.LatestAndFinalizedHead:output_type -> cre.sdk.v2.evm.LatestAndFinalizedHeadReply
-	33, // 47: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	33, // 48: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	24, // 46: cre.sdk.v2.evm.Client.HeaderByNumber:output_type -> cre.sdk.v2.evm.HeaderByNumberReply
+	34, // 47: cre.sdk.v2.evm.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	34, // 48: cre.sdk.v2.evm.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	9,  // 49: cre.sdk.v2.evm.Client.LogTrigger:output_type -> cre.sdk.v2.evm.Log
-	31, // 50: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
+	32, // 50: cre.sdk.v2.evm.Client.WriteReport:output_type -> cre.sdk.v2.evm.WriteReportReply
 	40, // [40:51] is the sub-list for method output_type
 	29, // [29:40] is the sub-list for method input_type
 	29, // [29:29] is the sub-list for extension type_name
@@ -2173,15 +2217,15 @@ func file_capability_proto_init() {
 	if File_capability_proto != nil {
 		return
 	}
-	file_capability_proto_msgTypes[26].OneofWrappers = []any{}
-	file_capability_proto_msgTypes[28].OneofWrappers = []any{}
+	file_capability_proto_msgTypes[27].OneofWrappers = []any{}
+	file_capability_proto_msgTypes[29].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capability_proto_rawDesc), len(file_capability_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   29,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

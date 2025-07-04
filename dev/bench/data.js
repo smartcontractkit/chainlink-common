@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751666403080,
+  "lastUpdate": 1751668484461,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18438,6 +18438,48 @@ window.BENCHMARK_DATA = {
             "value": 28148,
             "unit": "ns/op",
             "extra": "42571 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "62166777d63956a332c929a36eaa8dc3563b2a13",
+          "message": "Migrate test capabilites and remove other pb (#1345)",
+          "timestamp": "2025-07-04T23:32:30+01:00",
+          "tree_id": "fc5aebeec413cb1711efa9307a5c91b73496d2ba",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/62166777d63956a332c929a36eaa8dc3563b2a13"
+        },
+        "date": 1751668483272,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 375.5,
+            "unit": "ns/op",
+            "extra": "3260251 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 417.5,
+            "unit": "ns/op",
+            "extra": "2861764 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28148,
+            "unit": "ns/op",
+            "extra": "42542 times\n4 procs"
           }
         ]
       }

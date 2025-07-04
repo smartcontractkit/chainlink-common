@@ -18,7 +18,12 @@ var values = Packages{
 	Proto: "values/v1/values.proto",
 }
 
+type ProtocGenConfig struct {
+	ChainlinkProtosVersion string // override the default version of chainlink-protos to use
+}
+
 type ProtocGen struct {
+	ProtocGenConfig
 	ProtocHelper
 	packageNames map[string]string
 	sources      []string
@@ -148,6 +153,11 @@ func (p *ProtocGen) doInit() error {
 		return nil
 	}
 
+	// Set default ChainlinkProtosVersion if not provided
+	if p.ChainlinkProtosVersion == "" {
+		p.ChainlinkProtosVersion = defaultChainlinkProtosVersion
+	}
+
 	p.LinkPackage(values)
 
 	if p.ProtocHelper != nil {
@@ -172,7 +182,7 @@ func (p *ProtocGen) doInit() error {
 	}
 
 	clProtos := path.Join(protoDir, "chainlink-protos")
-	if err = checkoutClProtosRef(clProtos); err != nil {
+	if err = checkoutClProtosRef(clProtos, p.ChainlinkProtosVersion); err != nil {
 		return fmt.Errorf("failed to checkout chainlink-protos: %v", err)
 	}
 
@@ -192,7 +202,7 @@ func run(command string, path string, args ...string) (string, error) {
 	return strings.TrimSpace(string(outuptBytes)), nil
 }
 
-func checkoutClProtosRef(repoPath string) error {
+func checkoutClProtosRef(repoPath, version string) error {
 	if _, err := os.Stat(filepath.Join(repoPath, ".git")); err != nil {
 		if err = cloneClProtosRepo(repoPath); err != nil {
 			return fmt.Errorf("failed to clone chainlink-protos repo: %v", err)
@@ -204,14 +214,14 @@ func checkoutClProtosRef(repoPath string) error {
 		return fmt.Errorf("failed to reset chainlink-protos repo: %v", err)
 	}
 
-	if _, err := run("git", repoPath, "rev-parse", "--verify", "--quiet", chainlinkProtosVersion); err != nil {
+	if _, err := run("git", repoPath, "rev-parse", "--verify", "--quiet", version); err != nil {
 		if out, err := run("git", repoPath, "fetch"); err != nil {
 			return fmt.Errorf("failed to fetch: %v\nIf you're not working on the main branch, you may need to track that branch in proto_vendor/chainlink-protos, this tool will not do that for you to avoid accidental non-main commits\n%s", err, out)
 		}
 	}
 
-	fmt.Println("checking out chainlink-protos version:", chainlinkProtosVersion)
-	if out, err := run("git", repoPath, "checkout", chainlinkProtosVersion); err != nil {
+	fmt.Println("checking out chainlink-protos version:", version)
+	if out, err := run("git", repoPath, "checkout", version); err != nil {
 		return fmt.Errorf("failed to checkout: %v\n%s", err, out)
 	}
 

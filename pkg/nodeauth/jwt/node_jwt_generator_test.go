@@ -1,6 +1,7 @@
-package nodeauth
+package jwt
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 // mockRequest is a simple type that implements fmt.Stringer.
@@ -22,8 +24,8 @@ func (d mockRequest) String() string {
 	return d.Field
 }
 
-// Helper function to create test Ed25519 keys
-func createTestKeys() (ed25519.PrivateKey, ed25519.PublicKey, ed25519.PublicKey) {
+// Helper function to create test Ed25519 signer and keys
+func createTestSigner() (*core.Ed25519Signer, ed25519.PublicKey, ed25519.PublicKey) {
 	// Generate a private key for signing
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -36,15 +38,26 @@ func createTestKeys() (ed25519.PrivateKey, ed25519.PublicKey, ed25519.PublicKey)
 		panic("Failed to generate Ed25519 p2pId: " + err.Error())
 	}
 
-	return privateKey, publicKey, p2pId
+	// Create signer using the private key
+	account := hex.EncodeToString(publicKey)
+	signFn := func(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+		return ed25519.Sign(privateKey, data), nil
+	}
+
+	signer, err := core.NewEd25519Signer(account, signFn)
+	if err != nil {
+		panic("Failed to create Ed25519Signer: " + err.Error())
+	}
+
+	return signer, publicKey, p2pId
 }
 
 func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 	// prepare test data
-	privateKey, publicKey, p2pId := createTestKeys()
+	signer, publicKey, p2pId := createTestSigner()
 	req := mockRequest{Field: "test request"}
 
-	jwtGenerator := NewNodeJWTGenerator(privateKey, publicKey, p2pId, EnvironmentNameProductionTestnet)
+	jwtGenerator := NewNodeJWTGenerator(signer, publicKey, p2pId, EnvironmentNameProductionTestnet)
 
 	jwtToken, err := jwtGenerator.CreateJWTForRequest(req)
 	require.NoError(t, err)
@@ -82,8 +95,8 @@ func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 }
 
 func TestNodeJWTGenerator_DigestTampering(t *testing.T) {
-	privateKey, publicKey, p2pId := createTestKeys()
-	jwtGenerator := NewNodeJWTGenerator(privateKey, publicKey, p2pId, EnvironmentNameProductionTestnet)
+	signer, publicKey, p2pId := createTestSigner()
+	jwtGenerator := NewNodeJWTGenerator(signer, publicKey, p2pId, EnvironmentNameProductionTestnet)
 	req := mockRequest{Field: "original"}
 
 	// Create JWT for original and altered request
@@ -102,20 +115,20 @@ func TestNodeJWTGenerator_DigestTampering(t *testing.T) {
 	assert.NotEqual(t, digestAltered, claims.Digest, "Expected JWT digest to not match altered request")
 }
 
-func TestNodeJWTGenerator_NoPrivateKey(t *testing.T) {
-	_, publicKey, p2pId := createTestKeys()
+func TestNodeJWTGenerator_NoSigner(t *testing.T) {
+	_, publicKey, p2pId := createTestSigner()
 	jwtGenerator := NewNodeJWTGenerator(nil, publicKey, p2pId, EnvironmentNameProductionTestnet)
 
 	req := mockRequest{Field: "test request"}
 
 	_, err := jwtGenerator.CreateJWTForRequest(req)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no private key configured")
+	assert.Contains(t, err.Error(), "no signer configured")
 }
 
 func TestNodeJWTGenerator_ValidateSignature(t *testing.T) {
-	privateKey, publicKey, p2pId := createTestKeys()
-	jwtGenerator := NewNodeJWTGenerator(privateKey, publicKey, p2pId, EnvironmentNameProductionTestnet)
+	signer, publicKey, p2pId := createTestSigner()
+	jwtGenerator := NewNodeJWTGenerator(signer, publicKey, p2pId, EnvironmentNameProductionTestnet)
 
 	req := mockRequest{Field: "test request"}
 

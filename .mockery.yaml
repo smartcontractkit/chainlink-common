@@ -55,8 +55,8 @@ packages:
           filename: "mock_{{.InterfaceName | snakecase}}_test.go"
           mockname: "mock{{.InterfaceName}}"
           dir: "{{.InterfaceDir}}"
-  github.com/smartcontractkit/chainlink-common/pkg/nodeauth:
+  github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt:
     interfaces:
       JWTGenerator:
-      JWTValidator:
+      JWTAuthenticator:
       NodeTopologyProvider:

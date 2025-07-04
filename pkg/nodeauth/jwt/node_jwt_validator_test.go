@@ -1,4 +1,4 @@
-package nodeauth
+package jwt
 
 import (
 	"context"
@@ -16,8 +16,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 // Test request type
@@ -48,7 +49,18 @@ func createValidatorTestKeys() (ed25519.PrivateKey, ed25519.PublicKey, ed25519.P
 
 // Helper function to create a valid JWT token
 func createValidJWT(privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey, p2pId ed25519.PublicKey, request any) (string, error) {
-	generator := NewNodeJWTGenerator(privateKey, publicKey, p2pId, EnvironmentNameProductionTestnet)
+	// Create signer using the private key
+	account := hex.EncodeToString(publicKey)
+	signFn := func(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+		return ed25519.Sign(privateKey, data), nil
+	}
+
+	signer, err := core.NewEd25519Signer(account, signFn)
+	if err != nil {
+		return "", err
+	}
+
+	generator := NewNodeJWTGenerator(signer, publicKey, p2pId, EnvironmentNameProductionTestnet)
 	return generator.CreateJWTForRequest(request)
 }
 
@@ -56,7 +68,7 @@ func createTestLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelDebug}))
 }
 
-func TestNodeJWTValidator_ValidateJWT_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_Success(t *testing.T) {
 	// Setup
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	request := testRequest{Field: "test request"}
@@ -64,33 +76,33 @@ func TestNodeJWTValidator_ValidateJWT_Success(t *testing.T) {
 	// Create mock topology provider
 	mockProvider := mocks.NewNodeTopologyProvider(t)
 
-	mockProvider.EXPECT().IsNodeAuthorized(
+	mockProvider.EXPECT().IsNodePubKeyTrusted(
 		mock.Anything,
 		p2pId,
 		publicKey,
 	).Return(true, nil).Once()
 
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Create valid JWT
 	jwtToken, err := createValidJWT(privateKey, publicKey, p2pId, request)
 	require.NoError(t, err)
 
 	// Test
-	isValid, err := validator.ValidateJWT(context.Background(), jwtToken, request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, request)
 
 	// Assert
 	require.NoError(t, err)
 	assert.True(t, isValid)
 }
 
-func TestNodeJWTValidator_ValidateJWT_InvalidTokenFormat(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidTokenFormat(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 	request := testRequest{Field: "test request"}
 
 	// Test with invalid token
-	isValid, err := validator.ValidateJWT(context.Background(), "invalid.jwt.token", request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), "invalid.jwt.token", request)
 
 	// Assert
 	require.Error(t, err)
@@ -98,9 +110,9 @@ func TestNodeJWTValidator_ValidateJWT_InvalidTokenFormat(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to parse and validate JWT claims")
 }
 
-func TestNodeJWTValidator_ValidateJWT_InvalidPublicKey(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKey(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 	request := testRequest{Field: "test request"}
 
 	// Create JWT with invalid public key
@@ -123,7 +135,7 @@ func TestNodeJWTValidator_ValidateJWT_InvalidPublicKey(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test
-	isValid, err := validator.ValidateJWT(context.Background(), tokenString, request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), tokenString, request)
 
 	// Assert
 	require.Error(t, err)
@@ -131,9 +143,9 @@ func TestNodeJWTValidator_ValidateJWT_InvalidPublicKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid public key format")
 }
 
-func TestNodeJWTValidator_ValidateJWT_SignatureVerificationFailed(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_SignatureVerificationFailed(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 	request := testRequest{Field: "test request"}
 
 	// Create JWT with one key but sign with another
@@ -160,7 +172,7 @@ func TestNodeJWTValidator_ValidateJWT_SignatureVerificationFailed(t *testing.T) 
 	require.NoError(t, err)
 
 	// Test
-	isValid, err := validator.ValidateJWT(context.Background(), tokenString, request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), tokenString, request)
 
 	// Assert
 	require.Error(t, err)
@@ -168,9 +180,9 @@ func TestNodeJWTValidator_ValidateJWT_SignatureVerificationFailed(t *testing.T) 
 	assert.Contains(t, err.Error(), "JWT signature verification failed")
 }
 
-func TestNodeJWTValidator_ValidateJWT_DigestMismatch(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_DigestMismatch(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	originalRequest := testRequest{Field: "original"}
@@ -181,7 +193,7 @@ func TestNodeJWTValidator_ValidateJWT_DigestMismatch(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test with tampered request
-	isValid, err := validator.ValidateJWT(context.Background(), jwtToken, tamperedRequest)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, tamperedRequest)
 
 	// Assert
 	require.Error(t, err)
@@ -189,9 +201,9 @@ func TestNodeJWTValidator_ValidateJWT_DigestMismatch(t *testing.T) {
 	assert.Contains(t, err.Error(), "request integrity check failed")
 }
 
-func TestNodeJWTValidator_ValidateJWT_ExpiredToken(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	request := testRequest{Field: "test request"}
@@ -216,7 +228,7 @@ func TestNodeJWTValidator_ValidateJWT_ExpiredToken(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test
-	isValid, err := validator.ValidateJWT(context.Background(), tokenString, request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), tokenString, request)
 
 	// Assert
 	require.Error(t, err)
@@ -224,27 +236,27 @@ func TestNodeJWTValidator_ValidateJWT_ExpiredToken(t *testing.T) {
 	assert.Contains(t, err.Error(), "JWT signature verification failed")
 }
 
-func TestNodeJWTValidator_ValidateJWT_UnauthorizedNode(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_UnauthorizedNode(t *testing.T) {
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	request := testRequest{Field: "test request"}
 
 	// Create mock topology provider that returns unauthorized
 	mockProvider := mocks.NewNodeTopologyProvider(t)
 
-	mockProvider.EXPECT().IsNodeAuthorized(
+	mockProvider.EXPECT().IsNodePubKeyTrusted(
 		mock.Anything,
 		p2pId,
 		publicKey,
 	).Return(false, nil).Once()
 
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Create valid JWT
 	jwtToken, err := createValidJWT(privateKey, publicKey, p2pId, request)
 	require.NoError(t, err)
 
 	// Test
-	isValid, err := validator.ValidateJWT(context.Background(), jwtToken, request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, request)
 
 	// Assert
 	require.Error(t, err)
@@ -252,27 +264,27 @@ func TestNodeJWTValidator_ValidateJWT_UnauthorizedNode(t *testing.T) {
 	assert.Contains(t, err.Error(), "unauthorized node")
 }
 
-func TestNodeJWTValidator_ValidateJWT_TopologyProviderError(t *testing.T) {
+func TestNodeJWTAuthenticator_AuthenticateJWT_TopologyProviderError(t *testing.T) {
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	request := testRequest{Field: "test request"}
 
 	// Create mock topology provider that returns error
 	mockProvider := mocks.NewNodeTopologyProvider(t)
 
-	mockProvider.EXPECT().IsNodeAuthorized(
+	mockProvider.EXPECT().IsNodePubKeyTrusted(
 		mock.Anything,
 		p2pId,
 		publicKey,
 	).Return(false, fmt.Errorf("topology provider error")).Once()
 
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Create valid JWT
 	jwtToken, err := createValidJWT(privateKey, publicKey, p2pId, request)
 	require.NoError(t, err)
 
 	// Test
-	isValid, err := validator.ValidateJWT(context.Background(), jwtToken, request)
+	isValid, err := authenticator.AuthenticateJWT(context.Background(), jwtToken, request)
 
 	// Assert
 	require.Error(t, err)
@@ -280,9 +292,9 @@ func TestNodeJWTValidator_ValidateJWT_TopologyProviderError(t *testing.T) {
 	assert.Contains(t, err.Error(), "node validation failed")
 }
 
-func TestNodeJWTValidator_parseJWTClaims_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_parseJWTClaims_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	request := testRequest{Field: "test request"}
@@ -292,7 +304,7 @@ func TestNodeJWTValidator_parseJWTClaims_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test
-	claims, err := validator.parseJWTClaims(jwtToken)
+	claims, err := authenticator.parseJWTClaims(jwtToken)
 
 	// Assert
 	require.NoError(t, err)
@@ -300,99 +312,99 @@ func TestNodeJWTValidator_parseJWTClaims_Success(t *testing.T) {
 	assert.Equal(t, hex.EncodeToString(publicKey), claims.PublicKey)
 }
 
-func TestNodeJWTValidator_parseJWTClaims_InvalidFormat(t *testing.T) {
+func TestNodeJWTAuthenticator_parseJWTClaims_InvalidFormat(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Test with invalid token format
-	_, err := validator.parseJWTClaims("invalid.jwt")
+	_, err := authenticator.parseJWTClaims("invalid.jwt")
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid JWT format")
 }
 
-func TestNodeJWTValidator_decodePublicKey_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_decodePublicKey_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	_, publicKey, _ := createValidatorTestKeys()
 	publicKeyHex := hex.EncodeToString(publicKey)
 
 	// Test
-	decodedKey, err := validator.decodePublicKey(publicKeyHex)
+	decodedKey, err := authenticator.decodePublicKey(publicKeyHex)
 
 	// Assert
 	require.NoError(t, err)
 	assert.Equal(t, publicKey, decodedKey)
 }
 
-func TestNodeJWTValidator_decodePublicKey_InvalidHex(t *testing.T) {
+func TestNodeJWTAuthenticator_decodePublicKey_InvalidHex(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Test with invalid hex
-	_, err := validator.decodePublicKey("invalid-hex")
+	_, err := authenticator.decodePublicKey("invalid-hex")
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid hex encoding")
 }
 
-func TestNodeJWTValidator_decodePublicKey_InvalidSize(t *testing.T) {
+func TestNodeJWTAuthenticator_decodePublicKey_InvalidSize(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Test with wrong size (too short)
-	_, err := validator.decodePublicKey("1234")
+	_, err := authenticator.decodePublicKey("1234")
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid public key size")
 }
 
-func TestNodeJWTValidator_decodeP2PId_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_decodeP2PId_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	_, _, p2pId := createValidatorTestKeys()
 	p2pIdHex := hex.EncodeToString(p2pId)
 
 	// Test
-	decodedP2PId, err := validator.decodeP2PId(p2pIdHex)
+	decodedP2PId, err := authenticator.decodeP2PId(p2pIdHex)
 
 	// Assert
 	require.NoError(t, err)
 	assert.Equal(t, p2pId, decodedP2PId)
 }
 
-func TestNodeJWTValidator_decodeP2PId_InvalidHex(t *testing.T) {
+func TestNodeJWTAuthenticator_decodeP2PId_InvalidHex(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Test with invalid hex
-	_, err := validator.decodeP2PId("invalid-hex")
+	_, err := authenticator.decodeP2PId("invalid-hex")
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid hex encoding")
 }
 
-func TestNodeJWTValidator_decodeP2PId_InvalidSize(t *testing.T) {
+func TestNodeJWTAuthenticator_decodeP2PId_InvalidSize(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Test with wrong size (too short)
-	_, err := validator.decodeP2PId("1234")
+	_, err := authenticator.decodeP2PId("1234")
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid p2pId size")
 }
 
-func TestNodeJWTValidator_verifyJWTSignature_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyJWTSignature_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	privateKey, publicKey, p2pId := createValidatorTestKeys()
 	request := testRequest{Field: "test request"}
@@ -402,15 +414,15 @@ func TestNodeJWTValidator_verifyJWTSignature_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test
-	err = validator.verifyJWTSignature(jwtToken, publicKey)
+	err = authenticator.verifyJWTSignature(jwtToken, publicKey)
 
 	// Assert
 	require.NoError(t, err)
 }
 
-func TestNodeJWTValidator_verifyJWTSignature_WrongKey(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyJWTSignature_WrongKey(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	privateKey, _, p2pId := createValidatorTestKeys()
 	_, wrongPublicKey, _ := createValidatorTestKeys()
@@ -422,16 +434,16 @@ func TestNodeJWTValidator_verifyJWTSignature_WrongKey(t *testing.T) {
 
 	// Try to verify with different public key
 	_, differentPublicKey, _ := createValidatorTestKeys()
-	err = validator.verifyJWTSignature(jwtToken, differentPublicKey)
+	err = authenticator.verifyJWTSignature(jwtToken, differentPublicKey)
 
 	// Assert - should fail because we're using wrong public key
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "signature verification failed")
 }
 
-func TestNodeJWTValidator_verifyRequestDigest_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyRequestDigest_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	request := testRequest{Field: "test request"}
 	claims := &NodeJWTClaims{
@@ -439,15 +451,15 @@ func TestNodeJWTValidator_verifyRequestDigest_Success(t *testing.T) {
 	}
 
 	// Test
-	err := validator.verifyRequestDigest(claims, request)
+	err := authenticator.verifyRequestDigest(claims, request)
 
 	// Assert
 	require.NoError(t, err)
 }
 
-func TestNodeJWTValidator_verifyRequestDigest_Mismatch(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyRequestDigest_Mismatch(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	originalRequest := testRequest{Field: "original"}
 	differentRequest := testRequest{Field: "different"}
@@ -457,16 +469,16 @@ func TestNodeJWTValidator_verifyRequestDigest_Mismatch(t *testing.T) {
 	}
 
 	// Test with different request
-	err := validator.verifyRequestDigest(claims, differentRequest)
+	err := authenticator.verifyRequestDigest(claims, differentRequest)
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "digest mismatch")
 }
 
-func TestNodeJWTValidator_verifyStandardClaims_Success(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyStandardClaims_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	now := time.Now()
 	claims := &NodeJWTClaims{
@@ -481,15 +493,15 @@ func TestNodeJWTValidator_verifyStandardClaims_Success(t *testing.T) {
 	}
 
 	// Test
-	err := validator.verifyStandardClaims(claims)
+	err := authenticator.verifyStandardClaims(claims)
 
 	// Assert
 	require.NoError(t, err)
 }
 
-func TestNodeJWTValidator_verifyStandardClaims_MissingFields(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyStandardClaims_MissingFields(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	// Claims with missing required fields
 	claims := &NodeJWTClaims{
@@ -498,16 +510,16 @@ func TestNodeJWTValidator_verifyStandardClaims_MissingFields(t *testing.T) {
 	}
 
 	// Test
-	err := validator.verifyStandardClaims(claims)
+	err := authenticator.verifyStandardClaims(claims)
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "claims validation failed")
 }
 
-func TestNodeJWTValidator_verifyStandardClaims_ExpiredToken(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyStandardClaims_ExpiredToken(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	now := time.Now()
 	claims := &NodeJWTClaims{
@@ -522,16 +534,16 @@ func TestNodeJWTValidator_verifyStandardClaims_ExpiredToken(t *testing.T) {
 	}
 
 	// Test
-	err := validator.verifyStandardClaims(claims)
+	err := authenticator.verifyStandardClaims(claims)
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "token expired")
 }
 
-func TestNodeJWTValidator_verifyStandardClaims_FutureIssuedAt(t *testing.T) {
+func TestNodeJWTAuthenticator_verifyStandardClaims_FutureIssuedAt(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
-	validator := NewNodeJWTValidator(mockProvider, createTestLogger())
+	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
 
 	now := time.Now()
 	claims := &NodeJWTClaims{
@@ -546,22 +558,22 @@ func TestNodeJWTValidator_verifyStandardClaims_FutureIssuedAt(t *testing.T) {
 	}
 
 	// Test
-	err := validator.verifyStandardClaims(claims)
+	err := authenticator.verifyStandardClaims(claims)
 
 	// Assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "token issued too far in future")
 }
 
-func TestNewNodeJWTValidator(t *testing.T) {
+func TestNewNodeJWTAuthenticator(t *testing.T) {
 	mockProvider := mocks.NewNodeTopologyProvider(t)
 	logger := createTestLogger()
 
-	validator := NewNodeJWTValidator(mockProvider, logger)
+	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
 
-	assert.NotNil(t, validator)
-	assert.Equal(t, mockProvider, validator.nodeTopologyProvider)
-	assert.NotNil(t, validator.parser)
-	assert.NotNil(t, validator.validator)
-	assert.Equal(t, logger, validator.logger)
+	assert.NotNil(t, authenticator)
+	assert.Equal(t, mockProvider, authenticator.nodeTopologyProvider)
+	assert.NotNil(t, authenticator.parser)
+	assert.NotNil(t, authenticator.validator)
+	assert.Equal(t, logger, authenticator.logger)
 }

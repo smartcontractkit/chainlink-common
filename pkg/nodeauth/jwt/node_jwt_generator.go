@@ -1,4 +1,4 @@
-package nodeauth
+package jwt
 
 import (
 	"crypto/ed25519"
@@ -9,23 +9,23 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 // NodeJWTGenerator implements the JWTGenerator interface.
 // It is used to generate JWT tokens for node-initiated requests.
 type NodeJWTGenerator struct {
 	environment EnvironmentName
-	privateKey  ed25519.PrivateKey // The ed25519 private key(csa) of the node to sign the JWT.
-	publicKey   ed25519.PublicKey  // the ed25519 public key (csa counterpart) of the node to verify the JWT's signature.
-	p2pId       ed25519.PublicKey  // the ed25519 public key (node p2pId to identify this node on-chain)
-
+	signer      *core.Ed25519Signer // The Ed25519Signer to sign the JWT (no private key exposure)
+	publicKey   ed25519.PublicKey   // the ed25519 public key (csa counterpart) of the node to verify the JWT's signature.
+	p2pId       ed25519.PublicKey   // the ed25519 public key (node p2pId to identify this node on-chain)
 }
 
 // NewNodeJWTGenerator creates a new node JWT generator
-func NewNodeJWTGenerator(privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey, p2pId ed25519.PublicKey, environment EnvironmentName) *NodeJWTGenerator {
+func NewNodeJWTGenerator(signer *core.Ed25519Signer, publicKey ed25519.PublicKey, p2pId ed25519.PublicKey, environment EnvironmentName) *NodeJWTGenerator {
 	return &NodeJWTGenerator{
 		environment: environment,
-		privateKey:  privateKey,
+		signer:      signer,
 		publicKey:   publicKey,
 		p2pId:       p2pId,
 	}
@@ -33,8 +33,8 @@ func NewNodeJWTGenerator(privateKey ed25519.PrivateKey, publicKey ed25519.Public
 
 // CreateJWTForRequest creates a JWT token for the given request
 func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
-	if m.privateKey == nil {
-		return "", fmt.Errorf("no private key configured")
+	if m.signer == nil {
+		return "", fmt.Errorf("no signer configured")
 	}
 
 	// Create request digest for integrity
@@ -55,9 +55,9 @@ func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 		},
 	}
 
-	// Create token with claims using Ed25519(EdDSASigningMethod) signing method
+	// Create token with claims using jwt.SigningMethodEdDSA(built-in EdDSA signing method)
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 
-	// Sign the token with the private key
-	return token.SignedString(m.privateKey)
+	// Sign the token with the core.Ed25519Signer (implements crypto.Signer)
+	return token.SignedString(m.signer)
 }

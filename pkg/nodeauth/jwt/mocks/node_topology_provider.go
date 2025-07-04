@@ -22,12 +22,12 @@ func (_m *NodeTopologyProvider) EXPECT() *NodeTopologyProvider_Expecter {
 	return &NodeTopologyProvider_Expecter{mock: &_m.Mock}
 }
 
-// IsNodeAuthorized provides a mock function with given fields: ctx, p2pId, publicKey
-func (_m *NodeTopologyProvider) IsNodeAuthorized(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey) (bool, error) {
+// IsNodePubKeyTrusted provides a mock function with given fields: ctx, p2pId, publicKey
+func (_m *NodeTopologyProvider) IsNodePubKeyTrusted(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey) (bool, error) {
 	ret := _m.Called(ctx, p2pId, publicKey)
 
 	if len(ret) == 0 {
-		panic("no return value specified for IsNodeAuthorized")
+		panic("no return value specified for IsNodePubKeyTrusted")
 	}
 
 	var r0 bool
@@ -50,32 +50,32 @@ func (_m *NodeTopologyProvider) IsNodeAuthorized(ctx context.Context, p2pId ed25
 	return r0, r1
 }
 
-// NodeTopologyProvider_IsNodeAuthorized_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsNodeAuthorized'
-type NodeTopologyProvider_IsNodeAuthorized_Call struct {
+// NodeTopologyProvider_IsNodePubKeyTrusted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsNodePubKeyTrusted'
+type NodeTopologyProvider_IsNodePubKeyTrusted_Call struct {
 	*mock.Call
 }
 
-// IsNodeAuthorized is a helper method to define mock.On call
+// IsNodePubKeyTrusted is a helper method to define mock.On call
 //   - ctx context.Context
 //   - p2pId ed25519.PublicKey
 //   - publicKey ed25519.PublicKey
-func (_e *NodeTopologyProvider_Expecter) IsNodeAuthorized(ctx interface{}, p2pId interface{}, publicKey interface{}) *NodeTopologyProvider_IsNodeAuthorized_Call {
-	return &NodeTopologyProvider_IsNodeAuthorized_Call{Call: _e.mock.On("IsNodeAuthorized", ctx, p2pId, publicKey)}
+func (_e *NodeTopologyProvider_Expecter) IsNodePubKeyTrusted(ctx interface{}, p2pId interface{}, publicKey interface{}) *NodeTopologyProvider_IsNodePubKeyTrusted_Call {
+	return &NodeTopologyProvider_IsNodePubKeyTrusted_Call{Call: _e.mock.On("IsNodePubKeyTrusted", ctx, p2pId, publicKey)}
 }
 
-func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) Run(run func(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey)) *NodeTopologyProvider_IsNodeAuthorized_Call {
+func (_c *NodeTopologyProvider_IsNodePubKeyTrusted_Call) Run(run func(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey)) *NodeTopologyProvider_IsNodePubKeyTrusted_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(ed25519.PublicKey), args[2].(ed25519.PublicKey))
 	})
 	return _c
 }
 
-func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) Return(_a0 bool, _a1 error) *NodeTopologyProvider_IsNodeAuthorized_Call {
+func (_c *NodeTopologyProvider_IsNodePubKeyTrusted_Call) Return(_a0 bool, _a1 error) *NodeTopologyProvider_IsNodePubKeyTrusted_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *NodeTopologyProvider_IsNodeAuthorized_Call) RunAndReturn(run func(context.Context, ed25519.PublicKey, ed25519.PublicKey) (bool, error)) *NodeTopologyProvider_IsNodeAuthorized_Call {
+func (_c *NodeTopologyProvider_IsNodePubKeyTrusted_Call) RunAndReturn(run func(context.Context, ed25519.PublicKey, ed25519.PublicKey) (bool, error)) *NodeTopologyProvider_IsNodePubKeyTrusted_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -1,4 +1,4 @@
-package nodeauth
+package jwt
 
 import "time"
 	

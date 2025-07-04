@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
-	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth"
+	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )

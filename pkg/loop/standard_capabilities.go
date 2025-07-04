@@ -70,6 +70,7 @@ type StandardCapabilities interface {
 		relayerSet core.RelayerSet,
 		oracleFactory core.OracleFactory,
 		gatewayConnector core.GatewayConnector,
+		p2pKeystore core.Keystore,
 	) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }

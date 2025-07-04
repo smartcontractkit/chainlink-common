@@ -22,7 +22,7 @@ func (c *Consensus) Simple(runtime sdk.Runtime, input *pb1.SimpleConsensusInputs
 		return sdk.PromiseFromResult[*pb1.ConsensusOutputs](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "consensus@1.0.0",
+		Id:      "consensus@1.0.0-alpha",
 		Payload: wrapped,
 		Method:  "Simple",
 	}), func(i *sdkpb.CapabilityResponse) (*pb1.ConsensusOutputs, error) {

@@ -2,13 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: consensus.proto
+// source: capabilities/internal/consensus/v1alpha/consensus.proto
 
 package consensus
 
 import (
 	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	_ "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -23,21 +22,21 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_consensus_proto protoreflect.FileDescriptor
+var File_capabilities_internal_consensus_v1alpha_consensus_proto protoreflect.FileDescriptor
 
-const file_consensus_proto_rawDesc = "" +
+const file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\x10sdk.v2.consensus\x1a\x16values/v1/values.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x15sdk/v1alpha/sdk.proto2q\n" +
+	"7capabilities/internal/consensus/v1alpha/consensus.proto\x12'capabilities.internal.consensus.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto2w\n" +
 	"\tConsensus\x12K\n" +
-	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x1d.sdk.v1alpha.ConsensusOutputs\x1a\x17\x82\xb5\x18\x13\b\x01\x12\x0fconsensus@1.0.0BLZJgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/consensusb\x06proto3"
+	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x1d.sdk.v1alpha.ConsensusOutputs\x1a\x1d\x82\xb5\x18\x19\b\x01\x12\x15consensus@1.0.0-alphab\x06proto3"
 
-var file_consensus_proto_goTypes = []any{
+var file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes = []any{
 	(*pb.SimpleConsensusInputs)(nil), // 0: sdk.v1alpha.SimpleConsensusInputs
 	(*pb.ConsensusOutputs)(nil),      // 1: sdk.v1alpha.ConsensusOutputs
 }
-var file_consensus_proto_depIdxs = []int32{
-	0, // 0: sdk.v2.consensus.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
-	1, // 1: sdk.v2.consensus.Consensus.Simple:output_type -> sdk.v1alpha.ConsensusOutputs
+var file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = []int32{
+	0, // 0: capabilities.internal.consensus.v1alpha.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
+	1, // 1: capabilities.internal.consensus.v1alpha.Consensus.Simple:output_type -> sdk.v1alpha.ConsensusOutputs
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -45,25 +44,25 @@ var file_consensus_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_consensus_proto_init() }
-func file_consensus_proto_init() {
-	if File_consensus_proto != nil {
+func init() { file_capabilities_internal_consensus_v1alpha_consensus_proto_init() }
+func file_capabilities_internal_consensus_v1alpha_consensus_proto_init() {
+	if File_capabilities_internal_consensus_v1alpha_consensus_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_consensus_proto_rawDesc), len(file_consensus_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc), len(file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_consensus_proto_goTypes,
-		DependencyIndexes: file_consensus_proto_depIdxs,
+		GoTypes:           file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs,
 	}.Build()
-	File_consensus_proto = out.File
-	file_consensus_proto_goTypes = nil
-	file_consensus_proto_depIdxs = nil
+	File_capabilities_internal_consensus_v1alpha_consensus_proto = out.File
+	file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes = nil
+	file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = nil
 }

@@ -60,6 +60,7 @@ message Block{
 enum Confidence {
   Unconfirmed = 0;
   Finalized = 1;
+  Safe = 2;
 }
 
 message Timestamp{

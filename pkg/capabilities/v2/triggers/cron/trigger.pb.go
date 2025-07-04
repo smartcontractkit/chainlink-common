@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: cron_trigger.proto
+// source: capabilities/scheduler/cron/v1/trigger.proto
 
 package cron
 
@@ -32,7 +32,7 @@ type Config struct {
 
 func (x *Config) Reset() {
 	*x = Config{}
-	mi := &file_cron_trigger_proto_msgTypes[0]
+	mi := &file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_cron_trigger_proto_msgTypes[0]
+	mi := &file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_cron_trigger_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_scheduler_cron_v1_trigger_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Config) GetSchedule() string {
@@ -76,7 +76,7 @@ type Payload struct {
 
 func (x *Payload) Reset() {
 	*x = Payload{}
-	mi := &file_cron_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +88,7 @@ func (x *Payload) String() string {
 func (*Payload) ProtoMessage() {}
 
 func (x *Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_cron_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +101,7 @@ func (x *Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Payload.ProtoReflect.Descriptor instead.
 func (*Payload) Descriptor() ([]byte, []int) {
-	return file_cron_trigger_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_scheduler_cron_v1_trigger_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Payload) GetScheduledExecutionTime() *timestamppb.Timestamp {
@@ -111,7 +111,7 @@ func (x *Payload) GetScheduledExecutionTime() *timestamppb.Timestamp {
 	return nil
 }
 
-// Deprecated: Marked as deprecated in cron_trigger.proto.
+// Deprecated: Marked as deprecated in capabilities/scheduler/cron/v1/trigger.proto.
 type LegacyPayload struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
 	ScheduledExecutionTime string                 `protobuf:"bytes,1,opt,name=scheduled_execution_time,json=scheduledExecutionTime,proto3" json:"scheduled_execution_time,omitempty"` // Time that cron trigger's task execution had been scheduled to occur (RFC3339Nano formatted)
@@ -121,7 +121,7 @@ type LegacyPayload struct {
 
 func (x *LegacyPayload) Reset() {
 	*x = LegacyPayload{}
-	mi := &file_cron_trigger_proto_msgTypes[2]
+	mi := &file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -133,7 +133,7 @@ func (x *LegacyPayload) String() string {
 func (*LegacyPayload) ProtoMessage() {}
 
 func (x *LegacyPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_cron_trigger_proto_msgTypes[2]
+	mi := &file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -146,7 +146,7 @@ func (x *LegacyPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LegacyPayload.ProtoReflect.Descriptor instead.
 func (*LegacyPayload) Descriptor() ([]byte, []int) {
-	return file_cron_trigger_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_scheduler_cron_v1_trigger_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *LegacyPayload) GetScheduledExecutionTime() string {
@@ -156,46 +156,46 @@ func (x *LegacyPayload) GetScheduledExecutionTime() string {
 	return ""
 }
 
-var File_cron_trigger_proto protoreflect.FileDescriptor
+var File_capabilities_scheduler_cron_v1_trigger_proto protoreflect.FileDescriptor
 
-const file_cron_trigger_proto_rawDesc = "" +
+const file_capabilities_scheduler_cron_v1_trigger_proto_rawDesc = "" +
 	"\n" +
-	"\x12cron_trigger.proto\x12\x0fcron_trigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"$\n" +
+	",capabilities/scheduler/cron/v1/trigger.proto\x12\x1ecapabilities.scheduler.cron.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"$\n" +
 	"\x06Config\x12\x1a\n" +
 	"\bschedule\x18\x01 \x01(\tR\bschedule\"_\n" +
 	"\aPayload\x12T\n" +
 	"\x18scheduled_execution_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x16scheduledExecutionTime\"M\n" +
 	"\rLegacyPayload\x128\n" +
-	"\x18scheduled_execution_time\x18\x01 \x01(\tR\x16scheduledExecutionTime:\x02\x18\x012\xb9\x01\n" +
-	"\x04Cron\x12>\n" +
-	"\aTrigger\x12\x17.cron_trigger.v1.Config\x1a\x18.cron_trigger.v1.Payload0\x01\x12U\n" +
-	"\rLegacyTrigger\x12\x17.cron_trigger.v1.Config\x1a\x1e.cron_trigger.v1.LegacyPayload\"\t\x8a\xb5\x18\x02\b\x01\x88\x02\x010\x01\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12cron-trigger@1.0.0BPZNgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cronb\x06proto3"
+	"\x18scheduled_execution_time\x18\x01 \x01(\tR\x16scheduledExecutionTime:\x02\x18\x012\xf5\x01\n" +
+	"\x04Cron\x12\\\n" +
+	"\aTrigger\x12&.capabilities.scheduler.cron.v1.Config\x1a'.capabilities.scheduler.cron.v1.Payload0\x01\x12s\n" +
+	"\rLegacyTrigger\x12&.capabilities.scheduler.cron.v1.Config\x1a-.capabilities.scheduler.cron.v1.LegacyPayload\"\t\x8a\xb5\x18\x02\b\x01\x88\x02\x010\x01\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12cron-trigger@1.0.0b\x06proto3"
 
 var (
-	file_cron_trigger_proto_rawDescOnce sync.Once
-	file_cron_trigger_proto_rawDescData []byte
+	file_capabilities_scheduler_cron_v1_trigger_proto_rawDescOnce sync.Once
+	file_capabilities_scheduler_cron_v1_trigger_proto_rawDescData []byte
 )
 
-func file_cron_trigger_proto_rawDescGZIP() []byte {
-	file_cron_trigger_proto_rawDescOnce.Do(func() {
-		file_cron_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_cron_trigger_proto_rawDesc), len(file_cron_trigger_proto_rawDesc)))
+func file_capabilities_scheduler_cron_v1_trigger_proto_rawDescGZIP() []byte {
+	file_capabilities_scheduler_cron_v1_trigger_proto_rawDescOnce.Do(func() {
+		file_capabilities_scheduler_cron_v1_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_scheduler_cron_v1_trigger_proto_rawDesc), len(file_capabilities_scheduler_cron_v1_trigger_proto_rawDesc)))
 	})
-	return file_cron_trigger_proto_rawDescData
+	return file_capabilities_scheduler_cron_v1_trigger_proto_rawDescData
 }
 
-var file_cron_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_cron_trigger_proto_goTypes = []any{
-	(*Config)(nil),                // 0: cron_trigger.v1.Config
-	(*Payload)(nil),               // 1: cron_trigger.v1.Payload
-	(*LegacyPayload)(nil),         // 2: cron_trigger.v1.LegacyPayload
+var file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_capabilities_scheduler_cron_v1_trigger_proto_goTypes = []any{
+	(*Config)(nil),                // 0: capabilities.scheduler.cron.v1.Config
+	(*Payload)(nil),               // 1: capabilities.scheduler.cron.v1.Payload
+	(*LegacyPayload)(nil),         // 2: capabilities.scheduler.cron.v1.LegacyPayload
 	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
 }
-var file_cron_trigger_proto_depIdxs = []int32{
-	3, // 0: cron_trigger.v1.Payload.scheduled_execution_time:type_name -> google.protobuf.Timestamp
-	0, // 1: cron_trigger.v1.Cron.Trigger:input_type -> cron_trigger.v1.Config
-	0, // 2: cron_trigger.v1.Cron.LegacyTrigger:input_type -> cron_trigger.v1.Config
-	1, // 3: cron_trigger.v1.Cron.Trigger:output_type -> cron_trigger.v1.Payload
-	2, // 4: cron_trigger.v1.Cron.LegacyTrigger:output_type -> cron_trigger.v1.LegacyPayload
+var file_capabilities_scheduler_cron_v1_trigger_proto_depIdxs = []int32{
+	3, // 0: capabilities.scheduler.cron.v1.Payload.scheduled_execution_time:type_name -> google.protobuf.Timestamp
+	0, // 1: capabilities.scheduler.cron.v1.Cron.Trigger:input_type -> capabilities.scheduler.cron.v1.Config
+	0, // 2: capabilities.scheduler.cron.v1.Cron.LegacyTrigger:input_type -> capabilities.scheduler.cron.v1.Config
+	1, // 3: capabilities.scheduler.cron.v1.Cron.Trigger:output_type -> capabilities.scheduler.cron.v1.Payload
+	2, // 4: capabilities.scheduler.cron.v1.Cron.LegacyTrigger:output_type -> capabilities.scheduler.cron.v1.LegacyPayload
 	3, // [3:5] is the sub-list for method output_type
 	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -203,26 +203,26 @@ var file_cron_trigger_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_cron_trigger_proto_init() }
-func file_cron_trigger_proto_init() {
-	if File_cron_trigger_proto != nil {
+func init() { file_capabilities_scheduler_cron_v1_trigger_proto_init() }
+func file_capabilities_scheduler_cron_v1_trigger_proto_init() {
+	if File_capabilities_scheduler_cron_v1_trigger_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cron_trigger_proto_rawDesc), len(file_cron_trigger_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_scheduler_cron_v1_trigger_proto_rawDesc), len(file_capabilities_scheduler_cron_v1_trigger_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_cron_trigger_proto_goTypes,
-		DependencyIndexes: file_cron_trigger_proto_depIdxs,
-		MessageInfos:      file_cron_trigger_proto_msgTypes,
+		GoTypes:           file_capabilities_scheduler_cron_v1_trigger_proto_goTypes,
+		DependencyIndexes: file_capabilities_scheduler_cron_v1_trigger_proto_depIdxs,
+		MessageInfos:      file_capabilities_scheduler_cron_v1_trigger_proto_msgTypes,
 	}.Build()
-	File_cron_trigger_proto = out.File
-	file_cron_trigger_proto_goTypes = nil
-	file_cron_trigger_proto_depIdxs = nil
+	File_capabilities_scheduler_cron_v1_trigger_proto = out.File
+	file_capabilities_scheduler_cron_v1_trigger_proto_goTypes = nil
+	file_capabilities_scheduler_cron_v1_trigger_proto_depIdxs = nil
 }

@@ -1,27 +1,42 @@
 package datafeeds
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
+	"math/big"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
+	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 var (
-	ErrNoEthReportFound = errors.New("no eth report found")
+	ErrNoMatchingChainSelector = errors.New("no matching chain selector found")
+	ErrSequenceNumberTooLow    = errors.New("sequence number too low")
 )
 
+// secureMintReport represents the inner report structure
+type secureMintReport struct {
+	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
+	SeqNr        uint64                 `json:"seqNr"`
+	Block        uint64                 `json:"block"`
+	Mintable     *big.Int               `json:"mintable"`
+}
+
+// chainSelector represents the chain selector type
+type chainSelector int64
+
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.
-// This aggregator is designed to pick out a specific report (hardcoded to "eth" for now).
+// This aggregator is designed to pick out reports for a specific chain selector.
 type SecureMintAggregatorConfig struct {
-	// TargetFeedID is the feed ID to look for (hardcoded to "eth" for now)
-	TargetFeedID string `mapstructure:"targetFeedId"`
+	// TargetChainSelector is the chain selector to look for
+	TargetChainSelector chainSelector `mapstructure:"targetChainSelector"`
 }
 
 // ToMap converts the SecureMintAggregatorConfig to a values.Map, which is suitable for the
@@ -38,7 +53,7 @@ func (c SecureMintAggregatorConfig) ToMap() (*values.Map, error) {
 func NewSecureMintConfig(m values.Map) (SecureMintAggregatorConfig, error) {
 	// Create a default SecureMintAggregatorConfig
 	config := SecureMintAggregatorConfig{
-		TargetFeedID: "eth", // hardcoded as requested
+		TargetChainSelector: 1, // default to Ethereum mainnet
 	}
 	if err := m.UnwrapTo(&config); err != nil {
 		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap values.Map to SecureMintAggregatorConfig: %w", err)
@@ -67,26 +82,36 @@ func NewSecureMintAggregator(config values.Map) (types.Aggregator, error) {
 
 // Aggregate implements the Aggregator interface
 // This implementation:
-// 1. Extracts reports from observations
-// 2. Finds the target "eth" report
-// 3. Returns the report
+// 1. Extracts OCRTriggerEvent from observations
+// 2. Deserializes the inner ReportWithInfo to get chain selector and report
+// 3. Validates chain selector matches target and sequence number is higher than previous
+// 4. Returns the report in the same format as feeds aggregator
 func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "SecureMintAggregator")
+
+	lggr.Debugw("Aggregate called", "config", a.config, "observations", len(observations), "f", f, "previousOutcome", previousOutcome)
+
 	if len(observations) == 0 {
-		return nil, errors.New("empty observation")
+		return nil, errors.New("no observations")
 	}
 
-	// Extract reports from all observations
-	allReports, err := a.extractReports(lggr, observations)
+	// Extract and validate reports from all observations
+	validReports, err := a.extractAndValidateReports(lggr, observations, previousOutcome)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract reports: %w", err)
+		return nil, fmt.Errorf("failed to extract and validate reports: %w", err)
 	}
 
-	// Find the target "eth" report
-	targetReport, err := a.findTargetReport(lggr, allReports)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find target report: %w", err)
+	// TODO(gg): heartbeat check?
+
+	if len(validReports) == 0 {
+		lggr.Infow("no reports selected", "targetChainSelector", a.config.TargetChainSelector)
+		return &types.AggregationOutcome{
+			ShouldReport: false,
+		}, nil
 	}
+
+	// Take the first valid report
+	targetReport := validReports[0]
 
 	// Create the aggregation outcome
 	outcome, err := a.createOutcome(lggr, targetReport)
@@ -94,70 +119,92 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 		return nil, fmt.Errorf("failed to create outcome: %w", err)
 	}
 
-	lggr.Debugw("SecureMint Aggregate complete", "targetFeedID", a.config.TargetFeedID)
+	lggr.Debugw("SecureMint Aggregate complete", "targetChainSelector", a.config.TargetChainSelector)
 	return outcome, nil
 }
 
-// extractReports extracts all reports from the observations
-func (a *SecureMintAggregator) extractReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value) ([]datastreams.FeedReport, error) {
-	var allReports []datastreams.FeedReport
+// extractAndValidateReports extracts OCRTriggerEvent from observations and validates them
+func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value, previousOutcome *types.AggregationOutcome) ([]*secureMintReport, error) {
+	var validReports []*secureMintReport
+	var sequenceNumberTooLow bool
+	var foundMatchingChainSelector bool
+	previousSeqNr := uint64(0)
+	if previousOutcome != nil {
+		previousSeqNr = previousOutcome.LastSeenAt
+	}
 
 	for nodeID, nodeObservations := range observations {
 		lggr = logger.With(lggr, "nodeID", nodeID)
 
-		// Expect exactly one observation per node
-		if len(nodeObservations) == 0 || nodeObservations[0] == nil {
-			lggr.Warn("empty observations")
-			continue
-		}
-		if len(nodeObservations) > 1 {
-			lggr.Warn("more than one observation")
-			continue
-		}
+		for _, observation := range nodeObservations {
+			// Extract OCRTriggerEvent from the observation
+			triggerEvent := &capabilities.OCRTriggerEvent{}
+			if err := observation.UnwrapTo(triggerEvent); err != nil {
+				lggr.Warnw("could not unwrap OCRTriggerEvent", "err", err, "observation", observation)
+				continue
+			}
 
-		// Extract reports from the observation
-		observation := nodeObservations[0]
-		observationMap, ok := observation.(*values.Map)
-		if !ok {
-			lggr.Warn("observation is not a map")
-			continue
-		}
+			// Deserialize the ReportWithInfo
+			var reportWithInfo ocr3types.ReportWithInfo[chainSelector]
+			if err := json.Unmarshal(triggerEvent.Report, &reportWithInfo); err != nil {
+				lggr.Errorw("failed to unmarshal ReportWithInfo", "err", err)
+				continue
+			}
 
-		reports, err := datastreams.UnwrapStreamsTriggerEventToFeedReportList(observationMap)
-		if err != nil {
-			lggr.Warnw("could not unwrap reports", "err", err)
-			continue
-		}
+			// Check if chain selector matches target
+			if reportWithInfo.Info != a.config.TargetChainSelector {
+				lggr.Debugw("chain selector mismatch", "got", reportWithInfo.Info, "expected", a.config.TargetChainSelector)
+				continue
+			}
 
-		allReports = append(allReports, reports...)
+			// We found a matching chain selector
+			foundMatchingChainSelector = true
+
+			// Validate sequence number
+			if triggerEvent.SeqNr <= previousSeqNr {
+				lggr.Warnw("sequence number too low", "seqNr", triggerEvent.SeqNr, "previousSeqNr", previousSeqNr)
+				sequenceNumberTooLow = true
+				continue
+			}
+
+			// Deserialize the inner secureMintReport
+			var innerReport secureMintReport
+			if err := json.Unmarshal(reportWithInfo.Report, &innerReport); err != nil {
+				lggr.Errorw("failed to unmarshal secureMintReport", "err", err)
+				continue
+			}
+
+			validReports = append(validReports, &innerReport)
+		}
 	}
 
-	return allReports, nil
-}
-
-// findTargetReport finds the report with the target feed ID (hardcoded to "eth")
-func (a *SecureMintAggregator) findTargetReport(lggr logger.Logger, reports []datastreams.FeedReport) (*datastreams.FeedReport, error) {
-	for _, report := range reports {
-		// Check if this report is for the target feed ID
-		if strings.Contains(strings.ToLower(report.FeedID), strings.ToLower(a.config.TargetFeedID)) {
-			lggr.Debugw("found target report", "feedID", report.FeedID, "targetFeedID", a.config.TargetFeedID)
-			return &report, nil
-		}
+	// Return appropriate error based on what we found
+	if !foundMatchingChainSelector {
+		lggr.Infow("no reports found for target chain selector, ignoring", "targetChainSelector", a.config.TargetChainSelector)
+		return nil, nil
 	}
 
-	return nil, fmt.Errorf("%w: no report found for target feed ID %s", ErrNoEthReportFound, a.config.TargetFeedID)
+	if sequenceNumberTooLow {
+		return nil, fmt.Errorf("%w: all reports had sequence numbers <= %d", ErrSequenceNumberTooLow, previousSeqNr)
+	}
+
+	return validReports, nil
 }
 
-// createOutcome creates the final aggregation outcome
-func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *datastreams.FeedReport) (*types.AggregationOutcome, error) {
+// TODO(gg): update this piece to comply with KeystoneForwarder/DF Cache
+// createOutcome creates the final aggregation outcome in the same format as feeds aggregator
+func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureMintReport) (*types.AggregationOutcome, error) {
+	// Convert chain selector to bytes for feed ID
+	chainSelectorBytes := big.NewInt(int64(a.config.TargetChainSelector)).Bytes()
+
 	// Create the output in the same format as the feeds aggregator
 	toWrap := []any{
 		map[EVMEncoderKey]any{
-			FeedIDOutputFieldName:     []byte(report.FeedID),
-			RawReportOutputFieldName:  report.FullReport,
-			PriceOutputFieldName:      report.BenchmarkPrice,
-			TimestampOutputFieldName:  report.ObservationTimestamp,
-			RemappedIDOutputFieldName: []byte(report.FeedID), // Use original feed ID as remapped ID
+			FeedIDOutputFieldName:     chainSelectorBytes,
+			RawReportOutputFieldName:  report.Mintable.Bytes(), // Use Mintable as the raw report
+			PriceOutputFieldName:      report.Mintable.Bytes(), // Use Mintable as the price
+			TimestampOutputFieldName:  int64(report.Block),     // Use Block as timestamp // TODO(gg): fix
+			RemappedIDOutputFieldName: chainSelectorBytes,      // Use chain selector as remapped ID
 		},
 	}
 
@@ -170,12 +217,13 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *datastr
 
 	reportsProto := values.Proto(wrappedReport)
 
-	// Create empty metadata since we don't need to maintain state between rounds
-	metadata := []byte{}
+	// Store the sequence number in metadata for next round
+	metadata := []byte{byte(report.SeqNr)} // Simple metadata for now
 
 	return &types.AggregationOutcome{
 		EncodableOutcome: reportsProto.GetMapValue(),
 		Metadata:         metadata,
+		LastSeenAt:       report.SeqNr,
 		ShouldReport:     true, // Always report since we found and verified the target report
 	}, nil
 }
@@ -183,15 +231,15 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *datastr
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
 	parsedConfig := SecureMintAggregatorConfig{
-		TargetFeedID: "eth", // default value
+		TargetChainSelector: 1, // default value
 	}
 	if err := config.UnwrapTo(&parsedConfig); err != nil {
 		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap config: %w", err)
 	}
 
 	// Validate configuration
-	if parsedConfig.TargetFeedID == "" {
-		return SecureMintAggregatorConfig{}, fmt.Errorf("targetFeedId is required")
+	if parsedConfig.TargetChainSelector <= 0 {
+		return SecureMintAggregatorConfig{}, fmt.Errorf("targetChainSelector is required")
 	}
 
 	return parsedConfig, nil

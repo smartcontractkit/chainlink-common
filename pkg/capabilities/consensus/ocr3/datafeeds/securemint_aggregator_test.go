@@ -1,185 +1,164 @@
-package datafeeds_test
+package datafeeds
 
 import (
+	"encoding/json"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	ocr2types "github.com/smartcontractkit/libocr/offchainreporting2/types"
+	ocr3types "github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 var (
-	// Feed IDs that actually contain 'eth' and 'btc' as substrings
-	ethFeedID = datastreams.FeedID("0x0000000000000000000000000000000000006574680000000000000000000000") // contains 'eth'
-	btcFeedID = datastreams.FeedID("0x0000000000000000000000000000000000006274630000000000000000000000") // contains 'btc'
-	ethReport = []byte("eth_report")
-	btcReport = []byte("btc_report")
+	// Test chain selectors
+	ethChainSelector = chainSelector(1)
+	bnbChainSelector = chainSelector(56)
 )
 
 func TestSecureMintAggregator_Aggregate(t *testing.T) {
 	lggr := logger.Test(t)
 
 	tests := []struct {
-		name                 string
-		config               datafeeds.SecureMintAggregatorConfig
-		previousOutcome      *types.AggregationOutcome
-		observations         map[ocrcommon.OracleID][]values.Value
-		f                    int
-		expectedShouldReport bool
-		expectedFeedID       string
-		expectError          bool
-		errorContains        string
+		name                  string
+		config                SecureMintAggregatorConfig
+		previousOutcome       *types.AggregationOutcome
+		observations          map[ocrcommon.OracleID][]values.Value
+		f                     int
+		expectedShouldReport  bool
+		expectedChainSelector chainSelector
+		expectError           bool
+		errorContains         string
 	}{
 		{
 			name: "successful eth report extraction",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "eth",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
 			},
-			observations: createSecureMintObservations(t, []datastreams.FeedReport{
+			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					FeedID:               ethFeedID.String(),
-					ObservationTimestamp: 1000,
-					BenchmarkPrice:       []byte{100},
-					FullReport:           ethReport,
+					chainSelector: ethChainSelector,
+					seqNr:         10,
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
+						SeqNr:        10,
+						Block:        1000,
+						Mintable:     big.NewInt(99),
+					},
 				},
 				{
-					FeedID:               btcFeedID.String(),
-					ObservationTimestamp: 1100,
-					BenchmarkPrice:       []byte{200},
-					FullReport:           btcReport,
+					chainSelector: bnbChainSelector,
+					seqNr:         11,
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 2, 31: 3},
+						SeqNr:        11,
+						Block:        1100,
+						Mintable:     big.NewInt(200),
+					},
+				},
+			}),
+			f:                     1,
+			expectedShouldReport:  true,
+			expectedChainSelector: ethChainSelector,
+			expectError:           false,
+		},
+		{
+			name: "no matching chain selector found",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
+			},
+			observations: createSecureMintObservations(t, []ocrTriggerEventData{
+				{
+					chainSelector: bnbChainSelector,
+					seqNr:         10,
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
+						SeqNr:        10,
+						Block:        1000,
+						Mintable:     big.NewInt(99),
+					},
 				},
 			}),
 			f:                    1,
-			expectedShouldReport: true,
-			expectedFeedID:       ethFeedID.String(),
 			expectError:          false,
+			expectedShouldReport: false,
 		},
 		{
-			name: "case insensitive eth search",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "ETH",
+			name: "sequence number too low",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
 			},
-			observations: createSecureMintObservations(t, []datastreams.FeedReport{
-				{
-					FeedID:               "0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292", // contains "eth"
-					ObservationTimestamp: 1000,
-					BenchmarkPrice:       []byte{100},
-					FullReport:           ethReport,
-				},
-			}),
-			f:                    1,
-			expectedShouldReport: true,
-			expectedFeedID:       "0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292",
-			expectError:          false,
-		},
-		{
-			name: "no eth report found",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "eth",
+			previousOutcome: &types.AggregationOutcome{
+				LastSeenAt: 10, // Previous sequence number
 			},
-			observations: createSecureMintObservations(t, []datastreams.FeedReport{
+			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					FeedID:               btcFeedID.String(),
-					ObservationTimestamp: 1100,
-					BenchmarkPrice:       []byte{200},
-					FullReport:           btcReport,
+					chainSelector: ethChainSelector,
+					seqNr:         9, // Lower than previous
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
+						SeqNr:        9,
+						Block:        1000,
+						Mintable:     big.NewInt(99),
+					},
 				},
 			}),
 			f:             1,
 			expectError:   true,
-			errorContains: "no eth report found",
+			errorContains: "sequence number too low",
 		},
 		{
-			name: "empty observations",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "eth",
+			name: "no observations",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
 			},
 			observations:  map[ocrcommon.OracleID][]values.Value{},
 			f:             1,
 			expectError:   true,
-			errorContains: "empty observation",
+			errorContains: "no observations",
 		},
 		{
-			name: "custom target feed ID",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "btc",
+			name: "sequence number equal to previous (should be ignored)",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
 			},
-			observations: createSecureMintObservations(t, []datastreams.FeedReport{
+			previousOutcome: &types.AggregationOutcome{
+				LastSeenAt: 10, // Previous sequence number
+			},
+			observations: createSecureMintObservations(t, []ocrTriggerEventData{
 				{
-					FeedID:               ethFeedID.String(),
-					ObservationTimestamp: 1000,
-					BenchmarkPrice:       []byte{100},
-					FullReport:           ethReport,
-				},
-				{
-					FeedID:               btcFeedID.String(),
-					ObservationTimestamp: 1100,
-					BenchmarkPrice:       []byte{200},
-					FullReport:           btcReport,
+					chainSelector: ethChainSelector,
+					seqNr:         10, // Equal to previous
+					report: &secureMintReport{
+						ConfigDigest: ocr2types.ConfigDigest{0: 1, 31: 2},
+						SeqNr:        10,
+						Block:        1000,
+						Mintable:     big.NewInt(99),
+					},
 				},
 			}),
-			f:                    1,
-			expectedShouldReport: true,
-			expectedFeedID:       btcFeedID.String(),
-			expectError:          false,
-		},
-		{
-			name: "partial match in feed ID",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "eth",
-			},
-			observations: createSecureMintObservations(t, []datastreams.FeedReport{
-				{
-					FeedID:               "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef", // no eth
-					ObservationTimestamp: 1000,
-					BenchmarkPrice:       []byte{100},
-					FullReport:           []byte("other_report"),
-				},
-				{
-					FeedID:               "0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292", // contains eth
-					ObservationTimestamp: 1100,
-					BenchmarkPrice:       []byte{200},
-					FullReport:           ethReport,
-				},
-			}),
-			f:                    1,
-			expectedShouldReport: true,
-			expectedFeedID:       "0x0001013ebd4ed3f5889fb5a8a52b42675c60c1a8c42bc79eaa72dcd922ac4292",
-			expectError:          false,
+			f:             1,
+			expectError:   true,
+			errorContains: "sequence number too low",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create mock report codec
-			codec := mocks.NewReportCodec(t)
-
-			// Set up mock expectations
-			for _, nodeObservations := range tc.observations {
-				if len(nodeObservations) > 0 {
-					// Extract the reports that would be returned by the codec
-					triggerEvent := &datastreams.StreamsTriggerEvent{}
-					err := nodeObservations[0].UnwrapTo(triggerEvent)
-					require.NoError(t, err)
-
-					codec.On("Unwrap", nodeObservations[0]).Return(triggerEvent.Payload, nil)
-				}
-			}
-
 			// Create config map
 			cfgMap, err := tc.config.ToMap()
-			require.NoError(t, err, "Failed to convert config to values.Map")
+			require.NoErrorf(t, err, "Failed to convert config %+v to values.Map", tc.config)
 
 			// Create aggregator
-			aggregator, err := datafeeds.NewSecureMintAggregator(*cfgMap, codec)
+			aggregator, err := NewSecureMintAggregator(*cfgMap)
 			require.NoError(t, err)
 
 			// Run aggregation
@@ -198,7 +177,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 			require.Equal(t, tc.expectedShouldReport, outcome.ShouldReport)
 
 			if outcome.ShouldReport {
-				// Verify the output structure
+				// Verify the output structure matches the feeds aggregator format
 				val, err := values.FromMapValueProto(outcome.EncodableOutcome)
 				require.NoError(t, err)
 
@@ -208,7 +187,7 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				require.True(t, ok)
 
 				// Check that we have the expected reports
-				reportsList, ok := mm[datafeeds.TopLevelListOutputFieldName].([]any)
+				reportsList, ok := mm[TopLevelListOutputFieldName].([]any)
 				require.True(t, ok)
 				require.Len(t, reportsList, 1)
 
@@ -216,27 +195,25 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				report, ok := reportsList[0].(map[string]any)
 				require.True(t, ok)
 
-				// Verify feed ID
-				feedIDBytes, ok := report[datafeeds.FeedIDOutputFieldName].([]byte)
+				// Verify feed ID (should be the chain selector as bytes)
+				feedIDBytes, ok := report[FeedIDOutputFieldName].([]byte)
 				require.True(t, ok)
-				require.Equal(t, tc.expectedFeedID, string(feedIDBytes))
+				expectedChainSelectorBytes := big.NewInt(int64(tc.expectedChainSelector)).Bytes()
+				require.Equal(t, expectedChainSelectorBytes, feedIDBytes)
 
 				// Verify other fields exist
-				_, ok = report[datafeeds.RawReportOutputFieldName].([]byte)
+				_, ok = report[RawReportOutputFieldName].([]byte)
 				require.True(t, ok)
 
-				_, ok = report[datafeeds.PriceOutputFieldName].([]byte)
+				_, ok = report[PriceOutputFieldName].([]byte)
 				require.True(t, ok)
 
-				_, ok = report[datafeeds.TimestampOutputFieldName].(int64)
+				_, ok = report[TimestampOutputFieldName].(int64)
 				require.True(t, ok)
 
-				_, ok = report[datafeeds.RemappedIDOutputFieldName].([]byte)
+				_, ok = report[RemappedIDOutputFieldName].([]byte)
 				require.True(t, ok)
 			}
-
-			// Verify mock expectations
-			codec.AssertExpectations(t)
 		})
 	}
 }
@@ -244,24 +221,24 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 func TestSecureMintAggregatorConfig_RoundTrip(t *testing.T) {
 	testCases := []struct {
 		name   string
-		config datafeeds.SecureMintAggregatorConfig
+		config SecureMintAggregatorConfig
 	}{
 		{
 			name: "default eth config",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "eth",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
 			},
 		},
 		{
-			name: "custom target feed ID",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "btc",
+			name: "custom target chain selector",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: bnbChainSelector,
 			},
 		},
 		{
-			name: "uppercase target feed ID",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "ETH",
+			name: "large chain selector",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: 999999,
 			},
 		},
 	}
@@ -274,12 +251,12 @@ func TestSecureMintAggregatorConfig_RoundTrip(t *testing.T) {
 			require.NotNil(t, configMap, "ToMap should return non-nil map")
 
 			// Step 2: Convert values.Map back to config
-			roundTrippedConfig, err := datafeeds.NewSecureMintConfig(*configMap)
+			roundTrippedConfig, err := NewSecureMintConfig(*configMap)
 			require.NoError(t, err, "NewSecureMintConfig should not error")
 
 			// Step 3: Compare original and round-tripped configs
-			assert.Equal(t, tc.config.TargetFeedID, roundTrippedConfig.TargetFeedID,
-				"TargetFeedID should match")
+			assert.Equal(t, tc.config.TargetChainSelector, roundTrippedConfig.TargetChainSelector,
+				"TargetChainSelector should match")
 		})
 	}
 }
@@ -287,24 +264,32 @@ func TestSecureMintAggregatorConfig_RoundTrip(t *testing.T) {
 func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      datafeeds.SecureMintAggregatorConfig
+		config      SecureMintAggregatorConfig
 		expectError bool
 		errorMsg    string
 	}{
 		{
 			name: "valid config",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "eth",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: ethChainSelector,
 			},
 			expectError: false,
 		},
 		{
-			name: "empty target feed ID",
-			config: datafeeds.SecureMintAggregatorConfig{
-				TargetFeedID: "",
+			name: "zero target chain selector",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: 0,
 			},
 			expectError: true,
-			errorMsg:    "targetFeedId is required",
+			errorMsg:    "targetChainSelector is required",
+		},
+		{
+			name: "negative chain selector",
+			config: SecureMintAggregatorConfig{
+				TargetChainSelector: -1,
+			},
+			expectError: true,
+			errorMsg:    "targetChainSelector is required",
 		},
 	}
 
@@ -313,7 +298,7 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 			configMap, err := tc.config.ToMap()
 			require.NoError(t, err)
 
-			_, err = datafeeds.NewSecureMintAggregator(*configMap, nil)
+			_, err = NewSecureMintAggregator(*configMap)
 			if tc.expectError {
 				require.Error(t, err)
 				if tc.errorMsg != "" {
@@ -326,28 +311,64 @@ func TestSecureMintAggregatorConfig_Validation(t *testing.T) {
 	}
 }
 
-// Helper functions
+// Helper types and functions
 
-func createSecureMintObservations(t *testing.T, reports []datastreams.FeedReport) map[ocrcommon.OracleID][]values.Value {
+type ocrTriggerEventData struct {
+	chainSelector chainSelector
+	seqNr         uint64
+	report        *secureMintReport
+}
+
+func createSecureMintObservations(t *testing.T, events []ocrTriggerEventData) map[ocrcommon.OracleID][]values.Value {
 	observations := make(map[ocrcommon.OracleID][]values.Value)
-
-	// Create trigger event with the reports
-	triggerEvent := &datastreams.StreamsTriggerEvent{
-		Payload: reports,
-		Metadata: datastreams.Metadata{
-			Signers:               [][]byte{newSigner(t), newSigner(t)},
-			MinRequiredSignatures: 1,
-		},
-		Timestamp: 1000,
-	}
 
 	// Create three observations with identical data to ensure f+1 consensus
 	for i := ocrcommon.OracleID(1); i <= 3; i++ {
-		val, err := values.Wrap(triggerEvent)
-		require.NoError(t, err)
+		// For each oracle, create observations for all events
+		var oracleObservations []values.Value
+		for _, event := range events {
+			// Create the ReportWithInfo
+			ocr3Report := &ocr3types.ReportWithInfo[chainSelector]{
+				Report: createReportBytes(t, event.report),
+				Info:   event.chainSelector,
+			}
 
-		observations[i] = []values.Value{val}
+			// Marshal the ReportWithInfo
+			jsonReport, err := json.Marshal(ocr3Report)
+			require.NoError(t, err)
+
+			// Create the OCRTriggerEvent
+			triggerEvent := &capabilities.OCRTriggerEvent{
+				ConfigDigest: event.report.ConfigDigest[:],
+				SeqNr:        event.seqNr,
+				Report:       jsonReport,
+				Sigs: []capabilities.OCRAttributedOnchainSignature{
+					{
+						Signature: []byte("signature1"),
+						Signer:    1,
+					},
+					{
+						Signature: []byte("signature2"),
+						Signer:    2,
+					},
+				},
+			}
+
+			// Wrap in values.Value
+			val, err := values.Wrap(triggerEvent)
+			require.NoError(t, err)
+
+			oracleObservations = append(oracleObservations, val)
+		}
+
+		observations[i] = oracleObservations
 	}
 
 	return observations
+}
+
+func createReportBytes(t *testing.T, report *secureMintReport) []byte {
+	reportBytes, err := json.Marshal(report)
+	require.NoError(t, err)
+	return reportBytes
 }

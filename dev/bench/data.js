@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751655903814,
+  "lastUpdate": 1751659859202,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18312,6 +18312,48 @@ window.BENCHMARK_DATA = {
             "value": 28196,
             "unit": "ns/op",
             "extra": "42603 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b527e429e852e3c23afcce5d810dcfc92017fbf9",
+          "message": "Use the new module (updates protos too) (#1342)",
+          "timestamp": "2025-07-04T20:08:48Z",
+          "tree_id": "056818f3641af7116706ccf0a078c5297c826b47",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b527e429e852e3c23afcce5d810dcfc92017fbf9"
+        },
+        "date": 1751659858038,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.1,
+            "unit": "ns/op",
+            "extra": "3325264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.9,
+            "unit": "ns/op",
+            "extra": "2565295 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28344,
+            "unit": "ns/op",
+            "extra": "42595 times\n4 procs"
           }
         ]
       }

@@ -1,7 +1,10 @@
 package jsonrpc2
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -34,25 +37,46 @@ const (
 )
 
 // Wrapping/unwrapping Message objects into JSON RPC ones folllowing https://www.jsonrpc.org/specification
-type Request struct {
-	Version string          `json:"jsonrpc"`
-	ID      string          `json:"id,omitempty"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params,omitempty"`
+type Request[Params any] struct {
+	Version string  `json:"jsonrpc"`
+	ID      string  `json:"id"`
+	Method  string  `json:"method"`
+	Params  *Params `json:"params"`
 	// Auth is used to store the JWT token for the request. It is not part of the JSON RPC specification.
 	// JWT token can be part of the request payload or attached to the request header.
 	Auth string `json:"auth,omitempty"`
 }
 
-func (r *Request) ServiceName() string {
+func (r *Request[Params]) ServiceName() string {
 	return strings.Split(r.Method, ".")[0]
 }
 
-type Response struct {
-	Version string          `json:"jsonrpc"`
-	ID      string          `json:"id"`
-	Result  json.RawMessage `json:"result,omitempty"`
-	Error   *WireError      `json:"error,omitempty"`
+// Digest returns a digest of the request. This is used for signature verification.
+// The digest is a SHA256 hash of the JSON string of the request.
+func (r *Request[Params]) Digest() (string, error) {
+	canonicalJSONBytes, err := json.Marshal(Request[Params]{
+		Version: r.Version,
+		ID:      r.ID,
+		Method:  r.Method,
+		Params:  r.Params,
+		// Auth is intentionally excluded from the digest
+	})
+	if err != nil {
+		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	hasher := sha256.New()
+	hasher.Write(canonicalJSONBytes)
+	digestBytes := hasher.Sum(nil)
+
+	return hex.EncodeToString(digestBytes), nil
+}
+
+type Response[Result any] struct {
+	Version string     `json:"jsonrpc"`
+	ID      string     `json:"id"`
+	Result  *Result    `json:"result,omitempty"`
+	Error   *WireError `json:"error,omitempty"`
 }
 
 // WireError represents a structured error in a Response.

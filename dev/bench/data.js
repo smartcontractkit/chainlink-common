@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751668484461,
+  "lastUpdate": 1751671633794,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18480,6 +18480,48 @@ window.BENCHMARK_DATA = {
             "value": 28148,
             "unit": "ns/op",
             "extra": "42542 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "40088872a9b0d762d92e5800ed4fbc48bae41033",
+          "message": "Bring back evm capabilities and update it to the new protos (#1346)",
+          "timestamp": "2025-07-04T23:26:20Z",
+          "tree_id": "8caa53c38be127cea633c2b81c3160d8c854fba4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/40088872a9b0d762d92e5800ed4fbc48bae41033"
+        },
+        "date": 1751671632859,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.1,
+            "unit": "ns/op",
+            "extra": "3266024 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.1,
+            "unit": "ns/op",
+            "extra": "2860762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28138,
+            "unit": "ns/op",
+            "extra": "42610 times\n4 procs"
           }
         ]
       }

@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: basic_trigger.proto
+// source: capabilities/internal/basictrigger/v1/basic_trigger.proto
 
 package basictrigger
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -32,7 +32,7 @@ type Config struct {
 
 func (x *Config) Reset() {
 	*x = Config{}
-	mi := &file_basic_trigger_proto_msgTypes[0]
+	mi := &file_capabilities_internal_basictrigger_v1_basic_trigger_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_basic_trigger_proto_msgTypes[0]
+	mi := &file_capabilities_internal_basictrigger_v1_basic_trigger_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_basic_trigger_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Config) GetName() string {
@@ -83,7 +83,7 @@ type Outputs struct {
 
 func (x *Outputs) Reset() {
 	*x = Outputs{}
-	mi := &file_basic_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_internal_basictrigger_v1_basic_trigger_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +95,7 @@ func (x *Outputs) String() string {
 func (*Outputs) ProtoMessage() {}
 
 func (x *Outputs) ProtoReflect() protoreflect.Message {
-	mi := &file_basic_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_internal_basictrigger_v1_basic_trigger_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +108,7 @@ func (x *Outputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outputs.ProtoReflect.Descriptor instead.
 func (*Outputs) Descriptor() ([]byte, []int) {
-	return file_basic_trigger_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Outputs) GetCoolOutput() string {
@@ -118,40 +118,40 @@ func (x *Outputs) GetCoolOutput() string {
 	return ""
 }
 
-var File_basic_trigger_proto protoreflect.FileDescriptor
+var File_capabilities_internal_basictrigger_v1_basic_trigger_proto protoreflect.FileDescriptor
 
-const file_basic_trigger_proto_rawDesc = "" +
+const file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc = "" +
 	"\n" +
-	"\x13basic_trigger.proto\x12\x15basic_test_trigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"4\n" +
+	"9capabilities/internal/basictrigger/v1/basic_trigger.proto\x12%capabilities.internal.basictrigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"4\n" +
 	"\x06Config\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\x05R\x06number\"*\n" +
 	"\aOutputs\x12\x1f\n" +
 	"\vcool_output\x18\x01 \x01(\tR\n" +
-	"coolOutput2u\n" +
-	"\x05Basic\x12J\n" +
-	"\aTrigger\x12\x1d.basic_test_trigger.v1.Config\x1a\x1e.basic_test_trigger.v1.Outputs0\x01\x1a \x82\xb5\x18\x1c\b\x01\x12\x18basic-test-trigger@1.0.0BlZjgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictriggerb\x06proto3"
+	"coolOutput2\x95\x01\n" +
+	"\x05Basic\x12j\n" +
+	"\aTrigger\x12-.capabilities.internal.basictrigger.v1.Config\x1a..capabilities.internal.basictrigger.v1.Outputs0\x01\x1a \x82\xb5\x18\x1c\b\x01\x12\x18basic-test-trigger@1.0.0b\x06proto3"
 
 var (
-	file_basic_trigger_proto_rawDescOnce sync.Once
-	file_basic_trigger_proto_rawDescData []byte
+	file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescOnce sync.Once
+	file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescData []byte
 )
 
-func file_basic_trigger_proto_rawDescGZIP() []byte {
-	file_basic_trigger_proto_rawDescOnce.Do(func() {
-		file_basic_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_basic_trigger_proto_rawDesc), len(file_basic_trigger_proto_rawDesc)))
+func file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescGZIP() []byte {
+	file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescOnce.Do(func() {
+		file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc), len(file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc)))
 	})
-	return file_basic_trigger_proto_rawDescData
+	return file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDescData
 }
 
-var file_basic_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_basic_trigger_proto_goTypes = []any{
-	(*Config)(nil),  // 0: basic_test_trigger.v1.Config
-	(*Outputs)(nil), // 1: basic_test_trigger.v1.Outputs
+var file_capabilities_internal_basictrigger_v1_basic_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_capabilities_internal_basictrigger_v1_basic_trigger_proto_goTypes = []any{
+	(*Config)(nil),  // 0: capabilities.internal.basictrigger.v1.Config
+	(*Outputs)(nil), // 1: capabilities.internal.basictrigger.v1.Outputs
 }
-var file_basic_trigger_proto_depIdxs = []int32{
-	0, // 0: basic_test_trigger.v1.Basic.Trigger:input_type -> basic_test_trigger.v1.Config
-	1, // 1: basic_test_trigger.v1.Basic.Trigger:output_type -> basic_test_trigger.v1.Outputs
+var file_capabilities_internal_basictrigger_v1_basic_trigger_proto_depIdxs = []int32{
+	0, // 0: capabilities.internal.basictrigger.v1.Basic.Trigger:input_type -> capabilities.internal.basictrigger.v1.Config
+	1, // 1: capabilities.internal.basictrigger.v1.Basic.Trigger:output_type -> capabilities.internal.basictrigger.v1.Outputs
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -159,26 +159,26 @@ var file_basic_trigger_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_basic_trigger_proto_init() }
-func file_basic_trigger_proto_init() {
-	if File_basic_trigger_proto != nil {
+func init() { file_capabilities_internal_basictrigger_v1_basic_trigger_proto_init() }
+func file_capabilities_internal_basictrigger_v1_basic_trigger_proto_init() {
+	if File_capabilities_internal_basictrigger_v1_basic_trigger_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_basic_trigger_proto_rawDesc), len(file_basic_trigger_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc), len(file_capabilities_internal_basictrigger_v1_basic_trigger_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_basic_trigger_proto_goTypes,
-		DependencyIndexes: file_basic_trigger_proto_depIdxs,
-		MessageInfos:      file_basic_trigger_proto_msgTypes,
+		GoTypes:           file_capabilities_internal_basictrigger_v1_basic_trigger_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_basictrigger_v1_basic_trigger_proto_depIdxs,
+		MessageInfos:      file_capabilities_internal_basictrigger_v1_basic_trigger_proto_msgTypes,
 	}.Build()
-	File_basic_trigger_proto = out.File
-	file_basic_trigger_proto_goTypes = nil
-	file_basic_trigger_proto_depIdxs = nil
+	File_capabilities_internal_basictrigger_v1_basic_trigger_proto = out.File
+	file_capabilities_internal_basictrigger_v1_basic_trigger_proto_goTypes = nil
+	file_capabilities_internal_basictrigger_v1_basic_trigger_proto_depIdxs = nil
 }

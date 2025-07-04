@@ -70,12 +70,12 @@ func NewMessage(msg *types.Message) *Message {
 		return nil
 	}
 	return &Message{
-		Mode:       uint32(msg.Mode),
-		ToAddress:  msg.ToAddress,
-		AmountNano: msg.AmountNano,
-		Bounce:     msg.Bounce,
-		Body:       msg.Body,
-		StateInit:  msg.StateInit,
+		Mode:      uint32(msg.Mode),
+		ToAddress: msg.ToAddress,
+		Amount:    msg.Amount,
+		Bounce:    msg.Bounce,
+		Body:      msg.Body,
+		StateInit: msg.StateInit,
 	}
 }
 
@@ -84,12 +84,12 @@ func (pb *Message) AsMessage() *types.Message {
 		return nil
 	}
 	return &types.Message{
-		Mode:       uint8(pb.Mode),
-		ToAddress:  pb.ToAddress,
-		AmountNano: pb.AmountNano,
-		Bounce:     pb.Bounce,
-		Body:       pb.Body,
-		StateInit:  pb.StateInit,
+		Mode:      uint8(pb.Mode),
+		ToAddress: pb.ToAddress,
+		Amount:    pb.Amount,
+		Bounce:    pb.Bounce,
+		Body:      pb.Body,
+		StateInit: pb.StateInit,
 	}
 }
 

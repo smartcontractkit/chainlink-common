@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751637962327,
+  "lastUpdate": 1751642372397,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18186,6 +18186,48 @@ window.BENCHMARK_DATA = {
             "value": 28174,
             "unit": "ns/op",
             "extra": "42628 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2fe6b9c838eddd051cfb75fe753ef35ac9a7fe69",
+          "message": "Make the protos batch methods (#1323)",
+          "timestamp": "2025-07-04T15:18:15Z",
+          "tree_id": "65d938ae139d674d19f0c6f41fca35c27bfc6b85",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2fe6b9c838eddd051cfb75fe753ef35ac9a7fe69"
+        },
+        "date": 1751642370844,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.5,
+            "unit": "ns/op",
+            "extra": "3373263 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.4,
+            "unit": "ns/op",
+            "extra": "2784614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28248,
+            "unit": "ns/op",
+            "extra": "42690 times\n4 procs"
           }
         ]
       }

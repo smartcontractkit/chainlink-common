@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751635613841,
+  "lastUpdate": 1751637962327,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18144,6 +18144,48 @@ window.BENCHMARK_DATA = {
             "value": 28161,
             "unit": "ns/op",
             "extra": "42585 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cdafb991802c4c6c097991827f6ea39b989830e3",
+          "message": "PLEX-1499: support 'safe' tag for log poller queries (#1309)",
+          "timestamp": "2025-07-04T14:04:46Z",
+          "tree_id": "9bf7e791a28e4404210a62910715448397556151",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cdafb991802c4c6c097991827f6ea39b989830e3"
+        },
+        "date": 1751637961158,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.6,
+            "unit": "ns/op",
+            "extra": "3327152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.8,
+            "unit": "ns/op",
+            "extra": "2881125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28174,
+            "unit": "ns/op",
+            "extra": "42628 times\n4 procs"
           }
         ]
       }

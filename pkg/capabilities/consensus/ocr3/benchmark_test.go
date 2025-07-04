@@ -17,13 +17,14 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/datafeeds"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 // mockCapability implements CapabilityIface for testing
@@ -109,7 +110,7 @@ func runObservationBenchmarkWithParams(b *testing.B, lggr logger.Logger, numWork
 	)
 
 	// Create request store with requests for each workflow
-	store := requests.NewStore[*ocr3.ReportRequest, ocr3.ReportResponse]()
+	store := requests.NewStore[*ocr3.ReportRequest]()
 
 	// Create capability with LLO aggregators for each workflow
 	mockCap := &mockCapability{

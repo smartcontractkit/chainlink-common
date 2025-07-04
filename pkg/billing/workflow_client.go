@@ -9,27 +9,20 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/emptypb"
 
-	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt"
+	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // WorkflowClient is a specialized interface for the Workflow node use-case.
 type WorkflowClient interface {
-	// Reads
-	GetAccountCredits(ctx context.Context, req *pb.GetAccountCreditsRequest) (*pb.GetAccountCreditsResponse, error)
-	BatchGetCreditsForAccounts(ctx context.Context, req *pb.BatchGetCreditsForAccountsRequest) (*pb.BatchGetCreditsForAccountsResponse, error)
-
-	// Workflow-based credit ops
+	GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error)
+	GetRateCard(ctx context.Context, req *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error)
 	ReserveCredits(ctx context.Context, req *pb.ReserveCreditsRequest) (*pb.ReserveCreditsResponse, error)
-	ReleaseReservation(ctx context.Context, req *pb.ReleaseReservationRequest) (*pb.ReleaseReservationResponse, error)
-	ConsumeCredits(ctx context.Context, req *pb.ConsumeCreditsRequest) (*pb.ConsumeCreditsResponse, error)
-	ConsumeReservation(ctx context.Context, req *pb.ConsumeReservationRequest) (*pb.ConsumeReservationResponse, error)
-
-	// Workflow receipt
-	SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*pb.SubmitWorkflowReceiptResponse, error)
+	SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error)
 
 	// Closer
 	Close() error
@@ -38,7 +31,7 @@ type WorkflowClient interface {
 type workflowClient struct {
 	address string
 	conn    *grpc.ClientConn
-	client  pb.WorkflowServiceClient
+	client  pb.CreditReservationServiceClient
 	logger  logger.Logger
 	tlsCert string
 	creds   credentials.TransportCredentials
@@ -67,7 +60,7 @@ func defaultWorkflowConfig() workflowConfig {
 		log:                  loggerInst,
 		tlsCert:              "",
 		// Default to "localhost" if not overridden.
-		serverName: "localhost",
+		serverName:   "localhost",
 		jwtGenerator: nil,
 	}
 }
@@ -112,11 +105,11 @@ func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClien
 	}
 
 	wc := &workflowClient{
-		address:    address,
-		logger:     cfg.log,
-		tlsCert:    cfg.tlsCert,
-		creds:      cfg.transportCredentials,
-		serverName: cfg.serverName,
+		address:      address,
+		logger:       cfg.log,
+		tlsCert:      cfg.tlsCert,
+		creds:        cfg.transportCredentials,
+		serverName:   cfg.serverName,
 		jwtGenerator: cfg.jwtGenerator,
 	}
 
@@ -157,29 +150,29 @@ func (wc *workflowClient) addJWTAuth(ctx context.Context, req any) (context.Cont
 	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
 }
 
-func (wc *workflowClient) GetAccountCredits(ctx context.Context, req *pb.GetAccountCreditsRequest) (*pb.GetAccountCreditsResponse, error) {
+func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error) {
 	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("Failed to add JWT auth to GetAccountCredits request", "error", err)
+		wc.logger.Errorw("Failed to add custom auth header to GetOrganizationCreditsByWorkflow request", "error", err)
 		return nil, err
 	}
-	resp, err := wc.client.GetAccountCredits(ctx, req)
+	resp, err := wc.client.GetOrganizationCreditsByWorkflow(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("GetAccountCredits failed", "error", err)
+		wc.logger.Errorw("GetOrganizationCreditsByWorkflow failed", "error", err)
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (wc *workflowClient) BatchGetCreditsForAccounts(ctx context.Context, req *pb.BatchGetCreditsForAccountsRequest) (*pb.BatchGetCreditsForAccountsResponse, error) {
+func (wc *workflowClient) GetRateCard(ctx context.Context, req *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error) {
 	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("Failed to add JWT auth to BatchGetCreditsForAccounts request", "error", err)
+		wc.logger.Errorw("Failed to add custom auth header to GetRateCard request", "error", err)
 		return nil, err
 	}
-	resp, err := wc.client.BatchGetCreditsForAccounts(ctx, req)
+	resp, err := wc.client.GetRateCard(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("BatchGetCreditsForAccounts failed", "error", err)
+		wc.logger.Errorw("GetRateCard failed", "error", err)
 		return nil, err
 	}
 	return resp, nil
@@ -199,55 +192,13 @@ func (wc *workflowClient) ReserveCredits(ctx context.Context, req *pb.ReserveCre
 	return resp, nil
 }
 
-func (wc *workflowClient) ReleaseReservation(ctx context.Context, req *pb.ReleaseReservationRequest) (*pb.ReleaseReservationResponse, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("Failed to add JWT auth to ReleaseReservation request", "error", err)
-		return nil, err
-	}
-	resp, err := wc.client.ReleaseReservation(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("ReleaseReservation failed", "error", err)
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (wc *workflowClient) ConsumeCredits(ctx context.Context, req *pb.ConsumeCreditsRequest) (*pb.ConsumeCreditsResponse, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("Failed to add JWT auth to ConsumeCredits request", "error", err)
-		return nil, err
-	}
-	resp, err := wc.client.ConsumeCredits(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("ConsumeCredits failed", "error", err)
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (wc *workflowClient) ConsumeReservation(ctx context.Context, req *pb.ConsumeReservationRequest) (*pb.ConsumeReservationResponse, error) {
-	ctx, err := wc.addJWTAuth(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("Failed to add JWT auth to ConsumeReservation request", "error", err)
-		return nil, err
-	}
-	resp, err := wc.client.ConsumeReservation(ctx, req)
-	if err != nil {
-		wc.logger.Errorw("ConsumeReservation failed", "error", err)
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (wc *workflowClient) SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*pb.SubmitWorkflowReceiptResponse, error) {
+func (wc *workflowClient) SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error) {
 	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add JWT auth to SubmitWorkflowReceipt request", "error", err)
 		return nil, err
 	}
-	resp, err := wc.client.WorkflowReceipt(ctx, req)
+	resp, err := wc.client.SubmitWorkflowReceipt(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("SubmitWorkflowReceipt failed", "error", err)
 		return nil, err
@@ -281,7 +232,7 @@ func (wc *workflowClient) initGrpcConn(opts ...grpc.DialOption) error {
 	}
 
 	wc.conn = conn
-	wc.client = pb.NewWorkflowServiceClient(conn)
+	wc.client = pb.NewCreditReservationServiceClient(conn)
 
 	return nil
 }

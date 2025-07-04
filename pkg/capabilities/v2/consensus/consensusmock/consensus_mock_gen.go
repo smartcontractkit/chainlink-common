@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb1 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -28,7 +27,7 @@ func NewConsensusCapability(t testing.TB) (*ConsensusCapability, error) {
 
 type ConsensusCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	Simple func(ctx context.Context, input *pb1.SimpleConsensusInputs) (*pb.Value, error)
+	Simple func(ctx context.Context, input *pb1.SimpleConsensusInputs) (*pb1.ConsensusOutputs, error)
 }
 
 func (cap *ConsensusCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {

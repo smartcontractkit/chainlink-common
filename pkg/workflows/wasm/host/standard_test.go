@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -21,15 +22,15 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // See the README.md in standard_tests for more information.
@@ -43,7 +44,7 @@ func init() {
 	flag.StringVar(&testPath, "path", "./standard_tests", "Path to the standard tests")
 }
 
-func TestConfig(t *testing.T) {
+func TestStandardConfig(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -52,7 +53,7 @@ func TestConfig(t *testing.T) {
 	require.ElementsMatch(t, anyTestConfig, actualConfig)
 }
 
-func TestErrors(t *testing.T) {
+func TestStandardErrors(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -60,7 +61,7 @@ func TestErrors(t *testing.T) {
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
 }
 
-func TestCapabilityCallsAreAsync(t *testing.T) {
+func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -96,7 +97,7 @@ func TestCapabilityCallsAreAsync(t *testing.T) {
 	assert.Equal(t, "truefalse", result.GetValue().GetStringValue())
 }
 
-func TestModeSwitch(t *testing.T) {
+func TestStandardModeSwitch(t *testing.T) {
 	t.Parallel()
 	t.Run("successful mode switch", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
@@ -119,22 +120,53 @@ func TestModeSwitch(t *testing.T) {
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
 		require.NoError(t, err)
-		require.Equal(t, "test555", result.GetValue().GetStringValue())
+		require.Equal(t, "test556", result.GetValue().GetStringValue())
 	})
 
 	t.Run("node runtime in don mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+			response := values.NewString("hi")
+			mapProto := &valuespb.Map{
+				Fields: map[string]*valuespb.Value{
+					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					sdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
+				},
+			}
+			payload, err := anypb.New(mapProto)
+			require.NoError(t, err)
+			return &pb.CapabilityResponse{
+				Response: &pb.CapabilityResponse_Payload{
+					Payload: payload,
+				},
+			}, nil
+		}).Once()
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
 		require.NoError(t, err)
 		require.Contains(t, result.GetError(), "cannot use NodeRuntime outside RunInNodeMode")
 	})
-
 	t.Run("don runtime in node mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
+			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
+			input := &pb.SimpleConsensusInputs{}
+			require.NoError(t, request.Payload.UnmarshalTo(input))
+
+			var errMsg string
+			switch msg := input.Observation.(type) {
+			case *pb.SimpleConsensusInputs_Error:
+				errMsg = msg.Error
+			default:
+				require.Fail(t, "observation must be an error")
+			}
+			return &pb.CapabilityResponse{
+				Response: &pb.CapabilityResponse_Error{Error: errMsg},
+			}, nil
+		}).Once()
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -143,7 +175,7 @@ func TestModeSwitch(t *testing.T) {
 	})
 }
 
-func TestLogging(t *testing.T) {
+func TestStandardLogging(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
@@ -155,7 +187,7 @@ func TestLogging(t *testing.T) {
 	runWithBasicTrigger(t, mockExecutionHelper)
 }
 
-func TestMultipleTriggers(t *testing.T) {
+func TestStandardMultipleTriggers(t *testing.T) {
 	t.Parallel()
 	m := makeTestModule(t)
 	t.Run("test registration", func(t *testing.T) {
@@ -187,7 +219,7 @@ func TestMultipleTriggers(t *testing.T) {
 		expected := &pb.TriggerSubscriptionRequest{
 			Subscriptions: []*pb.TriggerSubscription{
 				{
-					Id:      "basic-trigger@1.0.0",
+					Id:      "basic-test-trigger@1.0.0",
 					Payload: payload0,
 					Method:  "Trigger",
 				},
@@ -197,7 +229,7 @@ func TestMultipleTriggers(t *testing.T) {
 					Method:  "Trigger",
 				},
 				{
-					Id:      "basic-trigger@1.0.0",
+					Id:      "basic-test-trigger@1.0.0",
 					Payload: payload2,
 					Method:  "Trigger",
 				},
@@ -241,7 +273,7 @@ func TestMultipleTriggers(t *testing.T) {
 	})
 }
 
-func TestRandom(t *testing.T) {
+func TestStandardRandom(t *testing.T) {
 	t.Parallel()
 	m := makeTestModule(t)
 
@@ -280,7 +312,8 @@ func TestRandom(t *testing.T) {
 
 		lt100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 99))
 		lt100Exec.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
-			_, err = strconv.ParseUint(s, 10, 64)
+			parts := strings.Split(s, "***")
+			_, err = strconv.ParseUint(parts[1], 10, 64)
 			require.NoError(t, err)
 			return nil
 		}).Once()
@@ -312,7 +345,7 @@ func TestRandom(t *testing.T) {
 	})
 }
 
-func TestSecrets(t *testing.T) {
+func TestStandardSecrets(t *testing.T) {
 	t.Parallel()
 
 	m := makeTestModule(t)
@@ -366,8 +399,13 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionRe
 // To re-use a binary, an outer test can create the module and use t.Run to run subtests using that module.
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
-	testName := strcase.ToSnake(t.Name()[len("Test"):]) + "/test.wasm"
-	cmd := exec.Command("make", testName) // #nosec
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return makeTestModuleByName(t, testName)
+}
+
+func makeTestModuleByName(t *testing.T, testName string) *module {
+	wasmName := path.Join(testName, "test.wasm")
+	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
 	cmd.Dir = absPath
@@ -375,7 +413,7 @@ func makeTestModule(t *testing.T) *module {
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	binary, err := os.ReadFile(filepath.Join(absPath, testName))
+	binary, err := os.ReadFile(filepath.Join(absPath, wasmName))
 	require.NoError(t, err)
 
 	cfg := defaultNoDAGModCfg(t)
@@ -398,10 +436,9 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			if err != nil {
 				require.Fail(t, err.Error())
 			}
-		case "consensus@1.0.0":
+		case "consensus@1.0.0-alpha":
 			input := &pb.SimpleConsensusInputs{}
 			require.NoError(t, request.Payload.UnmarshalTo(input))
-
 			expectedObservation := wrapValue(t, nodeResponse)
 			expectedInput := &pb.SimpleConsensusInputs{
 				Observation: &pb.SimpleConsensusInputs_Value{Value: expectedObservation},
@@ -411,7 +448,7 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 							Fields: map[string]*pb.ConsensusDescriptor{
 								"OutputThing": {
 									Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-										Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
+										Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 									},
 								},
 							},
@@ -421,7 +458,15 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 				Default: wrapValue(t, &nodeaction.NodeOutputs{OutputThing: 123}),
 			}
 			assertProto(t, expectedInput, input)
-			payload, err = anypb.New(expectedObservation)
+			cResponse := &nodeaction.NodeOutputs{OutputThing: output + 1}
+			response := wrapValue(t, cResponse)
+			mapProto := &valuespb.Map{
+				Fields: map[string]*valuespb.Value{
+					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					sdk.ConsensusResponseMapKeyPayload:  response,
+				},
+			}
+			payload, err = anypb.New(mapProto)
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)

@@ -1,0 +1,66 @@
+{
+	"WorkflowLimit": "-1",
+	"WorkflowRegistrationQueueLimit": "-1",
+	"TriggerEventQueueLimit": "1000",
+	"TriggerEventQueueTimeout": "10m0s",
+	"PerOrg": {
+		"WorkflowDeploymentRateLimit": "every1m0s,1",
+		"ZeroBalancePruningTimeout": "24h0m0s"
+	},
+	"PerOwner": {
+		"ExecutionConcurrencyLimit": "50"
+	},
+	"PerWorkflow": {
+		"TriggerLimit": "10",
+		"TriggerRateLimit": "every30s,3",
+		"TriggerRegistrationTimeout": "10s",
+		"TriggerSubscriptionTimeout": "5s",
+		"CapabilityConcurrencyLimit": "-1",
+		"ExecutionConcurrencyLimit": "10",
+		"ExecutionTimeout": "5m0s",
+		"ExecutionResponseLimit": "100.00kb",
+		"WASMExecutionTimeout": "1m0s",
+		"WASMMemoryLimit": "100.00mb",
+		"BinarySizeLimit": "30.00mb",
+		"ArtifactSizeLimit": "-1b",
+		"ConsensusObservationSizeLimit": "100.00kb",
+		"ConsensusCallsLimit": "2",
+		"LogTriggerLimit": "-1",
+		"LogSizeLimit": "-1b",
+		"LogEventLimit": "1000",
+		"CRONTrigger": {
+			"RateLimit": "every30s,1"
+		},
+		"HTTPTrigger": {
+			"RateLimit": "every30s,3",
+			"AuthRateLimit": "every-1s,-1",
+			"IncomingPayloadSizeLimit": "10.00kb",
+			"OutgoingPayloadSizeLimit": "-1b"
+		},
+		"LogTrigger": {
+			"Limit": "-1",
+			"EventRateLimit": "every-1s,-1",
+			"RateLimit": "every10s,-1",
+			"FilterAddressLimit": "-1",
+			"FilterTopicsPerSlotLimit": "-1"
+		},
+		"HTTPAction": {
+			"RateLimit": "every30s,3",
+			"ResponseSizeLimit": "10.00kb",
+			"ConnectionTimeout": "10s",
+			"RequestSizeLimit": "100.00kb"
+		},
+		"ChainWrite": {
+			"RateLimit": "every30s,3",
+			"TargetsLimit": "3",
+			"ReportSizeLimit": "1.00kb",
+			"EVM": {
+				"TransactionGasLimit": "-1"
+			}
+		},
+		"ChainRead": {
+			"RateLimit": "every-1s,-1",
+			"PayloadSizeLimit": "-1b"
+		}
+	}
+}

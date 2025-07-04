@@ -79,7 +79,7 @@ func (TransactionStatus) EnumDescriptor() ([]byte, []int) {
 type BlockIDExt struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Workchain     int32                  `protobuf:"varint,1,opt,name=workchain,proto3" json:"workchain,omitempty"`
-	Shard         uint64                 `protobuf:"varint,2,opt,name=shard,proto3" json:"shard,omitempty"`
+	Shard         int64                  `protobuf:"varint,2,opt,name=shard,proto3" json:"shard,omitempty"`
 	SeqNo         uint32                 `protobuf:"varint,3,opt,name=seq_no,json=seqNo,proto3" json:"seq_no,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -122,7 +122,7 @@ func (x *BlockIDExt) GetWorkchain() int32 {
 	return 0
 }
 
-func (x *BlockIDExt) GetShard() uint64 {
+func (x *BlockIDExt) GetShard() int64 {
 	if x != nil {
 		return x.Shard
 	}
@@ -324,7 +324,7 @@ type Message struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mode          uint32                 `protobuf:"varint,1,opt,name=mode,proto3" json:"mode,omitempty"`
 	ToAddress     string                 `protobuf:"bytes,2,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	AmountNano    string                 `protobuf:"bytes,3,opt,name=amount_nano,json=amountNano,proto3" json:"amount_nano,omitempty"`
+	Amount        string                 `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	Bounce        bool                   `protobuf:"varint,4,opt,name=bounce,proto3" json:"bounce,omitempty"`
 	Body          []byte                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                                  // BOC
 	StateInit     []byte                 `protobuf:"bytes,6,opt,name=state_init,json=stateInit,proto3,oneof" json:"state_init,omitempty"` // optional BOC
@@ -376,9 +376,9 @@ func (x *Message) GetToAddress() string {
 	return ""
 }
 
-func (x *Message) GetAmountNano() string {
+func (x *Message) GetAmount() string {
 	if x != nil {
-		return x.AmountNano
+		return x.Amount
 	}
 	return ""
 }
@@ -1016,7 +1016,7 @@ const file_ton_proto_rawDesc = "" +
 	"\n" +
 	"BlockIDExt\x12\x1c\n" +
 	"\tworkchain\x18\x01 \x01(\x05R\tworkchain\x12\x14\n" +
-	"\x05shard\x18\x02 \x01(\x04R\x05shard\x12\x15\n" +
+	"\x05shard\x18\x02 \x01(\x03R\x05shard\x12\x15\n" +
 	"\x06seq_no\x18\x03 \x01(\rR\x05seqNo\"A\n" +
 	"\x13GetBlockDataRequest\x12*\n" +
 	"\x05block\x18\x01 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\"$\n" +
@@ -1026,13 +1026,12 @@ const file_ton_proto_rawDesc = "" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12*\n" +
 	"\x05block\x18\x02 \x01(\v2\x14.loop.ton.BlockIDExtR\x05block\"6\n" +
 	"\aBalance\x12+\n" +
-	"\abalance\x18\x01 \x01(\v2\x11.values.v1.BigIntR\abalance\"\xbc\x01\n" +
+	"\abalance\x18\x01 \x01(\v2\x11.values.v1.BigIntR\abalance\"\xb3\x01\n" +
 	"\aMessage\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\rR\x04mode\x12\x1d\n" +
 	"\n" +
-	"to_address\x18\x02 \x01(\tR\ttoAddress\x12\x1f\n" +
-	"\vamount_nano\x18\x03 \x01(\tR\n" +
-	"amountNano\x12\x16\n" +
+	"to_address\x18\x02 \x01(\tR\ttoAddress\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\tR\x06amount\x12\x16\n" +
 	"\x06bounce\x18\x04 \x01(\bR\x06bounce\x12\x12\n" +
 	"\x04body\x18\x05 \x01(\fR\x04body\x12\"\n" +
 	"\n" +

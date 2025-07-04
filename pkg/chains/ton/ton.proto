@@ -29,7 +29,7 @@ service TON {
 
 message BlockIDExt {
   int32 workchain = 1;
-  uint64 shard = 2;
+  int64 shard = 2;
   uint32 seq_no = 3;
 }
 
@@ -55,7 +55,7 @@ message Balance {
 message Message {
   uint32 mode = 1;
   string to_address = 2;
-  string amount_nano = 3;
+  string amount = 3;
   bool bounce = 4;
   bytes body = 5;                  // BOC
   optional bytes state_init = 6;  // optional BOC

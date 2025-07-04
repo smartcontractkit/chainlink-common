@@ -6,13 +6,18 @@ import (
 	"time"
 )
 
+const AddressLength = 20
+
+// represents evm-style address
+type Address = [AddressLength]byte
+
 type ExitCode = int32
 
 type BOC = []byte
 
 type BlockIDExt struct {
 	Workchain int32
-	Shard     uint64
+	Shard     int64
 	SeqNo     uint32
 }
 type Block struct {
@@ -20,12 +25,12 @@ type Block struct {
 }
 
 type Message struct {
-	Mode       uint8  // TON send mode
-	ToAddress  string // TON address (raw or user-friendly)
-	AmountNano string // Amount in nanotons
-	Bounce     bool   // Bounce flag
-	Body       BOC    // BOC-encoded message body cell
-	StateInit  BOC    // BOC-encoded state init cell
+	Mode      uint8  // TON send mode
+	ToAddress string // TON address (raw or user-friendly)
+	Amount    string // Amount in tons
+	Bounce    bool   // Bounce flag
+	Body      BOC    // BOC-encoded message body cell
+	StateInit BOC    // BOC-encoded state init cell
 }
 
 type LPFilterQuery struct {

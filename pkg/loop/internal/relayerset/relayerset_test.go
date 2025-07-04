@@ -572,12 +572,12 @@ func Test_RelayerSet_TONService(t *testing.T) {
 				body := []byte("body")
 				stateInit := []byte("state-init")
 				msg := tontypes.Message{
-					Mode:       1,
-					ToAddress:  addr,
-					AmountNano: "1.0",
-					Bounce:     false,
-					Body:       body,
-					StateInit:  stateInit,
+					Mode:      1,
+					ToAddress: addr,
+					Amount:    "1.0",
+					Bounce:    false,
+					Body:      body,
+					StateInit: stateInit,
 				}
 				mockTON.EXPECT().SendTx(mock.Anything, msg).Return(nil)
 				err := ton.SendTx(ctx, msg)

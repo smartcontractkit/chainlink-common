@@ -16,13 +16,12 @@ var _ ocr3types.ContractTransmitter[struct{}] = (*Transmitter)(nil)
 // When called it will transmit DonTime requests back to the caller
 // and handle deletion of finished executionIDs.
 type Transmitter struct {
-	lggr      logger.Logger
-	store     *Store
-	batchSize int
+	lggr  logger.Logger
+	store *Store
 }
 
-func NewTransmitter(lggr logger.Logger, store *Store, batchSize int) *Transmitter {
-	return &Transmitter{lggr: lggr, store: store, batchSize: batchSize}
+func NewTransmitter(lggr logger.Logger, store *Store) *Transmitter {
+	return &Transmitter{lggr: lggr, store: store}
 }
 
 func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[struct{}], _ []types.AttributedOnchainSignature) error {

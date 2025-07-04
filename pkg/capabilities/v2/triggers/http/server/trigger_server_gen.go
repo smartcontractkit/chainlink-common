@@ -66,7 +66,7 @@ func (cs *HTTPServer) Close() error {
 	defer cancel()
 
 	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "http-trigger@0.1.0"); err != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "http-trigger@1.0.0-alpha"); err != nil {
 			return err
 		}
 	}
@@ -93,18 +93,18 @@ type hTTPCapability struct {
 
 func (c *hTTPCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("http-trigger@0.1.0", capabilities.CapabilityTypeCombined, c.HTTPCapability.Description())
+	return capabilities.NewCapabilityInfo("http-trigger@1.0.0-alpha", capabilities.CapabilityTypeCombined, c.HTTPCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*hTTPCapability)(nil)
 
-const HTTPID = "http-trigger@0.1.0"
+const HTTPID = "http-trigger@1.0.0-alpha"
 
 func (c *hTTPCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	switch request.Method {
 	case "Trigger":
 		input := &http.Config{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@0.1.0", request, input, c.HTTPCapability.RegisterTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "http-trigger@1.0.0-alpha", request, input, c.HTTPCapability.RegisterTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

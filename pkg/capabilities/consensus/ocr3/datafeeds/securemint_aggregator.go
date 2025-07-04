@@ -1,6 +1,7 @@
 package datafeeds
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -196,17 +197,25 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 // TODO(gg): update this piece to comply with KeystoneForwarder/DF Cache
 // createOutcome creates the final aggregation outcome in the same format as feeds aggregator
 func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureMintReport) (*types.AggregationOutcome, error) {
-	// Convert chain selector to bytes for feed ID
-	chainSelectorBytes := big.NewInt(int64(a.config.TargetChainSelector)).Bytes()
+	// Convert chain selector to bytes for feed ID TODO(gg): check if this works for us
+	var chainSelectorAsFeedId [32]byte
+	binary.BigEndian.PutUint64(chainSelectorAsFeedId[24:], uint64(a.config.TargetChainSelector)) // right-aligned
+
+	// pack the block number and mintables into a single uint224 for evm as follows:
+	//(top 32 - not used / middle 64 - block number / lower 128 - mintable amount)
+	packedReport := big.NewInt(0).SetBytes(report.Mintable.Bytes())
+	packedReport.Lsh(packedReport, 192)
+	packedReport.Or(packedReport, big.NewInt(int64(report.Block)))
 
 	// Create the output in the same format as the feeds aggregator
+	//abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
-			FeedIDOutputFieldName:     chainSelectorBytes,
-			RawReportOutputFieldName:  report.Mintable.Bytes(), // Use Mintable as the raw report
-			PriceOutputFieldName:      report.Mintable.Bytes(), // Use Mintable as the price
-			TimestampOutputFieldName:  int64(report.Block),     // Use Block as timestamp // TODO(gg): fix
-			RemappedIDOutputFieldName: chainSelectorBytes,      // Use chain selector as remapped ID
+			FeedIDOutputFieldName: chainSelectorAsFeedId,
+			// RawReportOutputFieldName: packedReport, // TODO(gg): check if this is correct
+			PriceOutputFieldName:     packedReport,
+			TimestampOutputFieldName: int64(report.Block),
+			// RemappedIDOutputFieldName: chainSelectorBytes,      // Use chain selector as remapped ID
 		},
 	}
 

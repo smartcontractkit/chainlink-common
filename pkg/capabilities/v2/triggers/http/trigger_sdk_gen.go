@@ -30,7 +30,7 @@ func (*hTTPTrigger) NewT() *Payload {
 }
 
 func (*hTTPTrigger) CapabilityID() string {
-	return "http-trigger@0.1.0"
+	return "http-trigger@1.0.0-alpha"
 }
 
 func (*hTTPTrigger) Method() string {

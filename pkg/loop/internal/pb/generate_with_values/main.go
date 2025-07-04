@@ -13,7 +13,9 @@ func main() {
 
 	gen := pkg.ProtocGen{Plugins: []pkg.Plugin{{Name: "go-grpc"}}}
 	gen.AddSourceDirectories(".", "../../../")
-	if err := gen.Generate(os.Args[1], "."); err != nil {
-		panic(err)
+	for i := 1; i < len(os.Args); i++ {
+		if err := gen.GenerateFile(os.Args[i], "."); err != nil {
+			panic(err)
+		}
 	}
 }

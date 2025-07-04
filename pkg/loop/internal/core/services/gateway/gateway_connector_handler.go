@@ -28,7 +28,7 @@ func (c GatewayConnectorHandlerClient) ID(ctx context.Context) (string, error) {
 	return resp.Id, nil
 }
 
-func (c GatewayConnectorHandlerClient) HandleGatewayMessage(ctx context.Context, gatewayID string, req *jsonrpc.Request) error {
+func (c GatewayConnectorHandlerClient) HandleGatewayMessage(ctx context.Context, gatewayID string, req *jsonrpc.Request[json.RawMessage]) error {
 	data, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to encode request: %w", err)
@@ -61,7 +61,7 @@ func NewGatewayConnectorHandlerServer(impl core.GatewayConnectorHandler) *Gatewa
 }
 
 func (s GatewayConnectorHandlerServer) HandleGatewayMessage(ctx context.Context, req *pb.SendMessageRequest) (*emptypb.Empty, error) {
-	var msg *jsonrpc.Request
+	var msg *jsonrpc.Request[json.RawMessage]
 	err := json.Unmarshal(req.Message, &msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message: %w", err)

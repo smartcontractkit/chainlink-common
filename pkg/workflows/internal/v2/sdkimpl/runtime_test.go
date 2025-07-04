@@ -339,7 +339,7 @@ func setupSimpleConsensus(t *testing.T, values *consensusValues) {
 	consensus, err := consensusmock.NewConsensusCapability(t)
 	require.NoError(t, err)
 
-	consensus.Simple = func(ctx context.Context, input *pb.SimpleConsensusInputs) (*valuespb.Value, error) {
+	consensus.Simple = func(ctx context.Context, input *pb.SimpleConsensusInputs) (*pb.ConsensusOutputs, error) {
 		assert.Nil(t, input.Default.Value)
 		switch d := input.Descriptors.Descriptor_.(type) {
 		case *pb.ConsensusDescriptor_Aggregation:
@@ -357,7 +357,17 @@ func setupSimpleConsensus(t *testing.T, values *consensusValues) {
 			default:
 				assert.Fail(t, "unexpected observation value type")
 			}
-			return &valuespb.Value{Value: &valuespb.Value_Int64Value{Int64Value: values.Resp}}, nil
+			mapProto := &valuespb.Map{
+				Fields: map[string]*valuespb.Value{
+					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					sdk.ConsensusResponseMapKeyPayload:  {Value: &valuespb.Value_Int64Value{Int64Value: values.Resp}},
+				},
+			}
+			rawValue, err := proto.Marshal(mapProto)
+			require.NoError(t, err)
+			return &pb.ConsensusOutputs{
+				RawReport: rawValue,
+			}, nil
 		case *pb.SimpleConsensusInputs_Error:
 			assert.Equal(t, values.Err.Error(), o.Error)
 			return nil, values.Err

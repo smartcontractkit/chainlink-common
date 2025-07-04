@@ -22,7 +22,7 @@ message Payload {
 
 enum KeyType {
   KEY_TYPE_UNSPECIFIED = 0;
-  ECDSA = 1;
+  KEY_TYPE_ECDSA = 1;
 }
 
 // Generic and extensible authorized signer abstraction
@@ -37,9 +37,5 @@ service HTTP {
     capability_id: "http-trigger@0.1.0"
   };
 
-  rpc Trigger(Config) returns (stream Payload) {
-    option (tools.generator.v1alpha.method) = {
-      map_to_untyped_api: true
-    };
-  }
+  rpc Trigger(Config) returns (stream Payload);
 }

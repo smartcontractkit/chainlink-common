@@ -186,14 +186,14 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	return ErrnoSuccess
 }
 
-func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) (*wasmtime.Trap, int32) {
+func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	if nsubscriptions == 0 {
-		return nil, ErrnoInval
+		return ErrnoInval
 	}
 
 	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
 	if err != nil {
-		return nil, ErrnoFault
+		return ErrnoFault
 	}
 
 	events := make([]byte, nsubscriptions*eventsLen)
@@ -207,7 +207,7 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 
 		slot, err := getSlot(events, i)
 		if err != nil {
-			return nil, ErrnoFault
+			return ErrnoFault
 		}
 
 		switch eventType {
@@ -239,7 +239,8 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 		select {
 		case <-time.After(timeout):
 		case <-e.ctx.Done():
-			return wasmtime.NewTrap("execution timeout"), 0
+			// If context was cancelled, there will be a trap from the engine
+			return 0
 		}
 	}
 
@@ -249,11 +250,11 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))
 
 	if wasmWrite(caller, rne, resultNevents, uint32Size) == -1 {
-		return nil, ErrnoFault
+		return ErrnoFault
 	}
 	if wasmWrite(caller, events, eventsptr, nsubscriptions*eventsLen) == -1 {
-		return nil, ErrnoFault
+		return ErrnoFault
 	}
 
-	return nil, ErrnoSuccess
+	return ErrnoSuccess
 }

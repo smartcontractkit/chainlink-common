@@ -113,15 +113,6 @@ type ChainService interface {
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
 type GethClient interface {
-	// CallContract reads a contract as specified in the call message at a block height defined by blockNumber where:
-	// blockNumber :
-	//   nil (default) or (-2) → use the latest mined block (“latest”)
-	//   FinalizedBlockNumber(-3) → last finalized block (“finalized”)
-	//
-	// Any positive value is treated as an explicit block height.
-	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
@@ -129,6 +120,51 @@ type GethClient interface {
 
 type EVMService interface {
 	GethClient
+
+	// BalanceAt returns the wei balance of the given account.
+	//
+	// blockNumber - defines block at which call will be executed:
+	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
+	//  positive value - execute as specified height with confidence level;
+	//
+	// confidenceLevel - defines at which confidence level request will be executed:
+	//    Unconfirmed - returns the most recent data
+	//    Finalized - returned data was finalized;
+	//    Safe - returned data is highly unlikely to be reorged;
+	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error)
+
+	// CallContract executes a message call transaction, which is directly executed in the VM of the node,
+	// but never mined into the blockchain.
+	//
+	// blockNumber - defines block at which call will be executed:
+	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
+	//  positive value - execute as specified height with confidence level;
+	//
+	// confidenceLevel - defines at which confidence level request will be executed:
+	//    Unconfirmed - returns the most recent data;
+	//    Finalized - returned data was finalized;
+	//    Safe - returned data is highly unlikely to be reorged;
+	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error)
+
+	// FilterLogs executes a filter query.
+	//
+	// confidenceLevel - defines at which confidence level request will be executed:
+	//    Unconfirmed - returns the most recent data;
+	//    Finalized - returned data was finalized;
+	//    Safe - returned data is highly unlikely to be reorged;
+	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+
+	// HeaderByNumber returns a block header from the current canonical chain.
+	//
+	// blockNumber - defines block at which call will be executed:
+	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.)
+	//  positive value - execute as specified height with confidence level
+	//
+	// confidenceLevel - defines at which confidence level request will be executed:
+	//    Unconfirmed - return the most recent data.
+	//    Finalized - returned data was finalized.
+	//    Safe - returned data is highly unlikely to be reorged.
+	HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error)
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected
@@ -146,9 +182,6 @@ type EVMService interface {
 	// collected through previously registered log filters.
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-
-	// LatestAndFinalizedHead returns Latest and Finalized Heads of the underling chain
-	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)

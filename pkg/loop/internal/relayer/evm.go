@@ -6,6 +6,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -13,7 +15,6 @@ import (
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 type EVMClient struct {
@@ -67,15 +68,21 @@ func (e *EVMClient) GetTransactionFee(ctx context.Context, transactionID string)
 	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransactionFee())}, nil
 }
 
-func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error) {
 	protoCallMsg, err := evmpb.ConvertCallMsgToProto(msg)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
+	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
 	reply, err := e.grpcClient.CallContract(ctx, &evmpb.CallContractRequest{
-		Call:        protoCallMsg,
-		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
+		Call:            protoCallMsg,
+		BlockNumber:     valuespb.NewBigIntFromInt(blockNumber),
+		ConfidenceLevel: protoConfidenceLevel,
 	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -84,8 +91,16 @@ func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blo
 	return reply.GetData(), nil
 }
 
-func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQuery) ([]*evmtypes.Log, error) {
-	reply, err := e.grpcClient.FilterLogs(ctx, &evmpb.FilterLogsRequest{FilterQuery: evmpb.ConvertFilterToProto(filterQuery)})
+func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evmtypes.Log, error) {
+	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	reply, err := e.grpcClient.FilterLogs(ctx, &evmpb.FilterLogsRequest{
+		FilterQuery:     evmpb.ConvertFilterToProto(filterQuery),
+		ConfidenceLevel: protoConfidenceLevel,
+	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -93,10 +108,16 @@ func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQ
 	return evmpb.ConvertLogsFromProto(reply.GetLogs()), nil
 }
 
-func (e *EVMClient) BalanceAt(ctx context.Context, account evmtypes.Address, blockNumber *big.Int) (*big.Int, error) {
+func (e *EVMClient) BalanceAt(ctx context.Context, account evmtypes.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error) {
+	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
 	reply, err := e.grpcClient.BalanceAt(ctx, &evmpb.BalanceAtRequest{
-		Account:     account[:],
-		BlockNumber: valuespb.NewBigIntFromInt(blockNumber),
+		Account:         account[:],
+		BlockNumber:     valuespb.NewBigIntFromInt(blockNumber),
+		ConfidenceLevel: protoConfidenceLevel,
 	})
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -137,23 +158,21 @@ func (e *EVMClient) GetTransactionReceipt(ctx context.Context, txHash evmtypes.H
 	return evmpb.ConvertReceiptFromProto(reply.GetReceipt())
 }
 
-func (e *EVMClient) LatestAndFinalizedHead(ctx context.Context) (latest evmtypes.Head, finalized evmtypes.Head, err error) {
-	reply, err := e.grpcClient.LatestAndFinalizedHead(ctx, &emptypb.Empty{})
+func (e *EVMClient) HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evmtypes.Head, error) {
+	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
-		return evmtypes.Head{}, evmtypes.Head{}, net.WrapRPCErr(err)
+		return evmtypes.Head{}, net.WrapRPCErr(err)
 	}
 
-	latest, err = evmpb.ConvertHeadFromProto(reply.GetLatest())
+	reply, err := e.grpcClient.HeaderByNumber(ctx, &evmpb.HeaderByNumberRequest{
+		BlockNumber:     valuespb.NewBigIntFromInt(blockNumber),
+		ConfidenceLevel: protoConfidenceLevel,
+	})
 	if err != nil {
-		return evmtypes.Head{}, evmtypes.Head{}, net.WrapRPCErr(err)
+		return evmtypes.Head{}, net.WrapRPCErr(err)
 	}
 
-	finalized, err = evmpb.ConvertHeadFromProto(reply.GetFinalized())
-	if err != nil {
-		return evmtypes.Head{}, evmtypes.Head{}, net.WrapRPCErr(err)
-	}
-
-	return latest, finalized, nil
+	return evmpb.ConvertHeadFromProto(reply.GetHeader())
 
 }
 func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
@@ -241,7 +260,12 @@ func (e *evmServer) CallContract(ctx context.Context, request *evmpb.CallContrac
 		return nil, err
 	}
 
-	data, err := e.impl.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.GetBlockNumber()))
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := e.impl.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +278,12 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 		return nil, err
 	}
 
-	logs, err := e.impl.FilterLogs(ctx, filter)
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	logs, err := e.impl.FilterLogs(ctx, filter, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +291,11 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
 }
 func (e *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
-	balance, err := e.impl.BalanceAt(ctx, evmtypes.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.GetBlockNumber()))
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+	balance, err := e.impl.BalanceAt(ctx, evmtypes.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -312,15 +345,18 @@ func (e *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.Ge
 	return &evmpb.GetTransactionReceiptReply{Receipt: protoReceipt}, nil
 }
 
-func (e *evmServer) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*evmpb.LatestAndFinalizedHeadReply, error) {
-	latest, finalized, err := e.impl.LatestAndFinalizedHead(ctx)
+func (e *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumberRequest) (*evmpb.HeaderByNumberReply, error) {
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+	header, err := e.impl.HeaderByNumber(ctx, valuespb.NewIntFromBigInt(request.BlockNumber), conf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.LatestAndFinalizedHeadReply{
-		Latest:    evmpb.ConvertHeadToProto(latest),
-		Finalized: evmpb.ConvertHeadToProto(finalized),
+	return &evmpb.HeaderByNumberReply{
+		Header: evmpb.ConvertHeadToProto(header),
 	}, nil
 }
 

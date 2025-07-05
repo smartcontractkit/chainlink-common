@@ -46,6 +46,7 @@ var (
 	filterName       = "f name 1"
 	retention        = time.Second
 	medianPluginType = string(types.Median)
+	confidenceLevel  = primitives.Finalized
 )
 
 func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
@@ -79,13 +80,14 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		grpcClient: evmpb.NewEVMClient(conn),
 	}
 	t.Run("BalanceAt", func(t *testing.T) {
-		evmService.staticBalanceAt = func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
+		evmService.staticBalanceAt = func(ctx context.Context, account evm.Address, blockNumber *big.Int, conf primitives.ConfidenceLevel) (*big.Int, error) {
 			require.Equal(t, account, address)
 			require.Equal(t, blockNumber, blockNum)
+			require.Equal(t, conf, confidenceLevel)
 			return balance, nil
 		}
 
-		resp, err := client.BalanceAt(ctx, address, blockNum)
+		resp, err := client.BalanceAt(ctx, address, blockNum, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, resp, balance)
 	})
@@ -96,12 +98,14 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			From: address1,
 			Data: abi,
 		}
-		evmService.staticCallContract = func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
+		evmService.staticCallContract = func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, conf primitives.ConfidenceLevel) ([]byte, error) {
 			require.Equal(t, expMsg, msg)
+			require.Equal(t, blockNumber, blockNum)
+			require.Equal(t, conf, confidenceLevel)
 			return respAbi, nil
 		}
 
-		resp, err := client.CallContract(ctx, expMsg, blockNum)
+		resp, err := client.CallContract(ctx, expMsg, blockNum, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, respAbi, resp)
 	})
@@ -180,12 +184,13 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 				Removed:     false,
 			},
 		}
-		evmService.staticFilterLogs = func(ctx context.Context, fq evm.FilterQuery) ([]*evm.Log, error) {
+		evmService.staticFilterLogs = func(ctx context.Context, fq evm.FilterQuery, conf primitives.ConfidenceLevel) ([]*evm.Log, error) {
 			require.Equal(t, expFQ, fq)
+			require.Equal(t, conf, confidenceLevel)
 			return expLog, nil
 		}
 
-		logs, err := client.FilterLogs(ctx, expFQ)
+		logs, err := client.FilterLogs(ctx, expFQ, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, expLog, logs)
 
@@ -267,13 +272,15 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			Number:     blockNum,
 			Timestamp:  10,
 		}
-		evmService.staticLatestAndFinalizedHead = func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error) {
-			return expHead, expHead, nil
+		evmService.staticHeaderByNumber = func(ctx context.Context, blockNumber *big.Int, conf primitives.ConfidenceLevel) (evm.Head, error) {
+			require.Equal(t, blockNum, blockNumber)
+			require.Equal(t, conf, confidenceLevel)
+			return expHead, nil
 		}
 
-		got1, _, err := client.LatestAndFinalizedHead(ctx)
+		h, err := client.HeaderByNumber(ctx, blockNum, confidenceLevel)
 		require.NoError(t, err)
-		require.Equal(t, expHead, got1)
+		require.Equal(t, expHead, h)
 	})
 
 	t.Run("QueryTrackedLogs", func(t *testing.T) {
@@ -322,15 +329,15 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 }
 
 type staticEVMService struct {
-	staticCallContract            func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	staticFilterLogs              func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	staticBalanceAt               func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
+	staticCallContract            func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error)
+	staticFilterLogs              func(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	staticBalanceAt               func(ctx context.Context, account evm.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error)
 	staticEstimateGas             func(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	staticGetTransactionByHash    func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	staticGetTransactionReceipt   func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
 	staticGetTransactionFee       func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
 	staticQueryTrackedLogs        func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	staticLatestAndFinalizedHead  func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
+	staticHeaderByNumber          func(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error)
 	staticRegisterLogTracking     func(ctx context.Context, filter evm.LPFilterQuery) error
 	staticUnregisterLogTracking   func(ctx context.Context, filterName string) error
 	staticGetTransactionStatus    func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
@@ -339,16 +346,16 @@ type staticEVMService struct {
 	staticGetForwarderForEOA      func(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error)
 }
 
-func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return s.staticCallContract(ctx, msg, blockNumber)
+func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, conf primitives.ConfidenceLevel) ([]byte, error) {
+	return s.staticCallContract(ctx, msg, blockNumber, conf)
 }
 
-func (s *staticEVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
-	return s.staticFilterLogs(ctx, filterQuery)
+func (s *staticEVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery, conf primitives.ConfidenceLevel) ([]*evm.Log, error) {
+	return s.staticFilterLogs(ctx, filterQuery, conf)
 }
 
-func (s *staticEVMService) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
-	return s.staticBalanceAt(ctx, account, blockNumber)
+func (s *staticEVMService) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int, conf primitives.ConfidenceLevel) (*big.Int, error) {
+	return s.staticBalanceAt(ctx, account, blockNumber, conf)
 }
 
 func (s *staticEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
@@ -371,8 +378,8 @@ func (s *staticEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []q
 	return s.staticQueryTrackedLogs(ctx, filterQuery, limitAndSort, confidenceLevel)
 }
 
-func (s *staticEVMService) LatestAndFinalizedHead(ctx context.Context) (evm.Head, evm.Head, error) {
-	return s.staticLatestAndFinalizedHead(ctx)
+func (s *staticEVMService) HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error) {
+	return s.staticHeaderByNumber(ctx, blockNumber, confidenceLevel)
 }
 
 func (s *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {

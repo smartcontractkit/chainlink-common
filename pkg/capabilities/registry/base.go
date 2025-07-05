@@ -45,8 +45,6 @@ func (r *baseRegistry) Get(_ context.Context, id string) (capabilities.BaseCapab
 
 // GetTrigger gets a capability from the registry and tries to coerce it to the TriggerCapability interface.
 func (r *baseRegistry) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	c, err := r.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -62,8 +60,6 @@ func (r *baseRegistry) GetTrigger(ctx context.Context, id string) (capabilities.
 
 // GetExecutable gets a capability from the registry and tries to coerce it to the ExecutableCapability interface.
 func (r *baseRegistry) GetExecutable(ctx context.Context, id string) (capabilities.ExecutableCapability, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	c, err := r.Get(ctx, id)
 	if err != nil {
 		return nil, err

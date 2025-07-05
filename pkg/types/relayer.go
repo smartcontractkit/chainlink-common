@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
@@ -166,12 +167,28 @@ type EVMService interface {
 	GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error)
 }
 
+type TONService interface {
+	ton.LiteClient
+
+	// TXM
+	SendTx(ctx context.Context, msg ton.Message) error
+	GetTxStatus(ctx context.Context, lt uint64) (TransactionStatus, ton.ExitCode, error)
+	GetTxExecutionFees(ctx context.Context, lt uint64) (*ton.TransactionFee, error)
+
+	// LogPoller
+	HasFilter(ctx context.Context, name string) bool
+	RegisterFilter(ctx context.Context, filter ton.LPFilterQuery) error
+	UnregisterFilter(ctx context.Context, name string) error
+}
+
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
 
 	// EVM returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
+	// TON returns TONService that provides access to TON specific functionalities
+	TON() (TONService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
@@ -250,6 +267,10 @@ func (u *UnimplementedRelayer) Replay(ctx context.Context, fromBlock string, arg
 
 func (u *UnimplementedRelayer) EVM() (EVMService, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
+}
+
+func (u *UnimplementedRelayer) TON() (TONService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
 }
 
 func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {

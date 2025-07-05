@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -28,6 +29,7 @@ type Client struct {
 	relayerSetClient     relayerset.RelayerSetClient
 	contractReaderClient pb.ContractReaderClient
 	evmRelayerSetClient  evm.EVMClient
+	tonRelayerSetClient  ton.TONClient
 }
 
 func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientConnInterface) *Client {
@@ -38,6 +40,7 @@ func NewRelayerSetClient(log logger.Logger, b *net.BrokerExt, conn grpc.ClientCo
 		ServiceClient:        goplugin.NewServiceClient(b, conn),
 		relayerSetClient:     relayerset.NewRelayerSetClient(conn),
 		evmRelayerSetClient:  evm.NewEVMClient(conn),
+		tonRelayerSetClient:  ton.NewTONClient(conn),
 		contractReaderClient: pb.NewContractReaderClient(conn)}
 }
 
@@ -151,6 +154,16 @@ func (k *Client) EVM(relayID types.RelayID) (types.EVMService, error) {
 	return rel.NewEVMCClient(&evmClient{
 		relayID: relayID,
 		client:  k.evmRelayerSetClient,
+	}), nil
+}
+
+func (k *Client) TON(relayID types.RelayID) (types.TONService, error) {
+	if k.tonRelayerSetClient == nil {
+		return nil, errors.New("tonRelayerSetClient can't be nil")
+	}
+	return rel.NewTONClient(&tonClient{
+		relayID: relayID,
+		client:  k.tonRelayerSetClient,
 	}), nil
 }
 

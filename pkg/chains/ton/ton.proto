@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/ton";
+package loop.ton;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "values/v1/values.proto";
+
+// Main TON service
+service TON {
+  // LiteClient
+  rpc GetMasterchainInfo(google.protobuf.Empty) returns (BlockIDExt);
+  rpc GetBlockData(GetBlockDataRequest) returns (Block);
+  rpc GetAccountBalance(GetAccountBalanceRequest) returns (Balance);
+
+  // Transaction Management (TXM)
+  rpc SendTx(SendTxRequest) returns (google.protobuf.Empty);
+  rpc GetTxStatus(GetTxStatusRequest) returns (GetTxStatusReply);
+  rpc GetTxExecutionFees(GetTxExecutionFeesRequest) returns (GetTxExecutionFeesReply);
+
+  // Log Poller
+  rpc HasFilter(HasFilterRequest) returns (HasFilterReply);
+  rpc RegisterFilter(RegisterFilterRequest) returns (google.protobuf.Empty);
+  rpc UnregisterFilter(UnregisterFilterRequest) returns (google.protobuf.Empty);
+}
+
+// ---- LiteClient Types ----
+
+message BlockIDExt {
+  int32 workchain = 1;
+  int64 shard = 2;
+  uint32 seq_no = 3;
+}
+
+message GetBlockDataRequest {
+  BlockIDExt block = 1;
+}
+
+message Block {
+  int32 global_id = 1;
+}
+
+message GetAccountBalanceRequest {
+  string address = 1;
+  BlockIDExt block = 2;
+}
+
+message Balance {
+  values.v1.BigInt balance = 1;
+}
+
+// ---- Transaction Management ----
+
+message Message {
+  uint32 mode = 1;
+  string to_address = 2;
+  string amount = 3;
+  bool bounce = 4;
+  bytes body = 5;                  // BOC
+  optional bytes state_init = 6;  // optional BOC
+}
+
+message SendTxRequest {
+  Message message = 1;
+}
+
+message GetTxStatusRequest {
+  uint64 logical_time = 1;
+}
+
+message GetTxStatusReply {
+  TransactionStatus status = 1;
+  optional int32 exit_code = 2; // Optional smart contract exit code
+}
+
+message GetTxExecutionFeesRequest {
+  uint64 logical_time = 1;
+}
+
+message GetTxExecutionFeesReply {
+  values.v1.BigInt total_fees = 1;
+}
+
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNKNOWN = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_FINALIZED = 2;
+  TRANSACTION_STATUS_FAILED = 3;
+}
+
+// ---- Log Poller ----
+
+message LPFilterQuery {
+  int64 id = 1;
+  string name = 2;
+  string address = 3;
+  string event_name = 4;
+  uint64 event_topic = 5;
+  uint32 starting_seq = 6;
+  int64 retention_secs = 7;
+}
+
+message Log {
+  int64 id = 1;
+  int64 filter_id = 2;
+  uint32 seq_no = 3;
+  string address = 4;
+  uint64 event_topic = 5;
+  bytes data = 6;
+  google.protobuf.Timestamp received_at = 7;
+  optional google.protobuf.Timestamp expires_at = 8;
+  optional string error = 9;
+}
+
+message HasFilterRequest {
+  string name = 1;
+}
+
+message HasFilterReply {
+  bool exists = 1;
+}
+
+message RegisterFilterRequest {
+  LPFilterQuery filter = 1;
+}
+
+message UnregisterFilterRequest {
+  string name = 1;
+}

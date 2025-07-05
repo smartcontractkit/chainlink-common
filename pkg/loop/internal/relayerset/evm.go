@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
@@ -14,9 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
-
-const metadataEVMChain = "evm-chain-id"
-const metadataEVMNetwork = "evm-network"
 
 // evmClient wraps the EVMRelayerSetClient by attaching a RelayerID to EVMClient requests.
 // The attached RelayerID is stored in the context metadata.
@@ -373,22 +369,4 @@ func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {
 	}
 
 	return r.EVM()
-}
-
-func appendRelayID(ctx context.Context, id types.RelayID) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, metadataEVMNetwork, id.Network, metadataEVMChain, id.ChainID)
-}
-
-func readRelayID(ctx context.Context) (types.RelayID, error) {
-	network, err := readContextValue(ctx, metadataEVMNetwork)
-	if err != nil {
-		return types.RelayID{}, err
-	}
-	chainID, err := readContextValue(ctx, metadataEVMChain)
-	if err != nil {
-		return types.RelayID{}, err
-	}
-	return types.RelayID{
-		Network: network, ChainID: chainID,
-	}, nil
 }

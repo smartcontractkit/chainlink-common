@@ -7,12 +7,11 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
 )
 
 type TemplateGenerator struct {

@@ -9,8 +9,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/anypb"
 
-	pb3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb"
-	pb4 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2"
 
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/testutils/registry"
@@ -28,14 +28,14 @@ func NewBasicActionCapability(t testing.TB) (*BasicActionCapability, error) {
 
 type BasicActionCapability struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 add the default to the call
-	PerformAction func(ctx context.Context, input *pb3.Inputs) (*pb4.Outputs, error)
+	PerformAction func(ctx context.Context, input *p1.Item) (*p2.Item, error)
 }
 
 func (cap *BasicActionCapability) Invoke(ctx context.Context, request *sdkpb.CapabilityRequest) *sdkpb.CapabilityResponse {
 	capResp := &sdkpb.CapabilityResponse{}
 	switch request.Method {
 	case "PerformAction":
-		input := &pb3.Inputs{}
+		input := &p1.Item{}
 		if err := request.Payload.UnmarshalTo(input); err != nil {
 			capResp.Response = &sdkpb.CapabilityResponse_Error{Error: err.Error()}
 			break

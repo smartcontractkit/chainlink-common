@@ -12,7 +12,7 @@ import (
 
 func main() {
 	gen := &pkg.ProtocGen{}
-	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
+	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "tools/generator/v1alpha/cre_metadata.proto"})
 	gen.LinkPackage(pkg.Packages{Go: "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb", Proto: "sdk/v1alpha/sdk.proto"})
 
 	capDir := flag.String("pkg", "", "the go package to generate in")

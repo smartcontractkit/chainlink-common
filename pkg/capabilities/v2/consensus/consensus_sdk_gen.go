@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
-	pb1 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	pb2 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
@@ -16,21 +16,21 @@ type Consensus struct {
 	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-799 allow defaults for capabilities
 }
 
-func (c *Consensus) Simple(runtime sdk.Runtime, input *pb1.SimpleConsensusInputs) sdk.Promise[*pb1.ConsensusOutputs] {
+func (c *Consensus) Simple(runtime sdk.Runtime, input *pb2.SimpleConsensusInputs) sdk.Promise[*pb2.ConsensusOutputs] {
 	wrapped, err := anypb.New(input)
 	if err != nil {
-		return sdk.PromiseFromResult[*pb1.ConsensusOutputs](nil, err)
+		return sdk.PromiseFromResult[*pb2.ConsensusOutputs](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
 		Id:      "consensus@1.0.0-alpha",
 		Payload: wrapped,
 		Method:  "Simple",
-	}), func(i *sdkpb.CapabilityResponse) (*pb1.ConsensusOutputs, error) {
+	}), func(i *sdkpb.CapabilityResponse) (*pb2.ConsensusOutputs, error) {
 		switch payload := i.Response.(type) {
 		case *sdkpb.CapabilityResponse_Error:
 			return nil, errors.New(payload.Error)
 		case *sdkpb.CapabilityResponse_Payload:
-			output := &pb1.ConsensusOutputs{}
+			output := &pb2.ConsensusOutputs{}
 			err = payload.Payload.UnmarshalTo(output)
 			return output, err
 		default:

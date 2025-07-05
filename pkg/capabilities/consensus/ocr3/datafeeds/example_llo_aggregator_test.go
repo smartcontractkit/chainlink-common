@@ -52,10 +52,19 @@ func ExampleLLOAggregator_Aggregate() {
 	observations := make(map[ocrcommon.OracleID][]values.Value)
 	timestamp := uint64(61116379204) //uint64(time.Now().UnixNano()) //nolint: gosec // G115
 
+	price1, err := decimal.NewFromString("1250427975000000000000")
+	if err != nil {
+		panic(err)
+	}
+	price2, err := decimal.NewFromString("39250250000000000000000")
+	if err != nil {
+		panic(err)
+	}
+
 	// Setup price data for 2 streams
 	prices := map[uint32]decimal.Decimal{
-		1: decimal.NewFromFloat(1250.427975), // ETH/USD price
-		2: decimal.NewFromFloat(39250.25),    // BTC/USD price
+		1: price1, // ETH/USD price
+		2: price2, // BTC/USD price
 	}
 
 	// Create the same observation for each oracle to ensure f+1 consensus

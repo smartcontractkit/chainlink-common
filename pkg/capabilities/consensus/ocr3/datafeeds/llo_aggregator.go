@@ -279,10 +279,6 @@ func decimalToBigInt(d decimal.Decimal) *big.Int {
 	return d.BigInt()
 }
 
-func bigIntToDecimal(b *big.Int) decimal.Decimal {
-	return decimal.NewFromBigInt(b, 0)
-}
-
 // extractLLOEvents decodes the untyped wire format into LLOStreamsTriggerEvent.
 // every observation ios expected to be len 1, a single wrapped LLOStreamsTriggerEvent.
 func (a *LLOAggregator) extractLLOEvents(lggr logger.Logger, observations map[ocrcommon.OracleID][]values.Value) map[ocrcommon.OracleID]*datastreams.LLOStreamsTriggerEvent {

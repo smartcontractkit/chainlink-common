@@ -167,7 +167,7 @@ type wrappedTransactionalDataSource struct {
 }
 
 // BeginWrappedTxx is like BeginTxx, but wraps the returned tx with the same hook.
-func (w *wrappedTransactionalDataSource) BeginWrappedTxx(ctx context.Context, opts *sql.TxOptions) (tx transaction, err error) {
+func (w *wrappedTransactionalDataSource) BeginWrappedTxx(ctx context.Context, opts *sql.TxOptions) (tx Transaction, err error) {
 	tx, err = w.BeginTxx(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -184,13 +184,13 @@ func (w *wrappedTransactionalDataSource) BeginWrappedTxx(ctx context.Context, op
 
 var (
 	_ DataSource  = (*wrappedTx)(nil)
-	_ transaction = (*wrappedTx)(nil)
+	_ Transaction = (*wrappedTx)(nil)
 )
 
 // wrappedTx extends [wrappedDataSource] with Commit and Rollback for completing a transaction.
 type wrappedTx struct {
 	wrappedDataSource
-	tx transaction
+	tx Transaction
 }
 
 func (w *wrappedTx) Commit() error { return w.tx.Commit() }

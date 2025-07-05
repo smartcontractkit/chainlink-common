@@ -84,26 +84,44 @@ func TransactConn[D any](ctx context.Context, newD func(DataSource) D, ds *sqlx.
 	return transact(ctx, newD, ds, opts, fn)
 }
 
+func startTransaction(ctx context.Context, ds transactional, opts *TxOptions) (Transaction, error) {
+	// Support [DataSource]s wrapped via [WrapDataSource]
+	if wrapped, ok := ds.(wrappedTransactional); ok {
+		tx, terr := wrapped.BeginWrappedTxx(ctx, &opts.TxOptions)
+		if terr != nil {
+			return nil, terr
+		}
+		return tx, nil
+	}
+
+	tx, terr := ds.BeginTxx(ctx, &opts.TxOptions)
+	if terr != nil {
+		return nil, terr
+	}
+	return tx, nil
+}
+
+func StartTransaction(ctx context.Context, ds DataSource, opts *TxOptions) (Transaction, error) {
+	tx, ok := ds.(Transaction)
+	if ok {
+		return tx, nil
+	}
+
+	txds, ok := ds.(transactional)
+	if ok {
+		return startTransaction(ctx, txds, opts)
+	}
+
+	return nil, errors.New("could not start transaction")
+}
+
 func transact[D any](ctx context.Context, newD func(DataSource) D, ds transactional, opts *TxOptions, fn func(tx D) error) (err error) {
 	if opts == nil {
 		opts = &TxOptions{}
 	}
 	// Begin tx
-	tx, err := func() (transaction, error) {
-		// Support [DataSource]s wrapped via [WrapDataSource]
-		if wrapped, ok := ds.(wrappedTransactional); ok {
-			tx, terr := wrapped.BeginWrappedTxx(ctx, &opts.TxOptions)
-			if terr != nil {
-				return nil, terr
-			}
-			return tx, nil
-		}
-
-		tx, terr := ds.BeginTxx(ctx, &opts.TxOptions)
-		if terr != nil {
-			return nil, terr
-		}
-		return tx, nil
+	tx, err := func() (Transaction, error) {
+		return startTransaction(ctx, ds, opts)
 	}()
 	if err != nil {
 		return err
@@ -138,12 +156,12 @@ type transactional interface {
 var _ wrappedTransactional = (*wrappedTransactionalDataSource)(nil)
 
 type wrappedTransactional interface {
-	BeginWrappedTxx(context.Context, *sql.TxOptions) (transaction, error)
+	BeginWrappedTxx(context.Context, *sql.TxOptions) (Transaction, error)
 }
 
-var _ transaction = (*wrappedTx)(nil)
+var _ Transaction = (*wrappedTx)(nil)
 
-type transaction interface {
+type Transaction interface {
 	DataSource
 	Commit() error
 	Rollback() error

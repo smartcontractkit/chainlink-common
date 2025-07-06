@@ -201,8 +201,9 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	var chainSelectorAsFeedId [32]byte
 	binary.BigEndian.PutUint64(chainSelectorAsFeedId[24:], uint64(a.config.TargetChainSelector)) // right-aligned
 
+	// TODO(gg): double-check if this implementation is correct
 	// pack the block number and mintables into a single uint224 for evm as follows:
-	//(top 32 - not used / middle 64 - block number / lower 128 - mintable amount)
+	// (top 32 - not used / middle 64 - block number / lower 128 - mintable amount)
 	packedReport := big.NewInt(0).SetBytes(report.Mintable.Bytes())
 	packedReport.Lsh(packedReport, 192)
 	packedReport.Or(packedReport, big.NewInt(int64(report.Block)))
@@ -212,10 +213,10 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	toWrap := []any{
 		map[EVMEncoderKey]any{
 			FeedIDOutputFieldName: chainSelectorAsFeedId,
-			// RawReportOutputFieldName: packedReport, // TODO(gg): check if this is correct
+			// RawReportOutputFieldName:  packedReport, // TODO(gg): check if we need this
 			PriceOutputFieldName:     packedReport,
 			TimestampOutputFieldName: int64(report.Block),
-			// RemappedIDOutputFieldName: chainSelectorBytes,      // Use chain selector as remapped ID
+			// RemappedIDOutputFieldName: chainSelectorAsFeedId, // Use chain selector as remapped ID // TODO(gg): delete this when not needed
 		},
 	}
 

@@ -372,3 +372,196 @@ func createReportBytes(t *testing.T, report *secureMintReport) []byte {
 	require.NoError(t, err)
 	return reportBytes
 }
+
+func TestPackSecureMintReportForIntoUint224(t *testing.T) {
+	tests := []struct {
+		name        string
+		mintable    *big.Int
+		blockNumber uint64
+		expected    *big.Int
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name:        "zero values",
+			mintable:    big.NewInt(0),
+			blockNumber: 0,
+			expected:    big.NewInt(0),
+			expectError: false,
+		},
+		{
+			name:        "small positive values",
+			mintable:    big.NewInt(100),
+			blockNumber: 12345,
+			expected:    new(big.Int).Add(big.NewInt(100), new(big.Int).Lsh(big.NewInt(12345), 128)),
+			expectError: false,
+		},
+		{
+			name:        "maximum mintable value (2^128 - 1)",
+			mintable:    new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)),
+			blockNumber: 999999,
+			expected: new(big.Int).Add(
+				new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)),
+				new(big.Int).Lsh(big.NewInt(999999), 128),
+			),
+			expectError: false,
+		},
+		{
+			name:        "large block number",
+			mintable:    big.NewInt(500),
+			blockNumber: 18446744073709551615, // max uint64
+			expected:    new(big.Int).Add(big.NewInt(500), new(big.Int).Lsh(new(big.Int).SetUint64(18446744073709551615), 128)),
+			expectError: false,
+		},
+		{
+			name:        "mintable exceeds 128 bits",
+			mintable:    new(big.Int).Lsh(big.NewInt(1), 128), // 2^128
+			blockNumber: 1000,
+			expectError: true,
+			errorMsg:    "mintable amount",
+		},
+		{
+			name:        "very large mintable that exceeds 128 bits",
+			mintable:    new(big.Int).Lsh(big.NewInt(1), 256), // 2^256
+			blockNumber: 1000,
+			expectError: true,
+			errorMsg:    "mintable amount",
+		},
+		{
+			name:        "nil mintable",
+			mintable:    nil,
+			blockNumber: 1000,
+			expectError: true,
+			errorMsg:    "mintable cannot be nil",
+		},
+		{
+			name:        "bit pattern verification - mintable 1, block 1",
+			mintable:    big.NewInt(1),
+			blockNumber: 1,
+			expected:    new(big.Int).Add(big.NewInt(1), new(big.Int).Lsh(big.NewInt(1), 128)),
+			expectError: false,
+		},
+		{
+			name:        "bit pattern verification - mintable 0xFFFFFFFF, block 0xFFFFFFFF",
+			mintable:    big.NewInt(0xFFFFFFFF),
+			blockNumber: 0xFFFFFFFF,
+			expected:    new(big.Int).Add(big.NewInt(0xFFFFFFFF), new(big.Int).Lsh(big.NewInt(0xFFFFFFFF), 128)),
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := packSecureMintReportForIntoUint224ForEVM(tt.mintable, tt.blockNumber)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				if tt.errorMsg != "" {
+					assert.Contains(t, err.Error(), tt.errorMsg)
+				}
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotNil(t, result)
+
+			if tt.expected != nil {
+				assert.Equal(t, tt.expected, result)
+			}
+
+			// Additional validation: ensure the result fits in 224 bits
+			maxUint224 := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 224), big.NewInt(1))
+			assert.True(t, result.Cmp(maxUint224) <= 0, "result should fit in 224 bits")
+
+			// Verify bit layout if we have expected values and not a large block number
+			if tt.expected != nil {
+				verifyBitLayout(t, result, tt.mintable, tt.blockNumber)
+			}
+		})
+	}
+}
+
+func TestPackSecureMintReportForIntoUint224_EdgeCases(t *testing.T) {
+	// Test edge cases and boundary conditions
+	tests := []struct {
+		name        string
+		mintable    *big.Int
+		blockNumber uint64
+		expectError bool
+	}{
+		{
+			name:        "mintable exactly at 128-bit boundary",
+			mintable:    new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)), // 2^128 - 1
+			blockNumber: 1000,
+			expectError: false,
+		},
+		{
+			name:        "mintable one over 128-bit boundary",
+			mintable:    new(big.Int).Lsh(big.NewInt(1), 128), // 2^128
+			blockNumber: 1000,
+			expectError: true,
+		},
+		{
+			name:        "block number at max uint64",
+			mintable:    big.NewInt(100),
+			blockNumber: 0xFFFFFFFFFFFFFFFF,
+			expectError: false,
+		},
+		{
+			name:        "both values at maximum",
+			mintable:    new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)),
+			blockNumber: 0xFFFFFFFFFFFFFFFF,
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := packSecureMintReportForIntoUint224ForEVM(tt.mintable, tt.blockNumber)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotNil(t, result)
+
+			// Verify the result is within uint224 bounds
+			maxUint224 := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 224), big.NewInt(1))
+			assert.True(t, result.Cmp(maxUint224) <= 0, "result should fit in 224 bits")
+		})
+	}
+}
+
+// verifyBitLayout verifies that the packed result has the correct bit layout
+// mintable should be in bits 0-127, block number in bits 128-191
+func verifyBitLayout(t *testing.T, packed *big.Int, mintable *big.Int, blockNumber uint64) {
+	// Extract mintable from lower 128 bits
+	mintableMask := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+	extractedMintable := new(big.Int).And(packed, mintableMask)
+
+	// Extract block number from bits 128-191
+	blockNumberMask := new(big.Int).Lsh(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 64), big.NewInt(1)), 128)
+	extractedBlockNumber := new(big.Int).And(packed, blockNumberMask)
+	extractedBlockNumber = new(big.Int).Rsh(extractedBlockNumber, 128)
+
+	// Always use big.NewInt(0) for zero-value mintable
+	expectedMintable := mintable
+	if mintable == nil || (mintable != nil && mintable.Sign() == 0) {
+		expectedMintable = big.NewInt(0)
+	}
+
+	assert.Equal(t, expectedMintable, extractedMintable, "mintable bits should match")
+	assert.Equal(t, new(big.Int).SetUint64(blockNumber), extractedBlockNumber, "block number bits should match")
+}
+
+func TestMaxMintableConstant(t *testing.T) {
+	// Verify the maxMintable constant is correctly defined
+	expectedMax := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+	assert.Equal(t, expectedMax, maxMintable, "maxMintable should be 2^128 - 1")
+
+	// Verify it's exactly 128 bits
+	bitLen := maxMintable.BitLen()
+	assert.Equal(t, 128, bitLen, "maxMintable should be exactly 128 bits")
+}

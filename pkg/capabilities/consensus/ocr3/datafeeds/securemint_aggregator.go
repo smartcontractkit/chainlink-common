@@ -22,6 +22,7 @@ var (
 	ErrSequenceNumberTooLow    = errors.New("sequence number too low")
 )
 
+// TODO(gg): should we reuse this from the por repo instead of copying?
 // secureMintReport represents the inner report structure
 type secureMintReport struct {
 	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
@@ -30,6 +31,7 @@ type secureMintReport struct {
 	Mintable     *big.Int               `json:"mintable"`
 }
 
+// TODO(gg): should we reuse this from the por repo instead of copying?
 // chainSelector represents the chain selector type
 type chainSelector int64
 
@@ -201,12 +203,10 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	var chainSelectorAsFeedId [32]byte
 	binary.BigEndian.PutUint64(chainSelectorAsFeedId[24:], uint64(a.config.TargetChainSelector)) // right-aligned
 
-	// TODO(gg): double-check if this implementation is correct
-	// pack the block number and mintables into a single uint224 for evm as follows:
-	// (top 32 - not used / middle 64 - block number / lower 128 - mintable amount)
-	packedReport := big.NewInt(0).SetBytes(report.Mintable.Bytes())
-	packedReport.Lsh(packedReport, 192)
-	packedReport.Or(packedReport, big.NewInt(int64(report.Block)))
+	smReportAsPrice, err := packSecureMintReportForIntoUint224ForEVM(report.Mintable, report.Block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to pack secure mint report for into uint224: %w", err)
+	}
 
 	// Create the output in the same format as the feeds aggregator
 	//abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
@@ -214,8 +214,8 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 		map[EVMEncoderKey]any{
 			FeedIDOutputFieldName: chainSelectorAsFeedId,
 			// RawReportOutputFieldName:  packedReport, // TODO(gg): check if we need this
-			PriceOutputFieldName:     packedReport,
-			TimestampOutputFieldName: int64(report.Block),
+			PriceOutputFieldName:     smReportAsPrice,
+			TimestampOutputFieldName: int64(report.Block), // TODO(gg): not sure if we want this
 			// RemappedIDOutputFieldName: chainSelectorAsFeedId, // Use chain selector as remapped ID // TODO(gg): delete this when not needed
 		},
 	}
@@ -256,3 +256,31 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 
 	return parsedConfig, nil
 }
+
+var maxMintable = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)) // 2^128 - 1
+
+// packSecureMintReportForIntoUint224ForEVM packs the mintable and block number into a single uint224 so that it can be used as a price in the DF Cache contract
+// (top 32 - not used / middle 64 - block number / lower 128 - mintable amount)
+func packSecureMintReportForIntoUint224ForEVM(mintable *big.Int, blockNumber uint64) (*big.Int, error) {
+	// Handle nil mintable
+	if mintable == nil {
+		return nil, fmt.Errorf("mintable cannot be nil")
+	}
+
+	// Validate that mintable fits in 128 bits
+	if mintable.Cmp(maxMintable) > 0 {
+		return nil, fmt.Errorf("mintable amount %v exceeds maximum 128-bit value %v", mintable, maxMintable)
+	}
+
+	packed := big.NewInt(0)
+	// Put mintable in lower 128 bits
+	packed.Or(packed, mintable)
+
+	// Put block number in middle 64 bits (bits 128-191)
+	blockNumberAsBigInt := new(big.Int).SetUint64(blockNumber)
+	packed.Or(packed, new(big.Int).Lsh(blockNumberAsBigInt, 128))
+
+	return packed, nil
+}
+
+// TODO(gg): double-check if this implementation is correct

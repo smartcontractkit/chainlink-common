@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751671633794,
+  "lastUpdate": 1751875466878,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18522,6 +18522,48 @@ window.BENCHMARK_DATA = {
             "value": 28138,
             "unit": "ns/op",
             "extra": "42610 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4d69ccc453ecb049d713ee8338c96f15f92e4139",
+          "message": "Remove duplicate acquisitions of the readlock (#1337)\n\nCo-authored-by: Street <5597260+MStreet3@users.noreply.github.com>",
+          "timestamp": "2025-07-07T09:03:30+01:00",
+          "tree_id": "a20371bf3f2e1730be975d21670d994245e2069e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4d69ccc453ecb049d713ee8338c96f15f92e4139"
+        },
+        "date": 1751875465781,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.6,
+            "unit": "ns/op",
+            "extra": "3368468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 422.1,
+            "unit": "ns/op",
+            "extra": "2835970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28166,
+            "unit": "ns/op",
+            "extra": "42118 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751875466878,
+  "lastUpdate": 1751895265980,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18564,6 +18564,48 @@ window.BENCHMARK_DATA = {
             "value": 28166,
             "unit": "ns/op",
             "extra": "42118 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "27faefc9ce454c8aa2b1b7484e377ea3e8996bba",
+          "message": "Move proto helpers from capabilities (#1347)",
+          "timestamp": "2025-07-07T13:33:21Z",
+          "tree_id": "f032dcb49c5f16be348bf7b76533d5bc845a168d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/27faefc9ce454c8aa2b1b7484e377ea3e8996bba"
+        },
+        "date": 1751895264962,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.3,
+            "unit": "ns/op",
+            "extra": "2827957 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.6,
+            "unit": "ns/op",
+            "extra": "2789239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28260,
+            "unit": "ns/op",
+            "extra": "42499 times\n4 procs"
           }
         ]
       }

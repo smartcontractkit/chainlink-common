@@ -21,7 +21,7 @@ func (c *Client) SendRequest(runtime sdk.NodeRuntime, input *Request) sdk.Promis
 		return sdk.PromiseFromResult[*Response](nil, err)
 	}
 	return sdk.Then(runtime.CallCapability(&sdkpb.CapabilityRequest{
-		Id:      "http-actions@0.1.0",
+		Id:      "http-actions@1.0.0-alpha",
 		Payload: wrapped,
 		Method:  "SendRequest",
 	}), func(i *sdkpb.CapabilityResponse) (*Response, error) {

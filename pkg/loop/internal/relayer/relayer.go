@@ -16,6 +16,7 @@ import (
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
+	ks "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -50,7 +51,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (relayerID uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		ksID, ksRes, err := p.ServeNew("Keystore", func(s *grpc.Server) {
-			pb.RegisterKeystoreServer(s, &keystoreServer{impl: keystore})
+			pb.RegisterKeystoreServer(s, ks.NewServer(keystore))
 		})
 		if err != nil {
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve keystore: %w", err)
@@ -59,7 +60,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 
 		var ksCSARes net.Resource
 		ksCSAID, ksCSARes, err := p.ServeNew("CSAKeystore", func(s *grpc.Server) {
-			pb.RegisterKeystoreServer(s, &keystoreServer{impl: csaKeystore})
+			pb.RegisterKeystoreServer(s, ks.NewServer(csaKeystore))
 		})
 		if err != nil {
 			return 0, nil, fmt.Errorf("Failed to create relayer client: failed to serve CSA keystore: %w", err)
@@ -129,7 +130,7 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	crRes := net.Resource{Closer: capRegistryConn, Name: "CapabilityRegistry"}
 	capRegistry := capability.NewCapabilitiesRegistryClient(capRegistryConn, p.BrokerExt)
 
-	r, err := p.impl.NewRelayer(ctx, request.Config, newKeystoreClient(ksConn), newKeystoreClient(ksCSAConn), capRegistry)
+	r, err := p.impl.NewRelayer(ctx, request.Config, ks.NewClient(ksConn), ks.NewClient(ksCSAConn), capRegistry)
 	if err != nil {
 		p.CloseAll(ksRes, ksCSARes, crRes)
 		return nil, err
@@ -154,56 +155,6 @@ func (p *pluginRelayerServer) NewRelayer(ctx context.Context, request *pb.NewRel
 	}
 
 	return &pb.NewRelayerReply{RelayerID: id}, nil
-}
-
-var _ core.Keystore = (*keystoreClient)(nil)
-
-type keystoreClient struct {
-	grpc pb.KeystoreClient
-}
-
-func newKeystoreClient(cc *grpc.ClientConn) *keystoreClient {
-	return &keystoreClient{pb.NewKeystoreClient(cc)}
-}
-
-func (k *keystoreClient) Accounts(ctx context.Context) (accounts []string, err error) {
-	reply, err := k.grpc.Accounts(ctx, &emptypb.Empty{})
-	if err != nil {
-		return nil, err
-	}
-	return reply.Accounts, nil
-}
-
-func (k *keystoreClient) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
-	reply, err := k.grpc.Sign(ctx, &pb.SignRequest{Account: account, Data: data})
-	if err != nil {
-		return nil, err
-	}
-	return reply.SignedData, nil
-}
-
-var _ pb.KeystoreServer = (*keystoreServer)(nil)
-
-type keystoreServer struct {
-	pb.UnimplementedKeystoreServer
-
-	impl core.Keystore
-}
-
-func (k *keystoreServer) Accounts(ctx context.Context, _ *emptypb.Empty) (*pb.AccountsReply, error) {
-	as, err := k.impl.Accounts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.AccountsReply{Accounts: as}, nil
-}
-
-func (k *keystoreServer) Sign(ctx context.Context, request *pb.SignRequest) (*pb.SignReply, error) {
-	signed, err := k.impl.Sign(ctx, request.Account, request.Data)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.SignReply{SignedData: signed}, nil
 }
 
 // relayerClient adapts a GRPC [pb.RelayerClient] to implement [Relayer].
@@ -253,6 +204,7 @@ func (r *relayerClient) NewConfigProvider(ctx context.Context, rargs types.Relay
 				ContractID:    rargs.ContractID,
 				New:           rargs.New,
 				RelayConfig:   rargs.RelayConfig,
+				ProviderType:  rargs.ProviderType,
 			},
 		})
 		if err != nil {
@@ -488,6 +440,7 @@ func (r *relayerServer) NewConfigProvider(ctx context.Context, request *pb.NewCo
 		ContractID:    request.RelayArgs.ContractID,
 		New:           request.RelayArgs.New,
 		RelayConfig:   request.RelayArgs.RelayConfig,
+		ProviderType:  request.RelayArgs.ProviderType,
 	})
 	if err != nil {
 		return nil, err

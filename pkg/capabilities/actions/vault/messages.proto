@@ -41,37 +41,60 @@ message GetSecretsResponse {
   repeated SecretResponse responses = 1;
 }
 
-message CreateSecretRequest {
-  // Unique identifier for the request
+message EncryptedSecret {
+  SecretIdentifier id = 1;
+  string encrypted_value = 2;
+}
+
+message CreateSecretsRequest {
   string request_id = 1;
-  // ID of the secret to be created
-  SecretIdentifier id = 2;
-  string encrypted_secret = 5;
+  repeated EncryptedSecret encrypted_secrets = 2;
 }
 
 message CreateSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
 }
 
-message UpdateSecretRequest {
+message CreateSecretsResponse {
+  repeated CreateSecretResponse responses = 1;
+}
+
+message UpdateSecretsRequest {
   string request_id = 1;
-  SecretIdentifier id = 2;
-  string encrypted_secret = 3;
+  repeated EncryptedSecret encrypted_secrets = 2;
 }
 
 message UpdateSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
 }
 
-message DeleteSecretRequest {
+message UpdateSecretsResponse {
+  repeated UpdateSecretResponse responses = 1;
+}
+
+message DeleteSecretsRequest {
   string request_id = 1;
-  SecretIdentifier id = 2;
+  repeated SecretIdentifier ids = 2;
 }
 
 message DeleteSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
 }
 
-message ListSecretIdentifiers {
-  string owner = 1;
-  string namespace = 2;
+message DeleteSecretsResponse {
+  repeated DeleteSecretResponse responses = 1;
+}
+
+message ListSecretIdentifiersRequest {
+  string request_id = 1;
+  string owner = 2;
+  string namespace = 3;
 }
 
 message ListSecretIdentifiersResponse {

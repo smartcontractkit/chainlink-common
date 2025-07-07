@@ -209,8 +209,7 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	// abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
-			FeedIDOutputFieldName: chainSelectorAsFeedId,
-			// RawReportOutputFieldName:  packedReport, // TODO(gg): check if we need this
+			FeedIDOutputFieldName:    chainSelectorAsFeedId,
 			PriceOutputFieldName:     smReportAsPrice,
 			TimestampOutputFieldName: int64(report.Block), // TODO(gg): not sure if we want this
 		},

@@ -194,8 +194,7 @@ func (a *SecureMintAggregator) extractAndValidateReports(lggr logger.Logger, obs
 	return validReports, nil
 }
 
-// TODO(gg): update this piece to comply with KeystoneForwarder/DF Cache
-// createOutcome creates the final aggregation outcome in the same format as feeds aggregator
+// createOutcome creates the final aggregation outcome which can be sent to the KeystoneForwarder
 func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureMintReport) (*types.AggregationOutcome, error) {
 	// Convert chain selector to bytes for feed ID TODO(gg): check if this works for us
 	var chainSelectorAsFeedId [32]byte
@@ -207,7 +206,7 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	}
 
 	// Create the output in the same format as the feeds aggregator
-	//abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
+	// abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
 			FeedIDOutputFieldName: chainSelectorAsFeedId,

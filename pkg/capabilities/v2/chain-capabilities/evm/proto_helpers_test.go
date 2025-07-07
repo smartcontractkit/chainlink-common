@@ -3,11 +3,12 @@ package evm_test
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvertFilterFromProto(t *testing.T) {
@@ -44,14 +45,13 @@ func TestConvertFilterFromProto(t *testing.T) {
 		}
 
 		// expected outputs from conversions
-		expectedHash := common.Hash(validBlockHash)
-		expectedAddr := common.Address(validAddress)
+		expectedAddr := [20]byte(validAddress)
 		expectedTopics := evm.ConvertTopicsFromProto(validTopics)
 
 		result, err := evm.ConvertFilterFromProto(input)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.ElementsMatch(t, expectedHash, result.BlockHash)
+		assert.ElementsMatch(t, validBlockHash, result.BlockHash)
 		assert.Equal(t, valuespb.NewIntFromBigInt(fromBlock), result.FromBlock)
 		assert.Equal(t, valuespb.NewIntFromBigInt(toBlock), result.ToBlock)
 		assert.ElementsMatch(t, [][20]byte{expectedAddr}, result.Addresses)
@@ -137,7 +137,7 @@ func TestConvertHeadFromProto(t *testing.T) {
 		}
 
 		result, err := evm.ConvertHeadFromProto(proto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, timestamp, result.Timestamp)
 		assert.Equal(t, evmtypes.Hash(hash), result.Hash)
 		assert.Equal(t, evmtypes.Hash(parent), result.ParentHash)
@@ -181,7 +181,7 @@ func TestConvertReceiptFromProto(t *testing.T) {
 		}
 
 		result, err := evm.ConvertReceiptFromProto(proto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, evmtypes.Hash(txHash), result.TxHash)
 		assert.Equal(t, evmtypes.Address(addr), result.ContractAddress)
 		assert.Equal(t, evmtypes.Hash(blockHash), result.BlockHash)
@@ -220,7 +220,7 @@ func TestConvertTransactionFromProto(t *testing.T) {
 		}
 
 		result, err := evm.ConvertTransactionFromProto(proto)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, evmtypes.Address(to), result.To)
 		assert.Equal(t, []byte{0x01, 0x02}, result.Data)
 		assert.Equal(t, evmtypes.Hash(hash), result.Hash)

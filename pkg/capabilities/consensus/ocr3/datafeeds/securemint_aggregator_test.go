@@ -196,13 +196,17 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				report, ok := reportsList[0].(map[string]any)
 				require.True(t, ok)
 
-				// Verify feed ID (should be the chain selector as bytes)
-				feedIDBytes, ok := report[FeedIDOutputFieldName].([]byte)
+				// Verify dataID
+				dataIDBytes, ok := report[FeedIDOutputFieldName].([]byte)
 				require.True(t, ok)
-				// The implementation creates a 32-byte array with the chain selector right-aligned
+				// Should be 0x04 + chain selector as bytes + right padded with 0s
 				var expectedChainSelectorBytes [32]byte
-				binary.BigEndian.PutUint64(expectedChainSelectorBytes[24:], uint64(tc.expectedChainSelector))
-				require.Equal(t, expectedChainSelectorBytes[:], feedIDBytes)
+				expectedChainSelectorBytes[0] = 0x04
+				binary.BigEndian.PutUint64(expectedChainSelectorBytes[1:], uint64(tc.expectedChainSelector))
+				for i := 9; i < 32; i++ {
+					expectedChainSelectorBytes[i] = 0x00
+				}
+				require.Equal(t, expectedChainSelectorBytes[:], dataIDBytes)
 
 				// Verify other fields exist
 				price, ok := report[PriceOutputFieldName].(*big.Int)

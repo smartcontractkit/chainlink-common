@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-const AddressLength = 20
-
-// represents evm-style address
-type Address = [AddressLength]byte
-
 type ExitCode = int32
 
 type BOC = []byte

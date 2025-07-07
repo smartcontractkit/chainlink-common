@@ -7,6 +7,7 @@
 package consensus
 
 import (
+	pb1 "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -25,19 +26,24 @@ var File_capabilities_internal_consensus_v1alpha_consensus_proto protoreflect.Fi
 
 const file_capabilities_internal_consensus_v1alpha_consensus_proto_rawDesc = "" +
 	"\n" +
-	"7capabilities/internal/consensus/v1alpha/consensus.proto\x12'capabilities.internal.consensus.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto2w\n" +
-	"\tConsensus\x12K\n" +
-	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x1d.sdk.v1alpha.ConsensusOutputs\x1a\x1d\x82\xb5\x18\x19\b\x01\x12\x15consensus@1.0.0-alphab\x06proto3"
+	"7capabilities/internal/consensus/v1alpha/consensus.proto\x12'capabilities.internal.consensus.v1alpha\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\x1a\x16values/v1/values.proto2\xad\x01\n" +
+	"\tConsensus\x12>\n" +
+	"\x06Simple\x12\".sdk.v1alpha.SimpleConsensusInputs\x1a\x10.values.v1.Value\x12A\n" +
+	"\x06Report\x12\x1a.sdk.v1alpha.ReportRequest\x1a\x1b.sdk.v1alpha.ReportResponse\x1a\x1d\x82\xb5\x18\x19\b\x01\x12\x15consensus@1.0.0-alphab\x06proto3"
 
 var file_capabilities_internal_consensus_v1alpha_consensus_proto_goTypes = []any{
 	(*pb.SimpleConsensusInputs)(nil), // 0: sdk.v1alpha.SimpleConsensusInputs
-	(*pb.ConsensusOutputs)(nil),      // 1: sdk.v1alpha.ConsensusOutputs
+	(*pb.ReportRequest)(nil),         // 1: sdk.v1alpha.ReportRequest
+	(*pb1.Value)(nil),                // 2: values.v1.Value
+	(*pb.ReportResponse)(nil),        // 3: sdk.v1alpha.ReportResponse
 }
 var file_capabilities_internal_consensus_v1alpha_consensus_proto_depIdxs = []int32{
 	0, // 0: capabilities.internal.consensus.v1alpha.Consensus.Simple:input_type -> sdk.v1alpha.SimpleConsensusInputs
-	1, // 1: capabilities.internal.consensus.v1alpha.Consensus.Simple:output_type -> sdk.v1alpha.ConsensusOutputs
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	1, // 1: capabilities.internal.consensus.v1alpha.Consensus.Report:input_type -> sdk.v1alpha.ReportRequest
+	2, // 2: capabilities.internal.consensus.v1alpha.Consensus.Simple:output_type -> values.v1.Value
+	3, // 3: capabilities.internal.consensus.v1alpha.Consensus.Report:output_type -> sdk.v1alpha.ReportResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

@@ -277,9 +277,6 @@ type ConsensusDescriptor struct {
 	//	*ConsensusDescriptor_Aggregation
 	//	*ConsensusDescriptor_FieldsMap
 	Descriptor_   isConsensusDescriptor_Descriptor_ `protobuf_oneof:"descriptor"`
-	EncoderName   string                            `protobuf:"bytes,3,opt,name=encoder_name,json=encoderName,proto3" json:"encoder_name,omitempty"`
-	SigningAlgo   string                            `protobuf:"bytes,4,opt,name=signing_algo,json=signingAlgo,proto3" json:"signing_algo,omitempty"`
-	HashingAlgo   string                            `protobuf:"bytes,5,opt,name=hashing_algo,json=hashingAlgo,proto3" json:"hashing_algo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -339,27 +336,6 @@ func (x *ConsensusDescriptor) GetFieldsMap() *FieldsMap {
 	return nil
 }
 
-func (x *ConsensusDescriptor) GetEncoderName() string {
-	if x != nil {
-		return x.EncoderName
-	}
-	return ""
-}
-
-func (x *ConsensusDescriptor) GetSigningAlgo() string {
-	if x != nil {
-		return x.SigningAlgo
-	}
-	return ""
-}
-
-func (x *ConsensusDescriptor) GetHashingAlgo() string {
-	if x != nil {
-		return x.HashingAlgo
-	}
-	return ""
-}
-
 type isConsensusDescriptor_Descriptor_ interface {
 	isConsensusDescriptor_Descriptor_()
 }
@@ -376,31 +352,30 @@ func (*ConsensusDescriptor_Aggregation) isConsensusDescriptor_Descriptor_() {}
 
 func (*ConsensusDescriptor_FieldsMap) isConsensusDescriptor_Descriptor_() {}
 
-type ConsensusOutputs struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ConfigDigest  []byte                 `protobuf:"bytes,1,opt,name=config_digest,json=configDigest,proto3" json:"config_digest,omitempty"`
-	SeqNr         uint64                 `protobuf:"varint,2,opt,name=seq_nr,json=seqNr,proto3" json:"seq_nr,omitempty"`
-	ReportContext []byte                 `protobuf:"bytes,3,opt,name=report_context,json=reportContext,proto3" json:"report_context,omitempty"` // combination of seq_nr and config_digest
-	RawReport     []byte                 `protobuf:"bytes,4,opt,name=raw_report,json=rawReport,proto3" json:"raw_report,omitempty"`
-	Sigs          []*AttributedSignature `protobuf:"bytes,5,rep,name=sigs,proto3" json:"sigs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type ReportRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	EncodedPayload []byte                 `protobuf:"bytes,1,opt,name=encoded_payload,json=encodedPayload,proto3" json:"encoded_payload,omitempty"`
+	EncoderName    string                 `protobuf:"bytes,2,opt,name=encoder_name,json=encoderName,proto3" json:"encoder_name,omitempty"`
+	SigningAlgo    string                 `protobuf:"bytes,3,opt,name=signing_algo,json=signingAlgo,proto3" json:"signing_algo,omitempty"`
+	HashingAlgo    string                 `protobuf:"bytes,4,opt,name=hashing_algo,json=hashingAlgo,proto3" json:"hashing_algo,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
-func (x *ConsensusOutputs) Reset() {
-	*x = ConsensusOutputs{}
+func (x *ReportRequest) Reset() {
+	*x = ReportRequest{}
 	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConsensusOutputs) String() string {
+func (x *ReportRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConsensusOutputs) ProtoMessage() {}
+func (*ReportRequest) ProtoMessage() {}
 
-func (x *ConsensusOutputs) ProtoReflect() protoreflect.Message {
+func (x *ReportRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -412,40 +387,109 @@ func (x *ConsensusOutputs) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConsensusOutputs.ProtoReflect.Descriptor instead.
-func (*ConsensusOutputs) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportRequest.ProtoReflect.Descriptor instead.
+func (*ReportRequest) Descriptor() ([]byte, []int) {
 	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ConsensusOutputs) GetConfigDigest() []byte {
+func (x *ReportRequest) GetEncodedPayload() []byte {
+	if x != nil {
+		return x.EncodedPayload
+	}
+	return nil
+}
+
+func (x *ReportRequest) GetEncoderName() string {
+	if x != nil {
+		return x.EncoderName
+	}
+	return ""
+}
+
+func (x *ReportRequest) GetSigningAlgo() string {
+	if x != nil {
+		return x.SigningAlgo
+	}
+	return ""
+}
+
+func (x *ReportRequest) GetHashingAlgo() string {
+	if x != nil {
+		return x.HashingAlgo
+	}
+	return ""
+}
+
+type ReportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConfigDigest  []byte                 `protobuf:"bytes,1,opt,name=config_digest,json=configDigest,proto3" json:"config_digest,omitempty"`
+	SeqNr         uint64                 `protobuf:"varint,2,opt,name=seq_nr,json=seqNr,proto3" json:"seq_nr,omitempty"`
+	ReportContext []byte                 `protobuf:"bytes,3,opt,name=report_context,json=reportContext,proto3" json:"report_context,omitempty"` // combination of seq_nr and config_digest
+	RawReport     []byte                 `protobuf:"bytes,4,opt,name=raw_report,json=rawReport,proto3" json:"raw_report,omitempty"`
+	Sigs          []*AttributedSignature `protobuf:"bytes,5,rep,name=sigs,proto3" json:"sigs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportResponse) Reset() {
+	*x = ReportResponse{}
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportResponse) ProtoMessage() {}
+
+func (x *ReportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportResponse.ProtoReflect.Descriptor instead.
+func (*ReportResponse) Descriptor() ([]byte, []int) {
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ReportResponse) GetConfigDigest() []byte {
 	if x != nil {
 		return x.ConfigDigest
 	}
 	return nil
 }
 
-func (x *ConsensusOutputs) GetSeqNr() uint64 {
+func (x *ReportResponse) GetSeqNr() uint64 {
 	if x != nil {
 		return x.SeqNr
 	}
 	return 0
 }
 
-func (x *ConsensusOutputs) GetReportContext() []byte {
+func (x *ReportResponse) GetReportContext() []byte {
 	if x != nil {
 		return x.ReportContext
 	}
 	return nil
 }
 
-func (x *ConsensusOutputs) GetRawReport() []byte {
+func (x *ReportResponse) GetRawReport() []byte {
 	if x != nil {
 		return x.RawReport
 	}
 	return nil
 }
 
-func (x *ConsensusOutputs) GetSigs() []*AttributedSignature {
+func (x *ReportResponse) GetSigs() []*AttributedSignature {
 	if x != nil {
 		return x.Sigs
 	}
@@ -462,7 +506,7 @@ type AttributedSignature struct {
 
 func (x *AttributedSignature) Reset() {
 	*x = AttributedSignature{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[4]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -474,7 +518,7 @@ func (x *AttributedSignature) String() string {
 func (*AttributedSignature) ProtoMessage() {}
 
 func (x *AttributedSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[4]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -487,7 +531,7 @@ func (x *AttributedSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributedSignature.ProtoReflect.Descriptor instead.
 func (*AttributedSignature) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{4}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AttributedSignature) GetSignature() []byte {
@@ -516,7 +560,7 @@ type CapabilityRequest struct {
 
 func (x *CapabilityRequest) Reset() {
 	*x = CapabilityRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[5]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -528,7 +572,7 @@ func (x *CapabilityRequest) String() string {
 func (*CapabilityRequest) ProtoMessage() {}
 
 func (x *CapabilityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[5]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -541,7 +585,7 @@ func (x *CapabilityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityRequest.ProtoReflect.Descriptor instead.
 func (*CapabilityRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{5}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CapabilityRequest) GetId() string {
@@ -585,7 +629,7 @@ type CapabilityResponse struct {
 
 func (x *CapabilityResponse) Reset() {
 	*x = CapabilityResponse{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[6]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -597,7 +641,7 @@ func (x *CapabilityResponse) String() string {
 func (*CapabilityResponse) ProtoMessage() {}
 
 func (x *CapabilityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[6]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -610,7 +654,7 @@ func (x *CapabilityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityResponse.ProtoReflect.Descriptor instead.
 func (*CapabilityResponse) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{6}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CapabilityResponse) GetResponse() isCapabilityResponse_Response {
@@ -665,7 +709,7 @@ type TriggerSubscription struct {
 
 func (x *TriggerSubscription) Reset() {
 	*x = TriggerSubscription{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[7]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -677,7 +721,7 @@ func (x *TriggerSubscription) String() string {
 func (*TriggerSubscription) ProtoMessage() {}
 
 func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[7]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -690,7 +734,7 @@ func (x *TriggerSubscription) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscription.ProtoReflect.Descriptor instead.
 func (*TriggerSubscription) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{7}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TriggerSubscription) GetId() string {
@@ -723,7 +767,7 @@ type TriggerSubscriptionRequest struct {
 
 func (x *TriggerSubscriptionRequest) Reset() {
 	*x = TriggerSubscriptionRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[8]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -735,7 +779,7 @@ func (x *TriggerSubscriptionRequest) String() string {
 func (*TriggerSubscriptionRequest) ProtoMessage() {}
 
 func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[8]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -748,7 +792,7 @@ func (x *TriggerSubscriptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSubscriptionRequest.ProtoReflect.Descriptor instead.
 func (*TriggerSubscriptionRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{8}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *TriggerSubscriptionRequest) GetSubscriptions() []*TriggerSubscription {
@@ -768,7 +812,7 @@ type Trigger struct {
 
 func (x *Trigger) Reset() {
 	*x = Trigger{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[9]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -780,7 +824,7 @@ func (x *Trigger) String() string {
 func (*Trigger) ProtoMessage() {}
 
 func (x *Trigger) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[9]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -793,7 +837,7 @@ func (x *Trigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trigger.ProtoReflect.Descriptor instead.
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{9}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Trigger) GetId() uint64 {
@@ -819,7 +863,7 @@ type AwaitCapabilitiesRequest struct {
 
 func (x *AwaitCapabilitiesRequest) Reset() {
 	*x = AwaitCapabilitiesRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[10]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -831,7 +875,7 @@ func (x *AwaitCapabilitiesRequest) String() string {
 func (*AwaitCapabilitiesRequest) ProtoMessage() {}
 
 func (x *AwaitCapabilitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[10]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -844,7 +888,7 @@ func (x *AwaitCapabilitiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwaitCapabilitiesRequest.ProtoReflect.Descriptor instead.
 func (*AwaitCapabilitiesRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{10}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *AwaitCapabilitiesRequest) GetIds() []int32 {
@@ -863,7 +907,7 @@ type AwaitCapabilitiesResponse struct {
 
 func (x *AwaitCapabilitiesResponse) Reset() {
 	*x = AwaitCapabilitiesResponse{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[11]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -875,7 +919,7 @@ func (x *AwaitCapabilitiesResponse) String() string {
 func (*AwaitCapabilitiesResponse) ProtoMessage() {}
 
 func (x *AwaitCapabilitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[11]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +932,7 @@ func (x *AwaitCapabilitiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwaitCapabilitiesResponse.ProtoReflect.Descriptor instead.
 func (*AwaitCapabilitiesResponse) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{11}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *AwaitCapabilitiesResponse) GetResponses() map[int32]*CapabilityResponse {
@@ -913,7 +957,7 @@ type ExecuteRequest struct {
 
 func (x *ExecuteRequest) Reset() {
 	*x = ExecuteRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[12]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +969,7 @@ func (x *ExecuteRequest) String() string {
 func (*ExecuteRequest) ProtoMessage() {}
 
 func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[12]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +982,7 @@ func (x *ExecuteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{12}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ExecuteRequest) GetConfig() []byte {
@@ -1010,7 +1054,7 @@ type ExecutionResult struct {
 
 func (x *ExecutionResult) Reset() {
 	*x = ExecutionResult{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[13]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1022,7 +1066,7 @@ func (x *ExecutionResult) String() string {
 func (*ExecutionResult) ProtoMessage() {}
 
 func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[13]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +1079,7 @@ func (x *ExecutionResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionResult.ProtoReflect.Descriptor instead.
 func (*ExecutionResult) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{13}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ExecutionResult) GetResult() isExecutionResult_Result {
@@ -1104,7 +1148,7 @@ type GetSecretsRequest struct {
 
 func (x *GetSecretsRequest) Reset() {
 	*x = GetSecretsRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[14]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1116,7 +1160,7 @@ func (x *GetSecretsRequest) String() string {
 func (*GetSecretsRequest) ProtoMessage() {}
 
 func (x *GetSecretsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[14]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1129,7 +1173,7 @@ func (x *GetSecretsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSecretsRequest.ProtoReflect.Descriptor instead.
 func (*GetSecretsRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{14}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetSecretsRequest) GetRequests() []*SecretRequest {
@@ -1155,7 +1199,7 @@ type AwaitSecretsRequest struct {
 
 func (x *AwaitSecretsRequest) Reset() {
 	*x = AwaitSecretsRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[15]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1167,7 +1211,7 @@ func (x *AwaitSecretsRequest) String() string {
 func (*AwaitSecretsRequest) ProtoMessage() {}
 
 func (x *AwaitSecretsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[15]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1180,7 +1224,7 @@ func (x *AwaitSecretsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwaitSecretsRequest.ProtoReflect.Descriptor instead.
 func (*AwaitSecretsRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{15}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AwaitSecretsRequest) GetIds() []int32 {
@@ -1199,7 +1243,7 @@ type AwaitSecretsResponse struct {
 
 func (x *AwaitSecretsResponse) Reset() {
 	*x = AwaitSecretsResponse{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[16]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1211,7 +1255,7 @@ func (x *AwaitSecretsResponse) String() string {
 func (*AwaitSecretsResponse) ProtoMessage() {}
 
 func (x *AwaitSecretsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[16]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1224,7 +1268,7 @@ func (x *AwaitSecretsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwaitSecretsResponse.ProtoReflect.Descriptor instead.
 func (*AwaitSecretsResponse) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{16}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AwaitSecretsResponse) GetResponses() map[int32]*SecretResponses {
@@ -1244,7 +1288,7 @@ type SecretRequest struct {
 
 func (x *SecretRequest) Reset() {
 	*x = SecretRequest{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[17]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1256,7 +1300,7 @@ func (x *SecretRequest) String() string {
 func (*SecretRequest) ProtoMessage() {}
 
 func (x *SecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[17]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1269,7 +1313,7 @@ func (x *SecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecretRequest.ProtoReflect.Descriptor instead.
 func (*SecretRequest) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{17}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SecretRequest) GetId() string {
@@ -1298,7 +1342,7 @@ type Secret struct {
 
 func (x *Secret) Reset() {
 	*x = Secret{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[18]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1310,7 +1354,7 @@ func (x *Secret) String() string {
 func (*Secret) ProtoMessage() {}
 
 func (x *Secret) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[18]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1323,7 +1367,7 @@ func (x *Secret) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Secret.ProtoReflect.Descriptor instead.
 func (*Secret) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{18}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Secret) GetId() string {
@@ -1366,7 +1410,7 @@ type SecretError struct {
 
 func (x *SecretError) Reset() {
 	*x = SecretError{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[19]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1378,7 +1422,7 @@ func (x *SecretError) String() string {
 func (*SecretError) ProtoMessage() {}
 
 func (x *SecretError) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[19]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1391,7 +1435,7 @@ func (x *SecretError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecretError.ProtoReflect.Descriptor instead.
 func (*SecretError) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{19}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *SecretError) GetId() string {
@@ -1435,7 +1479,7 @@ type SecretResponse struct {
 
 func (x *SecretResponse) Reset() {
 	*x = SecretResponse{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[20]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1447,7 +1491,7 @@ func (x *SecretResponse) String() string {
 func (*SecretResponse) ProtoMessage() {}
 
 func (x *SecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[20]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1460,7 +1504,7 @@ func (x *SecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecretResponse.ProtoReflect.Descriptor instead.
 func (*SecretResponse) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{20}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *SecretResponse) GetResponse() isSecretResponse_Response {
@@ -1513,7 +1557,7 @@ type SecretResponses struct {
 
 func (x *SecretResponses) Reset() {
 	*x = SecretResponses{}
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[21]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1525,7 +1569,7 @@ func (x *SecretResponses) String() string {
 func (*SecretResponses) ProtoMessage() {}
 
 func (x *SecretResponses) ProtoReflect() protoreflect.Message {
-	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[21]
+	mi := &file_sdk_v1alpha_sdk_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1538,7 +1582,7 @@ func (x *SecretResponses) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecretResponses.ProtoReflect.Descriptor instead.
 func (*SecretResponses) Descriptor() ([]byte, []int) {
-	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{21}
+	return file_sdk_v1alpha_sdk_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SecretResponses) GetResponses() []*SecretResponse {
@@ -1563,17 +1607,19 @@ const file_sdk_v1alpha_sdk_proto_rawDesc = "" +
 	"\x06fields\x18\x01 \x03(\v2\".sdk.v1alpha.FieldsMap.FieldsEntryR\x06fields\x1a[\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x126\n" +
-	"\x05value\x18\x02 \x01(\v2 .sdk.v1alpha.ConsensusDescriptorR\x05value:\x028\x01\"\x87\x02\n" +
+	"\x05value\x18\x02 \x01(\v2 .sdk.v1alpha.ConsensusDescriptorR\x05value:\x028\x01\"\x9e\x01\n" +
 	"\x13ConsensusDescriptor\x12@\n" +
 	"\vaggregation\x18\x01 \x01(\x0e2\x1c.sdk.v1alpha.AggregationTypeH\x00R\vaggregation\x127\n" +
 	"\n" +
-	"fields_map\x18\x02 \x01(\v2\x16.sdk.v1alpha.FieldsMapH\x00R\tfieldsMap\x12!\n" +
-	"\fencoder_name\x18\x03 \x01(\tR\vencoderName\x12!\n" +
-	"\fsigning_algo\x18\x04 \x01(\tR\vsigningAlgo\x12!\n" +
-	"\fhashing_algo\x18\x05 \x01(\tR\vhashingAlgoB\f\n" +
+	"fields_map\x18\x02 \x01(\v2\x16.sdk.v1alpha.FieldsMapH\x00R\tfieldsMapB\f\n" +
 	"\n" +
-	"descriptor\"\xca\x01\n" +
-	"\x10ConsensusOutputs\x12#\n" +
+	"descriptor\"\xa1\x01\n" +
+	"\rReportRequest\x12'\n" +
+	"\x0fencoded_payload\x18\x01 \x01(\fR\x0eencodedPayload\x12!\n" +
+	"\fencoder_name\x18\x02 \x01(\tR\vencoderName\x12!\n" +
+	"\fsigning_algo\x18\x03 \x01(\tR\vsigningAlgo\x12!\n" +
+	"\fhashing_algo\x18\x04 \x01(\tR\vhashingAlgo\"\xc8\x01\n" +
+	"\x0eReportResponse\x12#\n" +
 	"\rconfig_digest\x18\x01 \x01(\fR\fconfigDigest\x12\x15\n" +
 	"\x06seq_nr\x18\x02 \x01(\x04R\x05seqNr\x12%\n" +
 	"\x0ereport_context\x18\x03 \x01(\fR\rreportContext\x12\x1d\n" +
@@ -1676,65 +1722,66 @@ func file_sdk_v1alpha_sdk_proto_rawDescGZIP() []byte {
 }
 
 var file_sdk_v1alpha_sdk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_sdk_v1alpha_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_sdk_v1alpha_sdk_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_sdk_v1alpha_sdk_proto_goTypes = []any{
 	(AggregationType)(0),               // 0: sdk.v1alpha.AggregationType
 	(Mode)(0),                          // 1: sdk.v1alpha.Mode
 	(*SimpleConsensusInputs)(nil),      // 2: sdk.v1alpha.SimpleConsensusInputs
 	(*FieldsMap)(nil),                  // 3: sdk.v1alpha.FieldsMap
 	(*ConsensusDescriptor)(nil),        // 4: sdk.v1alpha.ConsensusDescriptor
-	(*ConsensusOutputs)(nil),           // 5: sdk.v1alpha.ConsensusOutputs
-	(*AttributedSignature)(nil),        // 6: sdk.v1alpha.AttributedSignature
-	(*CapabilityRequest)(nil),          // 7: sdk.v1alpha.CapabilityRequest
-	(*CapabilityResponse)(nil),         // 8: sdk.v1alpha.CapabilityResponse
-	(*TriggerSubscription)(nil),        // 9: sdk.v1alpha.TriggerSubscription
-	(*TriggerSubscriptionRequest)(nil), // 10: sdk.v1alpha.TriggerSubscriptionRequest
-	(*Trigger)(nil),                    // 11: sdk.v1alpha.Trigger
-	(*AwaitCapabilitiesRequest)(nil),   // 12: sdk.v1alpha.AwaitCapabilitiesRequest
-	(*AwaitCapabilitiesResponse)(nil),  // 13: sdk.v1alpha.AwaitCapabilitiesResponse
-	(*ExecuteRequest)(nil),             // 14: sdk.v1alpha.ExecuteRequest
-	(*ExecutionResult)(nil),            // 15: sdk.v1alpha.ExecutionResult
-	(*GetSecretsRequest)(nil),          // 16: sdk.v1alpha.GetSecretsRequest
-	(*AwaitSecretsRequest)(nil),        // 17: sdk.v1alpha.AwaitSecretsRequest
-	(*AwaitSecretsResponse)(nil),       // 18: sdk.v1alpha.AwaitSecretsResponse
-	(*SecretRequest)(nil),              // 19: sdk.v1alpha.SecretRequest
-	(*Secret)(nil),                     // 20: sdk.v1alpha.Secret
-	(*SecretError)(nil),                // 21: sdk.v1alpha.SecretError
-	(*SecretResponse)(nil),             // 22: sdk.v1alpha.SecretResponse
-	(*SecretResponses)(nil),            // 23: sdk.v1alpha.SecretResponses
-	nil,                                // 24: sdk.v1alpha.FieldsMap.FieldsEntry
-	nil,                                // 25: sdk.v1alpha.AwaitCapabilitiesResponse.ResponsesEntry
-	nil,                                // 26: sdk.v1alpha.AwaitSecretsResponse.ResponsesEntry
-	(*pb.Value)(nil),                   // 27: values.v1.Value
-	(*anypb.Any)(nil),                  // 28: google.protobuf.Any
-	(*emptypb.Empty)(nil),              // 29: google.protobuf.Empty
+	(*ReportRequest)(nil),              // 5: sdk.v1alpha.ReportRequest
+	(*ReportResponse)(nil),             // 6: sdk.v1alpha.ReportResponse
+	(*AttributedSignature)(nil),        // 7: sdk.v1alpha.AttributedSignature
+	(*CapabilityRequest)(nil),          // 8: sdk.v1alpha.CapabilityRequest
+	(*CapabilityResponse)(nil),         // 9: sdk.v1alpha.CapabilityResponse
+	(*TriggerSubscription)(nil),        // 10: sdk.v1alpha.TriggerSubscription
+	(*TriggerSubscriptionRequest)(nil), // 11: sdk.v1alpha.TriggerSubscriptionRequest
+	(*Trigger)(nil),                    // 12: sdk.v1alpha.Trigger
+	(*AwaitCapabilitiesRequest)(nil),   // 13: sdk.v1alpha.AwaitCapabilitiesRequest
+	(*AwaitCapabilitiesResponse)(nil),  // 14: sdk.v1alpha.AwaitCapabilitiesResponse
+	(*ExecuteRequest)(nil),             // 15: sdk.v1alpha.ExecuteRequest
+	(*ExecutionResult)(nil),            // 16: sdk.v1alpha.ExecutionResult
+	(*GetSecretsRequest)(nil),          // 17: sdk.v1alpha.GetSecretsRequest
+	(*AwaitSecretsRequest)(nil),        // 18: sdk.v1alpha.AwaitSecretsRequest
+	(*AwaitSecretsResponse)(nil),       // 19: sdk.v1alpha.AwaitSecretsResponse
+	(*SecretRequest)(nil),              // 20: sdk.v1alpha.SecretRequest
+	(*Secret)(nil),                     // 21: sdk.v1alpha.Secret
+	(*SecretError)(nil),                // 22: sdk.v1alpha.SecretError
+	(*SecretResponse)(nil),             // 23: sdk.v1alpha.SecretResponse
+	(*SecretResponses)(nil),            // 24: sdk.v1alpha.SecretResponses
+	nil,                                // 25: sdk.v1alpha.FieldsMap.FieldsEntry
+	nil,                                // 26: sdk.v1alpha.AwaitCapabilitiesResponse.ResponsesEntry
+	nil,                                // 27: sdk.v1alpha.AwaitSecretsResponse.ResponsesEntry
+	(*pb.Value)(nil),                   // 28: values.v1.Value
+	(*anypb.Any)(nil),                  // 29: google.protobuf.Any
+	(*emptypb.Empty)(nil),              // 30: google.protobuf.Empty
 }
 var file_sdk_v1alpha_sdk_proto_depIdxs = []int32{
-	27, // 0: sdk.v1alpha.SimpleConsensusInputs.value:type_name -> values.v1.Value
+	28, // 0: sdk.v1alpha.SimpleConsensusInputs.value:type_name -> values.v1.Value
 	4,  // 1: sdk.v1alpha.SimpleConsensusInputs.descriptors:type_name -> sdk.v1alpha.ConsensusDescriptor
-	27, // 2: sdk.v1alpha.SimpleConsensusInputs.default:type_name -> values.v1.Value
-	24, // 3: sdk.v1alpha.FieldsMap.fields:type_name -> sdk.v1alpha.FieldsMap.FieldsEntry
+	28, // 2: sdk.v1alpha.SimpleConsensusInputs.default:type_name -> values.v1.Value
+	25, // 3: sdk.v1alpha.FieldsMap.fields:type_name -> sdk.v1alpha.FieldsMap.FieldsEntry
 	0,  // 4: sdk.v1alpha.ConsensusDescriptor.aggregation:type_name -> sdk.v1alpha.AggregationType
 	3,  // 5: sdk.v1alpha.ConsensusDescriptor.fields_map:type_name -> sdk.v1alpha.FieldsMap
-	6,  // 6: sdk.v1alpha.ConsensusOutputs.sigs:type_name -> sdk.v1alpha.AttributedSignature
-	28, // 7: sdk.v1alpha.CapabilityRequest.payload:type_name -> google.protobuf.Any
-	28, // 8: sdk.v1alpha.CapabilityResponse.payload:type_name -> google.protobuf.Any
-	28, // 9: sdk.v1alpha.TriggerSubscription.payload:type_name -> google.protobuf.Any
-	9,  // 10: sdk.v1alpha.TriggerSubscriptionRequest.subscriptions:type_name -> sdk.v1alpha.TriggerSubscription
-	28, // 11: sdk.v1alpha.Trigger.payload:type_name -> google.protobuf.Any
-	25, // 12: sdk.v1alpha.AwaitCapabilitiesResponse.responses:type_name -> sdk.v1alpha.AwaitCapabilitiesResponse.ResponsesEntry
-	29, // 13: sdk.v1alpha.ExecuteRequest.subscribe:type_name -> google.protobuf.Empty
-	11, // 14: sdk.v1alpha.ExecuteRequest.trigger:type_name -> sdk.v1alpha.Trigger
-	27, // 15: sdk.v1alpha.ExecutionResult.value:type_name -> values.v1.Value
-	10, // 16: sdk.v1alpha.ExecutionResult.trigger_subscriptions:type_name -> sdk.v1alpha.TriggerSubscriptionRequest
-	19, // 17: sdk.v1alpha.GetSecretsRequest.requests:type_name -> sdk.v1alpha.SecretRequest
-	26, // 18: sdk.v1alpha.AwaitSecretsResponse.responses:type_name -> sdk.v1alpha.AwaitSecretsResponse.ResponsesEntry
-	20, // 19: sdk.v1alpha.SecretResponse.secret:type_name -> sdk.v1alpha.Secret
-	21, // 20: sdk.v1alpha.SecretResponse.error:type_name -> sdk.v1alpha.SecretError
-	22, // 21: sdk.v1alpha.SecretResponses.responses:type_name -> sdk.v1alpha.SecretResponse
+	7,  // 6: sdk.v1alpha.ReportResponse.sigs:type_name -> sdk.v1alpha.AttributedSignature
+	29, // 7: sdk.v1alpha.CapabilityRequest.payload:type_name -> google.protobuf.Any
+	29, // 8: sdk.v1alpha.CapabilityResponse.payload:type_name -> google.protobuf.Any
+	29, // 9: sdk.v1alpha.TriggerSubscription.payload:type_name -> google.protobuf.Any
+	10, // 10: sdk.v1alpha.TriggerSubscriptionRequest.subscriptions:type_name -> sdk.v1alpha.TriggerSubscription
+	29, // 11: sdk.v1alpha.Trigger.payload:type_name -> google.protobuf.Any
+	26, // 12: sdk.v1alpha.AwaitCapabilitiesResponse.responses:type_name -> sdk.v1alpha.AwaitCapabilitiesResponse.ResponsesEntry
+	30, // 13: sdk.v1alpha.ExecuteRequest.subscribe:type_name -> google.protobuf.Empty
+	12, // 14: sdk.v1alpha.ExecuteRequest.trigger:type_name -> sdk.v1alpha.Trigger
+	28, // 15: sdk.v1alpha.ExecutionResult.value:type_name -> values.v1.Value
+	11, // 16: sdk.v1alpha.ExecutionResult.trigger_subscriptions:type_name -> sdk.v1alpha.TriggerSubscriptionRequest
+	20, // 17: sdk.v1alpha.GetSecretsRequest.requests:type_name -> sdk.v1alpha.SecretRequest
+	27, // 18: sdk.v1alpha.AwaitSecretsResponse.responses:type_name -> sdk.v1alpha.AwaitSecretsResponse.ResponsesEntry
+	21, // 19: sdk.v1alpha.SecretResponse.secret:type_name -> sdk.v1alpha.Secret
+	22, // 20: sdk.v1alpha.SecretResponse.error:type_name -> sdk.v1alpha.SecretError
+	23, // 21: sdk.v1alpha.SecretResponses.responses:type_name -> sdk.v1alpha.SecretResponse
 	4,  // 22: sdk.v1alpha.FieldsMap.FieldsEntry.value:type_name -> sdk.v1alpha.ConsensusDescriptor
-	8,  // 23: sdk.v1alpha.AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> sdk.v1alpha.CapabilityResponse
-	23, // 24: sdk.v1alpha.AwaitSecretsResponse.ResponsesEntry.value:type_name -> sdk.v1alpha.SecretResponses
+	9,  // 23: sdk.v1alpha.AwaitCapabilitiesResponse.ResponsesEntry.value:type_name -> sdk.v1alpha.CapabilityResponse
+	24, // 24: sdk.v1alpha.AwaitSecretsResponse.ResponsesEntry.value:type_name -> sdk.v1alpha.SecretResponses
 	25, // [25:25] is the sub-list for method output_type
 	25, // [25:25] is the sub-list for method input_type
 	25, // [25:25] is the sub-list for extension type_name
@@ -1755,20 +1802,20 @@ func file_sdk_v1alpha_sdk_proto_init() {
 		(*ConsensusDescriptor_Aggregation)(nil),
 		(*ConsensusDescriptor_FieldsMap)(nil),
 	}
-	file_sdk_v1alpha_sdk_proto_msgTypes[6].OneofWrappers = []any{
+	file_sdk_v1alpha_sdk_proto_msgTypes[7].OneofWrappers = []any{
 		(*CapabilityResponse_Payload)(nil),
 		(*CapabilityResponse_Error)(nil),
 	}
-	file_sdk_v1alpha_sdk_proto_msgTypes[12].OneofWrappers = []any{
+	file_sdk_v1alpha_sdk_proto_msgTypes[13].OneofWrappers = []any{
 		(*ExecuteRequest_Subscribe)(nil),
 		(*ExecuteRequest_Trigger)(nil),
 	}
-	file_sdk_v1alpha_sdk_proto_msgTypes[13].OneofWrappers = []any{
+	file_sdk_v1alpha_sdk_proto_msgTypes[14].OneofWrappers = []any{
 		(*ExecutionResult_Value)(nil),
 		(*ExecutionResult_Error)(nil),
 		(*ExecutionResult_TriggerSubscriptions)(nil),
 	}
-	file_sdk_v1alpha_sdk_proto_msgTypes[20].OneofWrappers = []any{
+	file_sdk_v1alpha_sdk_proto_msgTypes[21].OneofWrappers = []any{
 		(*SecretResponse_Secret)(nil),
 		(*SecretResponse_Error)(nil),
 	}
@@ -1778,7 +1825,7 @@ func file_sdk_v1alpha_sdk_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sdk_v1alpha_sdk_proto_rawDesc), len(file_sdk_v1alpha_sdk_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   25,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

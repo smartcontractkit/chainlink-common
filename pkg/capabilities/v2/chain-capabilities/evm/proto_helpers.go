@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 func ConvertAddressesFromProto(addresses [][]byte) []evmtypes.Address {
@@ -183,13 +182,6 @@ func ConvertCallMsgFromProto(protoMsg *CallMsg) (*evmtypes.CallMsg, error) {
 var errEmptyFilter = errors.New("filter can't be nil")
 
 func ConvertLPFilterToProto(filter evmtypes.LPFilterQuery) *LPFilter {
-	convertAddressesToProto := func(addresses []evmtypes.Address) [][]byte {
-		protoAddresses := make([][]byte, 0, len(addresses))
-		for _, address := range addresses {
-			protoAddresses = append(protoAddresses, address[:])
-		}
-		return protoAddresses
-	}
 	return &LPFilter{
 		Name:          filter.Name,
 		RetentionTime: int64(filter.Retention),
@@ -292,9 +284,9 @@ func ConvertTopicsFromProto(protoTopics []*Topics) [][]evmtypes.Hash {
 }
 
 func ConvertLogToProto(log *evmtypes.Log) *Log {
-	var topics [][]byte
-	for _, topic := range log.Topics {
-		topics = append(topics, topic[:])
+	topics := make([][]byte, len(log.Topics))
+	for i, topic := range log.Topics {
+		topics[i] = topic[:]
 	}
 
 	return &Log{

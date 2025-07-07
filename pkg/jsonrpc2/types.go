@@ -79,6 +79,19 @@ type Response[Result any] struct {
 	Error   *WireError `json:"error,omitempty"`
 }
 
+func (r *Response[Result]) Digest() (string, error) {
+	canonicalJSONBytes, err := json.Marshal(r)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	hasher := sha256.New()
+	hasher.Write(canonicalJSONBytes)
+	digestBytes := hasher.Sum(nil)
+
+	return hex.EncodeToString(digestBytes), nil
+}
+
 // WireError represents a structured error in a Response.
 type WireError struct {
 	// Code is an error code indicating the type of failure.

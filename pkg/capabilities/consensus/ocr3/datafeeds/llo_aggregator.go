@@ -275,15 +275,8 @@ type EVMEncodableStreamUpdate struct {
 	RemappedID []byte
 }
 
-// decimalShift is the number of decimal places to shift the decimal.Decimal to convert it to a big.Int in convert an llo price to a big.Int.
-const decimalShift = 18
-
 func decimalToBigInt(d decimal.Decimal) *big.Int {
-	return d.Shift(decimalShift).BigInt()
-}
-
-func bigIntToDecimal(b *big.Int) decimal.Decimal {
-	return decimal.NewFromBigInt(b, 0).Shift(-decimalShift)
+	return d.BigInt()
 }
 
 // extractLLOEvents decodes the untyped wire format into LLOStreamsTriggerEvent.

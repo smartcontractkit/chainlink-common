@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751913613119,
+  "lastUpdate": 1751916307196,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18690,6 +18690,48 @@ window.BENCHMARK_DATA = {
             "value": 28566,
             "unit": "ns/op",
             "extra": "42382 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "brian.sztamfater@smartcontract.com",
+            "name": "Brian Sztamfater",
+            "username": "briansztamfater"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be9bb918903dcf59feb72bacc19263a4dccb3e29",
+          "message": "feat: add TONService to Relayer interface (#1298)\n\n* feat: add TONService to Relayer interface\n\n* append relay id in context metadata\n\n* simplify relay metadata\n\n* reafactor Seqno to SeqNo and seqno to seq_no in proto\n\n* add relayerset tests\n\n* add TON method to unimplemented relayer\n\n* fix ton generate.go\n\n* reafactor proto conversion methods\n\n* update BlockIDExt and Message types\n\n* remove unnecessary types",
+          "timestamp": "2025-07-07T19:23:53Z",
+          "tree_id": "f28d248306bace33b5ef9bf137c6008f1490d098",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/be9bb918903dcf59feb72bacc19263a4dccb3e29"
+        },
+        "date": 1751916306118,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 437.2,
+            "unit": "ns/op",
+            "extra": "2295214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.1,
+            "unit": "ns/op",
+            "extra": "2932662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28493,
+            "unit": "ns/op",
+            "extra": "42123 times\n4 procs"
           }
         ]
       }

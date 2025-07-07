@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751895265980,
+  "lastUpdate": 1751908058485,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18606,6 +18606,48 @@ window.BENCHMARK_DATA = {
             "value": 28260,
             "unit": "ns/op",
             "extra": "42499 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gregory.cawthorne@smartcontract.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3b697507abf41efd02a20e577cb19db5f506fbe3",
+          "message": "Remove CRE Capability Aggregator scaling (#1282)\n\n* Remove LLO Aggregator scaling\n\n* Fixup ExampleLLOAggregator_Aggregate test\n\n* Remove unused bigIntToDecimal function to pass code quality\n\n* Run CI",
+          "timestamp": "2025-07-07T17:06:29Z",
+          "tree_id": "b1a98c52184966342d64888517be97434852f1d3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3b697507abf41efd02a20e577cb19db5f506fbe3"
+        },
+        "date": 1751908057562,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 375.6,
+            "unit": "ns/op",
+            "extra": "3265522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 422.7,
+            "unit": "ns/op",
+            "extra": "2871426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28293,
+            "unit": "ns/op",
+            "extra": "42327 times\n4 procs"
           }
         ]
       }

@@ -86,7 +86,9 @@ func (r *Response[Result]) Digest() (string, error) {
 	}
 
 	hasher := sha256.New()
-	hasher.Write(canonicalJSONBytes)
+	if _, err := hasher.Write(canonicalJSONBytes); err != nil {
+		return "", fmt.Errorf("error writing to hasher: %w", err)
+	}
 	digestBytes := hasher.Sum(nil)
 
 	return hex.EncodeToString(digestBytes), nil

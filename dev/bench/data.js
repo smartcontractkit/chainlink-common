@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751908058485,
+  "lastUpdate": 1751913613119,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18648,6 +18648,48 @@ window.BENCHMARK_DATA = {
             "value": 28293,
             "unit": "ns/op",
             "extra": "42327 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0325e478c7f055b928321dbe744c85fb8c1c5993",
+          "message": "remove CRE sdk (#1349)",
+          "timestamp": "2025-07-07T14:37:58-04:00",
+          "tree_id": "930f1a3b6949e979c9f5d3d0d85d9a84bfec4fe7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0325e478c7f055b928321dbe744c85fb8c1c5993"
+        },
+        "date": 1751913611557,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.1,
+            "unit": "ns/op",
+            "extra": "3352855 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.4,
+            "unit": "ns/op",
+            "extra": "2875764 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28566,
+            "unit": "ns/op",
+            "extra": "42382 times\n4 procs"
           }
         ]
       }

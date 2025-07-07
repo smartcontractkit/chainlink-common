@@ -83,7 +83,7 @@ func NewSecureMintAggregator(config values.Map) (types.Aggregator, error) {
 // 1. Extracts OCRTriggerEvent from observations
 // 2. Deserializes the inner ReportWithInfo to get chain selector and report
 // 3. Validates chain selector matches target and sequence number is higher than previous
-// 4. Returns the report in the same format as feeds aggregator
+// 4. Returns the report in the format expected by the DF Cache, packing the mintable and block number into the decimal 'answer' field
 func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*types.AggregationOutcome, error) {
 	lggr = logger.Named(lggr, "SecureMintAggregator")
 
@@ -98,8 +98,6 @@ func (a *SecureMintAggregator) Aggregate(lggr logger.Logger, previousOutcome *ty
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract and validate reports: %w", err)
 	}
-
-	// TODO(gg): heartbeat check?
 
 	if len(validReports) == 0 {
 		lggr.Infow("no reports selected", "targetChainSelector", a.config.TargetChainSelector)
@@ -200,18 +198,18 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 	var chainSelectorAsFeedId [32]byte
 	binary.BigEndian.PutUint64(chainSelectorAsFeedId[24:], uint64(a.config.TargetChainSelector)) // right-aligned
 
-	smReportAsPrice, err := packSecureMintReportForIntoUint224ForEVM(report.Mintable, report.Block)
+	smReportAsPrice, err := packSecureMintReportIntoUint224ForEVM(report.Mintable, report.Block)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack secure mint report for into uint224: %w", err)
 	}
 
-	// Create the output in the same format as the feeds aggregator
+	// This is what the DF Cache contract expects:
 	// abi: "(bytes32 FeedID, uint224 Price, uint32 Timestamp)[] Reports"
 	toWrap := []any{
 		map[EVMEncoderKey]any{
 			FeedIDOutputFieldName:    chainSelectorAsFeedId,
 			PriceOutputFieldName:     smReportAsPrice,
-			TimestampOutputFieldName: int64(report.Block), // TODO(gg): not sure if we want this
+			TimestampOutputFieldName: int64(report.Block),
 		},
 	}
 
@@ -254,9 +252,9 @@ func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error
 
 var maxMintable = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)) // 2^128 - 1
 
-// packSecureMintReportForIntoUint224ForEVM packs the mintable and block number into a single uint224 so that it can be used as a price in the DF Cache contract
+// packSecureMintReportIntoUint224ForEVM packs the mintable and block number into a single uint224 so that it can be used as a price in the DF Cache contract
 // (top 32 - not used / middle 64 - block number / lower 128 - mintable amount)
-func packSecureMintReportForIntoUint224ForEVM(mintable *big.Int, blockNumber uint64) (*big.Int, error) {
+func packSecureMintReportIntoUint224ForEVM(mintable *big.Int, blockNumber uint64) (*big.Int, error) {
 	// Handle nil mintable
 	if mintable == nil {
 		return nil, fmt.Errorf("mintable cannot be nil")

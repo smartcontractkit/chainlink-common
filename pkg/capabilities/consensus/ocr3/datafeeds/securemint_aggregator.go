@@ -22,8 +22,7 @@ var (
 	ErrSequenceNumberTooLow    = errors.New("sequence number too low")
 )
 
-// TODO(gg): should we reuse this from the por repo instead of copying?
-// secureMintReport represents the inner report structure
+// secureMintReport represents the inner report structure, mimics the Report type in the SM plugin repo
 type secureMintReport struct {
 	ConfigDigest ocr2types.ConfigDigest `json:"configDigest"`
 	SeqNr        uint64                 `json:"seqNr"`
@@ -31,8 +30,7 @@ type secureMintReport struct {
 	Mintable     *big.Int               `json:"mintable"`
 }
 
-// TODO(gg): should we reuse this from the por repo instead of copying?
-// chainSelector represents the chain selector type
+// chainSelector represents the chain selector type, mimics the ChainSelector type in the SM plugin repo
 type chainSelector int64
 
 // SecureMintAggregatorConfig is the config for the SecureMint aggregator.

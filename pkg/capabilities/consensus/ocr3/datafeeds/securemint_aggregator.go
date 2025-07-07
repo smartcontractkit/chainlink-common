@@ -213,7 +213,6 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 			// RawReportOutputFieldName:  packedReport, // TODO(gg): check if we need this
 			PriceOutputFieldName:     smReportAsPrice,
 			TimestampOutputFieldName: int64(report.Block), // TODO(gg): not sure if we want this
-			// RemappedIDOutputFieldName: chainSelectorAsFeedId, // Use chain selector as remapped ID // TODO(gg): delete this when not needed
 		},
 	}
 
@@ -279,5 +278,3 @@ func packSecureMintReportForIntoUint224ForEVM(mintable *big.Int, blockNumber uin
 
 	return packed, nil
 }
-
-// TODO(gg): double-check if this implementation is correct

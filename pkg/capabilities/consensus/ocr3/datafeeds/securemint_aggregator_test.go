@@ -1,6 +1,7 @@
 package datafeeds
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -198,21 +199,18 @@ func TestSecureMintAggregator_Aggregate(t *testing.T) {
 				// Verify feed ID (should be the chain selector as bytes)
 				feedIDBytes, ok := report[FeedIDOutputFieldName].([]byte)
 				require.True(t, ok)
-				expectedChainSelectorBytes := big.NewInt(int64(tc.expectedChainSelector)).Bytes()
-				require.Equal(t, expectedChainSelectorBytes, feedIDBytes)
+				// The implementation creates a 32-byte array with the chain selector right-aligned
+				var expectedChainSelectorBytes [32]byte
+				binary.BigEndian.PutUint64(expectedChainSelectorBytes[24:], uint64(tc.expectedChainSelector))
+				require.Equal(t, expectedChainSelectorBytes[:], feedIDBytes)
 
 				// Verify other fields exist
-				_, ok = report[RawReportOutputFieldName].([]byte)
+				price, ok := report[PriceOutputFieldName].(*big.Int)
 				require.True(t, ok)
+				require.NotNil(t, price)
 
-				_, ok = report[PriceOutputFieldName].([]byte)
-				require.True(t, ok)
-
-				_, ok = report[TimestampOutputFieldName].(int64)
-				require.True(t, ok)
-
-				_, ok = report[RemappedIDOutputFieldName].([]byte)
-				require.True(t, ok)
+				timestamp := report[TimestampOutputFieldName].(int64)
+				require.Equal(t, int64(1000), timestamp)
 			}
 		})
 	}

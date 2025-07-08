@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751996469412,
+  "lastUpdate": 1752013528322,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18942,6 +18942,48 @@ window.BENCHMARK_DATA = {
             "value": 28448,
             "unit": "ns/op",
             "extra": "42193 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "133903322+ogtownsend@users.noreply.github.com",
+            "name": "Oliver Townsend",
+            "username": "ogtownsend"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c14dd6e6f08f88351f81100305dfb48b87dd04c6",
+          "message": "CCIP - move CAL interface and required types into chainlink-common (#1322)\n\n* CCIP - move CAL interface and required types into chainlink-common\n\n* Add some tests\n\n* suggestions\n\n* remove confidence level alias, add docstring\n\n* Comments\n\n* Rename UnknownAddress to AccountBytes\n\n* lint\n\n* Rename UnknownEncodedAddress to alias Account\n\n* use UnknownEncodedAddress and UnknownAddress, alias UnknownEncodedAddress",
+          "timestamp": "2025-07-08T15:23:18-07:00",
+          "tree_id": "77d1af4d9c7113b1643ea2703ad8900b354d791f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c14dd6e6f08f88351f81100305dfb48b87dd04c6"
+        },
+        "date": 1752013527363,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.9,
+            "unit": "ns/op",
+            "extra": "3283464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.1,
+            "unit": "ns/op",
+            "extra": "2743545 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28530,
+            "unit": "ns/op",
+            "extra": "42136 times\n4 procs"
           }
         ]
       }

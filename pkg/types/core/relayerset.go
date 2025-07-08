@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 
+	looptypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -26,6 +27,8 @@ type RelayArgs struct {
 	ProviderType       string
 	MercuryCredentials *types.MercuryCredentials
 }
+
+var _ looptypes.Relayer = (Relayer)(nil)
 
 type Relayer interface {
 	services.Service

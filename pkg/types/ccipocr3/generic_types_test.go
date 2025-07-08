@@ -135,6 +135,40 @@ func TestSeqNumRangeLimit(t *testing.T) {
 	}
 }
 
+func TestSeqNumFilterSlice(t *testing.T) {
+	testCases := []struct {
+		name     string
+		r        SeqNumRange
+		seqs     []SeqNum
+		expected []SeqNum
+	}{
+		{
+			"none",
+			SeqNumRange{0, 0},
+			[]SeqNum{1, 2, 3},
+			nil,
+		},
+		{
+			"zero in range",
+			SeqNumRange{0, 0},
+			[]SeqNum{1, 2, 0, 3},
+			[]SeqNum{0},
+		},
+		{
+			"inclusive",
+			SeqNumRange{10, 20},
+			[]SeqNum{1, 10, 2, 0, 4, 13, 3, 20},
+			[]SeqNum{10, 13, 20},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.r.FilterSlice(tc.seqs))
+		})
+	}
+}
+
 func TestCCIPMsg_String(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -152,10 +186,12 @@ func TestCCIPMsg_String(t *testing.T) {
 					Nonce:               1,
 
 					MsgHash: mustNewBytes32(t, "0x23"),
-					OnRamp:  mustNewBytes(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+					OnRamp:  mustNewUnknownAddressFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+					TxHash:  "0x1234",
 				},
 			},
-			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000","onRamp":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f"},"sender":"0x","data":"0x","receiver":"0x","extraArgs":"0x","feeToken":"0x","feeTokenAmount":null,"feeValueJuels":null,"tokenAmounts":null}`,
+			//nolint:lll // test input
+			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000","onRamp":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f","txHash":"0x1234"},"sender":"0x","data":"0x","receiver":"0x","extraArgs":"0x","feeToken":"0x","feeTokenAmount":null,"feeValueJuels":null,"tokenAmounts":null}`,
 		},
 		{
 			"with evm ramp message",
@@ -168,18 +204,19 @@ func TestCCIPMsg_String(t *testing.T) {
 					Nonce:               1,
 
 					MsgHash: mustNewBytes32(t, "0x23"),
-					OnRamp:  mustNewBytes(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+					OnRamp:  mustNewUnknownAddressFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+					TxHash:  "0x1234",
 				},
-				Sender:         mustNewBytes(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
-				Receiver:       mustNewBytes(t, "0x101112131415"), // simulate a non-evm receiver
+				Sender:         mustNewUnknownAddressFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+				Receiver:       mustNewUnknownAddressFromHex(t, "0x101112131415"), // simulate a non-evm receiver
 				Data:           []byte("some data"),
 				ExtraArgs:      []byte("extra args"),
-				FeeToken:       mustNewBytes(t, "0xB5fCC870d2aC8745054b4ba99B1f176B93382162"),
+				FeeToken:       mustNewUnknownAddressFromHex(t, "0xB5fCC870d2aC8745054b4ba99B1f176B93382162"),
 				FeeTokenAmount: BigInt{Int: big.NewInt(1000)},
 				FeeValueJuels:  BigInt{Int: big.NewInt(287)},
 				TokenAmounts: []RampTokenAmount{
 					{
-						SourcePoolAddress: mustNewBytes(t, "0x3E8456720B88A1DAdce8E2808C9Bf73dfFFd807c"),
+						SourcePoolAddress: mustNewUnknownAddressFromHex(t, "0x3E8456720B88A1DAdce8E2808C9Bf73dfFFd807c"),
 						DestTokenAddress:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, // simulate a non-evm token
 						ExtraData:         []byte("extra token data"),
 						Amount:            BigInt{Int: big.NewInt(2000)},
@@ -187,7 +224,8 @@ func TestCCIPMsg_String(t *testing.T) {
 					},
 				},
 			},
-			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000","onRamp":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f"},"sender":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f","data":"0x736f6d652064617461","receiver":"0x101112131415","extraArgs":"0x65787472612061726773","feeToken":"0xb5fcc870d2ac8745054b4ba99b1f176b93382162","feeTokenAmount":"1000","feeValueJuels":"287","tokenAmounts":[{"sourcePoolAddress":"0x3e8456720b88a1dadce8e2808c9bf73dfffd807c","destTokenAddress":"0x0102030405060708090a","extraData":"0x657874726120746f6b656e2064617461","amount":"2000","destExecData":"0x657874726120746f6b656e2064617461"}]}`,
+			//nolint:lll // test input
+			`{"header":{"messageId":"0x0100000000000000000000000000000000000000000000000000000000000000","sourceChainSelector":"1","destChainSelector":"2","seqNum":"2","nonce":1,"msgHash":"0x2300000000000000000000000000000000000000000000000000000000000000","onRamp":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f","txHash":"0x1234"},"sender":"0x04d4cc5972ad487f71b85654d48b27d32b13a22f","data":"0x736f6d652064617461","receiver":"0x101112131415","extraArgs":"0x65787472612061726773","feeToken":"0xb5fcc870d2ac8745054b4ba99b1f176b93382162","feeTokenAmount":"1000","feeValueJuels":"287","tokenAmounts":[{"sourcePoolAddress":"0x3e8456720b88a1dadce8e2808c9bf73dfffd807c","destTokenAddress":"0x0102030405060708090a","extraData":"0x657874726120746f6b656e2064617461","amount":"2000","destExecData":"0x657874726120746f6b656e2064617461"}]}`,
 		},
 	}
 
@@ -240,14 +278,213 @@ func TestMerkleRoot(t *testing.T) {
 	})
 }
 
+func TestMessage_IsPseudoDeleted(t *testing.T) {
+	tests := []struct {
+		name     string
+		msg      Message
+		expected bool
+	}{
+		{
+			name: "all fields zero/empty",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: true,
+		},
+		{
+			name: "non-zero DestChainSelector",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   1,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-zero SourceChainSelector",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 1,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-empty OnRamp",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              []byte{1, 2, 3},
+				},
+				Receiver: nil,
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-empty Receiver",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: []byte{1},
+				Sender:   nil,
+			},
+			expected: false,
+		},
+		{
+			name: "non-empty Sender",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   0,
+					SourceChainSelector: 0,
+					OnRamp:              nil,
+				},
+				Receiver: nil,
+				Sender:   []byte{1},
+			},
+			expected: false,
+		},
+		{
+			name: "all fields non-zero/non-empty",
+			msg: Message{
+				Header: RampMessageHeader{
+					DestChainSelector:   1,
+					SourceChainSelector: 2,
+					OnRamp:              []byte{1, 2, 3},
+				},
+				Receiver: []byte{4, 5},
+				Sender:   []byte{6, 7},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.msg.IsPseudoDeleted()
+			if got != tc.expected {
+				t.Errorf("IsPseudoDeleted() = %v, want %v", got, tc.expected)
+			}
+		})
+	}
+}
+
+func TestSeqNum_IsWithinRanges(t *testing.T) {
+	tests := []struct {
+		name   string
+		seq    SeqNum
+		ranges []SeqNumRange
+		want   bool
+	}{
+		{
+			name:   "empty ranges",
+			seq:    5,
+			ranges: nil,
+			want:   false,
+		},
+		{
+			name:   "single range contains seq",
+			seq:    5,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 10)},
+			want:   true,
+		},
+		{
+			name:   "single range does not contain seq",
+			seq:    15,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 10)},
+			want:   false,
+		},
+		{
+			name:   "multiple ranges, one contains seq",
+			seq:    7,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5), NewSeqNumRange(6, 10)},
+			want:   true,
+		},
+		{
+			name:   "multiple ranges, none contain seq",
+			seq:    20,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5), NewSeqNumRange(6, 10)},
+			want:   false,
+		},
+		{
+			name:   "seq at start of range",
+			seq:    1,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5)},
+			want:   true,
+		},
+		{
+			name:   "seq at end of range",
+			seq:    5,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5)},
+			want:   true,
+		},
+		{
+			name:   "empty range, seq matches",
+			seq:    3,
+			ranges: []SeqNumRange{NewSeqNumRange(3, 3)},
+			want:   true,
+		},
+		{
+			name:   "empty range, seq does not match",
+			seq:    4,
+			ranges: []SeqNumRange{NewSeqNumRange(3, 3)},
+			want:   false,
+		},
+		{
+			name:   "multiple ranges, seq in last range",
+			seq:    15,
+			ranges: []SeqNumRange{NewSeqNumRange(1, 5), NewSeqNumRange(10, 20)},
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.seq.IsWithinRanges(tt.ranges)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestTokenPriceMap_ToSortedSlice(t *testing.T) {
+	m := TokenPriceMap{
+		UnknownEncodedAddress("b"): BigInt{big.NewInt(2)},
+		UnknownEncodedAddress("a"): BigInt{big.NewInt(1)},
+		UnknownEncodedAddress("c"): BigInt{big.NewInt(3)},
+	}
+	sorted := m.ToSortedSlice()
+	require.Len(t, sorted, 3)
+	assert.Equal(t, UnknownEncodedAddress("a"), sorted[0].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("b"), sorted[1].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("c"), sorted[2].TokenID)
+}
+
 func mustNewBytes32(t *testing.T, s string) Bytes32 {
 	b32, err := NewBytes32FromString(s)
 	require.NoError(t, err)
 	return b32
 }
 
-func mustNewBytes(t *testing.T, s string) Bytes {
-	b, err := NewBytesFromString(s)
+func mustNewUnknownAddressFromHex(t *testing.T, s string) UnknownAddress {
+	b, err := NewUnknownAddressFromHex(s)
 	require.NoError(t, err)
 	return b
 }

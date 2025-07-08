@@ -52,7 +52,7 @@ type SourceChainConfig struct {
 	IsEnabled                 bool
 	IsRMNVerificationDisabled bool
 	MinSeqNr                  uint64
-	OnRamp                    UnknownAddress
+	OnRamp                    AccountBytes
 }
 
 type RouterConfig struct {

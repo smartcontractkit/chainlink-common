@@ -74,7 +74,7 @@ type AllAccessors interface {
 
 	// Sync can be used to perform frequent syncing operations inside the reader implementation.
 	// Returns an error if the sync operation failed.
-	Sync(ctx context.Context, contractName string, contractAddress UnknownAddress) error
+	Sync(ctx context.Context, contractName string, contractAddress AccountBytes) error
 }
 
 // DestinationAccessor contains all functions typically associated by the destination chain.
@@ -190,7 +190,7 @@ type SourceAccessor interface {
 	//        See Design Doc (Combined Token Price Helper) for notes.
 	GetTokenPriceUSD(
 		ctx context.Context,
-		address UnknownAddress,
+		address AccountBytes,
 	) (TimestampedUnixBig, error)
 
 	// GetFeeQuoterDestChainConfig returns the fee quoter destination chain config.
@@ -265,7 +265,7 @@ type CommitReportsByConfidenceLevel struct {
 
 // ContractAddresses is a map of contract names across all chain selectors and their address.
 // Currently only one contract per chain per name is supported.
-type ContractAddresses map[string]map[ChainSelector]UnknownAddress
+type ContractAddresses map[string]map[ChainSelector]AccountBytes
 
 // CurseInfo contains cursing information that are fetched from the rmn remote contract.
 type CurseInfo struct {
@@ -305,7 +305,7 @@ var GlobalCurseSubject = [16]byte{
 
 // RemoteConfig contains the configuration fetched from the RMNRemote contract.
 type RemoteConfig struct {
-	ContractAddress UnknownAddress     `json:"contractAddress"`
+	ContractAddress AccountBytes       `json:"contractAddress"`
 	ConfigDigest    Bytes32            `json:"configDigest"`
 	Signers         []RemoteSignerInfo `json:"signers"`
 	// F defines the max number of faulty RMN nodes; F+1 signers are required to verify a report.
@@ -326,7 +326,7 @@ func (r RemoteConfig) IsEmpty() bool {
 // RemoteSignerInfo contains information about a signer from the RMNRemote contract.
 type RemoteSignerInfo struct {
 	// The signer's onchain address, used to verify report signature
-	OnchainPublicKey UnknownAddress `json:"onchainPublicKey"`
+	OnchainPublicKey AccountBytes `json:"onchainPublicKey"`
 	// The index of the node in the RMN config
 	NodeIndex uint64 `json:"nodeIndex"`
 }

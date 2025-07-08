@@ -163,7 +163,7 @@ func TestNewBytesFromString(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, UnknownAddress(tt.want), got)
+				require.Equal(t, AccountBytes(tt.want), got)
 			}
 		})
 	}
@@ -249,42 +249,42 @@ func TestBytes_UnmarshalJSON(t *testing.T) {
 func TestUnknownAddress_IsZeroOrEmpty(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    UnknownAddress
+		input    AccountBytes
 		expected bool
 	}{
 		{
 			name:     "empty slice",
-			input:    UnknownAddress{},
+			input:    AccountBytes{},
 			expected: true,
 		},
 		{
 			name:     "all zero bytes",
-			input:    UnknownAddress{0, 0, 0},
+			input:    AccountBytes{0, 0, 0},
 			expected: true,
 		},
 		{
 			name:     "non-zero byte at start",
-			input:    UnknownAddress{1, 0, 0},
+			input:    AccountBytes{1, 0, 0},
 			expected: false,
 		},
 		{
 			name:     "non-zero byte in middle",
-			input:    UnknownAddress{0, 2, 0},
+			input:    AccountBytes{0, 2, 0},
 			expected: false,
 		},
 		{
 			name:     "non-zero byte at end",
-			input:    UnknownAddress{0, 0, 3},
+			input:    AccountBytes{0, 0, 3},
 			expected: false,
 		},
 		{
 			name:     "single non-zero byte",
-			input:    UnknownAddress{4},
+			input:    AccountBytes{4},
 			expected: false,
 		},
 		{
 			name:     "single zero byte",
-			input:    UnknownAddress{0},
+			input:    AccountBytes{0},
 			expected: true,
 		},
 	}

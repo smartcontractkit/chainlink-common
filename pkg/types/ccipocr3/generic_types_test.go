@@ -483,7 +483,7 @@ func mustNewBytes32(t *testing.T, s string) Bytes32 {
 	return b32
 }
 
-func mustNewUnknownAddress(t *testing.T, s string) UnknownAddress {
+func mustNewUnknownAddress(t *testing.T, s string) AccountBytes {
 	b, err := NewUnknownAddressFromHex(s)
 	require.NoError(t, err)
 	return b

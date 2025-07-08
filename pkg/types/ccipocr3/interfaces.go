@@ -21,8 +21,8 @@ type MessageHasher interface {
 }
 
 type AddressCodec interface {
-	AddressBytesToString(UnknownAddress, ChainSelector) (string, error)
-	AddressStringToBytes(string, ChainSelector) (UnknownAddress, error)
+	AddressBytesToString(AccountBytes, ChainSelector) (string, error)
+	AddressStringToBytes(string, ChainSelector) (AccountBytes, error)
 }
 
 // RMNCrypto provides a chain-agnostic interface for verifying RMN signatures.
@@ -35,7 +35,7 @@ type RMNCrypto interface {
 		ctx context.Context,
 		sigs []RMNECDSASignature,
 		report RMNReport,
-		signerAddresses []UnknownAddress,
+		signerAddresses []AccountBytes,
 	) error
 }
 

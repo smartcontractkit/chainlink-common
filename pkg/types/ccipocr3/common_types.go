@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 // UnknownAddress represents a raw address with an unknown encoding.
@@ -47,7 +49,7 @@ func (a UnknownAddress) IsZeroOrEmpty() bool {
 }
 
 // UnknownEncodedAddress represents an encoded address with an unknown encoding.
-type UnknownEncodedAddress string
+type UnknownEncodedAddress libocr.Account
 
 type Bytes []byte
 

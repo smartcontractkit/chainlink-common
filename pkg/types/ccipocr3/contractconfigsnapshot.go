@@ -78,7 +78,7 @@ type OCRConfig struct {
 }
 
 type ConfigInfo struct {
-	ConfigDigest                   [32]byte
+	ConfigDigest                   Bytes32
 	F                              uint8
 	N                              uint8
 	IsSignatureVerificationEnabled bool

@@ -113,8 +113,7 @@ type DestinationAccessor interface {
 	// Access Type: Method(NextSeqNum)
 	// Contract: OffRamp
 	// Confidence: Unconfirmed
-	NextSeqNum(ctx context.Context, sources []ChainSelector) (
-		seqNum map[ChainSelector]SeqNum, err error)
+	NextSeqNum(ctx context.Context, sources []ChainSelector) (map[ChainSelector]SeqNum, error)
 
 	// Nonces for all provided selector/address pairs. Addresses must be encoded
 	// according to the source chain requirements by using the AddressCodec.

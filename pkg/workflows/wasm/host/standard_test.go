@@ -22,8 +22,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -130,8 +130,8 @@ func TestStandardModeSwitch(t *testing.T) {
 			response := values.NewString("hi")
 			mapProto := &valuespb.Map{
 				Fields: map[string]*valuespb.Value{
-					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
-					sdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
+					rawsdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					rawsdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
 				},
 			}
 			payload, err := anypb.New(mapProto)
@@ -462,8 +462,8 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			response := wrapValue(t, cResponse)
 			mapProto := &valuespb.Map{
 				Fields: map[string]*valuespb.Value{
-					sdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
-					sdk.ConsensusResponseMapKeyPayload:  response,
+					rawsdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
+					rawsdk.ConsensusResponseMapKeyPayload:  response,
 				},
 			}
 			payload, err = anypb.New(mapProto)

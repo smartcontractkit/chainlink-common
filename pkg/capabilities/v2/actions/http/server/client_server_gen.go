@@ -27,7 +27,7 @@ type ClientCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
 }
 
 func NewClientServer(capability ClientCapability) *ClientServer {
@@ -44,8 +44,8 @@ type ClientServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
-	if err := cs.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
+func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := cs.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
@@ -65,7 +65,7 @@ func (cs *ClientServer) Close() error {
 	defer cancel()
 
 	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "http-actions@0.1.0"); err != nil {
+		if err := cs.capabilityRegistry.Remove(ctx, "http-actions@1.0.0-alpha"); err != nil {
 			return err
 		}
 	}
@@ -92,12 +92,12 @@ type clientCapability struct {
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("http-actions@0.1.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
+	return capabilities.NewCapabilityInfo("http-actions@1.0.0-alpha", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
 
-const ClientID = "http-actions@0.1.0"
+const ClientID = "http-actions@1.0.0-alpha"
 
 func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
 	return nil, fmt.Errorf("trigger %s not found", request.Method)

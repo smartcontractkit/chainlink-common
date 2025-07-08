@@ -186,7 +186,7 @@ func TestCCIPMsg_String(t *testing.T) {
 					Nonce:               1,
 
 					MsgHash: mustNewBytes32(t, "0x23"),
-					OnRamp:  mustNewAccountBytesFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+					OnRamp:  mustNewUnknownAddressFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
 					TxHash:  "0x1234",
 				},
 			},
@@ -204,19 +204,19 @@ func TestCCIPMsg_String(t *testing.T) {
 					Nonce:               1,
 
 					MsgHash: mustNewBytes32(t, "0x23"),
-					OnRamp:  mustNewAccountBytesFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+					OnRamp:  mustNewUnknownAddressFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
 					TxHash:  "0x1234",
 				},
-				Sender:         mustNewAccountBytesFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
-				Receiver:       mustNewAccountBytesFromHex(t, "0x101112131415"), // simulate a non-evm receiver
+				Sender:         mustNewUnknownAddressFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+				Receiver:       mustNewUnknownAddressFromHex(t, "0x101112131415"), // simulate a non-evm receiver
 				Data:           []byte("some data"),
 				ExtraArgs:      []byte("extra args"),
-				FeeToken:       mustNewAccountBytesFromHex(t, "0xB5fCC870d2aC8745054b4ba99B1f176B93382162"),
+				FeeToken:       mustNewUnknownAddressFromHex(t, "0xB5fCC870d2aC8745054b4ba99B1f176B93382162"),
 				FeeTokenAmount: BigInt{Int: big.NewInt(1000)},
 				FeeValueJuels:  BigInt{Int: big.NewInt(287)},
 				TokenAmounts: []RampTokenAmount{
 					{
-						SourcePoolAddress: mustNewAccountBytesFromHex(t, "0x3E8456720B88A1DAdce8E2808C9Bf73dfFFd807c"),
+						SourcePoolAddress: mustNewUnknownAddressFromHex(t, "0x3E8456720B88A1DAdce8E2808C9Bf73dfFFd807c"),
 						DestTokenAddress:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, // simulate a non-evm token
 						ExtraData:         []byte("extra token data"),
 						Amount:            BigInt{Int: big.NewInt(2000)},
@@ -466,15 +466,15 @@ func TestSeqNum_IsWithinRanges(t *testing.T) {
 
 func TestTokenPriceMap_ToSortedSlice(t *testing.T) {
 	m := TokenPriceMap{
-		Account("b"): BigInt{big.NewInt(2)},
-		Account("a"): BigInt{big.NewInt(1)},
-		Account("c"): BigInt{big.NewInt(3)},
+		UnknownEncodedAddress("b"): BigInt{big.NewInt(2)},
+		UnknownEncodedAddress("a"): BigInt{big.NewInt(1)},
+		UnknownEncodedAddress("c"): BigInt{big.NewInt(3)},
 	}
 	sorted := m.ToSortedSlice()
 	require.Len(t, sorted, 3)
-	assert.Equal(t, Account("a"), sorted[0].TokenID)
-	assert.Equal(t, Account("b"), sorted[1].TokenID)
-	assert.Equal(t, Account("c"), sorted[2].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("a"), sorted[0].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("b"), sorted[1].TokenID)
+	assert.Equal(t, UnknownEncodedAddress("c"), sorted[2].TokenID)
 }
 
 func mustNewBytes32(t *testing.T, s string) Bytes32 {
@@ -483,8 +483,8 @@ func mustNewBytes32(t *testing.T, s string) Bytes32 {
 	return b32
 }
 
-func mustNewAccountBytesFromHex(t *testing.T, s string) AccountBytes {
-	b, err := NewAccountBytesFromHex(s)
+func mustNewUnknownAddressFromHex(t *testing.T, s string) UnknownAddress {
+	b, err := NewUnknownAddressFromHex(s)
 	require.NoError(t, err)
 	return b
 }

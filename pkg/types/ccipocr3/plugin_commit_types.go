@@ -48,10 +48,10 @@ func (r CommitPluginReport) HasNoRoots() bool {
 //
 //nolint:lll // it's a url
 type MerkleRootChain struct {
-	ChainSel      ChainSelector `json:"chain"`
-	OnRampAddress AccountBytes  `json:"onRampAddress"`
-	SeqNumsRange  SeqNumRange   `json:"seqNumsRange"`
-	MerkleRoot    Bytes32       `json:"merkleRoot"`
+	ChainSel      ChainSelector  `json:"chain"`
+	OnRampAddress UnknownAddress `json:"onRampAddress"`
+	SeqNumsRange  SeqNumRange    `json:"seqNumsRange"`
+	MerkleRoot    Bytes32        `json:"merkleRoot"`
 }
 
 // String returns a string representation of the MerkleRootChain

@@ -158,12 +158,12 @@ func TestNewBytesFromString(t *testing.T) {
 		})
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAccountBytesFromHex(tt.arg)
+			got, err := NewUnknownAddressFromHex(tt.arg)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, AccountBytes(tt.want), got)
+				require.Equal(t, UnknownAddress(tt.want), got)
 			}
 		})
 	}
@@ -249,42 +249,42 @@ func TestBytes_UnmarshalJSON(t *testing.T) {
 func TestUnknownAddress_IsZeroOrEmpty(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    AccountBytes
+		input    UnknownAddress
 		expected bool
 	}{
 		{
 			name:     "empty slice",
-			input:    AccountBytes{},
+			input:    UnknownAddress{},
 			expected: true,
 		},
 		{
 			name:     "all zero bytes",
-			input:    AccountBytes{0, 0, 0},
+			input:    UnknownAddress{0, 0, 0},
 			expected: true,
 		},
 		{
 			name:     "non-zero byte at start",
-			input:    AccountBytes{1, 0, 0},
+			input:    UnknownAddress{1, 0, 0},
 			expected: false,
 		},
 		{
 			name:     "non-zero byte in middle",
-			input:    AccountBytes{0, 2, 0},
+			input:    UnknownAddress{0, 2, 0},
 			expected: false,
 		},
 		{
 			name:     "non-zero byte at end",
-			input:    AccountBytes{0, 0, 3},
+			input:    UnknownAddress{0, 0, 3},
 			expected: false,
 		},
 		{
 			name:     "single non-zero byte",
-			input:    AccountBytes{4},
+			input:    UnknownAddress{4},
 			expected: false,
 		},
 		{
 			name:     "single zero byte",
-			input:    AccountBytes{0},
+			input:    UnknownAddress{0},
 			expected: true,
 		},
 	}

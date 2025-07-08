@@ -9,33 +9,33 @@ import (
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-// AccountBytes represents a raw address with an unknown encoding.
-type AccountBytes []byte
+// UnknownAddress represents a raw address with an unknown encoding.
+type UnknownAddress []byte
 
-// NewAccountBytesFromHex creates a new AccountBytes from a hex string.
-func NewAccountBytesFromHex(s string) (AccountBytes, error) {
+// NewUnknownAddressFromHex creates a new UnknownAddress from a hex string.
+func NewUnknownAddressFromHex(s string) (UnknownAddress, error) {
 	b, err := NewBytesFromString(s)
 	if err != nil {
 		return nil, err
 	}
-	return AccountBytes(b), nil
+	return UnknownAddress(b), nil
 }
 
 // String returns the hex representation of the unknown address.
-func (a AccountBytes) String() string {
+func (a UnknownAddress) String() string {
 	return Bytes(a).String()
 }
 
-func (a AccountBytes) MarshalJSON() ([]byte, error) {
+func (a UnknownAddress) MarshalJSON() ([]byte, error) {
 	return Bytes(a).MarshalJSON()
 }
 
-func (a *AccountBytes) UnmarshalJSON(data []byte) error {
+func (a *UnknownAddress) UnmarshalJSON(data []byte) error {
 	return (*Bytes)(a).UnmarshalJSON(data)
 }
 
 // IsZeroOrEmpty returns true if the address contains 0 bytes or if all the bytes are 0.
-func (a AccountBytes) IsZeroOrEmpty() bool {
+func (a UnknownAddress) IsZeroOrEmpty() bool {
 	if len(a) == 0 {
 		return true // empty
 	}
@@ -48,8 +48,8 @@ func (a AccountBytes) IsZeroOrEmpty() bool {
 	return true
 }
 
-// Account represents an encoded address with an unknown encoding.
-type Account libocr.Account
+// UnknownEncodedAddress represents an encoded address with an unknown encoding.
+type UnknownEncodedAddress = libocr.Account
 
 type Bytes []byte
 

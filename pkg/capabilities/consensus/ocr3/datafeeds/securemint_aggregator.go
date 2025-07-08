@@ -241,9 +241,7 @@ func (a *SecureMintAggregator) createOutcome(lggr logger.Logger, report *secureM
 
 // parseSecureMintConfig parses the user-facing, type-less, SecureMint aggregator config into the internal typed config.
 func parseSecureMintConfig(config values.Map) (SecureMintAggregatorConfig, error) {
-	parsedConfig := SecureMintAggregatorConfig{
-		TargetChainSelector: 1, // default value
-	}
+	var parsedConfig SecureMintAggregatorConfig
 	if err := config.UnwrapTo(&parsedConfig); err != nil {
 		return SecureMintAggregatorConfig{}, fmt.Errorf("failed to unwrap config: %w", err)
 	}

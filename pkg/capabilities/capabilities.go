@@ -312,9 +312,12 @@ type DON struct {
 // You can assert this by checking for zero values in the WorkflowDON field.
 // See https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31 for an example.
 type Node struct {
-	PeerID         *p2ptypes.PeerID
-	WorkflowDON    DON
-	CapabilityDONs []DON
+	PeerID              *p2ptypes.PeerID
+	NodeOperatorID      uint32
+	Signer              [32]byte
+	EncryptionPublicKey [32]byte
+	WorkflowDON         DON
+	CapabilityDONs      []DON
 }
 
 // CapabilityInfo is a struct for the info of a capability.

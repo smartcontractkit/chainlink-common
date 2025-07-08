@@ -36,7 +36,7 @@ rm-builders:
 .PHONY: generate
 generate: mockery install-protoc gomods cre-protoc
 	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -go generate -x ./...
-	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files
+	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
 
 .PHONY: cre-protoc
 cre-protoc:

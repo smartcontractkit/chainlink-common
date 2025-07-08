@@ -46,6 +46,10 @@ func (r *RelayerService) EVM() (types.EVMService, error) {
 	return r.Service.EVM()
 }
 
+func (r *RelayerService) TON() (types.TONService, error) {
+	return r.Service.TON()
+}
+
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err

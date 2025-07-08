@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751984193018,
+  "lastUpdate": 1751996469412,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18900,6 +18900,48 @@ window.BENCHMARK_DATA = {
             "value": 28763,
             "unit": "ns/op",
             "extra": "42249 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fbb435dd18c8efad2d0f149e940b0c770567fa57",
+          "message": "Add missing TON() to keep Relayer interfaces in sync (#1355)\n\n* Add missing TON() to keep Relayer interfaces in sync\n\n* See https://github.com/smartcontractkit/chainlink-common/pull/1298\n\n* Also update RelayerService\n\n* Fix example relay\n\n* Type assertion between loop Relayer and relayerset.Relayer\n\n* Revert \"Type assertion between loop Relayer and relayerset.Relayer\"\n\nThis reverts commit bab02759d6a31343acec952d581509f0a835ece7.\n\n* Make generate",
+          "timestamp": "2025-07-08T13:39:59-04:00",
+          "tree_id": "5f7324f9a35c0280cdd27b5cf67810e1bb3af685",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fbb435dd18c8efad2d0f149e940b0c770567fa57"
+        },
+        "date": 1751996468341,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.7,
+            "unit": "ns/op",
+            "extra": "3358011 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.4,
+            "unit": "ns/op",
+            "extra": "2888174 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28448,
+            "unit": "ns/op",
+            "extra": "42193 times\n4 procs"
           }
         ]
       }

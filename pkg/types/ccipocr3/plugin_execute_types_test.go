@@ -59,7 +59,7 @@ func TestExecuteReportInfo_EncodeDecode(t *testing.T) {
 				MerkleRoots: []MerkleRootChain{
 					{
 						ChainSel:      10,
-						OnRampAddress: mustNewUnknownAddress(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
+						OnRampAddress: mustNewAccountBytesFromHex(t, "0x04D4cC5972ad487F71b85654d48b27D32b13a22F"),
 						SeqNumsRange:  NewSeqNumRange(100, 200),
 						MerkleRoot:    Bytes32{},
 					},

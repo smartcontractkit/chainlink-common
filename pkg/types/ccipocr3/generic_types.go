@@ -3,6 +3,7 @@ package ccipocr3
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -133,7 +134,11 @@ func (s SeqNumRange) String() string {
 }
 
 func (s SeqNumRange) Length() int {
-	return int(s.End() - s.Start() + 1)
+	length := s.End() - s.Start() + 1
+	if length > SeqNum(math.MaxInt) {
+		return math.MaxInt
+	}
+	return int(length)
 }
 
 // ToSlice returns a slice of sequence numbers in the range.

@@ -158,7 +158,7 @@ func TestNewBytesFromString(t *testing.T) {
 		})
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewUnknownAddressFromHex(tt.arg)
+			got, err := NewAccountBytesFromHex(tt.arg)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 // AccountBytes represents a raw address with an unknown encoding.
 type AccountBytes []byte
 
-// NewUnknownAddressFromHex creates a new AccountBytes from a hex string.
-func NewUnknownAddressFromHex(s string) (AccountBytes, error) {
+// NewAccountBytesFromHex creates a new AccountBytes from a hex string.
+func NewAccountBytesFromHex(s string) (AccountBytes, error) {
 	b, err := NewBytesFromString(s)
 	if err != nil {
 		return nil, err

@@ -121,20 +121,14 @@ type DestinationAccessor interface {
 	// Access Type: Method(GetInboundNonce)
 	// Contract: NonceManager
 	// Confidence: Unconfirmed
-	Nonces(
-		ctx context.Context,
-		addresses map[ChainSelector][]UnknownEncodedAddress,
-	) (map[ChainSelector]map[string]uint64, error)
+	Nonces(ctx context.Context, addresses map[ChainSelector][]Account) (map[ChainSelector]map[string]uint64, error)
 
 	// GetChainFeePriceUpdate Gets latest chain fee price update for the provided chains.
 	//
 	// Access Type: Method(GetChainFeePriceUpdate)
 	// Contract: FeeQuoter
 	// Confidence: Unconfirmed
-	GetChainFeePriceUpdate(
-		ctx context.Context,
-		selectors []ChainSelector,
-	) map[ChainSelector]TimestampedBig
+	GetChainFeePriceUpdate(ctx context.Context, selectors []ChainSelector) map[ChainSelector]TimestampedBig
 
 	// GetLatestPriceSeqNr returns the latest price sequence number for the destination chain.
 	// Not to confuse with the sequence number of the messages. This is the OCR sequence number.
@@ -153,11 +147,7 @@ type SourceAccessor interface {
 	// Access Type: Event(CCIPMessageSent)
 	// Contract: OnRamp
 	// Confidence: Finalized
-	MsgsBetweenSeqNums(
-		ctx context.Context,
-		dest ChainSelector,
-		seqNumRange SeqNumRange,
-	) ([]Message, error)
+	MsgsBetweenSeqNums(ctx context.Context, dest ChainSelector, seqNumRange SeqNumRange) ([]Message, error)
 
 	// LatestMessageTo returns the sequence number associated with the most
 	// recent message being sent to a given destination.
@@ -173,10 +163,7 @@ type SourceAccessor interface {
 	// Access Type: Method(GetExpectedNextSequenceNumber)
 	// Contract: OnRamp
 	// Confidence: Unconfirmed
-	GetExpectedNextSequenceNumber(
-		ctx context.Context,
-		dest ChainSelector,
-	) (SeqNum, error)
+	GetExpectedNextSequenceNumber(ctx context.Context, dest ChainSelector) (SeqNum, error)
 
 	// GetTokenPriceUSD looks up a token price in USD. The address value should
 	// be retrieved from a configuration cache (i.e. ConfigPoller).
@@ -188,10 +175,7 @@ type SourceAccessor interface {
 	// Notes: This function is new and serves as a general price interface for
 	//        both LinkPriceUSD and GetWrappedNativeTokenPriceUSD.
 	//        See Design Doc (Combined Token Price Helper) for notes.
-	GetTokenPriceUSD(
-		ctx context.Context,
-		address AccountBytes,
-	) (TimestampedUnixBig, error)
+	GetTokenPriceUSD(ctx context.Context, address AccountBytes) (TimestampedUnixBig, error)
 
 	// GetFeeQuoterDestChainConfig returns the fee quoter destination chain config.
 	//
@@ -201,10 +185,7 @@ type SourceAccessor interface {
 	//
 	// Notes: This is a new general purpose function needed to implement
 	//        GetMedianDataAvailabilityGasConfig.
-	GetFeeQuoterDestChainConfig(
-		ctx context.Context,
-		dest ChainSelector,
-	) (FeeQuoterDestChainConfig, error)
+	GetFeeQuoterDestChainConfig(ctx context.Context, dest ChainSelector) (FeeQuoterDestChainConfig, error)
 }
 
 type RMNAccessor interface {

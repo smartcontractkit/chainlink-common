@@ -10,11 +10,11 @@ import (
 )
 
 type TokenPrice struct {
-	TokenID UnknownEncodedAddress `json:"tokenID"`
-	Price   BigInt                `json:"price"`
+	TokenID Account `json:"tokenID"`
+	Price   BigInt  `json:"price"`
 }
 
-type TokenPriceMap map[UnknownEncodedAddress]BigInt
+type TokenPriceMap map[Account]BigInt
 
 func (t TokenPriceMap) ToSortedSlice() []TokenPrice {
 	var res []TokenPrice
@@ -30,7 +30,7 @@ func (t TokenPriceMap) ToSortedSlice() []TokenPrice {
 	return res
 }
 
-func NewTokenPrice(tokenID UnknownEncodedAddress, price *big.Int) TokenPrice {
+func NewTokenPrice(tokenID Account, price *big.Int) TokenPrice {
 	return TokenPrice{
 		TokenID: tokenID,
 		Price:   BigInt{price},

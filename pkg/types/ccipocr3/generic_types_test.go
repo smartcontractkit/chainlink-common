@@ -466,15 +466,15 @@ func TestSeqNum_IsWithinRanges(t *testing.T) {
 
 func TestTokenPriceMap_ToSortedSlice(t *testing.T) {
 	m := TokenPriceMap{
-		UnknownEncodedAddress("b"): BigInt{big.NewInt(2)},
-		UnknownEncodedAddress("a"): BigInt{big.NewInt(1)},
-		UnknownEncodedAddress("c"): BigInt{big.NewInt(3)},
+		Account("b"): BigInt{big.NewInt(2)},
+		Account("a"): BigInt{big.NewInt(1)},
+		Account("c"): BigInt{big.NewInt(3)},
 	}
 	sorted := m.ToSortedSlice()
 	require.Len(t, sorted, 3)
-	assert.Equal(t, UnknownEncodedAddress("a"), sorted[0].TokenID)
-	assert.Equal(t, UnknownEncodedAddress("b"), sorted[1].TokenID)
-	assert.Equal(t, UnknownEncodedAddress("c"), sorted[2].TokenID)
+	assert.Equal(t, Account("a"), sorted[0].TokenID)
+	assert.Equal(t, Account("b"), sorted[1].TokenID)
+	assert.Equal(t, Account("c"), sorted[2].TokenID)
 }
 
 func mustNewBytes32(t *testing.T, s string) Bytes32 {

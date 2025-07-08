@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 // AccountBytes represents a raw address with an unknown encoding.
@@ -46,8 +48,8 @@ func (a AccountBytes) IsZeroOrEmpty() bool {
 	return true
 }
 
-// UnknownEncodedAddress represents an encoded address with an unknown encoding.
-type UnknownEncodedAddress string
+// Account represents an encoded address with an unknown encoding.
+type Account libocr.Account
 
 type Bytes []byte
 

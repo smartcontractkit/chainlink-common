@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751983140113,
+  "lastUpdate": 1751984193018,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18858,6 +18858,48 @@ window.BENCHMARK_DATA = {
             "value": 28458,
             "unit": "ns/op",
             "extra": "42160 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "117188496+cll-gg@users.noreply.github.com",
+            "name": "Geert",
+            "username": "cll-gg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d0a81a75d553781d7e7f3e2254324cf0ff73aa5",
+          "message": "OEV-373 Add securemint plugin type and securemint aggregator (#1224)\n\n* OEV-373 Add sm plugin type\n\n* Provide a medianProvider for secure mint for now\n\n* Introduce securemint_aggregator (first pass)\n\n* Simplify and add test\n\n* Temporarily revert \"Use generics in Request and add Request.Digest() method (#1328)\" because it breaks core\n\nThis reverts commit 9c693c79b285f27ede6473188fc5933a40cd988f.\n\n* Progress on the securemint aggregator (using the securemint workflow test in core)\n\n* Improved aggregator\n\n* Remove default config + add debug logging\n\n* Pack the report in an int for the DF Cache contract\n\n* Small comment update\n\n* Fix packing report into uin224 for DF Cache\n\n* Fix aggregator test\n\n* Remove relayer change that's needed for loopifying\n\n* Decided to copy SM plugin types that we need\n\n* Update comment\n\n* Remove two older todos\n\n* I think we don't need the raw report\n\n* Fix various todos (see also DF-21519)\n\n* Set dataID specifically for secure mint\n\n* Reapply \"Temporarily revert \"Use generics in Request and add Request.Digest() method (#1328)\" because it should work with core again\"\n\nThis reverts commit 10b86ab7449e9029b04c0b606e1beec4002aa4b3.\n\n* Fix test\n\n* Remove default value",
+          "timestamp": "2025-07-08T14:15:12Z",
+          "tree_id": "c5bced586b84822eab42f3ee674079908ba63734",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9d0a81a75d553781d7e7f3e2254324cf0ff73aa5"
+        },
+        "date": 1751984191777,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.6,
+            "unit": "ns/op",
+            "extra": "2921775 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.3,
+            "unit": "ns/op",
+            "extra": "2881005 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28763,
+            "unit": "ns/op",
+            "extra": "42249 times\n4 procs"
           }
         ]
       }

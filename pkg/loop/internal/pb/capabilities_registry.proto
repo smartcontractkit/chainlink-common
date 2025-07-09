@@ -42,11 +42,11 @@ message NodeRequest {
 // LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
 message NodeReply {
   bytes peerID = 1; // [32]byte
-  uint32 nodeOperatorID = 2; // uint32
-  bytes signer = 3; // [32]byte
-  bytes encryptionPublicKey = 4; // [32]byte
-  DON workflowDON = 5;
-  repeated DON CapabilityDONs = 6;
+  DON workflowDON = 2;
+  repeated DON CapabilityDONs = 3;
+  uint32 nodeOperatorID = 4; // uint32
+  bytes signer = 5; // [32]byte
+  bytes encryptionPublicKey = 6; // [32]byte
 }
 
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].

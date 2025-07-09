@@ -191,12 +191,12 @@ func (x *NodeRequest) GetPeerID() []byte {
 // LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
 type NodeReply struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
-	PeerID              []byte                 `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"`                           // [32]byte
-	NodeOperatorID      uint32                 `protobuf:"varint,2,opt,name=nodeOperatorID,proto3" json:"nodeOperatorID,omitempty"`          // uint32
-	Signer              []byte                 `protobuf:"bytes,3,opt,name=signer,proto3" json:"signer,omitempty"`                           // [32]byte
-	EncryptionPublicKey []byte                 `protobuf:"bytes,4,opt,name=encryptionPublicKey,proto3" json:"encryptionPublicKey,omitempty"` // [32]byte
-	WorkflowDON         *DON                   `protobuf:"bytes,5,opt,name=workflowDON,proto3" json:"workflowDON,omitempty"`
-	CapabilityDONs      []*DON                 `protobuf:"bytes,6,rep,name=CapabilityDONs,proto3" json:"CapabilityDONs,omitempty"`
+	PeerID              []byte                 `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"` // [32]byte
+	WorkflowDON         *DON                   `protobuf:"bytes,2,opt,name=workflowDON,proto3" json:"workflowDON,omitempty"`
+	CapabilityDONs      []*DON                 `protobuf:"bytes,3,rep,name=CapabilityDONs,proto3" json:"CapabilityDONs,omitempty"`
+	NodeOperatorID      uint32                 `protobuf:"varint,4,opt,name=nodeOperatorID,proto3" json:"nodeOperatorID,omitempty"`          // uint32
+	Signer              []byte                 `protobuf:"bytes,5,opt,name=signer,proto3" json:"signer,omitempty"`                           // [32]byte
+	EncryptionPublicKey []byte                 `protobuf:"bytes,6,opt,name=encryptionPublicKey,proto3" json:"encryptionPublicKey,omitempty"` // [32]byte
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -238,6 +238,20 @@ func (x *NodeReply) GetPeerID() []byte {
 	return nil
 }
 
+func (x *NodeReply) GetWorkflowDON() *DON {
+	if x != nil {
+		return x.WorkflowDON
+	}
+	return nil
+}
+
+func (x *NodeReply) GetCapabilityDONs() []*DON {
+	if x != nil {
+		return x.CapabilityDONs
+	}
+	return nil
+}
+
 func (x *NodeReply) GetNodeOperatorID() uint32 {
 	if x != nil {
 		return x.NodeOperatorID
@@ -255,20 +269,6 @@ func (x *NodeReply) GetSigner() []byte {
 func (x *NodeReply) GetEncryptionPublicKey() []byte {
 	if x != nil {
 		return x.EncryptionPublicKey
-	}
-	return nil
-}
-
-func (x *NodeReply) GetWorkflowDON() *DON {
-	if x != nil {
-		return x.WorkflowDON
-	}
-	return nil
-}
-
-func (x *NodeReply) GetCapabilityDONs() []*DON {
-	if x != nil {
-		return x.CapabilityDONs
 	}
 	return nil
 }
@@ -848,12 +848,12 @@ const file_capabilities_registry_proto_rawDesc = "" +
 	"\vNodeRequest\x12\x16\n" +
 	"\x06peerID\x18\x01 \x01(\fR\x06peerID\"\xf5\x01\n" +
 	"\tNodeReply\x12\x16\n" +
-	"\x06peerID\x18\x01 \x01(\fR\x06peerID\x12&\n" +
-	"\x0enodeOperatorID\x18\x02 \x01(\rR\x0enodeOperatorID\x12\x16\n" +
-	"\x06signer\x18\x03 \x01(\fR\x06signer\x120\n" +
-	"\x13encryptionPublicKey\x18\x04 \x01(\fR\x13encryptionPublicKey\x12+\n" +
-	"\vworkflowDON\x18\x05 \x01(\v2\t.loop.DONR\vworkflowDON\x121\n" +
-	"\x0eCapabilityDONs\x18\x06 \x03(\v2\t.loop.DONR\x0eCapabilityDONs\"\x1c\n" +
+	"\x06peerID\x18\x01 \x01(\fR\x06peerID\x12+\n" +
+	"\vworkflowDON\x18\x02 \x01(\v2\t.loop.DONR\vworkflowDON\x121\n" +
+	"\x0eCapabilityDONs\x18\x03 \x03(\v2\t.loop.DONR\x0eCapabilityDONs\x12&\n" +
+	"\x0enodeOperatorID\x18\x04 \x01(\rR\x0enodeOperatorID\x12\x16\n" +
+	"\x06signer\x18\x05 \x01(\fR\x06signer\x120\n" +
+	"\x13encryptionPublicKey\x18\x06 \x01(\fR\x13encryptionPublicKey\"\x1c\n" +
 	"\n" +
 	"GetRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"X\n" +

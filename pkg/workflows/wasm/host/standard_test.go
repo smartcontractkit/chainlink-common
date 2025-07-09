@@ -49,7 +49,9 @@ func TestStandardConfig(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-	mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
 	wrappedConfig := runWithBasicTrigger(t, mockExecutionHelper)
 	actualConfig := wrappedConfig.GetValue().GetBytesValue()
 	require.ElementsMatch(t, anyTestConfig, actualConfig)
@@ -59,7 +61,9 @@ func TestStandardErrors(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-	mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
 	errMsg := runWithBasicTrigger(t, mockExecutionHelper)
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
 }
@@ -68,7 +72,9 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-	mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
 	m := makeTestModule(t)
 	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 	callsSeen := map[bool]bool{}
@@ -106,8 +112,13 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("successful mode switch", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
-		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).Return(time.Now(), nil).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
+		// We want to make sure time.Sleep() is called at least twice in DON mode and once in node Mode
+		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		})
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			if request.Id == "basic-test-action@1.0.0" {
 				input := &basicaction.Inputs{}
@@ -132,7 +143,9 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("node runtime in don mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			response := values.NewString("hi")
 			mapProto := &valuespb.Map{
@@ -158,7 +171,9 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("don runtime in node mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
 			input := &pb.SimpleConsensusInputs{}
@@ -187,7 +202,9 @@ func TestStandardLogging(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-	mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
 		assert.True(t, strings.Contains(s, "log from wasm!"))
 		return nil
@@ -202,7 +219,9 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Run("test registration", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
 
 		subscribe := &pb.ExecuteRequest{Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
 		actual, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
@@ -252,7 +271,9 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Run("first callback", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
 
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -264,7 +285,9 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Run("same trigger as first one but different registration", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
 
 		request := triggerExecuteRequest(t, 2, &basictrigger.Outputs{CoolOutput: "different"})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -276,7 +299,9 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Run("different capability callback", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		})
 
 		request := triggerExecuteRequest(t, 1, &actionandtrigger.TriggerEvent{CoolOutput: "different"})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -416,10 +441,15 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionRe
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName)
+	return makeTestModuleByName(t, testName, nil)
 }
 
-func makeTestModuleByName(t *testing.T, testName string) *module {
+func makeTestModuleWithCfg(t *testing.T, cfg *ModuleConfig) *module {
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return makeTestModuleByName(t, testName, cfg)
+}
+
+func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
 	wasmName := path.Join(testName, "test.wasm")
 	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
@@ -432,7 +462,9 @@ func makeTestModuleByName(t *testing.T, testName string) *module {
 	binary, err := os.ReadFile(filepath.Join(absPath, wasmName))
 	require.NoError(t, err)
 
-	cfg := defaultNoDAGModCfg(t)
+	if cfg == nil {
+		cfg = defaultNoDAGModCfg(t)
+	}
 	mod, err := NewModule(cfg, binary)
 	require.NoError(t, err)
 	return mod
@@ -520,7 +552,9 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *pb.ExecutionResult {
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
-	mockExecutionHelper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {

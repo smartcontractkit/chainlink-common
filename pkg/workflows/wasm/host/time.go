@@ -11,6 +11,7 @@ import (
 // timeFetcher safely retrieves DON or Node time from a background goroutine.
 // It avoids calling into Go runtime APIs (e.g., context) inside Wasm trap handlers,
 // which can panic if executed directly during WASI syscalls like clock_time_get.
+// TODO: Add link reference if there is one and say "see this"
 type timeFetcher struct {
 	ctx             context.Context
 	executor        ExecutionHelper
@@ -31,11 +32,6 @@ func newTimeFetcher(ctx context.Context, executor ExecutionHelper) *timeFetcher 
 	}
 }
 
-// GetTime safely returns DON or Node time based on the mode.
-//
-// This avoids calling time-related functions directly inside Wasm trap handlers,
-// which can panic in Go's WebAssembly runtime. A background goroutine handles
-// the request to ensure safe, deferred execution.
 func (t *timeFetcher) GetTime(mode sdkpb.Mode) (time.Time, error) {
 	select {
 	case t.timeRequestChan <- mode:

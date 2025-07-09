@@ -21,6 +21,7 @@ type execution[T any] struct {
 	module               *module
 	executor             ExecutionHelper
 	timeFetcher          *timeFetcher
+	baseTime             *time.Time
 	hasRun               bool
 	mode                 sdkpb.Mode
 	donSeed              int64
@@ -171,11 +172,26 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 		return ErrnoInval
 	}
 
-	trg := make([]byte, 8)
-	binary.LittleEndian.PutUint64(trg, uint64(donTime.UnixNano()))
-	if wasmWrite(caller, trg, resultTimestamp, 8) == -1 {
-		return ErrnoFault
+	if e.baseTime == nil {
+		// baseTime must be before the first poll or Go panics
+		t := donTime.Add(-time.Nanosecond)
+		e.baseTime = &t
 	}
+
+	var val int64
+	switch id {
+	case clockIDMonotonic:
+		val = donTime.Sub(*e.baseTime).Nanoseconds()
+	case clockIDRealtime:
+		val = donTime.UnixNano()
+	default:
+		return ErrnoInval
+	}
+
+	uint64Size := int32(8)
+	trg := make([]byte, uint64Size)
+	binary.LittleEndian.PutUint64(trg, uint64(val))
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
 }
 

@@ -14,9 +14,43 @@ import (
 )
 
 const (
-	nodagRandomBinaryCmd      = "standard_tests/multiple_triggers"
-	nodagRandomBinaryLocation = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd            = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagSleepTimeoutBinaryCmd      = "standard_tests/sleep_timeout"
+	nodagSleepTimeoutBinaryLocation = nodagSleepTimeoutBinaryCmd + "/testmodule.wasm"
 )
+
+func Test_Sleep_Timeout(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(nodagSleepTimeoutBinaryCmd, nodagSleepTimeoutBinaryLocation, true, t)
+
+	mc := defaultNoDAGModCfg(t)
+	timeout := 1 * time.Second
+	mc.Timeout = &timeout
+	m, err := NewModule(mc, binary)
+	require.NoError(t, err)
+
+	m.v2ImportName = "test"
+	m.Start()
+	defer m.Close()
+
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
+
+	req := &pb.ExecuteRequest{
+		Request: &pb.ExecuteRequest_Trigger{},
+	}
+
+	start := time.Now()
+	_, err = m.Execute(t.Context(), req, mockExecutionHelper)
+	duration := time.Since(start)
+	require.ErrorContains(t, err, "wasm trap: interrupt")
+	require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
+}
 
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()

@@ -51,7 +51,7 @@ func (o OtelZapCore) Enabled(level zapcore.Level) bool {
 func (o OtelZapCore) With(fields []zapcore.Field) zapcore.Core {
 	return &OtelZapCore{
 		logger:       o.logger,
-		fields:       append(o.fields, fields...),
+		attributes:       append(o.fields, fields...),
 		levelEnabler: o.levelEnabler,
 	}
 }

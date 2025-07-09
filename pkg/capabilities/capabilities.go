@@ -298,7 +298,8 @@ type DON struct {
 }
 
 // Node contains the node's peer ID and the DONs it is part of.
-//
+// The signer is the Node's onchain public key used for OCR signing,
+// and the encryption public key is the Node's workflow public key.
 // Note the following relationships between the workflow and capability DONs and this node.
 //
 // There is a 1:0..1 relationship between this node and a workflow DON.

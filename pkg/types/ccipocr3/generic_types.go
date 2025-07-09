@@ -3,18 +3,34 @@ package ccipocr3
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
+	"sort"
 	"strconv"
-
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
 type TokenPrice struct {
-	TokenID types.Account `json:"tokenID"`
-	Price   BigInt        `json:"price"`
+	TokenID UnknownEncodedAddress `json:"tokenID"`
+	Price   BigInt                `json:"price"`
 }
 
-func NewTokenPrice(tokenID types.Account, price *big.Int) TokenPrice {
+type TokenPriceMap map[UnknownEncodedAddress]BigInt
+
+func (t TokenPriceMap) ToSortedSlice() []TokenPrice {
+	var res []TokenPrice
+	for tokenID, price := range t {
+		res = append(res, TokenPrice{tokenID, price})
+	}
+
+	// sort the token prices by tokenID
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].TokenID < res[j].TokenID
+	})
+
+	return res
+}
+
+func NewTokenPrice(tokenID UnknownEncodedAddress, price *big.Int) TokenPrice {
 	return TokenPrice{
 		TokenID: tokenID,
 		Price:   BigInt{price},
@@ -22,14 +38,14 @@ func NewTokenPrice(tokenID types.Account, price *big.Int) TokenPrice {
 }
 
 type GasPriceChain struct {
-	GasPrice BigInt        `json:"gasPrice"`
 	ChainSel ChainSelector `json:"chainSel"`
+	GasPrice BigInt        `json:"gasPrice"`
 }
 
 func NewGasPriceChain(gasPrice *big.Int, chainSel ChainSelector) GasPriceChain {
 	return GasPriceChain{
-		GasPrice: NewBigInt(gasPrice),
 		ChainSel: chainSel,
+		GasPrice: NewBigInt(gasPrice),
 	}
 }
 
@@ -37,6 +53,15 @@ type SeqNum uint64
 
 func (s SeqNum) String() string {
 	return strconv.FormatUint(uint64(s), 10)
+}
+
+func (s SeqNum) IsWithinRanges(ranges []SeqNumRange) bool {
+	for _, r := range ranges {
+		if r.Contains(s) {
+			return true
+		}
+	}
+	return false
 }
 
 func NewSeqNumRange(start, end SeqNum) SeqNumRange {
@@ -93,8 +118,36 @@ func (s SeqNumRange) Contains(seq SeqNum) bool {
 	return s.Start() <= seq && seq <= s.End()
 }
 
+// FilterSlice returns a slice of sequence numbers that are contained in the range.
+func (s SeqNumRange) FilterSlice(seqNums []SeqNum) []SeqNum {
+	var contained []SeqNum
+	for _, seq := range seqNums {
+		if s.Contains(seq) {
+			contained = append(contained, seq)
+		}
+	}
+	return contained
+}
+
 func (s SeqNumRange) String() string {
 	return fmt.Sprintf("[%d -> %d]", s[0], s[1])
+}
+
+func (s SeqNumRange) Length() int {
+	length := s.End() - s.Start() + 1
+	if length > SeqNum(math.MaxInt) {
+		return math.MaxInt
+	}
+	return int(length)
+}
+
+// ToSlice returns a slice of sequence numbers in the range.
+func (s SeqNumRange) ToSlice() []SeqNum {
+	var seqs []SeqNum
+	for i := s.Start(); i <= s.End(); i++ {
+		seqs = append(seqs, i)
+	}
+	return seqs
 }
 
 type ChainSelector uint64
@@ -113,18 +166,20 @@ type Message struct {
 	Header RampMessageHeader `json:"header"`
 	// Sender address on the source chain.
 	// i.e if the source chain is EVM, this is an abi-encoded EVM address.
-	Sender Bytes `json:"sender"`
+	Sender UnknownAddress `json:"sender"`
 	// Data is the arbitrary data payload supplied by the message sender.
 	Data Bytes `json:"data"`
 	// Receiver is the receiver address on the destination chain.
 	// This is encoded in the destination chain family specific encoding.
 	// i.e if the destination is EVM, this is abi.encode(receiver).
-	Receiver Bytes `json:"receiver"`
-	// ExtraArgs is destination-chain specific extra args, such as the gasLimit for EVM chains.
+	Receiver UnknownAddress `json:"receiver"`
+	// ExtraArgs is destination-chain specific extra args,
+	// such as the gasLimit for EVM chains.
+	// This field is encoded in the source chain encoding scheme.
 	ExtraArgs Bytes `json:"extraArgs"`
 	// FeeToken is the fee token address.
 	// i.e if the source chain is EVM, len(FeeToken) == 20 (i.e, is not abi-encoded).
-	FeeToken Bytes `json:"feeToken"`
+	FeeToken UnknownAddress `json:"feeToken"`
 	// FeeTokenAmount is the amount of fee tokens paid.
 	FeeTokenAmount BigInt `json:"feeTokenAmount"`
 	// FeeValueJuels is the fee amount in Juels
@@ -133,9 +188,31 @@ type Message struct {
 	TokenAmounts []RampTokenAmount `json:"tokenAmounts"`
 }
 
-func (c Message) String() string {
-	js, _ := json.Marshal(c)
+func (m Message) CopyWithoutData() Message {
+	return Message{
+		Header:         m.Header,
+		Sender:         m.Sender,
+		Data:           []byte{},
+		Receiver:       m.Receiver,
+		ExtraArgs:      m.ExtraArgs,
+		FeeToken:       m.FeeToken,
+		FeeTokenAmount: m.FeeTokenAmount,
+		FeeValueJuels:  m.FeeValueJuels,
+		TokenAmounts:   m.TokenAmounts,
+	}
+}
+
+func (m Message) String() string {
+	js, _ := json.Marshal(m)
 	return string(js)
+}
+
+// IsPseudoDeleted returns true when the message is stripped out of some fields that makes it usable. Message still
+// contains some metaData like seqNumber and SourceChainSelector to be able to distinguish it from other messages while
+// still in the pseudo deleted state.
+func (m Message) IsPseudoDeleted() bool {
+	return m.Header.DestChainSelector == 0 && m.Header.SourceChainSelector == 0 &&
+		len(m.Header.OnRamp) == 0 && len(m.Receiver) == 0 && len(m.Sender) == 0
 }
 
 // RampMessageHeader is the family-agnostic header for OnRamp and OffRamp messages.
@@ -161,7 +238,10 @@ type RampMessageHeader struct {
 
 	// OnRamp is the address of the onramp that sent the message.
 	// NOTE: This is populated by the ccip reader. Not emitted explicitly onchain.
-	OnRamp Bytes `json:"onRamp"`
+	OnRamp UnknownAddress `json:"onRamp"`
+
+	// TxHash is the hash of the transaction that emitted this message.
+	TxHash string `json:"txHash"`
 }
 
 // RampTokenAmount represents the family-agnostic token amounts used for both OnRamp & OffRamp messages.
@@ -169,11 +249,11 @@ type RampTokenAmount struct {
 	// SourcePoolAddress is the source pool address, encoded according to source family native encoding scheme.
 	// This value is trusted as it was obtained through the onRamp. It can be relied upon by the destination
 	// pool to validate the source pool.
-	SourcePoolAddress Bytes `json:"sourcePoolAddress"`
+	SourcePoolAddress UnknownAddress `json:"sourcePoolAddress"`
 
 	// DestTokenAddress is the address of the destination token, abi encoded in the case of EVM chains.
 	// This value is UNTRUSTED as any pool owner can return whatever value they want.
-	DestTokenAddress Bytes `json:"destTokenAddress"`
+	DestTokenAddress UnknownAddress `json:"destTokenAddress"`
 
 	// ExtraData is optional pool data to be transferred to the destination chain. Be default this is capped at
 	// CCIP_LOCK_OR_BURN_V1_RET_BYTES bytes. If more data is required, the TokenTransferFeeConfig.destBytesOverhead

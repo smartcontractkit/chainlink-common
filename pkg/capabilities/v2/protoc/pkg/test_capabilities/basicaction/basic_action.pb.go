@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/protoc/pkg/test_capabilities/basicaction/basic_action.proto
+// source: capabilities/internal/basicaction/v1/basic_action.proto
 
 package basicaction
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -31,7 +31,7 @@ type Inputs struct {
 
 func (x *Inputs) Reset() {
 	*x = Inputs{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_msgTypes[0]
+	mi := &file_capabilities_internal_basicaction_v1_basic_action_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *Inputs) String() string {
 func (*Inputs) ProtoMessage() {}
 
 func (x *Inputs) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_msgTypes[0]
+	mi := &file_capabilities_internal_basicaction_v1_basic_action_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *Inputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Inputs.ProtoReflect.Descriptor instead.
 func (*Inputs) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Inputs) GetInputThing() bool {
@@ -75,7 +75,7 @@ type Outputs struct {
 
 func (x *Outputs) Reset() {
 	*x = Outputs{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_msgTypes[1]
+	mi := &file_capabilities_internal_basicaction_v1_basic_action_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -87,7 +87,7 @@ func (x *Outputs) String() string {
 func (*Outputs) ProtoMessage() {}
 
 func (x *Outputs) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_msgTypes[1]
+	mi := &file_capabilities_internal_basicaction_v1_basic_action_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +100,7 @@ func (x *Outputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outputs.ProtoReflect.Descriptor instead.
 func (*Outputs) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Outputs) GetAdaptedThing() string {
@@ -110,39 +110,39 @@ func (x *Outputs) GetAdaptedThing() string {
 	return ""
 }
 
-var File_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto protoreflect.FileDescriptor
+var File_capabilities_internal_basicaction_v1_basic_action_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDesc = "" +
+const file_capabilities_internal_basicaction_v1_basic_action_proto_rawDesc = "" +
 	"\n" +
-	"Kcapabilities/v2/protoc/pkg/test_capabilities/basicaction/basic_action.proto\x12\x14basic_test_action.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\")\n" +
+	"7capabilities/internal/basicaction/v1/basic_action.proto\x12$capabilities.internal.basicaction.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\")\n" +
 	"\x06Inputs\x12\x1f\n" +
 	"\vinput_thing\x18\x01 \x01(\bR\n" +
 	"inputThing\".\n" +
 	"\aOutputs\x12#\n" +
-	"\radapted_thing\x18\x01 \x01(\tR\fadaptedThing2z\n" +
-	"\vBasicAction\x12L\n" +
-	"\rPerformAction\x12\x1c.basic_test_action.v1.Inputs\x1a\x1d.basic_test_action.v1.Outputs\x1a\x1d\x82\xb5\x18\x19\x12\x17basic-test-action@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicactionb\x06proto3"
+	"\radapted_thing\x18\x01 \x01(\tR\fadaptedThing2\x9c\x01\n" +
+	"\vBasicAction\x12l\n" +
+	"\rPerformAction\x12,.capabilities.internal.basicaction.v1.Inputs\x1a-.capabilities.internal.basicaction.v1.Outputs\x1a\x1f\x82\xb5\x18\x1b\b\x01\x12\x17basic-test-action@1.0.0b\x06proto3"
 
 var (
-	file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescOnce sync.Once
-	file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescData []byte
+	file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescOnce sync.Once
+	file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDesc)))
+func file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescGZIP() []byte {
+	file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescOnce.Do(func() {
+		file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_internal_basicaction_v1_basic_action_proto_rawDesc), len(file_capabilities_internal_basicaction_v1_basic_action_proto_rawDesc)))
 	})
-	return file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDescData
+	return file_capabilities_internal_basicaction_v1_basic_action_proto_rawDescData
 }
 
-var file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_goTypes = []any{
-	(*Inputs)(nil),  // 0: basic_test_action.v1.Inputs
-	(*Outputs)(nil), // 1: basic_test_action.v1.Outputs
+var file_capabilities_internal_basicaction_v1_basic_action_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_capabilities_internal_basicaction_v1_basic_action_proto_goTypes = []any{
+	(*Inputs)(nil),  // 0: capabilities.internal.basicaction.v1.Inputs
+	(*Outputs)(nil), // 1: capabilities.internal.basicaction.v1.Outputs
 }
-var file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_depIdxs = []int32{
-	0, // 0: basic_test_action.v1.BasicAction.PerformAction:input_type -> basic_test_action.v1.Inputs
-	1, // 1: basic_test_action.v1.BasicAction.PerformAction:output_type -> basic_test_action.v1.Outputs
+var file_capabilities_internal_basicaction_v1_basic_action_proto_depIdxs = []int32{
+	0, // 0: capabilities.internal.basicaction.v1.BasicAction.PerformAction:input_type -> capabilities.internal.basicaction.v1.Inputs
+	1, // 1: capabilities.internal.basicaction.v1.BasicAction.PerformAction:output_type -> capabilities.internal.basicaction.v1.Outputs
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -150,26 +150,26 @@ var file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_p
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_init() }
-func file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_init() {
-	if File_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto != nil {
+func init() { file_capabilities_internal_basicaction_v1_basic_action_proto_init() }
+func file_capabilities_internal_basicaction_v1_basic_action_proto_init() {
+	if File_capabilities_internal_basicaction_v1_basic_action_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_basicaction_v1_basic_action_proto_rawDesc), len(file_capabilities_internal_basicaction_v1_basic_action_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_depIdxs,
-		MessageInfos:      file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_msgTypes,
+		GoTypes:           file_capabilities_internal_basicaction_v1_basic_action_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_basicaction_v1_basic_action_proto_depIdxs,
+		MessageInfos:      file_capabilities_internal_basicaction_v1_basic_action_proto_msgTypes,
 	}.Build()
-	File_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto = out.File
-	file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_goTypes = nil
-	file_capabilities_v2_protoc_pkg_test_capabilities_basicaction_basic_action_proto_depIdxs = nil
+	File_capabilities_internal_basicaction_v1_basic_action_proto = out.File
+	file_capabilities_internal_basicaction_v1_basic_action_proto_goTypes = nil
+	file_capabilities_internal_basicaction_v1_basic_action_proto_depIdxs = nil
 }

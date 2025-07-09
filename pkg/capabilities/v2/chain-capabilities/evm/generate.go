@@ -1,2 +1,2 @@
-//go:generate protoc --proto_path=../../../../ --go_out=../../../.. --go_opt=paths=source_relative --plugin=protoc-gen-cre=../../../../capabilities/v2/protoc/protoc-gen-cre --cre_out=../../../../capabilities/v2/chain-capabilities/evm capabilities/v2/chain-capabilities/evm/capability.proto
+//go:generate go run ../../gen --pkg=github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm --file=capabilities/blockchain/evm/v1alpha/client.proto
 package evm

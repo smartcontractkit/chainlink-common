@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault";
+
+package vault;
+
+message SecretIdentifier {
+    string key = 1;
+    string namespace = 2;
+    string owner = 3;
+}
+
+message SecretRequest {
+    SecretIdentifier id = 1;
+    repeated string encryption_keys = 2;
+}
+
+message EncryptedShares {
+    repeated string shares = 1;
+}
+
+message SecretData {
+    string encrypted_value = 2;
+    repeated EncryptedShares encrypted_decryption_key_shares = 3;
+}
+
+message SecretResponse {
+    SecretIdentifier id = 1;
+
+    oneof result {
+      SecretData data = 2;
+      string error = 3;
+    }
+}
+
+message GetSecretsRequest {
+  repeated SecretRequest requests = 1;
+}
+
+message GetSecretsResponse {
+  repeated SecretResponse responses = 1;
+}
+
+message EncryptedSecret {
+  SecretIdentifier id = 1;
+  string encrypted_value = 2;
+}
+
+message CreateSecretsRequest {
+  string request_id = 1;
+  repeated EncryptedSecret encrypted_secrets = 2;
+}
+
+message CreateSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message CreateSecretsResponse {
+  repeated CreateSecretResponse responses = 1;
+}
+
+message UpdateSecretsRequest {
+  string request_id = 1;
+  repeated EncryptedSecret encrypted_secrets = 2;
+}
+
+message UpdateSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message UpdateSecretsResponse {
+  repeated UpdateSecretResponse responses = 1;
+}
+
+message DeleteSecretsRequest {
+  string request_id = 1;
+  repeated SecretIdentifier ids = 2;
+}
+
+message DeleteSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message DeleteSecretsResponse {
+  repeated DeleteSecretResponse responses = 1;
+}
+
+message ListSecretIdentifiersRequest {
+  string request_id = 1;
+  string owner = 2;
+  string namespace = 3;
+}
+
+message ListSecretIdentifiersResponse {
+  repeated SecretIdentifier identifiers = 1;
+}

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: values/pb/values.proto
+// source: values/v1/values.proto
 
 package pb
 
@@ -43,7 +43,7 @@ type Value struct {
 
 func (x *Value) Reset() {
 	*x = Value{}
-	mi := &file_values_pb_values_proto_msgTypes[0]
+	mi := &file_values_v1_values_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -55,7 +55,7 @@ func (x *Value) String() string {
 func (*Value) ProtoMessage() {}
 
 func (x *Value) ProtoReflect() protoreflect.Message {
-	mi := &file_values_pb_values_proto_msgTypes[0]
+	mi := &file_values_v1_values_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -68,7 +68,7 @@ func (x *Value) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Value.ProtoReflect.Descriptor instead.
 func (*Value) Descriptor() ([]byte, []int) {
-	return file_values_pb_values_proto_rawDescGZIP(), []int{0}
+	return file_values_v1_values_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Value) GetValue() isValue_Value {
@@ -242,7 +242,7 @@ type BigInt struct {
 
 func (x *BigInt) Reset() {
 	*x = BigInt{}
-	mi := &file_values_pb_values_proto_msgTypes[1]
+	mi := &file_values_v1_values_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -254,7 +254,7 @@ func (x *BigInt) String() string {
 func (*BigInt) ProtoMessage() {}
 
 func (x *BigInt) ProtoReflect() protoreflect.Message {
-	mi := &file_values_pb_values_proto_msgTypes[1]
+	mi := &file_values_v1_values_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,7 +267,7 @@ func (x *BigInt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BigInt.ProtoReflect.Descriptor instead.
 func (*BigInt) Descriptor() ([]byte, []int) {
-	return file_values_pb_values_proto_rawDescGZIP(), []int{1}
+	return file_values_v1_values_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BigInt) GetAbsVal() []byte {
@@ -293,7 +293,7 @@ type Map struct {
 
 func (x *Map) Reset() {
 	*x = Map{}
-	mi := &file_values_pb_values_proto_msgTypes[2]
+	mi := &file_values_v1_values_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -305,7 +305,7 @@ func (x *Map) String() string {
 func (*Map) ProtoMessage() {}
 
 func (x *Map) ProtoReflect() protoreflect.Message {
-	mi := &file_values_pb_values_proto_msgTypes[2]
+	mi := &file_values_v1_values_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -318,7 +318,7 @@ func (x *Map) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Map.ProtoReflect.Descriptor instead.
 func (*Map) Descriptor() ([]byte, []int) {
-	return file_values_pb_values_proto_rawDescGZIP(), []int{2}
+	return file_values_v1_values_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Map) GetFields() map[string]*Value {
@@ -337,7 +337,7 @@ type List struct {
 
 func (x *List) Reset() {
 	*x = List{}
-	mi := &file_values_pb_values_proto_msgTypes[3]
+	mi := &file_values_v1_values_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -349,7 +349,7 @@ func (x *List) String() string {
 func (*List) ProtoMessage() {}
 
 func (x *List) ProtoReflect() protoreflect.Message {
-	mi := &file_values_pb_values_proto_msgTypes[3]
+	mi := &file_values_v1_values_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -362,7 +362,7 @@ func (x *List) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use List.ProtoReflect.Descriptor instead.
 func (*List) Descriptor() ([]byte, []int) {
-	return file_values_pb_values_proto_rawDescGZIP(), []int{3}
+	return file_values_v1_values_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *List) GetFields() []*Value {
@@ -382,7 +382,7 @@ type Decimal struct {
 
 func (x *Decimal) Reset() {
 	*x = Decimal{}
-	mi := &file_values_pb_values_proto_msgTypes[4]
+	mi := &file_values_v1_values_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +394,7 @@ func (x *Decimal) String() string {
 func (*Decimal) ProtoMessage() {}
 
 func (x *Decimal) ProtoReflect() protoreflect.Message {
-	mi := &file_values_pb_values_proto_msgTypes[4]
+	mi := &file_values_v1_values_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +407,7 @@ func (x *Decimal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Decimal.ProtoReflect.Descriptor instead.
 func (*Decimal) Descriptor() ([]byte, []int) {
-	return file_values_pb_values_proto_rawDescGZIP(), []int{4}
+	return file_values_v1_values_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Decimal) GetCoefficient() *BigInt {
@@ -424,24 +424,24 @@ func (x *Decimal) GetExponent() int32 {
 	return 0
 }
 
-var File_values_pb_values_proto protoreflect.FileDescriptor
+var File_values_v1_values_proto protoreflect.FileDescriptor
 
-const file_values_pb_values_proto_rawDesc = "" +
+const file_values_v1_values_proto_rawDesc = "" +
 	"\n" +
-	"\x16values/pb/values.proto\x12\x06values\x1a\x1fgoogle/protobuf/timestamp.proto\"\xce\x03\n" +
+	"\x16values/v1/values.proto\x12\tvalues.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xda\x03\n" +
 	"\x05Value\x12#\n" +
 	"\fstring_value\x18\x01 \x01(\tH\x00R\vstringValue\x12\x1f\n" +
 	"\n" +
 	"bool_value\x18\x02 \x01(\bH\x00R\tboolValue\x12!\n" +
 	"\vbytes_value\x18\x03 \x01(\fH\x00R\n" +
-	"bytesValue\x12*\n" +
-	"\tmap_value\x18\x04 \x01(\v2\v.values.MapH\x00R\bmapValue\x12-\n" +
+	"bytesValue\x12-\n" +
+	"\tmap_value\x18\x04 \x01(\v2\x0e.values.v1.MapH\x00R\bmapValue\x120\n" +
 	"\n" +
-	"list_value\x18\x05 \x01(\v2\f.values.ListH\x00R\tlistValue\x126\n" +
-	"\rdecimal_value\x18\x06 \x01(\v2\x0f.values.DecimalH\x00R\fdecimalValue\x12!\n" +
+	"list_value\x18\x05 \x01(\v2\x0f.values.v1.ListH\x00R\tlistValue\x129\n" +
+	"\rdecimal_value\x18\x06 \x01(\v2\x12.values.v1.DecimalH\x00R\fdecimalValue\x12!\n" +
 	"\vint64_value\x18\a \x01(\x03H\x00R\n" +
-	"int64Value\x123\n" +
-	"\fbigint_value\x18\t \x01(\v2\x0e.values.BigIntH\x00R\vbigintValue\x12;\n" +
+	"int64Value\x126\n" +
+	"\fbigint_value\x18\t \x01(\v2\x11.values.v1.BigIntH\x00R\vbigintValue\x12;\n" +
 	"\n" +
 	"time_value\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampH\x00R\ttimeValue\x12%\n" +
@@ -449,50 +449,50 @@ const file_values_pb_values_proto_rawDesc = "" +
 	"\x05valueJ\x04\b\b\x10\t\"5\n" +
 	"\x06BigInt\x12\x17\n" +
 	"\aabs_val\x18\x01 \x01(\fR\x06absVal\x12\x12\n" +
-	"\x04sign\x18\x02 \x01(\x03R\x04sign\"\x80\x01\n" +
-	"\x03Map\x12/\n" +
-	"\x06fields\x18\x01 \x03(\v2\x17.values.Map.FieldsEntryR\x06fields\x1aH\n" +
+	"\x04sign\x18\x02 \x01(\x03R\x04sign\"\x86\x01\n" +
+	"\x03Map\x122\n" +
+	"\x06fields\x18\x01 \x03(\v2\x1a.values.v1.Map.FieldsEntryR\x06fields\x1aK\n" +
 	"\vFieldsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12#\n" +
-	"\x05value\x18\x02 \x01(\v2\r.values.ValueR\x05value:\x028\x01\"-\n" +
-	"\x04List\x12%\n" +
-	"\x06fields\x18\x02 \x03(\v2\r.values.ValueR\x06fields\"W\n" +
-	"\aDecimal\x120\n" +
-	"\vcoefficient\x18\x01 \x01(\v2\x0e.values.BigIntR\vcoefficient\x12\x1a\n" +
-	"\bexponent\x18\x02 \x01(\x05R\bexponentB<Z:github.com/smartcontractkit/chainlink-common/pkg/values/pbb\x06proto3"
+	"\x03key\x18\x01 \x01(\tR\x03key\x12&\n" +
+	"\x05value\x18\x02 \x01(\v2\x10.values.v1.ValueR\x05value:\x028\x01\"0\n" +
+	"\x04List\x12(\n" +
+	"\x06fields\x18\x02 \x03(\v2\x10.values.v1.ValueR\x06fields\"Z\n" +
+	"\aDecimal\x123\n" +
+	"\vcoefficient\x18\x01 \x01(\v2\x11.values.v1.BigIntR\vcoefficient\x12\x1a\n" +
+	"\bexponent\x18\x02 \x01(\x05R\bexponentb\x06proto3"
 
 var (
-	file_values_pb_values_proto_rawDescOnce sync.Once
-	file_values_pb_values_proto_rawDescData []byte
+	file_values_v1_values_proto_rawDescOnce sync.Once
+	file_values_v1_values_proto_rawDescData []byte
 )
 
-func file_values_pb_values_proto_rawDescGZIP() []byte {
-	file_values_pb_values_proto_rawDescOnce.Do(func() {
-		file_values_pb_values_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_values_pb_values_proto_rawDesc), len(file_values_pb_values_proto_rawDesc)))
+func file_values_v1_values_proto_rawDescGZIP() []byte {
+	file_values_v1_values_proto_rawDescOnce.Do(func() {
+		file_values_v1_values_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_values_v1_values_proto_rawDesc), len(file_values_v1_values_proto_rawDesc)))
 	})
-	return file_values_pb_values_proto_rawDescData
+	return file_values_v1_values_proto_rawDescData
 }
 
-var file_values_pb_values_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_values_pb_values_proto_goTypes = []any{
-	(*Value)(nil),                 // 0: values.Value
-	(*BigInt)(nil),                // 1: values.BigInt
-	(*Map)(nil),                   // 2: values.Map
-	(*List)(nil),                  // 3: values.List
-	(*Decimal)(nil),               // 4: values.Decimal
-	nil,                           // 5: values.Map.FieldsEntry
+var file_values_v1_values_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_values_v1_values_proto_goTypes = []any{
+	(*Value)(nil),                 // 0: values.v1.Value
+	(*BigInt)(nil),                // 1: values.v1.BigInt
+	(*Map)(nil),                   // 2: values.v1.Map
+	(*List)(nil),                  // 3: values.v1.List
+	(*Decimal)(nil),               // 4: values.v1.Decimal
+	nil,                           // 5: values.v1.Map.FieldsEntry
 	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
 }
-var file_values_pb_values_proto_depIdxs = []int32{
-	2, // 0: values.Value.map_value:type_name -> values.Map
-	3, // 1: values.Value.list_value:type_name -> values.List
-	4, // 2: values.Value.decimal_value:type_name -> values.Decimal
-	1, // 3: values.Value.bigint_value:type_name -> values.BigInt
-	6, // 4: values.Value.time_value:type_name -> google.protobuf.Timestamp
-	5, // 5: values.Map.fields:type_name -> values.Map.FieldsEntry
-	0, // 6: values.List.fields:type_name -> values.Value
-	1, // 7: values.Decimal.coefficient:type_name -> values.BigInt
-	0, // 8: values.Map.FieldsEntry.value:type_name -> values.Value
+var file_values_v1_values_proto_depIdxs = []int32{
+	2, // 0: values.v1.Value.map_value:type_name -> values.v1.Map
+	3, // 1: values.v1.Value.list_value:type_name -> values.v1.List
+	4, // 2: values.v1.Value.decimal_value:type_name -> values.v1.Decimal
+	1, // 3: values.v1.Value.bigint_value:type_name -> values.v1.BigInt
+	6, // 4: values.v1.Value.time_value:type_name -> google.protobuf.Timestamp
+	5, // 5: values.v1.Map.fields:type_name -> values.v1.Map.FieldsEntry
+	0, // 6: values.v1.List.fields:type_name -> values.v1.Value
+	1, // 7: values.v1.Decimal.coefficient:type_name -> values.v1.BigInt
+	0, // 8: values.v1.Map.FieldsEntry.value:type_name -> values.v1.Value
 	9, // [9:9] is the sub-list for method output_type
 	9, // [9:9] is the sub-list for method input_type
 	9, // [9:9] is the sub-list for extension type_name
@@ -500,12 +500,12 @@ var file_values_pb_values_proto_depIdxs = []int32{
 	0, // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_values_pb_values_proto_init() }
-func file_values_pb_values_proto_init() {
-	if File_values_pb_values_proto != nil {
+func init() { file_values_v1_values_proto_init() }
+func file_values_v1_values_proto_init() {
+	if File_values_v1_values_proto != nil {
 		return
 	}
-	file_values_pb_values_proto_msgTypes[0].OneofWrappers = []any{
+	file_values_v1_values_proto_msgTypes[0].OneofWrappers = []any{
 		(*Value_StringValue)(nil),
 		(*Value_BoolValue)(nil),
 		(*Value_BytesValue)(nil),
@@ -521,17 +521,17 @@ func file_values_pb_values_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_values_pb_values_proto_rawDesc), len(file_values_pb_values_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_values_v1_values_proto_rawDesc), len(file_values_v1_values_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_values_pb_values_proto_goTypes,
-		DependencyIndexes: file_values_pb_values_proto_depIdxs,
-		MessageInfos:      file_values_pb_values_proto_msgTypes,
+		GoTypes:           file_values_v1_values_proto_goTypes,
+		DependencyIndexes: file_values_v1_values_proto_depIdxs,
+		MessageInfos:      file_values_v1_values_proto_msgTypes,
 	}.Build()
-	File_values_pb_values_proto = out.File
-	file_values_pb_values_proto_goTypes = nil
-	file_values_pb_values_proto_depIdxs = nil
+	File_values_v1_values_proto = out.File
+	file_values_v1_values_proto_goTypes = nil
+	file_values_v1_values_proto_depIdxs = nil
 }

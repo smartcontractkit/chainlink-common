@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger/action_and_trigger.proto
+// source: capabilities/internal/actionandtrigger/v1/action_and_trigger.proto
 
 package actionandtrigger
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -32,7 +32,7 @@ type Config struct {
 
 func (x *Config) Reset() {
 	*x = Config{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[0]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *Config) String() string {
 func (*Config) ProtoMessage() {}
 
 func (x *Config) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[0]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *Config) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Config.ProtoReflect.Descriptor instead.
 func (*Config) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescGZIP(), []int{0}
+	return file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Config) GetName() string {
@@ -83,7 +83,7 @@ type TriggerEvent struct {
 
 func (x *TriggerEvent) Reset() {
 	*x = TriggerEvent{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +95,7 @@ func (x *TriggerEvent) String() string {
 func (*TriggerEvent) ProtoMessage() {}
 
 func (x *TriggerEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[1]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +108,7 @@ func (x *TriggerEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerEvent.ProtoReflect.Descriptor instead.
 func (*TriggerEvent) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TriggerEvent) GetCoolOutput() string {
@@ -127,7 +127,7 @@ type Input struct {
 
 func (x *Input) Reset() {
 	*x = Input{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[2]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +139,7 @@ func (x *Input) String() string {
 func (*Input) ProtoMessage() {}
 
 func (x *Input) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[2]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +152,7 @@ func (x *Input) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Input.ProtoReflect.Descriptor instead.
 func (*Input) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Input) GetName() string {
@@ -171,7 +171,7 @@ type Output struct {
 
 func (x *Output) Reset() {
 	*x = Output{}
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[3]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -183,7 +183,7 @@ func (x *Output) String() string {
 func (*Output) ProtoMessage() {}
 
 func (x *Output) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes[3]
+	mi := &file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -196,7 +196,7 @@ func (x *Output) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Output.ProtoReflect.Descriptor instead.
 func (*Output) Descriptor() ([]byte, []int) {
-	return file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Output) GetWelcome() string {
@@ -206,11 +206,11 @@ func (x *Output) GetWelcome() string {
 	return ""
 }
 
-var File_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto protoreflect.FileDescriptor
+var File_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDesc = "" +
+const file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDesc = "" +
 	"\n" +
-	"Vcapabilities/v2/protoc/pkg/test_capabilities/actionandtrigger/action_and_trigger.proto\x12\x1cbasic_test_action_trigger.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\"4\n" +
+	"Bcapabilities/internal/actionandtrigger/v1/action_and_trigger.proto\x12)capabilities.internal.actionandtrigger.v1\x1a*tools/generator/v1alpha/cre_metadata.proto\"4\n" +
 	"\x06Config\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\x05R\x06number\"/\n" +
@@ -220,35 +220,35 @@ const file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_
 	"\x05Input\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\"\n" +
 	"\x06Output\x12\x18\n" +
-	"\awelcome\x18\x01 \x01(\tR\awelcome2\xe2\x01\n" +
-	"\x05Basic\x12S\n" +
-	"\x06Action\x12#.basic_test_action_trigger.v1.Input\x1a$.basic_test_action_trigger.v1.Output\x12]\n" +
-	"\aTrigger\x12$.basic_test_action_trigger.v1.Config\x1a*.basic_test_action_trigger.v1.TriggerEvent0\x01\x1a%\x82\xb5\x18!\x12\x1fbasic-test-action-trigger@1.0.0BpZngithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtriggerb\x06proto3"
+	"\awelcome\x18\x01 \x01(\tR\awelcome2\x98\x02\n" +
+	"\x05Basic\x12m\n" +
+	"\x06Action\x120.capabilities.internal.actionandtrigger.v1.Input\x1a1.capabilities.internal.actionandtrigger.v1.Output\x12w\n" +
+	"\aTrigger\x121.capabilities.internal.actionandtrigger.v1.Config\x1a7.capabilities.internal.actionandtrigger.v1.TriggerEvent0\x01\x1a'\x82\xb5\x18#\b\x01\x12\x1fbasic-test-action-trigger@1.0.0b\x06proto3"
 
 var (
-	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescOnce sync.Once
-	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescData []byte
+	file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescOnce sync.Once
+	file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescData []byte
 )
 
-func file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescGZIP() []byte {
-	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescOnce.Do(func() {
-		file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDesc)))
+func file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescGZIP() []byte {
+	file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescOnce.Do(func() {
+		file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDesc), len(file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDesc)))
 	})
-	return file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDescData
+	return file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDescData
 }
 
-var file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_goTypes = []any{
-	(*Config)(nil),       // 0: basic_test_action_trigger.v1.Config
-	(*TriggerEvent)(nil), // 1: basic_test_action_trigger.v1.TriggerEvent
-	(*Input)(nil),        // 2: basic_test_action_trigger.v1.Input
-	(*Output)(nil),       // 3: basic_test_action_trigger.v1.Output
+var file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_goTypes = []any{
+	(*Config)(nil),       // 0: capabilities.internal.actionandtrigger.v1.Config
+	(*TriggerEvent)(nil), // 1: capabilities.internal.actionandtrigger.v1.TriggerEvent
+	(*Input)(nil),        // 2: capabilities.internal.actionandtrigger.v1.Input
+	(*Output)(nil),       // 3: capabilities.internal.actionandtrigger.v1.Output
 }
-var file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_depIdxs = []int32{
-	2, // 0: basic_test_action_trigger.v1.Basic.Action:input_type -> basic_test_action_trigger.v1.Input
-	0, // 1: basic_test_action_trigger.v1.Basic.Trigger:input_type -> basic_test_action_trigger.v1.Config
-	3, // 2: basic_test_action_trigger.v1.Basic.Action:output_type -> basic_test_action_trigger.v1.Output
-	1, // 3: basic_test_action_trigger.v1.Basic.Trigger:output_type -> basic_test_action_trigger.v1.TriggerEvent
+var file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_depIdxs = []int32{
+	2, // 0: capabilities.internal.actionandtrigger.v1.Basic.Action:input_type -> capabilities.internal.actionandtrigger.v1.Input
+	0, // 1: capabilities.internal.actionandtrigger.v1.Basic.Trigger:input_type -> capabilities.internal.actionandtrigger.v1.Config
+	3, // 2: capabilities.internal.actionandtrigger.v1.Basic.Action:output_type -> capabilities.internal.actionandtrigger.v1.Output
+	1, // 3: capabilities.internal.actionandtrigger.v1.Basic.Trigger:output_type -> capabilities.internal.actionandtrigger.v1.TriggerEvent
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -256,28 +256,26 @@ var file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_an
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() {
-	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_init()
-}
-func file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_init() {
-	if File_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto != nil {
+func init() { file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_init() }
+func file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_init() {
+	if File_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDesc), len(file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_depIdxs,
-		MessageInfos:      file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_msgTypes,
+		GoTypes:           file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_depIdxs,
+		MessageInfos:      file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_msgTypes,
 	}.Build()
-	File_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto = out.File
-	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_goTypes = nil
-	file_capabilities_v2_protoc_pkg_test_capabilities_actionandtrigger_action_and_trigger_proto_depIdxs = nil
+	File_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto = out.File
+	file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_goTypes = nil
+	file_capabilities_internal_actionandtrigger_v1_action_and_trigger_proto_depIdxs = nil
 }

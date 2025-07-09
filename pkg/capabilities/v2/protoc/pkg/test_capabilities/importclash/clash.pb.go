@@ -2,14 +2,14 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: capabilities/v2/protoc/pkg/test_capabilities/importclash/clash.proto
+// source: capabilities/internal/importclash/v1/clash.proto
 
 package importclash
 
 import (
-	_ "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb"
-	pb1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb"
+	p1 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p1"
+	p2 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclash/p2"
+	_ "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,21 +23,21 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto protoreflect.FileDescriptor
+var File_capabilities_internal_importclash_v1_clash_proto protoreflect.FileDescriptor
 
-const file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_rawDesc = "" +
+const file_capabilities_internal_importclash_v1_clash_proto_rawDesc = "" +
 	"\n" +
-	"Dcapabilities/v2/protoc/pkg/test_capabilities/importclash/clash.proto\x12\x0eimportclash.v1\x1a0capabilities/v2/protoc/pkg/pb/cre_metadata.proto\x1aKcapabilities/v2/protoc/pkg/test_capabilities/importclash/p1/pb/import.proto\x1aKcapabilities/v2/protoc/pkg/test_capabilities/importclash/p2/pb/import.proto2o\n" +
-	"\vBasicAction\x12F\n" +
-	"\rPerformAction\x12\x19.importclash.p1.v1.Inputs\x1a\x1a.importclash.p2.v1.Outputs\x1a\x18\x82\xb5\x18\x14\x12\x12import-clash@1.0.0BkZigithub.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/importclashb\x06proto3"
+	"0capabilities/internal/importclash/v1/clash.proto\x12$capabilities.internal.importclash.v1\x1a4capabilities/internal/importclash/p1/v1/import.proto\x1a4capabilities/internal/importclash/p2/v1/import.proto\x1a*tools/generator/v1alpha/cre_metadata.proto2\x98\x01\n" +
+	"\vBasicAction\x12m\n" +
+	"\rPerformAction\x12-.capabilities.internal.importclash.p1.v1.Item\x1a-.capabilities.internal.importclash.p2.v1.Item\x1a\x1a\x82\xb5\x18\x16\b\x01\x12\x12import-clash@1.0.0b\x06proto3"
 
-var file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_goTypes = []any{
-	(*pb.Inputs)(nil),   // 0: importclash.p1.v1.Inputs
-	(*pb1.Outputs)(nil), // 1: importclash.p2.v1.Outputs
+var file_capabilities_internal_importclash_v1_clash_proto_goTypes = []any{
+	(*p1.Item)(nil), // 0: capabilities.internal.importclash.p1.v1.Item
+	(*p2.Item)(nil), // 1: capabilities.internal.importclash.p2.v1.Item
 }
-var file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_depIdxs = []int32{
-	0, // 0: importclash.v1.BasicAction.PerformAction:input_type -> importclash.p1.v1.Inputs
-	1, // 1: importclash.v1.BasicAction.PerformAction:output_type -> importclash.p2.v1.Outputs
+var file_capabilities_internal_importclash_v1_clash_proto_depIdxs = []int32{
+	0, // 0: capabilities.internal.importclash.v1.BasicAction.PerformAction:input_type -> capabilities.internal.importclash.p1.v1.Item
+	1, // 1: capabilities.internal.importclash.v1.BasicAction.PerformAction:output_type -> capabilities.internal.importclash.p2.v1.Item
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -45,25 +45,25 @@ var file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_de
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_init() }
-func file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_init() {
-	if File_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto != nil {
+func init() { file_capabilities_internal_importclash_v1_clash_proto_init() }
+func file_capabilities_internal_importclash_v1_clash_proto_init() {
+	if File_capabilities_internal_importclash_v1_clash_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_rawDesc), len(file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_internal_importclash_v1_clash_proto_rawDesc), len(file_capabilities_internal_importclash_v1_clash_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_goTypes,
-		DependencyIndexes: file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_depIdxs,
+		GoTypes:           file_capabilities_internal_importclash_v1_clash_proto_goTypes,
+		DependencyIndexes: file_capabilities_internal_importclash_v1_clash_proto_depIdxs,
 	}.Build()
-	File_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto = out.File
-	file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_goTypes = nil
-	file_capabilities_v2_protoc_pkg_test_capabilities_importclash_clash_proto_depIdxs = nil
+	File_capabilities_internal_importclash_v1_clash_proto = out.File
+	file_capabilities_internal_importclash_v1_clash_proto_goTypes = nil
+	file_capabilities_internal_importclash_v1_clash_proto_depIdxs = nil
 }

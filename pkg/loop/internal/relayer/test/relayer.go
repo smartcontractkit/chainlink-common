@@ -37,6 +37,13 @@ var chainStatus = types.ChainStatus{
 	Enabled: true,
 }
 
+var chainInfo = types.ChainInfo{
+	FamilyName:      "someFamily",
+	ChainID:         "123",
+	NetworkName:     "someNetwork",
+	NetworkNameFull: "someNetwork-test",
+}
+
 type transactionRequest struct {
 	from         string
 	to           string
@@ -79,6 +86,7 @@ type staticRelayerConfig struct {
 	transactionRequest transactionRequest
 	replayRequest      replayRequest
 	chainStatus        types.ChainStatus
+	chainInfo          types.ChainInfo
 }
 
 func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayerConfig {
@@ -111,6 +119,7 @@ func newStaticRelayerConfig(lggr logger.Logger, staticChecks bool) staticRelayer
 			balanceCheck: true,
 		},
 		chainStatus: chainStatus,
+		chainInfo:   chainInfo,
 	}
 }
 
@@ -195,6 +204,10 @@ func (s staticRelayer) NewContractWriter(_ context.Context, _ []byte) (types.Con
 }
 
 func (s staticRelayer) EVM() (types.EVMService, error) {
+	return nil, nil
+}
+
+func (s staticRelayer) TON() (types.TONService, error) {
 	return nil, nil
 }
 
@@ -300,6 +313,10 @@ func (s staticRelayer) GetChainStatus(ctx context.Context) (types.ChainStatus, e
 	return s.chainStatus, nil
 }
 
+func (s staticRelayer) GetChainInfo(_ context.Context) (types.ChainInfo, error) {
+	return s.chainInfo, nil
+}
+
 func (s staticRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) ([]types.NodeStatus, string, int, error) {
 	if s.StaticChecks && s.nodeRequest.pageSize != pageSize {
 		return nil, "", -1, fmt.Errorf("expected page_size %d but got %d", s.nodeRequest.pageSize, pageSize)
@@ -391,6 +408,14 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 		gotChain, err := relayer.GetChainStatus(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, s.chainStatus, gotChain)
+	})
+
+	t.Run("GetChainInfo", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		chainInfoReply, err := relayer.GetChainInfo(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, s.chainInfo, chainInfoReply)
 	})
 
 	t.Run("ListNodeStatuses", func(t *testing.T) {

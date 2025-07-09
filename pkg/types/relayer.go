@@ -7,8 +7,11 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
@@ -75,6 +78,14 @@ type ChainStatus struct {
 	Config  string // TOML
 }
 
+type ChainInfo struct {
+	FamilyName  string
+	ChainID     string
+	NetworkName string
+	// NetworkNameFull has network testnet, mainnet or devnet identifier attached.
+	NetworkNameFull string
+}
+
 type NodeStatus struct {
 	ChainID string
 	Name    string
@@ -88,6 +99,8 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// GetChainInfo returns the ChainInfo for this Relayer.
+	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.
@@ -141,8 +154,31 @@ type EVMService interface {
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
+	// Submits a transaction to the EVM chain. It will return once the transaction is included in a block or an error occurs.
+	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
+
+	// Utility function to calculate the total fee based on a tx receipt
+	CalculateTransactionFee(ctx context.Context, receiptGasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error)
+
 	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
 	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
+
+	// GetForwarderForEOA returns a proper forwarder for a given EOA. If ocr2AggregatorID is non-empty the forwarder is searched within the ocr2AggregatorID contract scope.
+	GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error)
+}
+
+type TONService interface {
+	ton.LiteClient
+
+	// TXM
+	SendTx(ctx context.Context, msg ton.Message) error
+	GetTxStatus(ctx context.Context, lt uint64) (TransactionStatus, ton.ExitCode, error)
+	GetTxExecutionFees(ctx context.Context, lt uint64) (*ton.TransactionFee, error)
+
+	// LogPoller
+	HasFilter(ctx context.Context, name string) bool
+	RegisterFilter(ctx context.Context, filter ton.LPFilterQuery) error
+	UnregisterFilter(ctx context.Context, name string) error
 }
 
 // Relayer extends ChainService with providers for each product.
@@ -151,6 +187,8 @@ type Relayer interface {
 
 	// EVM returns EVMService that provides access to evm-family specific functionalities
 	EVM() (EVMService, error)
+	// TON returns TONService that provides access to TON specific functionalities
+	TON() (TONService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
@@ -173,4 +211,112 @@ type Relayer interface {
 	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
+}
+
+var _ Relayer = &UnimplementedRelayer{}
+
+// UnimplementedRelayer implements the Relayer interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real Relayer implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement Relayer (through use of an unexported method).
+type UnimplementedRelayer struct{}
+
+func (u *UnimplementedRelayer) Name() string {
+	panic("method Name not implemented")
+}
+
+func (u *UnimplementedRelayer) Start(ctx context.Context) error {
+	return status.Errorf(codes.Unimplemented, "method Start not implemented")
+}
+
+func (u *UnimplementedRelayer) Close() error {
+	return status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
+
+func (u *UnimplementedRelayer) Ready() error {
+	return status.Errorf(codes.Unimplemented, "method Ready not implemented")
+}
+
+func (u *UnimplementedRelayer) HealthReport() map[string]error {
+	panic("method HealthReport not implemented")
+}
+
+func (u *UnimplementedRelayer) LatestHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedRelayer) GetChainInfo(ctx context.Context) (ChainInfo, error) {
+	return ChainInfo{}, status.Errorf(codes.Unimplemented, "method GetChainInfo not implemented")
+}
+
+func (u *UnimplementedRelayer) GetChainStatus(ctx context.Context) (ChainStatus, error) {
+	return ChainStatus{}, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
+}
+
+func (u *UnimplementedRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error) {
+	return []NodeStatus{}, "", -1, status.Errorf(codes.Unimplemented, "method ListNodeStatuses not implemented")
+}
+
+func (u *UnimplementedRelayer) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
+	return status.Errorf(codes.Unimplemented, "method Transact not implemented")
+}
+
+func (u *UnimplementedRelayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	return status.Errorf(codes.Unimplemented, "method Replay not implemented")
+}
+
+func (u *UnimplementedRelayer) EVM() (EVMService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
+}
+
+func (u *UnimplementedRelayer) TON() (TONService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
+}
+
+func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
+}
+
+func (u *UnimplementedRelayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
+}
+
+func (u *UnimplementedRelayer) NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewConfigProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMedianProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewFunctionsProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAutomationProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewLLOProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (LLOProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewLLOProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPCommitProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPCommitProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPExecProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPExecProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewOCR3CapabilityProvider not implemented")
 }

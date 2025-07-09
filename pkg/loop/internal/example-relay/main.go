@@ -77,6 +77,10 @@ func (r *relayer) EVM() (types.EVMService, error) {
 	return nil, nil
 }
 
+func (r *relayer) TON() (types.TONService, error) {
+	return nil, nil
+}
+
 func (r *relayer) Start(ctx context.Context) error {
 	var names []string
 	// Test database connection with dummy query
@@ -100,6 +104,10 @@ func (r *relayer) LatestHead(ctx context.Context) (types.Head, error) {
 
 func (r *relayer) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	return types.ChainStatus{}, errors.New("unimplemented")
+}
+
+func (r *relayer) GetChainInfo(_ context.Context) (types.ChainInfo, error) {
+	return types.ChainInfo{}, errors.New("unimplemented")
 }
 
 func (r *relayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []types.NodeStatus, nextPageToken string, total int, err error) {

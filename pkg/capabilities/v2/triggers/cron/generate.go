@@ -1,3 +1,2 @@
+//go:generate go run ../../gen --pkg=github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron --file=capabilities/scheduler/cron/v1/trigger.proto
 package cron
-
-//go:generate protoc --go_out=../../../.. --go_opt=paths=source_relative  --proto_path=../../../.. --plugin=protoc-gen-cre=../../protoc/protoc-gen-cre --cre_out=. capabilities/v2/triggers/cron/cron_trigger.proto

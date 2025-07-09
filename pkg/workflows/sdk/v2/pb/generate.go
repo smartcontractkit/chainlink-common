@@ -1,2 +1,6 @@
-//go:generate protoc --go_out=../../../../ --go_opt=paths=source_relative  --proto_path=../../../../ workflows/sdk/v2/pb/sdk.proto
+//go:generate go run ./gen
+//go:generate mv sdk/v1alpha/sdk.pb.go sdk.pb.go
+//go:generate rm -rf sdk
+//go:generate mv tools/generator/v1alpha/cre_metadata.pb.go cre_metadata.pb.go
+//go:generate rm -rf tools
 package pb

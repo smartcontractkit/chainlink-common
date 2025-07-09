@@ -25,11 +25,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/v2/pb"
 )
 
 const v2ImportPrefix = "version_v2"
@@ -42,7 +40,8 @@ var (
 	defaultMaxFetchRequests          = 5
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
-	defaultMaxResponseSizeBytes      = sdk.DefaultMaxResponseSizeBytes
+	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
+	ResponseBufferTooSmall           = "response buffer too small"
 )
 
 type DeterminismConfig struct {
@@ -88,7 +87,7 @@ type ModuleV2 interface {
 	ModuleBase
 
 	// V2/"NoDAG" API - request either the list of Trigger Subscriptions or launch workflow execution
-	Execute(ctx context.Context, request *wasmpb.ExecuteRequest, handler ExecutionHelper) (*wasmpb.ExecutionResult, error)
+	Execute(ctx context.Context, request *sdkpb.ExecuteRequest, handler ExecutionHelper) (*sdkpb.ExecutionResult, error)
 }
 
 // ExecutionHelper Implemented by those running the host, for example the Workflow Engine
@@ -253,7 +252,7 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	return m, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -270,8 +269,8 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*wasmpb.Executi
 	if err = linker.FuncWrap(
 		"env",
 		"send_response",
-		createSendResponseFn(logger, exec, func() *wasmpb.ExecutionResult {
-			return &wasmpb.ExecutionResult{}
+		createSendResponseFn(logger, exec, func() *sdkpb.ExecutionResult {
+			return &sdkpb.ExecutionResult{}
 		}),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping sendResponse func: %w", err)
@@ -411,7 +410,7 @@ func (m *module) IsLegacyDAG() bool {
 	return m.v2ImportName == ""
 }
 
-func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, executor ExecutionHelper) (*wasmpb.ExecutionResult, error) {
+func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {
 	if m.IsLegacyDAG() {
 		return nil, errors.New("cannot execute a legacy dag workflow")
 	}
@@ -424,7 +423,7 @@ func (m *module) Execute(ctx context.Context, req *wasmpb.ExecuteRequest, execut
 		return nil, fmt.Errorf("invalid request: can't be nil")
 	}
 
-	setMaxResponseSize := func(r *wasmpb.ExecuteRequest, maxSize uint64) {
+	setMaxResponseSize := func(r *sdkpb.ExecuteRequest, maxSize uint64) {
 		r.MaxResponseSize = maxSize
 	}
 
@@ -1002,7 +1001,7 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 
 func createCallCapFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
@@ -1032,7 +1031,7 @@ func createCallCapFn(
 
 func createAwaitCapsFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult],
+	exec *execution[*sdkpb.ExecutionResult],
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
@@ -1066,7 +1065,7 @@ func createAwaitCapsFn(
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
-			errStr := sdk.ResponseBufferTooSmall
+			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
@@ -1077,7 +1076,7 @@ func createAwaitCapsFn(
 
 func createGetSecretsFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, innerErr := wasmRead(caller, req, requestLen)
 		if innerErr != nil {
@@ -1106,7 +1105,7 @@ func createGetSecretsFn(
 
 func createAwaitSecretsFn(
 	logger logger.Logger,
-	exec *execution[*wasmpb.ExecutionResult],
+	exec *execution[*sdkpb.ExecutionResult],
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
@@ -1140,7 +1139,7 @@ func createAwaitSecretsFn(
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
-			errStr := sdk.ResponseBufferTooSmall
+			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}

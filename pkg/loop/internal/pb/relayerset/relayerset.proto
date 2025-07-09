@@ -7,6 +7,7 @@ package loop.relayerset;
 import "google/protobuf/empty.proto";
 import "loop/internal/pb/contract_reader.proto";
 import "loop/internal/pb/contract_writer.proto";
+import "loop/internal/pb/relayer.proto";
 import "chains/evm/evm.proto";
 
 message RelayerId {
@@ -89,6 +90,10 @@ message LatestHeadResponse {
   uint64 timestamp = 3;
 }
 
+message GetChainInfoRequest {
+  RelayerId relayerId = 1;
+}
+
 message RelayerHealthReportResponse {
   map<string, string> report = 1;
 }
@@ -110,128 +115,8 @@ service RelayerSet {
   rpc RelayerHealthReport(RelayerId) returns (RelayerHealthReportResponse) {}
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
   rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
+  rpc RelayerGetChainInfo(GetChainInfoRequest) returns (GetChainInfoReply) {}
 
-  rpc ContractReaderGetLatestValue (ContractReaderGetLatestValueRequest) returns (GetLatestValueReply) {}
-  rpc ContractReaderGetLatestValueWithHeadData (ContractReaderGetLatestValueRequest) returns (GetLatestValueWithHeadDataReply) {}
-  rpc ContractReaderBatchGetLatestValues (ContractReaderBatchGetLatestValuesRequest) returns (BatchGetLatestValuesReply) {}
-  rpc ContractReaderQueryKey(ContractReaderQueryKeyRequest) returns (QueryKeyReply) {}
-  rpc ContractReaderQueryKeys(ContractReaderQueryKeysRequest) returns (QueryKeysReply) {}
-  rpc ContractReaderBind(ContractReaderBindRequest) returns (google.protobuf.Empty) {}
-  rpc ContractReaderUnbind(ContractReaderUnbindRequest) returns (google.protobuf.Empty) {}
-  rpc ContractReaderStart(ContractReaderStartRequest) returns (google.protobuf.Empty) {}
-  rpc ContractReaderClose(ContractReaderCloseRequest) returns (google.protobuf.Empty) {}
+  rpc ContractReaderStart(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc ContractReaderClose(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
-
-service EVMRelayerSet {
-  rpc GetTransactionFee(GetTransactionFeeRequest) returns (loop.evm.GetTransactionFeeReply) {}
-  rpc CallContract(CallContractRequest) returns (loop.evm.CallContractReply);
-  rpc FilterLogs(FilterLogsRequest) returns (loop.evm.FilterLogsReply);
-  rpc BalanceAt(BalanceAtRequest) returns (loop.evm.BalanceAtReply);
-  rpc EstimateGas(EstimateGasRequest) returns (loop.evm.EstimateGasReply);
-  rpc GetTransactionByHash(GetTransactionByHashRequest) returns (loop.evm.GetTransactionByHashReply);
-  rpc GetTransactionReceipt(GetTransactionReceiptRequest) returns (loop.evm.GetTransactionReceiptReply);
-  rpc LatestAndFinalizedHead(LatestHeadRequest) returns (loop.evm.LatestAndFinalizedHeadReply);
-  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (loop.evm.QueryTrackedLogsReply);
-  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
-  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (loop.evm.GetTransactionStatusReply);
-}
-
-message ContractReaderGetLatestValueRequest {
-  string contractReaderId = 1;
-  GetLatestValueRequest request = 2;
-}
-
-message ContractReaderBatchGetLatestValuesRequest {
-  string contractReaderId = 1;
-  BatchGetLatestValuesRequest request = 2;
-}
-
-message ContractReaderQueryKeyRequest {
-  string contractReaderId = 1;
-  QueryKeyRequest request = 2;
-}
-
-message ContractReaderQueryKeysRequest {
-  string contractReaderId = 1;
-  QueryKeysRequest request = 2;
-}
-
-message ContractReaderBindRequest {
-  string contractReaderId = 1;
-  BindRequest request = 2;
-}
-
-message ContractReaderUnbindRequest {
-  string contractReaderId = 1;
-  UnbindRequest request = 2;
-}
-
-message ContractReaderStartRequest {
-  string contractReaderId = 1;
-}
-
-message ContractReaderCloseRequest {
-  string contractReaderId = 1;
-}
-
-message GetTransactionFeeRequest {
-  RelayerId relayerId = 1;
-  loop.evm.GetTransactionFeeRequest request = 2;
-}
-
-message CallContractRequest {
-  RelayerId relayerId = 1;
-  loop.evm.CallContractRequest request = 2;
-}
-
-message FilterLogsRequest {
-  RelayerId relayerId = 1;
-  loop.evm.FilterLogsRequest request = 2;
-}
-
-message BalanceAtRequest {
-  RelayerId relayerId = 1;
-  loop.evm.BalanceAtRequest request = 2;
-}
-
-message EstimateGasRequest {
-  RelayerId relayerId = 1;
-  loop.evm.EstimateGasRequest request = 2;
-}
-
-message GetTransactionByHashRequest {
-  RelayerId relayerId = 1;
-  loop.evm.GetTransactionByHashRequest request = 2;
-}
-
-message GetTransactionReceiptRequest {
-  RelayerId relayerId = 1;
-  loop.evm.GetTransactionReceiptRequest request = 2;
-}
-
-message QueryTrackedLogsRequest {
-  RelayerId relayerId = 1;
-  loop.evm.QueryTrackedLogsRequest request = 2;
-}
-
-message RegisterLogTrackingRequest {
-  RelayerId relayerId = 1;
-  loop.evm.RegisterLogTrackingRequest request = 2;
-}
-
-message UnregisterLogTrackingRequest {
-  RelayerId relayerId = 1;
-  loop.evm.UnregisterLogTrackingRequest request = 2;
-}
-
-message GetTransactionStatusRequest {
-  RelayerId relayerId = 1;
-  loop.evm.GetTransactionStatusRequest request = 2;
-}
-
-
-
-
-
-

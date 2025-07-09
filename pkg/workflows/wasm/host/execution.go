@@ -179,6 +179,12 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	return ErrnoSuccess
 }
 
+// Loosely based off the implementation here:
+// https://github.com/tetratelabs/wazero/blob/main/imports/wasi_snapshot_preview1/poll.go#L52
+// For an overview of the spec, including the datatypes being referred to, see:
+// https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md
+// This implementation only responds to clock events, not to file descriptor notifications.
+// It sleeps based on the largest timeout
 func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	if nsubscriptions == 0 {
 		return ErrnoInval

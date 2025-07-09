@@ -7,11 +7,12 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 type TemplateGenerator struct {
@@ -44,8 +45,10 @@ func (t *TemplateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 		return err
 	}
 
-	g := plugin.NewGeneratedFile(fileName, "")
-	g.P(content)
+	if len(content) > 0 {
+		g := plugin.NewGeneratedFile(fileName, "")
+		g.P(content)
+	}
 	return nil
 }
 
@@ -58,6 +61,10 @@ func (t *TemplateGenerator) Generate(baseFile, args any, importToPkg map[protoge
 	file, err := t.runTemplate(t.Name, t.Template, args, t.Partials, importToPkg)
 	if err != nil {
 		return fileName, "", err
+	}
+
+	if strings.TrimSpace(file) == "" {
+		return fileName, "", nil
 	}
 
 	settings := codegen.PrettySettings{

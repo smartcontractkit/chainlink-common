@@ -13,32 +13,35 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const instrumentationLibName = "github.com/smartcontractkit/chainlink-common"
+const defaultScopeName = "beholder"
 
 // OtelZapCore is a zapcore.Core implementation that exports logs to OpenTelemetry
 // It implements the zapcore.Core interface and uses OpenTelemetry's logging API
 type OtelZapCore struct {
 	zapcore.Core
 
-	logger       otellog.Logger
-	fields       []zapcore.Field
-	levelEnabler zapcore.LevelEnabler
+	loggerProvider otellog.LoggerProvider
+	logger         otellog.Logger
+	fields         []zapcore.Field
+	levelEnabler   zapcore.LevelEnabler
+	scopeName      string
 }
 
 type Option func(c *OtelZapCore)
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
 func NewOtelZapCore(loggerProvider otellog.LoggerProvider, opts ...Option) zapcore.Core {
-	logger := loggerProvider.Logger(instrumentationLibName)
 
 	c := &OtelZapCore{
-		logger:       logger,
-		levelEnabler: zapcore.InfoLevel,
+		loggerProvider: loggerProvider,
+		levelEnabler:   zapcore.InfoLevel,
+		scopeName:      defaultScopeName,
 	}
 	for _, apply := range opts {
 		apply(c)
 	}
 
+	c.logger = loggerProvider.Logger(c.scopeName)
 	return c
 }
 
@@ -51,7 +54,7 @@ func (o OtelZapCore) Enabled(level zapcore.Level) bool {
 func (o OtelZapCore) With(fields []zapcore.Field) zapcore.Core {
 	return &OtelZapCore{
 		logger:       o.logger,
-		attributes:       append(o.fields, fields...),
+		fields:       append(o.fields, fields...),
 		levelEnabler: o.levelEnabler,
 	}
 }
@@ -80,6 +83,13 @@ func WithLevel(level zapcore.Level) Option {
 func WithLevelEnabler(levelEnabler zapcore.LevelEnabler) Option {
 	return Option(func(o *OtelZapCore) {
 		o.levelEnabler = levelEnabler
+	})
+}
+
+// WithScopeName sets the instrumentation scope name for the OpenTelemetry Core
+func WithScopeName(name string) Option {
+	return Option(func(c *OtelZapCore) {
+		c.scopeName = name
 	})
 }
 

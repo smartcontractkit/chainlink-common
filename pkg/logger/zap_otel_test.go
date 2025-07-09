@@ -258,3 +258,19 @@ func TestOtelZapCore_Write(t *testing.T) {
 		})
 	}
 }
+func TestWithScopeName(t *testing.T) {
+	mockProvider := sdklog.NewLoggerProvider()
+	core := NewOtelZapCore(mockProvider)
+	otelCore, ok := core.(*OtelZapCore)
+	require.True(t, ok)
+
+	// Default scope name
+	assert.Equal(t, defaultScopeName, otelCore.scopeName)
+
+	// Apply WithScopeName option
+	const customScope = "custom-scope"
+	coreWithScope := NewOtelZapCore(mockProvider, WithScopeName(customScope))
+	otelCoreWithScope, ok := coreWithScope.(*OtelZapCore)
+	require.True(t, ok)
+	assert.Equal(t, customScope, otelCoreWithScope.scopeName)
+}

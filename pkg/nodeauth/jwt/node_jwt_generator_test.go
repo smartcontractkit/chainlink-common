@@ -16,7 +16,6 @@ import (
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
-// mockRequest is a simple type that implements fmt.Stringer.
 type mockRequest struct {
 	Field string
 }
@@ -39,13 +38,13 @@ func createTestSigner() (*core.Ed25519Signer, ed25519.PublicKey, p2ptypes.PeerID
 		panic("Failed to generate Ed25519 p2pId: " + err.Error())
 	}
 
-	// Create PeerID from ed25519 public key 
+	// Create PeerID from ed25519 public key
 	p2pId, err := p2ptypes.PeerIDFromPublicKey(p2pIdKey)
 	if err != nil {
 		panic("Failed to create PeerID from public key: " + err.Error())
 	}
 
-	// Create signer using the private key
+	// Create ed25519 signer from the mock node's csa private key
 	signFn := func(ctx context.Context, account string, data []byte) (signed []byte, err error) {
 		return ed25519.Sign(privateKey, data), nil
 	}
@@ -69,7 +68,7 @@ func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, jwtToken)
 
-	// verify expected values
+	// verify expected JWT claim values
 	token, _, err := new(jwt.Parser).ParseUnverified(jwtToken, &NodeJWTClaims{})
 	require.NoError(t, err)
 
@@ -90,7 +89,6 @@ func TestNodeJWTGenerator_CreateJWTForRequest(t *testing.T) {
 	assert.NotNil(t, claims.ExpiresAt)
 	assert.NotNil(t, claims.IssuedAt)
 
-	// verify P2P ID string representation
 	assert.Equal(t, p2pId.String(), claims.P2PId, "P2P ID should match string representation")
 
 	decodedCSAPubKey, err := hex.DecodeString(claims.PublicKey)

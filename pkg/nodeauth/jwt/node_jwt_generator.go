@@ -14,7 +14,6 @@ import (
 )
 
 // NodeJWTGenerator implements the JWTGenerator interface.
-// It is used to generate JWT tokens for node-initiated requests.
 type NodeJWTGenerator struct {
 	environment EnvironmentName
 	signer      *core.Ed25519Signer // The Ed25519Signer to sign the JWT (no private key exposure)
@@ -44,7 +43,7 @@ func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 	// Create JWT claims
 	now := time.Now()
 	claims := NodeJWTClaims{
-		P2PId:       m.p2pId.String(),  // P2PId: Node's on-chain P2P ID for on-chain verification of node-DON relationship.
+		P2PId:       m.p2pId.String(),                // P2PId: Node's on-chain P2P ID for on-chain verification of node-DON relationship.
 		PublicKey:   hex.EncodeToString(m.csaPubKey), // PublicKey: Node's public key to proof JWT's signature.
 		Environment: string(m.environment),           // Environment: Environment for which the JWT token is generated.
 		Digest:      digest,                          // Digest: Request integrity hash
@@ -59,6 +58,5 @@ func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 	// Create token with claims using jwt.SigningMethodEdDSA(built-in EdDSA signing method)
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 
-	// Sign the token with the core.Ed25519Signer (implements crypto.Signer)
 	return token.SignedString(m.signer)
 }

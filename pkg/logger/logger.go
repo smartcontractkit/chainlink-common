@@ -105,8 +105,8 @@ func NewWithSync(w io.Writer) Logger {
 }
 
 // NewWithOtelZapCore returns a new Logger using an OpenTelemetry Zap Core.
-func NewWithOtelZapCore(loggerProvider otellog.LoggerProvider) Logger {
-	return &logger{zap.New(NewOtelZapCore(loggerProvider)).Sugar()}
+func NewWithOtelZapCore(loggerProvider otellog.LoggerProvider, opts ...Option) Logger {
+	return &logger{zap.New(NewOtelZapCore(loggerProvider, opts...)).Sugar()}
 }
 
 // Test returns a new test Logger for tb.

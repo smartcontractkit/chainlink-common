@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	pb2 "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -19,7 +20,9 @@ import (
 var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
-	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs) (*pb2.ConsensusOutputs, error)
+	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs) (*pb.Value, error)
+
+	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest) (*pb2.ReportResponse, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -27,7 +30,7 @@ type ConsensusCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
 }
 
 func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
@@ -121,8 +124,15 @@ func (c *consensusCapability) Execute(ctx context.Context, request capabilities.
 	case "Simple":
 		input := &pb2.SimpleConsensusInputs{}
 		config := &emptypb.Empty{}
-		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs, _ *emptypb.Empty) (*pb2.ConsensusOutputs, error) {
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs, _ *emptypb.Empty) (*pb.Value, error) {
 			return c.ConsensusCapability.Simple(ctx, metadata, input)
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "Report":
+		input := &pb2.ReportRequest{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest, _ *emptypb.Empty) (*pb2.ReportResponse, error) {
+			return c.ConsensusCapability.Report(ctx, metadata, input)
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
 	default:

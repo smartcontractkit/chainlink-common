@@ -10,7 +10,8 @@
             "data_feeds",
             "llo_streams",
             "identical",
-            "reduce"
+            "reduce",
+            "secure_mint"
           ]
         },
         "aggregation_config": {

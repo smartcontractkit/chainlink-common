@@ -148,12 +148,14 @@ type EVMService interface {
 	CallContractWithConfidence(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error)
 
 	// FilterLogsWithConfidence executes a filter query.
-	// filterQuery.FromBlock and filterQuery.ToBlock must be positive values or 0. Nil only allowed if BlockHash is set.
+	// One of (filterQuery.FromBlock and filterQuery.ToBlock) or filterQuery.BlockHash can be specified.
+	// filterQuery.BlockHash is only supported with Unconfirmed confidence level.
+	// If filterQuery.BlockHash is not set, filterQuery.FromBlock=nil defaults to 0; filterQuery.ToBlock=nil defaults to latest.
 	//
 	// confidenceLevel - defines at which confidence level request will be executed:
-	//    Unconfirmed - returns the most recent data;
-	//    Finalized - returned data was finalized;
-	//    Safe - returned data is highly unlikely to be reorged;
+	//    Unconfirmed - returns the most recent data.
+	//    Finalized - returned data was finalized. Only allowed with filterQuery.FromBlock and filterQuery.ToBlock set to positive values.
+	//    Safe - returned data is highly unlikely to be reorged. Only allowed with filterQuery.FromBlock and filterQuery.ToBlock set to positive values.
 	FilterLogsWithConfidence(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
 	// HeaderByNumberWithConfidence returns a block header from the current canonical chain.

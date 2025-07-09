@@ -2,10 +2,11 @@ package logger
 
 import (
 	"fmt"
-	"go.opentelemetry.io/otel/log"
 	"io"
 	"reflect"
 	"testing"
+
+	otellog "go.opentelemetry.io/otel/log"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -103,10 +104,9 @@ func NewWithSync(w io.Writer) Logger {
 	return &logger{zap.New(core).Sugar()}
 }
 
-// todo return proper logger object
-// NewWithOtelZapCore returns a new Logger with an OpenTelemetry Core.
-func NewWithOtelZapCore(loggerProvider log.LoggerProvider) Logger {
-	return &otellogger{zap.New(NewOtelZapCore(loggerProvider)}
+// NewWithOtelZapCore returns a new Logger using an OpenTelemetry Zap Core.
+func NewWithOtelZapCore(loggerProvider otellog.LoggerProvider) Logger {
+	return &logger{zap.New(NewOtelZapCore(loggerProvider)).Sugar()}
 }
 
 // Test returns a new test Logger for tb.

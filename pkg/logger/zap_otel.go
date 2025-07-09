@@ -4,29 +4,23 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"reflect"
-	"strconv"
 	"time"
 
-	"go.opencensus.io/trace"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/log"
-	otel "go.opentelemetry.io/otel/log"
+	otellog "go.opentelemetry.io/otel/log"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap/zapcore"
 )
 
 const instrumentationLibName = "github.com/smartcontractkit/chainlink-common"
 
-// todo - do we need this interface?
-type ZapOtelLogger interface {
-	Logger
-}
-
+// OtelZapCore is a zapcore.Core implementation that exports logs to OpenTelemetry
+// It implements the zapcore.Core interface and uses OpenTelemetry's logging API
 type OtelZapCore struct {
 	zapcore.Core
 
-	logger       otel.Logger
+	logger       otellog.Logger
 	fields       []zapcore.Field
 	levelEnabler zapcore.LevelEnabler
 }
@@ -34,7 +28,7 @@ type OtelZapCore struct {
 type Option func(c *OtelZapCore)
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
-func NewOtelZapCore(loggerProvider otel.LoggerProvider, opts ...Option) zapcore.Core {
+func NewOtelZapCore(loggerProvider otellog.LoggerProvider, opts ...Option) zapcore.Core {
 	logger := loggerProvider.Logger(instrumentationLibName)
 
 	c := &OtelZapCore{
@@ -91,38 +85,22 @@ func WithLevelEnabler(levelEnabler zapcore.LevelEnabler) Option {
 
 func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	var attributes []attribute.KeyValue
-	var spanCtx *trace.SpanContext
+	var spanCtx *oteltrace.SpanContext
 
 	// Add core-attached fields
 	for _, f := range o.fields {
 		if f.Key == "context" {
-			if ctxValue, ok := f.Interface.(trace.SpanContext); ok {
+			if ctxValue, ok := f.Interface.(oteltrace.SpanContext); ok {
 				spanCtx = &ctxValue
 			}
 		} else {
-			attributes = append(attributes, zapFieldToAttr(f))
+			attributes = append(attributes, mapZapField(f))
 		}
 	}
 
 	// Add fields passed during log call
 	for _, f := range fields {
-		attributes = append(attributes, zapFieldToAttr(f))
-	}
-
-	// Add severity and basic metadata
-	attributes = append(attributes,
-		attribute.String("log.severity", entry.Level.String()),
-		attribute.String("log.message", entry.Message),
-		attribute.String("logger.name", entry.LoggerName),
-	)
-
-	// Add caller info
-	if entry.Caller.Defined {
-		attributes = append(attributes,
-			attribute.String("code.filepath", entry.Caller.File),
-			attribute.Int("code.line_number", entry.Caller.Line),
-			attribute.String("code.function", entry.Caller.Function),
-		)
+		attributes = append(attributes, mapZapField(f))
 	}
 
 	// Add exception metadata
@@ -147,127 +125,118 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	}
 
 	// Convert to OpenTelemetry KeyValues and emit
-	otelAttrs := make([]otel.KeyValue, len(attributes))
+	otelAttrs := make([]otellog.KeyValue, len(attributes))
 	for i, attr := range attributes {
-		otelAttrs[i] = otel.KeyValue(attr)
+		otelAttrs[i] = otellog.KeyValue{
+			Key:   string(attr.Key),
+			Value: mapAttrValueToLogAttrValue(attr.Value),
+		}
 	}
 
-	o.logger.Emit(context.Background(), []byte(entry.Message), otelAttrs)
+	logRecord := otellog.Record{}
+	logRecord.SetBody(otellog.StringValue(entry.Message))
+	logRecord.SetSeverity(mapZapSeverity(entry.Level))
+	logRecord.SetSeverityText(entry.Level.String())
+	logRecord.SetTimestamp(entry.Time)
+	logRecord.SetObservedTimestamp(time.Now())
+	logRecord.AddAttributes(otelAttrs...)
+
+	o.logger.Emit(context.Background(), logRecord)
 
 	return nil
 }
 
-func zapFieldToAttr(f zapcore.Field) attribute.KeyValue {
+func mapZapField(f zapcore.Field) attribute.KeyValue {
 	switch f.Type {
 	case zapcore.StringType:
 		return attribute.String(f.Key, f.String)
+
+	case zapcore.Int64Type, zapcore.Int32Type, zapcore.Int16Type, zapcore.Int8Type:
+		return attribute.Int64(f.Key, f.Integer)
+
+	case zapcore.Uint64Type, zapcore.Uint32Type, zapcore.Uint16Type, zapcore.Uint8Type, zapcore.UintptrType:
+		return attribute.Int64(f.Key, int64(f.Integer))
+
 	case zapcore.BoolType:
 		return attribute.Bool(f.Key, f.Integer == 1)
-	case zapcore.Int64Type:
-		return attribute.Int64(f.Key, f.Integer)
-	case zapcore.Uint64Type:
-		return attribute.Int64(f.Key, int64(f.Integer))
+
 	case zapcore.Float64Type:
 		return attribute.Float64(f.Key, math.Float64frombits(uint64(f.Integer)))
+
 	case zapcore.ErrorType:
-		return attribute.String(f.Key, f.Interface.(error).Error())
+		if err, ok := f.Interface.(error); ok {
+			return attribute.String(f.Key, err.Error())
+		}
+		return attribute.String(f.Key, "invalid error field")
+
 	case zapcore.StringerType:
 		return attribute.String(f.Key, f.Interface.(fmt.Stringer).String())
-	case zapcore.ReflectType, zapcore.ObjectMarshalerType:
-		return attribute.String(f.Key, fmt.Sprintf("%v", f.Interface))
+
+	case zapcore.TimeType:
+		if t, ok := f.Interface.(time.Time); ok {
+			return attribute.String(f.Key, t.Format(time.RFC3339))
+		}
+		return attribute.String(f.Key, fmt.Sprintf("invalid time: %v", f.Interface))
+
+	case zapcore.DurationType:
+		if d, ok := f.Interface.(time.Duration); ok {
+			return attribute.String(f.Key, d.String())
+		}
+		return attribute.String(f.Key, fmt.Sprintf("invalid duration: %v", f.Interface))
+
+	case zapcore.BinaryType:
+		if b, ok := f.Interface.([]byte); ok {
+			return attribute.String(f.Key, fmt.Sprintf("binary data: %x", b))
+		}
+		return attribute.String(f.Key, fmt.Sprintf("invalid binary: %v", f.Interface))
+
+	case zapcore.ByteStringType:
+		if b, ok := f.Interface.([]byte); ok {
+			return attribute.String(f.Key, fmt.Sprintf("byte string: %x", b))
+		}
+		return attribute.String(f.Key, fmt.Sprintf("invalid byte string: %v", f.Interface))
+
 	default:
 		return attribute.String(f.Key, f.String)
 	}
 }
 
-func convertLevel(level zapcore.Level) log.Severity {
+func mapZapSeverity(level zapcore.Level) otellog.Severity {
 	switch level {
 	case zapcore.DebugLevel:
-		return log.SeverityDebug
+		return otellog.SeverityDebug
 	case zapcore.InfoLevel:
-		return log.SeverityInfo
+		return otellog.SeverityInfo
 	case zapcore.WarnLevel:
-		return log.SeverityWarn
+		return otellog.SeverityWarn
 	case zapcore.ErrorLevel:
-		return log.SeverityError
+		return otellog.SeverityError
 	case zapcore.DPanicLevel:
-		return log.SeverityFatal1
+		return otellog.SeverityFatal1
 	case zapcore.PanicLevel:
-		return log.SeverityFatal2
+		return otellog.SeverityFatal2
 	case zapcore.FatalLevel:
-		return log.SeverityFatal3
+		return otellog.SeverityFatal3
 	default:
-		return log.SeverityUndefined
+		return otellog.SeverityUndefined
 	}
 }
 
-func convertFields(fields []zapcore.Field) []log.KeyValue {
-	kvs := make([]log.KeyValue, 0, len(fields)+numExtraAttr)
-	for _, field := range fields {
-		kvs = appendField(kvs, field)
-	}
-	return kvs
-}
-
-func appendField(kvs []log.KeyValue, f zapcore.Field) []log.KeyValue {
-	switch f.Type {
-	case zapcore.BoolType:
-		return append(kvs, log.Bool(f.Key, f.Integer == 1))
-
-	case zapcore.Int8Type, zapcore.Int16Type, zapcore.Int32Type, zapcore.Int64Type,
-		zapcore.Uint32Type, zapcore.Uint8Type, zapcore.Uint16Type, zapcore.Uint64Type,
-		zapcore.UintptrType:
-		return append(kvs, log.Int64(f.Key, f.Integer))
-
-	case zapcore.Float64Type:
-		num := math.Float64frombits(uint64(f.Integer))
-		return append(kvs, log.Float64(f.Key, num))
-	case zapcore.Float32Type:
-		num := math.Float32frombits(uint32(f.Integer))
-		return append(kvs, log.Float64(f.Key, float64(num)))
-
-	case zapcore.Complex64Type:
-		str := strconv.FormatComplex(complex128(f.Interface.(complex64)), 'E', -1, 64)
-		return append(kvs, log.String(f.Key, str))
-	case zapcore.Complex128Type:
-		str := strconv.FormatComplex(f.Interface.(complex128), 'E', -1, 128)
-		return append(kvs, log.String(f.Key, str))
-
-	case zapcore.StringType:
-		return append(kvs, log.String(f.Key, f.String))
-	case zapcore.BinaryType, zapcore.ByteStringType:
-		bs := f.Interface.([]byte)
-		return append(kvs, log.Bytes(f.Key, bs))
-	case zapcore.StringerType:
-		str := f.Interface.(fmt.Stringer).String()
-		return append(kvs, log.String(f.Key, str))
-
-	case zapcore.DurationType, zapcore.TimeType:
-		return append(kvs, log.Int64(f.Key, f.Integer))
-	case zapcore.TimeFullType:
-		str := f.Interface.(time.Time).Format(time.RFC3339Nano)
-		return append(kvs, log.String(f.Key, str))
-	case zapcore.ErrorType:
-		err := f.Interface.(error)
-		typ := reflect.TypeOf(err).String()
-		kvs = append(kvs, log.String("exception.type", typ))
-		kvs = append(kvs, log.String("exception.message", err.Error()))
-		return kvs
-	case zapcore.ReflectType:
-		str := fmt.Sprint(f.Interface)
-		return append(kvs, log.String(f.Key, str))
-	case zapcore.SkipType:
-		return kvs
-
-	case zapcore.ArrayMarshalerType:
-		kv := log.String(f.Key+"_error", "otelzap: zapcore.ArrayMarshalerType is not implemented")
-		return append(kvs, kv)
-	case zapcore.ObjectMarshalerType:
-		kv := log.String(f.Key+"_error", "otelzap: zapcore.ObjectMarshalerType is not implemented")
-		return append(kvs, kv)
-
+func mapAttrValueToLogAttrValue(v attribute.Value) otellog.Value {
+	switch v.Type() {
+	case attribute.STRING:
+		return otellog.StringValue(v.AsString())
+	case attribute.BOOL:
+		return otellog.BoolValue(v.AsBool())
+	case attribute.INT64:
+		return otellog.Int64Value(v.AsInt64())
+	case attribute.FLOAT64:
+		return otellog.Float64Value(v.AsFloat64())
+	case attribute.INVALID:
+		return otellog.StringValue("invalid")
+	case attribute.STRINGSLICE, attribute.BOOLSLICE, attribute.INT64SLICE, attribute.FLOAT64SLICE:
+		return otellog.StringValue(fmt.Sprintf("%v", v.AsInterface()))
 	default:
-		kv := log.String(f.Key+"_error", fmt.Sprintf("otelzap: unknown field type: %v", f))
-		return append(kvs, kv)
+		return otellog.StringValue(fmt.Sprintf("%v", v.AsInterface()))
 	}
 }

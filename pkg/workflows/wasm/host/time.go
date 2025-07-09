@@ -22,9 +22,9 @@ func newTimeFetcher(ctx context.Context, executor ExecutionHelper) *timeFetcher 
 	return &timeFetcher{
 		ctx:             ctx,
 		executor:        executor,
-		timeRequestChan: make(chan sdkpb.Mode),
-		timeResultChan:  make(chan time.Time),
-		timeErrChan:     make(chan error),
+		timeRequestChan: make(chan sdkpb.Mode, 1),
+		timeResultChan:  make(chan time.Time, 1),
+		timeErrChan:     make(chan error, 1),
 	}
 }
 
@@ -51,38 +51,38 @@ func (t *timeFetcher) GetTime(mode sdkpb.Mode) (time.Time, error) {
 }
 
 func (t *timeFetcher) Start() {
-	t.startOnce.Do(func() {
-		go func() {
-			for {
+	t.startOnce.Do(func() { go t.runLoop() })
+}
+
+func (t *timeFetcher) runLoop() {
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		case mode := <-t.timeRequestChan:
+			var donTime time.Time
+			var err error
+
+			switch mode {
+			case sdkpb.Mode_MODE_DON:
+				donTime, err = t.executor.GetDONTime(t.ctx)
+			default:
+				donTime = t.executor.GetNodeTime()
+			}
+
+			if err != nil {
 				select {
+				case t.timeErrChan <- err:
 				case <-t.ctx.Done():
 					return
-				case mode := <-t.timeRequestChan:
-					var donTime time.Time
-					var err error
-
-					switch mode {
-					case sdkpb.Mode_MODE_DON:
-						donTime, err = t.executor.GetDONTime(t.ctx)
-					default:
-						donTime = t.executor.GetNodeTime()
-					}
-
-					if err != nil {
-						select {
-						case t.timeErrChan <- err:
-						case <-t.ctx.Done():
-							return
-						}
-					} else {
-						select {
-						case t.timeResultChan <- donTime:
-						case <-t.ctx.Done():
-							return
-						}
-					}
+				}
+			} else {
+				select {
+				case t.timeResultChan <- donTime:
+				case <-t.ctx.Done():
+					return
 				}
 			}
-		}()
-	})
+		}
+	}
 }

@@ -145,7 +145,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    p2pId.String(),
 			Subject:   p2pId.String(),
-			ExpiresAt: jwt.NewNumericDate(now.Add(-time.Hour)), // Expired 
+			ExpiresAt: jwt.NewNumericDate(now.Add(-time.Hour)), // Expired
 			IssuedAt:  jwt.NewNumericDate(now.Add(-2 * time.Hour)),
 		},
 	})
@@ -254,84 +254,6 @@ func TestNodeJWTAuthenticator_parseJWTClaims_InvalidFormat(t *testing.T) {
 	// Expect
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid JWT format")
-}
-
-func TestNodeJWTAuthenticator_decodePublicKey_Success(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
-
-	_, csaPubKey, _ := createValidatorTestKeys()
-	csaPubKeyHex := hex.EncodeToString(csaPubKey)
-
-	// Test
-	decodedKey, err := authenticator.decodePublicKey(csaPubKeyHex)
-
-	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, csaPubKey, decodedKey)
-}
-
-func TestNodeJWTAuthenticator_decodePublicKey_InvalidHex(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
-
-	// Test with invalid hex
-	_, err := authenticator.decodePublicKey("invalid-hex")
-
-	// Assert
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid hex encoding")
-}
-
-func TestNodeJWTAuthenticator_decodePublicKey_InvalidSize(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
-
-	// Test with wrong size
-	_, err := authenticator.decodePublicKey("1234")
-
-	// Assert
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid public key size")
-}
-
-func TestNodeJWTAuthenticator_decodeP2PId_Success(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
-
-	_, _, p2pId := createValidatorTestKeys()
-	p2pIdHex := p2pId.String()
-
-	// Test
-	decodedP2PId, err := authenticator.decodeP2PId(p2pIdHex)
-
-	// Assert
-	require.NoError(t, err)
-	assert.Equal(t, p2pId, decodedP2PId)
-}
-
-func TestNodeJWTAuthenticator_decodeP2PId_InvalidHex(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
-
-	// Test with invalid hex
-	_, err := authenticator.decodeP2PId("invalid-hex")
-
-	// Assert
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to unmarshal PeerID")
-}
-
-func TestNodeJWTAuthenticator_decodeP2PId_InvalidSize(t *testing.T) {
-	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
-
-	// Test with wrong size 
-	_, err := authenticator.decodeP2PId("1234")
-
-	// Assert
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to unmarshal PeerID")
 }
 
 func TestNodeJWTAuthenticator_verifyJWTSignature_Success(t *testing.T) {

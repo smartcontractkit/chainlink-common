@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752077443131,
+  "lastUpdate": 1752094958776,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19194,6 +19194,48 @@ window.BENCHMARK_DATA = {
             "value": 28454,
             "unit": "ns/op",
             "extra": "42092 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e1f6343a9d5cb381b085050c4a126a4b9d0fc4d",
+          "message": "add types for auth metadata exchange and utility function for generating request ID (#1352)",
+          "timestamp": "2025-07-10T06:01:45+09:00",
+          "tree_id": "65567fa1bfa56c4139f4a8309ea6dbda85e60cce",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4e1f6343a9d5cb381b085050c4a126a4b9d0fc4d"
+        },
+        "date": 1752094957833,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363,
+            "unit": "ns/op",
+            "extra": "3351722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.8,
+            "unit": "ns/op",
+            "extra": "2907103 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28427,
+            "unit": "ns/op",
+            "extra": "42229 times\n4 procs"
           }
         ]
       }

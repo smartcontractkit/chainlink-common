@@ -35,6 +35,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
+	github.com/smartcontractkit/chain-selectors v1.0.62
 	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250707214334-e164c13b2f32
 	github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250708135749-8736758474ec
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250701181457-37bd0d618b58
@@ -120,7 +121,6 @@ require (
 	github.com/prometheus/common v0.63.0 // indirect
 	github.com/prometheus/procfs v0.16.0 // indirect
 	github.com/sanity-io/litter v1.5.5 // indirect
-	github.com/smartcontractkit/chain-selectors v1.0.62 // indirect
 	github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20250430163438-97d324ef9061 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752071761634,
+  "lastUpdate": 1752077443131,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19152,6 +19152,48 @@ window.BENCHMARK_DATA = {
             "value": 28689,
             "unit": "ns/op",
             "extra": "41875 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3dbd1ee373a275596111441622910d9b84450605",
+          "message": "creating helper for gas unit for WTs (#1361)\n\n* creating helper for gas unit for WTs\n\n* updating GasUnitForChain to take chainID instead\n\n* go mod",
+          "timestamp": "2025-07-09T12:08:35-04:00",
+          "tree_id": "c91fbc7e234940ca9a20015c2038b6212457fcb3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3dbd1ee373a275596111441622910d9b84450605"
+        },
+        "date": 1752077442168,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.7,
+            "unit": "ns/op",
+            "extra": "3360637 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 422.9,
+            "unit": "ns/op",
+            "extra": "2575312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28454,
+            "unit": "ns/op",
+            "extra": "42092 times\n4 procs"
           }
         ]
       }

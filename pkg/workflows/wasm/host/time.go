@@ -8,6 +8,9 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
+// timeFetcher safely retrieves DON or Node time from a background goroutine.
+// It avoids calling into Go runtime APIs (e.g., context) inside Wasm trap handlers,
+// which can panic if executed directly during WASI syscalls like clock_time_get.
 type timeFetcher struct {
 	ctx             context.Context
 	executor        ExecutionHelper

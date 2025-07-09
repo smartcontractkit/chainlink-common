@@ -35,6 +35,9 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 		return nil, err
 	}
 
+	exec.timeFetcher = newTimeFetcher(exec.ctx, exec.executor)
+	exec.timeFetcher.Start()
+
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"clock_time_get",

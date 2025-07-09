@@ -20,6 +20,7 @@ type execution[T any] struct {
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
+	timeFetcher          *timeFetcher
 	hasRun               bool
 	mode                 sdkpb.Mode
 	donSeed              int64
@@ -165,24 +166,16 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 }
 
 func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
-	var donTime time.Time
-	switch e.mode {
-	case sdkpb.Mode_MODE_DON:
-		var err error
-		donTime, err = e.executor.GetDONTime(context.TODO())
-		if err != nil {
-			return ErrnoInval
-		}
-	case sdkpb.Mode_MODE_NODE:
-		donTime = e.executor.GetNodeTime()
-	default:
+	donTime, err := e.timeFetcher.GetTime(e.mode)
+	if err != nil {
 		return ErrnoInval
 	}
 
-	uint64Size := int32(8)
-	trg := make([]byte, uint64Size)
+	trg := make([]byte, 8)
 	binary.LittleEndian.PutUint64(trg, uint64(donTime.UnixNano()))
-	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	if wasmWrite(caller, trg, resultTimestamp, 8) == -1 {
+		return ErrnoFault
+	}
 	return ErrnoSuccess
 }
 

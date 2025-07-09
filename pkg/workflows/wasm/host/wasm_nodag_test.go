@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -64,6 +65,7 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
 	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
+	helper.EXPECT().GetNodeTime().Return(time.Now())
 	execResult, err := m.Execute(t.Context(), &pb.ExecuteRequest{
 		Config:  config,
 		Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},

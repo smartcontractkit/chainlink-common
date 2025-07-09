@@ -4,22 +4,9 @@ import (
 	"context"
 	"crypto/ed25519"
 
-	"github.com/golang-jwt/jwt/v5"
+	nodeauthtypes "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
-
-// ---------- JWT Payload - Related Types ----------
-// NodeJWTClaims represents the JWT claims payload for node-initiated requests.
-type NodeJWTClaims struct {
-	P2PId       string `json:"p2pId" validate:"required"`
-	PublicKey   string `json:"public_key" validate:"required"`
-	Environment string `json:"environment" validate:"required"`
-	Digest      string `json:"digest" validate:"required"`
-	jwt.RegisteredClaims
-}
-
-// EnvironmentName represents the environment for which the JWT token is generated
-type EnvironmentName string
 
 // ---------- JWT Generator Interfaces ----------
 // JWTGenerator handles JWT token creation.
@@ -31,8 +18,9 @@ type JWTGenerator interface {
 // ---------- JWT Authenticator - Related Interfaces ----------
 // JWTAuthenticator handles JWT token authentication.
 type JWTAuthenticator interface {
-	// AuthenticateJWT authenticates the JWT token for the given request
-	AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (bool, error)
+	// AuthenticateJWT authenticates the JWT token for the given request and return the JWT claims.
+	// If the JWT token is invalid, the function will return nil claims and error.
+	AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (bool, *nodeauthtypes.NodeJWTClaims, error)
 }
 
 // NodeAuthProvider interface for node <-> DON auth provider
@@ -42,5 +30,5 @@ type NodeAuthProvider interface {
 	// IsNodePubKeyTrusted checks if a node's public key and p2pId is trusted
 	// Usually, this is done by checking the node aginst DON's on-chain topology.
 	// The check can be done aginst on-chain contracts or cache, depending on the each service's implementation.
-	IsNodePubKeyTrusted(ctx context.Context, p2pId p2ptypes.PeerID, publicKey ed25519.PublicKey) (bool, error)
+	IsNodePubKeyTrusted(ctx context.Context, p2pId p2ptypes.PeerID, publicKey ed25519.PublicKey, environment string) (bool, error)
 }

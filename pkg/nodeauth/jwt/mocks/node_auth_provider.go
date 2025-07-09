@@ -24,9 +24,9 @@ func (_m *NodeAuthProvider) EXPECT() *NodeAuthProvider_Expecter {
 	return &NodeAuthProvider_Expecter{mock: &_m.Mock}
 }
 
-// IsNodePubKeyTrusted provides a mock function with given fields: ctx, p2pId, publicKey
-func (_m *NodeAuthProvider) IsNodePubKeyTrusted(ctx context.Context, p2pId types.PeerID, publicKey ed25519.PublicKey) (bool, error) {
-	ret := _m.Called(ctx, p2pId, publicKey)
+// IsNodePubKeyTrusted provides a mock function with given fields: ctx, p2pId, publicKey, environment
+func (_m *NodeAuthProvider) IsNodePubKeyTrusted(ctx context.Context, p2pId types.PeerID, publicKey ed25519.PublicKey, environment string) (bool, error) {
+	ret := _m.Called(ctx, p2pId, publicKey, environment)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IsNodePubKeyTrusted")
@@ -34,17 +34,17 @@ func (_m *NodeAuthProvider) IsNodePubKeyTrusted(ctx context.Context, p2pId types
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.PeerID, ed25519.PublicKey) (bool, error)); ok {
-		return rf(ctx, p2pId, publicKey)
+	if rf, ok := ret.Get(0).(func(context.Context, types.PeerID, ed25519.PublicKey, string) (bool, error)); ok {
+		return rf(ctx, p2pId, publicKey, environment)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.PeerID, ed25519.PublicKey) bool); ok {
-		r0 = rf(ctx, p2pId, publicKey)
+	if rf, ok := ret.Get(0).(func(context.Context, types.PeerID, ed25519.PublicKey, string) bool); ok {
+		r0 = rf(ctx, p2pId, publicKey, environment)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.PeerID, ed25519.PublicKey) error); ok {
-		r1 = rf(ctx, p2pId, publicKey)
+	if rf, ok := ret.Get(1).(func(context.Context, types.PeerID, ed25519.PublicKey, string) error); ok {
+		r1 = rf(ctx, p2pId, publicKey, environment)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,13 +61,14 @@ type NodeAuthProvider_IsNodePubKeyTrusted_Call struct {
 //   - ctx context.Context
 //   - p2pId types.PeerID
 //   - publicKey ed25519.PublicKey
-func (_e *NodeAuthProvider_Expecter) IsNodePubKeyTrusted(ctx interface{}, p2pId interface{}, publicKey interface{}) *NodeAuthProvider_IsNodePubKeyTrusted_Call {
-	return &NodeAuthProvider_IsNodePubKeyTrusted_Call{Call: _e.mock.On("IsNodePubKeyTrusted", ctx, p2pId, publicKey)}
+//   - environment string
+func (_e *NodeAuthProvider_Expecter) IsNodePubKeyTrusted(ctx interface{}, p2pId interface{}, publicKey interface{}, environment interface{}) *NodeAuthProvider_IsNodePubKeyTrusted_Call {
+	return &NodeAuthProvider_IsNodePubKeyTrusted_Call{Call: _e.mock.On("IsNodePubKeyTrusted", ctx, p2pId, publicKey, environment)}
 }
 
-func (_c *NodeAuthProvider_IsNodePubKeyTrusted_Call) Run(run func(ctx context.Context, p2pId types.PeerID, publicKey ed25519.PublicKey)) *NodeAuthProvider_IsNodePubKeyTrusted_Call {
+func (_c *NodeAuthProvider_IsNodePubKeyTrusted_Call) Run(run func(ctx context.Context, p2pId types.PeerID, publicKey ed25519.PublicKey, environment string)) *NodeAuthProvider_IsNodePubKeyTrusted_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(types.PeerID), args[2].(ed25519.PublicKey))
+		run(args[0].(context.Context), args[1].(types.PeerID), args[2].(ed25519.PublicKey), args[3].(string))
 	})
 	return _c
 }
@@ -77,7 +78,7 @@ func (_c *NodeAuthProvider_IsNodePubKeyTrusted_Call) Return(_a0 bool, _a1 error)
 	return _c
 }
 
-func (_c *NodeAuthProvider_IsNodePubKeyTrusted_Call) RunAndReturn(run func(context.Context, types.PeerID, ed25519.PublicKey) (bool, error)) *NodeAuthProvider_IsNodePubKeyTrusted_Call {
+func (_c *NodeAuthProvider_IsNodePubKeyTrusted_Call) RunAndReturn(run func(context.Context, types.PeerID, ed25519.PublicKey, string) (bool, error)) *NodeAuthProvider_IsNodePubKeyTrusted_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
@@ -23,8 +24,8 @@ type NodeJWTAuthenticator struct {
 func NewNodeJWTAuthenticator(nodeAuthProvider NodeAuthProvider, logger *slog.Logger) *NodeJWTAuthenticator {
 	// Configure parser with validation options
 	parser := jwt.NewParser(
-		jwt.WithIssuedAt(),                     
-		jwt.WithExpirationRequired(),            
+		jwt.WithIssuedAt(),
+		jwt.WithExpirationRequired(),
 	)
 
 	return &NodeJWTAuthenticator{
@@ -36,50 +37,50 @@ func NewNodeJWTAuthenticator(nodeAuthProvider NodeAuthProvider, logger *slog.Log
 
 // 1. Standard JWT Validation: validate the JWT claims and signature against public key.
 // 2. Public Key Whitelist Validation: validate the node's public key is trusted.
-func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (bool, error) {
+func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (bool, *types.NodeJWTClaims, error) {
 	// Parse JWT claims
 	claims, err := v.parseJWTClaims(tokenString)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse and validate JWT claims: %w", err)
+		return false, nil, fmt.Errorf("failed to parse and validate JWT claims: %w", err)
 	}
 
 	// Extract public key from JWT claim
 	publicKey, err := v.decodePublicKey(claims.PublicKey)
 	if err != nil {
-		return false, fmt.Errorf("invalid public key format: %w", err)
+		return false, claims, fmt.Errorf("invalid public key format: %w", err)
 	}
 
 	// Extract p2pId from JWT claim
 	p2pId, err := v.decodeP2PId(claims.P2PId)
 	if err != nil {
-		return false, fmt.Errorf("invalid p2pId format: %w", err)
+		return false, claims, fmt.Errorf("invalid p2pId format: %w", err)
 	}
 
 	// Verify JWT signature against the public key
 	if err := v.verifyJWTSignature(tokenString, publicKey); err != nil {
-		return false, fmt.Errorf("JWT signature verification failed: %w", err)
+		return false, claims, fmt.Errorf("JWT signature verification failed: %w", err)
 	}
 
 	// Verify request digest integrity
 	if err := v.verifyRequestDigest(claims, originalRequest); err != nil {
-		return false, fmt.Errorf("request integrity check failed: %w", err)
+		return false, claims, fmt.Errorf("request integrity check failed: %w", err)
 	}
 
 	// Public Key Validation: Verify node's pubkey and p2pId against the whitelisted registry via NodeAuthProvider.
-	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, p2pId, publicKey)
+	isValid, err := v.nodeAuthProvider.IsNodePubKeyTrusted(ctx, p2pId, publicKey, claims.Environment)
 	if err != nil {
 		v.logger.Error("Node validation failed",
 			"p2pId", claims.P2PId,
 			"error", err,
 		)
-		return false, fmt.Errorf("node validation failed: %w", err)
+		return false, claims, fmt.Errorf("node validation failed: %w", err)
 	}
 
 	if !isValid {
 		v.logger.Warn("Unauthorized node attempted access",
 			"p2pId", claims.P2PId,
 		)
-		return false, fmt.Errorf("unauthorized node: %s", claims.P2PId)
+		return false, claims, fmt.Errorf("unauthorized node: %s", claims.P2PId)
 	}
 
 	v.logger.Debug("JWT validation successful",
@@ -87,17 +88,17 @@ func (v *NodeJWTAuthenticator) AuthenticateJWT(ctx context.Context, tokenString 
 		"environment", claims.Environment,
 	)
 
-	return true, nil
+	return true, claims, nil
 }
 
 // parseJWTClaims extracts JWT claims from the token string.
-func (v *NodeJWTAuthenticator) parseJWTClaims(tokenString string) (*NodeJWTClaims, error) {
-	token, _, err := v.parser.ParseUnverified(tokenString, &NodeJWTClaims{})
+func (v *NodeJWTAuthenticator) parseJWTClaims(tokenString string) (*types.NodeJWTClaims, error) {
+	token, _, err := v.parser.ParseUnverified(tokenString, &types.NodeJWTClaims{})
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT format: %w", err)
 	}
 
-	claims, ok := token.Claims.(*NodeJWTClaims)
+	claims, ok := token.Claims.(*types.NodeJWTClaims)
 	if !ok {
 		return nil, fmt.Errorf("invalid claims type")
 	}
@@ -152,7 +153,7 @@ func (v *NodeJWTAuthenticator) verifyJWTSignature(tokenString string, publicKey 
 }
 
 // verifyRequestDigest ensures the request hasn't been tampered with by verifying the digest in the JWT claim.
-func (v *NodeJWTAuthenticator) verifyRequestDigest(claims *NodeJWTClaims, originalRequest any) error {
+func (v *NodeJWTAuthenticator) verifyRequestDigest(claims *types.NodeJWTClaims, originalRequest any) error {
 	expectedDigest := utils.CalculateRequestDigest(originalRequest)
 
 	if claims.Digest != expectedDigest {

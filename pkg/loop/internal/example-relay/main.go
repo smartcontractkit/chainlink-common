@@ -77,6 +77,10 @@ func (r *relayer) EVM() (types.EVMService, error) {
 	return nil, nil
 }
 
+func (r *relayer) TON() (types.TONService, error) {
+	return nil, nil
+}
+
 func (r *relayer) Start(ctx context.Context) error {
 	var names []string
 	// Test database connection with dummy query

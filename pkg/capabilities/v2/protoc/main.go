@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"google.golang.org/protobuf/compiler/protogen"
-		"google.golang.org/protobuf/types/pluginpb"
+	"google.golang.org/protobuf/types/pluginpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg"
 )
@@ -32,12 +32,8 @@ func main() {
 			if !file.Generate {
 				continue
 			}
-			if err := pkg.GenerateClient(plugin, file); err != nil {
-				log.Printf("failed to generate for %s: %v", file.Desc.Path(), err)
-				os.Exit(1)
-			}
 
-			if err := pkg.GenerateServer(plugin, file, serverLanguage); err != nil {
+			if err = pkg.GenerateServer(plugin, file, serverLanguage); err != nil {
 				log.Printf("failed to generate for %s: %v", file.Desc.Path(), err)
 				os.Exit(1)
 			}

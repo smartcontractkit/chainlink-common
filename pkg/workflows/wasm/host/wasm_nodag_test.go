@@ -13,20 +13,14 @@ import (
 )
 
 const (
-	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
-	nodagBinaryLocation             = nodagBinaryCmd + "/testmodule.wasm"
-	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
-	nodagMultiTriggerBinaryLocation = nodagMultiTriggerBinaryCmd + "/testmodule.wasm"
-	nodagRandomBinaryCmd            = "test/nodag/randoms/cmd"
-	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd      = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation = nodagRandomBinaryCmd + "/testmodule.wasm"
 )
-
-var wordList = []string{"Hello, ", "world", "!"}
 
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 
-	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
+	binary := createTestBinary(nodagRandomBinaryCmd, nodagRandomBinaryLocation, true, t)
 
 	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
@@ -56,7 +50,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
-		require.Equal(t, len(triggers.Subscriptions), 1)
+		require.Equal(t, len(triggers.Subscriptions), 3)
 	})
 }
 

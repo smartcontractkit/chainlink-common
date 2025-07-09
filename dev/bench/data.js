@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752061154790,
+  "lastUpdate": 1752068231265,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19068,6 +19068,48 @@ window.BENCHMARK_DATA = {
             "value": 28459,
             "unit": "ns/op",
             "extra": "42111 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c14462fa7594dbbf3d02926e00f6415470e4f0d2",
+          "message": "Update standard tests so they don't panic in failure cases (#1357)",
+          "timestamp": "2025-07-09T09:36:02-04:00",
+          "tree_id": "934deadb2d33b2ecd073949ae6eb7ddea553d65c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c14462fa7594dbbf3d02926e00f6415470e4f0d2"
+        },
+        "date": 1752068230225,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.6,
+            "unit": "ns/op",
+            "extra": "3270387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.4,
+            "unit": "ns/op",
+            "extra": "2830256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28496,
+            "unit": "ns/op",
+            "extra": "42094 times\n4 procs"
           }
         ]
       }

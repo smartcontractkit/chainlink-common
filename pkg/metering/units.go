@@ -1,11 +1,16 @@
 package metering
 
+import (
+	"fmt"
+
+	chainselectors "github.com/smartcontractkit/chain-selectors"
+)
+
 var (
 	PayloadUnit = unit{Name: "payload", Unit: "bytes"}
 
-	// ComputeUnit is an example. The compute cap will eventually be obsoleted
-	// by the CRE No-DAG SDK.
-	ComputeUnit = unit{Name: "compute", Unit: "seconds"}
+	// ComputeUnit is an example.
+	ComputeUnit = unit{Name: "compute", Unit: "ms"}
 )
 
 // unit provides exported Name and unit fields for
@@ -17,4 +22,14 @@ type unit struct {
 
 	// Unit of the Metering Unit, i.e. bytes, seconds
 	Unit string
+}
+
+func GasUnitForChain(chainSelector uint64) (string, error) {
+	  // Getting ChainId based on ChainSelector
+	  _, err := chainselectors.ChainIdFromSelector(2664363617261496610)
+	  if err != nil {
+		return "", err
+	  }
+
+	  return fmt.Sprintf("GAS.%d",chainSelector), nil
 }

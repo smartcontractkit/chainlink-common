@@ -122,7 +122,7 @@ type GethClient interface {
 type EVMService interface {
 	GethClient
 
-	// BalanceAt returns the wei balance of the given account.
+	// BalanceAtWithConfidence returns the wei balance of the given account.
 	//
 	// blockNumber - defines block at which call will be executed:
 	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
@@ -132,9 +132,9 @@ type EVMService interface {
 	//    Unconfirmed - returns the most recent data
 	//    Finalized - returned data was finalized;
 	//    Safe - returned data is highly unlikely to be reorged;
-	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error)
+	BalanceAtWithConfidence(ctx context.Context, account evm.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error)
 
-	// CallContract executes a message call transaction, which is directly executed in the VM of the node,
+	// CallContractWithConfidence executes a message call transaction, which is directly executed in the VM of the node,
 	// but never mined into the blockchain.
 	//
 	// blockNumber - defines block at which call will be executed:
@@ -145,17 +145,18 @@ type EVMService interface {
 	//    Unconfirmed - returns the most recent data;
 	//    Finalized - returned data was finalized;
 	//    Safe - returned data is highly unlikely to be reorged;
-	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error)
+	CallContractWithConfidence(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error)
 
-	// FilterLogs executes a filter query.
+	// FilterLogsWithConfidence executes a filter query.
+	// filterQuery.FromBlock and filterQuery.ToBlock must be positive values or 0. Nil only allowed if BlockHash is set.
 	//
 	// confidenceLevel - defines at which confidence level request will be executed:
 	//    Unconfirmed - returns the most recent data;
 	//    Finalized - returned data was finalized;
 	//    Safe - returned data is highly unlikely to be reorged;
-	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	FilterLogsWithConfidence(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
-	// HeaderByNumber returns a block header from the current canonical chain.
+	// HeaderByNumberWithConfidence returns a block header from the current canonical chain.
 	//
 	// blockNumber - defines block at which call will be executed:
 	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.)
@@ -165,7 +166,7 @@ type EVMService interface {
 	//    Unconfirmed - return the most recent data.
 	//    Finalized - returned data was finalized.
 	//    Safe - returned data is highly unlikely to be reorged.
-	HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error)
+	HeaderByNumberWithConfidence(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error)
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected

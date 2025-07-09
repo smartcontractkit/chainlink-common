@@ -87,7 +87,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			return balance, nil
 		}
 
-		resp, err := client.BalanceAt(ctx, address, blockNum, confidenceLevel)
+		resp, err := client.BalanceAtWithConfidence(ctx, address, blockNum, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, resp, balance)
 	})
@@ -105,7 +105,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			return respAbi, nil
 		}
 
-		resp, err := client.CallContract(ctx, expMsg, blockNum, confidenceLevel)
+		resp, err := client.CallContractWithConfidence(ctx, expMsg, blockNum, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, respAbi, resp)
 	})
@@ -190,7 +190,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			return expLog, nil
 		}
 
-		logs, err := client.FilterLogs(ctx, expFQ, confidenceLevel)
+		logs, err := client.FilterLogsWithConfidence(ctx, expFQ, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, expLog, logs)
 
@@ -278,7 +278,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			return expHead, nil
 		}
 
-		h, err := client.HeaderByNumber(ctx, blockNum, confidenceLevel)
+		h, err := client.HeaderByNumberWithConfidence(ctx, blockNum, confidenceLevel)
 		require.NoError(t, err)
 		require.Equal(t, expHead, h)
 	})
@@ -346,15 +346,15 @@ type staticEVMService struct {
 	staticGetForwarderForEOA      func(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error)
 }
 
-func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, conf primitives.ConfidenceLevel) ([]byte, error) {
+func (s *staticEVMService) CallContractWithConfidence(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, conf primitives.ConfidenceLevel) ([]byte, error) {
 	return s.staticCallContract(ctx, msg, blockNumber, conf)
 }
 
-func (s *staticEVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery, conf primitives.ConfidenceLevel) ([]*evm.Log, error) {
+func (s *staticEVMService) FilterLogsWithConfidence(ctx context.Context, filterQuery evm.FilterQuery, conf primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	return s.staticFilterLogs(ctx, filterQuery, conf)
 }
 
-func (s *staticEVMService) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int, conf primitives.ConfidenceLevel) (*big.Int, error) {
+func (s *staticEVMService) BalanceAtWithConfidence(ctx context.Context, account evm.Address, blockNumber *big.Int, conf primitives.ConfidenceLevel) (*big.Int, error) {
 	return s.staticBalanceAt(ctx, account, blockNumber, conf)
 }
 
@@ -378,7 +378,7 @@ func (s *staticEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []q
 	return s.staticQueryTrackedLogs(ctx, filterQuery, limitAndSort, confidenceLevel)
 }
 
-func (s *staticEVMService) HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error) {
+func (s *staticEVMService) HeaderByNumberWithConfidence(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error) {
 	return s.staticHeaderByNumber(ctx, blockNumber, confidenceLevel)
 }
 

@@ -279,8 +279,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				block := big.NewInt(100)
 				conf := primitives.Finalized
-				mockEVM.EXPECT().CallContract(mock.Anything, &msg, block, conf).Return([]byte("ok"), nil)
-				out, err := evm.CallContract(ctx, &msg, block, conf)
+				mockEVM.EXPECT().CallContractWithConfidence(mock.Anything, &msg, block, conf).Return([]byte("ok"), nil)
+				out, err := evm.CallContractWithConfidence(ctx, &msg, block, conf)
 				require.NoError(t, err)
 				require.Equal(t, []byte("ok"), out)
 			},
@@ -295,9 +295,9 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 					Topics:    [][][32]byte{{topic, topic2}, {topic3}},
 				}
 				conf := primitives.Finalized
-				mockEVM.EXPECT().FilterLogs(mock.Anything, filter, conf).Return([]*evmtypes.Log{&evmLog}, nil)
+				mockEVM.EXPECT().FilterLogsWithConfidence(mock.Anything, filter, conf).Return([]*evmtypes.Log{&evmLog}, nil)
 
-				out, err := evm.FilterLogs(ctx, filter, conf)
+				out, err := evm.FilterLogsWithConfidence(ctx, filter, conf)
 				require.NoError(t, err)
 				require.Len(t, out, 1)
 				require.Equal(t, &evmLog, out[0])
@@ -308,8 +308,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				addr := evmtypes.Address{0xbb}
 				conf := primitives.Finalized
-				mockEVM.EXPECT().BalanceAt(mock.Anything, addr, big.NewInt(200), conf).Return(big.NewInt(999), nil)
-				out, err := evm.BalanceAt(ctx, addr, big.NewInt(200), conf)
+				mockEVM.EXPECT().BalanceAtWithConfidence(mock.Anything, addr, big.NewInt(200), conf).Return(big.NewInt(999), nil)
+				out, err := evm.BalanceAtWithConfidence(ctx, addr, big.NewInt(200), conf)
 				require.NoError(t, err)
 				require.Equal(t, big.NewInt(999), out)
 			},
@@ -402,8 +402,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				head1 := evmtypes.Head{Number: big.NewInt(123)}
 				blockNumber := big.NewInt(123)
 				conf := primitives.Finalized
-				mockEVM.EXPECT().HeaderByNumber(mock.Anything, blockNumber, conf).Return(head1, nil)
-				h, err := evm.HeaderByNumber(ctx, blockNumber, conf)
+				mockEVM.EXPECT().HeaderByNumberWithConfidence(mock.Anything, blockNumber, conf).Return(head1, nil)
+				h, err := evm.HeaderByNumberWithConfidence(ctx, blockNumber, conf)
 				require.NoError(t, err)
 				require.Equal(t, head1, h)
 			},

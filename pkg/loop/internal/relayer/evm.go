@@ -68,7 +68,7 @@ func (e *EVMClient) GetTransactionFee(ctx context.Context, transactionID string)
 	return &evmtypes.TransactionFee{TransactionFee: valuespb.NewIntFromBigInt(reply.GetTransactionFee())}, nil
 }
 
-func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error) {
+func (e *EVMClient) CallContractWithConfidence(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error) {
 	protoCallMsg, err := evmpb.ConvertCallMsgToProto(msg)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -91,7 +91,7 @@ func (e *EVMClient) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blo
 	return reply.GetData(), nil
 }
 
-func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evmtypes.Log, error) {
+func (e *EVMClient) FilterLogsWithConfidence(ctx context.Context, filterQuery evmtypes.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evmtypes.Log, error) {
 	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -108,7 +108,7 @@ func (e *EVMClient) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQ
 	return evmpb.ConvertLogsFromProto(reply.GetLogs()), nil
 }
 
-func (e *EVMClient) BalanceAt(ctx context.Context, account evmtypes.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error) {
+func (e *EVMClient) BalanceAtWithConfidence(ctx context.Context, account evmtypes.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error) {
 	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -158,7 +158,7 @@ func (e *EVMClient) GetTransactionReceipt(ctx context.Context, txHash evmtypes.H
 	return evmpb.ConvertReceiptFromProto(reply.GetReceipt())
 }
 
-func (e *EVMClient) HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evmtypes.Head, error) {
+func (e *EVMClient) HeaderByNumberWithConfidence(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evmtypes.Head, error) {
 	protoConfidenceLevel, err := chaincommonpb.ConvertConfidenceToProto(confidenceLevel)
 	if err != nil {
 		return evmtypes.Head{}, net.WrapRPCErr(err)
@@ -265,7 +265,7 @@ func (e *evmServer) CallContract(ctx context.Context, request *evmpb.CallContrac
 		return nil, err
 	}
 
-	data, err := e.impl.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
+	data, err := e.impl.CallContractWithConfidence(ctx, callMsg, valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (e *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReq
 		return nil, err
 	}
 
-	logs, err := e.impl.FilterLogs(ctx, filter, conf)
+	logs, err := e.impl.FilterLogsWithConfidence(ctx, filter, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (e *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtReque
 	if err != nil {
 		return nil, err
 	}
-	balance, err := e.impl.BalanceAt(ctx, evmtypes.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
+	balance, err := e.impl.BalanceAtWithConfidence(ctx, evmtypes.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (e *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByN
 	if err != nil {
 		return nil, err
 	}
-	header, err := e.impl.HeaderByNumber(ctx, valuespb.NewIntFromBigInt(request.BlockNumber), conf)
+	header, err := e.impl.HeaderByNumberWithConfidence(ctx, valuespb.NewIntFromBigInt(request.BlockNumber), conf)
 	if err != nil {
 		return nil, err
 	}

@@ -24,12 +24,12 @@ type unit struct {
 	Unit string
 }
 
-func GasUnitForChain(chainSelector uint64) (string, error) {
+func GasUnitForChain(chainID uint64) (string, error) {
 	  // Getting ChainId based on ChainSelector
-	  _, err := chainselectors.ChainIdFromSelector(2664363617261496610)
+	  selector, err := chainselectors.SelectorFromChainId(chainID)
 	  if err != nil {
 		return "", err
 	  }
 
-	  return fmt.Sprintf("GAS.%d",chainSelector), nil
+	  return fmt.Sprintf("GAS.%d",selector), nil
 }

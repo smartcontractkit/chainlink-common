@@ -149,13 +149,13 @@ type SourceAccessor interface {
 	// Confidence: Finalized
 	MsgsBetweenSeqNums(ctx context.Context, dest ChainSelector, seqNumRange SeqNumRange) ([]Message, error)
 
-	// LatestMessageTo returns the sequence number associated with the most
-	// recent message being sent to a given destination.
+	// LatestMessageTo returns the latest message sent to a given destination chain
+	// selector.
 	//
 	// Access Type: Event(CCIPMessageSent)
 	// Contract: OnRamp
 	// Confidence: Finalized
-	LatestMessageTo(ctx context.Context, dest ChainSelector) (SeqNum, error)
+	LatestMessageTo(ctx context.Context, dest ChainSelector) (Message, error)
 
 	// GetExpectedNextSequenceNumber returns the expected next sequence number
 	// messages being sent to the provided destination.

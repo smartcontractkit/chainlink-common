@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 
 	"github.com/golang-jwt/jwt/v5"
+	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
 // ---------- JWT Payload - Related Types ----------
@@ -34,12 +35,12 @@ type JWTAuthenticator interface {
 	AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (bool, error)
 }
 
-// NodeTopologyProvider interface for node <-> DON topology provider
+// NodeAuthProvider interface for node <-> DON auth provider
 // Each service that uses NodeJWTAuthenticator must provide an implementation for this interface.
-type NodeTopologyProvider interface {
+type NodeAuthProvider interface {
 
 	// IsNodePubKeyTrusted checks if a node's public key is trusted
 	// Usually, this is done by checking the node aginst DON's on-chain topology.
 	// The check can be done aginst on-chain contracts or cache, depending on the each service's implementation.
-	IsNodePubKeyTrusted(ctx context.Context, p2pId ed25519.PublicKey, publicKey ed25519.PublicKey) (bool, error)
+	IsNodePubKeyTrusted(ctx context.Context, p2pId p2ptypes.PeerID, publicKey ed25519.PublicKey) (bool, error)
 }

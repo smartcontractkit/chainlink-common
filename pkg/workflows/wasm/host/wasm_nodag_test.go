@@ -65,7 +65,7 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
 	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
-	helper.EXPECT().GetNodeTime().Return(time.Now())
+	helper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
 	execResult, err := m.Execute(t.Context(), &pb.ExecuteRequest{
 		Config:  config,
 		Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},

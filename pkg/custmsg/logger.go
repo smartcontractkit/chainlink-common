@@ -10,7 +10,7 @@ import (
 
 const (
 	LogLevelKey                  = "log_level"
-	defaultBeholderEmitTimeoutMs = 100
+	defaultBeholderEmitTimeoutMs = 3000
 )
 
 type beholderLogger struct {
@@ -53,8 +53,8 @@ func (b *beholderLogger) Named(name string) *beholderLogger {
 
 func (b *beholderLogger) Debug(args ...any) {
 	b.underlying.Debug(args...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "debug").Emit(ctx, fmt.Sprint(args...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -73,8 +73,8 @@ func (b *beholderLogger) Info(args ...any) {
 
 func (b *beholderLogger) Warn(args ...any) {
 	b.underlying.Warn(args...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "warn").Emit(ctx, fmt.Sprint(args...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -83,8 +83,8 @@ func (b *beholderLogger) Warn(args ...any) {
 
 func (b *beholderLogger) Error(args ...any) {
 	b.underlying.Error(args...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "error").Emit(ctx, fmt.Sprint(args...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -93,8 +93,8 @@ func (b *beholderLogger) Error(args ...any) {
 
 func (b *beholderLogger) Panic(args ...any) {
 	b.underlying.Panic(args...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//	defer cancel()
 	err := b.emitter.With(LogLevelKey, "panic").Emit(ctx, fmt.Sprint(args...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -103,8 +103,8 @@ func (b *beholderLogger) Panic(args ...any) {
 
 func (b *beholderLogger) Fatal(args ...any) {
 	b.underlying.Fatal(args...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "fatal").Emit(ctx, fmt.Sprint(args...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -113,8 +113,8 @@ func (b *beholderLogger) Fatal(args ...any) {
 
 func (b *beholderLogger) Debugf(format string, values ...any) {
 	b.underlying.Debugf(format, values...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "debug").Emit(ctx, fmt.Sprintf(format, values...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -123,8 +123,8 @@ func (b *beholderLogger) Debugf(format string, values ...any) {
 
 func (b *beholderLogger) Infof(format string, values ...any) {
 	b.underlying.Infof(format, values...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "info").Emit(ctx, fmt.Sprintf(format, values...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -133,8 +133,8 @@ func (b *beholderLogger) Infof(format string, values ...any) {
 
 func (b *beholderLogger) Warnf(format string, values ...any) {
 	b.underlying.Warnf(format, values...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "warn").Emit(ctx, fmt.Sprintf(format, values...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -143,8 +143,8 @@ func (b *beholderLogger) Warnf(format string, values ...any) {
 
 func (b *beholderLogger) Errorf(format string, values ...any) {
 	b.underlying.Errorf(format, values...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "error").Emit(ctx, fmt.Sprintf(format, values...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -153,8 +153,8 @@ func (b *beholderLogger) Errorf(format string, values ...any) {
 
 func (b *beholderLogger) Panicf(format string, values ...any) {
 	b.underlying.Panicf(format, values...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "panic").Emit(ctx, fmt.Sprintf(format, values...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -163,8 +163,8 @@ func (b *beholderLogger) Panicf(format string, values ...any) {
 
 func (b *beholderLogger) Fatalf(format string, values ...any) {
 	b.underlying.Fatalf(format, values...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "fatal").Emit(ctx, fmt.Sprintf(format, values...))
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -173,8 +173,8 @@ func (b *beholderLogger) Fatalf(format string, values ...any) {
 
 func (b *beholderLogger) Debugw(msg string, keysAndValues ...any) {
 	b.underlying.Debugw(msg, keysAndValues...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "debug").WithMapLabels(getLabelMap(keysAndValues...)).Emit(ctx, msg)
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -183,8 +183,8 @@ func (b *beholderLogger) Debugw(msg string, keysAndValues ...any) {
 
 func (b *beholderLogger) Infow(msg string, keysAndValues ...any) {
 	b.underlying.Infow(msg, keysAndValues...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "info").WithMapLabels(getLabelMap(keysAndValues...)).Emit(ctx, msg)
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -193,8 +193,8 @@ func (b *beholderLogger) Infow(msg string, keysAndValues ...any) {
 
 func (b *beholderLogger) Warnw(msg string, keysAndValues ...any) {
 	b.underlying.Warnw(msg, keysAndValues...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "warn").WithMapLabels(getLabelMap(keysAndValues...)).Emit(ctx, msg)
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -203,8 +203,8 @@ func (b *beholderLogger) Warnw(msg string, keysAndValues ...any) {
 
 func (b *beholderLogger) Errorw(msg string, keysAndValues ...any) {
 	b.underlying.Errorw(msg, keysAndValues...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "error").WithMapLabels(getLabelMap(keysAndValues...)).Emit(ctx, msg)
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -213,8 +213,8 @@ func (b *beholderLogger) Errorw(msg string, keysAndValues ...any) {
 
 func (b *beholderLogger) Panicw(msg string, keysAndValues ...any) {
 	b.underlying.Panicw(msg, keysAndValues...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "panic").WithMapLabels(getLabelMap(keysAndValues...)).Emit(ctx, msg)
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)
@@ -223,8 +223,8 @@ func (b *beholderLogger) Panicw(msg string, keysAndValues ...any) {
 
 func (b *beholderLogger) Fatalw(msg string, keysAndValues ...any) {
 	b.underlying.Fatalw(msg, keysAndValues...)
-	ctx, cancel := getBeholderCallContext()
-	defer cancel()
+	ctx, _ := getBeholderCallContext()
+	//defer cancel()
 	err := b.emitter.With(LogLevelKey, "fatal").WithMapLabels(getLabelMap(keysAndValues...)).Emit(ctx, msg)
 	if err != nil {
 		b.underlying.Errorw("error emitting log to Beholder", "error", err)

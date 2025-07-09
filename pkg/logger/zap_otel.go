@@ -13,35 +13,28 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const defaultScopeName = "beholder"
-
 // OtelZapCore is a zapcore.Core implementation that exports logs to OpenTelemetry
 // It implements the zapcore.Core interface and uses OpenTelemetry's logging API
 type OtelZapCore struct {
-	zapcore.Core
-
-	loggerProvider otellog.LoggerProvider
-	logger         otellog.Logger
-	fields         []zapcore.Field
-	levelEnabler   zapcore.LevelEnabler
-	scopeName      string
+	logger       otellog.Logger
+	fields       []zapcore.Field
+	levelEnabler zapcore.LevelEnabler
+	zapCore      zapcore.Core
 }
 
 type Option func(c *OtelZapCore)
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
-func NewOtelZapCore(loggerProvider otellog.LoggerProvider, opts ...Option) zapcore.Core {
+func NewOtelZapCore(logger otellog.Logger, opts ...Option) zapcore.Core {
 
 	c := &OtelZapCore{
-		loggerProvider: loggerProvider,
-		levelEnabler:   zapcore.InfoLevel,
-		scopeName:      defaultScopeName,
+		logger:       logger,
+		levelEnabler: zapcore.InfoLevel,
 	}
 	for _, apply := range opts {
 		apply(c)
 	}
 
-	c.logger = loggerProvider.Logger(c.scopeName)
 	return c
 }
 
@@ -52,23 +45,39 @@ func (o OtelZapCore) Enabled(level zapcore.Level) bool {
 
 // With returns a new OpenTelemetry Core with the given fields added to the log entry
 func (o OtelZapCore) With(fields []zapcore.Field) zapcore.Core {
+	newFields := append([]zapcore.Field{}, o.fields...)
+	newFields = append(newFields, fields...)
+
+	var zapCore zapcore.Core
+	if o.zapCore != nil {
+		zapCore = o.zapCore.With(fields)
+	}
+
 	return &OtelZapCore{
 		logger:       o.logger,
-		fields:       append(o.fields, fields...),
+		fields:       newFields,
 		levelEnabler: o.levelEnabler,
+		zapCore:      zapCore,
 	}
 }
 
 // Check checks if the given log entry is enabled for the OpenTelemetry Core
 func (o OtelZapCore) Check(entry zapcore.Entry, checked *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	if o.Enabled(entry.Level) {
-		return checked.AddCore(entry, o)
+		checked = checked.AddCore(entry, o)
+	}
+	if o.zapCore != nil {
+		checked = o.zapCore.Check(entry, checked)
 	}
 	return checked
 }
 
 func (o OtelZapCore) Sync() error {
-	// OpenTelemetry does not require a sync operation like zap does
+	if o.zapCore != nil {
+		return o.zapCore.Sync()
+	}
+	// If no zap core is set, we don't need to sync anything
+	// as OpenTelemetry Core does not have a sync operation.
 	return nil
 }
 
@@ -86,10 +95,10 @@ func WithLevelEnabler(levelEnabler zapcore.LevelEnabler) Option {
 	})
 }
 
-// WithScopeName sets the instrumentation scope name for the OpenTelemetry Core
-func WithScopeName(name string) Option {
-	return Option(func(c *OtelZapCore) {
-		c.scopeName = name
+// WithZapCore sets a zapcore.Core to be used for writing logs
+func WithZapCore(core zapcore.Core) Option {
+	return Option(func(o *OtelZapCore) {
+		o.zapCore = core
 	})
 }
 
@@ -152,6 +161,11 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	logRecord.AddAttributes(otelAttrs...)
 
 	o.logger.Emit(context.Background(), logRecord)
+
+	// If a zapCore is set, delegate the write to Zap as well
+	if o.zapCore != nil {
+		return o.zapCore.Write(entry, fields)
+	}
 
 	return nil
 }

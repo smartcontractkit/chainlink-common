@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
-	"go.opentelemetry.io/otel/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -149,7 +149,8 @@ func TestOtelZapCore_Write(t *testing.T) {
 		sdklog.WithProcessor(processor),
 	)
 
-	core := NewOtelZapCore(provider).(*OtelZapCore)
+	logger := provider.Logger("test")
+	core := NewOtelZapCore(logger).(*OtelZapCore)
 
 	tests := []struct {
 		name        string
@@ -199,7 +200,7 @@ func TestOtelZapCore_Write(t *testing.T) {
 				Time:    time.Now(),
 			},
 			coreFields: []zapcore.Field{
-				{Key: "context", Type: zapcore.ReflectType, Interface: trace.NewSpanContext(trace.SpanContextConfig{
+				{Key: "context", Type: zapcore.ReflectType, Interface: oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
 					TraceID:    [16]byte{1, 2, 3},
 					SpanID:     [8]byte{4, 5, 6},
 					TraceFlags: 1,
@@ -258,19 +259,61 @@ func TestOtelZapCore_Write(t *testing.T) {
 		})
 	}
 }
-func TestWithScopeName(t *testing.T) {
-	mockProvider := sdklog.NewLoggerProvider()
-	core := NewOtelZapCore(mockProvider)
-	otelCore, ok := core.(*OtelZapCore)
-	require.True(t, ok)
 
-	// Default scope name
-	assert.Equal(t, defaultScopeName, otelCore.scopeName)
+func TestOtelZapCore_WriteWithZapCore(t *testing.T) {
+	var otelBuf bytes.Buffer
+	var zapBuf bytes.Buffer
 
-	// Apply WithScopeName option
-	const customScope = "custom-scope"
-	coreWithScope := NewOtelZapCore(mockProvider, WithScopeName(customScope))
-	otelCoreWithScope, ok := coreWithScope.(*OtelZapCore)
-	require.True(t, ok)
-	assert.Equal(t, customScope, otelCoreWithScope.scopeName)
+	// Create a stdout exporter for OpenTelemetry logs
+	exporter, err := stdoutlog.New(stdoutlog.WithWriter(&otelBuf))
+	require.NoError(t, err)
+
+	// Create a simple processor for the exporter
+	processor := sdklog.NewSimpleProcessor(exporter)
+	// Create a logger provider with the processor
+	provider := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(processor),
+	)
+
+	// Set a zap core to be used for writing logs
+	zapCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zapcore.EncoderConfig{MessageKey: "message"}),
+		zapcore.AddSync(&zapBuf),
+		zapcore.InfoLevel,
+	)
+
+	logger := provider.Logger("test")
+	core := NewOtelZapCore(logger, WithZapCore(zapCore)).(*OtelZapCore)
+
+	entry := zapcore.Entry{
+		Message: "test message",
+		Level:   zapcore.InfoLevel,
+		Time:    time.Now(),
+	}
+
+	fields := []zapcore.Field{
+		{Key: "test key", Type: zapcore.StringType, String: "test value"},
+	}
+
+	err = core.Write(entry, fields)
+	require.NoError(t, err)
+
+	// Assert if it was written to both OpenTelemetry and Zap core?
+	var otelLogEntry struct {
+		Body struct {
+			Value string `json:"Value"`
+		} `json:"Body"`
+		Attributes []struct {
+			Key   string `json:"Key"`
+			Value struct {
+				Value string `json:"Value"`
+			} `json:"Value"`
+		} `json:"Attributes"`
+	}
+	err = json.Unmarshal(otelBuf.Bytes(), &otelLogEntry)
+	require.NoError(t, err, "failed to parse OTEL JSON log output")
+	assert.Equal(t, "test message", otelLogEntry.Body.Value)
+
+	assert.Contains(t, zapBuf.String(), `"message":"test message"`)
+	assert.Contains(t, zapBuf.String(), `"test key":"test value"`)
 }

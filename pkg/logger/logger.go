@@ -6,14 +6,13 @@ import (
 	"reflect"
 	"testing"
 
-	otellog "go.opentelemetry.io/otel/log"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	otellog "go.opentelemetry.io/otel/log"
 )
 
 // Logger is a basic logging interface implemented by smartcontractkit/chainlink/core/logger.Logger and go.uber.org/zap.SugaredLogger
@@ -104,9 +103,10 @@ func NewWithSync(w io.Writer) Logger {
 	return &logger{zap.New(core).Sugar()}
 }
 
-// NewWithOtelZapCore returns a new Logger using an OpenTelemetry Zap Core.
-func NewWithOtelZapCore(loggerProvider otellog.LoggerProvider, opts ...Option) Logger {
-	return &logger{zap.New(NewOtelZapCore(loggerProvider, opts...)).Sugar()}
+// NewWithOtel creates new Zap logger integrated with OTel logger using global LoggerProvider from beholder client
+func NewWithOtel(provider otellog.LoggerProvider, name string, opts ...Option) Logger {
+	otelLogger := provider.Logger(name)
+	return &logger{zap.New(NewOtelZapCore(otelLogger, opts...)).Sugar()}
 }
 
 // Test returns a new test Logger for tb.

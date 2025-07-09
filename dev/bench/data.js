@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752013528322,
+  "lastUpdate": 1752021896589,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -18984,6 +18984,48 @@ window.BENCHMARK_DATA = {
             "value": 28530,
             "unit": "ns/op",
             "extra": "42136 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26e132b091ba5a66e40974dfa0c907a11113bc8a",
+          "message": "chipingress: add basic-auth support (#1312)\n\n* chipingress: add basic-auth, refactor csa-key base token auth\n\n* chipingress/beholder: fix tests\n\n* chipingress: add type aliases\n\n* refactor(chipingress): remove NewEventWithAttributes, add EventToProto\n\n* chipingress: add ProtoToEvent, EventsToBatch helpers\n\n* beholder: fix race condition in TestClient\n\n* Wraps client\n\n* Returns `err` for StreamEvents api\n\n_ unused params\n\n* Fixes tests\n\n* Removes old mock\n\n* Renames func to reduce stuttering\n\n---------\n\nCo-authored-by: Hagen H <42331373+hendoxc@users.noreply.github.com>\nCo-authored-by: hendoxc <hagen.henderson@smartcontract.com>",
+          "timestamp": "2025-07-09T00:43:41Z",
+          "tree_id": "c3e341d2aee8b6ea5a85fe53b6e20e5cd2c1c944",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/26e132b091ba5a66e40974dfa0c907a11113bc8a"
+        },
+        "date": 1752021895048,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 373.1,
+            "unit": "ns/op",
+            "extra": "3332413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.7,
+            "unit": "ns/op",
+            "extra": "2855260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28552,
+            "unit": "ns/op",
+            "extra": "42122 times\n4 procs"
           }
         ]
       }

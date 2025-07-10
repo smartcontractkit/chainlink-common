@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752106360343,
+  "lastUpdate": 1752128622543,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19278,6 +19278,48 @@ window.BENCHMARK_DATA = {
             "value": 28631,
             "unit": "ns/op",
             "extra": "42172 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e64a19122f64988c9bab660fc45bd4c87247a50",
+          "message": "Expose Nodes via CapabilitiesRegistry interface (#1358)\n\n* Expose Nodes via CapabilitiesRegistry interface\n\n* mocks and gen files\n\n* proto fields tags change\n\n* add comments",
+          "timestamp": "2025-07-10T06:22:34Z",
+          "tree_id": "dd20f811f4fabd7f24093ccd54329e0dba514f00",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1e64a19122f64988c9bab660fc45bd4c87247a50"
+        },
+        "date": 1752128621549,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.9,
+            "unit": "ns/op",
+            "extra": "3346215 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.2,
+            "unit": "ns/op",
+            "extra": "2930392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28152,
+            "unit": "ns/op",
+            "extra": "42613 times\n4 procs"
           }
         ]
       }

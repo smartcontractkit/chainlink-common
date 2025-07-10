@@ -29,23 +29,22 @@ var _ = emptypb.Empty{}
 {{ range .Services}}
 {{ $hasTriggers := false }}
 {{ $hasActions := false }}
-{{ $service := . }}
-{{ if .Comments.Leading.String }}//{{.GoName}}Capability {{.Comments.Leading.String}} {{ end -}}
-type {{.GoName}}Capability interface { {{- if .Comments.Trailing.String }}//{{.GoName}}Capability {{.Comments.Trailing.String}} {{ end }}
+{{ $service := . -}}
+{{ if .Comments.Leading.String }}//{{.GoName}}Capability {{CleanComments .Comments.Leading.String}} {{ end }}
+type {{.GoName}}Capability interface { {{- if .Comments.Trailing.String }}//{{.GoName}}Capability {{CleanComments .Comments.Trailing.String}} {{ end }}
     {{- range .Methods}}
         {{- if isTrigger . }}
             {{ $hasTriggers = true }}
-    {{- if .Comments.Leading.String }}//Register{{.GoName}} registration for {{.Comments.Leading.String}} {{ end -}}
-    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error) {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end }}
-    {{ if .Comments.Leading.String }}//Unregister{{.GoName}} unregistration for {{.Comments.Leading.String}} {{ end }}
-    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end -}}
+    {{- if .Comments.Leading.String }}//Register{{.GoName}} registration for {{CleanComments .Comments.Leading.String}} {{ end }}
+    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error) {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
+    {{ if .Comments.Leading.String }}//Unregister{{.GoName}} unregistration for {{CleanComments .Comments.Leading.String}} {{ end }}
+    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
         {{- else }}
             {{ $hasActions = true }}
-    {{- if .Comments.Leading.String }}//{{.GoName}} {{.Comments.Leading.String}} {{ end -}}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error) {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end -}}
-        {{- end }}
+    {{- if .Comments.Leading.String }}//{{.GoName}} {{CleanComments .Comments.Leading.String}} {{ end }}
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error) {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
+        {{ end }}
     {{- end }}
-
 
     Start(ctx context.Context) error
     Close() error
@@ -63,9 +62,8 @@ func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
         stopCh: stopCh,
     }
 }
-
-{{ if .Comments.Leading.String }}//{{.GoName}}Server {{.Comments.Leading.String}} {{ end -}}
-type {{.GoName}}Server struct { {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end -}}
+{{ if .Comments.Leading.String }}//{{.GoName}}Server {{CleanComments .Comments.Leading.String}} {{ end }}
+type {{.GoName}}Server struct { {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
     {{.GoName|LowerFirst}}Capability
     capabilityRegistry core.CapabilitiesRegistry
     stopCh chan struct{}

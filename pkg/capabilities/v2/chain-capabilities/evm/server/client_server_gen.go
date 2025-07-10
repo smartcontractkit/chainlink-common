@@ -20,17 +20,27 @@ var _ = emptypb.Empty{}
 
 type ClientCapability interface {
 	CallContract(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest) (*evm.CallContractReply, error)
+
 	FilterLogs(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+
 	BalanceAt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+
 	EstimateGas(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest) (*evm.EstimateGasReply, error)
+
 	GetTransactionByHash(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest) (*evm.GetTransactionByHashReply, error)
+
 	GetTransactionReceipt(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest) (*evm.GetTransactionReceiptReply, error)
+
 	LatestAndFinalizedHead(ctx context.Context, metadata capabilities.RequestMetadata, input *emptypb.Empty) (*evm.LatestAndFinalizedHeadReply, error)
+
 	RegisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.RegisterLogTrackingRequest) (*emptypb.Empty, error)
+
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
+
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
 
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
+
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
 
 	Start(ctx context.Context) error

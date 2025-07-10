@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -21,6 +20,8 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 type Emitter interface {
@@ -249,7 +250,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
+		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient, WithTimeout(cfg.EmitterExportTimeout))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
 		}

@@ -5,6 +5,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -38,10 +39,11 @@ type ClientCapability interface {
 	UnregisterLogTracking(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 
 	RegisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) (<-chan capabilities.TriggerAndId[*evm.Log], error)
-
 	UnregisterLogTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *evm.FilterLogTriggerRequest) error
 
 	WriteReport(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest) (*evm.WriteReportReply, error)
+
+	ChainSelector() uint64
 
 	Start(ctx context.Context) error
 	Close() error
@@ -66,15 +68,15 @@ type ClientServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := cs.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := c.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	cs.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = capabilityRegistry
 
 	if err := capabilityRegistry.Add(ctx, &clientCapability{
-		ClientCapability: cs.ClientCapability,
+		ClientCapability: c.ClientCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -82,25 +84,25 @@ func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetry
 	return nil
 }
 
-func (cs *ClientServer) Close() error {
+func (c *ClientServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "evm@1.0.0"); err != nil {
+	if c.capabilityRegistry != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "evm@1.0.0"+":ChainSelector="+strconv.FormatUint(c.ChainSelector(), 10)); err != nil {
 			return err
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if c.stopCh != nil {
+		close(c.stopCh)
 	}
 
-	return cs.clientCapability.Close()
+	return c.clientCapability.Close()
 }
 
-func (cs *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.clientCapability.Info(ctx)
+func (c *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := c.clientCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +116,7 @@ type clientCapability struct {
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("evm@1.0.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
+	return capabilities.NewCapabilityInfo("evm@1.0.0"+":ChainSelector="+strconv.FormatUint(c.ChainSelector(), 10), capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
@@ -125,7 +127,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm@1.0.0"+":ChainSelector="+strconv.FormatUint(c.ChainSelector(), 10), request, input, c.ClientCapability.RegisterLogTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

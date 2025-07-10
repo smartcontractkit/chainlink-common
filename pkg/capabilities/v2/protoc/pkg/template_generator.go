@@ -20,6 +20,7 @@ type TemplateGenerator struct {
 	Template         string
 	FileNameTemplate string
 	Partials         map[string]string
+	LabelMapper      func(lbls map[string]*pb.Label) ([]Label, error)
 	ExtraFns         template.FuncMap
 }
 
@@ -198,7 +199,13 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 				return line
 			}
 		},
-
+		"Labels": func(s *protogen.Service) ([]Label, error) {
+			md, err := getCapabilityMetadata(s)
+			if err != nil {
+				return nil, err
+			}
+			return t.LabelMapper(md.Labels)
+		},
 		"ConfigType": func(s *protogen.Service) (string, error) {
 			md, err := getCapabilityMetadata(s)
 			if err != nil {

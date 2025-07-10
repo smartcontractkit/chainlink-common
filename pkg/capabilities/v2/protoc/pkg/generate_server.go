@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"text/template"
 
 	"google.golang.org/protobuf/compiler/protogen"
 )
@@ -35,6 +36,8 @@ var serverTemplates = map[ServerLanguage]TemplateGenerator{
 		Name:             "go_server",
 		Template:         goServerTemplate,
 		FileNameTemplate: "server/{{.}}_server_gen.go",
+		LabelMapper:      PbLabelToGoLabels,
+		ExtraFns:         template.FuncMap{"AppendLabels": AppendGoLabelsToVersion},
 	},
 }
 

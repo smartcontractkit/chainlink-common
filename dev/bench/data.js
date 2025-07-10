@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752128622543,
+  "lastUpdate": 1752150137159,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19320,6 +19320,48 @@ window.BENCHMARK_DATA = {
             "value": 28152,
             "unit": "ns/op",
             "extra": "42613 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c14b396e486cb84611cad9b36795ed1f35739d3",
+          "message": "pkg/loop: swap out deprecated otel grpc API (#636)",
+          "timestamp": "2025-07-10T12:20:11Z",
+          "tree_id": "2619a75ebc382982b09b306759a144b98b77a9e3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7c14b396e486cb84611cad9b36795ed1f35739d3"
+        },
+        "date": 1752150136218,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 370.4,
+            "unit": "ns/op",
+            "extra": "3366316 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.7,
+            "unit": "ns/op",
+            "extra": "2907555 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28457,
+            "unit": "ns/op",
+            "extra": "42103 times\n4 procs"
           }
         ]
       }

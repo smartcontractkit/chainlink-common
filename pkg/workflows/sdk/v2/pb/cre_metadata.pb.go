@@ -22,17 +22,308 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type StringLabel struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Defaults      map[string]string      `protobuf:"bytes,1,rep,name=defaults,proto3" json:"defaults,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StringLabel) Reset() {
+	*x = StringLabel{}
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StringLabel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StringLabel) ProtoMessage() {}
+
+func (x *StringLabel) ProtoReflect() protoreflect.Message {
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StringLabel.ProtoReflect.Descriptor instead.
+func (*StringLabel) Descriptor() ([]byte, []int) {
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *StringLabel) GetDefaults() map[string]string {
+	if x != nil {
+		return x.Defaults
+	}
+	return nil
+}
+
+type Uint64Label struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Defaults      map[string]uint64      `protobuf:"bytes,1,rep,name=defaults,proto3" json:"defaults,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Uint64Label) Reset() {
+	*x = Uint64Label{}
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Uint64Label) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Uint64Label) ProtoMessage() {}
+
+func (x *Uint64Label) ProtoReflect() protoreflect.Message {
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Uint64Label.ProtoReflect.Descriptor instead.
+func (*Uint64Label) Descriptor() ([]byte, []int) {
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Uint64Label) GetDefaults() map[string]uint64 {
+	if x != nil {
+		return x.Defaults
+	}
+	return nil
+}
+
+type Int64Label struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Defaults      map[string]int64       `protobuf:"bytes,1,rep,name=defaults,proto3" json:"defaults,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Int64Label) Reset() {
+	*x = Int64Label{}
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Int64Label) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Int64Label) ProtoMessage() {}
+
+func (x *Int64Label) ProtoReflect() protoreflect.Message {
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Int64Label.ProtoReflect.Descriptor instead.
+func (*Int64Label) Descriptor() ([]byte, []int) {
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Int64Label) GetDefaults() map[string]int64 {
+	if x != nil {
+		return x.Defaults
+	}
+	return nil
+}
+
+type Uint32Label struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Defaults      map[string]uint32      `protobuf:"bytes,1,rep,name=defaults,proto3" json:"defaults,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Uint32Label) Reset() {
+	*x = Uint32Label{}
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Uint32Label) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Uint32Label) ProtoMessage() {}
+
+func (x *Uint32Label) ProtoReflect() protoreflect.Message {
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Uint32Label.ProtoReflect.Descriptor instead.
+func (*Uint32Label) Descriptor() ([]byte, []int) {
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Uint32Label) GetDefaults() map[string]uint32 {
+	if x != nil {
+		return x.Defaults
+	}
+	return nil
+}
+
+type Label struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Kind:
+	//
+	//	*Label_StringLabel
+	//	*Label_Uint64Label
+	//	*Label_Int64Label
+	//	*Label_Uint32Label
+	Kind          isLabel_Kind `protobuf_oneof:"kind"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Label) Reset() {
+	*x = Label{}
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Label) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Label) ProtoMessage() {}
+
+func (x *Label) ProtoReflect() protoreflect.Message {
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Label.ProtoReflect.Descriptor instead.
+func (*Label) Descriptor() ([]byte, []int) {
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Label) GetKind() isLabel_Kind {
+	if x != nil {
+		return x.Kind
+	}
+	return nil
+}
+
+func (x *Label) GetStringLabel() *StringLabel {
+	if x != nil {
+		if x, ok := x.Kind.(*Label_StringLabel); ok {
+			return x.StringLabel
+		}
+	}
+	return nil
+}
+
+func (x *Label) GetUint64Label() *Uint64Label {
+	if x != nil {
+		if x, ok := x.Kind.(*Label_Uint64Label); ok {
+			return x.Uint64Label
+		}
+	}
+	return nil
+}
+
+func (x *Label) GetInt64Label() *Int64Label {
+	if x != nil {
+		if x, ok := x.Kind.(*Label_Int64Label); ok {
+			return x.Int64Label
+		}
+	}
+	return nil
+}
+
+func (x *Label) GetUint32Label() *Uint32Label {
+	if x != nil {
+		if x, ok := x.Kind.(*Label_Uint32Label); ok {
+			return x.Uint32Label
+		}
+	}
+	return nil
+}
+
+type isLabel_Kind interface {
+	isLabel_Kind()
+}
+
+type Label_StringLabel struct {
+	StringLabel *StringLabel `protobuf:"bytes,1,opt,name=string_label,json=stringLabel,proto3,oneof"`
+}
+
+type Label_Uint64Label struct {
+	Uint64Label *Uint64Label `protobuf:"bytes,2,opt,name=uint64_label,json=uint64Label,proto3,oneof"`
+}
+
+type Label_Int64Label struct {
+	Int64Label *Int64Label `protobuf:"bytes,3,opt,name=int64_label,json=int64Label,proto3,oneof"`
+}
+
+type Label_Uint32Label struct {
+	Uint32Label *Uint32Label `protobuf:"bytes,4,opt,name=uint32_label,json=uint32Label,proto3,oneof"`
+}
+
+func (*Label_StringLabel) isLabel_Kind() {}
+
+func (*Label_Uint64Label) isLabel_Kind() {}
+
+func (*Label_Int64Label) isLabel_Kind() {}
+
+func (*Label_Uint32Label) isLabel_Kind() {}
+
 type CapabilityMetadata struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mode          Mode                   `protobuf:"varint,1,opt,name=mode,proto3,enum=sdk.v1alpha.Mode" json:"mode,omitempty"`
 	CapabilityId  string                 `protobuf:"bytes,2,opt,name=capability_id,json=capabilityId,proto3" json:"capability_id,omitempty"`
+	Labels        map[string]*Label      `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CapabilityMetadata) Reset() {
 	*x = CapabilityMetadata{}
-	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[0]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +335,7 @@ func (x *CapabilityMetadata) String() string {
 func (*CapabilityMetadata) ProtoMessage() {}
 
 func (x *CapabilityMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[0]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +348,7 @@ func (x *CapabilityMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityMetadata.ProtoReflect.Descriptor instead.
 func (*CapabilityMetadata) Descriptor() ([]byte, []int) {
-	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{0}
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CapabilityMetadata) GetMode() Mode {
@@ -74,6 +365,13 @@ func (x *CapabilityMetadata) GetCapabilityId() string {
 	return ""
 }
 
+func (x *CapabilityMetadata) GetLabels() map[string]*Label {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
 type CapabilityMethodMetadata struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	MapToUntypedApi bool                   `protobuf:"varint,1,opt,name=map_to_untyped_api,json=mapToUntypedApi,proto3" json:"map_to_untyped_api,omitempty"`
@@ -83,7 +381,7 @@ type CapabilityMethodMetadata struct {
 
 func (x *CapabilityMethodMetadata) Reset() {
 	*x = CapabilityMethodMetadata{}
-	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[1]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +393,7 @@ func (x *CapabilityMethodMetadata) String() string {
 func (*CapabilityMethodMetadata) ProtoMessage() {}
 
 func (x *CapabilityMethodMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[1]
+	mi := &file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +406,7 @@ func (x *CapabilityMethodMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityMethodMetadata.ProtoReflect.Descriptor instead.
 func (*CapabilityMethodMetadata) Descriptor() ([]byte, []int) {
-	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{1}
+	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CapabilityMethodMetadata) GetMapToUntypedApi() bool {
@@ -153,10 +451,42 @@ var File_tools_generator_v1alpha_cre_metadata_proto protoreflect.FileDescriptor
 
 const file_tools_generator_v1alpha_cre_metadata_proto_rawDesc = "" +
 	"\n" +
-	"*tools/generator/v1alpha/cre_metadata.proto\x12\x17tools.generator.v1alpha\x1a google/protobuf/descriptor.proto\x1a\x15sdk/v1alpha/sdk.proto\"`\n" +
+	"*tools/generator/v1alpha/cre_metadata.proto\x12\x17tools.generator.v1alpha\x1a google/protobuf/descriptor.proto\x1a\x15sdk/v1alpha/sdk.proto\"\x9a\x01\n" +
+	"\vStringLabel\x12N\n" +
+	"\bdefaults\x18\x01 \x03(\v22.tools.generator.v1alpha.StringLabel.DefaultsEntryR\bdefaults\x1a;\n" +
+	"\rDefaultsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9a\x01\n" +
+	"\vUint64Label\x12N\n" +
+	"\bdefaults\x18\x01 \x03(\v22.tools.generator.v1alpha.Uint64Label.DefaultsEntryR\bdefaults\x1a;\n" +
+	"\rDefaultsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"\x98\x01\n" +
+	"\n" +
+	"Int64Label\x12M\n" +
+	"\bdefaults\x18\x01 \x03(\v21.tools.generator.v1alpha.Int64Label.DefaultsEntryR\bdefaults\x1a;\n" +
+	"\rDefaultsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"\x9a\x01\n" +
+	"\vUint32Label\x12N\n" +
+	"\bdefaults\x18\x01 \x03(\v22.tools.generator.v1alpha.Uint32Label.DefaultsEntryR\bdefaults\x1a;\n" +
+	"\rDefaultsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\xb8\x02\n" +
+	"\x05Label\x12I\n" +
+	"\fstring_label\x18\x01 \x01(\v2$.tools.generator.v1alpha.StringLabelH\x00R\vstringLabel\x12I\n" +
+	"\fuint64_label\x18\x02 \x01(\v2$.tools.generator.v1alpha.Uint64LabelH\x00R\vuint64Label\x12F\n" +
+	"\vint64_label\x18\x03 \x01(\v2#.tools.generator.v1alpha.Int64LabelH\x00R\n" +
+	"int64Label\x12I\n" +
+	"\fuint32_label\x18\x04 \x01(\v2$.tools.generator.v1alpha.Uint32LabelH\x00R\vuint32LabelB\x06\n" +
+	"\x04kind\"\x8c\x02\n" +
 	"\x12CapabilityMetadata\x12%\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x11.sdk.v1alpha.ModeR\x04mode\x12#\n" +
-	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId\"G\n" +
+	"\rcapability_id\x18\x02 \x01(\tR\fcapabilityId\x12O\n" +
+	"\x06labels\x18\x03 \x03(\v27.tools.generator.v1alpha.CapabilityMetadata.LabelsEntryR\x06labels\x1aY\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
+	"\x05value\x18\x02 \x01(\v2\x1e.tools.generator.v1alpha.LabelR\x05value:\x028\x01\"G\n" +
 	"\x18CapabilityMethodMetadata\x12+\n" +
 	"\x12map_to_untyped_api\x18\x01 \x01(\bR\x0fmapToUntypedApi:n\n" +
 	"\n" +
@@ -176,25 +506,45 @@ func file_tools_generator_v1alpha_cre_metadata_proto_rawDescGZIP() []byte {
 	return file_tools_generator_v1alpha_cre_metadata_proto_rawDescData
 }
 
-var file_tools_generator_v1alpha_cre_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_tools_generator_v1alpha_cre_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_tools_generator_v1alpha_cre_metadata_proto_goTypes = []any{
-	(*CapabilityMetadata)(nil),          // 0: tools.generator.v1alpha.CapabilityMetadata
-	(*CapabilityMethodMetadata)(nil),    // 1: tools.generator.v1alpha.CapabilityMethodMetadata
-	(Mode)(0),                           // 2: sdk.v1alpha.Mode
-	(*descriptorpb.ServiceOptions)(nil), // 3: google.protobuf.ServiceOptions
-	(*descriptorpb.MethodOptions)(nil),  // 4: google.protobuf.MethodOptions
+	(*StringLabel)(nil),                 // 0: tools.generator.v1alpha.StringLabel
+	(*Uint64Label)(nil),                 // 1: tools.generator.v1alpha.Uint64Label
+	(*Int64Label)(nil),                  // 2: tools.generator.v1alpha.Int64Label
+	(*Uint32Label)(nil),                 // 3: tools.generator.v1alpha.Uint32Label
+	(*Label)(nil),                       // 4: tools.generator.v1alpha.Label
+	(*CapabilityMetadata)(nil),          // 5: tools.generator.v1alpha.CapabilityMetadata
+	(*CapabilityMethodMetadata)(nil),    // 6: tools.generator.v1alpha.CapabilityMethodMetadata
+	nil,                                 // 7: tools.generator.v1alpha.StringLabel.DefaultsEntry
+	nil,                                 // 8: tools.generator.v1alpha.Uint64Label.DefaultsEntry
+	nil,                                 // 9: tools.generator.v1alpha.Int64Label.DefaultsEntry
+	nil,                                 // 10: tools.generator.v1alpha.Uint32Label.DefaultsEntry
+	nil,                                 // 11: tools.generator.v1alpha.CapabilityMetadata.LabelsEntry
+	(Mode)(0),                           // 12: sdk.v1alpha.Mode
+	(*descriptorpb.ServiceOptions)(nil), // 13: google.protobuf.ServiceOptions
+	(*descriptorpb.MethodOptions)(nil),  // 14: google.protobuf.MethodOptions
 }
 var file_tools_generator_v1alpha_cre_metadata_proto_depIdxs = []int32{
-	2, // 0: tools.generator.v1alpha.CapabilityMetadata.mode:type_name -> sdk.v1alpha.Mode
-	3, // 1: tools.generator.v1alpha.capability:extendee -> google.protobuf.ServiceOptions
-	4, // 2: tools.generator.v1alpha.method:extendee -> google.protobuf.MethodOptions
-	0, // 3: tools.generator.v1alpha.capability:type_name -> tools.generator.v1alpha.CapabilityMetadata
-	1, // 4: tools.generator.v1alpha.method:type_name -> tools.generator.v1alpha.CapabilityMethodMetadata
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	3, // [3:5] is the sub-list for extension type_name
-	1, // [1:3] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	7,  // 0: tools.generator.v1alpha.StringLabel.defaults:type_name -> tools.generator.v1alpha.StringLabel.DefaultsEntry
+	8,  // 1: tools.generator.v1alpha.Uint64Label.defaults:type_name -> tools.generator.v1alpha.Uint64Label.DefaultsEntry
+	9,  // 2: tools.generator.v1alpha.Int64Label.defaults:type_name -> tools.generator.v1alpha.Int64Label.DefaultsEntry
+	10, // 3: tools.generator.v1alpha.Uint32Label.defaults:type_name -> tools.generator.v1alpha.Uint32Label.DefaultsEntry
+	0,  // 4: tools.generator.v1alpha.Label.string_label:type_name -> tools.generator.v1alpha.StringLabel
+	1,  // 5: tools.generator.v1alpha.Label.uint64_label:type_name -> tools.generator.v1alpha.Uint64Label
+	2,  // 6: tools.generator.v1alpha.Label.int64_label:type_name -> tools.generator.v1alpha.Int64Label
+	3,  // 7: tools.generator.v1alpha.Label.uint32_label:type_name -> tools.generator.v1alpha.Uint32Label
+	12, // 8: tools.generator.v1alpha.CapabilityMetadata.mode:type_name -> sdk.v1alpha.Mode
+	11, // 9: tools.generator.v1alpha.CapabilityMetadata.labels:type_name -> tools.generator.v1alpha.CapabilityMetadata.LabelsEntry
+	4,  // 10: tools.generator.v1alpha.CapabilityMetadata.LabelsEntry.value:type_name -> tools.generator.v1alpha.Label
+	13, // 11: tools.generator.v1alpha.capability:extendee -> google.protobuf.ServiceOptions
+	14, // 12: tools.generator.v1alpha.method:extendee -> google.protobuf.MethodOptions
+	5,  // 13: tools.generator.v1alpha.capability:type_name -> tools.generator.v1alpha.CapabilityMetadata
+	6,  // 14: tools.generator.v1alpha.method:type_name -> tools.generator.v1alpha.CapabilityMethodMetadata
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	13, // [13:15] is the sub-list for extension type_name
+	11, // [11:13] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_tools_generator_v1alpha_cre_metadata_proto_init() }
@@ -203,13 +553,19 @@ func file_tools_generator_v1alpha_cre_metadata_proto_init() {
 		return
 	}
 	file_sdk_v1alpha_sdk_proto_init()
+	file_tools_generator_v1alpha_cre_metadata_proto_msgTypes[4].OneofWrappers = []any{
+		(*Label_StringLabel)(nil),
+		(*Label_Uint64Label)(nil),
+		(*Label_Int64Label)(nil),
+		(*Label_Uint32Label)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tools_generator_v1alpha_cre_metadata_proto_rawDesc), len(file_tools_generator_v1alpha_cre_metadata_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   12,
 			NumExtensions: 2,
 			NumServices:   0,
 		},

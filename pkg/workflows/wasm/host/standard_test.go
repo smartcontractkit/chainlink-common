@@ -117,14 +117,22 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("successful mode switch", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
-		var timeCallSequence []string
+		// Node calls may occur on initialization depending on the language.
+		var donCall1 bool
+		var nodeCall bool
+		var donCall2 bool
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
-			timeCallSequence = append(timeCallSequence, "NODE")
+			if donCall1 {
+				nodeCall = true
+			}
 			return time.Now()
 		})
 		// We want to make sure time.Sleep() is called at least twice in DON mode and once in node Mode
 		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
-			timeCallSequence = append(timeCallSequence, "DON")
+			donCall1 = true
+			if nodeCall {
+				donCall2 = true
+			}
 			return time.Now(), nil
 		})
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
@@ -145,35 +153,9 @@ func TestStandardModeSwitch(t *testing.T) {
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result := executeWithResult[string](t, m, request, mockExecutionHelper)
 		require.Equal(t, "test556", result)
-
-		// Verify time call sequence is Node --> DON --> Node --> DON
-		phase := 0
-		for i, call := range timeCallSequence {
-			switch phase {
-			case 0: // Initial time calls are in Node mode
-				if call == "DON" {
-					if i < 1 {
-						t.Fatalf("Expected at least one Node time call")
-					}
-					phase = 1
-				}
-			case 1: // Switched to DON Mode
-				if call == "NODE" {
-					phase = 2
-				}
-			case 2: // Switched back to NODE mode
-				if call == "DON" {
-					phase = 3
-				}
-			case 3: // Switched again to DON Mode
-				if call != "DON" {
-					t.Fatalf("Unexpected call at index %d in final DON phase: %s", i, call)
-				}
-			}
-		}
-		if phase < 3 {
-			t.Fatalf("Did not see final DON phase in call sequence")
-		}
+		require.True(t, donCall1)
+		require.True(t, nodeCall)
+		require.True(t, donCall2)
 	})
 
 	t.Run("node runtime in don mode", func(t *testing.T) {

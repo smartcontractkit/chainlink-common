@@ -26,19 +26,23 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-{{- range .Services}}
+{{ range .Services}}
 {{ $hasTriggers := false }}
 {{ $hasActions := false }}
 {{ $service := . }}
-type {{.GoName}}Capability interface {
+{{ if .Comments.Leading.String }}//{{.GoName}}Capability {{.Comments.Leading.String}} {{ end -}}
+type {{.GoName}}Capability interface { {{- if .Comments.Trailing.String }}//{{.GoName}}Capability {{.Comments.Trailing.String}} {{ end }}
     {{- range .Methods}}
         {{- if isTrigger . }}
             {{ $hasTriggers = true }}
-    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error)
-    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error
+    {{- if .Comments.Leading.String }}//Register{{.GoName}} registration for {{.Comments.Leading.String}} {{ end -}}
+    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error) {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end }}
+    {{ if .Comments.Leading.String }}//Unregister{{.GoName}} unregistration for {{.Comments.Leading.String}} {{ end }}
+    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end -}}
         {{- else }}
             {{ $hasActions = true }}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error)
+    {{- if .Comments.Leading.String }}//{{.GoName}} {{.Comments.Leading.String}} {{ end -}}
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error) {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end -}}
         {{- end }}
     {{- end }}
 
@@ -60,7 +64,8 @@ func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
     }
 }
 
-type {{.GoName}}Server struct {
+{{ if .Comments.Leading.String }}//{{.GoName}}Server {{.Comments.Leading.String}} {{ end -}}
+type {{.GoName}}Server struct { {{- if .Comments.Trailing.String }}// {{.Comments.Trailing.String}} {{ end -}}
     {{.GoName|LowerFirst}}Capability
     capabilityRegistry core.CapabilitiesRegistry
     stopCh chan struct{}

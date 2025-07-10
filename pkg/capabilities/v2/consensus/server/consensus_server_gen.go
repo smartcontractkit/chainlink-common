@@ -21,7 +21,6 @@ var _ = emptypb.Empty{}
 
 type ConsensusCapability interface {
 	Simple(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.SimpleConsensusInputs) (*pb.Value, error)
-
 	Report(ctx context.Context, metadata capabilities.RequestMetadata, input *pb2.ReportRequest) (*pb2.ReportResponse, error)
 
 	Start(ctx context.Context) error

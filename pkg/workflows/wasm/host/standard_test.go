@@ -129,9 +129,10 @@ func TestStandardModeSwitch(t *testing.T) {
 		})
 		// We want to make sure time.Sleep() is called at least twice in DON mode and once in node Mode
 		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
-			donCall1 = true
 			if nodeCall {
 				donCall2 = true
+			} else {
+				donCall1 = true
 			}
 			return time.Now(), nil
 		})

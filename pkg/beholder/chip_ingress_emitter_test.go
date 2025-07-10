@@ -1,14 +1,16 @@
 package beholder_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb/mocks"
 )
 
 func TestNewChipIngressEmitter(t *testing.T) {
@@ -267,4 +269,73 @@ func TestExtractAttributes(t *testing.T) {
 			assert.Equal(t, tt.wantAttributes, gotAttributes)
 		})
 	}
+}
+
+func TestNewCtx(t *testing.T) {
+	// Define a custom minimum timeout to use in tests
+	const (
+		customMinTimeout = 10 * time.Second
+		defaultTimeout   = 5 * time.Second
+	)
+
+	t.Run("context without deadline", func(t *testing.T) {
+		ctx := context.Background()
+		resultCtx, cancel := beholder.NewCtx(ctx, customMinTimeout)
+		defer cancel()
+
+		deadline, ok := resultCtx.Deadline()
+		require.True(t, ok, "Result context should have a deadline")
+		expectedDeadline := time.Now().Add(customMinTimeout)
+		assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
+	})
+
+	t.Run("context with deadline further than minTimeout", func(t *testing.T) {
+		// Create context with deadline that's further away than minTimeout
+		parentTimeout := 23 * time.Second
+		ctx, cancel := context.WithTimeout(context.Background(), parentTimeout)
+		defer cancel()
+
+		resultCtx, resultCancel := beholder.NewCtx(ctx, customMinTimeout)
+		defer resultCancel()
+
+		deadline, ok := resultCtx.Deadline()
+		require.True(t, ok, "Result context should have a deadline")
+		expectedDeadline := time.Now().Add(parentTimeout)
+		assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
+	})
+
+	t.Run("context with deadline sooner than minTimeout", func(t *testing.T) {
+		// Create context with deadline closer than minTimeout
+		parentTimeout := 2 * time.Second
+		ctx, cancel := context.WithTimeout(context.Background(), parentTimeout)
+		defer cancel()
+
+		resultCtx, resultCancel := beholder.NewCtx(ctx, customMinTimeout)
+		defer resultCancel()
+
+		deadline, ok := resultCtx.Deadline()
+		require.True(t, ok, "Result context should have a deadline")
+		expectedDeadline := time.Now().Add(customMinTimeout)
+		assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
+
+		// Verify the new context is NOT linked to the original
+		cancel() // Cancel the original context
+		assert.NoError(t, resultCtx.Err(), "Result context should remain valid when original is cancelled")
+	})
+
+	t.Run("already canceled context", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		resultCtx, resultCancel := beholder.NewCtx(ctx, customMinTimeout)
+		defer resultCancel()
+
+		// The result should be a fresh context, not inheriting the cancellation
+		assert.NoError(t, resultCtx.Err(), "Result context should not inherit cancellation")
+
+		deadline, ok := resultCtx.Deadline()
+		require.True(t, ok, "Result context should have a deadline")
+		expectedDeadline := time.Now().Add(customMinTimeout)
+		assert.WithinDuration(t, expectedDeadline, deadline, 100*time.Millisecond)
+	})
 }

@@ -250,7 +250,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 			return nil, err
 		}
 
-		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient, WithTimeout(cfg.EmitterExportTimeout))
+		chipIngressEmitter, err := NewChipIngressEmitter(chipIngressClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create chip ingress emitter: %w", err)
 		}

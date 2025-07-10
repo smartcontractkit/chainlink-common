@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultTimeout = 3 * time.Second
+	defaultTimeout = 5 * time.Second
 )
 
 type ChipIngressEmitter struct {
@@ -38,17 +38,24 @@ func NewChipIngressEmitter(client chpb.ChipIngressClient, opts ...Opt) (Emitter,
 	return e, nil
 }
 
-func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	// newCtx returns a ctx with a timeout min(c.timeout, ctx.Deadline())
-	newCtx := func(ctx context.Context) (context.Context, context.CancelFunc) {
-		// check if ctx has a deadline and it's less than the emitter timeout,
-		// then we need a new ctx with the emitter timeout
-		if dl, ok := ctx.Deadline(); ok && time.Until(dl) < c.timeout {
-			return context.WithTimeout(context.Background(), c.timeout)
+func NewCtx(ctx context.Context, minTimeout time.Duration) (context.Context, context.CancelFunc) {
+	// check if ctx has a deadline and it's less than the emitter timeout,
+	// then we need a new ctx with the emitter timeout
+
+	dl, ok := ctx.Deadline()
+	if ok {
+		if time.Until(dl) < minTimeout {
+			return context.WithTimeout(context.Background(), minTimeout)
 		}
-		return context.WithTimeout(ctx, c.timeout)
+		return context.WithCancel(ctx) // use the existing ctx timeout, but take ownership of cancellation
 	}
-	ctx, cancel := newCtx(ctx)
+
+	return context.WithTimeout(context.Background(), minTimeout)
+}
+
+func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+
+	ctx, cancel := NewCtx(ctx, c.timeout)
 	defer cancel()
 
 	sourceDomain, entityType, err := ExtractSourceAndType(attrKVs...)

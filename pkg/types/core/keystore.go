@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -72,28 +73,40 @@ func (s *Ed25519Signer) Sign(r io.Reader, digest []byte, opts crypto.SignerOpts)
 }
 
 var P2PAccountKey = "P2P_SIGNER"
+var StandardCapabilitiesPrefix = "STANDARD_CAPABILITIES_MESSAGE_"
 
-// singleAccountSigner implements Keystore for a single account.
-type singleAccountSigner struct {
+// prefixedSingleAccountSigner implements Keystore for a single account.
+type prefixedSingleAccountSigner struct {
+	prefix  string
 	account *string
 	signer  crypto.Signer
 }
 
-var _ Keystore = &singleAccountSigner{}
+var _ Keystore = &prefixedSingleAccountSigner{}
 
-func NewSingleAccountSigner(account *string, signer crypto.Signer) (*singleAccountSigner, error) {
-	return &singleAccountSigner{account: account, signer: signer}, nil
+func NewPrefixedSingleAccountSigner(account *string, signer crypto.Signer, prefix string) (*prefixedSingleAccountSigner, error) {
+	return &prefixedSingleAccountSigner{account: account, signer: signer, prefix: prefix}, nil
 }
-func (c *singleAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
+
+func (c *prefixedSingleAccountSigner) Accounts(ctx context.Context) (accounts []string, err error) {
 	if c.account == nil {
 		return nil, fmt.Errorf("account is nil")
 	}
 
 	return []string{*c.account}, nil
 }
-func (c *singleAccountSigner) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
+
+// Sign returns data signed by the single account.
+// Data is prefixed with c.prefix and then hashed with SHA-256 before signing.
+func (c *prefixedSingleAccountSigner) Sign(ctx context.Context, account string, data []byte) (signed []byte, err error) {
 	if c.account != nil && *c.account == account {
-		return c.signer.Sign(rand.Reader, data, crypto.Hash(0))
+		return c.signer.Sign(rand.Reader, CalcPrefixedHash(c.prefix, data), crypto.Hash(0))
 	}
 	return nil, fmt.Errorf("account not found: %s", account)
+}
+
+func CalcPrefixedHash(prefix string, data []byte) []byte {
+	prefixedData := append([]byte(prefix), data...)
+	hash := sha256.Sum256(prefixedData)
+	return hash[:]
 }

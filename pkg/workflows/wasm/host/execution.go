@@ -255,11 +255,11 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 		case <-time.After(timeout):
 		case <-e.ctx.Done():
 			// If context was cancelled, there will be a trap from the engine
+			// which will halt execution, therefore the return value isn't read
 			return 0
 		}
 	}
 
-	// Write number of events
 	uint32Size := int32(4)
 	rne := make([]byte, uint32Size)
 	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))

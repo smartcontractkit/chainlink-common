@@ -75,7 +75,6 @@ func (v *Broker) DialWithOptions(id uint32, opts ...grpc.DialOption) (conn *grpc
 		return nil, fmt.Errorf("listener with id %d does not exist", id)
 	}
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
 	return grpc.Dial(l.Addr().String(), opts...) //nolint:staticcheck
 }
 

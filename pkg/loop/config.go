@@ -203,31 +203,31 @@ func (e *EnvConfig) parse() error {
 		return err
 	}
 	if e.DatabaseURL != nil {
-		e.DatabaseIdleInTxSessionTimeout, err = getEnv(envDatabaseIdleInTxSessionTimeout, time.ParseDuration)
+		e.DatabaseIdleInTxSessionTimeout, err = getDuration(envDatabaseIdleInTxSessionTimeout)
 		if err != nil {
 			return err
 		}
-		e.DatabaseLockTimeout, err = getEnv(envDatabaseLockTimeout, time.ParseDuration)
+		e.DatabaseLockTimeout, err = getDuration(envDatabaseLockTimeout)
 		if err != nil {
 			return err
 		}
-		e.DatabaseQueryTimeout, err = getEnv(envDatabaseQueryTimeout, time.ParseDuration)
+		e.DatabaseQueryTimeout, err = getDuration(envDatabaseQueryTimeout)
 		if err != nil {
 			return err
 		}
-		e.DatabaseListenerFallbackPollInterval, err = getEnv(envDatabaseListenerFallbackPollInterval, time.ParseDuration)
+		e.DatabaseListenerFallbackPollInterval, err = getDuration(envDatabaseListenerFallbackPollInterval)
 		if err != nil {
 			return err
 		}
-		e.DatabaseLogSQL, err = getEnv(envDatabaseLogSQL, strconv.ParseBool)
+		e.DatabaseLogSQL, err = getBool(envDatabaseLogSQL)
 		if err != nil {
 			return err
 		}
-		e.DatabaseMaxOpenConns, err = getEnv(envDatabaseMaxOpenConns, strconv.Atoi)
+		e.DatabaseMaxOpenConns, err = getInt(envDatabaseMaxOpenConns)
 		if err != nil {
 			return err
 		}
-		e.DatabaseMaxIdleConns, err = getEnv(envDatabaseMaxIdleConns, strconv.Atoi)
+		e.DatabaseMaxIdleConns, err = getInt(envDatabaseMaxIdleConns)
 		if err != nil {
 			return err
 		}
@@ -238,15 +238,15 @@ func (e *EnvConfig) parse() error {
 		return err
 	}
 
-	e.MercuryCacheLatestReportDeadline, err = getEnv(envMercuryCacheLatestReportDeadline, time.ParseDuration)
+	e.MercuryCacheLatestReportDeadline, err = getDuration(envMercuryCacheLatestReportDeadline)
 	if err != nil {
 		return err
 	}
-	e.MercuryCacheLatestReportTTL, err = getEnv(envMercuryCacheLatestReportTTL, time.ParseDuration)
+	e.MercuryCacheLatestReportTTL, err = getDuration(envMercuryCacheLatestReportTTL)
 	if err != nil {
 		return err
 	}
-	e.MercuryCacheMaxStaleAge, err = getEnv(envMercuryCacheMaxStaleAge, time.ParseDuration)
+	e.MercuryCacheMaxStaleAge, err = getDuration(envMercuryCacheMaxStaleAge)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (e *EnvConfig) parse() error {
 	if err != nil {
 		return err
 	}
-	e.MercuryTransmitterTransmitTimeout, err = getEnv(envMercuryTransmitterTransmitTimeout, time.ParseDuration)
+	e.MercuryTransmitterTransmitTimeout, err = getDuration(envMercuryTransmitterTransmitTimeout)
 	if err != nil {
 		return err
 	}
@@ -264,11 +264,11 @@ func (e *EnvConfig) parse() error {
 	if err != nil {
 		return err
 	}
-	e.MercuryTransmitterReaperFrequency, err = getEnv(envMercuryTransmitterReaperFrequency, time.ParseDuration)
+	e.MercuryTransmitterReaperFrequency, err = getDuration(envMercuryTransmitterReaperFrequency)
 	if err != nil {
 		return err
 	}
-	e.MercuryTransmitterReaperMaxAge, err = getEnv(envMercuryTransmitterReaperMaxAge, time.ParseDuration)
+	e.MercuryTransmitterReaperMaxAge, err = getDuration(envMercuryTransmitterReaperMaxAge)
 	if err != nil {
 		return err
 	}
@@ -318,19 +318,19 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)
 		}
-		e.TelemetryEmitterExportTimeout, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportTimeout))
+		e.TelemetryEmitterExportTimeout, err = getDuration(envTelemetryEmitterExportTimeout)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportTimeout, err)
 		}
-		e.TelemetryEmitterExportInterval, err = time.ParseDuration(os.Getenv(envTelemetryEmitterExportInterval))
+		e.TelemetryEmitterExportInterval, err = getDuration(envTelemetryEmitterExportInterval)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportInterval, err)
 		}
-		e.TelemetryEmitterExportMaxBatchSize, err = strconv.Atoi(os.Getenv(envTelemetryEmitterExportMaxBatchSize))
+		e.TelemetryEmitterExportMaxBatchSize, err = getInt(envTelemetryEmitterExportMaxBatchSize)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportMaxBatchSize, err)
 		}
-		e.TelemetryEmitterMaxQueueSize, err = strconv.Atoi(os.Getenv(envTelemetryEmitterMaxQueueSize))
+		e.TelemetryEmitterMaxQueueSize, err = getInt(envTelemetryEmitterMaxQueueSize)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
 		}
@@ -408,6 +408,14 @@ func getUint32(envKey string) (uint32, error) {
 	return uint32(u), nil
 }
 
+func getDuration(envKey string) (time.Duration, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	return time.ParseDuration(s)
+}
+
 func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
 	v := os.Getenv(key)
 	t, err = parse(v)
@@ -415,4 +423,16 @@ func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
 		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
 	return
+}
+
+func getInt(envKey string) (int, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }

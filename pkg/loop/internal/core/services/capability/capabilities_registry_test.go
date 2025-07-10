@@ -15,12 +15,13 @@ import (
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 )
 
 var _ capabilities.BaseCapability = (*mockBaseCapability)(nil)
@@ -154,7 +155,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	_, err = rc.Get(t.Context(), "some-id")
 	require.ErrorContains(t, err, "capability not found")
 
-	pid := p2ptypes.PeerID([32]byte{0: 1})
+	pid := p2ptypes.PeerID([32]byte{0: 3})
 	expectedNode := capabilities.Node{
 		PeerID: &pid,
 		WorkflowDON: capabilities.DON{
@@ -190,30 +191,31 @@ func TestCapabilitiesRegistry(t *testing.T) {
 
 	actualNode, err := rc.LocalNode(t.Context())
 	require.NoError(t, err)
-	// check local node struct
-	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
-
-	// check workflow DON
-	require.Len(t, expectedNode.WorkflowDON.Members, len(actualNode.WorkflowDON.Members))
-	require.ElementsMatch(t, expectedNode.WorkflowDON.Members, actualNode.WorkflowDON.Members)
-	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
-	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
-	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
-
-	// check capability DONs
-	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
-	for i := range expectedNode.CapabilityDONs {
-		require.Equal(t, expectedNode.CapabilityDONs[i].ID, actualNode.CapabilityDONs[i].ID)
-		require.Len(t, expectedNode.CapabilityDONs[i].Members, len(actualNode.CapabilityDONs[i].Members))
-		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
-		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
-		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
-	}
+	ensureEqual(t, expectedNode, actualNode)
 
 	// Check zero values for empty node
 	emptyNode := capabilities.Node{}
 	reg.On("LocalNode", mock.Anything).Once().Return(emptyNode, nil)
 	actualNode, err = rc.LocalNode(t.Context())
+	require.NoError(t, err)
+	require.Nil(t, actualNode.PeerID)
+	require.Equal(t, capabilities.DON{
+		ID:            0,
+		Members:       nil,
+		F:             0,
+		ConfigVersion: 0,
+	}, actualNode.WorkflowDON)
+	require.Empty(t, actualNode.CapabilityDONs)
+
+	reg.On("NodeByPeerID", mock.Anything, pid).Once().Return(expectedNode, nil)
+
+	actualNode, err = rc.NodeByPeerID(t.Context(), pid)
+	require.NoError(t, err)
+	ensureEqual(t, expectedNode, actualNode)
+
+	// Check zero values for empty node
+	reg.On("NodeByPeerID", mock.Anything, pid).Once().Return(emptyNode, nil)
+	actualNode, err = rc.NodeByPeerID(t.Context(), pid)
 	require.NoError(t, err)
 	require.Nil(t, actualNode.PeerID)
 	require.Equal(t, capabilities.DON{
@@ -477,4 +479,26 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	assert.Equal(t, expectedCapConfig, capConf)
 	assert.Equal(t, 30*time.Second, capConf.RemoteExecutableConfig.RegistrationRefresh)
 	assert.Equal(t, 2*time.Minute, capConf.RemoteExecutableConfig.RegistrationExpiry)
+}
+
+func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
+	// check local node struct
+	require.Equal(t, expectedNode.PeerID, actualNode.PeerID)
+
+	// check workflow DON
+	require.Len(t, expectedNode.WorkflowDON.Members, len(actualNode.WorkflowDON.Members))
+	require.ElementsMatch(t, expectedNode.WorkflowDON.Members, actualNode.WorkflowDON.Members)
+	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
+	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
+	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
+
+	// check capability DONs
+	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
+	for i := range expectedNode.CapabilityDONs {
+		require.Equal(t, expectedNode.CapabilityDONs[i].ID, actualNode.CapabilityDONs[i].ID)
+		require.Len(t, expectedNode.CapabilityDONs[i].Members, len(actualNode.CapabilityDONs[i].Members))
+		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
+		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
+		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
+	}
 }

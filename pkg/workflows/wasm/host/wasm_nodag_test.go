@@ -14,16 +14,14 @@ import (
 )
 
 const (
-	nodagRandomBinaryCmd            = "standard_tests/multiple_triggers"
-	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
-	nodagSleepTimeoutBinaryCmd      = "standard_tests/sleep_timeout"
-	nodagSleepTimeoutBinaryLocation = nodagSleepTimeoutBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd      = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation = nodagRandomBinaryCmd + "/testmodule.wasm"
 )
 
 func Test_Sleep_Timeout(t *testing.T) {
 	t.Parallel()
 
-	binary := createTestBinary(nodagSleepTimeoutBinaryCmd, nodagSleepTimeoutBinaryLocation, true, t)
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	mc := defaultNoDAGModCfg(t)
 	timeout := 1 * time.Second

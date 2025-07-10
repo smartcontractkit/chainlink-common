@@ -51,7 +51,7 @@ func TestStandardConfig(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
-	})
+	}).Maybe()
 	wrappedConfig := runWithBasicTrigger(t, mockExecutionHelper)
 	actualConfig := wrappedConfig.GetValue().GetBytesValue()
 	require.ElementsMatch(t, anyTestConfig, actualConfig)
@@ -63,7 +63,7 @@ func TestStandardErrors(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
-	})
+	}).Maybe()
 	errMsg := runWithBasicTrigger(t, mockExecutionHelper)
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
 }
@@ -74,7 +74,7 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
-	})
+	}).Maybe()
 	m := makeTestModule(t)
 	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 	callsSeen := map[bool]bool{}
@@ -145,7 +145,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
-		})
+		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			response := values.NewString("hi")
 			mapProto := &valuespb.Map{
@@ -173,7 +173,7 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
-		})
+		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
 			input := &pb.SimpleConsensusInputs{}
@@ -204,7 +204,7 @@ func TestStandardLogging(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
-	})
+	}).Maybe()
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
 		assert.True(t, strings.Contains(s, "log from wasm!"))
 		return nil
@@ -221,7 +221,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
-		})
+		}).Maybe()
 
 		subscribe := &pb.ExecuteRequest{Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
 		actual, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
@@ -273,7 +273,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
-		})
+		}).Maybe()
 
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -287,7 +287,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
-		})
+		}).Maybe()
 
 		request := triggerExecuteRequest(t, 2, &basictrigger.Outputs{CoolOutput: "different"})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -301,7 +301,7 @@ func TestStandardMultipleTriggers(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
-		})
+		}).Maybe()
 
 		request := triggerExecuteRequest(t, 1, &actionandtrigger.TriggerEvent{CoolOutput: "different"})
 		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
@@ -319,7 +319,9 @@ func TestStandardRandom(t *testing.T) {
 	anyId := "Id"
 	gte100Exec := NewMockExecutionHelper(t)
 	gte100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
-	gte100Exec.EXPECT().GetNodeTime().Return(time.Now())
+	gte100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
 
 	// RunAndReturn
 	gte100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 150))
@@ -348,7 +350,9 @@ func TestStandardRandom(t *testing.T) {
 	t.Run("Same execution id gives the same randoms even if random is called in node mode", func(t *testing.T) {
 		lt100Exec := NewMockExecutionHelper(t)
 		lt100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
-		lt100Exec.EXPECT().GetNodeTime().Return(time.Now())
+		lt100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
 
 		lt100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 99))
 		lt100Exec.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
@@ -372,7 +376,9 @@ func TestStandardRandom(t *testing.T) {
 
 		gte100Exec2 := NewMockExecutionHelper(t)
 		gte100Exec2.EXPECT().GetWorkflowExecutionID().Return("differentId")
-		gte100Exec2.EXPECT().GetNodeTime().Return(time.Now())
+		gte100Exec2.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
 
 		gte100Exec2.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 120))
 
@@ -554,7 +560,7 @@ func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
-	})
+	}).Maybe()
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {

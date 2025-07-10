@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -48,10 +49,14 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 
 	// Emit via chip ingress async
 	go func() {
-		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
+		d.log.Debugw("emitting to chip ingress", "body", string(body), "attributes", attrKVs)
+		d.log.Debugw("overriding context for chip ingress emission", "timeout", 5*time.Second)
+		ctx2, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := d.chipIngressEmitter.Emit(ctx2, body, attrKVs...); err != nil {
 			// If the chip ingress emitter fails, we ONLY log the error
 			// because we still want to send the data to the OTLP collector and not cause disruption
-			d.log.Infof("failed to emit to chip ingress: %v", err)
+			d.log.Errorw("failed to emit to chip ingress", "error", err)
 		}
 	}()
 

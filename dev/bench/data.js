@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752254812537,
+  "lastUpdate": 1752255905920,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19614,6 +19614,48 @@ window.BENCHMARK_DATA = {
             "value": 28145,
             "unit": "ns/op",
             "extra": "42606 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5df4c9b61ec6116256a3bd65f3dad937ac846bd3",
+          "message": "Fix cre std tests (#1373)",
+          "timestamp": "2025-07-11T17:43:57Z",
+          "tree_id": "776915d4bca9a0b554d742ce9e8997309c8636a4",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5df4c9b61ec6116256a3bd65f3dad937ac846bd3"
+        },
+        "date": 1752255904975,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.2,
+            "unit": "ns/op",
+            "extra": "3235465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.9,
+            "unit": "ns/op",
+            "extra": "2860182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28292,
+            "unit": "ns/op",
+            "extra": "42483 times\n4 procs"
           }
         ]
       }

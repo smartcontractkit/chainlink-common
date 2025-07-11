@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/nodeaction"
@@ -12,15 +13,22 @@ import (
 )
 
 func main() {
+	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
+	time.Sleep(100 * time.Millisecond)
+
 	dinput := &basicaction.Inputs{InputThing: true}
 	doutput := &basicaction.Outputs{}
 	rawsdk.DoRequest("basic-test-action@1.0.0", "PerformAction", pb.Mode_MODE_DON, dinput, doutput)
 
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_NODE))
+	time.Sleep(100 * time.Millisecond)
+
 	ninput := &nodeaction.NodeInputs{InputThing: true}
 	noutput := &nodeaction.NodeOutputs{}
 	rawsdk.DoRequest("basic-test-node-action@1.0.0", "PerformAction", pb.Mode_MODE_NODE, ninput, noutput)
+
 	rawsdk.SwitchModes(int32(pb.Mode_MODE_DON))
+	time.Sleep(100 * time.Millisecond)
 
 	dft := &nodeaction.NodeOutputs{OutputThing: 123}
 	consensus := &pb.SimpleConsensusInputs{

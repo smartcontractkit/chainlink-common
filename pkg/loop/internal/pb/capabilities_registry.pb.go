@@ -82,6 +82,8 @@ type DON struct {
 	Members       [][]byte               `protobuf:"bytes,2,rep,name=members,proto3" json:"members,omitempty"` // [n][32]byte where n is the number of members
 	F             uint32                 `protobuf:"varint,3,opt,name=f,proto3" json:"f,omitempty"`            // uint8
 	ConfigVersion uint32                 `protobuf:"varint,4,opt,name=configVersion,proto3" json:"configVersion,omitempty"`
+	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	Families      []string               `protobuf:"bytes,6,rep,name=families,proto3" json:"families,omitempty"` // [n]string where n is the number of DON families
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -142,6 +144,20 @@ func (x *DON) GetConfigVersion() uint32 {
 		return x.ConfigVersion
 	}
 	return 0
+}
+
+func (x *DON) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DON) GetFamilies() []string {
+	if x != nil {
+		return x.Families
+	}
+	return nil
 }
 
 type NodeRequest struct {
@@ -839,12 +855,14 @@ var File_capabilities_registry_proto protoreflect.FileDescriptor
 
 const file_capabilities_registry_proto_rawDesc = "" +
 	"\n" +
-	"\x1bcapabilities_registry.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1ecapabilities/pb/registry.proto\"c\n" +
+	"\x1bcapabilities_registry.proto\x12\x04loop\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1ecapabilities/pb/registry.proto\"\x93\x01\n" +
 	"\x03DON\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x18\n" +
 	"\amembers\x18\x02 \x03(\fR\amembers\x12\f\n" +
 	"\x01f\x18\x03 \x01(\rR\x01f\x12$\n" +
-	"\rconfigVersion\x18\x04 \x01(\rR\rconfigVersion\"%\n" +
+	"\rconfigVersion\x18\x04 \x01(\rR\rconfigVersion\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\x12\x1a\n" +
+	"\bfamilies\x18\x06 \x03(\tR\bfamilies\"%\n" +
 	"\vNodeRequest\x12\x16\n" +
 	"\x06peerID\x18\x01 \x01(\fR\x06peerID\"\xf5\x01\n" +
 	"\tNodeReply\x12\x16\n" +

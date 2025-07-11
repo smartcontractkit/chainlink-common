@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752251000515,
+  "lastUpdate": 1752254812537,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19572,6 +19572,48 @@ window.BENCHMARK_DATA = {
             "value": 28147,
             "unit": "ns/op",
             "extra": "42616 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "6c25771386b8acefa35d389eb56f96e709112130",
+          "message": "protoc outputs the stdout (even if successful) for easier debugging (#1372)",
+          "timestamp": "2025-07-11T17:25:34Z",
+          "tree_id": "201b2bbe4aacb0f5a4a27fb52199f577e12e3131",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6c25771386b8acefa35d389eb56f96e709112130"
+        },
+        "date": 1752254810970,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369,
+            "unit": "ns/op",
+            "extra": "3230678 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 427.1,
+            "unit": "ns/op",
+            "extra": "2881028 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28145,
+            "unit": "ns/op",
+            "extra": "42606 times\n4 procs"
           }
         ]
       }

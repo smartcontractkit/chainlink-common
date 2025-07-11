@@ -17,6 +17,7 @@ message SecretRequest {
 
 message EncryptedShares {
     repeated string shares = 1;
+    string encryption_key = 2;
 }
 
 message SecretData {
@@ -99,4 +100,75 @@ message ListSecretIdentifiersRequest {
 
 message ListSecretIdentifiersResponse {
   repeated SecretIdentifier identifiers = 1;
+}
+
+enum RequestType {
+  UNKNOWN = 0;
+  GET_SECRETS = 1;
+  CREATE_SECRETS = 2;
+  UPDATE_SECRETS = 3;
+  DELETE_SECRETS = 4;
+  LIST_SECRET_IDENTIFIERS = 5;
+}
+
+message Observation {
+  string id = 1;
+  RequestType request_type = 2;
+
+  oneof request {
+    CreateSecretsRequest create_secrets_request = 3;
+    GetSecretsRequest get_secrets_request = 4;
+    UpdateSecretsRequest update_secrets_request = 5;
+    DeleteSecretsRequest delete_secrets_request = 6;
+    ListSecretIdentifiersRequest list_secret_identifiers_request = 7;
+  }
+
+  oneof response {
+    CreateSecretsResponse create_secrets_response = 8;
+    GetSecretsResponse get_secrets_response = 9;
+    UpdateSecretsResponse update_secrets_response = 10;
+    DeleteSecretsResponse delete_secrets_response = 11;
+    ListSecretIdentifiersResponse list_secret_identifiers_response = 12;
+  }
+}
+
+message Observations {
+  repeated Observation observations = 1;
+}
+
+message Outcome {
+  string id = 1;
+  RequestType request_type = 2;
+
+  oneof request {
+    CreateSecretsRequest create_secrets_request = 3;
+    GetSecretsRequest get_secrets_request = 4;
+    UpdateSecretsRequest update_secrets_request = 5;
+    DeleteSecretsRequest delete_secrets_request = 6;
+    ListSecretIdentifiersRequest list_secret_identifiers_request = 7;
+  }
+
+  oneof response {
+    CreateSecretsResponse create_secrets_response = 8;
+    GetSecretsResponse get_secrets_response = 9;
+    UpdateSecretsResponse update_secrets_response = 10;
+    DeleteSecretsResponse delete_secrets_response = 11;
+    ListSecretIdentifiersResponse list_secret_identifiers_response = 12;
+  }
+}
+
+message Outcomes {
+  repeated Outcome outcomes = 1;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredSecret {
+  bytes encrypted_secret = 1;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredMetadata {
+  repeated string keys = 2;
 }

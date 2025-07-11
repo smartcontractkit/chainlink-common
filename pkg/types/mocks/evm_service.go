@@ -29,12 +29,12 @@ func (_m *EVMService) EXPECT() *EVMService_Expecter {
 	return &EVMService_Expecter{mock: &_m.Mock}
 }
 
-// BalanceAtWithConfidence provides a mock function with given fields: ctx, account, blockNumber, confidenceLevel
-func (_m *EVMService) BalanceAtWithConfidence(ctx context.Context, account [20]byte, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error) {
+// BalanceAt provides a mock function with given fields: ctx, account, blockNumber, confidenceLevel
+func (_m *EVMService) BalanceAt(ctx context.Context, account [20]byte, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error) {
 	ret := _m.Called(ctx, account, blockNumber, confidenceLevel)
 
 	if len(ret) == 0 {
-		panic("no return value specified for BalanceAtWithConfidence")
+		panic("no return value specified for BalanceAt")
 	}
 
 	var r0 *big.Int
@@ -59,33 +59,33 @@ func (_m *EVMService) BalanceAtWithConfidence(ctx context.Context, account [20]b
 	return r0, r1
 }
 
-// EVMService_BalanceAtWithConfidence_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BalanceAtWithConfidence'
-type EVMService_BalanceAtWithConfidence_Call struct {
+// EVMService_BalanceAt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BalanceAt'
+type EVMService_BalanceAt_Call struct {
 	*mock.Call
 }
 
-// BalanceAtWithConfidence is a helper method to define mock.On call
+// BalanceAt is a helper method to define mock.On call
 //   - ctx context.Context
 //   - account [20]byte
 //   - blockNumber *big.Int
 //   - confidenceLevel primitives.ConfidenceLevel
-func (_e *EVMService_Expecter) BalanceAtWithConfidence(ctx interface{}, account interface{}, blockNumber interface{}, confidenceLevel interface{}) *EVMService_BalanceAtWithConfidence_Call {
-	return &EVMService_BalanceAtWithConfidence_Call{Call: _e.mock.On("BalanceAtWithConfidence", ctx, account, blockNumber, confidenceLevel)}
+func (_e *EVMService_Expecter) BalanceAt(ctx interface{}, account interface{}, blockNumber interface{}, confidenceLevel interface{}) *EVMService_BalanceAt_Call {
+	return &EVMService_BalanceAt_Call{Call: _e.mock.On("BalanceAt", ctx, account, blockNumber, confidenceLevel)}
 }
 
-func (_c *EVMService_BalanceAtWithConfidence_Call) Run(run func(ctx context.Context, account [20]byte, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel)) *EVMService_BalanceAtWithConfidence_Call {
+func (_c *EVMService_BalanceAt_Call) Run(run func(ctx context.Context, account [20]byte, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel)) *EVMService_BalanceAt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([20]byte), args[2].(*big.Int), args[3].(primitives.ConfidenceLevel))
 	})
 	return _c
 }
 
-func (_c *EVMService_BalanceAtWithConfidence_Call) Return(_a0 *big.Int, _a1 error) *EVMService_BalanceAtWithConfidence_Call {
+func (_c *EVMService_BalanceAt_Call) Return(_a0 *big.Int, _a1 error) *EVMService_BalanceAt_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_BalanceAtWithConfidence_Call) RunAndReturn(run func(context.Context, [20]byte, *big.Int, primitives.ConfidenceLevel) (*big.Int, error)) *EVMService_BalanceAtWithConfidence_Call {
+func (_c *EVMService_BalanceAt_Call) RunAndReturn(run func(context.Context, [20]byte, *big.Int, primitives.ConfidenceLevel) (*big.Int, error)) *EVMService_BalanceAt_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -149,12 +149,12 @@ func (_c *EVMService_CalculateTransactionFee_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// CallContractWithConfidence provides a mock function with given fields: ctx, msg, blockNumber, confidenceLevel
-func (_m *EVMService) CallContractWithConfidence(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error) {
+// CallContract provides a mock function with given fields: ctx, msg, blockNumber, confidenceLevel
+func (_m *EVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error) {
 	ret := _m.Called(ctx, msg, blockNumber, confidenceLevel)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CallContractWithConfidence")
+		panic("no return value specified for CallContract")
 	}
 
 	var r0 []byte
@@ -179,33 +179,33 @@ func (_m *EVMService) CallContractWithConfidence(ctx context.Context, msg *evm.C
 	return r0, r1
 }
 
-// EVMService_CallContractWithConfidence_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CallContractWithConfidence'
-type EVMService_CallContractWithConfidence_Call struct {
+// EVMService_CallContract_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CallContract'
+type EVMService_CallContract_Call struct {
 	*mock.Call
 }
 
-// CallContractWithConfidence is a helper method to define mock.On call
+// CallContract is a helper method to define mock.On call
 //   - ctx context.Context
 //   - msg *evm.CallMsg
 //   - blockNumber *big.Int
 //   - confidenceLevel primitives.ConfidenceLevel
-func (_e *EVMService_Expecter) CallContractWithConfidence(ctx interface{}, msg interface{}, blockNumber interface{}, confidenceLevel interface{}) *EVMService_CallContractWithConfidence_Call {
-	return &EVMService_CallContractWithConfidence_Call{Call: _e.mock.On("CallContractWithConfidence", ctx, msg, blockNumber, confidenceLevel)}
+func (_e *EVMService_Expecter) CallContract(ctx interface{}, msg interface{}, blockNumber interface{}, confidenceLevel interface{}) *EVMService_CallContract_Call {
+	return &EVMService_CallContract_Call{Call: _e.mock.On("CallContract", ctx, msg, blockNumber, confidenceLevel)}
 }
 
-func (_c *EVMService_CallContractWithConfidence_Call) Run(run func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel)) *EVMService_CallContractWithConfidence_Call {
+func (_c *EVMService_CallContract_Call) Run(run func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel)) *EVMService_CallContract_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*evm.CallMsg), args[2].(*big.Int), args[3].(primitives.ConfidenceLevel))
 	})
 	return _c
 }
 
-func (_c *EVMService_CallContractWithConfidence_Call) Return(_a0 []byte, _a1 error) *EVMService_CallContractWithConfidence_Call {
+func (_c *EVMService_CallContract_Call) Return(_a0 []byte, _a1 error) *EVMService_CallContract_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_CallContractWithConfidence_Call) RunAndReturn(run func(context.Context, *evm.CallMsg, *big.Int, primitives.ConfidenceLevel) ([]byte, error)) *EVMService_CallContractWithConfidence_Call {
+func (_c *EVMService_CallContract_Call) RunAndReturn(run func(context.Context, *evm.CallMsg, *big.Int, primitives.ConfidenceLevel) ([]byte, error)) *EVMService_CallContract_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -267,12 +267,12 @@ func (_c *EVMService_EstimateGas_Call) RunAndReturn(run func(context.Context, *e
 	return _c
 }
 
-// FilterLogsWithConfidence provides a mock function with given fields: ctx, filterQuery, confidenceLevel
-func (_m *EVMService) FilterLogsWithConfidence(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+// FilterLogs provides a mock function with given fields: ctx, filterQuery, confidenceLevel
+func (_m *EVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	ret := _m.Called(ctx, filterQuery, confidenceLevel)
 
 	if len(ret) == 0 {
-		panic("no return value specified for FilterLogsWithConfidence")
+		panic("no return value specified for FilterLogs")
 	}
 
 	var r0 []*evm.Log
@@ -297,32 +297,32 @@ func (_m *EVMService) FilterLogsWithConfidence(ctx context.Context, filterQuery 
 	return r0, r1
 }
 
-// EVMService_FilterLogsWithConfidence_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FilterLogsWithConfidence'
-type EVMService_FilterLogsWithConfidence_Call struct {
+// EVMService_FilterLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FilterLogs'
+type EVMService_FilterLogs_Call struct {
 	*mock.Call
 }
 
-// FilterLogsWithConfidence is a helper method to define mock.On call
+// FilterLogs is a helper method to define mock.On call
 //   - ctx context.Context
 //   - filterQuery evm.FilterQuery
 //   - confidenceLevel primitives.ConfidenceLevel
-func (_e *EVMService_Expecter) FilterLogsWithConfidence(ctx interface{}, filterQuery interface{}, confidenceLevel interface{}) *EVMService_FilterLogsWithConfidence_Call {
-	return &EVMService_FilterLogsWithConfidence_Call{Call: _e.mock.On("FilterLogsWithConfidence", ctx, filterQuery, confidenceLevel)}
+func (_e *EVMService_Expecter) FilterLogs(ctx interface{}, filterQuery interface{}, confidenceLevel interface{}) *EVMService_FilterLogs_Call {
+	return &EVMService_FilterLogs_Call{Call: _e.mock.On("FilterLogs", ctx, filterQuery, confidenceLevel)}
 }
 
-func (_c *EVMService_FilterLogsWithConfidence_Call) Run(run func(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel)) *EVMService_FilterLogsWithConfidence_Call {
+func (_c *EVMService_FilterLogs_Call) Run(run func(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel)) *EVMService_FilterLogs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(evm.FilterQuery), args[2].(primitives.ConfidenceLevel))
 	})
 	return _c
 }
 
-func (_c *EVMService_FilterLogsWithConfidence_Call) Return(_a0 []*evm.Log, _a1 error) *EVMService_FilterLogsWithConfidence_Call {
+func (_c *EVMService_FilterLogs_Call) Return(_a0 []*evm.Log, _a1 error) *EVMService_FilterLogs_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_FilterLogsWithConfidence_Call) RunAndReturn(run func(context.Context, evm.FilterQuery, primitives.ConfidenceLevel) ([]*evm.Log, error)) *EVMService_FilterLogsWithConfidence_Call {
+func (_c *EVMService_FilterLogs_Call) RunAndReturn(run func(context.Context, evm.FilterQuery, primitives.ConfidenceLevel) ([]*evm.Log, error)) *EVMService_FilterLogs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -622,12 +622,12 @@ func (_c *EVMService_GetTransactionStatus_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// HeaderByNumberWithConfidence provides a mock function with given fields: ctx, blockNumber, confidenceLevel
-func (_m *EVMService) HeaderByNumberWithConfidence(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error) {
+// HeaderByNumber provides a mock function with given fields: ctx, blockNumber, confidenceLevel
+func (_m *EVMService) HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error) {
 	ret := _m.Called(ctx, blockNumber, confidenceLevel)
 
 	if len(ret) == 0 {
-		panic("no return value specified for HeaderByNumberWithConfidence")
+		panic("no return value specified for HeaderByNumber")
 	}
 
 	var r0 evm.Head
@@ -650,32 +650,32 @@ func (_m *EVMService) HeaderByNumberWithConfidence(ctx context.Context, blockNum
 	return r0, r1
 }
 
-// EVMService_HeaderByNumberWithConfidence_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HeaderByNumberWithConfidence'
-type EVMService_HeaderByNumberWithConfidence_Call struct {
+// EVMService_HeaderByNumber_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HeaderByNumber'
+type EVMService_HeaderByNumber_Call struct {
 	*mock.Call
 }
 
-// HeaderByNumberWithConfidence is a helper method to define mock.On call
+// HeaderByNumber is a helper method to define mock.On call
 //   - ctx context.Context
 //   - blockNumber *big.Int
 //   - confidenceLevel primitives.ConfidenceLevel
-func (_e *EVMService_Expecter) HeaderByNumberWithConfidence(ctx interface{}, blockNumber interface{}, confidenceLevel interface{}) *EVMService_HeaderByNumberWithConfidence_Call {
-	return &EVMService_HeaderByNumberWithConfidence_Call{Call: _e.mock.On("HeaderByNumberWithConfidence", ctx, blockNumber, confidenceLevel)}
+func (_e *EVMService_Expecter) HeaderByNumber(ctx interface{}, blockNumber interface{}, confidenceLevel interface{}) *EVMService_HeaderByNumber_Call {
+	return &EVMService_HeaderByNumber_Call{Call: _e.mock.On("HeaderByNumber", ctx, blockNumber, confidenceLevel)}
 }
 
-func (_c *EVMService_HeaderByNumberWithConfidence_Call) Run(run func(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel)) *EVMService_HeaderByNumberWithConfidence_Call {
+func (_c *EVMService_HeaderByNumber_Call) Run(run func(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel)) *EVMService_HeaderByNumber_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*big.Int), args[2].(primitives.ConfidenceLevel))
 	})
 	return _c
 }
 
-func (_c *EVMService_HeaderByNumberWithConfidence_Call) Return(_a0 evm.Head, _a1 error) *EVMService_HeaderByNumberWithConfidence_Call {
+func (_c *EVMService_HeaderByNumber_Call) Return(_a0 evm.Head, _a1 error) *EVMService_HeaderByNumber_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_HeaderByNumberWithConfidence_Call) RunAndReturn(run func(context.Context, *big.Int, primitives.ConfidenceLevel) (evm.Head, error)) *EVMService_HeaderByNumberWithConfidence_Call {
+func (_c *EVMService_HeaderByNumber_Call) RunAndReturn(run func(context.Context, *big.Int, primitives.ConfidenceLevel) (evm.Head, error)) *EVMService_HeaderByNumber_Call {
 	_c.Call.Return(run)
 	return _c
 }

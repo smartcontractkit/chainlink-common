@@ -114,7 +114,7 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 		return nil, err
 	}
 
-	reply, err := evmService.CallContractWithConfidence(ctx, callMsg, valuespb.NewIntFromBigInt(request.BlockNumber), conf)
+	reply, err := evmService.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.BlockNumber), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 		return nil, err
 	}
 
-	reply, err := evmService.FilterLogsWithConfidence(ctx, expression, conf)
+	reply, err := evmService.FilterLogs(ctx, expression, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest)
 		return nil, err
 	}
 
-	balance, err := evmService.BalanceAtWithConfidence(ctx, evm.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.BlockNumber), conf)
+	balance, err := evmService.BalanceAt(ctx, evm.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.BlockNumber), conf)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumb
 		return nil, err
 	}
 
-	header, err := evmService.HeaderByNumberWithConfidence(ctx, valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
+	header, err := evmService.HeaderByNumber(ctx, valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
 	if err != nil {
 		return nil, err
 	}

@@ -2,8 +2,10 @@ package host
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
@@ -18,6 +20,8 @@ type execution[T any] struct {
 	lock                 sync.RWMutex
 	module               *module
 	executor             ExecutionHelper
+	timeFetcher          *timeFetcher
+	baseTime             *time.Time
 	hasRun               bool
 	mode                 sdkpb.Mode
 	donSeed              int64
@@ -160,4 +164,112 @@ func (e *execution[T]) getSeed(mode int32) int64 {
 func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 	e.hasRun = true
 	e.mode = sdkpb.Mode(mode)
+}
+
+func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
+	donTime, err := e.timeFetcher.GetTime(e.mode)
+	if err != nil {
+		return ErrnoInval
+	}
+
+	if e.baseTime == nil {
+		// baseTime must be before the first poll or Go panics
+		t := donTime.Add(-time.Nanosecond)
+		e.baseTime = &t
+	}
+
+	var val int64
+	switch id {
+	case clockIDMonotonic:
+		val = donTime.Sub(*e.baseTime).Nanoseconds()
+	case clockIDRealtime:
+		val = donTime.UnixNano()
+	default:
+		return ErrnoInval
+	}
+
+	uint64Size := int32(8)
+	trg := make([]byte, uint64Size)
+	binary.LittleEndian.PutUint64(trg, uint64(val))
+	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	return ErrnoSuccess
+}
+
+// Loosely based off the implementation here:
+// https://github.com/tetratelabs/wazero/blob/main/imports/wasi_snapshot_preview1/poll.go#L52
+// For an overview of the spec, including the datatypes being referred to, see:
+// https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md
+// This implementation only responds to clock events, not to file descriptor notifications.
+// It sleeps based on the largest timeout
+func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
+	if nsubscriptions == 0 {
+		return ErrnoInval
+	}
+
+	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
+	if err != nil {
+		return ErrnoFault
+	}
+
+	events := make([]byte, nsubscriptions*eventsLen)
+	timeout := time.Duration(0)
+
+	for i := int32(0); i < nsubscriptions; i++ {
+		inOffset := i * subscriptionLen
+		userData := subs[inOffset : inOffset+8]
+		eventType := subs[inOffset+8]
+		argBuf := subs[inOffset+8+8:]
+
+		slot, err := getSlot(events, i)
+		if err != nil {
+			return ErrnoFault
+		}
+
+		switch eventType {
+		case eventTypeClock:
+			newTimeout := binary.LittleEndian.Uint64(argBuf[8:16])
+			flag := binary.LittleEndian.Uint16(argBuf[24:32])
+
+			var errno Errno
+			switch flag {
+			case 0: // relative
+				errno = ErrnoSuccess
+				if timeout < time.Duration(newTimeout) {
+					timeout = time.Duration(newTimeout)
+				}
+			default:
+				errno = ErrnoNotsup
+			}
+			writeEvent(slot, userData, errno, eventTypeClock)
+
+		case eventTypeFDRead, eventTypeFDWrite:
+			writeEvent(slot, userData, ErrnoBadf, int(eventType))
+
+		default:
+			writeEvent(slot, userData, ErrnoInval, int(eventType))
+		}
+	}
+
+	if timeout > 0 {
+		select {
+		case <-time.After(timeout):
+		case <-e.ctx.Done():
+			// If context was cancelled, there will be a trap from the engine
+			// which will halt execution, therefore the return value isn't read
+			return 0
+		}
+	}
+
+	uint32Size := int32(4)
+	rne := make([]byte, uint32Size)
+	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))
+
+	if wasmWrite(caller, rne, resultNevents, uint32Size) == -1 {
+		return ErrnoFault
+	}
+	if wasmWrite(caller, events, eventsptr, nsubscriptions*eventsLen) == -1 {
+		return ErrnoFault
+	}
+
+	return ErrnoSuccess
 }

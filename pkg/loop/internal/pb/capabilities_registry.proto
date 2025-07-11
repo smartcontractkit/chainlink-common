@@ -33,6 +33,8 @@ message DON {
   repeated bytes members = 2; // [n][32]byte where n is the number of members
   uint32 f = 3; // uint8
   uint32 configVersion  = 4;
+  string name = 5;
+  repeated string families = 6; // [n]string where n is the number of DON families
 }
 
 message NodeRequest {

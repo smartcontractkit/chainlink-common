@@ -32,9 +32,6 @@ packages:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
     interfaces:
       OTLPExporter: {}
-  github.com/smartcontractkit/chainlink-common/pkg/chipingress:
-    interfaces:
-      Client: {}
   github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host:
     interfaces:
       ModuleV1: {}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752173947430,
+  "lastUpdate": 1752192280012,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19404,6 +19404,48 @@ window.BENCHMARK_DATA = {
             "value": 28438,
             "unit": "ns/op",
             "extra": "42171 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96180e8cf4bcdf6a964bfc1f7a87e190c35a5eca",
+          "message": "DonTime module hooks (#1302)\n\n* Create WorkflowLib Plugin\n\n* Add test coverage\n\n* Update plugin.go\n\n* Update config\n\n* Update ocr3.go\n\n* Extract transmitter\n\n* Handle request expiry\n\n* Make DonTimeResponse fields public\n\n* Make DonTimeResponse fields public\n\n* Add donTimeStore singleton\n\n* Link time call\n\n* Update wasip1.go\n\n* Update timeout handling\n\n* Update plugin\n\n* close channel on error\n\n* Add WorkflowLib plugin\n\n* Add context\n\n* Update factory.go\n\n* Fix map read\n\n* Address comments\n\n* Address comments\n\n* Collect valid requests\n\n* Verify sequence numbers\n\n* Add Range test\n\n* Update store_test.go\n\n* DontimePlugin\n\n* Add DonTimePlugin\n\n* Fix naming\n\n* Export default timeout\n\n* Fix tests\n\n* Update store_test.go\n\n* Remove ctx when sending responses\n\n* Add optimization comment\n\n* Remove consensus on Finished Executions\n\n* Add batching test\n\n* Fix tests\n\n* Trigger CI\n\n* Implement pollOneoff\n\n* Fix generics\n\n* Update store.go\n\n* Update store.go\n\n* Fix naming\n\n* Remove batch size\n\n* Rename\n\n* Create provider.go\n\n* Update provider.go\n\n* Remove trap\n\n* Create time fetcher and mock time calls\n\n* Update time.go\n\n* Optional time calls\n\n* Update execution.go\n\n* add comment\n\n* Add baseTime and fix tests\n\n* Update tests\n\n* Verify time call sequence\n\n* Update standard_test.go\n\n* Update standard_test.go",
+          "timestamp": "2025-07-11T00:03:44Z",
+          "tree_id": "712d0c99f1e2d896b2a884b92cc9994eda549380",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/96180e8cf4bcdf6a964bfc1f7a87e190c35a5eca"
+        },
+        "date": 1752192279049,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.9,
+            "unit": "ns/op",
+            "extra": "3340653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415,
+            "unit": "ns/op",
+            "extra": "2893236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28498,
+            "unit": "ns/op",
+            "extra": "42042 times\n4 procs"
           }
         ]
       }

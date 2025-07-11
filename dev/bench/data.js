@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752247885306,
+  "lastUpdate": 1752251000515,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19530,6 +19530,48 @@ window.BENCHMARK_DATA = {
             "value": 28298,
             "unit": "ns/op",
             "extra": "42570 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44a63c9739d92a6e51bb914e3716e88df86ad5e0",
+          "message": "Fix race on mock usage (#1375)",
+          "timestamp": "2025-07-11T12:22:12-04:00",
+          "tree_id": "1430296a70ca93bfc95387f1dddcd73b17381c6a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/44a63c9739d92a6e51bb914e3716e88df86ad5e0"
+        },
+        "date": 1752250999301,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.9,
+            "unit": "ns/op",
+            "extra": "3297973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.9,
+            "unit": "ns/op",
+            "extra": "2897828 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28147,
+            "unit": "ns/op",
+            "extra": "42616 times\n4 procs"
           }
         ]
       }

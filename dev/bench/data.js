@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752192280012,
+  "lastUpdate": 1752222803711,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19446,6 +19446,48 @@ window.BENCHMARK_DATA = {
             "value": 28498,
             "unit": "ns/op",
             "extra": "42042 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "11a60f4546ecfe3884c56495c8f54736287e7120",
+          "message": "[PRIV-88] Proto changes to support vault plugin (#1367)",
+          "timestamp": "2025-07-11T09:31:09+01:00",
+          "tree_id": "2688e7ad36265ea66853fb4fa5db2655e13f6408",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/11a60f4546ecfe3884c56495c8f54736287e7120"
+        },
+        "date": 1752222802801,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.8,
+            "unit": "ns/op",
+            "extra": "3330286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.4,
+            "unit": "ns/op",
+            "extra": "2901424 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28421,
+            "unit": "ns/op",
+            "extra": "42632 times\n4 procs"
           }
         ]
       }

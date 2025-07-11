@@ -298,7 +298,8 @@ type DON struct {
 }
 
 // Node contains the node's peer ID and the DONs it is part of.
-//
+// The signer is the Node's onchain public key used for OCR signing,
+// and the encryption public key is the Node's workflow public key.
 // Note the following relationships between the workflow and capability DONs and this node.
 //
 // There is a 1:0..1 relationship between this node and a workflow DON.
@@ -312,9 +313,12 @@ type DON struct {
 // You can assert this by checking for zero values in the WorkflowDON field.
 // See https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31 for an example.
 type Node struct {
-	PeerID         *p2ptypes.PeerID
-	WorkflowDON    DON
-	CapabilityDONs []DON
+	PeerID              *p2ptypes.PeerID
+	NodeOperatorID      uint32
+	Signer              [32]byte
+	EncryptionPublicKey [32]byte
+	WorkflowDON         DON
+	CapabilityDONs      []DON
 }
 
 // CapabilityInfo is a struct for the info of a capability.

@@ -3,11 +3,14 @@ package core
 import (
 	"context"
 
+	"github.com/smartcontractkit/libocr/ragep2p/types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 )
 
 type CapabilitiesRegistry interface {
 	LocalNode(ctx context.Context) (capabilities.Node, error)
+	NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
 	CapabilitiesRegistryBase
 }

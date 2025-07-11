@@ -4,9 +4,6 @@ go 1.24.2
 
 toolchain go1.24.3
 
-// Will be removed in following commit
-replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress
-
 require (
 	github.com/XSAM/otelsql v0.29.0
 	github.com/andybalholm/brotli v1.1.1
@@ -37,7 +34,7 @@ require (
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/chain-selectors v1.0.62
-	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.0
+	github.com/smartcontractkit/chainlink-common/pkg/chipingress v1.0.0
 	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250707214334-e164c13b2f32
 	github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250708135749-8736758474ec
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250701181457-37bd0d618b58

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752222803711,
+  "lastUpdate": 1752247885306,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19488,6 +19488,48 @@ window.BENCHMARK_DATA = {
             "value": 28421,
             "unit": "ns/op",
             "extra": "42632 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16602512+krehermann@users.noreply.github.com",
+            "name": "krehermann",
+            "username": "krehermann"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4854126b2774bcd5d08c3c05177427d5b58008be",
+          "message": "fix: enable local beholder connections to loops (#1374)",
+          "timestamp": "2025-07-11T15:30:12Z",
+          "tree_id": "00ecddbc94bc03de860564990d3bec6a2f8d8729",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4854126b2774bcd5d08c3c05177427d5b58008be"
+        },
+        "date": 1752247883627,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372.7,
+            "unit": "ns/op",
+            "extra": "3276536 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.2,
+            "unit": "ns/op",
+            "extra": "2885510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28298,
+            "unit": "ns/op",
+            "extra": "42570 times\n4 procs"
           }
         ]
       }

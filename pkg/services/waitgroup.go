@@ -6,6 +6,7 @@ import (
 )
 
 // WaitGroup is like [sync.WaitGroup], but TryAdd may be called after Wait and will return error rather than cause a race.
+// This is useful for situations where you want to wait for ongoing operations while blocking any new operations, like a Close() method.
 type WaitGroup struct {
 	mu      sync.Mutex
 	cond    sync.Cond

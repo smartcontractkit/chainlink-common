@@ -50,11 +50,11 @@ var _ grpc.StreamServerInterceptor = (&CREServerInterceptor{}).StreamServerInter
 
 // CREServerInterceptor has methods that implement [grpc.UnaryServerInterceptor] and [grpc.StreamServerInterceptor]
 type CREServerInterceptor struct {
-	lggr logger.Logger
+	lggr logger.SugaredLogger
 }
 
 func NewCREServerInterceptor(lggr logger.Logger) *CREServerInterceptor {
-	return &CREServerInterceptor{logger.Named(lggr, "CREServerInterceptor")}
+	return &CREServerInterceptor{logger.Sugared(lggr).Named("CREServerInterceptor")}
 }
 
 // UnaryServerInterceptor is a [grpc.UnaryServerInterceptor] that converts GRPC metadata to CRE context values.
@@ -77,17 +77,17 @@ func (i *CREServerInterceptor) extractIncomingMetadata(ctx context.Context) cont
 	if vs := md.Get(headerKeyOrg); len(vs) == 1 {
 		cre.Org = vs[0]
 	} else if len(vs) > 1 {
-		i.lggr.Errorw("GRPC header contains multiple orgs", "orgs", vs)
+		i.lggr.Criticalw("GRPC header contains multiple orgs", "orgs", vs)
 	}
 	if vs := md.Get(headerKeyOwner); len(vs) == 1 {
 		cre.Owner = vs[0]
 	} else if len(vs) > 1 {
-		i.lggr.Errorw("GRPC header contains multiple owners", "owners", vs)
+		i.lggr.Criticalw("GRPC header contains multiple owners", "owners", vs)
 	}
 	if vs := md.Get(headerKeyWorkflow); len(vs) == 1 {
 		cre.Workflow = vs[0]
 	} else if len(vs) > 1 {
-		i.lggr.Errorw("GRPC header contains multiple workflows", "workflows", vs)
+		i.lggr.Criticalw("GRPC header contains multiple workflows", "workflows", vs)
 	}
 	return WithCRE(ctx, cre)
 }

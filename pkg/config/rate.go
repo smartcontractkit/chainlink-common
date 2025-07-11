@@ -10,17 +10,17 @@ import (
 )
 
 // Rate includes a per second limit and a burst.
-// Rates >= 1 are printed as "<rate>rps". Rates < 1 are printed as "every<duration>".
+// Rates >= 1 are printed as "<rate>rps:<burst>". Rates < 1 are printed as "every<duration>:<burst>".
 type Rate struct {
 	Limit rate.Limit
 	Burst int
 }
 
 // ParseRate parses a two part rate limit & burst.
-// They must be separated by a ','. Limit comes first, either in the form every<int duration>, or <float count>rps. Burst comes
+// They must be separated by a ':'. Limit comes first, either in the form every<int duration>, or <float count>rps. Burst comes
 // second, as an integer.
 func ParseRate(s string) (Rate, error) {
-	parts := strings.Split(s, ",")
+	parts := strings.Split(s, ":")
 	if len(parts) != 2 {
 		return Rate{}, fmt.Errorf("invalid rate limit: %s: must contain two parts", s)
 	}
@@ -50,7 +50,7 @@ func ParseRate(s string) (Rate, error) {
 
 func (r Rate) String() string {
 	if r.Limit < 1 {
-		return fmt.Sprintf("every%s,%d", time.Duration(1/r.Limit)*time.Second, r.Burst)
+		return fmt.Sprintf("every%s:%d", time.Duration(1/r.Limit)*time.Second, r.Burst)
 	}
-	return fmt.Sprintf("%grps,%d", r.Limit, r.Burst)
+	return fmt.Sprintf("%grps:%d", r.Limit, r.Burst)
 }

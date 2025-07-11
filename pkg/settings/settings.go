@@ -204,10 +204,10 @@ func (s *Setting[T]) Subscribe(ctx context.Context, r Registry) (<-chan Update[T
 // with a full-qualified, dot-separated key.
 // Every field must either be a Setting or a nested struct following the same rules.
 func InitConfig(a any) error {
-	return initConfig(ScopeGlobal, "", a)
+	return initConfig(a, ScopeGlobal, "")
 }
 
-func initConfig(scope Scope, parent string, a any) error {
+func initConfig(a any, scope Scope, parent string) error {
 	v := reflect.ValueOf(a)
 
 	if v.Kind() != reflect.Ptr {
@@ -241,7 +241,7 @@ func initConfig(scope Scope, parent string, a any) error {
 				return fmt.Errorf("%s failed to init Setting: %s", key, err)
 			}
 		} else if f.Type().Kind() == reflect.Struct {
-			if err := initConfig(scope, key, f.Addr().Interface()); err != nil {
+			if err := initConfig(f.Addr().Interface(), scope, key); err != nil {
 				return fmt.Errorf("%s failed to set keys: %s", key, err)
 			}
 		} else {

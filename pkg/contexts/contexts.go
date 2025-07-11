@@ -30,6 +30,7 @@ func CREValue(ctx context.Context) CRE {
 
 // CRE holds contextual Chainlink Runtime Environment metadata.
 // This can include organization, owner, and workflow information.
+// When a value is present, the higher scoped values are normally also available - except for Org, which may not be set.
 // Typically injected via [context.Context]. See WithCRE & CREValue.
 type CRE struct {
 	Org             string // may be missing even if others are present.

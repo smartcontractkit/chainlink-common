@@ -71,4 +71,4 @@ jobs:
           make rm-builders
           make generate
           git add --all
-          git diff --stat --cached --exit-code
+          git diff --minimal --cached --exit-code

@@ -79,10 +79,14 @@ func (p *ProtocGen) GenerateFile(file, from string) error {
 	}
 
 	args = append(args, file)
-
-	if out, err := run("protoc", from, args...); err != nil {
+	out, err := run("protoc", from, args...)
+	if err != nil {
 		return fmt.Errorf("failed to run protoc: %v\n%s", err, out)
 	}
+	if out == "" {
+		out = "No output"
+	}
+	fmt.Printf("Generated file %q\nexecution output:\n%s\n", file, out)
 
 	return nil
 }
@@ -185,11 +189,11 @@ func (p *ProtocGen) doInit() error {
 func run(command string, path string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
 	cmd.Dir = path
-	outuptBytes, err := cmd.CombinedOutput()
+	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("Failed running command\n%s\nfrom path: %s\n%v", cmd.String(), path, err)
+		return "", fmt.Errorf("Failed running command\n%s\nfrom path: %s\nerror:%v\nexecution output:\n%s", cmd.String(), path, err, "\t"+strings.ReplaceAll(string(outputBytes), "\n", "\n\t"))
 	}
-	return strings.TrimSpace(string(outuptBytes)), nil
+	return strings.TrimSpace(string(outputBytes)), nil
 }
 
 func checkoutClProtosRef(repoPath string) error {

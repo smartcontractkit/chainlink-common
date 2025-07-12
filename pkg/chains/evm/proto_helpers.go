@@ -64,8 +64,8 @@ func convertTopicsToProto(topics [][]evmtypes.Hash) []*Topics {
 	return protoTopics
 }
 
-func ConvertHeadToProto(h evmtypes.Head) *Head {
-	return &Head{
+func ConvertHeadToProto(h evmtypes.Head) *Header {
+	return &Header{
 		Timestamp:   h.Timestamp,
 		BlockNumber: valuespb.NewBigIntFromInt(h.Number),
 		Hash:        h.Hash[:],
@@ -75,15 +75,15 @@ func ConvertHeadToProto(h evmtypes.Head) *Head {
 
 var errEmptyHead = errors.New("head is nil")
 
-func ConvertHeadFromProto(head *Head) (evmtypes.Head, error) {
-	if head == nil {
+func ConvertHeadFromProto(header *Header) (evmtypes.Head, error) {
+	if header == nil {
 		return evmtypes.Head{}, errEmptyHead
 	}
 	return evmtypes.Head{
-		Timestamp:  head.GetTimestamp(),
-		Hash:       evmtypes.Hash(head.GetHash()),
-		ParentHash: evmtypes.Hash(head.GetParentHash()),
-		Number:     valuespb.NewIntFromBigInt(head.GetBlockNumber()),
+		Timestamp:  header.GetTimestamp(),
+		Hash:       evmtypes.Hash(header.GetHash()),
+		ParentHash: evmtypes.Hash(header.GetParentHash()),
+		Number:     valuespb.NewIntFromBigInt(header.GetBlockNumber()),
 	}, nil
 }
 

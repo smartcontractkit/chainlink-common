@@ -129,7 +129,7 @@ func TestConvertHeadFromProto(t *testing.T) {
 		num := &valuespb.BigInt{AbsVal: []byte{0x01, 0x02, 0x03}, Sign: 1}
 		timestamp := uint64(42)
 
-		proto := &evm.Head{
+		proto := &evm.Header{
 			Timestamp:   timestamp,
 			BlockNumber: num,
 			Hash:        hash,

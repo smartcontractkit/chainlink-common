@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"io"
 	"fmt"
+	"io"
 	"reflect"
 	"testing"
 
@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	otelglobal "go.opentelemetry.io/otel/log/global"
 )
 
 // Logger is a basic logging interface implemented by smartcontractkit/chainlink/core/logger.Logger and go.uber.org/zap.SugaredLogger
@@ -100,6 +101,13 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 func NewWithSync(w io.Writer) Logger {
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(w), zapcore.InfoLevel)
 	return &logger{zap.New(core).Sugar()}
+}
+
+// NOTE: [beholder.SetGlobalOtelProviders](https://github.com/smartcontractkit/chainlink-common/blob/27faefc9ce454c8aa2b1b7484e377ea3e8996bba/pkg/beholder/global.go#L50)
+// must be called before using `NewWithOtel` otherwise otelglobal.GetLoggerProvider() returns noop provider
+func NewWithOtel(name string, opts ...Option) Logger {
+	otelLogger := otelglobal.GetLoggerProvider().Logger(name)
+	return &logger{zap.New(NewOtelZapCore(otelLogger, opts...)).Sugar()}
 }
 
 // Test returns a new test Logger for tb.

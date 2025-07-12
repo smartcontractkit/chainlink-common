@@ -6,6 +6,7 @@
 
 * @smartcontractkit/foundations
 
+/pkg/billing/ @smartcontractkit/cre-business @smartcontractkit/core
 /pkg/beholder/ @smartcontractkit/data-tooling
 /pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations

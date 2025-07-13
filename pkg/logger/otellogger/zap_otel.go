@@ -1,4 +1,4 @@
-package logger
+package otellogger
 
 import (
 	"context"
@@ -8,8 +8,10 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
+	otelglobal "go.opentelemetry.io/otel/log/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
+
 	"go.uber.org/zap/zapcore"
 )
 
@@ -19,10 +21,15 @@ type OtelZapCore struct {
 	logger       otellog.Logger
 	fields       []zapcore.Field
 	levelEnabler zapcore.LevelEnabler
-	zapCore      zapcore.Core
 }
 
 type Option func(c *OtelZapCore)
+
+// NOTE: [beholder.SetGlobalOtelProviders](https://github.com/smartcontractkit/chainlink-common/blob/27faefc9ce454c8aa2b1b7484e377ea3e8996bba/pkg/beholder/global.go#L50)
+// must be called before using `NewOtelLogger` otherwise otelglobal.GetLoggerProvider() returns noop provider
+func NewOtelLogger(name string) otellog.Logger {
+	return otelglobal.GetLoggerProvider().Logger(name)
+}
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
 func NewOtelZapCore(logger otellog.Logger, opts ...Option) zapcore.Core {
@@ -48,16 +55,10 @@ func (o OtelZapCore) With(fields []zapcore.Field) zapcore.Core {
 	newFields := append([]zapcore.Field{}, o.fields...)
 	newFields = append(newFields, fields...)
 
-	var zapCore zapcore.Core
-	if o.zapCore != nil {
-		zapCore = o.zapCore.With(fields)
-	}
-
 	return &OtelZapCore{
 		logger:       o.logger,
 		fields:       newFields,
 		levelEnabler: o.levelEnabler,
-		zapCore:      zapCore,
 	}
 }
 
@@ -66,16 +67,10 @@ func (o OtelZapCore) Check(entry zapcore.Entry, checked *zapcore.CheckedEntry) *
 	if o.Enabled(entry.Level) {
 		checked = checked.AddCore(entry, o)
 	}
-	if o.zapCore != nil {
-		checked = o.zapCore.Check(entry, checked)
-	}
 	return checked
 }
 
 func (o OtelZapCore) Sync() error {
-	if o.zapCore != nil {
-		return o.zapCore.Sync()
-	}
 	// If no zap core is set, we don't need to sync anything
 	// as OpenTelemetry Core does not have a sync operation.
 	return nil
@@ -92,13 +87,6 @@ func WithLevel(level zapcore.Level) Option {
 func WithLevelEnabler(levelEnabler zapcore.LevelEnabler) Option {
 	return Option(func(o *OtelZapCore) {
 		o.levelEnabler = levelEnabler
-	})
-}
-
-// WithZapCore sets a zapcore.Core to be used for writing logs
-func WithZapCore(core zapcore.Core) Option {
-	return Option(func(o *OtelZapCore) {
-		o.zapCore = core
 	})
 }
 
@@ -161,11 +149,6 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	logRecord.AddAttributes(otelAttrs...)
 
 	o.logger.Emit(context.Background(), logRecord)
-
-	// If a zapCore is set, delegate the write to Zap as well
-	if o.zapCore != nil {
-		return o.zapCore.Write(entry, fields)
-	}
 
 	return nil
 }

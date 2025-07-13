@@ -126,6 +126,7 @@ func (s *Server) start() error {
 			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
+			ChipIngressInsecureConnection:  s.EnvConfig.TelemetryInsecureConnection,
 		}
 
 		if tracingConfig.Enabled {

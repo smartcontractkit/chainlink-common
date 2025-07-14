@@ -1,4 +1,4 @@
-package otellogger
+package otelzap
 
 import (
 	"bytes"

@@ -13,9 +13,18 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/iancoleman/strcase"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -24,13 +33,6 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/testing/protocmp"
-	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // See the README.md in standard_tests for more information.
@@ -48,7 +50,14 @@ func TestStandardConfig(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	// Some languages call time during initiation of the executable before the main is called.
+	// This would be in unknown mode, which would call Node mode by default.
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
 	wrappedConfig := runWithBasicTrigger(t, mockExecutionHelper)
+	wrappedValue := wrappedConfig.GetValue()
+	require.NotNil(t, wrappedValue, "Expected a value in the response")
 	actualConfig := wrappedConfig.GetValue().GetBytesValue()
 	require.ElementsMatch(t, anyTestConfig, actualConfig)
 }
@@ -57,6 +66,9 @@ func TestStandardErrors(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
 	errMsg := runWithBasicTrigger(t, mockExecutionHelper)
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
 }
@@ -65,6 +77,12 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
 	m := makeTestModule(t)
 	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 	callsSeen := map[bool]bool{}
@@ -91,10 +109,10 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 			Response: &pb.CapabilityResponse_Payload{Payload: payload},
 		}, nil
 	})
-	result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-	require.NoError(t, err)
 
-	assert.Equal(t, "truefalse", result.GetValue().GetStringValue())
+	result := executeWithResult[string](t, m, request, mockExecutionHelper)
+
+	assert.Equal(t, "truefalse", result)
 }
 
 func TestStandardModeSwitch(t *testing.T) {
@@ -102,6 +120,26 @@ func TestStandardModeSwitch(t *testing.T) {
 	t.Run("successful mode switch", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		// Node calls may occur on initialization depending on the language.
+		var donCall1 bool
+		var nodeCall bool
+		var donCall2 bool
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			if donCall1 {
+				nodeCall = true
+			}
+			return time.Now()
+		})
+
+		// We want to make sure time.Now() is called at least twice in DON mode and once in node Mode
+		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			if nodeCall {
+				donCall2 = true
+			} else {
+				donCall1 = true
+			}
+			return time.Now(), nil
+		})
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			if request.Id == "basic-test-action@1.0.0" {
 				input := &basicaction.Inputs{}
@@ -118,14 +156,22 @@ func TestStandardModeSwitch(t *testing.T) {
 
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
-		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-		require.NoError(t, err)
-		require.Equal(t, "test556", result.GetValue().GetStringValue())
+		result := executeWithResult[string](t, m, request, mockExecutionHelper)
+		require.Equal(t, "test556", result)
+		require.True(t, donCall1)
+		require.True(t, nodeCall)
+		require.True(t, donCall2)
 	})
 
 	t.Run("node runtime in don mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
+		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			response := values.NewString("hi")
 			mapProto := &valuespb.Map{
@@ -134,7 +180,7 @@ func TestStandardModeSwitch(t *testing.T) {
 					rawsdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
 				},
 			}
-			payload, err := anypb.New(mapProto)
+			payload, err := anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
 			require.NoError(t, err)
 			return &pb.CapabilityResponse{
 				Response: &pb.CapabilityResponse_Payload{
@@ -144,13 +190,19 @@ func TestStandardModeSwitch(t *testing.T) {
 		}).Once()
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
-		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-		require.NoError(t, err)
-		require.Contains(t, result.GetError(), "cannot use NodeRuntime outside RunInNodeMode")
+		errStr := executeWithError(t, m, request, mockExecutionHelper)
+		require.Contains(t, errStr, "cannot use NodeRuntime outside RunInNodeMode")
 	})
+
 	t.Run("don runtime in node mode", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
+		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
 			input := &pb.SimpleConsensusInputs{}
@@ -169,9 +221,10 @@ func TestStandardModeSwitch(t *testing.T) {
 		}).Once()
 		m := makeTestModule(t)
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
-		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-		require.NoError(t, err)
-		require.Contains(t, result.GetError(), "cannot use Runtime inside RunInNodeMode")
+
+		errStr := executeWithError(t, m, request, mockExecutionHelper)
+
+		require.Contains(t, errStr, "cannot use Runtime inside RunInNodeMode")
 	})
 }
 
@@ -179,6 +232,12 @@ func TestStandardLogging(t *testing.T) {
 	t.Parallel()
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
 		assert.True(t, strings.Contains(s, "log from wasm!"))
 		return nil
@@ -193,6 +252,9 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Run("test registration", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
 
 		subscribe := &pb.ExecuteRequest{Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
 		actual, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
@@ -242,34 +304,41 @@ func TestStandardMultipleTriggers(t *testing.T) {
 	t.Run("first callback", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
 
 		request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
-		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-		require.NoError(t, err)
 
-		require.Equal(t, fmt.Sprintf("called 0 with %v", anyTestTriggerValue), result.GetValue().GetStringValue())
+		result := executeWithResult[string](t, m, request, mockExecutionHelper)
+
+		require.Equal(t, fmt.Sprintf("called 0 with %v", anyTestTriggerValue), result)
 	})
 
 	t.Run("same trigger as first one but different registration", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
 
 		request := triggerExecuteRequest(t, 2, &basictrigger.Outputs{CoolOutput: "different"})
-		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-		require.NoError(t, err)
+		result := executeWithResult[string](t, m, request, mockExecutionHelper)
 
-		require.Equal(t, "called 2 with different", result.GetValue().GetStringValue())
+		require.Equal(t, "called 2 with different", result)
 	})
 
 	t.Run("different capability callback", func(t *testing.T) {
 		mockExecutionHelper := NewMockExecutionHelper(t)
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
 
 		request := triggerExecuteRequest(t, 1, &actionandtrigger.TriggerEvent{CoolOutput: "different"})
-		result, err := m.Execute(t.Context(), request, mockExecutionHelper)
-		require.NoError(t, err)
+		result := executeWithResult[string](t, m, request, mockExecutionHelper)
 
-		require.Equal(t, "called 1 with different", result.GetValue().GetStringValue())
+		require.Equal(t, "called 1 with different", result)
 	})
 }
 
@@ -281,7 +350,12 @@ func TestStandardRandom(t *testing.T) {
 	anyId := "Id"
 	gte100Exec := NewMockExecutionHelper(t)
 	gte100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
-
+	gte100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	gte100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
 	// RunAndReturn
 	gte100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 150))
 
@@ -299,16 +373,19 @@ func TestStandardRandom(t *testing.T) {
 			},
 		},
 	}
-	execution1Result, err := m.Execute(t.Context(), anyRequest, gte100Exec)
-	require.NoError(t, err)
-	wrappedValue1, err := values.FromProto(execution1Result.GetValue())
-	require.NoError(t, err)
-	value1, err := wrappedValue1.Unwrap()
-	require.NoError(t, err)
+
+	// any since uint64 can be int64 or *big.Int
+	value1 := executeWithResult[any](t, m, anyRequest, gte100Exec)
 
 	t.Run("Same execution id gives the same randoms even if random is called in node mode", func(t *testing.T) {
 		lt100Exec := NewMockExecutionHelper(t)
 		lt100Exec.EXPECT().GetWorkflowExecutionID().Return(anyId)
+		lt100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
+		lt100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		}).Maybe()
 
 		lt100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 99))
 		lt100Exec.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
@@ -318,12 +395,7 @@ func TestStandardRandom(t *testing.T) {
 			return nil
 		}).Once()
 
-		execution2Result, err := m.Execute(t.Context(), anyRequest, lt100Exec)
-		require.NoError(t, err)
-		wrappedValue2, err := values.FromProto(execution2Result.GetValue())
-		require.NoError(t, err)
-		value2, err := wrappedValue2.Unwrap()
-		require.NoError(t, err)
+		value2 := executeWithResult[any](t, m, anyRequest, lt100Exec)
 		require.Equal(t, value1, value2, "Expected the same random number to be generated for the same trigger")
 	})
 
@@ -332,15 +404,17 @@ func TestStandardRandom(t *testing.T) {
 
 		gte100Exec2 := NewMockExecutionHelper(t)
 		gte100Exec2.EXPECT().GetWorkflowExecutionID().Return("differentId")
+		gte100Exec2.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+			return time.Now()
+		}).Maybe()
+		gte100Exec2.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		}).Maybe()
 
 		gte100Exec2.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 120))
 
-		executionResult2, err := m.Execute(t.Context(), anyRequest, gte100Exec2)
-		require.NoError(t, err)
-		wrappedValue2, err := values.FromProto(executionResult2.GetValue())
-		require.NoError(t, err)
-		value2, err := wrappedValue2.Unwrap()
-		require.NoError(t, err)
+		value2 := executeWithResult[any](t, m, anyRequest, gte100Exec2)
+
 		require.NotEqual(t, value1, value2, "Expected different random numbers for different triggers")
 	})
 }
@@ -400,10 +474,15 @@ func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *pb.ExecutionRe
 // When subtests have their own binaries, those binaries are expected to be nested in a subfolder.
 func makeTestModule(t *testing.T) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName)
+	return makeTestModuleByName(t, testName, nil)
 }
 
-func makeTestModuleByName(t *testing.T, testName string) *module {
+func makeTestModuleWithCfg(t *testing.T, cfg *ModuleConfig) *module {
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return makeTestModuleByName(t, testName, cfg)
+}
+
+func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
 	wasmName := path.Join(testName, "test.wasm")
 	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
@@ -416,7 +495,9 @@ func makeTestModuleByName(t *testing.T, testName string) *module {
 	binary, err := os.ReadFile(filepath.Join(absPath, wasmName))
 	require.NoError(t, err)
 
-	cfg := defaultNoDAGModCfg(t)
+	if cfg == nil {
+		cfg = defaultNoDAGModCfg(t)
+	}
 	mod, err := NewModule(cfg, binary)
 	require.NoError(t, err)
 	return mod
@@ -466,7 +547,7 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 					rawsdk.ConsensusResponseMapKeyPayload:  response,
 				},
 			}
-			payload, err = anypb.New(mapProto)
+			payload, err = anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)
@@ -504,6 +585,12 @@ func assertProto[T proto.Message](t *testing.T, expected, actual T) {
 func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *pb.ExecutionResult {
 	mockExecutionHelper := NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, request *pb.GetSecretsRequest) ([]*pb.SecretResponse, error) {
@@ -518,4 +605,34 @@ func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *
 	response, err := m.Execute(t.Context(), executeRequest, mockExecutionHelper)
 	require.NoError(t, err)
 	return response
+}
+
+func executeWithResult[T any](t *testing.T, m *module, req *pb.ExecuteRequest, executor ExecutionHelper) T {
+	res, err := m.Execute(t.Context(), req, executor)
+	require.NoError(t, err)
+	var result T
+	switch v := res.Result.(type) {
+	case *pb.ExecutionResult_Value:
+		wrappedValue, err := values.FromProto(v.Value)
+		require.NoError(t, err)
+		require.NoError(t, wrappedValue.UnwrapTo(&result))
+	case *pb.ExecutionResult_Error:
+		require.Failf(t, "unexpected error in result", "error: %s", v.Error)
+	default:
+		require.Failf(t, "unexpected result type", "result: %v", res)
+	}
+
+	return result
+}
+
+func executeWithError(t *testing.T, m *module, req *pb.ExecuteRequest, executor ExecutionHelper) string {
+	res, err := m.Execute(t.Context(), req, executor)
+	require.NoError(t, err)
+	switch e := res.Result.(type) {
+	case *pb.ExecutionResult_Error:
+		return e.Error
+	default:
+		require.Failf(t, "unexpected result type", "%T", e)
+		return ""
+	}
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	ch "github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chpb "github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
@@ -63,13 +63,17 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	attributes := ExtractAttributes(attrKVs...)
-
-	event, err := ch.NewEventWithAttributes(sourceDomain, entityType, body, attributes)
+	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
 	if err != nil {
 		return err
 	}
-	_, err = c.client.Publish(ctx, event)
+
+	eventPb, err := chipingress.EventToProto(event)
+	if err != nil {
+		return fmt.Errorf("failed to convert event to proto: %w", err)
+	}
+
+	_, err = c.client.Publish(ctx, eventPb)
 	if err != nil {
 		return err
 	}

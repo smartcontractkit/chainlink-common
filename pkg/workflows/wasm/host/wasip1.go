@@ -26,21 +26,22 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 		return nil, err
 	}
 
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"poll_oneoff",
-		pollOneoff,
+		exec.pollOneoff,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-903
+	exec.timeFetcher = newTimeFetcher(exec.ctx, exec.executor)
+	exec.timeFetcher.Start()
+
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"clock_time_get",
-		clockTimeGet,
+		exec.clockTimeGet,
 	)
 	if err != nil {
 		return nil, err

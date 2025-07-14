@@ -21,6 +21,64 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type RequestType int32
+
+const (
+	RequestType_UNKNOWN                 RequestType = 0
+	RequestType_GET_SECRETS             RequestType = 1
+	RequestType_CREATE_SECRETS          RequestType = 2
+	RequestType_UPDATE_SECRETS          RequestType = 3
+	RequestType_DELETE_SECRETS          RequestType = 4
+	RequestType_LIST_SECRET_IDENTIFIERS RequestType = 5
+)
+
+// Enum value maps for RequestType.
+var (
+	RequestType_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "GET_SECRETS",
+		2: "CREATE_SECRETS",
+		3: "UPDATE_SECRETS",
+		4: "DELETE_SECRETS",
+		5: "LIST_SECRET_IDENTIFIERS",
+	}
+	RequestType_value = map[string]int32{
+		"UNKNOWN":                 0,
+		"GET_SECRETS":             1,
+		"CREATE_SECRETS":          2,
+		"UPDATE_SECRETS":          3,
+		"DELETE_SECRETS":          4,
+		"LIST_SECRET_IDENTIFIERS": 5,
+	}
+)
+
+func (x RequestType) Enum() *RequestType {
+	p := new(RequestType)
+	*p = x
+	return p
+}
+
+func (x RequestType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RequestType) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_actions_vault_messages_proto_enumTypes[0].Descriptor()
+}
+
+func (RequestType) Type() protoreflect.EnumType {
+	return &file_capabilities_actions_vault_messages_proto_enumTypes[0]
+}
+
+func (x RequestType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RequestType.Descriptor instead.
+func (RequestType) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{0}
+}
+
 type SecretIdentifier struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -136,6 +194,7 @@ func (x *SecretRequest) GetEncryptionKeys() []string {
 type EncryptedShares struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Shares        []string               `protobuf:"bytes,1,rep,name=shares,proto3" json:"shares,omitempty"`
+	EncryptionKey string                 `protobuf:"bytes,2,opt,name=encryption_key,json=encryptionKey,proto3" json:"encryption_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -175,6 +234,13 @@ func (x *EncryptedShares) GetShares() []string {
 		return x.Shares
 	}
 	return nil
+}
+
+func (x *EncryptedShares) GetEncryptionKey() string {
+	if x != nil {
+		return x.EncryptionKey
+	}
+	return ""
 }
 
 type SecretData struct {
@@ -1031,6 +1097,666 @@ func (x *ListSecretIdentifiersResponse) GetIdentifiers() []*SecretIdentifier {
 	return nil
 }
 
+type Observation struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	RequestType RequestType            `protobuf:"varint,2,opt,name=request_type,json=requestType,proto3,enum=vault.RequestType" json:"request_type,omitempty"`
+	// Types that are valid to be assigned to Request:
+	//
+	//	*Observation_CreateSecretsRequest
+	//	*Observation_GetSecretsRequest
+	//	*Observation_UpdateSecretsRequest
+	//	*Observation_DeleteSecretsRequest
+	//	*Observation_ListSecretIdentifiersRequest
+	Request isObservation_Request `protobuf_oneof:"request"`
+	// Types that are valid to be assigned to Response:
+	//
+	//	*Observation_CreateSecretsResponse
+	//	*Observation_GetSecretsResponse
+	//	*Observation_UpdateSecretsResponse
+	//	*Observation_DeleteSecretsResponse
+	//	*Observation_ListSecretIdentifiersResponse
+	Response      isObservation_Response `protobuf_oneof:"response"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Observation) Reset() {
+	*x = Observation{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Observation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Observation) ProtoMessage() {}
+
+func (x *Observation) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Observation.ProtoReflect.Descriptor instead.
+func (*Observation) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *Observation) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Observation) GetRequestType() RequestType {
+	if x != nil {
+		return x.RequestType
+	}
+	return RequestType_UNKNOWN
+}
+
+func (x *Observation) GetRequest() isObservation_Request {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+func (x *Observation) GetCreateSecretsRequest() *CreateSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Observation_CreateSecretsRequest); ok {
+			return x.CreateSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetGetSecretsRequest() *GetSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Observation_GetSecretsRequest); ok {
+			return x.GetSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetUpdateSecretsRequest() *UpdateSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Observation_UpdateSecretsRequest); ok {
+			return x.UpdateSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetDeleteSecretsRequest() *DeleteSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Observation_DeleteSecretsRequest); ok {
+			return x.DeleteSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetListSecretIdentifiersRequest() *ListSecretIdentifiersRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Observation_ListSecretIdentifiersRequest); ok {
+			return x.ListSecretIdentifiersRequest
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetResponse() isObservation_Response {
+	if x != nil {
+		return x.Response
+	}
+	return nil
+}
+
+func (x *Observation) GetCreateSecretsResponse() *CreateSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Observation_CreateSecretsResponse); ok {
+			return x.CreateSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetGetSecretsResponse() *GetSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Observation_GetSecretsResponse); ok {
+			return x.GetSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetUpdateSecretsResponse() *UpdateSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Observation_UpdateSecretsResponse); ok {
+			return x.UpdateSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetDeleteSecretsResponse() *DeleteSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Observation_DeleteSecretsResponse); ok {
+			return x.DeleteSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Observation) GetListSecretIdentifiersResponse() *ListSecretIdentifiersResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Observation_ListSecretIdentifiersResponse); ok {
+			return x.ListSecretIdentifiersResponse
+		}
+	}
+	return nil
+}
+
+type isObservation_Request interface {
+	isObservation_Request()
+}
+
+type Observation_CreateSecretsRequest struct {
+	CreateSecretsRequest *CreateSecretsRequest `protobuf:"bytes,3,opt,name=create_secrets_request,json=createSecretsRequest,proto3,oneof"`
+}
+
+type Observation_GetSecretsRequest struct {
+	GetSecretsRequest *GetSecretsRequest `protobuf:"bytes,4,opt,name=get_secrets_request,json=getSecretsRequest,proto3,oneof"`
+}
+
+type Observation_UpdateSecretsRequest struct {
+	UpdateSecretsRequest *UpdateSecretsRequest `protobuf:"bytes,5,opt,name=update_secrets_request,json=updateSecretsRequest,proto3,oneof"`
+}
+
+type Observation_DeleteSecretsRequest struct {
+	DeleteSecretsRequest *DeleteSecretsRequest `protobuf:"bytes,6,opt,name=delete_secrets_request,json=deleteSecretsRequest,proto3,oneof"`
+}
+
+type Observation_ListSecretIdentifiersRequest struct {
+	ListSecretIdentifiersRequest *ListSecretIdentifiersRequest `protobuf:"bytes,7,opt,name=list_secret_identifiers_request,json=listSecretIdentifiersRequest,proto3,oneof"`
+}
+
+func (*Observation_CreateSecretsRequest) isObservation_Request() {}
+
+func (*Observation_GetSecretsRequest) isObservation_Request() {}
+
+func (*Observation_UpdateSecretsRequest) isObservation_Request() {}
+
+func (*Observation_DeleteSecretsRequest) isObservation_Request() {}
+
+func (*Observation_ListSecretIdentifiersRequest) isObservation_Request() {}
+
+type isObservation_Response interface {
+	isObservation_Response()
+}
+
+type Observation_CreateSecretsResponse struct {
+	CreateSecretsResponse *CreateSecretsResponse `protobuf:"bytes,8,opt,name=create_secrets_response,json=createSecretsResponse,proto3,oneof"`
+}
+
+type Observation_GetSecretsResponse struct {
+	GetSecretsResponse *GetSecretsResponse `protobuf:"bytes,9,opt,name=get_secrets_response,json=getSecretsResponse,proto3,oneof"`
+}
+
+type Observation_UpdateSecretsResponse struct {
+	UpdateSecretsResponse *UpdateSecretsResponse `protobuf:"bytes,10,opt,name=update_secrets_response,json=updateSecretsResponse,proto3,oneof"`
+}
+
+type Observation_DeleteSecretsResponse struct {
+	DeleteSecretsResponse *DeleteSecretsResponse `protobuf:"bytes,11,opt,name=delete_secrets_response,json=deleteSecretsResponse,proto3,oneof"`
+}
+
+type Observation_ListSecretIdentifiersResponse struct {
+	ListSecretIdentifiersResponse *ListSecretIdentifiersResponse `protobuf:"bytes,12,opt,name=list_secret_identifiers_response,json=listSecretIdentifiersResponse,proto3,oneof"`
+}
+
+func (*Observation_CreateSecretsResponse) isObservation_Response() {}
+
+func (*Observation_GetSecretsResponse) isObservation_Response() {}
+
+func (*Observation_UpdateSecretsResponse) isObservation_Response() {}
+
+func (*Observation_DeleteSecretsResponse) isObservation_Response() {}
+
+func (*Observation_ListSecretIdentifiersResponse) isObservation_Response() {}
+
+type Observations struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Observations  []*Observation         `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Observations) Reset() {
+	*x = Observations{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Observations) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Observations) ProtoMessage() {}
+
+func (x *Observations) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Observations.ProtoReflect.Descriptor instead.
+func (*Observations) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *Observations) GetObservations() []*Observation {
+	if x != nil {
+		return x.Observations
+	}
+	return nil
+}
+
+type Outcome struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	RequestType RequestType            `protobuf:"varint,2,opt,name=request_type,json=requestType,proto3,enum=vault.RequestType" json:"request_type,omitempty"`
+	// Types that are valid to be assigned to Request:
+	//
+	//	*Outcome_CreateSecretsRequest
+	//	*Outcome_GetSecretsRequest
+	//	*Outcome_UpdateSecretsRequest
+	//	*Outcome_DeleteSecretsRequest
+	//	*Outcome_ListSecretIdentifiersRequest
+	Request isOutcome_Request `protobuf_oneof:"request"`
+	// Types that are valid to be assigned to Response:
+	//
+	//	*Outcome_CreateSecretsResponse
+	//	*Outcome_GetSecretsResponse
+	//	*Outcome_UpdateSecretsResponse
+	//	*Outcome_DeleteSecretsResponse
+	//	*Outcome_ListSecretIdentifiersResponse
+	Response      isOutcome_Response `protobuf_oneof:"response"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Outcome) Reset() {
+	*x = Outcome{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Outcome) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Outcome) ProtoMessage() {}
+
+func (x *Outcome) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Outcome.ProtoReflect.Descriptor instead.
+func (*Outcome) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *Outcome) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Outcome) GetRequestType() RequestType {
+	if x != nil {
+		return x.RequestType
+	}
+	return RequestType_UNKNOWN
+}
+
+func (x *Outcome) GetRequest() isOutcome_Request {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+func (x *Outcome) GetCreateSecretsRequest() *CreateSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Outcome_CreateSecretsRequest); ok {
+			return x.CreateSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetGetSecretsRequest() *GetSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Outcome_GetSecretsRequest); ok {
+			return x.GetSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetUpdateSecretsRequest() *UpdateSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Outcome_UpdateSecretsRequest); ok {
+			return x.UpdateSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetDeleteSecretsRequest() *DeleteSecretsRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Outcome_DeleteSecretsRequest); ok {
+			return x.DeleteSecretsRequest
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetListSecretIdentifiersRequest() *ListSecretIdentifiersRequest {
+	if x != nil {
+		if x, ok := x.Request.(*Outcome_ListSecretIdentifiersRequest); ok {
+			return x.ListSecretIdentifiersRequest
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetResponse() isOutcome_Response {
+	if x != nil {
+		return x.Response
+	}
+	return nil
+}
+
+func (x *Outcome) GetCreateSecretsResponse() *CreateSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Outcome_CreateSecretsResponse); ok {
+			return x.CreateSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetGetSecretsResponse() *GetSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Outcome_GetSecretsResponse); ok {
+			return x.GetSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetUpdateSecretsResponse() *UpdateSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Outcome_UpdateSecretsResponse); ok {
+			return x.UpdateSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetDeleteSecretsResponse() *DeleteSecretsResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Outcome_DeleteSecretsResponse); ok {
+			return x.DeleteSecretsResponse
+		}
+	}
+	return nil
+}
+
+func (x *Outcome) GetListSecretIdentifiersResponse() *ListSecretIdentifiersResponse {
+	if x != nil {
+		if x, ok := x.Response.(*Outcome_ListSecretIdentifiersResponse); ok {
+			return x.ListSecretIdentifiersResponse
+		}
+	}
+	return nil
+}
+
+type isOutcome_Request interface {
+	isOutcome_Request()
+}
+
+type Outcome_CreateSecretsRequest struct {
+	CreateSecretsRequest *CreateSecretsRequest `protobuf:"bytes,3,opt,name=create_secrets_request,json=createSecretsRequest,proto3,oneof"`
+}
+
+type Outcome_GetSecretsRequest struct {
+	GetSecretsRequest *GetSecretsRequest `protobuf:"bytes,4,opt,name=get_secrets_request,json=getSecretsRequest,proto3,oneof"`
+}
+
+type Outcome_UpdateSecretsRequest struct {
+	UpdateSecretsRequest *UpdateSecretsRequest `protobuf:"bytes,5,opt,name=update_secrets_request,json=updateSecretsRequest,proto3,oneof"`
+}
+
+type Outcome_DeleteSecretsRequest struct {
+	DeleteSecretsRequest *DeleteSecretsRequest `protobuf:"bytes,6,opt,name=delete_secrets_request,json=deleteSecretsRequest,proto3,oneof"`
+}
+
+type Outcome_ListSecretIdentifiersRequest struct {
+	ListSecretIdentifiersRequest *ListSecretIdentifiersRequest `protobuf:"bytes,7,opt,name=list_secret_identifiers_request,json=listSecretIdentifiersRequest,proto3,oneof"`
+}
+
+func (*Outcome_CreateSecretsRequest) isOutcome_Request() {}
+
+func (*Outcome_GetSecretsRequest) isOutcome_Request() {}
+
+func (*Outcome_UpdateSecretsRequest) isOutcome_Request() {}
+
+func (*Outcome_DeleteSecretsRequest) isOutcome_Request() {}
+
+func (*Outcome_ListSecretIdentifiersRequest) isOutcome_Request() {}
+
+type isOutcome_Response interface {
+	isOutcome_Response()
+}
+
+type Outcome_CreateSecretsResponse struct {
+	CreateSecretsResponse *CreateSecretsResponse `protobuf:"bytes,8,opt,name=create_secrets_response,json=createSecretsResponse,proto3,oneof"`
+}
+
+type Outcome_GetSecretsResponse struct {
+	GetSecretsResponse *GetSecretsResponse `protobuf:"bytes,9,opt,name=get_secrets_response,json=getSecretsResponse,proto3,oneof"`
+}
+
+type Outcome_UpdateSecretsResponse struct {
+	UpdateSecretsResponse *UpdateSecretsResponse `protobuf:"bytes,10,opt,name=update_secrets_response,json=updateSecretsResponse,proto3,oneof"`
+}
+
+type Outcome_DeleteSecretsResponse struct {
+	DeleteSecretsResponse *DeleteSecretsResponse `protobuf:"bytes,11,opt,name=delete_secrets_response,json=deleteSecretsResponse,proto3,oneof"`
+}
+
+type Outcome_ListSecretIdentifiersResponse struct {
+	ListSecretIdentifiersResponse *ListSecretIdentifiersResponse `protobuf:"bytes,12,opt,name=list_secret_identifiers_response,json=listSecretIdentifiersResponse,proto3,oneof"`
+}
+
+func (*Outcome_CreateSecretsResponse) isOutcome_Response() {}
+
+func (*Outcome_GetSecretsResponse) isOutcome_Response() {}
+
+func (*Outcome_UpdateSecretsResponse) isOutcome_Response() {}
+
+func (*Outcome_DeleteSecretsResponse) isOutcome_Response() {}
+
+func (*Outcome_ListSecretIdentifiersResponse) isOutcome_Response() {}
+
+type Outcomes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Outcomes      []*Outcome             `protobuf:"bytes,1,rep,name=outcomes,proto3" json:"outcomes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Outcomes) Reset() {
+	*x = Outcomes{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Outcomes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Outcomes) ProtoMessage() {}
+
+func (x *Outcomes) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Outcomes.ProtoReflect.Descriptor instead.
+func (*Outcomes) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *Outcomes) GetOutcomes() []*Outcome {
+	if x != nil {
+		return x.Outcomes
+	}
+	return nil
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+type StoredSecret struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	EncryptedSecret []byte                 `protobuf:"bytes,1,opt,name=encrypted_secret,json=encryptedSecret,proto3" json:"encrypted_secret,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *StoredSecret) Reset() {
+	*x = StoredSecret{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredSecret) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredSecret) ProtoMessage() {}
+
+func (x *StoredSecret) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredSecret.ProtoReflect.Descriptor instead.
+func (*StoredSecret) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StoredSecret) GetEncryptedSecret() []byte {
+	if x != nil {
+		return x.EncryptedSecret
+	}
+	return nil
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+type StoredMetadata struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Keys          []string               `protobuf:"bytes,2,rep,name=keys,proto3" json:"keys,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StoredMetadata) Reset() {
+	*x = StoredMetadata{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredMetadata) ProtoMessage() {}
+
+func (x *StoredMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredMetadata.ProtoReflect.Descriptor instead.
+func (*StoredMetadata) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *StoredMetadata) GetKeys() []string {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
 var File_capabilities_actions_vault_messages_proto protoreflect.FileDescriptor
 
 const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
@@ -1042,9 +1768,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x05owner\x18\x03 \x01(\tR\x05owner\"a\n" +
 	"\rSecretRequest\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
-	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\")\n" +
+	"\x0fencryption_keys\x18\x02 \x03(\tR\x0eencryptionKeys\"P\n" +
 	"\x0fEncryptedShares\x12\x16\n" +
-	"\x06shares\x18\x01 \x03(\tR\x06shares\"\x94\x01\n" +
+	"\x06shares\x18\x01 \x03(\tR\x06shares\x12%\n" +
+	"\x0eencryption_key\x18\x02 \x01(\tR\rencryptionKey\"\x94\x01\n" +
 	"\n" +
 	"SecretData\x12'\n" +
 	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\x12]\n" +
@@ -1097,7 +1824,56 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\"Z\n" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
-	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiersBMZKgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vaultb\x06proto3"
+	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\"\xec\a\n" +
+	"\vObservation\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
+	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +
+	"\x16create_secrets_request\x18\x03 \x01(\v2\x1b.vault.CreateSecretsRequestH\x00R\x14createSecretsRequest\x12J\n" +
+	"\x13get_secrets_request\x18\x04 \x01(\v2\x18.vault.GetSecretsRequestH\x00R\x11getSecretsRequest\x12S\n" +
+	"\x16update_secrets_request\x18\x05 \x01(\v2\x1b.vault.UpdateSecretsRequestH\x00R\x14updateSecretsRequest\x12S\n" +
+	"\x16delete_secrets_request\x18\x06 \x01(\v2\x1b.vault.DeleteSecretsRequestH\x00R\x14deleteSecretsRequest\x12l\n" +
+	"\x1flist_secret_identifiers_request\x18\a \x01(\v2#.vault.ListSecretIdentifiersRequestH\x00R\x1clistSecretIdentifiersRequest\x12V\n" +
+	"\x17create_secrets_response\x18\b \x01(\v2\x1c.vault.CreateSecretsResponseH\x01R\x15createSecretsResponse\x12M\n" +
+	"\x14get_secrets_response\x18\t \x01(\v2\x19.vault.GetSecretsResponseH\x01R\x12getSecretsResponse\x12V\n" +
+	"\x17update_secrets_response\x18\n" +
+	" \x01(\v2\x1c.vault.UpdateSecretsResponseH\x01R\x15updateSecretsResponse\x12V\n" +
+	"\x17delete_secrets_response\x18\v \x01(\v2\x1c.vault.DeleteSecretsResponseH\x01R\x15deleteSecretsResponse\x12o\n" +
+	" list_secret_identifiers_response\x18\f \x01(\v2$.vault.ListSecretIdentifiersResponseH\x01R\x1dlistSecretIdentifiersResponseB\t\n" +
+	"\arequestB\n" +
+	"\n" +
+	"\bresponse\"F\n" +
+	"\fObservations\x126\n" +
+	"\fobservations\x18\x01 \x03(\v2\x12.vault.ObservationR\fobservations\"\xe8\a\n" +
+	"\aOutcome\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
+	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +
+	"\x16create_secrets_request\x18\x03 \x01(\v2\x1b.vault.CreateSecretsRequestH\x00R\x14createSecretsRequest\x12J\n" +
+	"\x13get_secrets_request\x18\x04 \x01(\v2\x18.vault.GetSecretsRequestH\x00R\x11getSecretsRequest\x12S\n" +
+	"\x16update_secrets_request\x18\x05 \x01(\v2\x1b.vault.UpdateSecretsRequestH\x00R\x14updateSecretsRequest\x12S\n" +
+	"\x16delete_secrets_request\x18\x06 \x01(\v2\x1b.vault.DeleteSecretsRequestH\x00R\x14deleteSecretsRequest\x12l\n" +
+	"\x1flist_secret_identifiers_request\x18\a \x01(\v2#.vault.ListSecretIdentifiersRequestH\x00R\x1clistSecretIdentifiersRequest\x12V\n" +
+	"\x17create_secrets_response\x18\b \x01(\v2\x1c.vault.CreateSecretsResponseH\x01R\x15createSecretsResponse\x12M\n" +
+	"\x14get_secrets_response\x18\t \x01(\v2\x19.vault.GetSecretsResponseH\x01R\x12getSecretsResponse\x12V\n" +
+	"\x17update_secrets_response\x18\n" +
+	" \x01(\v2\x1c.vault.UpdateSecretsResponseH\x01R\x15updateSecretsResponse\x12V\n" +
+	"\x17delete_secrets_response\x18\v \x01(\v2\x1c.vault.DeleteSecretsResponseH\x01R\x15deleteSecretsResponse\x12o\n" +
+	" list_secret_identifiers_response\x18\f \x01(\v2$.vault.ListSecretIdentifiersResponseH\x01R\x1dlistSecretIdentifiersResponseB\t\n" +
+	"\arequestB\n" +
+	"\n" +
+	"\bresponse\"6\n" +
+	"\bOutcomes\x12*\n" +
+	"\boutcomes\x18\x01 \x03(\v2\x0e.vault.OutcomeR\boutcomes\"9\n" +
+	"\fStoredSecret\x12)\n" +
+	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"$\n" +
+	"\x0eStoredMetadata\x12\x12\n" +
+	"\x04keys\x18\x02 \x03(\tR\x04keys*\x84\x01\n" +
+	"\vRequestType\x12\v\n" +
+	"\aUNKNOWN\x10\x00\x12\x0f\n" +
+	"\vGET_SECRETS\x10\x01\x12\x12\n" +
+	"\x0eCREATE_SECRETS\x10\x02\x12\x12\n" +
+	"\x0eUPDATE_SECRETS\x10\x03\x12\x12\n" +
+	"\x0eDELETE_SECRETS\x10\x04\x12\x1b\n" +
+	"\x17LIST_SECRET_IDENTIFIERS\x10\x05BMZKgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vaultb\x06proto3"
 
 var (
 	file_capabilities_actions_vault_messages_proto_rawDescOnce sync.Once
@@ -1111,51 +1887,83 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 	return file_capabilities_actions_vault_messages_proto_rawDescData
 }
 
-var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
-	(*SecretIdentifier)(nil),              // 0: vault.SecretIdentifier
-	(*SecretRequest)(nil),                 // 1: vault.SecretRequest
-	(*EncryptedShares)(nil),               // 2: vault.EncryptedShares
-	(*SecretData)(nil),                    // 3: vault.SecretData
-	(*SecretResponse)(nil),                // 4: vault.SecretResponse
-	(*GetSecretsRequest)(nil),             // 5: vault.GetSecretsRequest
-	(*GetSecretsResponse)(nil),            // 6: vault.GetSecretsResponse
-	(*EncryptedSecret)(nil),               // 7: vault.EncryptedSecret
-	(*CreateSecretsRequest)(nil),          // 8: vault.CreateSecretsRequest
-	(*CreateSecretResponse)(nil),          // 9: vault.CreateSecretResponse
-	(*CreateSecretsResponse)(nil),         // 10: vault.CreateSecretsResponse
-	(*UpdateSecretsRequest)(nil),          // 11: vault.UpdateSecretsRequest
-	(*UpdateSecretResponse)(nil),          // 12: vault.UpdateSecretResponse
-	(*UpdateSecretsResponse)(nil),         // 13: vault.UpdateSecretsResponse
-	(*DeleteSecretsRequest)(nil),          // 14: vault.DeleteSecretsRequest
-	(*DeleteSecretResponse)(nil),          // 15: vault.DeleteSecretResponse
-	(*DeleteSecretsResponse)(nil),         // 16: vault.DeleteSecretsResponse
-	(*ListSecretIdentifiersRequest)(nil),  // 17: vault.ListSecretIdentifiersRequest
-	(*ListSecretIdentifiersResponse)(nil), // 18: vault.ListSecretIdentifiersResponse
+	(RequestType)(0),                      // 0: vault.RequestType
+	(*SecretIdentifier)(nil),              // 1: vault.SecretIdentifier
+	(*SecretRequest)(nil),                 // 2: vault.SecretRequest
+	(*EncryptedShares)(nil),               // 3: vault.EncryptedShares
+	(*SecretData)(nil),                    // 4: vault.SecretData
+	(*SecretResponse)(nil),                // 5: vault.SecretResponse
+	(*GetSecretsRequest)(nil),             // 6: vault.GetSecretsRequest
+	(*GetSecretsResponse)(nil),            // 7: vault.GetSecretsResponse
+	(*EncryptedSecret)(nil),               // 8: vault.EncryptedSecret
+	(*CreateSecretsRequest)(nil),          // 9: vault.CreateSecretsRequest
+	(*CreateSecretResponse)(nil),          // 10: vault.CreateSecretResponse
+	(*CreateSecretsResponse)(nil),         // 11: vault.CreateSecretsResponse
+	(*UpdateSecretsRequest)(nil),          // 12: vault.UpdateSecretsRequest
+	(*UpdateSecretResponse)(nil),          // 13: vault.UpdateSecretResponse
+	(*UpdateSecretsResponse)(nil),         // 14: vault.UpdateSecretsResponse
+	(*DeleteSecretsRequest)(nil),          // 15: vault.DeleteSecretsRequest
+	(*DeleteSecretResponse)(nil),          // 16: vault.DeleteSecretResponse
+	(*DeleteSecretsResponse)(nil),         // 17: vault.DeleteSecretsResponse
+	(*ListSecretIdentifiersRequest)(nil),  // 18: vault.ListSecretIdentifiersRequest
+	(*ListSecretIdentifiersResponse)(nil), // 19: vault.ListSecretIdentifiersResponse
+	(*Observation)(nil),                   // 20: vault.Observation
+	(*Observations)(nil),                  // 21: vault.Observations
+	(*Outcome)(nil),                       // 22: vault.Outcome
+	(*Outcomes)(nil),                      // 23: vault.Outcomes
+	(*StoredSecret)(nil),                  // 24: vault.StoredSecret
+	(*StoredMetadata)(nil),                // 25: vault.StoredMetadata
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
-	0,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
-	2,  // 1: vault.SecretData.encrypted_decryption_key_shares:type_name -> vault.EncryptedShares
-	0,  // 2: vault.SecretResponse.id:type_name -> vault.SecretIdentifier
-	3,  // 3: vault.SecretResponse.data:type_name -> vault.SecretData
-	1,  // 4: vault.GetSecretsRequest.requests:type_name -> vault.SecretRequest
-	4,  // 5: vault.GetSecretsResponse.responses:type_name -> vault.SecretResponse
-	0,  // 6: vault.EncryptedSecret.id:type_name -> vault.SecretIdentifier
-	7,  // 7: vault.CreateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
-	0,  // 8: vault.CreateSecretResponse.id:type_name -> vault.SecretIdentifier
-	9,  // 9: vault.CreateSecretsResponse.responses:type_name -> vault.CreateSecretResponse
-	7,  // 10: vault.UpdateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
-	0,  // 11: vault.UpdateSecretResponse.id:type_name -> vault.SecretIdentifier
-	12, // 12: vault.UpdateSecretsResponse.responses:type_name -> vault.UpdateSecretResponse
-	0,  // 13: vault.DeleteSecretsRequest.ids:type_name -> vault.SecretIdentifier
-	0,  // 14: vault.DeleteSecretResponse.id:type_name -> vault.SecretIdentifier
-	15, // 15: vault.DeleteSecretsResponse.responses:type_name -> vault.DeleteSecretResponse
-	0,  // 16: vault.ListSecretIdentifiersResponse.identifiers:type_name -> vault.SecretIdentifier
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	1,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
+	3,  // 1: vault.SecretData.encrypted_decryption_key_shares:type_name -> vault.EncryptedShares
+	1,  // 2: vault.SecretResponse.id:type_name -> vault.SecretIdentifier
+	4,  // 3: vault.SecretResponse.data:type_name -> vault.SecretData
+	2,  // 4: vault.GetSecretsRequest.requests:type_name -> vault.SecretRequest
+	5,  // 5: vault.GetSecretsResponse.responses:type_name -> vault.SecretResponse
+	1,  // 6: vault.EncryptedSecret.id:type_name -> vault.SecretIdentifier
+	8,  // 7: vault.CreateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
+	1,  // 8: vault.CreateSecretResponse.id:type_name -> vault.SecretIdentifier
+	10, // 9: vault.CreateSecretsResponse.responses:type_name -> vault.CreateSecretResponse
+	8,  // 10: vault.UpdateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
+	1,  // 11: vault.UpdateSecretResponse.id:type_name -> vault.SecretIdentifier
+	13, // 12: vault.UpdateSecretsResponse.responses:type_name -> vault.UpdateSecretResponse
+	1,  // 13: vault.DeleteSecretsRequest.ids:type_name -> vault.SecretIdentifier
+	1,  // 14: vault.DeleteSecretResponse.id:type_name -> vault.SecretIdentifier
+	16, // 15: vault.DeleteSecretsResponse.responses:type_name -> vault.DeleteSecretResponse
+	1,  // 16: vault.ListSecretIdentifiersResponse.identifiers:type_name -> vault.SecretIdentifier
+	0,  // 17: vault.Observation.request_type:type_name -> vault.RequestType
+	9,  // 18: vault.Observation.create_secrets_request:type_name -> vault.CreateSecretsRequest
+	6,  // 19: vault.Observation.get_secrets_request:type_name -> vault.GetSecretsRequest
+	12, // 20: vault.Observation.update_secrets_request:type_name -> vault.UpdateSecretsRequest
+	15, // 21: vault.Observation.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
+	18, // 22: vault.Observation.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
+	11, // 23: vault.Observation.create_secrets_response:type_name -> vault.CreateSecretsResponse
+	7,  // 24: vault.Observation.get_secrets_response:type_name -> vault.GetSecretsResponse
+	14, // 25: vault.Observation.update_secrets_response:type_name -> vault.UpdateSecretsResponse
+	17, // 26: vault.Observation.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
+	19, // 27: vault.Observation.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
+	20, // 28: vault.Observations.observations:type_name -> vault.Observation
+	0,  // 29: vault.Outcome.request_type:type_name -> vault.RequestType
+	9,  // 30: vault.Outcome.create_secrets_request:type_name -> vault.CreateSecretsRequest
+	6,  // 31: vault.Outcome.get_secrets_request:type_name -> vault.GetSecretsRequest
+	12, // 32: vault.Outcome.update_secrets_request:type_name -> vault.UpdateSecretsRequest
+	15, // 33: vault.Outcome.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
+	18, // 34: vault.Outcome.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
+	11, // 35: vault.Outcome.create_secrets_response:type_name -> vault.CreateSecretsResponse
+	7,  // 36: vault.Outcome.get_secrets_response:type_name -> vault.GetSecretsResponse
+	14, // 37: vault.Outcome.update_secrets_response:type_name -> vault.UpdateSecretsResponse
+	17, // 38: vault.Outcome.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
+	19, // 39: vault.Outcome.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
+	22, // 40: vault.Outcomes.outcomes:type_name -> vault.Outcome
+	41, // [41:41] is the sub-list for method output_type
+	41, // [41:41] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }
@@ -1167,18 +1975,43 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*SecretResponse_Data)(nil),
 		(*SecretResponse_Error)(nil),
 	}
+	file_capabilities_actions_vault_messages_proto_msgTypes[19].OneofWrappers = []any{
+		(*Observation_CreateSecretsRequest)(nil),
+		(*Observation_GetSecretsRequest)(nil),
+		(*Observation_UpdateSecretsRequest)(nil),
+		(*Observation_DeleteSecretsRequest)(nil),
+		(*Observation_ListSecretIdentifiersRequest)(nil),
+		(*Observation_CreateSecretsResponse)(nil),
+		(*Observation_GetSecretsResponse)(nil),
+		(*Observation_UpdateSecretsResponse)(nil),
+		(*Observation_DeleteSecretsResponse)(nil),
+		(*Observation_ListSecretIdentifiersResponse)(nil),
+	}
+	file_capabilities_actions_vault_messages_proto_msgTypes[21].OneofWrappers = []any{
+		(*Outcome_CreateSecretsRequest)(nil),
+		(*Outcome_GetSecretsRequest)(nil),
+		(*Outcome_UpdateSecretsRequest)(nil),
+		(*Outcome_DeleteSecretsRequest)(nil),
+		(*Outcome_ListSecretIdentifiersRequest)(nil),
+		(*Outcome_CreateSecretsResponse)(nil),
+		(*Outcome_GetSecretsResponse)(nil),
+		(*Outcome_UpdateSecretsResponse)(nil),
+		(*Outcome_DeleteSecretsResponse)(nil),
+		(*Outcome_ListSecretIdentifiersResponse)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   19,
+			NumEnums:      1,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_capabilities_actions_vault_messages_proto_goTypes,
 		DependencyIndexes: file_capabilities_actions_vault_messages_proto_depIdxs,
+		EnumInfos:         file_capabilities_actions_vault_messages_proto_enumTypes,
 		MessageInfos:      file_capabilities_actions_vault_messages_proto_msgTypes,
 	}.Build()
 	File_capabilities_actions_vault_messages_proto = out.File

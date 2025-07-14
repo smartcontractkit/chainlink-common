@@ -33,7 +33,7 @@ type Factory struct {
 func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
 	return &Factory{
 		store: s,
-		lggr:  logger.Named(lggr, "OCR3WorkflowLibFactory"),
+		lggr:  logger.Named(lggr, "OCR3DonTimeFactory"),
 	}, nil
 }
 
@@ -84,13 +84,13 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 }
 
 func (o *Factory) Start(ctx context.Context) error {
-	return o.StartOnce("OCR3WorkflowLibPlugin", func() error {
+	return o.StartOnce("OCR3DonTimePlugin", func() error {
 		return nil
 	})
 }
 
 func (o *Factory) Close() error {
-	return o.StopOnce("OCR3WorkflowLibPlugin", func() error {
+	return o.StopOnce("OCR3DonTimePlugin", func() error {
 		return nil
 	})
 }

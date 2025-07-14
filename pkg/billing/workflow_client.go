@@ -2,12 +2,8 @@ package billing
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
 	"fmt"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -15,6 +11,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	auth "github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt"
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -32,39 +29,39 @@ type WorkflowClient interface {
 }
 
 type workflowClient struct {
-	address    string
-	conn       *grpc.ClientConn
-	client     pb.CreditReservationServiceClient
-	logger     logger.Logger
-	signingKey ed25519.PrivateKey
-	// serverPubKey is used for verifying signatures from the server.
-	serverPubKey ed25519.PublicKey
-	tlsCert      string
-	creds        credentials.TransportCredentials
+	address string
+	conn    *grpc.ClientConn
+	client  pb.CreditReservationServiceClient
+	logger  logger.Logger
+	tlsCert string
+	creds   credentials.TransportCredentials
 	// serverName is the expected server name in the TLS certificate.
 	serverName string
+
+	// JWT-based authentication
+	jwtGenerator auth.JWTGenerator
 }
 
 type workflowConfig struct {
 	log                  logger.Logger
 	transportCredentials credentials.TransportCredentials
-	signingKey           ed25519.PrivateKey
-	serverPubKey         ed25519.PublicKey
 	tlsCert              string
 	serverName           string
+	jwtGenerator         auth.JWTGenerator
 }
 
 type WorkflowClientOpt func(*workflowConfig)
 
 func defaultWorkflowConfig() workflowConfig {
 	loggerInst, _ := logger.New()
-	// By default, no signing key is set and we fallback to insecure creds.
+	// By default, no JWT manager is set and we fallback to insecure creds.
 	return workflowConfig{
 		transportCredentials: insecure.NewCredentials(),
 		log:                  loggerInst,
 		tlsCert:              "",
 		// Default to "localhost" if not overridden.
-		serverName: "localhost",
+		serverName:   "localhost",
+		jwtGenerator: nil,
 	}
 }
 
@@ -80,15 +77,10 @@ func WithWorkflowLogger(l logger.Logger) WorkflowClientOpt {
 	}
 }
 
-func WithSigningKey(signingKey ed25519.PrivateKey) WorkflowClientOpt {
+// WithJWTGenerator sets the JWT generator for authentication.
+func WithJWTGenerator(jwtGenerator auth.JWTGenerator) WorkflowClientOpt {
 	return func(cfg *workflowConfig) {
-		cfg.signingKey = signingKey
-	}
-}
-
-func WithServerPublicKey(pub ed25519.PublicKey) WorkflowClientOpt {
-	return func(cfg *workflowConfig) {
-		cfg.serverPubKey = pub
+		cfg.jwtGenerator = jwtGenerator
 	}
 }
 
@@ -105,6 +97,7 @@ func WithServerName(name string) WorkflowClientOpt {
 	}
 }
 
+// NewWorkflowClient creates a new workflow client with JWT signing enabled.
 func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClient, error) {
 	cfg := defaultWorkflowConfig()
 	for _, opt := range opts {
@@ -114,11 +107,10 @@ func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClien
 	wc := &workflowClient{
 		address:      address,
 		logger:       cfg.log,
-		signingKey:   cfg.signingKey,
-		serverPubKey: cfg.serverPubKey,
 		tlsCert:      cfg.tlsCert,
 		creds:        cfg.transportCredentials,
 		serverName:   cfg.serverName,
+		jwtGenerator: cfg.jwtGenerator,
 	}
 
 	err := wc.initGrpcConn()
@@ -141,56 +133,25 @@ func (wc *workflowClient) Close() error {
 	return nil
 }
 
-func (wc *workflowClient) addSignature(ctx context.Context, req interface{}) (context.Context, error) {
-	if wc.signingKey == nil {
+// addJWTAuth creates and signs a JWT token, then adds it to the context
+func (wc *workflowClient) addJWTAuth(ctx context.Context, req any) (context.Context, error) {
+	// Skip authentication if no JWT manager provided
+	if wc.jwtGenerator == nil {
 		return ctx, nil
 	}
-	canonical := wc.CanonicalStringFromRequest(req)
-	ts := time.Now().UTC().Format(time.RFC3339)
-	hasher := sha256.New()
-	hasher.Write([]byte(canonical + ts))
-	digest := hex.EncodeToString(hasher.Sum(nil))
 
-	// Use "|" as the delimiter.
-	pubKeyHex := hex.EncodeToString(wc.signingKey.Public().(ed25519.PublicKey))
-	headerValue := fmt.Sprintf("%s|%s|%s", pubKeyHex, ts, digest)
-	return metadata.AppendToOutgoingContext(ctx, "x-custom-auth", headerValue), nil
-}
-
-func (wc *workflowClient) Sign(request interface{}) (string, error) {
-	// Retained for compatibility; not used in custom auth header.
-	canonical := wc.CanonicalStringFromRequest(request)
-	signature := ed25519.Sign(wc.signingKey, []byte(canonical))
-	return hex.EncodeToString(signature), nil
-}
-
-func (wc *workflowClient) CanonicalStringFromRequest(request interface{}) string {
-	if s, ok := request.(fmt.Stringer); ok {
-		return s.String()
-	}
-	return fmt.Sprintf("%v", request)
-}
-
-// Used on server, provided for testing.
-func VerifySignature(publicKey ed25519.PublicKey, request interface{}, signature string) error {
-	var canonical string
-	if s, ok := request.(fmt.Stringer); ok {
-		canonical = s.String()
-	} else {
-		canonical = fmt.Sprintf("%v", request)
-	}
-	sigBytes, err := hex.DecodeString(signature)
+	// Create JWT token using the JWT manager
+	jwtToken, err := wc.jwtGenerator.CreateJWTForRequest(req)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to create JWT: %w", err)
 	}
-	if !ed25519.Verify(publicKey, []byte(canonical), sigBytes) {
-		return fmt.Errorf("signature verification failed")
-	}
-	return nil
+
+	// Add JWT to Authorization header
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+jwtToken), nil
 }
 
 func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error) {
-	ctx, err := wc.addSignature(ctx, req)
+	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add custom auth header to GetOrganizationCreditsByWorkflow request", "error", err)
 		return nil, err
@@ -204,7 +165,7 @@ func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, 
 }
 
 func (wc *workflowClient) GetRateCard(ctx context.Context, req *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error) {
-	ctx, err := wc.addSignature(ctx, req)
+	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
 		wc.logger.Errorw("Failed to add custom auth header to GetRateCard request", "error", err)
 		return nil, err
@@ -218,9 +179,9 @@ func (wc *workflowClient) GetRateCard(ctx context.Context, req *pb.GetRateCardRe
 }
 
 func (wc *workflowClient) ReserveCredits(ctx context.Context, req *pb.ReserveCreditsRequest) (*pb.ReserveCreditsResponse, error) {
-	ctx, err := wc.addSignature(ctx, req)
+	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("Failed to add custom auth header to ReserveCredits request", "error", err)
+		wc.logger.Errorw("Failed to add JWT auth to ReserveCredits request", "error", err)
 		return nil, err
 	}
 	resp, err := wc.client.ReserveCredits(ctx, req)
@@ -232,9 +193,9 @@ func (wc *workflowClient) ReserveCredits(ctx context.Context, req *pb.ReserveCre
 }
 
 func (wc *workflowClient) SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error) {
-	ctx, err := wc.addSignature(ctx, req)
+	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("Failed to add custom auth header to SubmitWorkflowReceipt request", "error", err)
+		wc.logger.Errorw("Failed to add JWT auth to SubmitWorkflowReceipt request", "error", err)
 		return nil, err
 	}
 	resp, err := wc.client.SubmitWorkflowReceipt(ctx, req)

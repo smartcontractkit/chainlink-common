@@ -260,7 +260,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
+	transmitter := NewTransmitter(lggr, store)
 	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 

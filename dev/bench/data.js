@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752506699128,
+  "lastUpdate": 1752517124112,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19866,6 +19866,48 @@ window.BENCHMARK_DATA = {
             "value": 28513,
             "unit": "ns/op",
             "extra": "42110 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "12178754+anirudhwarrier@users.noreply.github.com",
+            "name": "Anirudh Warrier",
+            "username": "anirudhwarrier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "674a6a44b5dff637a24f849faa09bdb044704449",
+          "message": "fix: workflow wasm host native_unwind_info windows issue (#1380)",
+          "timestamp": "2025-07-14T11:17:36-07:00",
+          "tree_id": "808059e04baeab5200fab7d5f317c65e64f8963c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/674a6a44b5dff637a24f849faa09bdb044704449"
+        },
+        "date": 1752517122955,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 364.5,
+            "unit": "ns/op",
+            "extra": "3047568 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 454.3,
+            "unit": "ns/op",
+            "extra": "2812318 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28610,
+            "unit": "ns/op",
+            "extra": "42033 times\n4 procs"
           }
         ]
       }

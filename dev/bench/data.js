@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752255905920,
+  "lastUpdate": 1752473046693,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19656,6 +19656,48 @@ window.BENCHMARK_DATA = {
             "value": 28292,
             "unit": "ns/op",
             "extra": "42483 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "167744086+seanwangsmartcontract@users.noreply.github.com",
+            "name": "Sean",
+            "username": "seanwangsmartcontract"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97b700097bfaa869995fa13c0b354fa04e93598a",
+          "message": "[PRODCRE-522] Common JWT tokenGenerator and tokenValidator for DON <-> Web2 Service Auth (#1324)",
+          "timestamp": "2025-07-14T10:01:50+04:00",
+          "tree_id": "706ba93a21645b7f4d842d8c2e6c9557760e8437",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/97b700097bfaa869995fa13c0b354fa04e93598a"
+        },
+        "date": 1752473045447,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.9,
+            "unit": "ns/op",
+            "extra": "3295920 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413.6,
+            "unit": "ns/op",
+            "extra": "2649998 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28180,
+            "unit": "ns/op",
+            "extra": "41377 times\n4 procs"
           }
         ]
       }

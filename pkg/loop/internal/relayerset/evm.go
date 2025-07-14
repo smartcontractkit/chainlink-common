@@ -2,6 +2,7 @@ package relayerset
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -114,13 +115,20 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 		return nil, err
 	}
 
-	reply, err := evmService.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.BlockNumber), conf)
+	reply, err := evmService.CallContract(ctx, evm.CallContractRequest{
+		Msg:             callMsg,
+		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
+		ConfidenceLevel: conf,
+	})
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
 
 	return &evmpb.CallContractReply{
-		Data: reply,
+		Data: reply.Data,
 	}, nil
 }
 
@@ -140,12 +148,18 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 		return nil, err
 	}
 
-	reply, err := evmService.FilterLogs(ctx, expression, conf)
+	reply, err := evmService.FilterLogs(ctx, evm.FilterLogsRequest{
+		FilterQuery:     expression,
+		ConfidenceLevel: conf,
+	})
 	if err != nil {
 		return nil, err
 	}
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
 
-	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply)}, nil
+	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply.Logs)}, nil
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
@@ -159,12 +173,20 @@ func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest)
 		return nil, err
 	}
 
-	balance, err := evmService.BalanceAt(ctx, evm.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.BlockNumber), conf)
+	reply, err := evmService.BalanceAt(ctx, evm.BalanceAtRequest{
+		Address:         evm.Address(request.GetAccount()),
+		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
+		ConfidenceLevel: conf,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(balance)}, nil
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
+
+	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(reply.Balance)}, nil
 }
 
 func (s *Server) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
@@ -239,13 +261,20 @@ func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumb
 		return nil, err
 	}
 
-	header, err := evmService.HeaderByNumber(ctx, valuespb.NewIntFromBigInt(request.GetBlockNumber()), conf)
+	reply, err := evmService.HeaderByNumber(ctx, evm.HeaderByNumberRequest{
+		Number:          valuespb.NewIntFromBigInt(request.GetBlockNumber()),
+		ConfidenceLevel: conf,
+	})
 	if err != nil {
 		return nil, err
 	}
 
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
+
 	return &evmpb.HeaderByNumberReply{
-		Header: evmpb.ConvertHeadToProto(header),
+		Header: evmpb.ConvertHeadToProto(reply.Header),
 	}, nil
 }
 

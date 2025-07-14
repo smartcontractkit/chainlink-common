@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 const AddressLength = 20
@@ -161,4 +163,42 @@ type SubmitTransactionRequest struct {
 	Data ABIPayload
 	// Default to nil. If not specified the configured gas estimator config will be used
 	GasConfig *GasConfig
+}
+
+type BalanceAtRequest struct {
+	Address         Address
+	BlockNumber     *big.Int
+	ConfidenceLevel primitives.ConfidenceLevel
+}
+
+type BalanceAtReply struct {
+	Balance *big.Int
+}
+
+type CallContractRequest struct {
+	Msg             *CallMsg
+	BlockNumber     *big.Int
+	ConfidenceLevel primitives.ConfidenceLevel
+}
+
+type CallContractReply struct {
+	Data []byte
+}
+
+type FilterLogsRequest struct {
+	FilterQuery     FilterQuery
+	ConfidenceLevel primitives.ConfidenceLevel
+}
+
+type FilterLogsReply struct {
+	Logs []*Log
+}
+
+type HeaderByNumberRequest struct {
+	Number          *big.Int
+	ConfidenceLevel primitives.ConfidenceLevel
+}
+
+type HeaderByNumberReply struct {
+	Header *Head
 }

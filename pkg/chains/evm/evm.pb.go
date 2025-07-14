@@ -1325,16 +1325,16 @@ func (*Primitive_EventByTopic) isPrimitive_Primitive() {}
 // HeaderByNumberRequest - returns block information without full transaction data and uncle headers
 type HeaderByNumberRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// block_number - defines block at which call will be executed:
-	//
-	//	nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.)
-	//	positive value - execute as specified height with confidence level
+	// block_number - specifies which block to fetch:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
 	BlockNumber *pb.BigInt `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
-	// confidence_level - defines at which confidence level request will be executed
-	//
-	//	Unconfirmed - return the most recent data.
-	//	Finalized - returned data was finalized.
-	//	Safe - returned data is highly unlikely to be reorged.
+	// confidence_level - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if requested is not finalized
+	//   - "Safe": returns error if requested block is not safe
 	ConfidenceLevel chain_common.Confidence `protobuf:"varint,3,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -1434,15 +1434,15 @@ type CallContractRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Call  *CallMsg               `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
 	// block_number - defines block at which call will be executed:
-	//
-	//	nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
-	//	positive value - execute as specified height with confidence level;
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
 	BlockNumber *pb.BigInt `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
-	// confidence_level - defines at which confidence level request will be executed:
-	//
-	//	Unconfirmed - returns the most recent data
-	//	Finalized - returned data was finalized;
-	//	Safe - returned data is highly unlikely to be reorged;
+	// confidence_level - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if call is executed at block that is not safe
+	//   - "Safe": returns error if call is executed at block that is not safe
 	ConfidenceLevel chain_common.Confidence `protobuf:"varint,3,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -1636,11 +1636,10 @@ func (x *GetTransactionFeeReply) GetTransactionFee() *pb.BigInt {
 type FilterLogsRequest struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	FilterQuery *FilterQuery           `protobuf:"bytes,1,opt,name=filter_query,json=filterQuery,proto3" json:"filter_query,omitempty"`
-	// confidence_level - defines at which confidence level request will be executed
-	//
-	//	Unconfirmed - return the most recent data.
-	//	Finalized - returned data was finalized.
-	//	Safe - returned data is highly unlikely to be reorged.
+	// confidence_level - determines if additional verification is required (only applicable if both filter_query.fromBlock and filter_query.toBlock are positive values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified filter_query.toBlock is not finalized
+	//   - "Safe": returns error if specified filter_query.toBlock is not safe
 	ConfidenceLevel chain_common.Confidence `protobuf:"varint,2,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -1737,16 +1736,15 @@ func (x *FilterLogsReply) GetLogs() []*Log {
 type BalanceAtRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Account []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"` // in evm address [20]byte fix-sized array format
-	// block_number - defines block at which call will be executed:
-	//
-	//	nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
-	//	positive value - execute as specified height with confidence level;
+	// - nil or -2: latest block
+	// - -3: finalized block
+	// - -4: safe block
+	// - positive value: specific block at that height
 	BlockNumber *pb.BigInt `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
-	// confidence_level - defines at which confidence level request will be executed:
-	//
-	//	Unconfirmed - return the most recent data.
-	//	Finalized - returned data was finalized.
-	//	Safe - returned data is highly unlikely to be reorged.
+	// opts.confidence - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified blockNumber is not finalized
+	//   - "Safe": returns error if specified blockNumber is not safe
 	ConfidenceLevel chain_common.Confidence `protobuf:"varint,3,opt,name=confidence_level,json=confidenceLevel,proto3,enum=loop.chain.common.Confidence" json:"confidence_level,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache

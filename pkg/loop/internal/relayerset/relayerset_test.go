@@ -279,10 +279,20 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				block := big.NewInt(100)
 				conf := primitives.Finalized
-				mockEVM.EXPECT().CallContract(mock.Anything, &msg, block, conf).Return([]byte("ok"), nil)
-				out, err := evm.CallContract(ctx, &msg, block, conf)
+				mockEVM.EXPECT().CallContract(mock.Anything, evmtypes.CallContractRequest{
+					Msg:             &msg,
+					BlockNumber:     block,
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.CallContractReply{
+					Data: []byte("ok"),
+				}, nil)
+				reply, err := evm.CallContract(ctx, evmtypes.CallContractRequest{
+					Msg:             &msg,
+					BlockNumber:     block,
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Equal(t, []byte("ok"), out)
+				require.Equal(t, []byte("ok"), reply.Data)
 			},
 		},
 		{
@@ -295,12 +305,18 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 					Topics:    [][][32]byte{{topic, topic2}, {topic3}},
 				}
 				conf := primitives.Finalized
-				mockEVM.EXPECT().FilterLogs(mock.Anything, filter, conf).Return([]*evmtypes.Log{&evmLog}, nil)
+				mockEVM.EXPECT().FilterLogs(mock.Anything, evmtypes.FilterLogsRequest{
+					FilterQuery:     filter,
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.FilterLogsReply{Logs: []*evmtypes.Log{&evmLog}}, nil)
 
-				out, err := evm.FilterLogs(ctx, filter, conf)
+				reply, err := evm.FilterLogs(ctx, evmtypes.FilterLogsRequest{
+					FilterQuery:     filter,
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Len(t, out, 1)
-				require.Equal(t, &evmLog, out[0])
+				require.Len(t, reply.Logs, 1)
+				require.Equal(t, &evmLog, reply.Logs[0])
 			},
 		},
 		{
@@ -308,10 +324,18 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				addr := evmtypes.Address{0xbb}
 				conf := primitives.Finalized
-				mockEVM.EXPECT().BalanceAt(mock.Anything, addr, big.NewInt(200), conf).Return(big.NewInt(999), nil)
-				out, err := evm.BalanceAt(ctx, addr, big.NewInt(200), conf)
+				mockEVM.EXPECT().BalanceAt(mock.Anything, evmtypes.BalanceAtRequest{
+					Address:         addr,
+					BlockNumber:     big.NewInt(200),
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.BalanceAtReply{Balance: big.NewInt(999)}, nil)
+				reply, err := evm.BalanceAt(ctx, evmtypes.BalanceAtRequest{
+					Address:         addr,
+					BlockNumber:     big.NewInt(200),
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Equal(t, big.NewInt(999), out)
+				require.Equal(t, big.NewInt(999), reply.Balance)
 			},
 		},
 		{
@@ -402,10 +426,16 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				head1 := evmtypes.Head{Number: big.NewInt(123)}
 				blockNumber := big.NewInt(123)
 				conf := primitives.Finalized
-				mockEVM.EXPECT().HeaderByNumber(mock.Anything, blockNumber, conf).Return(head1, nil)
-				h, err := evm.HeaderByNumber(ctx, blockNumber, conf)
+				mockEVM.EXPECT().HeaderByNumber(mock.Anything, evmtypes.HeaderByNumberRequest{
+					Number:          blockNumber,
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.HeaderByNumberReply{Header: &head1}, nil)
+				reply, err := evm.HeaderByNumber(ctx, evmtypes.HeaderByNumberRequest{
+					Number:          blockNumber,
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Equal(t, head1, h)
+				require.Equal(t, &head1, reply.Header)
 			},
 		},
 		{

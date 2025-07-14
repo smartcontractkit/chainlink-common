@@ -124,51 +124,56 @@ type EVMService interface {
 
 	// BalanceAt returns the wei balance of the given account.
 	//
-	// blockNumber - defines block at which call will be executed:
-	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
-	//  positive value - execute as specified height with confidence level;
+	// Parameters:
+	// request.BlockNumber - specifies at which block height to fetch the balance:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
 	//
-	// confidenceLevel - defines at which confidence level request will be executed:
-	//    Unconfirmed - returns the most recent data
-	//    Finalized - returned data was finalized;
-	//    Safe - returned data is highly unlikely to be reorged;
-	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (*big.Int, error)
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified blockNumber is not finalized
+	//   - "Safe": returns error if specified blockNumber is not safe
+	BalanceAt(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
 
 	// CallContract executes a message call transaction, which is directly executed in the VM of the node,
 	// but never mined into the blockchain.
 	//
-	// blockNumber - defines block at which call will be executed:
-	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.);
-	//  positive value - execute as specified height with confidence level;
+	// request.BlockNumber - defines block at which call will be executed:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
 	//
-	// confidenceLevel - defines at which confidence level request will be executed:
-	//    Unconfirmed - returns the most recent data;
-	//    Finalized - returned data was finalized;
-	//    Safe - returned data is highly unlikely to be reorged;
-	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) ([]byte, error)
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if call is executed at block that is not safe
+	//   - "Safe": returns error if call is executed at block that is not safe
+	CallContract(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error)
 
 	// FilterLogs executes a filter query.
-	// One of (filterQuery.FromBlock and filterQuery.ToBlock) or filterQuery.BlockHash can be specified.
-	// filterQuery.BlockHash is only supported with Unconfirmed confidence level.
-	// If filterQuery.BlockHash is not set, filterQuery.FromBlock=nil defaults to 0; filterQuery.ToBlock=nil defaults to latest.
 	//
-	// confidenceLevel - defines at which confidence level request will be executed:
-	//    Unconfirmed - returns the most recent data.
-	//    Finalized - returned data was finalized. Only allowed with filterQuery.FromBlock and filterQuery.ToBlock set to positive values.
-	//    Safe - returned data is highly unlikely to be reorged. Only allowed with filterQuery.FromBlock and filterQuery.ToBlock set to positive values.
-	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable if both q.FromBlock and q.ToBlock are positive values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified q.ToBlockNumber is not finalized
+	//   - "Safe": returns error if specified q.ToBlockNumber is not safe
+	FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
 
-	// HeaderByNumber returns a block header from the current canonical chain.
+	// HeaderByNumber returns a block header from the current canonical chain with the specified block number.
 	//
-	// blockNumber - defines block at which call will be executed:
-	//  nil - execute at latest block of specified confidence level (e.g. latest finalized, latest safe, etc.)
-	//  positive value - execute as specified height with confidence level
+	// Parameters:
+	// request.BlockNumber - specifies which block to fetch:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
 	//
-	// confidenceLevel - defines at which confidence level request will be executed:
-	//    Unconfirmed - return the most recent data.
-	//    Finalized - returned data was finalized.
-	//    Safe - returned data is highly unlikely to be reorged.
-	HeaderByNumber(ctx context.Context, blockNumber *big.Int, confidenceLevel primitives.ConfidenceLevel) (evm.Head, error)
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if requested is not finalized
+	//   - "Safe": returns error if requested block is not safe
+	HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
 
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected

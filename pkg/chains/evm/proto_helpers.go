@@ -64,7 +64,10 @@ func convertTopicsToProto(topics [][]evmtypes.Hash) []*Topics {
 	return protoTopics
 }
 
-func ConvertHeadToProto(h evmtypes.Head) *Header {
+func ConvertHeadToProto(h *evmtypes.Head) *Header {
+	if h == nil {
+		return nil
+	}
 	return &Header{
 		Timestamp:   h.Timestamp,
 		BlockNumber: valuespb.NewBigIntFromInt(h.Number),
@@ -75,11 +78,11 @@ func ConvertHeadToProto(h evmtypes.Head) *Header {
 
 var errEmptyHead = errors.New("head is nil")
 
-func ConvertHeadFromProto(header *Header) (evmtypes.Head, error) {
+func ConvertHeadFromProto(header *Header) (*evmtypes.Head, error) {
 	if header == nil {
-		return evmtypes.Head{}, errEmptyHead
+		return nil, errEmptyHead
 	}
-	return evmtypes.Head{
+	return &evmtypes.Head{
 		Timestamp:  header.GetTimestamp(),
 		Hash:       evmtypes.Hash(header.GetHash()),
 		ParentHash: evmtypes.Hash(header.GetParentHash()),
@@ -540,4 +543,12 @@ func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionReques
 		Data:      evmtypes.ABIPayload(txRequest.Data),
 		GasConfig: ConvertGasConfigFromProto(txRequest.GasConfig),
 	}
+}
+
+func AddressFromBytes(b []byte) (evmtypes.Address, error) {
+	if len(b) != evmtypes.AddressLength {
+		return evmtypes.Address{}, fmt.Errorf("invalid address length: expected %d, got %d", evmtypes.AddressLength, len(b))
+	}
+
+	return evmtypes.Address(b), nil
 }

@@ -18,7 +18,7 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 	store := NewStore(DefaultRequestTimeout)
 	ctx := t.Context()
 
-	transmitter := NewTransmitter(lggr, store, defaultBatchSize)
+	transmitter := NewTransmitter(lggr, store)
 
 	// Create request for second donTime in sequence
 	executionID := "workflow-123"

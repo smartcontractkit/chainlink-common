@@ -200,6 +200,8 @@ type Relayer interface {
 
 	NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error)
 
+	NewCCIPProvider() (CCIPProvider, error)
+
 	NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
 	NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
@@ -283,6 +285,10 @@ func (u *UnimplementedRelayer) NewContractReader(ctx context.Context, contractRe
 
 func (u *UnimplementedRelayer) NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewConfigProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPProvider() (CCIPProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPProvider not implemented")
 }
 
 func (u *UnimplementedRelayer) NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error) {

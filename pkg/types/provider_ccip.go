@@ -3,9 +3,17 @@ package types
 import (
 	"context"
 
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
 )
+
+type CCIPProvider interface {
+	NewChainAccessor() (ccipocr3.ChainAccessor, error)
+	ocr3types.ContractTransmitter[[]byte]
+}
 
 type CCIPCommitProvider interface {
 	PluginProvider

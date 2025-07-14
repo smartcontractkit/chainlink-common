@@ -64,7 +64,7 @@ func convertTopicsToProto(topics [][]evmtypes.Hash) []*Topics {
 	return protoTopics
 }
 
-func ConvertHeadToProto(h *evmtypes.Head) *Header {
+func ConvertHeaderToProto(h *evmtypes.Header) *Header {
 	if h == nil {
 		return nil
 	}
@@ -78,14 +78,23 @@ func ConvertHeadToProto(h *evmtypes.Head) *Header {
 
 var errEmptyHead = errors.New("head is nil")
 
-func ConvertHeadFromProto(header *Header) (*evmtypes.Head, error) {
+func ConvertHeaderFromProto(header *Header) (*evmtypes.Header, error) {
 	if header == nil {
 		return nil, errEmptyHead
 	}
-	return &evmtypes.Head{
+	hash, err := ConvertHashFromProto(header.GetHash())
+	if err != nil {
+		return nil, fmt.Errorf("err to convert hash: %w", err)
+	}
+
+	parentHash, err := ConvertHashFromProto(header.GetParentHash())
+	if err != nil {
+		return nil, fmt.Errorf("err to convert parent hash: %w", err)
+	}
+	return &evmtypes.Header{
 		Timestamp:  header.GetTimestamp(),
-		Hash:       evmtypes.Hash(header.GetHash()),
-		ParentHash: evmtypes.Hash(header.GetParentHash()),
+		Hash:       hash,
+		ParentHash: parentHash,
 		Number:     valuespb.NewIntFromBigInt(header.GetBlockNumber()),
 	}, nil
 }
@@ -545,10 +554,18 @@ func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionReques
 	}
 }
 
-func AddressFromBytes(b []byte) (evmtypes.Address, error) {
+func ConvertAddressFromProto(b []byte) (evmtypes.Address, error) {
 	if len(b) != evmtypes.AddressLength {
 		return evmtypes.Address{}, fmt.Errorf("invalid address length: expected %d, got %d", evmtypes.AddressLength, len(b))
 	}
 
 	return evmtypes.Address(b), nil
+}
+
+func ConvertHashFromProto(b []byte) (evmtypes.Hash, error) {
+	if len(b) != evmtypes.HashLength {
+		return evmtypes.Hash{}, fmt.Errorf("invalid hash length: expected %d, got %d", evmtypes.HashLength, len(b))
+	}
+
+	return evmtypes.Hash(b), nil
 }

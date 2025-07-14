@@ -278,7 +278,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	})
 
 	t.Run("HeaderByNumber", func(t *testing.T) {
-		expHead := evm.Head{
+		expHead := evm.Header{
 			Hash:       blockHash,
 			ParentHash: parentHash,
 			Number:     blockNum,

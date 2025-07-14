@@ -106,7 +106,7 @@ type Receipt struct {
 }
 
 // matches simplified evm-style head
-type Head struct {
+type Header struct {
 	Timestamp  uint64 // time in seconds
 	Hash       Hash
 	ParentHash Hash
@@ -200,5 +200,5 @@ type HeaderByNumberRequest struct {
 }
 
 type HeaderByNumberReply struct {
-	Header *Head
+	Header *Header
 }

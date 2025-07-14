@@ -274,7 +274,7 @@ func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumb
 	}
 
 	return &evmpb.HeaderByNumberReply{
-		Header: evmpb.ConvertHeadToProto(reply.Header),
+		Header: evmpb.ConvertHeaderToProto(reply.Header),
 	}, nil
 }
 

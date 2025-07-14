@@ -172,7 +172,7 @@ func (e *EVMClient) HeaderByNumber(ctx context.Context, request evmtypes.HeaderB
 		return nil, net.WrapRPCErr(err)
 	}
 
-	header, err := evmpb.ConvertHeadFromProto(reply.GetHeader())
+	header, err := evmpb.ConvertHeaderFromProto(reply.GetHeader())
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
@@ -315,7 +315,7 @@ func (e *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtReque
 		return nil, err
 	}
 
-	addr, err := evmpb.AddressFromBytes(request.Account)
+	addr, err := evmpb.ConvertAddressFromProto(request.Account)
 	if err != nil {
 		return nil, err
 	}
@@ -395,7 +395,7 @@ func (e *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByN
 	}
 
 	return &evmpb.HeaderByNumberReply{
-		Header: evmpb.ConvertHeadToProto(reply.Header),
+		Header: evmpb.ConvertHeaderToProto(reply.Header),
 	}, nil
 }
 

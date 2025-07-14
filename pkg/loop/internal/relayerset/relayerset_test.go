@@ -423,7 +423,7 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 		{
 			name: "HeaderByNumber",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				head1 := evmtypes.Head{Number: big.NewInt(123)}
+				head1 := evmtypes.Header{Number: big.NewInt(123)}
 				blockNumber := big.NewInt(123)
 				conf := primitives.Finalized
 				mockEVM.EXPECT().HeaderByNumber(mock.Anything, evmtypes.HeaderByNumberRequest{

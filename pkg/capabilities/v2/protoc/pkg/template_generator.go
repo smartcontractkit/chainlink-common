@@ -23,7 +23,12 @@ type TemplateGenerator struct {
 	ExtraFns         template.FuncMap
 }
 
-func (t *TemplateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
+func (t *TemplateGenerator) GenerateFile(
+	file *protogen.File,
+	plugin *protogen.Plugin,
+	args any,
+	toolName,
+	localPrefix string) error {
 
 	seen := map[string]int{}
 	importToPkg := map[protogen.GoImportPath]protogen.GoPackageName{}
@@ -40,7 +45,7 @@ func (t *TemplateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 		importToPkg[f.GoImportPath] = protogen.GoPackageName(alias)
 	}
 
-	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg)
+	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg, toolName, localPrefix)
 	if err != nil {
 		return err
 	}
@@ -52,7 +57,12 @@ func (t *TemplateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 	return nil
 }
 
-func (t *TemplateGenerator) Generate(baseFile, args any, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, string, error) {
+func (t *TemplateGenerator) Generate(
+	baseFile,
+	args any,
+	importToPkg map[protogen.GoImportPath]protogen.GoPackageName,
+	toolName,
+	localPrefix string) (string, string, error) {
 	fileName, err := t.runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials, importToPkg)
 	if err != nil {
 		return "", "", err
@@ -68,10 +78,9 @@ func (t *TemplateGenerator) Generate(baseFile, args any, importToPkg map[protoge
 	}
 
 	settings := codegen.PrettySettings{
-		Tool: "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc",
+		Tool: toolName,
 		GoPrettySettings: codegen.GoPrettySettings{
-			// TODO make this configurable
-			LocalPrefix: "github.com/smartcontractkit",
+			LocalPrefix: localPrefix,
 		},
 	}
 

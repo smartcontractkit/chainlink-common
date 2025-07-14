@@ -38,7 +38,12 @@ var serverTemplates = map[ServerLanguage]TemplateGenerator{
 	},
 }
 
-func GenerateServer(plugin *protogen.Plugin, file *protogen.File, serverLanguage ServerLanguage) error {
+func GenerateServer(
+	plugin *protogen.Plugin,
+	file *protogen.File,
+	serverLanguage ServerLanguage,
+	toolName,
+	localPrefix string) error {
 	if len(file.Services) == 0 {
 		return nil
 	}
@@ -49,5 +54,5 @@ func GenerateServer(plugin *protogen.Plugin, file *protogen.File, serverLanguage
 	}
 
 	args := serverArgs{File: file}
-	return template.GenerateFile(file, plugin, args)
+	return template.GenerateFile(file, plugin, args, toolName, localPrefix)
 }

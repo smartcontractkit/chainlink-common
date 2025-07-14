@@ -59,12 +59,23 @@ func TestTimeFetcher_GetTime_DON_Error(t *testing.T) {
 }
 
 func TestTimeFetcher_ContextCancelledBeforeRequest(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
 	mockExec := NewMockExecutionHelper(t)
+	mockExec.EXPECT().GetDONTime(mock.Anything).Return(time.Time{}, context.Canceled).Maybe()
 
 	tf := newTimeFetcher(ctx, mockExec)
-	tf.Start()
-	cancel()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		tf.runLoop()
+	}()
+
+	t.Cleanup(func() {
+		<-done // wait for runLoop to exit to avoid mock usage after test ends
+	})
 
 	_, err := tf.GetTime(pb.Mode_MODE_DON)
 	require.ErrorIs(t, err, context.Canceled)

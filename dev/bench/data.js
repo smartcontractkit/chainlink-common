@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752473046693,
+  "lastUpdate": 1752501606837,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19698,6 +19698,48 @@ window.BENCHMARK_DATA = {
             "value": 28180,
             "unit": "ns/op",
             "extra": "41377 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bab7ef2d679074b926bdb5b41cef3a633e75a5bd",
+          "message": "Change metadata message (#1378)",
+          "timestamp": "2025-07-14T13:58:58Z",
+          "tree_id": "8419881de14bc54573a9a2f3a95d4150dc4f6692",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bab7ef2d679074b926bdb5b41cef3a633e75a5bd"
+        },
+        "date": 1752501601843,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.5,
+            "unit": "ns/op",
+            "extra": "3295566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.4,
+            "unit": "ns/op",
+            "extra": "2851632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28285,
+            "unit": "ns/op",
+            "extra": "42650 times\n4 procs"
           }
         ]
       }

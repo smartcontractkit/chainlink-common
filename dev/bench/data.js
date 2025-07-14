@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752501606837,
+  "lastUpdate": 1752503198362,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19740,6 +19740,48 @@ window.BENCHMARK_DATA = {
             "value": 28285,
             "unit": "ns/op",
             "extra": "42650 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5204c0899c5e9a99ee2e3755b0beae34eed21a0a",
+          "message": "Update cre_metadata (#1369)",
+          "timestamp": "2025-07-14T14:25:22Z",
+          "tree_id": "b723df8eb37326bb36cfcbbdf36a214dc31f2f45",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5204c0899c5e9a99ee2e3755b0beae34eed21a0a"
+        },
+        "date": 1752503196752,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.7,
+            "unit": "ns/op",
+            "extra": "3297223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.6,
+            "unit": "ns/op",
+            "extra": "2846548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28404,
+            "unit": "ns/op",
+            "extra": "42626 times\n4 procs"
           }
         ]
       }

@@ -53,4 +53,3 @@ packages:
           filename: "mock_{{.InterfaceName | snakecase}}_test.go"
           mockname: "mock{{.InterfaceName}}"
           dir: "{{.InterfaceDir}}"
-  github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer:

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752505418447,
+  "lastUpdate": 1752506699128,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19824,6 +19824,48 @@ window.BENCHMARK_DATA = {
             "value": 28731,
             "unit": "ns/op",
             "extra": "42184 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d398d1454f223ba4c14bfde55fec51d17d5a79a2",
+          "message": "Small cleanup to template generator (#1379)",
+          "timestamp": "2025-07-14T10:23:54-05:00",
+          "tree_id": "1a067544605ec0aee2eb3e9603d73139b22cb255",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d398d1454f223ba4c14bfde55fec51d17d5a79a2"
+        },
+        "date": 1752506698047,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 376.5,
+            "unit": "ns/op",
+            "extra": "2763781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.1,
+            "unit": "ns/op",
+            "extra": "2882530 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28513,
+            "unit": "ns/op",
+            "extra": "42110 times\n4 procs"
           }
         ]
       }

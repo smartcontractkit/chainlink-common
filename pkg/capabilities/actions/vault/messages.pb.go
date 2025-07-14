@@ -1714,10 +1714,10 @@ func (x *StoredSecret) GetEncryptedSecret() []byte {
 // IMPORTANT: this record is persisted so any changes must be
 // backwards compatible
 type StoredMetadata struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Keys          []string               `protobuf:"bytes,2,rep,name=keys,proto3" json:"keys,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	SecretIdentifiers []*SecretIdentifier    `protobuf:"bytes,2,rep,name=secret_identifiers,json=secretIdentifiers,proto3" json:"secret_identifiers,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *StoredMetadata) Reset() {
@@ -1750,9 +1750,9 @@ func (*StoredMetadata) Descriptor() ([]byte, []int) {
 	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *StoredMetadata) GetKeys() []string {
+func (x *StoredMetadata) GetSecretIdentifiers() []*SecretIdentifier {
 	if x != nil {
-		return x.Keys
+		return x.SecretIdentifiers
 	}
 	return nil
 }
@@ -1864,9 +1864,9 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\bOutcomes\x12*\n" +
 	"\boutcomes\x18\x01 \x03(\v2\x0e.vault.OutcomeR\boutcomes\"9\n" +
 	"\fStoredSecret\x12)\n" +
-	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"$\n" +
-	"\x0eStoredMetadata\x12\x12\n" +
-	"\x04keys\x18\x02 \x03(\tR\x04keys*\x84\x01\n" +
+	"\x10encrypted_secret\x18\x01 \x01(\fR\x0fencryptedSecret\"X\n" +
+	"\x0eStoredMetadata\x12F\n" +
+	"\x12secret_identifiers\x18\x02 \x03(\v2\x17.vault.SecretIdentifierR\x11secretIdentifiers*\x84\x01\n" +
 	"\vRequestType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0f\n" +
 	"\vGET_SECRETS\x10\x01\x12\x12\n" +
@@ -1959,11 +1959,12 @@ var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	17, // 38: vault.Outcome.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
 	19, // 39: vault.Outcome.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
 	22, // 40: vault.Outcomes.outcomes:type_name -> vault.Outcome
-	41, // [41:41] is the sub-list for method output_type
-	41, // [41:41] is the sub-list for method input_type
-	41, // [41:41] is the sub-list for extension type_name
-	41, // [41:41] is the sub-list for extension extendee
-	0,  // [0:41] is the sub-list for field type_name
+	1,  // 41: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
+	42, // [42:42] is the sub-list for method output_type
+	42, // [42:42] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }

@@ -80,6 +80,9 @@ func TestStandardCapabilityCallsAreAsync(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
 	m := makeTestModule(t)
 	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
 	callsSeen := map[bool]bool{}
@@ -127,7 +130,8 @@ func TestStandardModeSwitch(t *testing.T) {
 			}
 			return time.Now()
 		})
-		// We want to make sure time.Sleep() is called at least twice in DON mode and once in node Mode
+
+		// We want to make sure time.Now() is called at least twice in DON mode and once in node Mode
 		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
 			if nodeCall {
 				donCall2 = true
@@ -165,6 +169,9 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
+		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			response := values.NewString("hi")
 			mapProto := &valuespb.Map{
@@ -173,7 +180,7 @@ func TestStandardModeSwitch(t *testing.T) {
 					rawsdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
 				},
 			}
-			payload, err := anypb.New(mapProto)
+			payload, err := anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
 			require.NoError(t, err)
 			return &pb.CapabilityResponse{
 				Response: &pb.CapabilityResponse_Payload{
@@ -192,6 +199,9 @@ func TestStandardModeSwitch(t *testing.T) {
 		mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 		mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
+		}).Maybe()
+		mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
 		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
 			assert.Equal(t, "consensus@1.0.0-alpha", request.Id)
@@ -224,6 +234,9 @@ func TestStandardLogging(t *testing.T) {
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
 	}).Maybe()
 	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
 		assert.True(t, strings.Contains(s, "log from wasm!"))
@@ -340,7 +353,9 @@ func TestStandardRandom(t *testing.T) {
 	gte100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
 	}).Maybe()
-
+	gte100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
 	// RunAndReturn
 	gte100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 150))
 
@@ -368,6 +383,9 @@ func TestStandardRandom(t *testing.T) {
 		lt100Exec.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
 		}).Maybe()
+		lt100Exec.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
+		}).Maybe()
 
 		lt100Exec.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 99))
 		lt100Exec.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(s string) error {
@@ -388,6 +406,9 @@ func TestStandardRandom(t *testing.T) {
 		gte100Exec2.EXPECT().GetWorkflowExecutionID().Return("differentId")
 		gte100Exec2.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 			return time.Now()
+		}).Maybe()
+		gte100Exec2.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+			return time.Now(), nil
 		}).Maybe()
 
 		gte100Exec2.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(setupNodeCallAndConsensusCall(t, 120))
@@ -526,7 +547,7 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 					rawsdk.ConsensusResponseMapKeyPayload:  response,
 				},
 			}
-			payload, err = anypb.New(mapProto)
+			payload, err = anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)
@@ -566,6 +587,9 @@ func runSecretTest(t *testing.T, m *module, secretResponse *pb.SecretResponse) *
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("Id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
 		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime(mock.Anything).RunAndReturn(func(ctx context.Context) (time.Time, error) {
+		return time.Now(), nil
 	}).Maybe()
 
 	mockExecutionHelper.EXPECT().GetSecrets(mock.Anything, mock.Anything).

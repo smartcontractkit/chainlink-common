@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"

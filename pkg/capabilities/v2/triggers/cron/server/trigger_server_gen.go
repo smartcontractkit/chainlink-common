@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -20,9 +19,11 @@ var _ = emptypb.Empty{}
 
 type CronCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.Payload], error)
+
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
 
 	RegisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) (<-chan capabilities.TriggerAndId[*cron.LegacyPayload], error)
+
 	UnregisterLegacyTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *cron.Config) error
 
 	Start(ctx context.Context) error

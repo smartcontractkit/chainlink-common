@@ -170,5 +170,5 @@ message StoredSecret {
 // IMPORTANT: this record is persisted so any changes must be
 // backwards compatible
 message StoredMetadata {
-  repeated string keys = 2;
+  repeated SecretIdentifier secret_identifiers = 2;
 }

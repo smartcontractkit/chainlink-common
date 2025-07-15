@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -22,6 +21,7 @@ type BasicCapability interface {
 	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*actionandtrigger.Output, error)
 
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
+
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
 
 	Start(ctx context.Context) error

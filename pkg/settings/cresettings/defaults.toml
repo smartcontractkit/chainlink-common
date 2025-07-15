@@ -1,0 +1,66 @@
+WorkflowLimit = '200'
+WorkflowRegistrationQueueLimit = '20'
+
+[HTTPTrigger]
+AuthRateLimit = '100rps:-1'
+
+[PerOrg]
+WorkflowDeploymentRateLimit = 'every1m0s:1'
+TriggerEventQueueLimit = '1000'
+TriggerEventQueueTimeout = '10m0s'
+ZeroBalancePruningTimeout = '24h0m0s'
+
+[PerOwner]
+ExecutionConcurrencyLimit = '50'
+
+[PerWorkflow]
+TriggerLimit = '10'
+TriggerRateLimit = 'every30s:3'
+TriggerRegistrationTimeout = '10s'
+TriggerSubscriptionTimeout = '5s'
+CapabilityConcurrencyLimit = '3'
+ExecutionConcurrencyLimit = '10'
+ExecutionTimeout = '5m0s'
+ExecutionResponseLimit = '100kb'
+WASMExecutionTimeout = '1m0s'
+WASMMemoryLimit = '100mb'
+BinarySizeLimit = '30mb'
+ConsensusObservationSizeLimit = '10kb'
+ConsensusCallsLimit = '2'
+LogLineLimit = '1kb'
+LogEventLimit = '1000'
+
+[PerWorkflow.CRONTrigger]
+RateLimit = 'every30s:1'
+
+[PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:3'
+AuthRateLimit = '1rps:-1'
+IncomingPayloadSizeLimit = '10kb'
+OutgoingPayloadSizeLimit = '-1b'
+
+[PerWorkflow.LogTrigger]
+RateLimit = 'every10s:-1'
+Limit = '5'
+EventRateLimit = 'every-1s:-1'
+FilterAddressLimit = '5'
+FilterTopicsPerSlotLimit = '10'
+
+[PerWorkflow.HTTPAction]
+RateLimit = 'every30s:3'
+ResponseSizeLimit = '10kb'
+ConnectionTimeout = '10s'
+RequestSizeLimit = '100kb'
+
+[PerWorkflow.ChainWrite]
+RateLimit = 'every30s:3'
+TargetsLimit = '3'
+ReportSizeLimit = '1kb'
+
+[PerWorkflow.ChainWrite.EVM]
+TransactionGasLimit = '-1'
+
+[PerWorkflow.ChainRead]
+CallLimit = '3'
+LogQueryBlockLimit = '100'
+PayloadSizeLimit = '5kb'

@@ -12,6 +12,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg"
 )
 
+const (
+	toolName    = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc"
+	localPrefix = "http://github.com/smartcontractkit/chainlink"
+)
+
 func main() {
 	args := map[string]string{}
 	protogen.Options{ParamFunc: func(name, value string) error {
@@ -33,7 +38,7 @@ func main() {
 				continue
 			}
 
-			if err = pkg.GenerateServer(plugin, file, serverLanguage); err != nil {
+			if err = pkg.GenerateServer(plugin, file, serverLanguage, toolName, localPrefix); err != nil {
 				log.Printf("failed to generate for %s: %v", file.Desc.Path(), err)
 				os.Exit(1)
 			}

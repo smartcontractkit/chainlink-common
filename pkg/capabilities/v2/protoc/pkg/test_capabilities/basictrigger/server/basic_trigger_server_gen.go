@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -20,6 +19,7 @@ var _ = emptypb.Empty{}
 
 type BasicCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) (<-chan capabilities.TriggerAndId[*basictrigger.Outputs], error)
+
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *basictrigger.Config) error
 
 	Start(ctx context.Context) error

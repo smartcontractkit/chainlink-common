@@ -114,14 +114,6 @@ type ChainService interface {
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
 type GethClient interface {
-	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-}
-
-type EVMService interface {
-	GethClient
-
 	// BalanceAt returns the wei balance of the given account.
 	//
 	// Parameters:
@@ -174,7 +166,13 @@ type EVMService interface {
 	//   - "Finalized": returns error if requested is not finalized
 	//   - "Safe": returns error if requested block is not safe
 	HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
+	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
+	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
+}
 
+type EVMService interface {
+	GethClient
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected
 	// over time and stored in a cache for future querying.

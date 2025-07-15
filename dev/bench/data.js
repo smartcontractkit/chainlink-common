@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752605473259,
+  "lastUpdate": 1752611340162,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20076,6 +20076,48 @@ window.BENCHMARK_DATA = {
             "value": 28653,
             "unit": "ns/op",
             "extra": "42214 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6390c88843518f14f1e3ae11a6d52f6f5c836c5c",
+          "message": "pkg/chipingress: retract v1.0.1 (#1388)",
+          "timestamp": "2025-07-15T14:27:50-06:00",
+          "tree_id": "1131e9803bfe6fd7d3a46a5865b4168573055ef3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6390c88843518f14f1e3ae11a6d52f6f5c836c5c"
+        },
+        "date": 1752611338564,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3307513 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.8,
+            "unit": "ns/op",
+            "extra": "2847013 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28450,
+            "unit": "ns/op",
+            "extra": "41871 times\n4 procs"
           }
         ]
       }

@@ -17,8 +17,10 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-type BasicActionCapability interface {
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error)
+// BasicActionCapability This action server for testing purposes only.
+type BasicActionCapability interface { //BasicActionCapability This comment tests the generator's ability to handle comments.
+	//PerformAction This comment tests the generator's ability to handle leading comments on methods.
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error) // This comment tests the generator's ability to handle trailing comments on methods.
 
 	Start(ctx context.Context) error
 	Close() error
@@ -37,7 +39,8 @@ func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
 	}
 }
 
-type BasicActionServer struct {
+// BasicActionServer This action server for testing purposes only.
+type BasicActionServer struct { // This comment tests the generator's ability to handle comments.
 	basicActionCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}

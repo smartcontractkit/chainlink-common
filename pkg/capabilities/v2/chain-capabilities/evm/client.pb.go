@@ -2042,7 +2042,7 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x16\n" +
 	"\x12TX_STATUS_REVERTED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\x9a\v\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x022\xc2\x0f\n" +
 	"\x06Client\x12\x80\x01\n" +
 	"\fCallContract\x128.capabilities.blockchain.evm.v1alpha.CallContractRequest\x1a6.capabilities.blockchain.evm.v1alpha.CallContractReply\x12z\n" +
 	"\n" +
@@ -2056,7 +2056,34 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x15UnregisterLogTracking\x12A.capabilities.blockchain.evm.v1alpha.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12v\n" +
 	"\n" +
 	"LogTrigger\x12<.capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest\x1a(.capabilities.blockchain.evm.v1alpha.Log0\x01\x12}\n" +
-	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\x11\x82\xb5\x18\r\b\x01\x12\tevm@1.0.0b\x06proto3"
+	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xb8\x04\x82\xb5\x18\xb3\x04\b\x01\x12\tevm@1.0.0\x1a\xa3\x04\n" +
+	"\rChainSelector\x12\x91\x04\x12\x8e\x04\n" +
+	"\x1d\n" +
+	"\x11avalanche-mainnet\x10\xd5\xe7\x8a\xc0\xe1\u0558\xa4Y\n" +
+	"#\n" +
+	"\x16avalanche-testnet-fuji\x10\x9b\xf9\xfc\x90\xa2\xe3\xa8\xf8\xcc\x01\n" +
+	"/\n" +
+	"#binance_smart_chain-mainnet-opbnb-1\x10\x89\xad\x8f\xef\x93\xc6\u05fb\x06\n" +
+	"0\n" +
+	"#binance_smart_chain-testnet-opbnb-1\x10\x8e\xf5\x85\x91\xc1\x83\x8f\x9c\xb8\x01\n" +
+	"\x1c\n" +
+	"\x10ethereum-mainnet\x10\x95\xf6\xf1\xe4ϲ\xa6\xc2E\n" +
+	"'\n" +
+	"\x1bethereum-mainnet-arbitrum-1\x10\xc4\xe8\x8d͎\x9b\xa1\xd7D\n" +
+	"'\n" +
+	"\x1bethereum-mainnet-optimism-1\x10\xb8\x95\x8f\xc3\xf7\xfe\xd0\xe93\n" +
+	"%\n" +
+	"\x18ethereum-testnet-sepolia\x10ٵ\xe4\xce\xfc\xc9\xee\xa0\xde\x01\n" +
+	"/\n" +
+	"#ethereum-testnet-sepolia-arbitrum-1\x10\xea\xce\xee\xff궄\xa30\n" +
+	",\n" +
+	"\x1fethereum-testnet-sepolia-base-1\x10\xb8ʹ\xef\xf6\x90\xaeȏ\x01\n" +
+	"/\n" +
+	"#ethereum-testnet-sepolia-optimism-1\x10\x9f\x86š\xbe\xd8\xc3\xc0H\n" +
+	"\x1b\n" +
+	"\x0fpolygon-mainnet\x10\xb1\xab\xe4\U0001a486\x9d8\n" +
+	"!\n" +
+	"\x14polygon-testnet-amoy\x10͏\xd6\xdf\xf1ǐ\xfa\xe1\x01b\x06proto3"
 
 var (
 	file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescOnce sync.Once

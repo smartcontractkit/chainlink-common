@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752598942859,
+  "lastUpdate": 1752600802559,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19992,6 +19992,48 @@ window.BENCHMARK_DATA = {
             "value": 28460,
             "unit": "ns/op",
             "extra": "42145 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d6d46adae894ae9c2a96e9d3fef0297299f3dcd",
+          "message": "pkg/billing: require Logger for NewWorkflowClient (#1385)",
+          "timestamp": "2025-07-15T12:32:20-05:00",
+          "tree_id": "ca0dfcc7dc61b070d77f640e539b319049583856",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6d6d46adae894ae9c2a96e9d3fef0297299f3dcd"
+        },
+        "date": 1752600801364,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.5,
+            "unit": "ns/op",
+            "extra": "3242892 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415,
+            "unit": "ns/op",
+            "extra": "2885178 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28470,
+            "unit": "ns/op",
+            "extra": "41955 times\n4 procs"
           }
         ]
       }

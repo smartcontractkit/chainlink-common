@@ -199,8 +199,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	cfg.CacheConfigLoadDefault()
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
-	// Load testing shows that leaving native unwind info enabled causes a very large slowdown when loading multiple modules.
-	cfg.SetNativeUnwindInfo(false)
+	// Handled differenty based on host OS.
+	SetUnwinding(cfg)
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {

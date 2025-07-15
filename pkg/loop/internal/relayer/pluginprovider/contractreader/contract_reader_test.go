@@ -2,6 +2,7 @@ package contractreader_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"iter"
@@ -23,13 +24,49 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chainreader"
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	contractreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
+	loopjson "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/json"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
+	
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
+	"net"
 )
+
+func extractParamValue[T any](params any, fieldName string, target T) error {
+	if typed, ok := params.(T); ok {
+		reflect.ValueOf(target).Elem().Set(reflect.ValueOf(typed).Elem())
+		return nil
+	}
+
+	if m, ok := params.(map[string]interface{}); ok {
+		if fieldName == "" {
+			data, err := json.Marshal(m)
+			if err != nil {
+				return fmt.Errorf("failed to marshal map: %w", err)
+			}
+			return loopjson.UnmarshalJson(data, target)
+		}
+
+		if val, exists := m[fieldName]; exists {
+			data, err := json.Marshal(val)
+			if err != nil {
+				return fmt.Errorf("failed to marshal field %s: %w", fieldName, err)
+			}
+			return loopjson.UnmarshalJson(data, target)
+		}
+		return fmt.Errorf("field %s not found in params", fieldName)
+	}
+
+	return fmt.Errorf("unexpected params type: %T", params)
+}
 
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
@@ -81,22 +118,15 @@ func TestVersionedBytesFunctions(t *testing.T) {
 func TestContractReaderInterfaceTests(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
-		return func(t *testing.T) {
-			t.Parallel()
-
-			fake := &fakeContractReader{}
-			RunContractReaderInterfaceTests(
-				t,
-				contractreadertest.WrapContractReaderTesterForLoop(
-					&fakeContractReaderInterfaceTester{impl: fake},
-					contractreadertest.WithContractReaderLoopEncoding(version),
-				),
-				true,
-				false,
-			)
-		}
-	})
+	fake := &fakeContractReader{}
+	RunContractReaderInterfaceTests(
+		t,
+		contractreadertest.WrapContractReaderTesterForLoop(
+			&fakeContractReaderInterfaceTester{impl: fake},
+		),
+		true,
+		false,
+	)
 }
 
 func TestContractReaderByIDWrapper(t *testing.T) {
@@ -109,189 +139,162 @@ func TestContractReaderByIDWrapper(t *testing.T) {
 func TestBind(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
-		return func(t *testing.T) {
-			t.Parallel()
+	es := &errContractReader{}
+	errTester := contractreadertest.WrapContractReaderTesterForLoop(
+		&fakeContractReaderInterfaceTester{impl: es},
+	)
 
-			es := &errContractReader{}
-			errTester := contractreadertest.WrapContractReaderTesterForLoop(
-				&fakeContractReaderInterfaceTester{impl: es},
-				contractreadertest.WithContractReaderLoopEncoding(version),
-			)
+	errTester.Setup(t)
+	contractReader := errTester.GetContractReader(t)
 
-			errTester.Setup(t)
-			contractReader := errTester.GetContractReader(t)
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := t.Context()
+			err := contractReader.Bind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
+			assert.True(t, errors.Is(err, errorType))
+		})
 
-			for _, errorType := range errorTypes {
-				es.err = errorType
-				t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := t.Context()
-					err := contractReader.Bind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
-					assert.True(t, errors.Is(err, errorType))
-				})
-
-				t.Run("Unbind unwraps errors from server"+errorType.Error(), func(t *testing.T) {
-					ctx := t.Context()
-					err := contractReader.Unbind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
-					assert.True(t, errors.Is(err, errorType))
-				})
-			}
-		}
-	})
+		t.Run("Unbind unwraps errors from server"+errorType.Error(), func(t *testing.T) {
+			ctx := t.Context()
+			err := contractReader.Unbind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
 }
 
 func TestGetLatestValue(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
-		return func(t *testing.T) {
-			t.Parallel()
+	es := &errContractReader{}
+	errTester := contractreadertest.WrapContractReaderTesterForLoop(
+		&fakeContractReaderInterfaceTester{impl: es},
+	)
 
-			es := &errContractReader{}
-			errTester := contractreadertest.WrapContractReaderTesterForLoop(
-				&fakeContractReaderInterfaceTester{impl: es},
-				contractreadertest.WithContractReaderLoopEncoding(version),
-			)
+	errTester.Setup(t)
+	contractReader := errTester.GetContractReader(t)
 
-			errTester.Setup(t)
-			contractReader := errTester.GetContractReader(t)
+	t.Run("nil reader should return unimplemented", func(t *testing.T) {
+		t.Parallel()
 
-			t.Run("nil reader should return unimplemented", func(t *testing.T) {
-				t.Parallel()
+		ctx := t.Context()
 
-				ctx := t.Context()
+		nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
+		nilTester.Setup(t)
+		nilCr := nilTester.GetContractReader(t)
 
-				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
-				nilCr := nilTester.GetContractReader(t)
+		err := nilCr.GetLatestValue(ctx, "method", primitives.Unconfirmed, "anything", "anything")
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+	})
 
-				err := nilCr.GetLatestValue(ctx, "method", primitives.Unconfirmed, "anything", "anything")
-				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
-			})
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := t.Context()
+			err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, nil, "anything")
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
 
-			for _, errorType := range errorTypes {
-				es.err = errorType
-				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := t.Context()
-					err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, nil, "anything")
-					assert.True(t, errors.Is(err, errorType))
-				})
-			}
-
-			// make sure that errors come from client directly
-			es.err = nil
-			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-				ctx := t.Context()
-				err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, &cannotEncode{}, &TestStruct{})
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
-			})
-		}
+	// make sure that errors come from client directly
+	es.err = nil
+	t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+		ctx := t.Context()
+		err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, &cannotEncode{}, &TestStruct{})
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }
 
 func TestBatchGetLatestValues(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
-		return func(t *testing.T) {
-			t.Parallel()
+	es := &errContractReader{}
+	errTester := contractreadertest.WrapContractReaderTesterForLoop(
+		&fakeContractReaderInterfaceTester{impl: es},
+	)
 
-			es := &errContractReader{}
-			errTester := contractreadertest.WrapContractReaderTesterForLoop(
-				&fakeContractReaderInterfaceTester{impl: es},
-				contractreadertest.WithContractReaderLoopEncoding(version),
-			)
+	errTester.Setup(t)
+	contractReader := errTester.GetContractReader(t)
 
-			errTester.Setup(t)
-			contractReader := errTester.GetContractReader(t)
+	t.Run("nil reader should return unimplemented", func(t *testing.T) {
+		t.Parallel()
 
-			t.Run("nil reader should return unimplemented", func(t *testing.T) {
-				t.Parallel()
+		ctx := t.Context()
 
-				ctx := t.Context()
+		nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
+		nilTester.Setup(t)
+		nilCr := nilTester.GetContractReader(t)
 
-				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
-				nilCr := nilTester.GetContractReader(t)
+		_, err := nilCr.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+	})
 
-				_, err := nilCr.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
-				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
-			})
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("BatchGetLatestValues unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := t.Context()
+			_, err := contractReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
 
-			for _, errorType := range errorTypes {
-				es.err = errorType
-				t.Run("BatchGetLatestValues unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := t.Context()
-					_, err := contractReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
-					assert.True(t, errors.Is(err, errorType))
-				})
-			}
+	// make sure that errors come from client directly
+	es.err = nil
+	t.Run("BatchGetLatestValues returns error if type cannot be encoded in the wire format", func(t *testing.T) {
+		ctx := t.Context()
+		_, err := contractReader.BatchGetLatestValues(
+			ctx,
+			types.BatchGetLatestValuesRequest{
+				types.BoundContract{Name: "contract"}: {
+					{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}},
+				},
+			},
+		)
 
-			// make sure that errors come from client directly
-			es.err = nil
-			t.Run("BatchGetLatestValues returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-				ctx := t.Context()
-				_, err := contractReader.BatchGetLatestValues(
-					ctx,
-					types.BatchGetLatestValuesRequest{
-						types.BoundContract{Name: "contract"}: {
-							{ReadName: "method", Params: &cannotEncode{}, ReturnVal: &cannotEncode{}},
-						},
-					},
-				)
-
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
-			})
-		}
+		assert.True(t, errors.Is(err, types.ErrInvalidType))
 	})
 }
 
 func TestQueryKey(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
-		return func(t *testing.T) {
-			t.Parallel()
+	impl := &protoConversionTestContractReader{}
+	crTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: impl})
+	crTester.Setup(t)
+	cr := crTester.GetContractReader(t)
 
-			impl := &protoConversionTestContractReader{}
-			crTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: impl}, contractreadertest.WithContractReaderLoopEncoding(version))
-			crTester.Setup(t)
-			cr := crTester.GetContractReader(t)
+	es := &errContractReader{}
+	errTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: es})
+	errTester.Setup(t)
+	contractReader := errTester.GetContractReader(t)
 
-			es := &errContractReader{}
-			errTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: es})
-			errTester.Setup(t)
-			contractReader := errTester.GetContractReader(t)
+	t.Run("nil reader should return unimplemented", func(t *testing.T) {
+		ctx := t.Context()
 
-			t.Run("nil reader should return unimplemented", func(t *testing.T) {
-				ctx := t.Context()
+		nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
+		nilTester.Setup(t)
+		nilCr := nilTester.GetContractReader(t)
 
-				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
-				nilTester.Setup(t)
-				nilCr := nilTester.GetContractReader(t)
+		_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+		assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
+	})
 
-				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
-				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
-			})
+	for _, errorType := range errorTypes {
+		es.err = errorType
+		t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
+			ctx := t.Context()
+			_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+			assert.True(t, errors.Is(err, errorType))
+		})
+	}
 
-			for _, errorType := range errorTypes {
-				es.err = errorType
-				t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := t.Context()
-					_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
-					assert.True(t, errors.Is(err, errorType))
-				})
-			}
-
-			t.Run("test QueryKey proto conversion", func(t *testing.T) {
-				for _, tc := range generateQueryFilterTestCases(t) {
-					impl.expectedQueryFilter = tc
-					filter, err := query.Where(tc.Key, tc.Expressions...)
-					require.NoError(t, err)
-					_, err = cr.QueryKey(t.Context(), types.BoundContract{}, filter, query.LimitAndSort{}, &[]interface{}{nil})
-					require.NoError(t, err)
-				}
-			})
+	t.Run("test QueryKey proto conversion", func(t *testing.T) {
+		for _, tc := range generateQueryFilterTestCases(t) {
+			impl.expectedQueryFilter = tc
+			filter, err := query.Where(tc.Key, tc.Expressions...)
+			require.NoError(t, err)
+			_, err = cr.QueryKey(t.Context(), types.BoundContract{}, filter, query.LimitAndSort{}, &[]interface{}{nil})
+			require.NoError(t, err)
 		}
 	})
 }
@@ -436,7 +439,6 @@ func (e *eventsRecorder) getEvents(filters ...func(event) bool) []event {
 
 type fakeContractReader struct {
 	types.UnimplementedContractReader
-	fakeTypeProvider
 	vals        map[string][]valConfidencePair
 	triggers    *eventsRecorder
 	stored      map[string][]TestStruct
@@ -542,40 +544,39 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	split := strings.Split(readIdentifier, "-")
 	contractName := strings.Join([]string{split[0], split[1]}, "-")
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
-		r := returnVal.(*uint64)
 		vals := f.vals[contractName]
 		for i := len(vals) - 1; i >= 0; i-- {
 			if vals[i].confidenceLevel == confidenceLevel {
-				*r = vals[i].val
-				return nil
+				return setReturnValue(returnVal, vals[i].val)
 			}
 		}
 		return fmt.Errorf("%w: no val with %s confidence was found ", types.ErrNotFound, confidenceLevel)
 	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64) {
-		r := returnVal.(*uint64)
-
+		var value uint64
 		if strings.Contains(readIdentifier, "-"+AnyContractName+"-") {
-			*r = AnyValueToReadWithoutAnArgument
+			value = AnyValueToReadWithoutAnArgument
 		} else {
-			*r = AnyDifferentValueToReadWithoutAnArgument
+			value = AnyDifferentValueToReadWithoutAnArgument
+		}
+		return setReturnValue(returnVal, value)
+	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
+		return setReturnValue(returnVal, AnySliceToReadWithoutAnArgument)
+	} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
+		var pv TestStruct
+		if err := extractParamValue(params, "", &pv); err != nil {
+			return fmt.Errorf("failed to extract TestStruct params: %w", err)
 		}
 
-		return nil
-	} else if strings.HasSuffix(readIdentifier, MethodReturningUint64Slice) {
-		r := returnVal.(*[]uint64)
-		*r = AnySliceToReadWithoutAnArgument
-		return nil
-	} else if strings.HasSuffix(readIdentifier, MethodReturningSeenStruct) {
-		pv := params.(*TestStruct)
-		rv := returnVal.(*TestStructWithExtraField)
-		rv.TestStruct = *pv
-		rv.ExtraField = AnyExtraValue
-		rv.AccountStruct = AccountStruct{
+		value := TestStructWithExtraField{
+			TestStruct: pv,
+			ExtraField: AnyExtraValue,
+		}
+		value.AccountStruct = AccountStruct{
 			Account:    anyAccountBytes,
 			AccountStr: anyAccountString,
 		}
-		rv.BigField = big.NewInt(2)
-		return nil
+		value.BigField = big.NewInt(2)
+		return setReturnValue(returnVal, value)
 	} else if strings.HasSuffix(readIdentifier, EventName) {
 		f.lock.Lock()
 		defer f.lock.Unlock()
@@ -590,8 +591,7 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 
 		for i := len(events) - 1; i >= 0; i-- {
 			if events[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*TestStruct) = events[i].event.(TestStruct)
-				return nil
+				return setReturnValue(returnVal, events[i].event.(TestStruct))
 			}
 		}
 
@@ -599,13 +599,17 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	} else if strings.HasSuffix(readIdentifier, EventWithFilterName) {
 		f.lock.Lock()
 		defer f.lock.Unlock()
-		param := params.(*FilterEventParams)
+
+		var param FilterEventParams
+		if err := extractParamValue(params, "", &param); err != nil {
+			return fmt.Errorf("failed to extract FilterEventParams: %w", err)
+		}
+
 		triggers := f.triggers.getEvents(func(e event) bool { return e.contractID == contractName && e.eventType == EventName })
 		for i := len(triggers) - 1; i >= 0; i-- {
 			testStruct := triggers[i].event.(TestStruct)
 			if *testStruct.Field == param.Field {
-				*returnVal.(*TestStruct) = testStruct
-				return nil
+				return setReturnValue(returnVal, testStruct)
 			}
 		}
 		return types.ErrNotFound
@@ -621,8 +625,7 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 
 		for i := len(triggers) - 1; i >= 0; i-- {
 			if triggers[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*SomeDynamicTopicEvent) = triggers[i].event.(SomeDynamicTopicEvent)
-				return nil
+				return setReturnValue(returnVal, triggers[i].event.(SomeDynamicTopicEvent))
 			}
 		}
 
@@ -634,7 +637,11 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	stored := f.stored[contractName]
-	lp := params.(*LatestParams)
+
+	var lp LatestParams
+	if err := extractParamValue(params, "", &lp); err != nil {
+		return fmt.Errorf("failed to extract LatestParams: %w", err)
+	}
 
 	if lp.I-1 >= len(stored) {
 		return errors.New("latest params index out of bounds for stored test structs")
@@ -642,18 +649,14 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 
 	_, isValue := returnVal.(*values.Value)
 	if isValue {
-		var err error
-		ptrToVal := returnVal.(*values.Value)
-		*ptrToVal, err = values.Wrap(stored[lp.I-1])
+		wrapped, err := values.Wrap(stored[lp.I-1])
 		if err != nil {
 			return err
 		}
-	} else {
-		rv := returnVal.(*TestStruct)
-		*rv = stored[lp.I-1]
+		return setReturnValue(returnVal, wrapped)
 	}
 
-	return nil
+	return setReturnValue(returnVal, stored[lp.I-1])
 }
 
 func (f *fakeContractReader) GetLatestValueWithHeadData(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) (*types.Head, error) {
@@ -678,33 +681,57 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 			req := requestContractBatch[i]
 
 			if req.ReadName == MethodReturningUint64 {
-				returnVal = req.ReturnVal.(*uint64)
+				var value uint64
 				if requestContract.Name == AnyContractName {
-					*returnVal.(*uint64) = AnyValueToReadWithoutAnArgument
+					value = AnyValueToReadWithoutAnArgument
 				} else {
-					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
+					value = AnyDifferentValueToReadWithoutAnArgument
 				}
+				if err := setReturnValue(req.ReturnVal, value); err != nil {
+					return nil, err
+				}
+				returnVal = req.ReturnVal
 			} else if req.ReadName == MethodReturningUint64Slice {
-				returnVal = req.ReturnVal.(*[]uint64)
-				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
+				value := AnySliceToReadWithoutAnArgument
+				if err := setReturnValue(req.ReturnVal, value); err != nil {
+					return nil, err
+				}
+				returnVal = req.ReturnVal
 			} else if req.ReadName == MethodReturningSeenStruct {
-				ts := *req.Params.(*TestStruct)
+				var ts TestStruct
+				if err := extractParamValue(req.Params, "", &ts); err != nil {
+					return nil, fmt.Errorf("failed to extract TestStruct params: %w", err)
+				}
 				ts.AccountStruct = AccountStruct{
 					Account:    anyAccountBytes,
 					AccountStr: anyAccountString,
 				}
 				ts.BigField = big.NewInt(2)
-				returnVal = &TestStructWithExtraField{
+				value := TestStructWithExtraField{
 					TestStruct: ts,
 					ExtraField: AnyExtraValue,
 				}
+				if err := setReturnValue(req.ReturnVal, value); err != nil {
+					return nil, err
+				}
+				returnVal = req.ReturnVal
 			} else if req.ReadName == MethodTakingLatestParamsReturningTestStruct {
-				latestParams := requestContractBatch[i].Params.(*LatestParams)
+				var latestParams LatestParams
+				if err := extractParamValue(req.Params, "", &latestParams); err != nil {
+					return nil, fmt.Errorf("failed to extract LatestParams: %w", err)
+				}
 				if latestParams.I <= 0 {
-					returnVal = &LatestParams{}
 					err = fmt.Errorf("invalid param %d", latestParams.I)
+					if setErr := setReturnValue(req.ReturnVal, &LatestParams{}); setErr != nil {
+						return nil, setErr
+					}
+					returnVal = req.ReturnVal
 				} else {
-					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
+					value := storedContractBatch[latestParams.I-1].ReturnValue
+					if setErr := setReturnValue(req.ReturnVal, value); setErr != nil {
+						return nil, setErr
+					}
+					returnVal = req.ReturnVal
 				}
 			} else {
 				return nil, errors.New("unknown read " + req.ReadName)
@@ -795,7 +822,32 @@ func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.Contra
 				}
 				if primitive.Name == "Field" {
 					for _, valComp := range primitive.ValueComparators {
-						doAppend = doAppend && Compare(*trigger.event.(TestStruct).Field, *valComp.Value.(*int32), valComp.Operator)
+						// Handle both direct int32 pointers and map[string]interface{} from JSON
+						var fieldValue int32
+						if valPtr, ok := valComp.Value.(*int32); ok {
+							fieldValue = *valPtr
+						} else if val, ok := valComp.Value.(int32); ok {
+							// Handle direct int32 values (from type hints)
+							fieldValue = val
+						} else if val, ok := valComp.Value.(int); ok {
+							// Handle direct int values (from test)
+							fieldValue = int32(val)
+						} else if m, ok := valComp.Value.(map[string]interface{}); ok {
+							// For JSON deserialized values
+							if err := extractParamValue(m, "", &fieldValue); err != nil {
+								return nil, fmt.Errorf("failed to extract int32 from comparator: %w", err)
+							}
+						} else if num, ok := valComp.Value.(json.Number); ok {
+							// Handle json.Number from UseNumber decoding
+							val, err := num.Int64()
+							if err != nil {
+								return nil, fmt.Errorf("failed to convert json.Number to int: %w", err)
+							}
+							fieldValue = int32(val)
+						} else {
+							return nil, fmt.Errorf("unexpected comparator value type: %T", valComp.Value)
+						}
+						doAppend = doAppend && Compare(*trigger.event.(TestStruct).Field, fieldValue, valComp.Operator)
 					}
 				}
 			}
@@ -933,7 +985,6 @@ func (e *errContractReader) QueryKey(_ context.Context, _ types.BoundContract, _
 
 type protoConversionTestContractReader struct {
 	types.UnimplementedContractReader
-	testProtoConversionTypeProvider
 	expectedBindings     types.BoundContract
 	expectedQueryFilter  query.KeyFilter
 	expectedLimitAndSort query.LimitAndSort
@@ -973,7 +1024,7 @@ func (pc *protoConversionTestContractReader) Unbind(_ context.Context, bc []type
 }
 
 func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
-	if !reflect.DeepEqual(pc.expectedQueryFilter, filter) {
+	if !equalKeyFilters(pc.expectedQueryFilter, filter) {
 		return nil, fmt.Errorf("filter wasn't parsed properly")
 	}
 
@@ -997,6 +1048,151 @@ func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types
 	}
 
 	return nil, nil
+}
+
+// equalKeyFilters compares two KeyFilter instances for semantic equality,
+// handling pointer values correctly (comparing dereferenced values rather than addresses)
+func equalKeyFilters(a, b query.KeyFilter) bool {
+	if a.Key != b.Key {
+		return false
+	}
+
+	if len(a.Expressions) != len(b.Expressions) {
+		return false
+	}
+
+	for i := range a.Expressions {
+		if !equalExpressions(a.Expressions[i], b.Expressions[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func equalExpressions(a, b query.Expression) bool {
+	// Check if both are primitive or both are boolean expressions
+	if a.IsPrimitive() != b.IsPrimitive() {
+		return false
+	}
+
+	if a.IsPrimitive() {
+		return equalPrimitives(a.Primitive, b.Primitive)
+	}
+
+	// Both are boolean expressions
+	if a.BoolExpression.BoolOperator != b.BoolExpression.BoolOperator {
+		return false
+	}
+
+	if len(a.BoolExpression.Expressions) != len(b.BoolExpression.Expressions) {
+		return false
+	}
+
+	for i := range a.BoolExpression.Expressions {
+		if !equalExpressions(a.BoolExpression.Expressions[i], b.BoolExpression.Expressions[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func equalPrimitives(a, b primitives.Primitive) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	// Check if they're the same type
+	if reflect.TypeOf(a) != reflect.TypeOf(b) {
+		return false
+	}
+
+	switch ap := a.(type) {
+	case *primitives.Comparator:
+		bp := b.(*primitives.Comparator)
+		if ap.Name != bp.Name {
+			return false
+		}
+		if len(ap.ValueComparators) != len(bp.ValueComparators) {
+			return false
+		}
+		for i := range ap.ValueComparators {
+			if ap.ValueComparators[i].Operator != bp.ValueComparators[i].Operator {
+				return false
+			}
+			// Compare values, handling pointers correctly
+			if !equalValues(ap.ValueComparators[i].Value, bp.ValueComparators[i].Value) {
+				return false
+			}
+		}
+		return true
+	case *primitives.Confidence:
+		bp := b.(*primitives.Confidence)
+		return ap.ConfidenceLevel == bp.ConfidenceLevel
+	case *primitives.Block:
+		bp := b.(*primitives.Block)
+		return ap.Block == bp.Block && ap.Operator == bp.Operator
+	case *primitives.Timestamp:
+		bp := b.(*primitives.Timestamp)
+		return ap.Timestamp == bp.Timestamp && ap.Operator == bp.Operator
+	case *primitives.TxHash:
+		bp := b.(*primitives.TxHash)
+		return ap.TxHash == bp.TxHash
+	default:
+		// Fall back to DeepEqual for unknown types
+		return reflect.DeepEqual(a, b)
+	}
+}
+
+func equalValues(a, b interface{}) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	// Handle pointers by dereferencing
+	aVal := reflect.ValueOf(a)
+	bVal := reflect.ValueOf(b)
+
+	// If both are pointers, dereference and compare values
+	if aVal.Kind() == reflect.Ptr && bVal.Kind() == reflect.Ptr {
+		if aVal.IsNil() && bVal.IsNil() {
+			return true
+		}
+		if aVal.IsNil() || bVal.IsNil() {
+			return false
+		}
+		// Compare dereferenced values
+		return reflect.DeepEqual(aVal.Elem().Interface(), bVal.Elem().Interface())
+	}
+
+	// If one is a pointer and the other isn't, compare the dereferenced value
+	if aVal.Kind() == reflect.Ptr && bVal.Kind() != reflect.Ptr {
+		if aVal.IsNil() {
+			return false
+		}
+		return reflect.DeepEqual(aVal.Elem().Interface(), b)
+	}
+	if aVal.Kind() != reflect.Ptr && bVal.Kind() == reflect.Ptr {
+		if bVal.IsNil() {
+			return false
+		}
+		return reflect.DeepEqual(a, bVal.Elem().Interface())
+	}
+
+	// If types don't match exactly, it's not equal
+	if reflect.TypeOf(a) != reflect.TypeOf(b) {
+		return false
+	}
+
+	// For non-pointer types, use DeepEqual
+	return reflect.DeepEqual(a, b)
 }
 
 func runContractReaderByIDGetLatestValue(t *testing.T) {
@@ -1274,3 +1470,226 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 		})
 }
+
+func setReturnValue(returnVal any, value any) error {
+	if anyRetVal, ok := returnVal.(*any); ok {
+		*anyRetVal = value
+		return nil
+	}
+
+	switch rv := returnVal.(type) {
+	case *TestStruct:
+		if v, ok := value.(TestStruct); ok {
+			*rv = v
+			return nil
+		}
+	case *TestStructWithExtraField:
+		if v, ok := value.(TestStructWithExtraField); ok {
+			*rv = v
+			return nil
+		}
+	case *SomeDynamicTopicEvent:
+		if v, ok := value.(SomeDynamicTopicEvent); ok {
+			*rv = v
+			return nil
+		}
+	case *uint64:
+		if v, ok := value.(uint64); ok {
+			*rv = v
+			return nil
+		}
+	case *[]uint64:
+		if v, ok := value.([]uint64); ok {
+			*rv = v
+			return nil
+		}
+	}
+
+	return fmt.Errorf("unexpected return value type: %T", returnVal)
+}
+
+// Test case for debugging *[]byte parameter handling
+func TestContractReader_PointerToByteSliceParams(t *testing.T) {
+	t.Run("GetLatestValue with *[]byte params", func(t *testing.T) {
+		// Create test contract reader
+		testCR := &testPointerParamsContractReader{t: t}
+		
+		// Create client/server through LOOP
+		server := contractreader.NewServer(testCR)
+		grpcServer := grpc.NewServer()
+		pb.RegisterContractReaderServer(grpcServer, server)
+		
+		// Create in-memory connection
+		lis := bufconn.Listen(1024 * 1024)
+		go func() {
+			if err := grpcServer.Serve(lis); err != nil {
+				t.Logf("Server exited with error: %v", err)
+			}
+		}()
+		t.Cleanup(grpcServer.Stop)
+		
+		// Create client connection
+		ctx := context.Background()
+		conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			return lis.Dial()
+		}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+		t.Cleanup(func() { conn.Close() })
+		
+		// Create contract reader client
+		grpcClient := pb.NewContractReaderClient(conn)
+		client := contractreader.NewClient(brokerExt{}, grpcClient)
+		
+		// Test: Pass *[]byte as params (simulating chainlink-aptos behavior)
+		jsonData := []byte(`{"key":"value","number":123}`)
+		params := &jsonData // This is *[]byte
+		t.Logf("Client sending params of type: %T", params)
+		
+		var result []byte
+		err = client.GetLatestValue(ctx, "test-identifier", primitives.Finalized, params, &result)
+		require.NoError(t, err)
+		
+		// Verify the server received the correct type
+		require.True(t, testCR.gotCorrectType, "Server should have received *[]byte")
+	})
+	
+	t.Run("BatchGetLatestValues with *[]byte params", func(t *testing.T) {
+		// Create test contract reader
+		testCR := &testPointerParamsContractReader{t: t, batchMode: true}
+		
+		// Create client/server through LOOP
+		server := contractreader.NewServer(testCR)
+		grpcServer := grpc.NewServer()
+		pb.RegisterContractReaderServer(grpcServer, server)
+		
+		// Create in-memory connection
+		lis := bufconn.Listen(1024 * 1024)
+		go func() {
+			if err := grpcServer.Serve(lis); err != nil {
+				t.Logf("Server exited with error: %v", err)
+			}
+		}()
+		t.Cleanup(grpcServer.Stop)
+		
+		// Create client connection
+		ctx := context.Background()
+		conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			return lis.Dial()
+		}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+		t.Cleanup(func() { conn.Close() })
+		
+		// Create contract reader client
+		grpcClient := pb.NewContractReaderClient(conn)
+		client := contractreader.NewClient(brokerExt{}, grpcClient)
+		
+		// Test: Pass *[]byte as params in batch request
+		jsonData := []byte(`{"key":"value","number":456}`)
+		params := &jsonData // This is *[]byte
+		
+		var result []byte
+		request := types.BatchGetLatestValuesRequest{
+			types.BoundContract{Address: "0x123", Name: "test"}: []types.BatchRead{
+				{
+					ReadName:  "testRead",
+					Params:    params,
+					ReturnVal: &result,
+				},
+			},
+		}
+		
+		_, err = client.BatchGetLatestValues(ctx, request)
+		require.NoError(t, err)
+		
+		// Verify the server received the correct type
+		require.True(t, testCR.gotCorrectType, "Server should have received *[]byte in batch")
+	})
+}
+
+// Test contract reader that checks if it receives *[]byte params
+type testPointerParamsContractReader struct {
+	types.UnimplementedContractReader
+	t              *testing.T
+	gotCorrectType bool
+	batchMode      bool
+}
+
+func (t *testPointerParamsContractReader) GetLatestValue(ctx context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, retVal any) error {
+	t.t.Logf("GetLatestValue called with params type: %T, value: %v", params, params)
+	
+	// Log detailed type information
+	if params != nil {
+		t.t.Logf("Params is nil: %v", params == nil)
+		t.t.Logf("Type of params: %T", params)
+		
+		// Try different type assertions
+		if p, ok := params.(*[]byte); ok {
+			t.gotCorrectType = true
+			t.t.Logf("Successfully asserted as *[]byte, value: %v", *p)
+		} else if p, ok := params.([]byte); ok {
+			t.t.Logf("ERROR: Received []byte instead of *[]byte, value: %v", p)
+		} else if p, ok := params.(*[]uint8); ok {
+			t.gotCorrectType = true
+			t.t.Logf("Successfully asserted as *[]uint8 (same as *[]byte), value: %v", *p)
+		} else if p, ok := params.([]uint8); ok {
+			t.t.Logf("ERROR: Received []uint8 instead of *[]uint8, value: %v", p)
+		} else {
+			t.t.Logf("ERROR: Could not assert to any byte slice type")
+		}
+	}
+	
+	// Return some dummy data
+	if retValPtr, ok := retVal.(*[]byte); ok {
+		*retValPtr = []byte(`{"result":"success"}`)
+	}
+	
+	return nil
+}
+
+func (t *testPointerParamsContractReader) BatchGetLatestValues(ctx context.Context, request types.BatchGetLatestValuesRequest) (types.BatchGetLatestValuesResult, error) {
+	t.t.Log("BatchGetLatestValues called")
+	
+	result := make(types.BatchGetLatestValuesResult)
+	
+	for contract, reads := range request {
+		batchResults := make([]types.BatchReadResult, len(reads))
+		
+		for i, read := range reads {
+			t.t.Logf("Batch read %d params type: %T", i, read.Params)
+			
+			// Check if we received *[]byte
+			if _, ok := read.Params.(*[]byte); ok {
+				t.gotCorrectType = true
+				t.t.Log("Batch: Received correct type: *[]byte")
+			} else {
+				t.t.Logf("Batch ERROR: Expected *[]byte but got %T", read.Params)
+			}
+			
+			// Set dummy result
+			if retValPtr, ok := read.ReturnVal.(*[]byte); ok {
+				*retValPtr = []byte(`{"batch_result":"success"}`)
+			}
+			
+			batchResults[i] = types.BatchReadResult{
+				ReadName: read.ReadName,
+			}
+			batchResults[i].SetResult(read.ReturnVal, nil)
+		}
+		
+		result[contract] = batchResults
+	}
+	
+	return result, nil
+}
+
+// Minimal broker extension for testing
+type brokerExt struct {
+	types.UnimplementedContractReader
+}
+
+func (b brokerExt) ClientConn() grpc.ClientConnInterface { return nil }
+func (b brokerExt) Close() error { return nil }
+func (b brokerExt) HealthReport() map[string]error { return nil }
+func (b brokerExt) Name() string { return "test" }
+func (b brokerExt) Ready() error { return nil }
+func (b brokerExt) Start(ctx context.Context) error { return nil }

@@ -64,8 +64,6 @@ func (f fakeTypeProvider) CreateType(readName string, isEncode bool) (any, error
 	return f.CreateContractType(readName, isEncode)
 }
 
-var _ types.ContractTypeProvider = (*fakeTypeProvider)(nil)
-
 func (fakeTypeProvider) CreateContractType(readName string, isEncode bool) (any, error) {
 	switch true {
 	case strings.HasSuffix(readName, NilType):
@@ -119,8 +117,6 @@ type testProtoConversionTypeProvider struct{}
 func (f testProtoConversionTypeProvider) CreateType(itemType string, isEncode bool) (any, error) {
 	return f.CreateContractType(itemType, isEncode)
 }
-
-var _ types.ContractTypeProvider = (*testProtoConversionTypeProvider)(nil)
 
 func (testProtoConversionTypeProvider) CreateContractType(itemType string, isEncode bool) (any, error) {
 	switch true {

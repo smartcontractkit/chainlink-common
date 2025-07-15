@@ -4,7 +4,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "internal/codec/codec.proto";
 import "loop/chain-common/query.proto";
 import "google/protobuf/empty.proto";
 
@@ -22,8 +21,8 @@ service ContractReader {
 message GetLatestValueRequest {
   string read_identifier = 1;
   loop.chain.common.Confidence confidence = 2;
-  codec.VersionedBytes params = 3;
-  bool as_value_type = 4;
+  bytes params = 3;
+  string params_type_hint = 4;
 }
 
 // BatchGetLatestValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -36,7 +35,6 @@ message QueryKeyRequest {
   BoundContract contract = 1;
   QueryKeyFilter filter = 2;
   loop.chain.common.LimitAndSort limit_and_sort = 3;
-  bool as_value_type = 4;
 }
 
 // QueryKeysRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.QueryKeys].
@@ -48,7 +46,6 @@ message QueryKeysRequest {
 message ContractKeyFilter {
   BoundContract contract = 1;
   QueryKeyFilter filter = 2;
-  bool as_value_type = 4;
 }
 
 // BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Bind].
@@ -63,13 +60,17 @@ message UnbindRequest {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 message GetLatestValueReply {
-  codec.VersionedBytes ret_val = 1;
+  bytes ret_val = 1;
+  // used for decoding values.Value
+  string ret_val_type_hint = 2;
 }
 
 // GetLatestValueWithHeadDataReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithHeadData].
 message GetLatestValueWithHeadDataReply {
-  codec.VersionedBytes ret_val = 1;
-  Head head_data = 2;
+  bytes ret_val = 1;
+  // used for decoding values.Value
+  string ret_val_type_hint = 2;
+  Head head_data = 3;
 }
 
 // BatchGetLatestValuesReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -96,8 +97,8 @@ message ContractBatch {
 // BatchCall is gRPC adapter for the GetLatestValueRequest struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchCall].
 message BatchRead  {
   string read_name = 1;
-  codec.VersionedBytes params = 2;
-  codec. VersionedBytes return_val = 3;
+  bytes params = 2;
+  string params_type_hint = 3;
 }
 
 // ContractBatchResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -109,8 +110,10 @@ message ContractBatchResult {
 // BatchCallResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
 message BatchReadResult {
   string read_name = 1;
-  codec.VersionedBytes return_val = 2;
-  string error = 3;
+  bytes return_val = 2;
+  // used for decoding values.Value
+  string return_val_type_hint = 3;
+  string error = 4;
 }
 
 // Head is gRPC adapter for the Head struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Head].
@@ -124,16 +127,20 @@ message Head {
 message Sequence {
   string sequence_cursor = 1;
   Head head = 2;
-  codec.VersionedBytes data = 3;
-  bytes tx_hash = 4;
+  bytes data = 3;
+  // used for decoding values.Value
+  string data_type_hint = 4;
+  bytes tx_hash = 5;
 }
 
 message SequenceWithKey {
   string sequence_cursor = 1;
   Head head = 2;
-  codec.VersionedBytes data = 3;
-  string key = 4;
-  bytes tx_hash = 5;
+  bytes data = 3;
+  // used for decoding values.Value
+  string data_type_hint = 4;
+  string key = 5;
+  bytes tx_hash = 6;
 }
 
 // BoundContract represents a [github.com/smartcontractkit/chainlink-common/pkg/types.BoundContract].

@@ -2,16 +2,17 @@ package contractwriter
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
-	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	loopjson "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/json"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -21,15 +22,13 @@ type ClientOpt func(*Client)
 
 type Client struct {
 	*goplugin.ServiceClient
-	grpc       pb.ContractWriterClient
-	encodeWith codecpb.EncodingVersion
+	grpc pb.ContractWriterClient
 }
 
 func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt) *Client {
 	client := &Client{
 		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewContractWriterClient(cc),
-		encodeWith:    codecpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -39,26 +38,22 @@ func NewClient(b *net.BrokerExt, cc grpc.ClientConnInterface, opts ...ClientOpt)
 	return client
 }
 
-func WithClientEncoding(version codecpb.EncodingVersion) ClientOpt {
-	return func(client *Client) {
-		client.encodeWith = version
-	}
-}
-
 func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int) error {
-	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
+	// Encode params as JSON bytes with type hint
+	encodedParams, paramsTypeHint, err := loopjson.MarshalWithHint(params)
 	if err != nil {
 		return err
 	}
 
 	req := pb.SubmitTransactionRequest{
-		ContractName:  contractName,
-		Method:        method,
-		Params:        versionedParams,
-		TransactionId: transactionID,
-		ToAddress:     toAddress,
-		Meta:          TxMetaToProto(meta),
-		Value:         pb.NewBigIntFromInt(value),
+		ContractName:   contractName,
+		Method:         method,
+		Params:         encodedParams,
+		TransactionId:  transactionID,
+		ToAddress:      toAddress,
+		Meta:           TxMetaToProto(meta),
+		Value:          pb.NewBigIntFromInt(value),
+		ParamsTypeHint: paramsTypeHint,
 	}
 
 	_, err = c.grpc.SubmitTransaction(ctx, &req)
@@ -91,18 +86,20 @@ func (c *Client) GetFeeComponents(ctx context.Context) (*types.ChainFeeComponent
 }
 
 func (c *Client) GetEstimateFee(ctx context.Context, contract, method string, params any, toAddress string, meta *types.TxMeta, val *big.Int) (types.EstimateFee, error) {
-	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
+	// Encode params as JSON bytes with type hint
+	encodedParams, paramsTypeHint, err := loopjson.MarshalWithHint(params)
 	if err != nil {
 		return types.EstimateFee{}, err
 	}
 
 	req := &pb.GetEstimateFeeRequest{
-		ContractName: contract,
-		Method:       method,
-		Params:       versionedParams,
-		ToAddress:    toAddress,
-		Meta:         TxMetaToProto(meta),
-		Value:        pb.NewBigIntFromInt(val),
+		ContractName:   contract,
+		Method:         method,
+		Params:         encodedParams,
+		ToAddress:      toAddress,
+		Meta:           TxMetaToProto(meta),
+		Value:          pb.NewBigIntFromInt(val),
+		ParamsTypeHint: paramsTypeHint,
 	}
 
 	reply, err := c.grpc.GetEstimateFee(ctx, req)
@@ -124,14 +121,12 @@ type ServerOpt func(*Server)
 
 type Server struct {
 	pb.UnimplementedContractWriterServer
-	impl       types.ContractWriter
-	encodeWith codecpb.EncodingVersion
+	impl types.ContractWriter
 }
 
 func NewServer(impl types.ContractWriter, opts ...ServerOpt) pb.ContractWriterServer {
 	server := &Server{
-		impl:       impl,
-		encodeWith: codecpb.DefaultEncodingVersion,
+		impl: impl,
 	}
 
 	for _, opt := range opts {
@@ -141,16 +136,20 @@ func NewServer(impl types.ContractWriter, opts ...ServerOpt) pb.ContractWriterSe
 	return server
 }
 
-func WithServerEncoding(version codecpb.EncodingVersion) ServerOpt {
-	return func(server *Server) {
-		server.encodeWith = version
-	}
-}
-
 func (s *Server) SubmitTransaction(ctx context.Context, req *pb.SubmitTransactionRequest) (*emptypb.Empty, error) {
-	params := map[string]any{}
-	if err := codecpb.DecodeVersionedBytes(&params, req.Params); err != nil {
-		return nil, err
+	// Use type hint to properly unmarshal params
+	var params any
+	if req.ParamsTypeHint != "" {
+		var err error
+		params, err = loopjson.UnmarshalWithHint(req.Params, req.ParamsTypeHint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal params with type hint: %w", err)
+		}
+	} else {
+		// Fallback to generic unmarshal if no type hint provided
+		if err := loopjson.UnmarshalJson(req.Params, &params); err != nil {
+			return nil, err
+		}
 	}
 
 	err := s.impl.SubmitTransaction(ctx, req.ContractName, req.Method, params, req.TransactionId, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int())
@@ -184,9 +183,19 @@ func (s *Server) GetFeeComponents(ctx context.Context, _ *emptypb.Empty) (*pb.Ge
 }
 
 func (s *Server) GetEstimateFee(ctx context.Context, req *pb.GetEstimateFeeRequest) (*pb.GetEstimateFeeReply, error) {
-	params := map[string]any{}
-	if err := codecpb.DecodeVersionedBytes(&params, req.Params); err != nil {
-		return nil, err
+	// Use type hint to properly unmarshal params
+	var params any
+	if req.ParamsTypeHint != "" {
+		var err error
+		params, err = loopjson.UnmarshalWithHint(req.Params, req.ParamsTypeHint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal params with type hint: %w", err)
+		}
+	} else {
+		// Fallback to generic unmarshal if no type hint provided
+		if err := loopjson.UnmarshalJson(req.Params, &params); err != nil {
+			return nil, err
+		}
 	}
 
 	estimateFee, err := s.impl.GetEstimateFee(ctx, req.ContractName, req.Method, params, req.ToAddress, TxMetaFromProto(req.Meta), req.Value.Int())

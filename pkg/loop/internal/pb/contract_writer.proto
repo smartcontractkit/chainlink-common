@@ -4,7 +4,6 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop;
 
-import "internal/codec/codec.proto";
 import "loop/internal/pb/relayer.proto";
 import "google/protobuf/empty.proto";
 import "chains/evm/evm.proto";
@@ -19,11 +18,12 @@ service ContractWriter {
 message SubmitTransactionRequest {
     string contract_name = 1;
     string method = 2;
-    codec.VersionedBytes params = 3;
-    string transaction_id = 4;
-    string to_address = 5;
-    TransactionMeta meta = 6;
-    BigInt value = 7;
+    bytes params = 3;
+    string params_type_hint = 4;
+    string transaction_id = 5;
+    string to_address = 6;
+    TransactionMeta meta = 7;
+    BigInt value = 8;
 }
 
 message TransactionMeta {
@@ -35,10 +35,11 @@ message TransactionMeta {
 message GetEstimateFeeRequest {
     string contract_name = 1;
     string method = 2;
-    codec.VersionedBytes params = 3;
-    string to_address = 4;
-    TransactionMeta meta = 5;
-    BigInt value = 6;
+    bytes params = 3;
+    string params_type_hint = 4;
+    string to_address = 5;
+    TransactionMeta meta = 6;
+    BigInt value = 7;
 }
 
 // GetFeeComponentsReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractWriter.GetFeeComponents].

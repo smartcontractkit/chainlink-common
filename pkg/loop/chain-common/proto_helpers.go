@@ -6,22 +6,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
+	loopjson "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/json"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
-type ValueEncoder func(value any) (*codec.VersionedBytes, error)
-
-func ConvertExpressionFromProto(
-	pbExpression *Expression,
-	encodedTypeGetter func(comparatorName string, forEncoding bool) (any, error),
-) (query.Expression, error) {
+func ConvertExpressionFromProto(pbExpression *Expression) (query.Expression, error) {
 	switch pbEvaluatedExpr := pbExpression.Evaluator.(type) {
 	case *Expression_BooleanExpression:
 		var expressions []query.Expression
 		for _, expression := range pbEvaluatedExpr.BooleanExpression.Expression {
-			converted, err := ConvertExpressionFromProto(expression, encodedTypeGetter)
+			converted, err := ConvertExpressionFromProto(expression)
 			if err != nil {
 				return query.Expression{}, err
 			}
@@ -32,7 +27,7 @@ func ConvertExpressionFromProto(
 		}
 		return query.Or(expressions...), nil
 	case *Expression_Primitive:
-		expr, err := ConvertPrimitiveFromProto(pbEvaluatedExpr.Primitive, encodedTypeGetter)
+		expr, err := ConvertPrimitiveFromProto(pbEvaluatedExpr.Primitive)
 		if err != nil {
 			return query.Expression{}, err
 		}
@@ -44,10 +39,10 @@ func ConvertExpressionFromProto(
 	}
 }
 
-func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEncoder) (*Expression, error) {
+func ConvertExpressionToProto(expression query.Expression) (*Expression, error) {
 	pbExpression := &Expression{}
 	if expression.IsPrimitive() {
-		primitive, err := ConvertPrimitiveToProto(expression.Primitive, encodeValue)
+		primitive, err := ConvertPrimitiveToProto(expression.Primitive)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +53,7 @@ func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEnco
 	pbExpression.Evaluator = &Expression_BooleanExpression{BooleanExpression: &BooleanExpression{}}
 	expressions := make([]*Expression, 0)
 	for _, expr := range expression.BoolExpression.Expressions {
-		e, err := ConvertExpressionToProto(expr, encodeValue)
+		e, err := ConvertExpressionToProto(expr)
 		if err != nil {
 			return nil, err
 		}
@@ -74,18 +69,14 @@ func ConvertExpressionToProto(expression query.Expression, encodeValue ValueEnco
 	return pbExpression, nil
 }
 
-func ConvertPrimitiveFromProto(protoPrimitive *Primitive, encodedTypeGetter func(comparatorName string, forEncoding bool) (any, error)) (query.Expression, error) {
+func ConvertPrimitiveFromProto(protoPrimitive *Primitive) (query.Expression, error) {
 	switch primitive := protoPrimitive.Primitive.(type) {
 	case *Primitive_Comparator:
 		var valueComparators []primitives.ValueComparator
 
 		for _, pbValueComparator := range primitive.Comparator.ValueComparators {
-			val, err := encodedTypeGetter(primitive.Comparator.Name, true)
+			val, err := loopjson.UnmarshalWithHint(pbValueComparator.Value, pbValueComparator.ValueTypeHint)
 			if err != nil {
-				return query.Expression{}, err
-			}
-
-			if err = codec.DecodeVersionedBytes(val, pbValueComparator.Value); err != nil {
 				return query.Expression{}, err
 			}
 
@@ -119,22 +110,24 @@ func ConvertPrimitiveFromProto(protoPrimitive *Primitive, encodedTypeGetter func
 	}
 }
 
-func ConvertPrimitiveToProto(primitive primitives.Primitive, encodeValue ValueEncoder) (*Primitive, error) {
+func ConvertPrimitiveToProto(primitive primitives.Primitive) (*Primitive, error) {
 	primitiveToReturn := &Primitive{}
 	switch p := primitive.(type) {
 	case *primitives.Comparator:
 		var pbValueComparators []*ValueComparator
 
 		for _, vc := range p.ValueComparators {
-			versioned, err := encodeValue(vc.Value)
+			jsonBytes, typeHint, err := loopjson.MarshalWithHint(vc.Value)
 			if err != nil {
 				return nil, err
 			}
+
 			pbValueComparators = append(pbValueComparators,
 				&ValueComparator{
-					Value: versioned,
+					Value: jsonBytes,
 					//nolint: gosec // G115
-					Operator: ComparisonOperator(vc.Operator),
+					Operator:      ComparisonOperator(vc.Operator),
+					ValueTypeHint: typeHint,
 				})
 		}
 

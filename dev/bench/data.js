@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752611340162,
+  "lastUpdate": 1752618319333,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20118,6 +20118,48 @@ window.BENCHMARK_DATA = {
             "value": 28450,
             "unit": "ns/op",
             "extra": "41871 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0c8a1361be8de0c8e23abeef4e55fc95af4a3d3a",
+          "message": "Update Capabilities DON type with V2 CapabilitiesRegistry fields (#1370)\n\nCo-authored-by: Gabriel Paradiso <gaboparadiso@gmail.com>",
+          "timestamp": "2025-07-15T22:23:59Z",
+          "tree_id": "c59b274114ba8630949dbeaef59530166e61f39d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0c8a1361be8de0c8e23abeef4e55fc95af4a3d3a"
+        },
+        "date": 1752618318102,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 367.8,
+            "unit": "ns/op",
+            "extra": "3315619 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.3,
+            "unit": "ns/op",
+            "extra": "2812196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28207,
+            "unit": "ns/op",
+            "extra": "42409 times\n4 procs"
           }
         ]
       }

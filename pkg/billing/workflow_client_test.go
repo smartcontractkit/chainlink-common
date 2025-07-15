@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 )
 
@@ -29,7 +29,6 @@ type MockRequest struct {
 func (d MockRequest) String() string {
 	return d.Field
 }
-
 
 // ---------- Test Server Implementation ----------
 
@@ -101,11 +100,10 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	mockJWT.EXPECT().CreateJWTForRequest(&pb.GetRateCardRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1}).Return("test.jwt.token", nil).Once()
 
 	lggr := logger.Test(t)
-	wc, err := NewWorkflowClient(addr,
+	wc, err := NewWorkflowClient(lggr, addr,
 		WithWorkflowTransportCredentials(clientCreds), // Provided but may be overridden by TLS cert.
 		WithWorkflowTLSCert(string(certBytes)),
 		WithJWTGenerator(mockJWT),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 	require.NoError(t, err)
@@ -153,9 +151,8 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	addr := lis.Addr().String()
 	lggr := logger.Test(t)
 
-	wc, err := NewWorkflowClient(addr,
+	wc, err := NewWorkflowClient(lggr, addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 
@@ -170,9 +167,8 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 // Test that NewWorkflowClient fails when given an invalid address.
 func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 	lggr := logger.Test(t)
-	wc, err := NewWorkflowClient("invalid-address",
+	wc, err := NewWorkflowClient(lggr, "invalid-address",
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 
@@ -196,9 +192,8 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 
 	addr := lis.Addr().String()
 	lggr := logger.Test(t)
-	wc, err := NewWorkflowClient(addr,
+	wc, err := NewWorkflowClient(lggr, addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 	require.NoError(t, err)
@@ -215,9 +210,8 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 func TestWorkflowClient_DialUnreachable(t *testing.T) {
 	lggr := logger.Test(t)
 	unreachableAddr := "192.0.2.1:12345" // Reserved for documentation.
-	wc, err := NewWorkflowClient(unreachableAddr,
+	wc, err := NewWorkflowClient(lggr, unreachableAddr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 
@@ -240,7 +234,7 @@ func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Once()
 
 	wc := &workflowClient{
-		logger:     logger.Test(t),
+		logger:       logger.Test(t),
 		jwtGenerator: mockJWT,
 	}
 
@@ -263,7 +257,7 @@ func TestWorkflowClient_NoSigningKey(t *testing.T) {
 	ctx := context.Background()
 	req := MockRequest{Field: "test"}
 	wc := &workflowClient{
-		logger: logger.Test(t),
+		logger:       logger.Test(t),
 		jwtGenerator: nil,
 	}
 	newCtx, err := wc.addJWTAuth(ctx, req)
@@ -281,7 +275,7 @@ func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", fmt.Errorf("mock JWT creation error")).Once()
 
 	wc := &workflowClient{
-		logger:     logger.Test(t),
+		logger:       logger.Test(t),
 		jwtGenerator: mockJWT,
 	}
 
@@ -300,7 +294,7 @@ func TestWorkflowClient_RepeatedSign(t *testing.T) {
 	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Times(2)
 
 	wc := &workflowClient{
-		logger:     logger.Test(t),
+		logger:       logger.Test(t),
 		jwtGenerator: mockJWT,
 	}
 

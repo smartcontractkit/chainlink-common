@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752586301331,
+  "lastUpdate": 1752598942859,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19950,6 +19950,48 @@ window.BENCHMARK_DATA = {
             "value": 28470,
             "unit": "ns/op",
             "extra": "42150 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1ae7457d1b91fc2c3f78cfbdca945c54c37dcd0d",
+          "message": "Update template to respect comments (#1384)",
+          "timestamp": "2025-07-15T17:00:01Z",
+          "tree_id": "e8f226d076cacd9482f47cc48e98faecd337fcaa",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1ae7457d1b91fc2c3f78cfbdca945c54c37dcd0d"
+        },
+        "date": 1752598941103,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 374.9,
+            "unit": "ns/op",
+            "extra": "3083647 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 426.3,
+            "unit": "ns/op",
+            "extra": "2767267 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28460,
+            "unit": "ns/op",
+            "extra": "42145 times\n4 procs"
           }
         ]
       }

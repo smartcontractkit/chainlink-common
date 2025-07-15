@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752517124112,
+  "lastUpdate": 1752586301331,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -19908,6 +19908,48 @@ window.BENCHMARK_DATA = {
             "value": 28610,
             "unit": "ns/op",
             "extra": "42033 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fbb00f834ac83481150d31842c837b1b5a8e3e77",
+          "message": "Separate pkg/chipingress into standalone Go module (#1371)\n\n* feat: separate pkg/chipingress into standalone Go module\n\n    This commit separates the chipingress package into an independent Go module\n    to enable better dependency management and independent versioning.\n\n    **New Module Structure:**\n    - Create pkg/chipingress/go.mod with module path github.com/smartcontractkit/chainlink-common/pkg/chipi\nngress\n\n    **Main Module Updates:**\n    - Add chipingress as explicit dependency in require block\n    - Move CloudEvents dependencies to indirect section (now pulled via chipingress)\n\n    **Benefits:**\n    - Independent versioning of chipingress module\n    - Cleaner dependency separation and reduced coupling\n    - Enhanced modularity for potential standalone usage\n    - Isolated testing and development workflow\n\n* remove replace directive and use versioned chipingress module\n\n- Remove local replace directive for chipingress module\n- Update chipingress dependency to use tagged version v1.0.0\n- Enable proper Go module versioning for chipingress\n- Maintain backward compatibility with existing import paths\n\n* update mockery configuration for separated chipingress module\n\n* retag pkg/chipingress/v1.0.0 -> pkg/chipingress/v0.0.1\n\n* Retract pkg/chipingress/v1.0.0, use v0.0.1 instead",
+          "timestamp": "2025-07-15T14:29:21+01:00",
+          "tree_id": "fa4415771dddf005aafb849132a83a19122bf468",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fbb00f834ac83481150d31842c837b1b5a8e3e77"
+        },
+        "date": 1752586300078,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.1,
+            "unit": "ns/op",
+            "extra": "3285534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 422.5,
+            "unit": "ns/op",
+            "extra": "2844598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28470,
+            "unit": "ns/op",
+            "extra": "42150 times\n4 procs"
           }
         ]
       }

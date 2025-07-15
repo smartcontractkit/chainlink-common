@@ -21,6 +21,7 @@ type BasicCapability interface {
 	Action(ctx context.Context, metadata capabilities.RequestMetadata, input *actionandtrigger.Input) (*actionandtrigger.Output, error)
 
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) (<-chan capabilities.TriggerAndId[*actionandtrigger.TriggerEvent], error)
+
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *actionandtrigger.Config) error
 
 	Start(ctx context.Context) error

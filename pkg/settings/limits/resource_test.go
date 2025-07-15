@@ -70,7 +70,9 @@ func ExampleResourceLimiter_Use() {
 }
 
 func ExampleMultiResourcePoolLimiter() {
-	ctx := contexts.WithCRE(context.Background(), contexts.CRE{Org: "orgID", Owner: "ownerID", Workflow: "workflowID"})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "orgID", Owner: "owner-id", Workflow: "workflowID"})
 	global := GlobalResourcePoolLimiter[int](100)
 	freeGlobal, err := global.Wait(ctx, 95)
 	if err != nil {
@@ -93,12 +95,11 @@ func ExampleMultiResourcePoolLimiter() {
 	}
 	multi := MultiResourcePoolLimiter[int]{global, org, user, workflow}
 	tryWork := func() error {
-		free, err := multi.Use(ctx, 10)
+		err := multi.Use(ctx, 10)
 		if err != nil {
 			return err
 		}
-		defer free()
-		return nil
+		return multi.Free(ctx, 10)
 	}
 
 	fmt.Println(tryWork())
@@ -110,15 +111,15 @@ func ExampleMultiResourcePoolLimiter() {
 	fmt.Println(tryWork())
 	freeWorkflow()
 	fmt.Println(tryWork())
-	done, err := multi.Wait(ctx, 10)
+	free, err := multi.Wait(ctx, 10)
 	if err != nil {
 		log.Fatal(err)
 	}
-	done()
+	free()
 	// Output:
 	// resource limited: cannot use 10, already using 95/100
 	// resource limited for org[orgID]: cannot use 10, already using 45/50
-	// resource limited for owner[ownerID]: cannot use 10, already using 15/20
+	// resource limited for owner[owner-id]: cannot use 10, already using 15/20
 	// resource limited for workflow[workflowID]: cannot use 10, already using 5/10
 	// <nil>
 }

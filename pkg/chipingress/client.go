@@ -102,8 +102,8 @@ func (c *client) PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...
 }
 
 // StreamEvents - Experimental, this API is subject to change.
-func (c *client) StreamEvents(_ context.Context, _ ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error) {
-	return nil, fmt.Errorf("not implemented: StreamEvents is experimental and not supported yet")
+func (c *client) StreamEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error) {
+	return c.client.StreamEvents(ctx, opts...)
 }
 
 func (c *client) Close() error {

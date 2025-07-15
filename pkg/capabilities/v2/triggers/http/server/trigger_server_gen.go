@@ -19,6 +19,7 @@ var _ = emptypb.Empty{}
 
 type HTTPCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], error)
+
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) error
 
 	Start(ctx context.Context) error

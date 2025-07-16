@@ -14,7 +14,7 @@ func TestGenerateReportContext(t *testing.T) {
 	seqNr := uint64(12345)
 	configDigest := types.ConfigDigest{}
 	copy(configDigest[:], []byte("testconfigdigest"))
-	result := generateReportContext(seqNr, configDigest)
+	result := GenerateReportContext(seqNr, configDigest)
 	expectedResult, err := hex.DecodeString("74657374636f6e6669676469676573740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003039000000000000000000000000000000000000000000000000000000000000000000")
 	require.NoError(t, err)
 	assert.Equal(t, expectedResult, result)

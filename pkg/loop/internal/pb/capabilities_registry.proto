@@ -8,7 +8,8 @@ import "google/protobuf/empty.proto";
 import "capabilities/pb/registry.proto";
 
 service CapabilitiesRegistry {
-  rpc LocalNode (google.protobuf.Empty) returns (LocalNodeReply) {}
+  rpc LocalNode (google.protobuf.Empty) returns (NodeReply) {}
+  rpc NodeByPeerID(NodeRequest) returns (NodeReply) {}
   rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
@@ -32,13 +33,22 @@ message DON {
   repeated bytes members = 2; // [n][32]byte where n is the number of members
   uint32 f = 3; // uint8
   uint32 configVersion  = 4;
+  string name = 5;
+  repeated string families = 6; // [n]string where n is the number of DON families
+}
+
+message NodeRequest {
+  bytes peerID = 1; // [32]byte
 }
 
 // LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
-message LocalNodeReply {
+message NodeReply {
   bytes peerID = 1; // [32]byte
   DON workflowDON = 2;
   repeated DON CapabilityDONs = 3;
+  uint32 nodeOperatorID = 4; // uint32
+  bytes signer = 5; // [32]byte
+  bytes encryptionPublicKey = 6; // [32]byte
 }
 
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].

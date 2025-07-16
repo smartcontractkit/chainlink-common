@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -18,8 +17,10 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-type BasicActionCapability interface {
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error)
+// BasicActionCapability This action server for testing purposes only.
+type BasicActionCapability interface { //BasicActionCapability This comment tests the generator's ability to handle comments.
+	//PerformAction This comment tests the generator's ability to handle leading comments on methods.
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error) // This comment tests the generator's ability to handle trailing comments on methods.
 
 	Start(ctx context.Context) error
 	Close() error
@@ -27,7 +28,7 @@ type BasicActionCapability interface {
 	Name() string
 	Description() string
 	Ready() error
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
+	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
 }
 
 func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
@@ -38,14 +39,15 @@ func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
 	}
 }
 
-type BasicActionServer struct {
+// BasicActionServer This action server for testing purposes only.
+type BasicActionServer struct { // This comment tests the generator's ability to handle comments.
 	basicActionCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 
-func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
-	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
+func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 

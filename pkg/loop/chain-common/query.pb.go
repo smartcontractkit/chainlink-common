@@ -131,6 +131,7 @@ type Confidence int32
 const (
 	Confidence_Unconfirmed Confidence = 0
 	Confidence_Finalized   Confidence = 1
+	Confidence_Safe        Confidence = 2
 )
 
 // Enum value maps for Confidence.
@@ -138,10 +139,12 @@ var (
 	Confidence_name = map[int32]string{
 		0: "Unconfirmed",
 		1: "Finalized",
+		2: "Safe",
 	}
 	Confidence_value = map[string]int32{
 		"Unconfirmed": 0,
 		"Finalized":   1,
+		"Safe":        2,
 	}
 )
 
@@ -1154,11 +1157,12 @@ const file_loop_chain_common_query_proto_rawDesc = "" +
 	"\x03Lte\x10\x05*\"\n" +
 	"\x0fBooleanOperator\x12\a\n" +
 	"\x03AND\x10\x00\x12\x06\n" +
-	"\x02OR\x10\x01*,\n" +
+	"\x02OR\x10\x01*6\n" +
 	"\n" +
 	"Confidence\x12\x0f\n" +
 	"\vUnconfirmed\x10\x00\x12\r\n" +
-	"\tFinalized\x10\x01*/\n" +
+	"\tFinalized\x10\x01\x12\b\n" +
+	"\x04Safe\x10\x02*/\n" +
 	"\x0fCursorDirection\x12\r\n" +
 	"\tPreceding\x10\x00\x12\r\n" +
 	"\tFollowing\x10\x01*\"\n" +

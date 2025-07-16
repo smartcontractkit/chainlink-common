@@ -126,6 +126,62 @@ func (_c *Relayer_EVM_Call) RunAndReturn(run func() (types.EVMService, error)) *
 	return _c
 }
 
+// GetChainInfo provides a mock function with given fields: ctx
+func (_m *Relayer) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetChainInfo")
+	}
+
+	var r0 types.ChainInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (types.ChainInfo, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) types.ChainInfo); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(types.ChainInfo)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_GetChainInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetChainInfo'
+type Relayer_GetChainInfo_Call struct {
+	*mock.Call
+}
+
+// GetChainInfo is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Relayer_Expecter) GetChainInfo(ctx interface{}) *Relayer_GetChainInfo_Call {
+	return &Relayer_GetChainInfo_Call{Call: _e.mock.On("GetChainInfo", ctx)}
+}
+
+func (_c *Relayer_GetChainInfo_Call) Run(run func(ctx context.Context)) *Relayer_GetChainInfo_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Relayer_GetChainInfo_Call) Return(_a0 types.ChainInfo, _a1 error) *Relayer_GetChainInfo_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_GetChainInfo_Call) RunAndReturn(run func(context.Context) (types.ChainInfo, error)) *Relayer_GetChainInfo_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HealthReport provides a mock function with no fields
 func (_m *Relayer) HealthReport() map[string]error {
 	ret := _m.Called()
@@ -539,6 +595,63 @@ func (_c *Relayer_Start_Call) Return(_a0 error) *Relayer_Start_Call {
 }
 
 func (_c *Relayer_Start_Call) RunAndReturn(run func(context.Context) error) *Relayer_Start_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TON provides a mock function with no fields
+func (_m *Relayer) TON() (types.TONService, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for TON")
+	}
+
+	var r0 types.TONService
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (types.TONService, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() types.TONService); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.TONService)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_TON_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TON'
+type Relayer_TON_Call struct {
+	*mock.Call
+}
+
+// TON is a helper method to define mock.On call
+func (_e *Relayer_Expecter) TON() *Relayer_TON_Call {
+	return &Relayer_TON_Call{Call: _e.mock.On("TON")}
+}
+
+func (_c *Relayer_TON_Call) Run(run func()) *Relayer_TON_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Relayer_TON_Call) Return(_a0 types.TONService, _a1 error) *Relayer_TON_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_TON_Call) RunAndReturn(run func() (types.TONService, error)) *Relayer_TON_Call {
 	_c.Call.Return(run)
 	return _c
 }

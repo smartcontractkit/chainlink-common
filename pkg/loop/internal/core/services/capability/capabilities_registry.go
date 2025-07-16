@@ -8,12 +8,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
@@ -33,9 +34,11 @@ func toDON(don *pb.DON) capabilities.DON {
 
 	return capabilities.DON{
 		ID:            don.Id,
+		Name:          don.Name,
 		Members:       members,
 		F:             uint8(don.F),
 		ConfigVersion: don.ConfigVersion,
+		Families:      don.Families,
 	}
 }
 
@@ -48,9 +51,11 @@ func toPbDON(don capabilities.DON) *pb.DON {
 
 	return &pb.DON{
 		Id:            don.ID,
+		Name:          don.Name,
 		Members:       membersBytes,
 		F:             uint32(don.F),
 		ConfigVersion: don.ConfigVersion,
+		Families:      don.Families,
 	}
 }
 
@@ -60,22 +65,42 @@ func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabiliti
 		return capabilities.Node{}, err
 	}
 
+	return cr.nodeFromNodeReply(res), nil
+}
+
+func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p2ptypes.PeerID) (capabilities.Node, error) {
+	res, err := cr.grpc.NodeByPeerID(ctx, &pb.NodeRequest{PeerID: peerID[:]})
+	if err != nil {
+		return capabilities.Node{}, err
+	}
+
+	return cr.nodeFromNodeReply(res), nil
+}
+
+func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
 	var pid *p2ptypes.PeerID
-	if len(res.PeerID) > 0 {
-		p := p2ptypes.PeerID(res.PeerID)
+	if len(nodeReply.PeerID) > 0 {
+		p := p2ptypes.PeerID(nodeReply.PeerID)
 		pid = &p
 	}
 
-	cDONs := make([]capabilities.DON, len(res.CapabilityDONs))
-	for i, don := range res.CapabilityDONs {
+	cDONs := make([]capabilities.DON, len(nodeReply.CapabilityDONs))
+	for i, don := range nodeReply.CapabilityDONs {
 		cDONs[i] = toDON(don)
 	}
 
+	var signer32 [32]byte
+	copy(signer32[:], nodeReply.Signer)
+	var encryptionPublicKey32 [32]byte
+	copy(encryptionPublicKey32[:], nodeReply.EncryptionPublicKey)
 	return capabilities.Node{
-		PeerID:         pid,
-		WorkflowDON:    toDON(res.WorkflowDON),
-		CapabilityDONs: cDONs,
-	}, nil
+		PeerID:              pid,
+		NodeOperatorID:      nodeReply.NodeOperatorID,
+		Signer:              signer32,
+		EncryptionPublicKey: encryptionPublicKey32,
+		WorkflowDON:         toDON(nodeReply.WorkflowDON),
+		CapabilityDONs:      cDONs,
+	}
 }
 
 func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
@@ -321,12 +346,25 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.LocalNodeReply, error) {
+func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.NodeReply, error) {
 	node, err := c.impl.LocalNode(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	return c.nodeReplyFromNode(node), nil
+}
+
+func (c *capabilitiesRegistryServer) NodeByPeerID(ctx context.Context, nodeRequest *pb.NodeRequest) (*pb.NodeReply, error) {
+	node, err := c.impl.NodeByPeerID(ctx, p2ptypes.PeerID(nodeRequest.GetPeerID()))
+	if err != nil {
+		return nil, err
+	}
+
+	return c.nodeReplyFromNode(node), nil
+}
+
+func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *pb.NodeReply {
 	workflowDONpb := toPbDON(node.WorkflowDON)
 
 	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
@@ -338,13 +376,16 @@ func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.E
 	if node.PeerID != nil {
 		pid = node.PeerID[:]
 	}
-	reply := &pb.LocalNodeReply{
-		PeerID:         pid,
-		WorkflowDON:    workflowDONpb,
-		CapabilityDONs: capabilityDONsPb,
+	reply := &pb.NodeReply{
+		PeerID:              pid,
+		NodeOperatorID:      node.NodeOperatorID,
+		Signer:              node.Signer[:],
+		EncryptionPublicKey: node.EncryptionPublicKey[:],
+		WorkflowDON:         workflowDONpb,
+		CapabilityDONs:      capabilityDONsPb,
 	}
 
-	return reply, nil
+	return reply
 }
 
 func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb.GetTriggerRequest) (*pb.GetTriggerReply, error) {

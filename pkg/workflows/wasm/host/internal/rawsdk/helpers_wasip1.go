@@ -7,10 +7,12 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
 func GetRequest() *pb.ExecuteRequest {
@@ -61,7 +63,7 @@ var NodeOutputConsensusDescriptor = &pb.ConsensusDescriptor{
 			Fields: map[string]*pb.ConsensusDescriptor{
 				"OutputThing": {
 					Descriptor_: &pb.ConsensusDescriptor_Aggregation{
-						Aggregation: pb.AggregationType_AGGREGATION_TYPE_IDENTICAL,
+						Aggregation: pb.AggregationType_AGGREGATION_TYPE_MEDIAN,
 					},
 				},
 			},
@@ -93,8 +95,22 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 	return callbackId
 }
 
+func DoConsensusRequest(capabilityId string, input *pb.SimpleConsensusInputs, output *valuespb.Value) {
+	Await(DoRequestAsync(capabilityId, "Simple", pb.Mode_MODE_DON, input), output)
+}
+
 func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {
 	Await(DoRequestAsync(capabilityId, method, mode, input), output)
+}
+
+func DoRequestErr[I proto.Message](capabilityId, method string, mode pb.Mode, input I) error {
+	callbackId := DoRequestAsync(capabilityId, method, mode, input)
+
+	resp := &pb.AwaitCapabilitiesResponse{}
+	await(&pb.AwaitCapabilitiesRequest{Ids: []int32{callbackId}}, resp, awaitCapabilities)
+
+	errMsg := resp.Responses[callbackId].GetError()
+	return errors.New(errMsg)
 }
 
 func GetSecret(id string) (string, error) {
@@ -135,7 +151,7 @@ func GetSecret(id string) (string, error) {
 	case *pb.SecretResponse_Secret:
 		return r.Secret.Value, nil
 	case *pb.SecretResponse_Error:
-		return "", errors.New(r.Error)
+		return "", errors.New(r.Error.Error)
 	default:
 		SendError(fmt.Errorf("unexpected response type: %T", r))
 	}

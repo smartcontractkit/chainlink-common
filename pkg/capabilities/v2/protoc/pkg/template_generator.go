@@ -11,19 +11,24 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
-	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
-type templateGenerator struct {
+type TemplateGenerator struct {
 	Name             string
 	Template         string
 	FileNameTemplate string
 	Partials         map[string]string
+	ExtraFns         template.FuncMap
 }
 
-func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.Plugin, args any) error {
+func (t *TemplateGenerator) GenerateFile(
+	file *protogen.File,
+	plugin *protogen.Plugin,
+	args any,
+	toolName,
+	localPrefix string) error {
 
 	seen := map[string]int{}
 	importToPkg := map[protogen.GoImportPath]protogen.GoPackageName{}
@@ -40,32 +45,42 @@ func (t *templateGenerator) GenerateFile(file *protogen.File, plugin *protogen.P
 		importToPkg[f.GoImportPath] = protogen.GoPackageName(alias)
 	}
 
-	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg)
+	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg, toolName, localPrefix)
 	if err != nil {
 		return err
 	}
 
-	g := plugin.NewGeneratedFile(fileName, "")
-	g.P(content)
+	if len(content) > 0 {
+		g := plugin.NewGeneratedFile(fileName, "")
+		g.P(content)
+	}
 	return nil
 }
 
-func (t *templateGenerator) Generate(baseFile, args any, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, string, error) {
-	fileName, err := runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials, importToPkg)
+func (t *TemplateGenerator) Generate(
+	baseFile,
+	args any,
+	importToPkg map[protogen.GoImportPath]protogen.GoPackageName,
+	toolName,
+	localPrefix string) (string, string, error) {
+	fileName, err := t.runTemplate(t.Name+"_fileName", t.FileNameTemplate, baseFile, t.Partials, importToPkg)
 	if err != nil {
 		return "", "", err
 	}
 
-	file, err := runTemplate(t.Name, t.Template, args, t.Partials, importToPkg)
+	file, err := t.runTemplate(t.Name, t.Template, args, t.Partials, importToPkg)
 	if err != nil {
 		return fileName, "", err
 	}
 
+	if strings.TrimSpace(file) == "" {
+		return fileName, "", nil
+	}
+
 	settings := codegen.PrettySettings{
-		Tool: "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc",
+		Tool: toolName,
 		GoPrettySettings: codegen.GoPrettySettings{
-			// TODO make this configurable
-			LocalPrefix: "github.com/smartcontractkit",
+			LocalPrefix: localPrefix,
 		},
 	}
 
@@ -73,9 +88,14 @@ func (t *templateGenerator) Generate(baseFile, args any, importToPkg map[protoge
 	return fileName, prettyFile, err
 }
 
-func runTemplate(name, tmplText string, args any, partials map[string]string, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, error) {
+func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partials map[string]string, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, error) {
 	buf := &bytes.Buffer{}
 	imports := map[string]bool{}
+	var orderedImports []string
+	if t.ExtraFns == nil {
+		t.ExtraFns = template.FuncMap{}
+	}
+
 	templ := template.New(name).Funcs(template.FuncMap{
 		"ImportAlias": func(importPath protogen.GoImportPath) string {
 			return string(importToPkg[importPath])
@@ -127,14 +147,16 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 				importName = fmt.Sprintf("%s %s", importToPkg[importPath], importName)
 			}
 
-			imports[importName] = true
+			if !imports[importName] {
+				orderedImports = append(orderedImports, importName)
+				imports[importName] = true
+			}
+
 			return ""
 		},
 		"allimports": func() []string {
-			var allImports []string
-			for i := range imports {
-				allImports = append(allImports, i)
-			}
+			allImports := make([]string, len(imports))
+			copy(allImports, orderedImports)
 			return allImports
 		},
 		"name": func(ident protogen.GoIdent, ignore string) string {
@@ -167,9 +189,9 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 			}
 
 			switch md.Mode {
-			case sdkpb.Mode_MODE_NODE:
+			case pb.Mode_MODE_NODE:
 				return "Node", nil
-			case sdkpb.Mode_MODE_DON:
+			case pb.Mode_MODE_DON:
 				return "", nil
 			default:
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)
@@ -184,7 +206,20 @@ func runTemplate(name, tmplText string, args any, partials map[string]string, im
 
 			return "emptypb.Empty", nil
 		},
-	})
+		"CleanComments": func(line string) string {
+			line = strings.TrimSpace(line)
+			switch {
+			case strings.HasPrefix(line, "//"):
+				return strings.TrimSpace(strings.TrimPrefix(line, "//"))
+			case strings.HasPrefix(line, "/*"):
+				line = strings.TrimPrefix(line, "/*")
+				line = strings.TrimSuffix(line, "*/")
+				return strings.TrimSpace(line)
+			default:
+				return line
+			}
+		},
+	}).Funcs(t.ExtraFns)
 
 	// Register partials
 	if partials != nil {

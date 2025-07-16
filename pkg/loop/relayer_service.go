@@ -46,6 +46,10 @@ func (r *RelayerService) EVM() (types.EVMService, error) {
 	return r.Service.EVM()
 }
 
+func (r *RelayerService) TON() (types.TONService, error) {
+	return r.Service.TON()
+}
+
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return nil, err
@@ -93,6 +97,10 @@ func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus,
 		return types.ChainStatus{}, err
 	}
 	return r.Service.GetChainStatus(ctx)
+}
+
+func (r *RelayerService) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	return r.Service.GetChainInfo(ctx)
 }
 
 func (r *RelayerService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {

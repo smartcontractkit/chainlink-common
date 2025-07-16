@@ -26,22 +26,25 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-{{- range .Services}}
+{{ range .Services}}
 {{ $hasTriggers := false }}
 {{ $hasActions := false }}
-{{ $service := . }}
-type {{.GoName}}Capability interface {
+{{ $service := . -}}
+{{ if .Comments.Leading.String }}//{{.GoName}}Capability {{CleanComments .Comments.Leading.String}} {{ end }}
+type {{.GoName}}Capability interface { {{- if .Comments.Trailing.String }}//{{.GoName}}Capability {{CleanComments .Comments.Trailing.String}} {{ end }}
     {{- range .Methods}}
         {{- if isTrigger . }}
             {{ $hasTriggers = true }}
-    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error)
-    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error
+    {{- if .Comments.Leading.String }}//Register{{.GoName}} registration for {{CleanComments .Comments.Leading.String}} {{ end }}
+    Register{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) (<- chan capabilities.TriggerAndId[*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}], error) {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
+    {{ if .Comments.Leading.String }}//Unregister{{.GoName}} unregistration for {{CleanComments .Comments.Leading.String}} {{ end }}
+    Unregister{{.GoName}}(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}}) error {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
         {{- else }}
             {{ $hasActions = true }}
-    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error)
-        {{- end }}
+    {{- if .Comments.Leading.String }}//{{.GoName}} {{CleanComments .Comments.Leading.String}} {{ end }}
+    {{.GoName}}(ctx context.Context, metadata capabilities.RequestMetadata, input *{{ImportAlias .Input.GoIdent.GoImportPath}}.{{.Input.GoIdent.GoName}} {{if ne "emptypb.Empty" (ConfigType $service)}}, {{(ConfigType $service)}}{{ end }}) (*{{ImportAlias .Output.GoIdent.GoImportPath}}.{{.Output.GoIdent.GoName}}, error) {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
+        {{ end }}
     {{- end }}
-
 
     Start(ctx context.Context) error
     Close() error
@@ -49,7 +52,7 @@ type {{.GoName}}Capability interface {
     Name() string
     Description() string
     Ready() error
-    Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error
+    Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeyValueStore core.Keystore) error
 }
 
 func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
@@ -59,16 +62,16 @@ func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
         stopCh: stopCh,
     }
 }
-
-type {{.GoName}}Server struct {
+{{ if .Comments.Leading.String }}//{{.GoName}}Server {{CleanComments .Comments.Leading.String}} {{ end }}
+type {{.GoName}}Server struct { {{- if .Comments.Trailing.String }}// {{CleanComments .Comments.Trailing.String}} {{ end }}
     {{.GoName|LowerFirst}}Capability
     capabilityRegistry core.CapabilitiesRegistry
     stopCh chan struct{}
 }
 
 
-func (cs *{{.GoName}}Server) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector) error {
-    if err := cs.{{.GoName}}Capability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector); err != nil {
+func (cs *{{.GoName}}Server) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+    if err := cs.{{.GoName}}Capability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
         return fmt.Errorf("error when initializing capability: %w", err)
     }
 

@@ -3,6 +3,7 @@ package beholder_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -129,7 +130,10 @@ func TestClient(t *testing.T) {
 
 			client := tc.mustNewGrpcClient(t, exporterMock)
 
+			// Set error handler and ensure it's reset after test
+			originalHandler := otel.GetErrorHandler()
 			otel.SetErrorHandler(otelMustNotErr(t))
+			defer otel.SetErrorHandler(originalHandler)
 			// Number of exported messages
 			exportedMessageCount := 0
 
@@ -217,7 +221,24 @@ func TestClient_ForPackage(t *testing.T) {
 }
 
 func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
-	return func(err error) { t.Fatalf("otel error: %v", err) }
+	// Create a context that will be canceled when the test completes
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Use t.Cleanup to cancel the context when test completes
+	t.Cleanup(cancel)
+
+	return func(err error) {
+		// Check if test context is still valid
+		select {
+		case <-ctx.Done():
+			// Test has completed, just log the error instead of failing
+			fmt.Printf("otel error after test completion: %v\n", err)
+			return
+		default:
+			// Test is still active, safe to call t.Fatalf
+			t.Fatalf("otel error: %v", err)
+		}
+	}
 }
 
 func TestNewClient(t *testing.T) {
@@ -274,7 +295,7 @@ func TestNewClient(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Equal(t, "failed to extract host from address '': missing port in address", err.Error())
+		assert.Equal(t, "invalid address format: missing port in address", err.Error())
 	})
 }
 
@@ -290,7 +311,6 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 		assert.NotNil(t, client)
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
-
 
 	t.Run("LogStreamingEnabled true creates logger", func(t *testing.T) {
 		cfg := beholder.Config{
@@ -321,9 +341,8 @@ func TestNewClientWithChipIngressConfig(t *testing.T) {
 				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
 			}
 		}()
-		client.Logger.Emit(context.Background(), log.Record{})
+		client.Logger.Emit(t.Context(), log.Record{})
 	})
-
 
 	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
@@ -395,7 +414,7 @@ func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "failed to extract host from address '': missing port in address")
+		assert.Contains(t, err.Error(), "invalid address format: missing port in address")
 	})
 
 	t.Run("errors when ChipIngress enabled with whitespace-only endpoint", func(t *testing.T) {
@@ -407,7 +426,71 @@ func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, client)
 		// The whitespace is preserved in the address, so the error includes the spaces
-		assert.Contains(t, err.Error(), "failed to extract host from address '   '")
+		assert.Contains(t, err.Error(), "invalid address format: address")
 		assert.Contains(t, err.Error(), "missing port in address")
 	})
+}
+
+func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
+	t.Run("chip ingress emitter enabled with insecure connection and auth headers", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer my-secret-token",
+			},
+		}
+
+		// Mock the otlploggrpc.New function to avoid creating a real exporter
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+
+		assert.NotNil(t, client.Emitter)
+		// Check that the emitter is a dualSourceEmitter
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress emitter enabled with tls connection", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  false, // Use TLS
+		}
+
+		// Mock the otlploggrpc.New function
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		defer client.Close()
+		assert.NotNil(t, client.Emitter)
+	})
+}
+
+// mockLogExporter is a no-op exporter for testing purposes.
+type mockLogExporter struct{}
+
+func (m *mockLogExporter) Export(ctx context.Context, logs []sdklog.Record) error {
+	return nil
+}
+
+func (m *mockLogExporter) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
+	return nil
 }

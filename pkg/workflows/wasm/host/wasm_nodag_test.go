@@ -4,28 +4,56 @@ import (
 	_ "embed"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
-	nodagBinaryCmd                  = "test/nodag/singlehandler/cmd"
-	nodagBinaryLocation             = nodagBinaryCmd + "/testmodule.wasm"
-	nodagMultiTriggerBinaryCmd      = "test/nodag/multihandler/cmd"
-	nodagMultiTriggerBinaryLocation = nodagMultiTriggerBinaryCmd + "/testmodule.wasm"
-	nodagRandomBinaryCmd            = "test/nodag/randoms/cmd"
-	nodagRandomBinaryLocation       = nodagRandomBinaryCmd + "/testmodule.wasm"
+	nodagRandomBinaryCmd      = "standard_tests/multiple_triggers"
+	nodagRandomBinaryLocation = nodagRandomBinaryCmd + "/testmodule.wasm"
 )
 
-var wordList = []string{"Hello, ", "world", "!"}
+func Test_Sleep_Timeout(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
+
+	mc := defaultNoDAGModCfg(t)
+	timeout := 1 * time.Second
+	mc.Timeout = &timeout
+	m, err := NewModule(mc, binary)
+	require.NoError(t, err)
+
+	m.v2ImportName = "test"
+	m.Start()
+	defer m.Close()
+
+	mockExecutionHelper := NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	})
+
+	req := &pb.ExecuteRequest{
+		Request: &pb.ExecuteRequest_Trigger{},
+	}
+
+	start := time.Now()
+	_, err = m.Execute(t.Context(), req, mockExecutionHelper)
+	duration := time.Since(start)
+	require.ErrorContains(t, err, "wasm trap: interrupt")
+	require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
+}
 
 func Test_NoDag_Run(t *testing.T) {
 	t.Parallel()
 
-	binary := createTestBinary(nodagBinaryCmd, nodagBinaryLocation, true, t)
+	binary := createTestBinary(nodagRandomBinaryCmd, nodagRandomBinaryLocation, true, t)
 
 	t.Run("NOK fails with unset ExecutionHelper for trigger", func(t *testing.T) {
 		mc := defaultNoDAGModCfg(t)
@@ -55,7 +83,7 @@ func Test_NoDag_Run(t *testing.T) {
 
 		triggers, err := getTriggersSpec(t, m, []byte(""))
 		require.NoError(t, err)
-		require.Equal(t, len(triggers.Subscriptions), 1)
+		require.Equal(t, len(triggers.Subscriptions), 3)
 	})
 }
 
@@ -69,6 +97,7 @@ func defaultNoDAGModCfg(t testing.TB) *ModuleConfig {
 func getTriggersSpec(t *testing.T, m ModuleV2, config []byte) (*pb.TriggerSubscriptionRequest, error) {
 	helper := NewMockExecutionHelper(t)
 	helper.EXPECT().GetWorkflowExecutionID().Return("Id")
+	helper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
 	execResult, err := m.Execute(t.Context(), &pb.ExecuteRequest{
 		Config:  config,
 		Request: &pb.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}},

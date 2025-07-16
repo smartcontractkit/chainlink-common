@@ -8,10 +8,10 @@ import (
 )
 
 type ChipIngressEmitter struct {
-	client chipingress.ChipIngressClient
+	client chipingress.Client
 }
 
-func NewChipIngressEmitter(client chipingress.ChipIngressClient) (Emitter, error) {
+func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 
 	if client == nil {
 		return nil, fmt.Errorf("chip ingress client is nil")
@@ -27,12 +27,17 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	event, err := chipingress.NewEvent(sourceDomain, entityType, body)
+	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
 	if err != nil {
 		return err
 	}
 
-	_, err = c.client.Publish(ctx, event)
+	eventPb, err := chipingress.EventToProto(event)
+	if err != nil {
+		return fmt.Errorf("failed to convert event to proto: %w", err)
+	}
+
+	_, err = c.client.Publish(ctx, eventPb)
 	if err != nil {
 		return err
 	}
@@ -72,4 +77,15 @@ func ExtractSourceAndType(attrKVs ...any) (string, string, error) {
 	}
 
 	return sourceDomain, entityType, nil
+}
+
+func ExtractAttributes(attrKVs ...any) map[string]any {
+	attributes := newAttributes(attrKVs...)
+
+	attributesMap := make(map[string]any)
+	for key, value := range attributes {
+		attributesMap[key] = value
+	}
+
+	return attributesMap
 }

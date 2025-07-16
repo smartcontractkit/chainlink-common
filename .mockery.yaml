@@ -21,6 +21,7 @@ packages:
     interfaces:
       ContractReader:
       EVMService:
+      TONService:
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
       CapabilitiesRegistry:
@@ -31,12 +32,6 @@ packages:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
     interfaces:
       OTLPExporter: {}
-  github.com/smartcontractkit/chainlink-common/pkg/chipingress:
-    interfaces:
-      ChipIngressClient: {}
-  github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb:
-    interfaces:
-      ChipIngressClient: {}
   github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host:
     interfaces:
       ModuleV1: {}
@@ -55,3 +50,8 @@ packages:
           filename: "mock_{{.InterfaceName | snakecase}}_test.go"
           mockname: "mock{{.InterfaceName}}"
           dir: "{{.InterfaceDir}}"
+  github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt:
+    interfaces:
+      JWTGenerator:
+      JWTAuthenticator:
+      NodeAuthProvider:

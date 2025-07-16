@@ -25,7 +25,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2"
 	sdkpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm"
 	wasmdagpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
@@ -41,7 +40,8 @@ var (
 	defaultMaxFetchRequests          = 5
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
-	defaultMaxResponseSizeBytes      = sdk.DefaultMaxResponseSizeBytes
+	defaultMaxResponseSizeBytes      = 5 * 1024 * 1024   // 5 MB
+	ResponseBufferTooSmall           = "response buffer too small"
 )
 
 type DeterminismConfig struct {
@@ -100,7 +100,7 @@ type ExecutionHelper interface {
 
 	GetNodeTime() time.Time
 
-	GetDONTime() time.Time
+	GetDONTime(ctx context.Context) (time.Time, error)
 
 	EmitUserLog(log string) error
 }
@@ -199,8 +199,8 @@ func NewModule(modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig))
 	cfg.CacheConfigLoadDefault()
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 
-	// Load testing shows that leaving native unwind info enabled causes a very large slowdown when loading multiple modules.
-	cfg.SetNativeUnwindInfo(false)
+	// Handled differenty based on host OS.
+	SetUnwinding(cfg)
 
 	engine := wasmtime.NewEngineWithConfig(cfg)
 	if !modCfg.IsUncompressed {
@@ -1065,7 +1065,7 @@ func createAwaitCapsFn(
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
-			errStr := sdk.ResponseBufferTooSmall
+			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}
@@ -1139,7 +1139,7 @@ func createAwaitSecretsFn(
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
-			errStr := sdk.ResponseBufferTooSmall
+			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
 			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 		}

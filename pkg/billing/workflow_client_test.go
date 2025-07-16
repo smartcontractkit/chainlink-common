@@ -2,12 +2,9 @@ package billing
 
 import (
 	"context"
-	"crypto/ed25519"
-	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -17,58 +14,46 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	pb "github.com/smartcontractkit/chainlink-protos/billing/go"
 )
+
+// mockRequest is a simple type that implements fmt.Stringer.
+type MockRequest struct {
+	Field string
+}
+
+func (d MockRequest) String() string {
+	return d.Field
+}
 
 // ---------- Test Server Implementation ----------
 
 // testWorkflowServer implements pb.WorkflowServiceServer for testing.
 type testWorkflowServer struct {
-	pb.UnimplementedWorkflowServiceServer
+	pb.UnsafeCreditReservationServiceServer
 }
 
-func (s *testWorkflowServer) GetAccountCredits(_ context.Context, _ *pb.GetAccountCreditsRequest) (*pb.GetAccountCreditsResponse, error) {
-	return &pb.GetAccountCreditsResponse{
-		Credits: []*pb.AccountCredits{
-			{CreditType: "TEST", Credits: 100},
+func (s *testWorkflowServer) GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error) {
+	return &pb.GetOrganizationCreditsByWorkflowResponse{}, nil
+}
+
+func (s *testWorkflowServer) GetRateCard(_ context.Context, _ *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error) {
+	return &pb.GetRateCardResponse{
+		Entries: []*pb.RateCardEntry{
+			{ResourceType: pb.ResourceType_RESOURCE_TYPE_COMPUTE, MeasurementUnit: pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, UnitsPerCredit: "0.00001"},
 		},
 	}, nil
 }
 
-// ---------- Test for Sign and VerifySignature ----------
-
-// mockRequest is a simple type that implements fmt.Stringer.
-type mockRequest struct {
-	Field string
+func (s *testWorkflowServer) ReserveCredits(ctx context.Context, req *pb.ReserveCreditsRequest) (*pb.ReserveCreditsResponse, error) {
+	return &pb.ReserveCreditsResponse{}, nil
 }
-
-func (d mockRequest) String() string {
-	return d.Field
-}
-
-func TestWorkflowClient_SignAndVerify(t *testing.T) {
-	// Generate an ed25519 key pair for testing.
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-
-	req := mockRequest{Field: "test request"}
-
-	// Create a workflowClient instance with the test signing key.
-	wc := &workflowClient{
-		logger:     logger.Test(t),
-		signingKey: priv,
-	}
-
-	// Sign the request.
-	signature, err := wc.Sign(req)
-	require.NoError(t, err)
-	require.NotEmpty(t, signature)
-
-	// Verify the signature using our VerifySignature function.
-	err = VerifySignature(pub, req, signature)
-	require.NoError(t, err)
+func (s *testWorkflowServer) SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
 }
 
 // ---------- Test GRPC Dial with TLS Credentials ----------
@@ -93,7 +78,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	require.NoError(t, err)
 	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
 	testSrv := &testWorkflowServer{}
-	pb.RegisterWorkflowServiceServer(grpcServer, testSrv)
+	pb.RegisterCreditReservationServiceServer(grpcServer, testSrv)
 	go func() {
 		_ = grpcServer.Serve(lis)
 	}()
@@ -109,16 +94,16 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 
 	addr := lis.Addr().String()
 
-	// Generate a signing key so that the custom auth header is added.
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
+	// Create mock JWT manager for testing
+	mockJWT := mocks.NewJWTGenerator(t)
+	// Since we're making a real call, expect JWT creation
+	mockJWT.EXPECT().CreateJWTForRequest(&pb.GetRateCardRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1}).Return("test.jwt.token", nil).Once()
+
 	lggr := logger.Test(t)
-	wc, err := NewWorkflowClient(addr,
+	wc, err := NewWorkflowClient(lggr, addr,
 		WithWorkflowTransportCredentials(clientCreds), // Provided but may be overridden by TLS cert.
 		WithWorkflowTLSCert(string(certBytes)),
-		WithSigningKey(priv),
-		WithServerPublicKey(pub),
-		WithWorkflowLogger(lggr),
+		WithJWTGenerator(mockJWT),
 		WithServerName("localhost"),
 	)
 	require.NoError(t, err)
@@ -132,10 +117,12 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	// Call a method to verify that the client and server communicate over TLS.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := wc.GetAccountCredits(ctx, &pb.GetAccountCreditsRequest{AccountId: "test-account"})
+	resp, err := wc.GetRateCard(ctx, &pb.GetRateCardRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	assert.Equal(t, "TEST", resp.Credits[0].CreditType)
+	assert.Equal(t, pb.ResourceType_RESOURCE_TYPE_COMPUTE, resp.Entries[0].ResourceType)
+	assert.Equal(t, pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, resp.Entries[0].MeasurementUnit)
+	assert.Equal(t, "0.00001", resp.Entries[0].UnitsPerCredit)
 }
 
 func TestIntegration_GRPC_Insecure(t *testing.T) {
@@ -155,7 +142,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	require.NoError(t, err)
 	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
 	testSrv := &testWorkflowServer{}
-	pb.RegisterWorkflowServiceServer(grpcServer, testSrv)
+	pb.RegisterCreditReservationServiceServer(grpcServer, testSrv)
 	go func() {
 		_ = grpcServer.Serve(lis)
 	}()
@@ -164,132 +151,31 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	addr := lis.Addr().String()
 	lggr := logger.Test(t)
 
-	wc, err := NewWorkflowClient(addr,
+	wc, err := NewWorkflowClient(lggr, addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, wc)
 
-	_, err = wc.ConsumeCredits(t.Context(), nil)
+	_, err = wc.GetRateCard(context.Background(), nil)
 
 	require.Error(t, err)
-}
-
-// Test that CanonicalStringFromRequest returns the correct string.
-func TestWorkflowClient_CanonicalString(t *testing.T) {
-	lggr := logger.Test(t)
-	wc := &workflowClient{
-		logger: lggr,
-	}
-
-	dr := mockRequest{Field: "hello"}
-	str := wc.CanonicalStringFromRequest(dr)
-	require.Equal(t, "hello", str)
-
-	x := 42
-	str2 := wc.CanonicalStringFromRequest(x)
-	require.Equal(t, "42", str2)
-
-	type sample struct {
-		A int
-		B string
-	}
-	s := sample{A: 10, B: "foo"}
-	expected := fmt.Sprintf("%v", s)
-	require.Equal(t, expected, wc.CanonicalStringFromRequest(s))
-}
-
-// Test that VerifySignature fails when the request is altered.
-func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
-	lggr := logger.Test(t)
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-
-	req := mockRequest{Field: "original"}
-	wc := &workflowClient{
-		logger:     lggr,
-		signingKey: priv,
-	}
-	sig, err := wc.Sign(req)
-	require.NoError(t, err)
-
-	reqAltered := mockRequest{Field: "tampered"}
-	err = VerifySignature(pub, reqAltered, sig)
-	require.Error(t, err, "Expected signature verification to fail for altered request")
-}
-
-// Updated test: Verify that addSignature does nothing when no signing key is provided.
-func TestWorkflowClient_NoSigningKey(t *testing.T) {
-	ctx := context.Background()
-	req := mockRequest{Field: "test"}
-	wc := &workflowClient{
-		// signingKey is nil
-	}
-	newCtx, err := wc.addSignature(ctx, req)
-	require.NoError(t, err)
-
-	md, ok := metadata.FromOutgoingContext(newCtx)
-	if ok {
-		_, exists := md["x-custom-auth"]
-		require.False(t, exists, "Expected no 'x-custom-auth' metadata when no signing key is set")
-	} else {
-		assert.True(t, true, "No outgoing metadata, as expected")
-	}
-}
-
-func TestWorkflowClient_CustomAuthHeader(t *testing.T) {
-	lggr := logger.Test(t)
-	_, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-
-	wc := &workflowClient{
-		logger:     lggr,
-		signingKey: priv,
-	}
-
-	req := mockRequest{Field: "custom auth test"}
-	ctx := context.Background()
-	newCtx, err := wc.addSignature(ctx, req)
-	require.NoError(t, err)
-
-	md, ok := metadata.FromOutgoingContext(newCtx)
-	require.True(t, ok, "Expected outgoing metadata to be present")
-
-	values := md["x-custom-auth"]
-	require.NotEmpty(t, values, "x-custom-auth header should be present")
-	authHeader := values[0]
-	parts := strings.Split(authHeader, "|")
-	require.Len(t, parts, 3, "x-custom-auth header should contain three parts separated by '|'")
-
-	// First part: public key.
-	expectedPubHex := hex.EncodeToString(priv.Public().(ed25519.PublicKey))
-	require.Equal(t, expectedPubHex, parts[0], "Public key in header should match")
-
-	// Second part: timestamp.
-	ts, err := time.Parse(time.RFC3339, parts[1])
-	require.NoError(t, err, "Timestamp should be in RFC3339 format")
-	require.Less(t, time.Since(ts).Seconds(), 5.0, "Timestamp should be recent")
-
-	// Third part: SHA256 hash (64 hex characters).
-	require.Len(t, parts[2], 64, "Hash in x-custom-auth header should be 64 hex characters")
 }
 
 // Test that NewWorkflowClient fails when given an invalid address.
 func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 	lggr := logger.Test(t)
-	wc, err := NewWorkflowClient("invalid-address",
+	wc, err := NewWorkflowClient(lggr, "invalid-address",
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 
 	require.NotNil(t, wc)
 	require.NoError(t, err)
 
-	_, err = wc.ConsumeCredits(t.Context(), nil)
+	_, err = wc.GetRateCard(context.Background(), nil)
 
 	require.Error(t, err, "Expected error when dialing an invalid address")
 }
@@ -306,9 +192,8 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 
 	addr := lis.Addr().String()
 	lggr := logger.Test(t)
-	wc, err := NewWorkflowClient(addr,
+	wc, err := NewWorkflowClient(lggr, addr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 	require.NoError(t, err)
@@ -321,43 +206,111 @@ func TestWorkflowClient_CloseTwice(t *testing.T) {
 	t.Log("Second Close() call error (if any):", err)
 }
 
-// Additional test: Verify that signing produces a valid signature and repeated signing yields the same result.
-func TestWorkflowClient_RepeatedSign(t *testing.T) {
-	lggr := logger.Test(t)
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-
-	wc := &workflowClient{
-		logger:     lggr,
-		signingKey: priv,
-	}
-	req := mockRequest{Field: "repeatable"}
-	sig1, err := wc.Sign(req)
-	require.NoError(t, err)
-	require.NotEmpty(t, sig1)
-
-	sig2, err := wc.Sign(req)
-	require.NoError(t, err)
-	require.Equal(t, sig1, sig2, "Expected repeated signatures for the same request to match")
-
-	err = VerifySignature(pub, req, sig1)
-	require.NoError(t, err)
-}
-
 // Additional test: Verify that dialGrpc fails if an unreachable address is provided.
 func TestWorkflowClient_DialUnreachable(t *testing.T) {
 	lggr := logger.Test(t)
 	unreachableAddr := "192.0.2.1:12345" // Reserved for documentation.
-	wc, err := NewWorkflowClient(unreachableAddr,
+	wc, err := NewWorkflowClient(lggr, unreachableAddr,
 		WithWorkflowTransportCredentials(insecure.NewCredentials()),
-		WithWorkflowLogger(lggr),
 		WithServerName("localhost"),
 	)
 
 	require.NotNil(t, wc)
 	require.NoError(t, err)
 
-	_, err = wc.ConsumeCredits(t.Context(), nil)
+	_, err = wc.GetRateCard(context.Background(), nil)
 
 	require.Error(t, err, "Expected dialing an unreachable address to fail")
+}
+
+// ---------- Test JWT Token Creation ----------
+
+func TestWorkflowClient_AddJWTAuthToContext(t *testing.T) {
+
+	mockJWT := mocks.NewJWTGenerator(t)
+	req := MockRequest{Field: "test request"}
+	expectedToken := "mock.jwt.token"
+
+	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Once()
+
+	wc := &workflowClient{
+		logger:       logger.Test(t),
+		jwtGenerator: mockJWT,
+	}
+
+	ctx := context.Background()
+	newCtx, err := wc.addJWTAuth(ctx, req)
+	require.NoError(t, err)
+
+	// Verify JWT is added to metadata
+	md, ok := metadata.FromOutgoingContext(newCtx)
+	require.True(t, ok, "Expected outgoing metadata to be present")
+
+	values := md["authorization"]
+	require.NotEmpty(t, values, "authorization header should be present")
+	authHeader := values[0]
+	require.Equal(t, "Bearer "+expectedToken, authHeader, "Authorization header should contain expected token")
+}
+
+// Test that client handles the case when no JWT manager is provided.
+func TestWorkflowClient_NoSigningKey(t *testing.T) {
+	ctx := context.Background()
+	req := MockRequest{Field: "test"}
+	wc := &workflowClient{
+		logger:       logger.Test(t),
+		jwtGenerator: nil,
+	}
+	newCtx, err := wc.addJWTAuth(ctx, req)
+	require.NoError(t, err)
+
+	// Should return the same context
+	assert.Equal(t, ctx, newCtx)
+}
+
+// Test that client handles JWT manager errors properly
+func TestWorkflowClient_VerifySignature_Invalid(t *testing.T) {
+	mockJWT := mocks.NewJWTGenerator(t)
+	req := MockRequest{Field: "test"}
+
+	mockJWT.EXPECT().CreateJWTForRequest(req).Return("", fmt.Errorf("mock JWT creation error")).Once()
+
+	wc := &workflowClient{
+		logger:       logger.Test(t),
+		jwtGenerator: mockJWT,
+	}
+
+	ctx := context.Background()
+	_, err := wc.addJWTAuth(ctx, req)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create JWT")
+}
+
+func TestWorkflowClient_RepeatedSign(t *testing.T) {
+	mockJWT := mocks.NewJWTGenerator(t)
+	req := MockRequest{Field: "repeatable"}
+	expectedToken := "consistent.jwt.token"
+
+	// Expect the same call twice 
+	mockJWT.EXPECT().CreateJWTForRequest(req).Return(expectedToken, nil).Times(2)
+
+	wc := &workflowClient{
+		logger:       logger.Test(t),
+		jwtGenerator: mockJWT,
+	}
+
+	ctx1 := context.Background()
+	newCtx1, err := wc.addJWTAuth(ctx1, req)
+	require.NoError(t, err)
+
+	ctx2 := context.Background()
+	newCtx2, err := wc.addJWTAuth(ctx2, req)
+	require.NoError(t, err)
+
+	// Both should have the same token since we're mocking the same response
+	md1, ok := metadata.FromOutgoingContext(newCtx1)
+	require.True(t, ok)
+	md2, ok := metadata.FromOutgoingContext(newCtx2)
+	require.True(t, ok)
+
+	assert.Equal(t, md1["authorization"], md2["authorization"], "Expected same authorization header for same request")
 }

@@ -39,6 +39,10 @@ func (r *relayer) EVM() (types.EVMService, error) {
 	return r.relayerSetClient.EVM(r.relayerID)
 }
 
+func (r *relayer) TON() (types.TONService, error) {
+	return r.relayerSetClient.TON(r.relayerID)
+}
+
 func (r *relayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
 	return r.relayerSetClient.NewContractReader(ctx, r.relayerID, contractReaderConfig)
 }
@@ -85,6 +89,15 @@ func (r *relayer) Name() string {
 	}
 
 	return name
+}
+
+func (r *relayer) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	chainInfo, err := r.relayerSetClient.RelayerGetChainInfo(ctx, r.relayerID)
+	if err != nil {
+		r.log.Error("error getting chain info", "error", err)
+		return types.ChainInfo{}, err
+	}
+	return chainInfo, nil
 }
 
 func (r *relayer) LatestHead(ctx context.Context) (types.Head, error) {

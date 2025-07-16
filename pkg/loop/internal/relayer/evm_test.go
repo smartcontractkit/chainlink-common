@@ -7,12 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/mocks"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
@@ -22,28 +24,31 @@ import (
 )
 
 var (
-	txId         = "txid1"
-	txIndex      = 10
-	txFee        = big.NewInt(12345)
-	balance      = big.NewInt(1222345)
-	gasPrice     = big.NewInt(12344)
-	abi          = []byte("data")
-	respAbi      = []byte("response")
-	address      = evm.Address{1, 2, 3}
-	address1     = evm.Address{10, 11, 14}
-	blockHash    = evm.Hash{22, 33, 44}
-	parentHash   = evm.Hash{01, 33, 44}
-	fromBlock    = big.NewInt(10)
-	blockNum     = big.NewInt(101)
-	toBlock      = big.NewInt(145)
-	topic        = evm.Hash{21, 3, 4}
-	topic2       = evm.Hash{33, 1, 33}
-	topic3       = evm.Hash{20, 19, 17}
-	gas          = uint64(10)
-	txHash       = evm.Hash{5, 3, 44}
-	eventSigHash = evm.Hash{14, 16, 29}
-	filterName   = "f name 1"
-	retention    = time.Second
+	txId             = "txid1"
+	txIndex          = 10
+	txFee            = big.NewInt(12345)
+	balance          = big.NewInt(1222345)
+	gasPrice         = big.NewInt(12344)
+	abi              = []byte("data")
+	respAbi          = []byte("response")
+	address          = evm.Address{1, 2, 3}
+	address1         = evm.Address{10, 11, 14}
+	address2         = evm.Address{13, 15, 16}
+	blockHash        = evm.Hash{22, 33, 44}
+	parentHash       = evm.Hash{01, 33, 44}
+	fromBlock        = big.NewInt(10)
+	blockNum         = big.NewInt(101)
+	toBlock          = big.NewInt(145)
+	topic            = evm.Hash{21, 3, 4}
+	topic2           = evm.Hash{33, 1, 33}
+	topic3           = evm.Hash{20, 19, 17}
+	gas              = uint64(10)
+	txHash           = evm.Hash{5, 3, 44}
+	eventSigHash     = evm.Hash{14, 16, 29}
+	filterName       = "f name 1"
+	retention        = time.Second
+	medianPluginType = string(types.Median)
+	confidenceLevel  = primitives.Finalized
 )
 
 func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
@@ -51,7 +56,7 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
-	evmService := &staticEVMService{}
+	evmService := mocks.NewEVMService(t)
 	evmpb.RegisterEVMServer(s, &evmServer{impl: evmService})
 
 	go func() {
@@ -77,15 +82,20 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		grpcClient: evmpb.NewEVMClient(conn),
 	}
 	t.Run("BalanceAt", func(t *testing.T) {
-		evmService.staticBalanceAt = func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
-			require.Equal(t, account, address)
-			require.Equal(t, blockNumber, blockNum)
-			return balance, nil
-		}
+		evmService.EXPECT().BalanceAt(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error) {
+			require.Equal(t, request.Address, address)
+			require.Equal(t, request.BlockNumber, blockNum)
+			require.Equal(t, request.ConfidenceLevel, confidenceLevel)
+			return &evm.BalanceAtReply{Balance: balance}, nil
+		})
 
-		resp, err := client.BalanceAt(ctx, address, blockNum)
+		resp, err := client.BalanceAt(ctx, evm.BalanceAtRequest{
+			Address:         address,
+			BlockNumber:     blockNum,
+			ConfidenceLevel: confidenceLevel,
+		})
 		require.NoError(t, err)
-		require.Equal(t, resp, balance)
+		require.Equal(t, resp.Balance, balance)
 	})
 
 	t.Run("CallContract", func(t *testing.T) {
@@ -94,14 +104,20 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			From: address1,
 			Data: abi,
 		}
-		evmService.staticCallContract = func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-			require.Equal(t, expMsg, msg)
-			return respAbi, nil
-		}
+		evmService.EXPECT().CallContract(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error) {
+			require.Equal(t, expMsg, request.Msg)
+			require.Equal(t, request.BlockNumber, blockNum)
+			require.Equal(t, request.ConfidenceLevel, confidenceLevel)
+			return &evm.CallContractReply{Data: respAbi}, nil
+		})
 
-		resp, err := client.CallContract(ctx, expMsg, blockNum)
+		resp, err := client.CallContract(ctx, evm.CallContractRequest{
+			Msg:             expMsg,
+			BlockNumber:     blockNum,
+			ConfidenceLevel: confidenceLevel,
+		})
 		require.NoError(t, err)
-		require.Equal(t, respAbi, resp)
+		require.Equal(t, respAbi, resp.Data)
 	})
 
 	t.Run("RegisterLogTracking", func(t *testing.T) {
@@ -118,28 +134,27 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			Retention: retention,
 			Topic3:    topic3,
 		}
-		evmService.staticRegisterLogTracking = func(ctx context.Context, filter evm.LPFilterQuery) error {
+		evmService.EXPECT().RegisterLogTracking(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, filter evm.LPFilterQuery) error {
 			require.Equal(t, expFilter.Name, filter.Name)
 			require.Equal(t, expFilter.Addresses, filter.Addresses)
 			require.Equal(t, expFilter.EventSigs, filter.EventSigs)
 			require.Equal(t, expFilter.Topic2, filter.Topic2)
 			require.Equal(t, expFilter.Topic3, filter.Topic3)
 			require.Equal(t, expFilter.Retention, filter.Retention)
-
 			return nil
-		}
+		})
 
 		err := client.RegisterLogTracking(ctx, expFilter)
 		require.NoError(t, err)
 	})
 
 	t.Run("GetTransactionFee", func(t *testing.T) {
-		evmService.staticGetTransactionFee = func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error) {
+		evmService.EXPECT().GetTransactionFee(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error) {
 			require.Equal(t, txId, transactionID)
 			return &evm.TransactionFee{
 				TransactionFee: txFee,
 			}, nil
-		}
+		})
 
 		fee, err := client.GetTransactionFee(ctx, txId)
 		require.NoError(t, err)
@@ -147,10 +162,10 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 	})
 
 	t.Run("GetTransactionStatus", func(t *testing.T) {
-		evmService.staticGetTransactionStatus = func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
+		evmService.EXPECT().GetTransactionStatus(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
 			require.Equal(t, txId, transactionID)
 			return types.Finalized, nil
-		}
+		})
 
 		got, err := client.GetTransactionStatus(ctx, txId)
 		require.NoError(t, err)
@@ -178,14 +193,19 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 				Removed:     false,
 			},
 		}
-		evmService.staticFilterLogs = func(ctx context.Context, fq evm.FilterQuery) ([]*evm.Log, error) {
-			require.Equal(t, expFQ, fq)
-			return expLog, nil
-		}
+		evmService.EXPECT().FilterLogs(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
+			require.Equal(t, expFQ, request.FilterQuery)
+			require.Equal(t, request.ConfidenceLevel, confidenceLevel)
+			return &evm.FilterLogsReply{Logs: expLog}, nil
+		})
 
-		logs, err := client.FilterLogs(ctx, expFQ)
+		request := evm.FilterLogsRequest{
+			FilterQuery:     expFQ,
+			ConfidenceLevel: confidenceLevel,
+		}
+		reply, err := client.FilterLogs(ctx, request)
 		require.NoError(t, err)
-		require.Equal(t, expLog, logs)
+		require.Equal(t, expLog, reply.Logs)
 
 	})
 
@@ -195,10 +215,10 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			From: address1,
 			Data: abi,
 		}
-		evmService.staticEstimateGas = func(ctx context.Context, call *evm.CallMsg) (uint64, error) {
+		evmService.EXPECT().EstimateGas(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, call *evm.CallMsg) (uint64, error) {
 			require.Equal(t, expMsg, call)
 			return gas, nil
-		}
+		})
 
 		resp, err := client.EstimateGas(ctx, expMsg)
 		require.NoError(t, err)
@@ -227,10 +247,10 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			BlockNumber:       blockNum,
 			TransactionIndex:  uint64(txIndex),
 		}
-		evmService.staticGetTransactionReceipt = func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
+		evmService.EXPECT().GetTransactionReceipt(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, got evm.Hash) (*evm.Receipt, error) {
 			require.Equal(t, txHash, got)
 			return expReceipt, nil
-		}
+		})
 
 		got, err := client.GetTransactionReceipt(ctx, txHash)
 		require.NoError(t, err)
@@ -247,31 +267,32 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			Gas:      gas,
 			GasPrice: gasPrice,
 		}
-		evmService.staticGetTransactionByHash = func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
+		evmService.EXPECT().GetTransactionByHash(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
 			require.Equal(t, txHash, hash)
 			return expTx, nil
-
-		}
+		})
 
 		got, err := client.GetTransactionByHash(ctx, txHash)
 		require.NoError(t, err)
 		require.Equal(t, expTx, got)
 	})
 
-	t.Run("LatestAndFinalizedHead", func(t *testing.T) {
-		expHead := evm.Head{
+	t.Run("HeaderByNumber", func(t *testing.T) {
+		expHead := evm.Header{
 			Hash:       blockHash,
 			ParentHash: parentHash,
 			Number:     blockNum,
 			Timestamp:  10,
 		}
-		evmService.staticLatestAndFinalizedHead = func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error) {
-			return expHead, expHead, nil
-		}
+		evmService.EXPECT().HeaderByNumber(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error) {
+			require.Equal(t, blockNum, request.Number)
+			require.Equal(t, request.ConfidenceLevel, confidenceLevel)
+			return &evm.HeaderByNumberReply{Header: &expHead}, nil
+		})
 
-		got1, _, err := client.LatestAndFinalizedHead(ctx)
+		reply, err := client.HeaderByNumber(ctx, evm.HeaderByNumberRequest{Number: blockNum, ConfidenceLevel: confidenceLevel})
 		require.NoError(t, err)
-		require.Equal(t, expHead, got1)
+		require.Equal(t, &expHead, reply.Header)
 	})
 
 	t.Run("QueryTrackedLogs", func(t *testing.T) {
@@ -292,88 +313,37 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 			},
 		}
 
-		evmService.staticQueryTrackedLogs = func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort,
+		evmService.EXPECT().QueryTrackedLogs(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort,
 			confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
 			require.Equal(t, expQuery, filterQuery)
 			require.Equal(t, expLimitAndSort, limitAndSort)
 			require.Equal(t, expConfidence, confidenceLevel)
 			return expLog, nil
-		}
+		})
 
 		got, err := client.QueryTrackedLogs(ctx, expQuery, expLimitAndSort, expConfidence)
 		require.NoError(t, err)
 		require.Equal(t, expLog, got)
 
 	})
-}
 
-type staticEVMService struct {
-	staticCallContract           func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	staticFilterLogs             func(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	staticBalanceAt              func(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
-	staticEstimateGas            func(ctx context.Context, call *evm.CallMsg) (uint64, error)
-	staticGetTransactionByHash   func(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
-	staticGetTransactionReceipt  func(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
-	staticGetTransactionFee      func(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error)
-	staticQueryTrackedLogs       func(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
-	staticLatestAndFinalizedHead func(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
-	staticRegisterLogTracking    func(ctx context.Context, filter evm.LPFilterQuery) error
-	staticUnregisterLogTracking  func(ctx context.Context, filterName string) error
-	staticGetTransactionStatus   func(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error)
-}
-
-func (s *staticEVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return s.staticCallContract(ctx, msg, blockNumber)
-}
-
-func (s *staticEVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
-	return s.staticFilterLogs(ctx, filterQuery)
-}
-
-func (s *staticEVMService) BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error) {
-	return s.staticBalanceAt(ctx, account, blockNumber)
-}
-
-func (s *staticEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
-	return s.staticEstimateGas(ctx, call)
-}
-
-func (s *staticEVMService) GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error) {
-	return s.staticGetTransactionByHash(ctx, hash)
-}
-
-func (s *staticEVMService) GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error) {
-	return s.staticGetTransactionReceipt(ctx, txHash)
-}
-
-func (s *staticEVMService) GetTransactionFee(ctx context.Context, transactionID types.IdempotencyKey) (*evm.TransactionFee, error) {
-	return s.staticGetTransactionFee(ctx, transactionID)
-}
-
-func (s *staticEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
-	return s.staticQueryTrackedLogs(ctx, filterQuery, limitAndSort, confidenceLevel)
-}
-
-func (s *staticEVMService) LatestAndFinalizedHead(ctx context.Context) (evm.Head, evm.Head, error) {
-	return s.staticLatestAndFinalizedHead(ctx)
-}
-
-func (s *staticEVMService) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
-	return s.staticRegisterLogTracking(ctx, filter)
-}
-
-func (s *staticEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
-	return s.staticUnregisterLogTracking(ctx, filterName)
-}
-
-func (s *staticEVMService) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-	return s.staticGetTransactionStatus(ctx, transactionID)
+	t.Run("GetForwarderForEOA", func(t *testing.T) {
+		evmService.EXPECT().GetForwarderForEOA(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (evm.Address, error) {
+			require.Equal(t, address, eoa)
+			require.Equal(t, address2, ocr2AggregatorID)
+			require.Equal(t, pluginType, medianPluginType)
+			return address1, nil
+		})
+		got, err := client.GetForwarderForEOA(ctx, address, address2, medianPluginType)
+		require.NoError(t, err)
+		require.Equal(t, address1, got)
+	})
 }
 
 func generateFixtureQuery() []query.Expression {
 	exprs := make([]query.Expression, 0)
 
-	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed, primitives.Safe}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}

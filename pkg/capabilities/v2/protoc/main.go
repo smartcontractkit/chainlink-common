@@ -7,8 +7,14 @@ import (
 	"strings"
 
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/types/pluginpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg"
+)
+
+const (
+	toolName    = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc"
+	localPrefix = "http://github.com/smartcontractkit/chainlink"
 )
 
 func main() {
@@ -18,6 +24,7 @@ func main() {
 		return nil
 	}}.Run(func(plugin *protogen.Plugin) error {
 		goLang := pkg.ServerLangaugeGo
+		plugin.SupportedFeatures = uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
 		serverLanguage, err := parseArg(args, "server_language", func(value string) (pkg.ServerLanguage, error) {
 			serverLanguage := pkg.ServerLanguage(strings.ToLower(value))
 			return serverLanguage, serverLanguage.Validate()
@@ -30,12 +37,8 @@ func main() {
 			if !file.Generate {
 				continue
 			}
-			if err := pkg.GenerateClient(plugin, file); err != nil {
-				log.Printf("failed to generate for %s: %v", file.Desc.Path(), err)
-				os.Exit(1)
-			}
 
-			if err := pkg.GenerateServer(plugin, file, serverLanguage); err != nil {
+			if err = pkg.GenerateServer(plugin, file, serverLanguage, toolName, localPrefix); err != nil {
 				log.Printf("failed to generate for %s: %v", file.Desc.Path(), err)
 				os.Exit(1)
 			}

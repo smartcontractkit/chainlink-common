@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil/pg"
 )
@@ -60,21 +61,19 @@ type Server struct {
 	DataSource      sqlutil.DataSource // optional
 	promServer      *PromServer
 	checker         *services.HealthChecker
+	LimitsFactory   limits.Factory
 }
 
 func newServer(loggerName string) (*Server, error) {
-	s := &Server{
-		// default prometheus.Registerer
-		GRPCOpts: NewGRPCOpts(nil),
-	}
-
 	lggr, err := NewLogger()
 	if err != nil {
 		return nil, fmt.Errorf("error creating logger: %w", err)
 	}
 	lggr = logger.Named(lggr, loggerName)
-	s.Logger = logger.Sugared(lggr)
-	return s, nil
+	return &Server{
+		GRPCOpts: NewGRPCOpts(nil), // default prometheus.Registerer
+		Logger:   logger.Sugared(lggr),
+	}, nil
 }
 
 func (s *Server) start() error {
@@ -126,6 +125,7 @@ func (s *Server) start() error {
 			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
+			ChipIngressInsecureConnection:  s.EnvConfig.TelemetryInsecureConnection,
 		}
 
 		if tracingConfig.Enabled {
@@ -176,6 +176,11 @@ func (s *Server) start() error {
 
 		s.dbStatsReporter = pg.NewStatsReporter(s.db.Stats, s.Logger)
 		s.dbStatsReporter.Start()
+	}
+
+	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
+	if bc := beholder.GetClient(); bc != nil {
+		s.LimitsFactory.Meter = bc.Meter
 	}
 
 	return nil

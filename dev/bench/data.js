@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752669547916,
+  "lastUpdate": 1752670331689,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20286,6 +20286,48 @@ window.BENCHMARK_DATA = {
             "value": 28495,
             "unit": "ns/op",
             "extra": "42044 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3993822e27366735a6dd86d65805901c24a559af",
+          "message": "migrate golangci-lint to v2; swap out gomodguard for gomoddirectives (#1392)",
+          "timestamp": "2025-07-16T14:51:02+02:00",
+          "tree_id": "c82ad838f74ba71d7d9c8c5966e4e83b133a5b41",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3993822e27366735a6dd86d65805901c24a559af"
+        },
+        "date": 1752670330170,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.2,
+            "unit": "ns/op",
+            "extra": "3305767 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 399.9,
+            "unit": "ns/op",
+            "extra": "2956914 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28461,
+            "unit": "ns/op",
+            "extra": "42100 times\n4 procs"
           }
         ]
       }

@@ -11,7 +11,7 @@ import (
 func TestTenant_rawKeys(t *testing.T) {
 	const (
 		org      = "AcmeCorporation"
-		owner    = "0x1234abcd"
+		owner    = "1234abcd"
 		workflow = "ABCDEFGH"
 		key      = "foo"
 	)

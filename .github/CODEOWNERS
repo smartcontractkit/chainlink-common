@@ -11,9 +11,9 @@
 /pkg/chains/evm @smartcontractkit/bix-framework
 /pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations
 /pkg/loop/cmd/loopinstall @smartcontractkit/devex-cicd
-/pkg/loop/internal/relayer @smartcontractkit/bix-framework
-/pkg/loop/internal/relayerset @smartcontractkit/bix-framework
-/pkg/types/ @smartcontractkit/ccip-offchain
+/pkg/loop/internal/relayer @smartcontractkit/bix-framework @smartcontractkit/foundations
+/pkg/loop/internal/relayerset @smartcontractkit/bix-framework @smartcontractkit/foundations
+/pkg/types/ @smartcontractkit/foundations
 /pkg/types/ccip @smartcontractkit/ccip-offchain
 /pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team

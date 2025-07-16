@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752681430408,
+  "lastUpdate": 1752686667106,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20454,6 +20454,48 @@ window.BENCHMARK_DATA = {
             "value": 28542,
             "unit": "ns/op",
             "extra": "41982 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "poopoothegorilla@users.noreply.github.com",
+            "name": "Jim W",
+            "username": "poopoothegorilla"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1e97949e758426b82b98717d049912b8916c861",
+          "message": "Update CODEOWNERS to include bix-framework for capabilities and chains (#1297)",
+          "timestamp": "2025-07-16T10:23:13-07:00",
+          "tree_id": "ba318a8ae66a11f453d3715399e7df60f87fcfdf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f1e97949e758426b82b98717d049912b8916c861"
+        },
+        "date": 1752686666120,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 374.9,
+            "unit": "ns/op",
+            "extra": "3240404 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.4,
+            "unit": "ns/op",
+            "extra": "2897823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28471,
+            "unit": "ns/op",
+            "extra": "42080 times\n4 procs"
           }
         ]
       }

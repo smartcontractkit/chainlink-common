@@ -4,7 +4,6 @@ package mocks
 
 import (
 	context "context"
-	big "math/big"
 
 	evm "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	mock "github.com/stretchr/testify/mock"
@@ -29,29 +28,29 @@ func (_m *EVMService) EXPECT() *EVMService_Expecter {
 	return &EVMService_Expecter{mock: &_m.Mock}
 }
 
-// BalanceAt provides a mock function with given fields: ctx, account, blockNumber
-func (_m *EVMService) BalanceAt(ctx context.Context, account [20]byte, blockNumber *big.Int) (*big.Int, error) {
-	ret := _m.Called(ctx, account, blockNumber)
+// BalanceAt provides a mock function with given fields: ctx, request
+func (_m *EVMService) BalanceAt(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error) {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BalanceAt")
 	}
 
-	var r0 *big.Int
+	var r0 *evm.BalanceAtReply
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, [20]byte, *big.Int) (*big.Int, error)); ok {
-		return rf(ctx, account, blockNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.BalanceAtRequest) (*evm.BalanceAtReply, error)); ok {
+		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, [20]byte, *big.Int) *big.Int); ok {
-		r0 = rf(ctx, account, blockNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.BalanceAtRequest) *evm.BalanceAtReply); ok {
+		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*big.Int)
+			r0 = ret.Get(0).(*evm.BalanceAtReply)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, [20]byte, *big.Int) error); ok {
-		r1 = rf(ctx, account, blockNumber)
+	if rf, ok := ret.Get(1).(func(context.Context, evm.BalanceAtRequest) error); ok {
+		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -66,25 +65,24 @@ type EVMService_BalanceAt_Call struct {
 
 // BalanceAt is a helper method to define mock.On call
 //   - ctx context.Context
-//   - account [20]byte
-//   - blockNumber *big.Int
-func (_e *EVMService_Expecter) BalanceAt(ctx interface{}, account interface{}, blockNumber interface{}) *EVMService_BalanceAt_Call {
-	return &EVMService_BalanceAt_Call{Call: _e.mock.On("BalanceAt", ctx, account, blockNumber)}
+//   - request evm.BalanceAtRequest
+func (_e *EVMService_Expecter) BalanceAt(ctx interface{}, request interface{}) *EVMService_BalanceAt_Call {
+	return &EVMService_BalanceAt_Call{Call: _e.mock.On("BalanceAt", ctx, request)}
 }
 
-func (_c *EVMService_BalanceAt_Call) Run(run func(ctx context.Context, account [20]byte, blockNumber *big.Int)) *EVMService_BalanceAt_Call {
+func (_c *EVMService_BalanceAt_Call) Run(run func(ctx context.Context, request evm.BalanceAtRequest)) *EVMService_BalanceAt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([20]byte), args[2].(*big.Int))
+		run(args[0].(context.Context), args[1].(evm.BalanceAtRequest))
 	})
 	return _c
 }
 
-func (_c *EVMService_BalanceAt_Call) Return(_a0 *big.Int, _a1 error) *EVMService_BalanceAt_Call {
+func (_c *EVMService_BalanceAt_Call) Return(_a0 *evm.BalanceAtReply, _a1 error) *EVMService_BalanceAt_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_BalanceAt_Call) RunAndReturn(run func(context.Context, [20]byte, *big.Int) (*big.Int, error)) *EVMService_BalanceAt_Call {
+func (_c *EVMService_BalanceAt_Call) RunAndReturn(run func(context.Context, evm.BalanceAtRequest) (*evm.BalanceAtReply, error)) *EVMService_BalanceAt_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -148,29 +146,29 @@ func (_c *EVMService_CalculateTransactionFee_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// CallContract provides a mock function with given fields: ctx, msg, blockNumber
-func (_m *EVMService) CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	ret := _m.Called(ctx, msg, blockNumber)
+// CallContract provides a mock function with given fields: ctx, request
+func (_m *EVMService) CallContract(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error) {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CallContract")
 	}
 
-	var r0 []byte
+	var r0 *evm.CallContractReply
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *evm.CallMsg, *big.Int) ([]byte, error)); ok {
-		return rf(ctx, msg, blockNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.CallContractRequest) (*evm.CallContractReply, error)); ok {
+		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *evm.CallMsg, *big.Int) []byte); ok {
-		r0 = rf(ctx, msg, blockNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.CallContractRequest) *evm.CallContractReply); ok {
+		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+			r0 = ret.Get(0).(*evm.CallContractReply)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *evm.CallMsg, *big.Int) error); ok {
-		r1 = rf(ctx, msg, blockNumber)
+	if rf, ok := ret.Get(1).(func(context.Context, evm.CallContractRequest) error); ok {
+		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -185,25 +183,24 @@ type EVMService_CallContract_Call struct {
 
 // CallContract is a helper method to define mock.On call
 //   - ctx context.Context
-//   - msg *evm.CallMsg
-//   - blockNumber *big.Int
-func (_e *EVMService_Expecter) CallContract(ctx interface{}, msg interface{}, blockNumber interface{}) *EVMService_CallContract_Call {
-	return &EVMService_CallContract_Call{Call: _e.mock.On("CallContract", ctx, msg, blockNumber)}
+//   - request evm.CallContractRequest
+func (_e *EVMService_Expecter) CallContract(ctx interface{}, request interface{}) *EVMService_CallContract_Call {
+	return &EVMService_CallContract_Call{Call: _e.mock.On("CallContract", ctx, request)}
 }
 
-func (_c *EVMService_CallContract_Call) Run(run func(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int)) *EVMService_CallContract_Call {
+func (_c *EVMService_CallContract_Call) Run(run func(ctx context.Context, request evm.CallContractRequest)) *EVMService_CallContract_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*evm.CallMsg), args[2].(*big.Int))
+		run(args[0].(context.Context), args[1].(evm.CallContractRequest))
 	})
 	return _c
 }
 
-func (_c *EVMService_CallContract_Call) Return(_a0 []byte, _a1 error) *EVMService_CallContract_Call {
+func (_c *EVMService_CallContract_Call) Return(_a0 *evm.CallContractReply, _a1 error) *EVMService_CallContract_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_CallContract_Call) RunAndReturn(run func(context.Context, *evm.CallMsg, *big.Int) ([]byte, error)) *EVMService_CallContract_Call {
+func (_c *EVMService_CallContract_Call) RunAndReturn(run func(context.Context, evm.CallContractRequest) (*evm.CallContractReply, error)) *EVMService_CallContract_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -265,29 +262,29 @@ func (_c *EVMService_EstimateGas_Call) RunAndReturn(run func(context.Context, *e
 	return _c
 }
 
-// FilterLogs provides a mock function with given fields: ctx, filterQuery
-func (_m *EVMService) FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error) {
-	ret := _m.Called(ctx, filterQuery)
+// FilterLogs provides a mock function with given fields: ctx, request
+func (_m *EVMService) FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FilterLogs")
 	}
 
-	var r0 []*evm.Log
+	var r0 *evm.FilterLogsReply
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, evm.FilterQuery) ([]*evm.Log, error)); ok {
-		return rf(ctx, filterQuery)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.FilterLogsRequest) (*evm.FilterLogsReply, error)); ok {
+		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, evm.FilterQuery) []*evm.Log); ok {
-		r0 = rf(ctx, filterQuery)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.FilterLogsRequest) *evm.FilterLogsReply); ok {
+		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*evm.Log)
+			r0 = ret.Get(0).(*evm.FilterLogsReply)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, evm.FilterQuery) error); ok {
-		r1 = rf(ctx, filterQuery)
+	if rf, ok := ret.Get(1).(func(context.Context, evm.FilterLogsRequest) error); ok {
+		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -302,24 +299,24 @@ type EVMService_FilterLogs_Call struct {
 
 // FilterLogs is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filterQuery evm.FilterQuery
-func (_e *EVMService_Expecter) FilterLogs(ctx interface{}, filterQuery interface{}) *EVMService_FilterLogs_Call {
-	return &EVMService_FilterLogs_Call{Call: _e.mock.On("FilterLogs", ctx, filterQuery)}
+//   - request evm.FilterLogsRequest
+func (_e *EVMService_Expecter) FilterLogs(ctx interface{}, request interface{}) *EVMService_FilterLogs_Call {
+	return &EVMService_FilterLogs_Call{Call: _e.mock.On("FilterLogs", ctx, request)}
 }
 
-func (_c *EVMService_FilterLogs_Call) Run(run func(ctx context.Context, filterQuery evm.FilterQuery)) *EVMService_FilterLogs_Call {
+func (_c *EVMService_FilterLogs_Call) Run(run func(ctx context.Context, request evm.FilterLogsRequest)) *EVMService_FilterLogs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(evm.FilterQuery))
+		run(args[0].(context.Context), args[1].(evm.FilterLogsRequest))
 	})
 	return _c
 }
 
-func (_c *EVMService_FilterLogs_Call) Return(_a0 []*evm.Log, _a1 error) *EVMService_FilterLogs_Call {
+func (_c *EVMService_FilterLogs_Call) Return(_a0 *evm.FilterLogsReply, _a1 error) *EVMService_FilterLogs_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_FilterLogs_Call) RunAndReturn(run func(context.Context, evm.FilterQuery) ([]*evm.Log, error)) *EVMService_FilterLogs_Call {
+func (_c *EVMService_FilterLogs_Call) RunAndReturn(run func(context.Context, evm.FilterLogsRequest) (*evm.FilterLogsReply, error)) *EVMService_FilterLogs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -619,65 +616,61 @@ func (_c *EVMService_GetTransactionStatus_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// LatestAndFinalizedHead provides a mock function with given fields: ctx
-func (_m *EVMService) LatestAndFinalizedHead(ctx context.Context) (evm.Head, evm.Head, error) {
-	ret := _m.Called(ctx)
+// HeaderByNumber provides a mock function with given fields: ctx, request
+func (_m *EVMService) HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error) {
+	ret := _m.Called(ctx, request)
 
 	if len(ret) == 0 {
-		panic("no return value specified for LatestAndFinalizedHead")
+		panic("no return value specified for HeaderByNumber")
 	}
 
-	var r0 evm.Head
-	var r1 evm.Head
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context) (evm.Head, evm.Head, error)); ok {
-		return rf(ctx)
+	var r0 *evm.HeaderByNumberReply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)); ok {
+		return rf(ctx, request)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) evm.Head); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, evm.HeaderByNumberRequest) *evm.HeaderByNumberReply); ok {
+		r0 = rf(ctx, request)
 	} else {
-		r0 = ret.Get(0).(evm.Head)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*evm.HeaderByNumberReply)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) evm.Head); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, evm.HeaderByNumberRequest) error); ok {
+		r1 = rf(ctx, request)
 	} else {
-		r1 = ret.Get(1).(evm.Head)
+		r1 = ret.Error(1)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
-		r2 = rf(ctx)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
-// EVMService_LatestAndFinalizedHead_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestAndFinalizedHead'
-type EVMService_LatestAndFinalizedHead_Call struct {
+// EVMService_HeaderByNumber_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HeaderByNumber'
+type EVMService_HeaderByNumber_Call struct {
 	*mock.Call
 }
 
-// LatestAndFinalizedHead is a helper method to define mock.On call
+// HeaderByNumber is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *EVMService_Expecter) LatestAndFinalizedHead(ctx interface{}) *EVMService_LatestAndFinalizedHead_Call {
-	return &EVMService_LatestAndFinalizedHead_Call{Call: _e.mock.On("LatestAndFinalizedHead", ctx)}
+//   - request evm.HeaderByNumberRequest
+func (_e *EVMService_Expecter) HeaderByNumber(ctx interface{}, request interface{}) *EVMService_HeaderByNumber_Call {
+	return &EVMService_HeaderByNumber_Call{Call: _e.mock.On("HeaderByNumber", ctx, request)}
 }
 
-func (_c *EVMService_LatestAndFinalizedHead_Call) Run(run func(ctx context.Context)) *EVMService_LatestAndFinalizedHead_Call {
+func (_c *EVMService_HeaderByNumber_Call) Run(run func(ctx context.Context, request evm.HeaderByNumberRequest)) *EVMService_HeaderByNumber_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(evm.HeaderByNumberRequest))
 	})
 	return _c
 }
 
-func (_c *EVMService_LatestAndFinalizedHead_Call) Return(latest evm.Head, finalized evm.Head, err error) *EVMService_LatestAndFinalizedHead_Call {
-	_c.Call.Return(latest, finalized, err)
+func (_c *EVMService_HeaderByNumber_Call) Return(_a0 *evm.HeaderByNumberReply, _a1 error) *EVMService_HeaderByNumber_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *EVMService_LatestAndFinalizedHead_Call) RunAndReturn(run func(context.Context) (evm.Head, evm.Head, error)) *EVMService_LatestAndFinalizedHead_Call {
+func (_c *EVMService_HeaderByNumber_Call) RunAndReturn(run func(context.Context, evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)) *EVMService_HeaderByNumber_Call {
 	_c.Call.Return(run)
 	return _c
 }

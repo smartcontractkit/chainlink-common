@@ -69,9 +69,9 @@ func (e evmClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedL
 	return e.client.QueryTrackedLogs(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
-func (e *evmClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetFiltersNamesReply, error) {
+func (e evmClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetFiltersNamesReply, error) {
 	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
-	return e.client.GetFiltersNames(ctx, &emptypb.Empty{}, opts...)
+	return e.client.GetFiltersNames(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {

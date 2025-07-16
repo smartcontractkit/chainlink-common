@@ -46,15 +46,15 @@ type ConsensusServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := cs.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *ConsensusServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := c.ConsensusCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	cs.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = capabilityRegistry
 
 	if err := capabilityRegistry.Add(ctx, &consensusCapability{
-		ConsensusCapability: cs.ConsensusCapability,
+		ConsensusCapability: c.ConsensusCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -62,25 +62,25 @@ func (cs *ConsensusServer) Initialise(ctx context.Context, config string, teleme
 	return nil
 }
 
-func (cs *ConsensusServer) Close() error {
+func (c *ConsensusServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "consensus@1.0.0-alpha"); err != nil {
+	if c.capabilityRegistry != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "consensus@1.0.0-alpha"); err != nil {
 			return err
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if c.stopCh != nil {
+		close(c.stopCh)
 	}
 
-	return cs.consensusCapability.Close()
+	return c.consensusCapability.Close()
 }
 
-func (cs *ConsensusServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.consensusCapability.Info(ctx)
+func (c *ConsensusServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := c.consensusCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}

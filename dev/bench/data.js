@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752618319333,
+  "lastUpdate": 1752664354081,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20160,6 +20160,48 @@ window.BENCHMARK_DATA = {
             "value": 28207,
             "unit": "ns/op",
             "extra": "42409 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "453020f8c2bb6b208209000b757f1ededd5317f6",
+          "message": "move Metadata Prepend logic and report context creation logic from core to common (#1390)\n\n* moved Prepend logic and report context logic to common",
+          "timestamp": "2025-07-16T12:11:14+01:00",
+          "tree_id": "2062939c4241909754a669ddc5a700a3d348ee9b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/453020f8c2bb6b208209000b757f1ededd5317f6"
+        },
+        "date": 1752664353106,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 382.7,
+            "unit": "ns/op",
+            "extra": "3008720 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 437.3,
+            "unit": "ns/op",
+            "extra": "2670752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28731,
+            "unit": "ns/op",
+            "extra": "42566 times\n4 procs"
           }
         ]
       }

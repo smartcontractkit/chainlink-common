@@ -135,8 +135,22 @@ func (w *WireError) Error() string {
 	return w.Message
 }
 
-// Normalize is a utility function that normalizes a value to ensure consistent hashing
-// maps are unordered, so sort keys for consistent hashing.
+// Normalize is a utility function that normalizes a value to ensure consistent hashing.
+// It recursively processes maps and slices to ensure consistent ordering and structure.
+// 
+// Types handled:
+// - map[string]interface{}: Keys are sorted alphabetically, and values are recursively normalized.
+// - []interface{}: Elements are recursively normalized.
+// - Other types (e.g., structs, strings, numbers): Returned as-is without modification.
+//
+// Example usage:
+// Input: map[string]interface{}{"b": 2, "a": 1}
+// Output: map[string]interface{}{"a": 1, "b": 2}
+//
+// Input: []interface{}{map[string]interface{}{"b": 2, "a": 1}, 3}
+// Output: []interface{}{map[string]interface{}{"a": 1, "b": 2}, 3}
+//
+// This function is essential for ensuring consistent hashing of complex data structures.
 func Normalize(v any) (any, error) {
 	switch val := v.(type) {
 	case map[string]interface{}:

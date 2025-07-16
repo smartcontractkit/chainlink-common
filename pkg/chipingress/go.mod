@@ -27,4 +27,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-retract v1.0.0 // Use v0.0.1 instead
+retract [v1.0.0, v1.0.1]

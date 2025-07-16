@@ -7,7 +7,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	secp "github.com/decred/dcrd/dcrec/secp256k1/v4"
 	secpecdsa "github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
 	"github.com/golang-jwt/jwt/v5"

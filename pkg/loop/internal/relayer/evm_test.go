@@ -338,6 +338,14 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, address1, got)
 	})
+
+	t.Run("GetFiltersNames", func(t *testing.T) {
+		expectedNames := []string{"filter1", "filter2"}
+		evmService.EXPECT().GetFiltersNames(mock.Anything).Return(expectedNames, nil)
+		actualNames, err := client.GetFiltersNames(ctx)
+		require.NoError(t, err)
+		require.Equal(t, expectedNames, actualNames)
+	})
 }
 
 func generateFixtureQuery() []query.Expression {

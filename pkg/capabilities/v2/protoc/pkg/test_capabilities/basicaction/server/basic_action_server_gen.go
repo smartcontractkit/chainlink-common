@@ -17,10 +17,8 @@ import (
 // Avoid unused imports if there is configuration type
 var _ = emptypb.Empty{}
 
-// BasicActionCapability This action server for testing purposes only.
-type BasicActionCapability interface { //BasicActionCapability This comment tests the generator's ability to handle comments.
-	//PerformAction This comment tests the generator's ability to handle leading comments on methods.
-	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error) // This comment tests the generator's ability to handle trailing comments on methods.
+type BasicActionCapability interface {
+	PerformAction(ctx context.Context, metadata capabilities.RequestMetadata, input *basicaction.Inputs) (*basicaction.Outputs, error)
 
 	Start(ctx context.Context) error
 	Close() error
@@ -39,22 +37,21 @@ func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
 	}
 }
 
-// BasicActionServer This action server for testing purposes only.
-type BasicActionServer struct { // This comment tests the generator's ability to handle comments.
+type BasicActionServer struct {
 	basicActionCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 
-func (cs *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := cs.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *BasicActionServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := c.BasicActionCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	cs.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = capabilityRegistry
 
 	if err := capabilityRegistry.Add(ctx, &basicActionCapability{
-		BasicActionCapability: cs.BasicActionCapability,
+		BasicActionCapability: c.BasicActionCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -62,25 +59,25 @@ func (cs *BasicActionServer) Initialise(ctx context.Context, config string, tele
 	return nil
 }
 
-func (cs *BasicActionServer) Close() error {
+func (c *BasicActionServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "basic-test-action@1.0.0"); err != nil {
+	if c.capabilityRegistry != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "basic-test-action@1.0.0"); err != nil {
 			return err
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if c.stopCh != nil {
+		close(c.stopCh)
 	}
 
-	return cs.basicActionCapability.Close()
+	return c.basicActionCapability.Close()
 }
 
-func (cs *BasicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.basicActionCapability.Info(ctx)
+func (c *BasicActionServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := c.basicActionCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}

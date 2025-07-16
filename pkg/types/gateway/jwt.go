@@ -174,7 +174,7 @@ func compressedECDSAPubKey(pubKey *ecdsa.PublicKey) ([]byte, error) {
 	if pubKey == nil || pubKey.X == nil || pubKey.Y == nil {
 		return nil, errors.New("invalid public key")
 	}
-	var x, y secp256k1.FieldVal
+	var x, y secp.FieldVal
 	x.SetByteSlice(pubKey.X.Bytes())
 	y.SetByteSlice(pubKey.Y.Bytes())
 	return secp.NewPublicKey(&x, &y).SerializeCompressed(), nil

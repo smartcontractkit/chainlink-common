@@ -44,7 +44,7 @@ func TestES256K(t *testing.T) {
 			},
 		}
 
-		token, err := CreateRequestJWT(req, ecdsaPubKey, nil)
+		token, err := CreateRequestJWT(req, ecdsaPubKey)
 		require.NoError(t, err)
 		signedToken, err := token.SignedString(ecdsaPrivKey)
 		require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestES256K(t *testing.T) {
 			Method:  "test.method",
 			Params:  &testString,
 		}
-		token, err := CreateRequestJWT(req, ecdsaPubKey, nil)
+		token, err := CreateRequestJWT(req, ecdsaPubKey)
 		require.NoError(t, err)
 		signedToken, err := token.SignedString(ecdsaPrivKey)
 		require.NoError(t, err)
@@ -133,7 +133,7 @@ func TestCreateRequestJWT(t *testing.T) {
 		}
 
 		expiryDuration := time.Hour
-		unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+		unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey)
 		require.NoError(t, err)
 		signedToken, err := unsignedToken.SignedString(privateKey)
 		require.NoError(t, err)
@@ -180,7 +180,7 @@ func TestCreateRequestJWT(t *testing.T) {
 
 		for _, duration := range testCases {
 			t.Run(duration.String(), func(t *testing.T) {
-				unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey, &duration)
+				unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey, WithExpiry(duration))
 				require.NoError(t, err)
 				tokenString, err := unsignedToken.SignedString(privateKey)
 				require.NoError(t, err)
@@ -211,7 +211,7 @@ func TestCreateRequestJWT(t *testing.T) {
 			},
 		}
 
-		_, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+		_, err := CreateRequestJWT(req, &privateKey.PublicKey)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error marshaling JSON")
 	})
@@ -225,7 +225,7 @@ func TestCreateRequestJWT(t *testing.T) {
 			Params:  &testParam,
 		}
 
-		_, err := CreateRequestJWT(req, nil, nil)
+		_, err := CreateRequestJWT(req, nil)
 		require.Error(t, err)
 	})
 
@@ -242,7 +242,7 @@ func TestCreateRequestJWT(t *testing.T) {
 			Params:  &testParam,
 		}
 
-		unsigned, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+		unsigned, err := CreateRequestJWT(req, &privateKey.PublicKey)
 		require.NoError(t, err)
 		tokenString, err := unsigned.SignedString(privateKey)
 		require.NoError(t, err)
@@ -267,7 +267,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 		Method:  "test.method",
 		Params:  &testParam,
 	}
-	validToken, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+	validToken, err := CreateRequestJWT(req, &privateKey.PublicKey)
 	require.NoError(t, err)
 	signedToken, err := validToken.SignedString(privateKey)
 	require.NoError(t, err)

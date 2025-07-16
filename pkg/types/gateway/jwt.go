@@ -18,6 +18,36 @@ const (
 	defaultJWTExpiryDuration = time.Hour
 )
 
+// Option is a function type that allows configuring CreateRequestJWT.
+type Option func(*jwtOptions)
+
+// jwtOptions holds all possible optional configurations for CreateRequestJWT.
+type jwtOptions struct {
+	expiryDuration *time.Duration
+	issuer         *string // New field for optional issuer
+}
+
+// WithExpiry sets the expiry duration for the JWT.
+func WithExpiry(d time.Duration) Option {
+	return func(opts *jwtOptions) {
+		opts.expiryDuration = &d
+	}
+}
+
+// WithIssuer sets a custom issuer for the JWT.
+func WithIssuer(issuer string) Option {
+	return func(opts *jwtOptions) {
+		opts.issuer = &issuer
+	}
+}
+
+// You can add more options here as needed, e.g.:
+// func WithAudience(audience string) Option {
+// 	return func(opts *jwtOptions) {
+// 		opts.Audience = &audience
+// 	}
+// }
+
 var SigningMethodES256K *SigningMethodSecp256k1
 
 func init() {
@@ -117,28 +147,46 @@ type JWTClaims struct {
 //	}
 //
 // signature: ECDSA signature of the header and payload using the private key
-func CreateRequestJWT[T any](req jsonrpc.Request[T], key *ecdsa.PublicKey, expiryDuration *time.Duration) (*jwt.Token, error) {
+func CreateRequestJWT[T any](req jsonrpc.Request[T], key *ecdsa.PublicKey, opts ...Option) (*jwt.Token, error) {
 	if key == nil {
 		return nil, errors.New("public key cannot be nil")
 	}
-	if expiryDuration == nil {
-		d := defaultJWTExpiryDuration
-		expiryDuration = &d
+	
+	// Apply options
+	options := &jwtOptions{}
+	for _, opt := range opts {
+		opt(options)
 	}
+	
+	// Set defaults if not provided
+	expiryDuration := defaultJWTExpiryDuration
+	if options.expiryDuration != nil {
+		expiryDuration = *options.expiryDuration
+	}
+	
 	digest, err := req.Digest()
 	if err != nil {
 		return nil, err
 	}
-	issuer, err := compressedECDSAPubKey(key)
-	if err != nil {
-		return nil, err
+	
+	var issuer string
+	if options.issuer != nil {
+		issuer = *options.issuer
+	} else {
+		// Use compressed public key as default issuer
+		compressed, err := compressedECDSAPubKey(key)
+		if err != nil {
+			return nil, err
+		}
+		issuer = "0x" + hex.EncodeToString(compressed)
 	}
+	
 	now := time.Now()
 	claims := JWTClaims{
 		Digest: "0x" + digest,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "0x" + hex.EncodeToString(issuer),
-			ExpiresAt: jwt.NewNumericDate(now.Add(*expiryDuration)),
+			Issuer:    issuer,
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiryDuration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}

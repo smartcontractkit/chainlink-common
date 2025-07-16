@@ -14,6 +14,10 @@ import (
 	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
 )
 
+const (
+	defaultJWTExpiryDuration = time.Hour
+)
+
 var SigningMethodES256K *SigningMethodSecp256k1
 
 func init() {
@@ -85,7 +89,7 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// CreateRequestJWT creates a signed JWT for a JSON-RPC request
+// CreateRequestJWT creates an unsigned JWT for a JSON-RPC request
 // JWT has 3 parts: header, payload, and signature as shown below
 // header:
 //
@@ -97,37 +101,49 @@ type JWTClaims struct {
 // payload:
 //
 //	{
-//		digest: "<request-digest>"
-//		iss: "<compressed-public-key>",
-//		exp: <timestamp>,
-//		iat: <timestamp>
+//		digest: "<request-digest>",      // 32 byte hex string with "0x" prefix
+//		iss: "<compresssed-public-key>", // compressed ECDSA public key in hex format with "0x" prefix
+//		exp: <timestamp>,                // expiration time (Unix timestamp)
+//		iat: <timestamp>                 // issued at time (Unix timestamp)
+//	}
+//
+// sample payload:
+//
+//	{
+//	  "digest": "0x4a1f2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a",
+//	  "iss": "0x03a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b",
+//	  "exp": 1717600000,
+//	  "iat": 1717596400
 //	}
 //
 // signature: ECDSA signature of the header and payload using the private key
-func CreateRequestJWT[T any](req jsonrpc.Request[T], key *ecdsa.PrivateKey, expiryDuration time.Duration) (string, error) {
+func CreateRequestJWT[T any](req jsonrpc.Request[T], key *ecdsa.PublicKey, expiryDuration *time.Duration) (*jwt.Token, error) {
 	if key == nil {
-		return "", errors.New("private key cannot be nil")
+		return nil, errors.New("public key cannot be nil")
+	}
+	if expiryDuration == nil {
+		d := defaultJWTExpiryDuration
+		expiryDuration = &d
 	}
 	digest, err := req.Digest()
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+	issuer, err := compressedECDSAPubKey(key)
+	if err != nil {
+		return nil, err
 	}
 	now := time.Now()
-	compressed, err := compressedECDSAPubKey(&key.PublicKey)
-	if err != nil {
-		return "", err
-	}
 	claims := JWTClaims{
-		Digest: digest,
+		Digest: "0x" + digest,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hex.EncodeToString(compressed),
-			ExpiresAt: jwt.NewNumericDate(now.Add(expiryDuration)),
+			Issuer:    "0x" + hex.EncodeToString(issuer),
+			ExpiresAt: jwt.NewNumericDate(now.Add(*expiryDuration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
-	token := jwt.NewWithClaims(SigningMethodES256K, claims)
-	return token.SignedString(key)
+	return jwt.NewWithClaims(SigningMethodES256K, claims), nil
 }
 
 // VerifyRequestJWT verifies a signed JWT for a JSON-RPC request
@@ -157,14 +173,14 @@ func VerifyRequestJWT[T any](tokenString string, key *ecdsa.PublicKey, req jsonr
 	if err != nil {
 		return nil, err
 	}
-	if claims.Issuer != hex.EncodeToString(compressed) {
+	if claims.Issuer != "0x"+hex.EncodeToString(compressed) {
 		return nil, jwt.ErrTokenInvalidIssuer
 	}
 	reqDigest, err := req.Digest()
 	if err != nil {
 		return nil, err
 	}
-	if claims.Digest != reqDigest {
+	if claims.Digest != "0x"+reqDigest {
 		return nil, errors.New("JWT digest does not match request digest")
 	}
 	return claims, nil

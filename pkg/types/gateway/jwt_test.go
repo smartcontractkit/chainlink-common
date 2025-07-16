@@ -31,6 +31,7 @@ func TestES256K(t *testing.T) {
 		},
 		D: new(big.Int).SetBytes(privKeyBytes[:]),
 	}
+	ecdsaPubKey := &ecdsaPrivKey.PublicKey
 
 	t.Run("ES256K JWT creation and verification", func(t *testing.T) {
 		req := jsonrpc.Request[map[string]interface{}]{
@@ -43,19 +44,20 @@ func TestES256K(t *testing.T) {
 			},
 		}
 
-		tokenString, err := CreateRequestJWT(req, ecdsaPrivKey, time.Hour)
+		token, err := CreateRequestJWT(req, ecdsaPubKey, nil)
 		require.NoError(t, err)
-		require.NotEmpty(t, tokenString)
+		signedToken, err := token.SignedString(ecdsaPrivKey)
+		require.NoError(t, err)
 
-		claims, err := VerifyRequestJWT(tokenString, &ecdsaPrivKey.PublicKey, req)
+		claims, err := VerifyRequestJWT(signedToken, &ecdsaPrivKey.PublicKey, req)
 		require.NoError(t, err)
 		require.NotNil(t, claims)
 
 		expectedDigest, err := req.Digest()
 		require.NoError(t, err)
-		require.Equal(t, expectedDigest, claims.Digest)
+		require.Equal(t, "0x"+expectedDigest, claims.Digest)
 
-		parts := strings.Split(tokenString, ".")
+		parts := strings.Split(signedToken, ".")
 		require.Len(t, parts, 3, "JWT should have 3 parts")
 
 		headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
@@ -104,11 +106,13 @@ func TestES256K(t *testing.T) {
 			Method:  "test.method",
 			Params:  &testString,
 		}
-		tokenString, err := CreateRequestJWT(req, ecdsaPrivKey, time.Hour)
+		token, err := CreateRequestJWT(req, ecdsaPubKey, nil)
+		require.NoError(t, err)
+		signedToken, err := token.SignedString(ecdsaPrivKey)
 		require.NoError(t, err)
 
 		// Try to verify with second key (should fail)
-		_, err = VerifyRequestJWT(tokenString, &ecdsaPrivKey2.PublicKey, req)
+		_, err = VerifyRequestJWT(signedToken, &ecdsaPrivKey2.PublicKey, req)
 		require.Error(t, err)
 	})
 }
@@ -129,11 +133,12 @@ func TestCreateRequestJWT(t *testing.T) {
 		}
 
 		expiryDuration := time.Hour
-		tokenString, err := CreateRequestJWT(req, privateKey, expiryDuration)
+		unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
 		require.NoError(t, err)
-		require.NotEmpty(t, tokenString)
+		signedToken, err := unsignedToken.SignedString(privateKey)
+		require.NoError(t, err)
 
-		token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(signedToken, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return &privateKey.PublicKey, nil
 		})
 		require.NoError(t, err)
@@ -148,11 +153,11 @@ func TestCreateRequestJWT(t *testing.T) {
 
 		expectedDigest, err := req.Digest()
 		require.NoError(t, err)
-		require.Equal(t, expectedDigest, claims.Digest)
+		require.Equal(t, "0x"+expectedDigest, claims.Digest)
 
 		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
 		require.NoError(t, err)
-		require.Equal(t, hex.EncodeToString(compressed), claims.Issuer)
+		require.Equal(t, "0x"+hex.EncodeToString(compressed), claims.Issuer)
 		expectedExpiry := claims.IssuedAt.Add(expiryDuration)
 		require.WithinDuration(t, expectedExpiry, claims.ExpiresAt.Time, time.Second)
 	})
@@ -175,7 +180,9 @@ func TestCreateRequestJWT(t *testing.T) {
 
 		for _, duration := range testCases {
 			t.Run(duration.String(), func(t *testing.T) {
-				tokenString, err := CreateRequestJWT(req, privateKey, duration)
+				unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey, &duration)
+				require.NoError(t, err)
+				tokenString, err := unsignedToken.SignedString(privateKey)
 				require.NoError(t, err)
 
 				token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -204,7 +211,7 @@ func TestCreateRequestJWT(t *testing.T) {
 			},
 		}
 
-		_, err := CreateRequestJWT(req, privateKey, time.Hour)
+		_, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error marshaling JSON")
 	})
@@ -218,7 +225,7 @@ func TestCreateRequestJWT(t *testing.T) {
 			Params:  &testParam,
 		}
 
-		_, err := CreateRequestJWT(req, nil, time.Hour)
+		_, err := CreateRequestJWT(req, nil, nil)
 		require.Error(t, err)
 	})
 
@@ -235,7 +242,9 @@ func TestCreateRequestJWT(t *testing.T) {
 			Params:  &testParam,
 		}
 
-		tokenString, err := CreateRequestJWT(req, privateKey, time.Hour)
+		unsigned, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+		require.NoError(t, err)
+		tokenString, err := unsigned.SignedString(privateKey)
 		require.NoError(t, err)
 
 		_, err = jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -258,11 +267,13 @@ func TestVerifyRequestJWT(t *testing.T) {
 		Method:  "test.method",
 		Params:  &testParam,
 	}
-	validToken, err := CreateRequestJWT(req, privateKey, time.Hour)
+	validToken, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+	require.NoError(t, err)
+	signedToken, err := validToken.SignedString(privateKey)
 	require.NoError(t, err)
 
 	t.Run("successful verification", func(t *testing.T) {
-		claims, err := VerifyRequestJWT(validToken, &privateKey.PublicKey, req)
+		claims, err := VerifyRequestJWT(signedToken, &privateKey.PublicKey, req)
 
 		require.NoError(t, err)
 		require.NotNil(t, claims)
@@ -271,18 +282,18 @@ func TestVerifyRequestJWT(t *testing.T) {
 
 		expectedDigest, err := req.Digest()
 		require.NoError(t, err)
-		require.Equal(t, expectedDigest, claims.Digest)
+		require.Equal(t, "0x"+expectedDigest, claims.Digest)
 
 		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
 		require.NoError(t, err)
-		require.Equal(t, hex.EncodeToString(compressed), claims.Issuer)
+		require.Equal(t, "0x"+hex.EncodeToString(compressed), claims.Issuer)
 	})
 
 	t.Run("wrong public key", func(t *testing.T) {
 		wrongKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
 		require.NoError(t, err)
 
-		_, err = VerifyRequestJWT(validToken, &wrongKey.PublicKey, req)
+		_, err = VerifyRequestJWT(signedToken, &wrongKey.PublicKey, req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "signature is invalid")
 	})
@@ -293,10 +304,13 @@ func TestVerifyRequestJWT(t *testing.T) {
 	})
 
 	t.Run("expired token", func(t *testing.T) {
-		expiredToken, err := CreateRequestJWT(req, privateKey, -time.Hour)
+		d := -time.Hour
+		expiredToken, err := CreateRequestJWT(req, &privateKey.PublicKey, &d)
+		require.NoError(t, err)
+		expiredTokenString, err := expiredToken.SignedString(privateKey)
 		require.NoError(t, err)
 
-		_, err = VerifyRequestJWT(expiredToken, &privateKey.PublicKey, req)
+		_, err = VerifyRequestJWT(expiredTokenString, &privateKey.PublicKey, req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "token is expired")
 	})
@@ -343,7 +357,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 	})
 
 	t.Run("nil public key", func(t *testing.T) {
-		_, err := VerifyRequestJWT(validToken, nil, req)
+		_, err := VerifyRequestJWT(signedToken, nil, req)
 		require.Error(t, err)
 	})
 
@@ -374,7 +388,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 		}
 
 		// Try to verify the token against the different request
-		_, err := VerifyRequestJWT(validToken, &privateKey.PublicKey, differentReq)
+		_, err := VerifyRequestJWT(signedToken, &privateKey.PublicKey, differentReq)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "JWT digest does not match request digest")
 	})
@@ -390,7 +404,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 		}
 
 		// Try to verify the token against the modified request
-		_, err := VerifyRequestJWT(validToken, &privateKey.PublicKey, modifiedReq)
+		_, err := VerifyRequestJWT(signedToken, &privateKey.PublicKey, modifiedReq)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "JWT digest does not match request digest")
 	})
@@ -403,7 +417,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 		claims := JWTClaims{
 			Digest: "wrong-digest-hash",
 			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    hex.EncodeToString(compressed),
+				Issuer:    "0x" + hex.EncodeToString(compressed),
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
 			},
@@ -431,7 +445,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 			},
 		}
 
-		_, err := VerifyRequestJWT(validToken, &privateKey.PublicKey, invalidReq)
+		_, err := VerifyRequestJWT(signedToken, &privateKey.PublicKey, invalidReq)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error marshaling JSON")
 	})
@@ -504,18 +518,20 @@ func TestJWTEndToEnd(t *testing.T) {
 			},
 		}
 
-		tokenString, err := CreateRequestJWT(req, privateKey, time.Hour)
+		token, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+		require.NoError(t, err)
+		tokenString, err := token.SignedString(privateKey)
 		require.NoError(t, err)
 		claims, err := VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
 		require.NoError(t, err)
 
 		expectedDigest, err := req.Digest()
 		require.NoError(t, err)
-		require.Equal(t, expectedDigest, claims.Digest)
+		require.Equal(t, "0x"+expectedDigest, claims.Digest)
 
 		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
 		require.NoError(t, err)
-		require.Equal(t, hex.EncodeToString(compressed), claims.Issuer)
+		require.Equal(t, "0x"+hex.EncodeToString(compressed), claims.Issuer)
 
 		require.True(t, claims.ExpiresAt.After(time.Now()))
 		require.True(t, claims.IssuedAt.Before(time.Now().Add(time.Second)))
@@ -569,26 +585,30 @@ func TestJWTEndToEnd(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				var tokenString string
+				var token *jwt.Token
 				var err error
 				var claims *JWTClaims
+				var signedToken string
 
 				switch req := tc.req.(type) {
 				case jsonrpc.Request[string]:
-					tokenString, err = CreateRequestJWT(req, privateKey, time.Hour)
+					token, err = CreateRequestJWT(req, &privateKey.PublicKey, nil)
 					require.NoError(t, err)
-					require.NotEmpty(t, tokenString)
-					claims, err = VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
+					signedToken, err = token.SignedString(privateKey)
+					require.NoError(t, err)
+					claims, err = VerifyRequestJWT(signedToken, &privateKey.PublicKey, req)
 				case jsonrpc.Request[int]:
-					tokenString, err = CreateRequestJWT(req, privateKey, time.Hour)
+					token, err = CreateRequestJWT(req, &privateKey.PublicKey, nil)
 					require.NoError(t, err)
-					require.NotEmpty(t, tokenString)
-					claims, err = VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
+					signedToken, err = token.SignedString(privateKey)
+					require.NoError(t, err)
+					claims, err = VerifyRequestJWT(signedToken, &privateKey.PublicKey, req)
 				case jsonrpc.Request[[]string]:
-					tokenString, err = CreateRequestJWT(req, privateKey, time.Hour)
+					token, err = CreateRequestJWT(req, &privateKey.PublicKey, nil)
 					require.NoError(t, err)
-					require.NotEmpty(t, tokenString)
-					claims, err = VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
+					signedToken, err = token.SignedString(privateKey)
+					require.NoError(t, err)
+					claims, err = VerifyRequestJWT(signedToken, &privateKey.PublicKey, req)
 				}
 
 				require.NoError(t, err)

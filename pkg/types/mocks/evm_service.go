@@ -321,6 +321,64 @@ func (_c *EVMService_FilterLogs_Call) RunAndReturn(run func(context.Context, evm
 	return _c
 }
 
+// GetFiltersNames provides a mock function with given fields: ctx
+func (_m *EVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFiltersNames")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EVMService_GetFiltersNames_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFiltersNames'
+type EVMService_GetFiltersNames_Call struct {
+	*mock.Call
+}
+
+// GetFiltersNames is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *EVMService_Expecter) GetFiltersNames(ctx interface{}) *EVMService_GetFiltersNames_Call {
+	return &EVMService_GetFiltersNames_Call{Call: _e.mock.On("GetFiltersNames", ctx)}
+}
+
+func (_c *EVMService_GetFiltersNames_Call) Run(run func(ctx context.Context)) *EVMService_GetFiltersNames_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *EVMService_GetFiltersNames_Call) Return(_a0 []string, _a1 error) *EVMService_GetFiltersNames_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *EVMService_GetFiltersNames_Call) RunAndReturn(run func(context.Context) ([]string, error)) *EVMService_GetFiltersNames_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetForwarderForEOA provides a mock function with given fields: ctx, eoa, ocr2AggregatorID, pluginType
 func (_m *EVMService) GetForwarderForEOA(ctx context.Context, eoa [20]byte, ocr2AggregatorID [20]byte, pluginType string) ([20]byte, error) {
 	ret := _m.Called(ctx, eoa, ocr2AggregatorID, pluginType)

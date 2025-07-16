@@ -208,6 +208,15 @@ func (e *EVMClient) QueryTrackedLogs(ctx context.Context, filterQuery []query.Ex
 	return evmpb.ConvertLogsFromProto(reply.GetLogs()), nil
 }
 
+func (e *EVMClient) GetFiltersNames(ctx context.Context) ([]string, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	names, err := e.grpcClient.GetFiltersNames(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return names.GetItems(), nil
+}
+
 func (e *EVMClient) RegisterLogTracking(ctx context.Context, filter evmtypes.LPFilterQuery) error {
 	_, err := e.grpcClient.RegisterLogTracking(ctx, &evmpb.RegisterLogTrackingRequest{Filter: evmpb.ConvertLPFilterToProto(filter)})
 	return net.WrapRPCErr(err)
@@ -475,4 +484,13 @@ func (e *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetFo
 		return nil, err
 	}
 	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
+}
+
+func (e *evmServer) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	names, err := e.impl.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetFiltersNamesReply{Items: names}, nil
 }

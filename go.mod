@@ -11,6 +11,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1
 	github.com/cloudevents/sdk-go/v2 v2.16.1
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0

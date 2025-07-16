@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752670331689,
+  "lastUpdate": 1752676256409,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20328,6 +20328,48 @@ window.BENCHMARK_DATA = {
             "value": 28461,
             "unit": "ns/op",
             "extra": "42100 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "706208c46756780ff0c23e944dec9a7eef977970",
+          "message": "Update standard tests, since we're no longer wrapping simple consensus (#1395)",
+          "timestamp": "2025-07-16T14:29:54Z",
+          "tree_id": "7087bf16adb7031c4d9c2271a380dd452dfb468e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/706208c46756780ff0c23e944dec9a7eef977970"
+        },
+        "date": 1752676255414,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.9,
+            "unit": "ns/op",
+            "extra": "3186163 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 421.8,
+            "unit": "ns/op",
+            "extra": "2939760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28502,
+            "unit": "ns/op",
+            "extra": "42110 times\n4 procs"
           }
         ]
       }

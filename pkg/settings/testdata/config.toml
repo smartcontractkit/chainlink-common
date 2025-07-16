@@ -21,16 +21,16 @@ Baz = "500"
 
 [owner]
 
-[owner.0x00026b4aa7e57ca7b68ae1bf45653f56b656fd3a]
+[owner.00026b4aa7e57ca7b68ae1bf45653f56b656fd3a]
 Foo = "75"
 
-[owner.0x00026b4aa7e57ca7b68ae1bf45653f56b656fd3a.Bar]
+[owner.00026b4aa7e57ca7b68ae1bf45653f56b656fd3a.Bar]
 Baz = "200"
 
-[owner.0x8bd112d3f8f92e41c861939545ad387307af9703]
+[owner.8bd112d3f8f92e41c861939545ad387307af9703]
 Foo = "13"
 
-[owner.0x8bd112d3f8f92e41c861939545ad387307af9703.Bar]
+[owner.8bd112d3f8f92e41c861939545ad387307af9703.Bar]
 Baz = "43"
 
 [workflow]

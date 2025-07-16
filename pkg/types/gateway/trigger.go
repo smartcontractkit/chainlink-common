@@ -22,7 +22,7 @@ type HTTPTriggerRequest struct {
 type WorkflowSelector struct {
 	WorkflowOwner string `json:"workflowOwner,omitempty"` // Owner of the workflow.
 	WorkflowName  string `json:"workflowName,omitempty"`  // Name of the workflow.
-	WorkflowLabel string `json:"workflowLabel,omitempty"` // Optional label for the workflow.
+	WorkflowTag   string `json:"workflowTag,omitempty"`   // Tag for the workflow.
 	WorkflowID    string `json:"workflowID,omitempty"`    // Unique ID of the workflow.
 }
 

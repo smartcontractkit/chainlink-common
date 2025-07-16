@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752691515739,
+  "lastUpdate": 1752692821702,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20580,6 +20580,48 @@ window.BENCHMARK_DATA = {
             "value": 28716,
             "unit": "ns/op",
             "extra": "42074 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "84ab43b6630bf0dc0d1c717a2b2d36aa65e4d0dd",
+          "message": "pkg/settings/limits: fix MultiResourcePoolLimiter; normalize contexts.CRE.Owner (#1382)",
+          "timestamp": "2025-07-16T19:05:45Z",
+          "tree_id": "e847ab93c87a544c93600b617019cc374489be3f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/84ab43b6630bf0dc0d1c717a2b2d36aa65e4d0dd"
+        },
+        "date": 1752692820524,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 393.1,
+            "unit": "ns/op",
+            "extra": "3124108 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.4,
+            "unit": "ns/op",
+            "extra": "2863245 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28434,
+            "unit": "ns/op",
+            "extra": "42081 times\n4 procs"
           }
         ]
       }

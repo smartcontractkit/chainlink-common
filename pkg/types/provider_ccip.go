@@ -5,6 +5,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3"
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
 
 type CCIPCommitProvider interface {
@@ -43,4 +45,10 @@ type CCIPExecutionFactoryGenerator interface {
 type CCIPFactoryGenerator interface {
 	CCIPCommitFactoryGenerator
 	CCIPExecutionFactoryGenerator
+}
+
+type CCIPProvider interface {
+	services.Service
+	ChainAccessor() (ccipocr3.ChainAccessor, error)
+	ContractTransmitter() (ocr3types.ContractTransmitter[[]byte], error)
 }

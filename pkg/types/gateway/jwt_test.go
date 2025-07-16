@@ -97,11 +97,12 @@ func TestES256K(t *testing.T) {
 			D: new(big.Int).SetBytes(privKey2Bytes[:]),
 		}
 
+		testString := "test"
 		req := jsonrpc.Request[string]{
 			Version: jsonrpc.JsonRpcVersion,
 			ID:      "test-wrong-key",
 			Method:  "test.method",
-			Params:  func() *string { s := "test"; return &s }(),
+			Params:  &testString,
 		}
 		tokenString, err := CreateRequestJWT(req, ecdsaPrivKey, time.Hour)
 		require.NoError(t, err)

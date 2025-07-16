@@ -541,13 +541,8 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			assertProto(t, expectedInput, input)
 			cResponse := &nodeaction.NodeOutputs{OutputThing: output + 1}
 			response := wrapValue(t, cResponse)
-			mapProto := &valuespb.Map{
-				Fields: map[string]*valuespb.Value{
-					rawsdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
-					rawsdk.ConsensusResponseMapKeyPayload:  response,
-				},
-			}
-			payload, err = anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
+
+			payload, err = anypb.New(response)
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752664354081,
+  "lastUpdate": 1752665596433,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20202,6 +20202,48 @@ window.BENCHMARK_DATA = {
             "value": 28731,
             "unit": "ns/op",
             "extra": "42566 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ebc5e77f06ba97711c0f32dfb41790a70d4b0013",
+          "message": "PLEX-1560 Replaced LatestAndFinalized with HeaderByNumber to support safe tag (#1339)\n\n* HeaderByNumber method and confidence level\n\n* drop unused code\n\n* remove merge artifcat\n\n* Rename method to have WithConfidenceSuffix\n\n* LatestAndFinalizedHead to HeaderByNumber\n\n* Update doc\n\n* bump protos version\n\n* Bump values\n\n* tidy\n\n* Trigger Build\n\n* Drop WithConfidence suffix\n\n* Accept request struct instead of separate arguments\n\n* clean up mockery file\n\n* rename head to header\n\n* drop redundant code\n\n* move balance at etc to the geth client\n\n* bump protos\n\n* bump pkg/values\n\n* tidy",
+          "timestamp": "2025-07-16T11:30:58Z",
+          "tree_id": "93cf8fda45b3726f15a4ab2dbf4fcfd0fb9dc177",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ebc5e77f06ba97711c0f32dfb41790a70d4b0013"
+        },
+        "date": 1752665594839,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 369.5,
+            "unit": "ns/op",
+            "extra": "3212899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.2,
+            "unit": "ns/op",
+            "extra": "3003429 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28780,
+            "unit": "ns/op",
+            "extra": "42152 times\n4 procs"
           }
         ]
       }

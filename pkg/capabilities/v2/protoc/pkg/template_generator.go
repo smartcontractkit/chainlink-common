@@ -91,6 +91,7 @@ func (t *TemplateGenerator) Generate(
 func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partials map[string]string, importToPkg map[protogen.GoImportPath]protogen.GoPackageName) (string, error) {
 	buf := &bytes.Buffer{}
 	imports := map[string]bool{}
+	var orderedImports []string
 	if t.ExtraFns == nil {
 		t.ExtraFns = template.FuncMap{}
 	}
@@ -146,14 +147,16 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 				importName = fmt.Sprintf("%s %s", importToPkg[importPath], importName)
 			}
 
-			imports[importName] = true
+			if !imports[importName] {
+				orderedImports = append(orderedImports, importName)
+				imports[importName] = true
+			}
+
 			return ""
 		},
 		"allimports": func() []string {
-			var allImports []string
-			for i := range imports {
-				allImports = append(allImports, i)
-			}
+			allImports := make([]string, len(imports))
+			copy(allImports, orderedImports)
 			return allImports
 		},
 		"name": func(ident protogen.GoIdent, ignore string) string {
@@ -202,6 +205,19 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			_ = md
 
 			return "emptypb.Empty", nil
+		},
+		"CleanComments": func(line string) string {
+			line = strings.TrimSpace(line)
+			switch {
+			case strings.HasPrefix(line, "//"):
+				return strings.TrimSpace(strings.TrimPrefix(line, "//"))
+			case strings.HasPrefix(line, "/*"):
+				line = strings.TrimPrefix(line, "/*")
+				line = strings.TrimSuffix(line, "*/")
+				return strings.TrimSpace(line)
+			default:
+				return line
+			}
 		},
 	}).Funcs(t.ExtraFns)
 

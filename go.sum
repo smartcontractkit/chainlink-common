@@ -306,10 +306,12 @@ github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMB
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/smartcontractkit/chain-selectors v1.0.62 h1:KWLEyKQXHxGGHIlUfLrzjYldlB8hBjRZi9GP49WtgYs=
 github.com/smartcontractkit/chain-selectors v1.0.62/go.mod h1:xsKM0aN3YGcQKTPRPDDtPx2l4mlTN1Djmg0VVXV40b8=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250707214334-e164c13b2f32 h1:+yOhdrImF2R4qnMZQaGWyJ2qd1HhvSHtJjeKJSWplbI=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250707214334-e164c13b2f32/go.mod h1:U1UAbPhy6D7Qz0wHKGPoQO+dpR0hsYjgUz8xwRrmKwI=
-github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250708135749-8736758474ec h1:6XpqaGA2a4ik2zte0bEKeFIgPyHlTQNrVdaIbJWqlks=
-github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250708135749-8736758474ec/go.mod h1:0B4c6GEcnm67Q/E8vwpxTpdjL8elQkh8pVzxGhXkVsM=
+github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.1 h1:ca2z5OXgnbBPQRxpwXwBLJsUA1+cAp5ncfW4Ssvd6eY=
+github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.1/go.mod h1:NZv/qKYGFRnkjOYBouajnDfFoZ+WDa6H2KNmSf1dnKc=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250710185807-2e08944e72d2 h1:pMwrNp2BFITYYDP3sAiGtecDP3frYDNPXpa4/vleghU=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250710185807-2e08944e72d2/go.mod h1:U1UAbPhy6D7Qz0wHKGPoQO+dpR0hsYjgUz8xwRrmKwI=
+github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250715132921-fbb00f834ac8 h1:/AUP/7d2ILZyYeb/Zs70WllVzjuyzUjQGDJCaF50hww=
+github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250715132921-fbb00f834ac8/go.mod h1:ay4g8WruGFr512i+0IWDPmc1ZGpsw2ivfqfk0ED9vqY=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250701181457-37bd0d618b58 h1:yXbKWplUgoC+PoOoPXseKunxElXrnCKnKBGxkmUVR2I=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250701181457-37bd0d618b58/go.mod h1:HHGeDUpAsPa0pmOx7wrByCitjQ0mbUxf0R9v+g67uCA=
 github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20250430163438-97d324ef9061 h1:5BKk6j2QWmb5TFoWYVLuL8U2XUIzTUUo5HBkCHTX2kM=

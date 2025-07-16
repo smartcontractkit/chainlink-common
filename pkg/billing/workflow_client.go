@@ -53,11 +53,9 @@ type workflowConfig struct {
 type WorkflowClientOpt func(*workflowConfig)
 
 func defaultWorkflowConfig() workflowConfig {
-	loggerInst, _ := logger.New()
 	// By default, no JWT manager is set and we fallback to insecure creds.
 	return workflowConfig{
 		transportCredentials: insecure.NewCredentials(),
-		log:                  loggerInst,
 		tlsCert:              "",
 		// Default to "localhost" if not overridden.
 		serverName:   "localhost",
@@ -68,12 +66,6 @@ func defaultWorkflowConfig() workflowConfig {
 func WithWorkflowTransportCredentials(creds credentials.TransportCredentials) WorkflowClientOpt {
 	return func(cfg *workflowConfig) {
 		cfg.transportCredentials = creds
-	}
-}
-
-func WithWorkflowLogger(l logger.Logger) WorkflowClientOpt {
-	return func(cfg *workflowConfig) {
-		cfg.log = l
 	}
 }
 
@@ -98,7 +90,7 @@ func WithServerName(name string) WorkflowClientOpt {
 }
 
 // NewWorkflowClient creates a new workflow client with JWT signing enabled.
-func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClient, error) {
+func NewWorkflowClient(lggr logger.Logger, address string, opts ...WorkflowClientOpt) (WorkflowClient, error) {
 	cfg := defaultWorkflowConfig()
 	for _, opt := range opts {
 		opt(&cfg)
@@ -106,7 +98,7 @@ func NewWorkflowClient(address string, opts ...WorkflowClientOpt) (WorkflowClien
 
 	wc := &workflowClient{
 		address:      address,
-		logger:       cfg.log,
+		logger:       logger.Named(lggr, "WorkflowClient"),
 		tlsCert:      cfg.tlsCert,
 		creds:        cfg.transportCredentials,
 		serverName:   cfg.serverName,

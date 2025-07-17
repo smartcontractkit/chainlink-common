@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
@@ -20,6 +21,8 @@ const (
 	defaultExecutionRemovalTime = 20 * time.Minute // 2x CRE workflow time limit
 	defaultMinTimeIncrease      = time.Millisecond
 )
+
+var _ core.OCR3ReportingPluginFactory = &Factory{}
 
 type Factory struct {
 	store                   *Store
@@ -37,7 +40,7 @@ func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
 	}, nil
 }
 
-func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[struct{}], ocr3types.ReportingPluginInfo, error) {
+func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
 	var configProto pb.Config
 	err := proto.Unmarshal(config.OffchainConfig, &configProto)
 	if err != nil {

@@ -3,28 +3,45 @@ package pkg
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"golang.org/x/exp/slices"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
 )
 
+// toPascalCase converts a string to PascalCase
+func toPascalCase(s string) string {
+	words := strings.FieldsFunc(s, func(r rune) bool {
+		return r == '_' || r == '-' || unicode.IsSpace(r)
+	})
+
+	result := ""
+	for _, word := range words {
+		if len(word) > 0 {
+			result += strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+		}
+	}
+	return result
+}
+
 func StringLblValue(method bool) func(string, *pb.Label) (string, error) {
 	return func(name string, label *pb.Label) (string, error) {
+		pascalName := toPascalCase(name)
 		if method {
-			name += "()"
+			pascalName += "()"
 		}
 		switch pbLbl := label.Kind.(type) {
 		case *pb.Label_StringLabel:
-			return fmt.Sprintf("+ c.%s", name), nil
+			return fmt.Sprintf("+ c.%s", pascalName), nil
 		case *pb.Label_Uint32Label:
-			return fmt.Sprintf("strconv.FormatUint(uint64(c.%s), 10)", name), nil
+			return fmt.Sprintf("strconv.FormatUint(uint64(c.%s), 10)", pascalName), nil
 		case *pb.Label_Int32Label:
-			return fmt.Sprintf("strconv.FormatInt(int64(c.%s), 10)", name), nil
+			return fmt.Sprintf("strconv.FormatInt(int64(c.%s), 10)", pascalName), nil
 		case *pb.Label_Uint64Label:
-			return fmt.Sprintf("strconv.FormatUint(c.%s, 10)", name), nil
+			return fmt.Sprintf("strconv.FormatUint(c.%s, 10)", pascalName), nil
 		case *pb.Label_Int64Label:
-			return fmt.Sprintf("strconv.FormatInt(c.%s, 10)", name), nil
+			return fmt.Sprintf("strconv.FormatInt(c.%s, 10)", pascalName), nil
 		default:
 			return "", fmt.Errorf("unsupported label type: %T", pbLbl)
 		}

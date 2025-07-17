@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752755172995,
+  "lastUpdate": 1752756974809,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20706,6 +20706,48 @@ window.BENCHMARK_DATA = {
             "value": 28175,
             "unit": "ns/op",
             "extra": "42643 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0b373f953795c077bc1e1b2f82276439c53844c",
+          "message": "PLEX-1456: logTrigger clean up (#1399)",
+          "timestamp": "2025-07-17T12:54:49Z",
+          "tree_id": "53611e5c994d2243825ea11e2509ee59e134f273",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a0b373f953795c077bc1e1b2f82276439c53844c"
+        },
+        "date": 1752756973477,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 379.2,
+            "unit": "ns/op",
+            "extra": "3208442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 431,
+            "unit": "ns/op",
+            "extra": "2773386 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28182,
+            "unit": "ns/op",
+            "extra": "42218 times\n4 procs"
           }
         ]
       }

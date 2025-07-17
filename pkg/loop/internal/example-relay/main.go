@@ -67,6 +67,7 @@ func (p *pluginRelayer) NewRelayer(ctx context.Context, config string, keystore,
 func (p *pluginRelayer) Close() error { return nil }
 
 type relayer struct {
+	types.UnimplementedRelayer
 	lggr logger.Logger
 	ds   sqlutil.DataSource
 }

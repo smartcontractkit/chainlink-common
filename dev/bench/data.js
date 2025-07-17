@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752779387344,
+  "lastUpdate": 1752789637680,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20916,6 +20916,48 @@ window.BENCHMARK_DATA = {
             "value": 28584,
             "unit": "ns/op",
             "extra": "42723 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "brian.sztamfater@smartcontract.com",
+            "name": "Brian Sztamfater",
+            "username": "briansztamfater"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c52472ac1dd349bd084d60bee619287449fdca11",
+          "message": "feat: add CCIPProvider interface to relayer (#1404)\n\n* feat: add CCIPProvider interface to relayer\n\n* embed unimplementedRelayer in example relayer\n\n* do not return error on CCIPProvider interface functions",
+          "timestamp": "2025-07-17T21:59:21Z",
+          "tree_id": "92c2a10a6237333bcf834ecb2e37f2f768f6eb51",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c52472ac1dd349bd084d60bee619287449fdca11"
+        },
+        "date": 1752789636480,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 363.9,
+            "unit": "ns/op",
+            "extra": "3182148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 413,
+            "unit": "ns/op",
+            "extra": "2891268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28113,
+            "unit": "ns/op",
+            "extra": "42649 times\n4 procs"
           }
         ]
       }

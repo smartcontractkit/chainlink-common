@@ -411,7 +411,7 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 		},
 
 		{
-			name: "previous outcome, empty observation, update due to heartbeat",
+			name: "previous outcome, empty observation, no update due to heartbeat",
 			config: datafeeds.LLOAggregatorConfig{
 				Streams: map[string]datafeeds.FeedConfig{
 					"1": {
@@ -444,16 +444,8 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 				2: decimal.NewFromFloat(101), // no change
 			}),
 			f:                    1,
-			expectedShouldReport: true,
-			expectedStreamIDs:    []uint32{1},
-			wantUpdates: []*datafeeds.EVMEncodableStreamUpdate{
-				{
-					StreamID:   1,
-					Price:      datafeeds.DecimalToBigInt(decimal.NewFromFloat(100)), //big.NewInt(105),
-					Timestamp:  uint32(testStartTime.Unix()),                         //nolint: gosec // G115
-					RemappedID: remapped1,
-				},
-			},
+			expectedShouldReport: false, // No update despite heartbeat, as no observation for stream 1
+			expectedStreamIDs:    []uint32{},
 		},
 
 		{

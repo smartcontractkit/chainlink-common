@@ -49,6 +49,6 @@ type CCIPFactoryGenerator interface {
 
 type CCIPProvider interface {
 	services.Service
-	ChainAccessor() (ccipocr3.ChainAccessor, error)
-	ContractTransmitter() (ocr3types.ContractTransmitter[[]byte], error)
+	ChainAccessor() ccipocr3.ChainAccessor
+	ContractTransmitter() ocr3types.ContractTransmitter[[]byte]
 }

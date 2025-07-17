@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752765390330,
+  "lastUpdate": 1752772469178,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20832,6 +20832,48 @@ window.BENCHMARK_DATA = {
             "value": 28211,
             "unit": "ns/op",
             "extra": "42693 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "akhil.chainani@smartcontract.com",
+            "name": "Akhil Chainani",
+            "username": "akhilchainani"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3713a263eb89fafe02d7095e31b42ea2a88f6414",
+          "message": "Upgrade protos to v10 (#1406)\n\n* capability ids can only be lowercase\n\n* upgrade proto",
+          "timestamp": "2025-07-17T19:13:26+02:00",
+          "tree_id": "84c8dab99a6a64e467ca6bbcf14adc7d63b47d72",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3713a263eb89fafe02d7095e31b42ea2a88f6414"
+        },
+        "date": 1752772468199,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 375.1,
+            "unit": "ns/op",
+            "extra": "3105414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 431,
+            "unit": "ns/op",
+            "extra": "2772514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28288,
+            "unit": "ns/op",
+            "extra": "42672 times\n4 procs"
           }
         ]
       }

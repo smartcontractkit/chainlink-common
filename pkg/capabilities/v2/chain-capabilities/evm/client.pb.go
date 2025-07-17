@@ -2018,7 +2018,7 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
 	"LogTrigger\x12<.capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest\x1a(.capabilities.blockchain.evm.v1alpha.Log0\x01\x12}\n" +
 	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xb8\x04\x82\xb5\x18\xb3\x04\b\x01\x12\tevm@1.0.0\x1a\xa3\x04\n" +
-	"\rChainSelector\x12\x91\x04\x12\x8e\x04\n" +
+	"\rchainselector\x12\x91\x04\x12\x8e\x04\n" +
 	"\x1d\n" +
 	"\x11avalanche-mainnet\x10\xd5\xe7\x8a\xc0\xe1\u0558\xa4Y\n" +
 	"#\n" +

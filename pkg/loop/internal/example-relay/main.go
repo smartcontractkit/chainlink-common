@@ -67,6 +67,7 @@ func (p *pluginRelayer) NewRelayer(ctx context.Context, config string, keystore,
 func (p *pluginRelayer) Close() error { return nil }
 
 type relayer struct {
+	types.UnimplementedRelayer
 	lggr logger.Logger
 	ds   sqlutil.DataSource
 }
@@ -139,9 +140,5 @@ func (r *relayer) NewPluginProvider(ctx context.Context, args types.RelayArgs, a
 }
 
 func (r *relayer) NewLLOProvider(ctx context.Context, args types.RelayArgs, args2 types.PluginArgs) (types.LLOProvider, error) {
-	return nil, errors.New("unimplemented")
-}
-
-func (r *relayer) NewCCIPProvider(ctx context.Context, args types.RelayArgs) (types.CCIPProvider, error) {
 	return nil, errors.New("unimplemented")
 }

@@ -19,7 +19,6 @@ var _ = emptypb.Empty{}
 
 type HTTPCapability interface {
 	RegisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) (<-chan capabilities.TriggerAndId[*http.Payload], error)
-
 	UnregisterTrigger(ctx context.Context, triggerID string, metadata capabilities.RequestMetadata, input *http.Config) error
 
 	Start(ctx context.Context) error
@@ -45,15 +44,15 @@ type HTTPServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *HTTPServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := cs.HTTPCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *HTTPServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := c.HTTPCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	cs.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = capabilityRegistry
 
 	if err := capabilityRegistry.Add(ctx, &hTTPCapability{
-		HTTPCapability: cs.HTTPCapability,
+		HTTPCapability: c.HTTPCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -61,25 +60,25 @@ func (cs *HTTPServer) Initialise(ctx context.Context, config string, telemetrySe
 	return nil
 }
 
-func (cs *HTTPServer) Close() error {
+func (c *HTTPServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "http-trigger@1.0.0-alpha"); err != nil {
+	if c.capabilityRegistry != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "http-trigger@1.0.0-alpha"); err != nil {
 			return err
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if c.stopCh != nil {
+		close(c.stopCh)
 	}
 
-	return cs.hTTPCapability.Close()
+	return c.hTTPCapability.Close()
 }
 
-func (cs *HTTPServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.hTTPCapability.Info(ctx)
+func (c *HTTPServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := c.hTTPCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}

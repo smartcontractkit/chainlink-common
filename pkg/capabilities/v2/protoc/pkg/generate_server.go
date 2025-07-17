@@ -32,9 +32,11 @@ var goServerTemplate string
 
 var serverTemplates = map[ServerLanguage]TemplateGenerator{
 	ServerLangaugeGo: {
-		Name:             "go_server",
-		Template:         goServerTemplate,
-		FileNameTemplate: "server/{{.}}_server_gen.go",
+		Name:               "go_server",
+		Template:           goServerTemplate,
+		FileNameTemplate:   "server/{{.}}_server_gen.go",
+		StringLblValue:     StringLblValue(true),
+		PbLabelTLangLabels: PbLabelToGoLabels,
 	},
 }
 

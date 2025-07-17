@@ -30,16 +30,7 @@ jobs:
           else
             echo "CUSTOM_CORE_REF=develop" >> "${GITHUB_ENV}"
           fi
-      - name: Collect Metrics
-        id: collect-gha-metrics
-        uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
-        with:
-          id: build-chainlink
-          basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
-          hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
-          org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
-          this-job-name: Build Chainlink Image
-        continue-on-error: true
+
       - name: Checkout the repo
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -76,16 +67,7 @@ jobs:
           else
             echo "CUSTOM_SOLANA_REF=develop" >> "${GITHUB_ENV}"
           fi
-      - name: Collect Metrics
-        id: collect-gha-metrics
-        uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
-        with:
-          id: solana-build-relay
-          basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
-          hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
-          org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
-          this-job-name: Solana Build Relay
-        continue-on-error: true
+
       - name: Checkout the solana repo
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -123,16 +105,7 @@ jobs:
           else
             echo "CUSTOM_STARKNET_REF=develop" >> "${GITHUB_ENV}"
           fi
-      - name: Collect Metrics
-        id: collect-gha-metrics
-        uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
-        with:
-          id: starknet-build-relay
-          basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
-          hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
-          org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
-          this-job-name: Starknet Build Relay
-        continue-on-error: true
+
       - name: Checkout the starknet repo
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -163,16 +136,6 @@ jobs:
   #   name: Terra Build Relay
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - name: Collect Metrics
-  #       id: collect-gha-metrics
-  #       uses: smartcontractkit/push-gha-metrics-action@dea9b546553cb4ca936607c2267a09c004e4ab3f # v3.0.0
-  #       with:
-  #         id: terra-build-relay
-  #         basic-auth: ${{ secrets.GRAFANA_INTERNAL_BASIC_AUTH }}
-  #         hostname: ${{ secrets.GRAFANA_INTERNAL_HOST }}
-  #         org-id: ${{ secrets.GRAFANA_INTERNAL_TENANT_ID }}
-  #         this-job-name: Terra Build Relay
-  #       continue-on-error: true
   #     - name: Checkout the terra repo
   #       uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
   #       with:

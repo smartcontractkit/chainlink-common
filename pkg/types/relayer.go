@@ -190,6 +190,10 @@ type EVMService interface {
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
+	// GetFiltersNames returns all registered filters' names for later pruning
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	GetFiltersNames(ctx context.Context) ([]string, error)
+
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 

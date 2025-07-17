@@ -5,7 +5,7 @@ go 1.24.2
 toolchain go1.24.4
 
 require (
-	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250710185807-2e08944e72d2
+	github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250717171326-3713a263eb89
 	google.golang.org/protobuf v1.36.6
 )
 

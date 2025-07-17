@@ -198,6 +198,9 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 		newPrice, ok := prices[streamID]
 		if !ok {
 			newPrice = *oldPrice
+			// Insure we have a price for this stream in the prices map in case a heartbeat is triggered
+			prices[streamID] = newPrice
+			lggr.Debugw("using previous price for stream", "streamID", streamID)
 		}
 		priceDeviation := deviationDecimal(*oldPrice, newPrice)
 		timeDiffNs := observationTimestamp.UnixNano() - previousStreamInfo.Timestamp

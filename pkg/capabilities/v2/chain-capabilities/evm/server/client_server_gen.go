@@ -88,7 +88,7 @@ func (c *ClientServer) Close() error {
 	defer cancel()
 
 	if c.capabilityRegistry != nil {
-		if err := c.capabilityRegistry.Remove(ctx, "evm"+":chainselector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0"); err != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0"); err != nil {
 			return err
 		}
 	}
@@ -115,7 +115,7 @@ type clientCapability struct {
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	// Maybe we do need to split it out, even if the user doesn't see it
-	return capabilities.NewCapabilityInfo("evm"+":chainselector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
+	return capabilities.NewCapabilityInfo("evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", capabilities.CapabilityTypeCombined, c.ClientCapability.Description())
 }
 
 var _ capabilities.ExecutableAndTriggerCapability = (*clientCapability)(nil)
@@ -126,7 +126,7 @@ func (c *clientCapability) RegisterTrigger(ctx context.Context, request capabili
 	switch request.Method {
 	case "LogTrigger":
 		input := &evm.FilterLogTriggerRequest{}
-		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm"+":chainselector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
+		return capabilities.RegisterTrigger(ctx, c.stopCh, "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", request, input, c.ClientCapability.RegisterLogTrigger)
 	default:
 		return nil, fmt.Errorf("trigger %s not found", request.Method)
 	}

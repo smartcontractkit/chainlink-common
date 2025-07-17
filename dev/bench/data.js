@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752762462582,
+  "lastUpdate": 1752765390330,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20790,6 +20790,48 @@ window.BENCHMARK_DATA = {
             "value": 28149,
             "unit": "ns/op",
             "extra": "37076 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d7c87d27164d927cc88c51f8b03de10969bd5564",
+          "message": "Update evm client proto in sdk and main module (#1403)",
+          "timestamp": "2025-07-17T11:14:11-04:00",
+          "tree_id": "b511127e600d38c1f3b7a1e47db0f349d94ec393",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d7c87d27164d927cc88c51f8b03de10969bd5564"
+        },
+        "date": 1752765388657,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372.3,
+            "unit": "ns/op",
+            "extra": "3111369 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 428.6,
+            "unit": "ns/op",
+            "extra": "2789521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28211,
+            "unit": "ns/op",
+            "extra": "42693 times\n4 procs"
           }
         ]
       }

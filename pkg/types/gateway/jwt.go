@@ -3,7 +3,6 @@ package gateway
 import (
 	"crypto/ecdsa"
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"time"
 
@@ -21,32 +20,36 @@ const (
 // Option is a function type that allows configuring CreateRequestJWT.
 type Option func(*jwtOptions)
 
-// jwtOptions holds all possible optional configurations for CreateRequestJWT.
 type jwtOptions struct {
 	expiryDuration *time.Duration
-	issuer         *string // New field for optional issuer
+	issuer         *string  // New field for optional issuer
+	audience       []string // New field for optional audience
+	subject        *string  // New field for optional subject
 }
 
-// WithExpiry sets the expiry duration for the JWT.
 func WithExpiry(d time.Duration) Option {
 	return func(opts *jwtOptions) {
 		opts.expiryDuration = &d
 	}
 }
 
-// WithIssuer sets a custom issuer for the JWT.
 func WithIssuer(issuer string) Option {
 	return func(opts *jwtOptions) {
 		opts.issuer = &issuer
 	}
 }
 
-// You can add more options here as needed, e.g.:
-// func WithAudience(audience string) Option {
-// 	return func(opts *jwtOptions) {
-// 		opts.Audience = &audience
-// 	}
-// }
+func WithAudience(audience []string) Option {
+	return func(opts *jwtOptions) {
+		opts.audience = audience
+	}
+}
+
+func WithSubject(subject string) Option {
+	return func(opts *jwtOptions) {
+		opts.subject = &subject
+	}
+}
 
 var SigningMethodES256K *SigningMethodSecp256k1
 
@@ -151,41 +154,46 @@ func CreateRequestJWT[T any](req jsonrpc.Request[T], key *ecdsa.PublicKey, opts 
 	if key == nil {
 		return nil, errors.New("public key cannot be nil")
 	}
-	
+
 	// Apply options
 	options := &jwtOptions{}
 	for _, opt := range opts {
 		opt(options)
 	}
-	
+
 	// Set defaults if not provided
 	expiryDuration := defaultJWTExpiryDuration
 	if options.expiryDuration != nil {
 		expiryDuration = *options.expiryDuration
 	}
-	
+
 	digest, err := req.Digest()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var issuer string
 	if options.issuer != nil {
 		issuer = *options.issuer
-	} else {
-		// Use compressed public key as default issuer
-		compressed, err := compressedECDSAPubKey(key)
-		if err != nil {
-			return nil, err
-		}
-		issuer = "0x" + hex.EncodeToString(compressed)
 	}
-	
+
+	var subject string
+	if options.subject != nil {
+		subject = *options.subject
+	}
+
+	var audience []string
+	if options.audience != nil {
+		audience = options.audience
+	}
+
 	now := time.Now()
 	claims := JWTClaims{
 		Digest: "0x" + digest,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    issuer,
+			Subject:   subject,
+			Audience:  jwt.ClaimStrings(audience),
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiryDuration)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
@@ -217,13 +225,6 @@ func VerifyRequestJWT[T any](tokenString string, key *ecdsa.PublicKey, req jsonr
 	if !token.Valid {
 		return nil, jwt.ErrTokenInvalidClaims
 	}
-	compressed, err := compressedECDSAPubKey(key)
-	if err != nil {
-		return nil, err
-	}
-	if claims.Issuer != "0x"+hex.EncodeToString(compressed) {
-		return nil, jwt.ErrTokenInvalidIssuer
-	}
 	reqDigest, err := req.Digest()
 	if err != nil {
 		return nil, err
@@ -232,14 +233,4 @@ func VerifyRequestJWT[T any](tokenString string, key *ecdsa.PublicKey, req jsonr
 		return nil, errors.New("JWT digest does not match request digest")
 	}
 	return claims, nil
-}
-
-func compressedECDSAPubKey(pubKey *ecdsa.PublicKey) ([]byte, error) {
-	if pubKey == nil || pubKey.X == nil || pubKey.Y == nil {
-		return nil, errors.New("invalid public key")
-	}
-	var x, y secp.FieldVal
-	x.SetByteSlice(pubKey.X.Bytes())
-	y.SetByteSlice(pubKey.Y.Bytes())
-	return secp.NewPublicKey(&x, &y).SerializeCompressed(), nil
 }

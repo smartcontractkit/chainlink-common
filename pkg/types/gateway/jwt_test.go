@@ -5,7 +5,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"math/big"
 	"strings"
@@ -131,9 +130,7 @@ func TestCreateRequestJWT(t *testing.T) {
 				"param2": 42,
 			},
 		}
-
-		expiryDuration := time.Hour
-		unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey)
+		unsignedToken, err := CreateRequestJWT(req, &privateKey.PublicKey, WithExpiry(time.Hour), WithIssuer("issuer"), WithSubject("subject"), WithAudience([]string{"audience1", "audience2"}))
 		require.NoError(t, err)
 		signedToken, err := unsignedToken.SignedString(privateKey)
 		require.NoError(t, err)
@@ -147,19 +144,17 @@ func TestCreateRequestJWT(t *testing.T) {
 		claims, ok := token.Claims.(*JWTClaims)
 		require.True(t, ok)
 		require.NotEmpty(t, claims.Digest)
-		require.NotEmpty(t, claims.Issuer)
+		require.Equal(t, "issuer", claims.Issuer)
+		require.NotNil(t, "subject", claims.Subject)
+		require.Len(t, claims.Audience, 2)
+		require.Equal(t, "audience1", claims.Audience[0])
+		require.Equal(t, "audience2", claims.Audience[1])
 		require.NotNil(t, claims.ExpiresAt)
 		require.NotNil(t, claims.IssuedAt)
 
 		expectedDigest, err := req.Digest()
 		require.NoError(t, err)
 		require.Equal(t, "0x"+expectedDigest, claims.Digest)
-
-		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err)
-		require.Equal(t, "0x"+hex.EncodeToString(compressed), claims.Issuer)
-		expectedExpiry := claims.IssuedAt.Add(expiryDuration)
-		require.WithinDuration(t, expectedExpiry, claims.ExpiresAt.Time, time.Second)
 	})
 
 	t.Run("different expiry durations", func(t *testing.T) {
@@ -278,15 +273,9 @@ func TestVerifyRequestJWT(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, claims)
 		require.NotEmpty(t, claims.Digest)
-		require.NotEmpty(t, claims.Issuer)
-
 		expectedDigest, err := req.Digest()
 		require.NoError(t, err)
 		require.Equal(t, "0x"+expectedDigest, claims.Digest)
-
-		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err)
-		require.Equal(t, "0x"+hex.EncodeToString(compressed), claims.Issuer)
 	})
 
 	t.Run("wrong public key", func(t *testing.T) {
@@ -304,8 +293,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 	})
 
 	t.Run("expired token", func(t *testing.T) {
-		d := -time.Hour
-		expiredToken, err := CreateRequestJWT(req, &privateKey.PublicKey, &d)
+		expiredToken, err := CreateRequestJWT(req, &privateKey.PublicKey, WithExpiry(-time.Hour))
 		require.NoError(t, err)
 		expiredTokenString, err := expiredToken.SignedString(privateKey)
 		require.NoError(t, err)
@@ -334,28 +322,6 @@ func TestVerifyRequestJWT(t *testing.T) {
 		require.Contains(t, err.Error(), "signature is invalid")
 	})
 
-	t.Run("token with wrong issuer", func(t *testing.T) {
-		// Create a token with the wrong issuer
-		digest, err := req.Digest()
-		require.NoError(t, err)
-
-		claims := JWTClaims{
-			Digest: digest,
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    "wrong-issuer",
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-				IssuedAt:  jwt.NewNumericDate(time.Now()),
-			},
-		}
-		token := jwt.NewWithClaims(SigningMethodES256K, claims)
-		tokenString, err := token.SignedString(privateKey)
-		require.NoError(t, err)
-
-		_, err = VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid issuer")
-	})
-
 	t.Run("nil public key", func(t *testing.T) {
 		_, err := VerifyRequestJWT(signedToken, nil, req)
 		require.Error(t, err)
@@ -374,7 +340,7 @@ func TestVerifyRequestJWT(t *testing.T) {
 
 		_, err = VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid issuer")
+		require.Contains(t, err.Error(), "JWT digest does not match request digest")
 	})
 
 	t.Run("digest mismatch - different request", func(t *testing.T) {
@@ -409,28 +375,6 @@ func TestVerifyRequestJWT(t *testing.T) {
 		require.Contains(t, err.Error(), "JWT digest does not match request digest")
 	})
 
-	t.Run("digest mismatch - wrong digest in JWT", func(t *testing.T) {
-		// Create a token with wrong digest
-		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err)
-
-		claims := JWTClaims{
-			Digest: "wrong-digest-hash",
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    "0x" + hex.EncodeToString(compressed),
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-				IssuedAt:  jwt.NewNumericDate(time.Now()),
-			},
-		}
-		token := jwt.NewWithClaims(SigningMethodES256K, claims)
-		tokenString, err := token.SignedString(privateKey)
-		require.NoError(t, err)
-
-		_, err = VerifyRequestJWT(tokenString, &privateKey.PublicKey, req)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "JWT digest does not match request digest")
-	})
-
 	t.Run("request digest calculation failure", func(t *testing.T) {
 		// Create a request with unmarshalable data
 		type UnmarshalableType struct {
@@ -448,51 +392,6 @@ func TestVerifyRequestJWT(t *testing.T) {
 		_, err := VerifyRequestJWT(signedToken, &privateKey.PublicKey, invalidReq)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error marshaling JSON")
-	})
-}
-
-func TestCompressedECDSAPubKey(t *testing.T) {
-	t.Run("valid public key", func(t *testing.T) {
-		privateKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
-		require.NoError(t, err)
-
-		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err)
-		require.NotEmpty(t, compressed)
-
-		// Compressed keys should be 33 bytes (1 byte prefix + 32 bytes X coordinate)
-		require.Equal(t, 33, len(compressed))
-		// The first byte should be 0x02 or 0x03 (compression prefix)
-		require.True(t, compressed[0] == 0x02 || compressed[0] == 0x03)
-	})
-
-	t.Run("nil public key", func(t *testing.T) {
-		_, err := compressedECDSAPubKey(nil)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid public key")
-	})
-
-	t.Run("public key with nil X", func(t *testing.T) {
-		pubKey := &ecdsa.PublicKey{
-			Curve: elliptic.P256(),
-			X:     nil,
-			Y:     nil,
-		}
-		_, err := compressedECDSAPubKey(pubKey)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid public key")
-	})
-
-	t.Run("consistency test", func(t *testing.T) {
-		privateKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
-		require.NoError(t, err)
-
-		// Call the function multiple times with the same key
-		compressed1, err1 := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err1)
-		compressed2, err2 := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err2)
-		require.Equal(t, compressed1, compressed2)
 	})
 }
 
@@ -518,7 +417,7 @@ func TestJWTEndToEnd(t *testing.T) {
 			},
 		}
 
-		token, err := CreateRequestJWT(req, &privateKey.PublicKey, nil)
+		token, err := CreateRequestJWT(req, &privateKey.PublicKey, WithExpiry(time.Hour), WithIssuer("issuer"), WithSubject("subject"), WithAudience([]string{"audience1", "audience2"}))
 		require.NoError(t, err)
 		tokenString, err := token.SignedString(privateKey)
 		require.NoError(t, err)
@@ -529,12 +428,13 @@ func TestJWTEndToEnd(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "0x"+expectedDigest, claims.Digest)
 
-		compressed, err := compressedECDSAPubKey(&privateKey.PublicKey)
-		require.NoError(t, err)
-		require.Equal(t, "0x"+hex.EncodeToString(compressed), claims.Issuer)
-
 		require.True(t, claims.ExpiresAt.After(time.Now()))
 		require.True(t, claims.IssuedAt.Before(time.Now().Add(time.Second)))
+		require.Equal(t, "issuer", claims.Issuer)
+		require.Equal(t, "subject", claims.Subject)
+		require.Len(t, claims.Audience, 2)
+		require.Equal(t, "audience1", claims.Audience[0])
+		require.Equal(t, "audience2", claims.Audience[1])
 	})
 
 	t.Run("different request types", func(t *testing.T) {
@@ -592,19 +492,19 @@ func TestJWTEndToEnd(t *testing.T) {
 
 				switch req := tc.req.(type) {
 				case jsonrpc.Request[string]:
-					token, err = CreateRequestJWT(req, &privateKey.PublicKey, nil)
+					token, err = CreateRequestJWT(req, &privateKey.PublicKey)
 					require.NoError(t, err)
 					signedToken, err = token.SignedString(privateKey)
 					require.NoError(t, err)
 					claims, err = VerifyRequestJWT(signedToken, &privateKey.PublicKey, req)
 				case jsonrpc.Request[int]:
-					token, err = CreateRequestJWT(req, &privateKey.PublicKey, nil)
+					token, err = CreateRequestJWT(req, &privateKey.PublicKey)
 					require.NoError(t, err)
 					signedToken, err = token.SignedString(privateKey)
 					require.NoError(t, err)
 					claims, err = VerifyRequestJWT(signedToken, &privateKey.PublicKey, req)
 				case jsonrpc.Request[[]string]:
-					token, err = CreateRequestJWT(req, &privateKey.PublicKey, nil)
+					token, err = CreateRequestJWT(req, &privateKey.PublicKey)
 					require.NoError(t, err)
 					signedToken, err = token.SignedString(privateKey)
 					require.NoError(t, err)
@@ -616,5 +516,89 @@ func TestJWTEndToEnd(t *testing.T) {
 				require.NotEmpty(t, claims.Digest)
 			})
 		}
+	})
+}
+
+func TestJWTOptions_EmptyAudience(t *testing.T) {
+	privateKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
+	require.NoError(t, err)
+
+	req := jsonrpc.Request[string]{
+		Version: jsonrpc.JsonRpcVersion,
+		ID:      "test-id",
+		Method:  "test.method",
+		Params:  func() *string { s := "test-param"; return &s }(),
+	}
+
+	token, err := CreateRequestJWT(req, &privateKey.PublicKey, WithAudience([]string{}))
+	require.NoError(t, err)
+
+	signedToken, err := token.SignedString(privateKey)
+	require.NoError(t, err)
+
+	parsedToken, err := jwt.ParseWithClaims(signedToken, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return &privateKey.PublicKey, nil
+	})
+	require.NoError(t, err)
+
+	claims := parsedToken.Claims.(*JWTClaims)
+	require.Empty(t, claims.Audience)
+}
+
+func TestSigningMethodSecp256k1(t *testing.T) {
+	method := &SigningMethodSecp256k1{}
+
+	t.Run("Alg method returns ES256K", func(t *testing.T) {
+		require.Equal(t, "ES256K", method.Alg())
+	})
+
+	t.Run("Sign with invalid key type", func(t *testing.T) {
+		invalidKey := "not-a-private-key"
+		_, err := method.Sign("test-string", invalidKey)
+		require.Error(t, err)
+		require.Equal(t, jwt.ErrInvalidKeyType, err)
+	})
+
+	t.Run("Verify with invalid key type", func(t *testing.T) {
+		invalidKey := "not-a-public-key"
+		err := method.Verify("test-string", []byte("signature"), invalidKey)
+		require.Error(t, err)
+		require.Equal(t, jwt.ErrInvalidKeyType, err)
+	})
+
+	t.Run("Verify with invalid signature format", func(t *testing.T) {
+		privateKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
+		require.NoError(t, err)
+
+		invalidSignature := []byte("invalid-signature-format")
+		err = method.Verify("test-string", invalidSignature, &privateKey.PublicKey)
+		require.Error(t, err)
+	})
+
+	t.Run("Verify with wrong signature", func(t *testing.T) {
+		privateKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
+		require.NoError(t, err)
+
+		// Sign one string
+		signature, err := method.Sign("original-string", privateKey)
+		require.NoError(t, err)
+
+		// Try to verify with a different string
+		err = method.Verify("different-string", signature, &privateKey.PublicKey)
+		require.Error(t, err)
+		require.Equal(t, jwt.ErrSignatureInvalid, err)
+	})
+
+	t.Run("Sign and verify success", func(t *testing.T) {
+		privateKey, err := ecdsa.GenerateKey(secp.S256(), rand.Reader)
+		require.NoError(t, err)
+
+		testString := "test-signing-string"
+		signature, err := method.Sign(testString, privateKey)
+		require.NoError(t, err)
+		require.NotEmpty(t, signature)
+
+		err = method.Verify(testString, signature, &privateKey.PublicKey)
+		require.NoError(t, err)
 	})
 }

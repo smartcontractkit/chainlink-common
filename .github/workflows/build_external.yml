@@ -32,7 +32,7 @@ jobs:
           fi
 
       - name: Checkout the repo
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Build the image
@@ -69,7 +69,7 @@ jobs:
           fi
 
       - name: Checkout the solana repo
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@v4
         with:
           repository: smartcontractkit/chainlink-solana
           ref: ${{ env.CUSTOM_SOLANA_REF }}
@@ -107,7 +107,7 @@ jobs:
           fi
 
       - name: Checkout the starknet repo
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@v4
         with:
           repository: smartcontractkit/chainlink-starknet
           ref: ${{ env.CUSTOM_STARKNET_REF }}
@@ -137,7 +137,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout the terra repo
-  #       uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+  #       uses: actions/checkout@v4
   #       with:
   #         repository: smartcontractkit/chainlink-terra
   #     - name: Setup Go

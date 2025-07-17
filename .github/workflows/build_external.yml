@@ -17,37 +17,49 @@ jobs:
       contents: read
     name: Build Chainlink Image
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Get core ref from PR body
         if: github.event_name == 'pull_request'
+        id: get-core-ref
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          comment=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json body -q '.body')
+          comment=$(gh pr view https://github.com/${GITHUB_REPOSITORY}/pull/${PR_NUMBER} --json body -q '.body')
           core_ref=$(echo $comment | grep -oP 'core ref: \K\S+' || true)
           if [ ! -z "$core_ref" ]; then
-            echo "CUSTOM_CORE_REF=${core_ref}" >> "${GITHUB_ENV}"
+            echo "core-ref=${core_ref}" | tee -a "$GITHUB_OUTPUT"
           else
-            echo "CUSTOM_CORE_REF=develop" >> "${GITHUB_ENV}"
+            echo "core-ref=develop" | tee -a "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout the repo
+      - name: Checkout chainlink-common repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          path: chainlink-common
 
-      - name: Build the image
-        uses: smartcontractkit/chainlink-github-actions/chainlink-testing-framework/build-image@e29366cdecfe6befff9ab8c3cfe4825218505d58 # v2.3.16
-        env:
-          GH_TOKEN: ${{ github.token }}
+
+      - name: Checkout chainlink repo
+        uses: actions/checkout@v4
         with:
-          push_tag: ""
-          cl_repo: smartcontractkit/chainlink
-          cl_ref: ${{ env.CUSTOM_CORE_REF }}
-          dep_common_sha: ${{ github.event.pull_request.head.sha }}
-          should_checkout: true
-          QA_AWS_REGION: ""
-          QA_AWS_ROLE_TO_ASSUME: ""
+          path: chainlink
+          repository: smartcontractkit/chainlink
+          ref: ${{ steps.get-core-ref.outputs.core-ref }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5 # TODO: replace with local version
+        with:
+          go-version-file: "chainlink/go.mod"
+
+      - name: Build /chainlink
+        shell: bash
+        env:
+          COMMON_SHA: ${{ github.event.pull_request.head.sha }}
+        working-directory: chainlink
+        run: |
+          go get github.com/smartcontractkit/chainlink-common@${COMMON_SHA}
+          go mod tidy
+          make install-chainlink
 
   solana-build-relay:
     environment: integration

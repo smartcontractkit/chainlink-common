@@ -193,7 +193,12 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 			lggr.Errorw("failed to unmarshal previous price", "streamID", streamID, "err", uerr)
 			continue
 		}
-		newPrice := prices[streamID]
+		// If we don't have a price for this stream, we will use the previous price.
+		// This is to prevent instantly zeroing out onchain values due to a bad LLO Stream Job/observation.
+		newPrice, ok := prices[streamID]
+		if !ok {
+			newPrice = *oldPrice
+		}
 		priceDeviation := deviationDecimal(*oldPrice, newPrice)
 		timeDiffNs := observationTimestamp.UnixNano() - previousStreamInfo.Timestamp
 		lggr.Debugw("checking deviation and heartbeat",

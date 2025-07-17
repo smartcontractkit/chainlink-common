@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752772469178,
+  "lastUpdate": 1752779387344,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -20874,6 +20874,48 @@ window.BENCHMARK_DATA = {
             "value": 28288,
             "unit": "ns/op",
             "extra": "42672 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "akhil.chainani@smartcontract.com",
+            "name": "Akhil Chainani",
+            "username": "akhilchainani"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "612a8b4eb22fc2e6f41d098130d9c7db87fb5e15",
+          "message": "upgrade proto in pkg/workflows/sdk/v2/pb (#1407)\n\n* upgrade proto in pkg/workflows/sdk/v2/pb\n\n* run make gomodtidy",
+          "timestamp": "2025-07-17T15:08:38-04:00",
+          "tree_id": "1bb27822df3796110d88d0ffee6007bd8000c75e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/612a8b4eb22fc2e6f41d098130d9c7db87fb5e15"
+        },
+        "date": 1752779385630,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372.4,
+            "unit": "ns/op",
+            "extra": "3172504 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 432.2,
+            "unit": "ns/op",
+            "extra": "2783001 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28584,
+            "unit": "ns/op",
+            "extra": "42723 times\n4 procs"
           }
         ]
       }

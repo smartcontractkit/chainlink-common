@@ -1,6 +1,8 @@
 package jsonrpc2
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -168,6 +170,45 @@ func TestNormalize(t *testing.T) {
 			},
 		}
 		require.Equal(t, expected, normalized)
+	})
+
+	t.Run("Normalize - nested map inside a struct", func(t *testing.T) {
+
+		type inner struct {
+			innermap map[string]string
+		}
+
+		type outer struct {
+			innerVal inner
+		}
+		fmt.Println("Hello, World")
+		outer1 := outer{
+			innerVal: inner{
+				innermap: map[string]string{
+					"a": "aVal",
+					"b": "bVal",
+				},
+			},
+		}
+		outer2 := outer{
+			innerVal: inner{
+				innermap: map[string]string{
+					"b": "bVal",
+					"a": "aVal",
+				},
+			},
+		}
+		normalized1, err := Normalize(outer1)
+		require.NoError(t, err)
+		normalized2, err := Normalize(outer2)
+		require.NoError(t, err)
+		require.Equal(t, normalized1, normalized2)
+		marshaled1, err := json.Marshal(normalized1)
+		require.NoError(t, err)
+		require.NotEqual(t, string(marshaled1), "{}")
+		marshaled2, err := json.Marshal(normalized2)
+		require.NoError(t, err)
+		require.Equal(t, marshaled1, marshaled2)
 	})
 
 	t.Run("Normalize - slice", func(t *testing.T) {

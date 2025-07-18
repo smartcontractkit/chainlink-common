@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752853954633,
+  "lastUpdate": 1752854941792,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21210,6 +21210,48 @@ window.BENCHMARK_DATA = {
             "value": 28144,
             "unit": "ns/op",
             "extra": "42610 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gaboparadiso@gmail.com",
+            "name": "Gabriel Paradiso",
+            "username": "agparadiso"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52367713623f288e1f96142884904850eba40d6c",
+          "message": "feat: add Config field needed for capabilities registry syncer V2 (#1417)",
+          "timestamp": "2025-07-18T09:07:37-07:00",
+          "tree_id": "b13e8f34b90b6393c4323bc3a4741e1cfdadcd5c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/52367713623f288e1f96142884904850eba40d6c"
+        },
+        "date": 1752854940143,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358,
+            "unit": "ns/op",
+            "extra": "3342166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.3,
+            "unit": "ns/op",
+            "extra": "2882529 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28170,
+            "unit": "ns/op",
+            "extra": "42362 times\n4 procs"
           }
         ]
       }

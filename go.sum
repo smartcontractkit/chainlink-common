@@ -302,10 +302,10 @@ github.com/smartcontractkit/chain-selectors v1.0.62 h1:KWLEyKQXHxGGHIlUfLrzjYldl
 github.com/smartcontractkit/chain-selectors v1.0.62/go.mod h1:xsKM0aN3YGcQKTPRPDDtPx2l4mlTN1Djmg0VVXV40b8=
 github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.1 h1:ca2z5OXgnbBPQRxpwXwBLJsUA1+cAp5ncfW4Ssvd6eY=
 github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.1/go.mod h1:NZv/qKYGFRnkjOYBouajnDfFoZ+WDa6H2KNmSf1dnKc=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250717142627-ae07002b923d h1:wQK8b6D04/uAO0gOLAPgqKSc9Y2uGBv3mizhjbpyuzU=
-github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250717142627-ae07002b923d/go.mod h1:U1UAbPhy6D7Qz0wHKGPoQO+dpR0hsYjgUz8xwRrmKwI=
-github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250715132921-fbb00f834ac8 h1:/AUP/7d2ILZyYeb/Zs70WllVzjuyzUjQGDJCaF50hww=
-github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250715132921-fbb00f834ac8/go.mod h1:ay4g8WruGFr512i+0IWDPmc1ZGpsw2ivfqfk0ED9vqY=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250718143957-41236f9ef8b4 h1:hPKEslzkVA2HUuqwGc6w594EWYnJFp5jXmAoBu3VryE=
+github.com/smartcontractkit/chainlink-common/pkg/values v0.0.0-20250718143957-41236f9ef8b4/go.mod h1:U1UAbPhy6D7Qz0wHKGPoQO+dpR0hsYjgUz8xwRrmKwI=
+github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250718160737-52367713623f h1:1/3TZgbBTxAoxFa2PXNy5ZMBais1S5gSoUTxbOFXVlw=
+github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb v0.0.0-20250718160737-52367713623f/go.mod h1:LEZQ/SbFHseQJrLKVm6ELB8gyI4G8rVEH3SQzzZqFDk=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250701181457-37bd0d618b58 h1:yXbKWplUgoC+PoOoPXseKunxElXrnCKnKBGxkmUVR2I=
 github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20250701181457-37bd0d618b58/go.mod h1:HHGeDUpAsPa0pmOx7wrByCitjQ0mbUxf0R9v+g67uCA=
 github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20250430163438-97d324ef9061 h1:5BKk6j2QWmb5TFoWYVLuL8U2XUIzTUUo5HBkCHTX2kM=

@@ -100,7 +100,11 @@ func (m *SigningMethodSecp256k1) Verify(signingString string, signature []byte, 
 	hasher.Write([]byte(signingString))
 	hash := hasher.Sum(nil)
 
-	pubKeyBytes := append(ecdsaKey.X.Bytes(), ecdsaKey.Y.Bytes()...)
+	xBytes := make([]byte, 32)
+	yBytes := make([]byte, 32)
+	ecdsaKey.X.FillBytes(xBytes)
+	ecdsaKey.Y.FillBytes(yBytes)
+	pubKeyBytes := append(xBytes, yBytes...)
 	fullPubKey := append([]byte{0x04}, pubKeyBytes...)
 	secpPubKey, err := secp.ParsePubKey(fullPubKey)
 	if err != nil {

@@ -10,7 +10,6 @@ require (
 )
 
 require (
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 )

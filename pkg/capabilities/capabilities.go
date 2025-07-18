@@ -297,6 +297,7 @@ type DON struct {
 	F                uint8
 	IsPublic         bool
 	AcceptsWorkflows bool
+	Config           []byte
 }
 
 // Node contains the node's peer ID and the DONs it is part of.

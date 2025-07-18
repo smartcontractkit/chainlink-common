@@ -407,7 +407,83 @@ func TestLLOAggregator_Aggregate(t *testing.T) {
 			observations:         map[ocrcommon.OracleID][]values.Value{},
 			f:                    1,
 			expectedShouldReport: false,
-			expectError:          true, // Should error with empty observations
+			expectError:          true, // Should error with empty observations and no previous outcome
+		},
+
+		{
+			name: "previous outcome, empty observation, no update due to heartbeat",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
+					"2": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex2,
+					},
+				},
+			},
+			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
+				price     decimal.Decimal
+				timestamp int64
+			}{
+				1: {
+					price:     decimal.NewFromFloat(100),
+					timestamp: testStartTime.Add(-61 * time.Minute).UnixNano(), // Over 1 the hour heartbeat
+				},
+				2: {
+					price:     decimal.NewFromFloat(101),
+					timestamp: testStartTime.Add(-10 * time.Minute).UnixNano(), // 10 minutes ago, under the 1 hour heartbeat
+				},
+			}),
+
+			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
+				2: decimal.NewFromFloat(101), // no change
+			}),
+			f:                    1,
+			expectedShouldReport: false, // No update despite heartbeat, as no observation for stream 1
+			expectedStreamIDs:    []uint32{},
+		},
+
+		{
+			name: "previous outcome, empty observation, no update before heartbeat",
+			config: datafeeds.LLOAggregatorConfig{
+				Streams: map[string]datafeeds.FeedConfig{
+					"1": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex1,
+					},
+					"2": {
+						Deviation:     decimal.NewFromFloat(0.1).String(), // 10%
+						Heartbeat:     3600,                               // 1 hour
+						RemappedIDHex: remappedHex2,
+					},
+				},
+			},
+			previousOutcome: createPreviousOutcome(t, map[uint32]struct {
+				price     decimal.Decimal
+				timestamp int64
+			}{
+				1: {
+					price:     decimal.NewFromFloat(100),
+					timestamp: testStartTime.Add(-10 * time.Minute).UnixNano(), // 10 minutes ago, under the 1 hour heartbeat
+				},
+				2: {
+					price:     decimal.NewFromFloat(101),
+					timestamp: testStartTime.Add(-10 * time.Minute).UnixNano(), // 10 minutes ago, under the 1 hour heartbeat
+				},
+			}),
+
+			observations: createObservations(t, testStartTime, map[uint32]decimal.Decimal{ //nolint: gosec // G115
+				2: decimal.NewFromFloat(101), // no change
+			}),
+			f:                    1,
+			expectedShouldReport: false,
+			expectedStreamIDs:    []uint32{},
 		},
 	}
 

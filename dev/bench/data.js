@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752849664587,
+  "lastUpdate": 1752853954633,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21168,6 +21168,48 @@ window.BENCHMARK_DATA = {
             "value": 28139,
             "unit": "ns/op",
             "extra": "42588 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "akhil.chainani@smartcontract.com",
+            "name": "Akhil Chainani",
+            "username": "akhilchainani"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "661c3f2ec1b3c91f97cde1ba036277e5b083503e",
+          "message": "bump pb v2 (#1421)\n\n* bump pb v2\n\n* go mod tidy\n\n---------\n\nCo-authored-by: Akshay Aggarwal <akshay.aggarwal@smartcontract.com>",
+          "timestamp": "2025-07-18T11:51:17-04:00",
+          "tree_id": "700df9df8857aac6b986841398b232c16454b419",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/661c3f2ec1b3c91f97cde1ba036277e5b083503e"
+        },
+        "date": 1752853953003,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 375.3,
+            "unit": "ns/op",
+            "extra": "3364983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.4,
+            "unit": "ns/op",
+            "extra": "2945314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28144,
+            "unit": "ns/op",
+            "extra": "42610 times\n4 procs"
           }
         ]
       }

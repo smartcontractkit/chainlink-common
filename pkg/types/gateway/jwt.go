@@ -81,7 +81,9 @@ func (m *SigningMethodSecp256k1) Sign(signingString string, key interface{}) ([]
 	hasher.Write([]byte(signingString))
 	hash := hasher.Sum(nil)
 
-	secpPrivKey := secp.PrivKeyFromBytes(ecdsaKey.D.Bytes())
+	privateKeyBytes := make([]byte, 32)
+	ecdsaKey.D.FillBytes(privateKeyBytes)
+	secpPrivKey := secp.PrivKeyFromBytes(privateKeyBytes)
 	signature := secpecdsa.Sign(secpPrivKey, hash)
 
 	return signature.Serialize(), nil

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752831227372,
+  "lastUpdate": 1752844962317,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21000,6 +21000,48 @@ window.BENCHMARK_DATA = {
             "value": 28150,
             "unit": "ns/op",
             "extra": "42664 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "matthew.pendrey@gmail.com",
+            "name": "Matthew Pendrey",
+            "username": "ettec"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ca372cb8ad81c1163a17387f9071f42138ffecee",
+          "message": "request store stats (#1418)",
+          "timestamp": "2025-07-18T14:21:29+01:00",
+          "tree_id": "22f50bbce3cfe1d0bc0d4e2ba7826ed193a63a8c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ca372cb8ad81c1163a17387f9071f42138ffecee"
+        },
+        "date": 1752844960720,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365.7,
+            "unit": "ns/op",
+            "extra": "3286815 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.7,
+            "unit": "ns/op",
+            "extra": "2844607 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28220,
+            "unit": "ns/op",
+            "extra": "41713 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752844962317,
+  "lastUpdate": 1752846223545,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21042,6 +21042,48 @@ window.BENCHMARK_DATA = {
             "value": 28220,
             "unit": "ns/op",
             "extra": "41713 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "akhil.chainani@smartcontract.com",
+            "name": "Akhil Chainani",
+            "username": "akhilchainani"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87f014d4412513aa874474b9ad2d13f334933383",
+          "message": "allow uppercase chars in cap ids (#1416)",
+          "timestamp": "2025-07-18T09:42:33-04:00",
+          "tree_id": "12f2f0b2c05b195a7ddc6eb3b3d868a338a91b22",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/87f014d4412513aa874474b9ad2d13f334933383"
+        },
+        "date": 1752846222570,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.7,
+            "unit": "ns/op",
+            "extra": "3369006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410,
+            "unit": "ns/op",
+            "extra": "2825946 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28177,
+            "unit": "ns/op",
+            "extra": "42564 times\n4 procs"
           }
         ]
       }

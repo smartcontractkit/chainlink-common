@@ -1,10 +1,10 @@
 .PHONY: gomods
 gomods: ## Install gomods
-	go install github.com/jmank88/gomods@v0.1.5
+	go install github.com/jmank88/gomods@v0.1.6
 
 .PHONY: gomodtidy
 gomodtidy: gomods
-	gomods tidy
+	gomods -s proto_vendor tidy
 
 .PHONY: docs
 docs:
@@ -34,8 +34,8 @@ rm-builders:
 	rm -f ./pkg/workflows/wasm/host/test/cmd/testmodule.wasm
 
 .PHONY: generate
-generate: mockery install-protoc gomods cre-protoc
-	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -go generate -x ./...
+generate: mockery install-protoc gomods cre-protoc modgraph
+	export PATH="$(HOME)/.local/bin:$(PATH)"; gomods -s proto_vendor -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
 
 .PHONY: cre-protoc
@@ -52,3 +52,8 @@ lint-workspace:
 
 lint:
 	@./script/lint.sh $(GOLANGCI_LINT_VERSION) "$(GOLANGCI_LINT_COMMON_OPTS)" $(GOLANGCI_LINT_DIRECTORY) "--new-from-rev=origin/main"
+
+.PHONY: modgraph
+modgraph: gomods
+	go install github.com/jmank88/modgraph@v0.1.0
+	./modgraph > go.md

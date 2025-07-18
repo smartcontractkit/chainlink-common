@@ -18,9 +18,6 @@ type testStatsCollector struct {
 func (t *testStatsCollector) RequestAdded() {
 	t.requestCount++
 }
-func (t *testStatsCollector) RequestEvicted() {
-	t.requestCount--
-}
 
 func TestOCR3Store_Stats(t *testing.T) {
 	// Create a new store with stats collector

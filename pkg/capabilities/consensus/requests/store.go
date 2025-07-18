@@ -7,14 +7,12 @@ import (
 )
 
 type statsCollector interface {
-	RequestAdded()
-	RequestEvicted()
+	SetRequestCount(requestCount int)
 }
 
-type noopsStatsCollector struct{}
+type noopStatsCollector struct{}
 
-func (n *noopsStatsCollector) RequestAdded()   {}
-func (n *noopsStatsCollector) RequestEvicted() {}
+func (n *noopStatsCollector) SetRequestCount(requestCount int) {}
 
 type StoredRequest[T any] interface {
 	ID() string
@@ -36,7 +34,7 @@ func NewStore[T StoredRequest[T]]() *Store[T] {
 	return &Store[T]{
 		requestIDs:     []string{},
 		requests:       map[string]T{},
-		statsCollector: &noopsStatsCollector{},
+		statsCollector: &noopStatsCollector{},
 	}
 }
 
@@ -141,7 +139,7 @@ func (s *Store[T]) Add(req T) error {
 	}
 	s.requestIDs = append(s.requestIDs, req.ID())
 	s.requests[req.ID()] = req
-	s.statsCollector.RequestAdded()
+	s.statsCollector.SetRequestCount(len(s.requests))
 	return nil
 }
 
@@ -169,7 +167,7 @@ func (s *Store[T]) Evict(requestID string) (T, bool) {
 	if ok {
 		found = true
 		delete(s.requests, requestID)
-		s.statsCollector.RequestEvicted()
+		s.statsCollector.SetRequestCount(len(s.requests))
 	}
 
 	newRequestIDs := make([]string, 0, len(s.requestIDs))

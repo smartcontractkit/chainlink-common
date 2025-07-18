@@ -62,7 +62,11 @@ type AllAccessors interface {
 	// Access Type: Method(many, see code)
 	// Contract: Many
 	// Confidence: Unconfirmed
-	GetAllConfigLegacySnapshot(ctx context.Context) (ChainConfigSnapshot, error)
+	GetAllConfigLegacySnapshot(
+		ctx context.Context,
+		destChainSelector ChainSelector,
+		sourceChainSelectors []ChainSelector,
+	) (ChainConfigSnapshot, error)
 
 	// GetChainFeeComponents Returns all fee components for given chains if corresponding
 	// chain writer is available.

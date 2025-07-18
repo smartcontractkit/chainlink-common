@@ -296,8 +296,19 @@ func (u *unscopedResourcePoolLimiter[N]) Free(_ context.Context, amount N) error
 	return nil
 }
 
+var _ ResourcePoolLimiter[int] = MultiResourcePoolLimiter[int]{}
+
 // MultiResourcePoolLimiter is a ResourcePoolLimiter backed by other limiters, which are each called in order.
 type MultiResourcePoolLimiter[N Number] []ResourcePoolLimiter[N]
+
+func (m MultiResourcePoolLimiter[N]) Close() (errs error) {
+	for _, l := range m {
+		if err := l.Close(); err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+	return
+}
 
 func (m MultiResourcePoolLimiter[N]) Wait(ctx context.Context, amount N) (func(), error) {
 	var frees freeFns
@@ -312,17 +323,26 @@ func (m MultiResourcePoolLimiter[N]) Wait(ctx context.Context, amount N) (func()
 	return frees.freeAll, nil
 }
 
-func (m MultiResourcePoolLimiter[N]) Use(ctx context.Context, amount N) (func(), error) {
+func (m MultiResourcePoolLimiter[N]) Use(ctx context.Context, amount N) error {
 	var frees freeFns
 	for _, l := range m {
 		err := l.Use(ctx, amount)
 		if err != nil {
 			frees.freeAll()
-			return nil, err
+			return err
 		}
 		frees = append(frees, func() { l.Free(ctx, amount) })
 	}
-	return frees.freeAll, nil
+	return nil
+}
+
+func (m MultiResourcePoolLimiter[N]) Free(ctx context.Context, amount N) (errs error) {
+	for _, l := range m {
+		if err := l.Free(ctx, amount); err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+	return
 }
 
 type freeFns []func()

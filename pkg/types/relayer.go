@@ -114,15 +114,58 @@ type ChainService interface {
 
 // GethClient is the subset of go-ethereum client methods implemented by EVMService.
 type GethClient interface {
-	// CallContract reads a contract as specified in the call message at a block height defined by blockNumber where:
-	// blockNumber :
-	//   nil (default) or (-2) → use the latest mined block (“latest”)
-	//   FinalizedBlockNumber(-3) → last finalized block (“finalized”)
+	// BalanceAt returns the wei balance of the given account.
 	//
-	// Any positive value is treated as an explicit block height.
-	CallContract(ctx context.Context, msg *evm.CallMsg, blockNumber *big.Int) ([]byte, error)
-	FilterLogs(ctx context.Context, filterQuery evm.FilterQuery) ([]*evm.Log, error)
-	BalanceAt(ctx context.Context, account evm.Address, blockNumber *big.Int) (*big.Int, error)
+	// Parameters:
+	// request.BlockNumber - specifies at which block height to fetch the balance:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified blockNumber is not finalized
+	//   - "Safe": returns error if specified blockNumber is not safe
+	BalanceAt(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+
+	// CallContract executes a message call transaction, which is directly executed in the VM of the node,
+	// but never mined into the blockchain.
+	//
+	// request.BlockNumber - defines block at which call will be executed:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if call is executed at block that is not safe
+	//   - "Safe": returns error if call is executed at block that is not safe
+	CallContract(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error)
+
+	// FilterLogs executes a filter query.
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable if both q.FromBlock and q.ToBlock are positive values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified q.ToBlockNumber is not finalized
+	//   - "Safe": returns error if specified q.ToBlockNumber is not safe
+	FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+
+	// HeaderByNumber returns a block header from the current canonical chain with the specified block number.
+	//
+	// Parameters:
+	// request.BlockNumber - specifies which block to fetch:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if requested is not finalized
+	//   - "Safe": returns error if requested block is not safe
+	HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
 	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
 	GetTransactionByHash(ctx context.Context, hash evm.Hash) (*evm.Transaction, error)
 	GetTransactionReceipt(ctx context.Context, txHash evm.Hash) (*evm.Receipt, error)
@@ -130,7 +173,6 @@ type GethClient interface {
 
 type EVMService interface {
 	GethClient
-
 	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
 	// based on the provided filter parameters. Once registered, matching logs will be collected
 	// over time and stored in a cache for future querying.
@@ -148,8 +190,9 @@ type EVMService interface {
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
-	// LatestAndFinalizedHead returns Latest and Finalized Heads of the underling chain
-	LatestAndFinalizedHead(ctx context.Context) (latest evm.Head, finalized evm.Head, err error)
+	// GetFiltersNames returns all registered filters' names for later pruning
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	GetFiltersNames(ctx context.Context) ([]string, error)
 
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
@@ -211,6 +254,8 @@ type Relayer interface {
 	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
+
+	NewCCIPProvider(ctx context.Context, rargs RelayArgs) (CCIPProvider, error)
 }
 
 var _ Relayer = &UnimplementedRelayer{}
@@ -319,4 +364,8 @@ func (u *UnimplementedRelayer) NewPluginProvider(ctx context.Context, rargs Rela
 
 func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewOCR3CapabilityProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPProvider(ctx context.Context, rargs RelayArgs) (CCIPProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPProvider not implemented")
 }

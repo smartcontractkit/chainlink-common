@@ -15,8 +15,9 @@ service EVM{
   rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
   rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
   rpc GetTransactionReceipt(GetTransactionReceiptRequest) returns (GetTransactionReceiptReply);
-  rpc LatestAndFinalizedHead(google.protobuf.Empty) returns (LatestAndFinalizedHeadReply);
+  rpc HeaderByNumber(HeaderByNumberRequest) returns (HeaderByNumberReply);
   rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
+  rpc GetFiltersNames(google.protobuf.Empty) returns (GetFiltersNamesReply); // TODO PLEX-1465: once code is moved away, remove this GetFiltersNames RPC method
   rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
   rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
@@ -97,7 +98,7 @@ message LPFilter {
   repeated bytes topic4 = 9; // list of possible values for topic4, in [32]byte fix-sized array format
 }
 
-message Head {
+message Header {
   uint64 timestamp = 1; // unix timestamp
   values.v1.BigInt block_number = 2;
   bytes hash = 3; // in [32]byte fix-sized array format
@@ -152,20 +153,40 @@ message Primitive {
 }
 
 // ----- Request/Reply Wrappers -----
-message LatestAndFinalizedHeadReply {
-  Head latest = 1;
-  Head finalized = 2;
+// HeaderByNumberRequest - returns block information without full transaction data and uncle headers
+message HeaderByNumberRequest {
+  // block_number - specifies which block to fetch:
+  //   - nil or -2: latest block
+  //   - -3: finalized block
+  //   - -4: safe block
+  //   - positive value: specific block at that height
+  values.v1.BigInt block_number = 2;
+  // confidence_level - determines if additional verification is required (only applicable for positive blockNumber values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if requested is not finalized
+  //   - "Safe": returns error if requested block is not safe
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
-// CallContractRequest has arguments for reading a contract as specified in the call message at a block height defined by blockNumber where:
-// blockNumber :
-//	nil (default) or (-2) → use the latest mined block (“latest”)
-//	FinalizedBlockNumber(-3) → last finalized block (“finalized”)
-//
-// Any positive value is treated as an explicit block height.
+message HeaderByNumberReply {
+  Header header = 1;
+}
+
+// CallContract executes a message call transaction, which is directly executed in the VM
+// of the node, but never mined into the blockchain.
 message CallContractRequest {
   CallMsg call = 1;
+  // block_number - defines block at which call will be executed:
+  //   - nil or -2: latest block
+  //   - -3: finalized block
+  //   - -4: safe block
+  //   - positive value: specific block at that height
   values.v1.BigInt block_number = 2;
+  // confidence_level - determines if additional verification is required (only applicable for positive blockNumber values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if call is executed at block that is not safe
+  //   - "Safe": returns error if call is executed at block that is not safe
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message CallContractReply {
@@ -184,15 +205,37 @@ message GetTransactionFeeReply {
 
 message FilterLogsRequest {
   FilterQuery filter_query = 1;
+  // confidence_level - determines if additional verification is required (only applicable if both filter_query.fromBlock and filter_query.toBlock are positive values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if specified filter_query.toBlock is not finalized
+  //   - "Safe": returns error if specified filter_query.toBlock is not safe
+  loop.chain.common.Confidence confidence_level = 2;
 }
 
 message FilterLogsReply {
   repeated Log logs = 1;
 }
 
+// number - specifies at which block height to fetch the balance:
+
+//
+// opts.confidence - determines if additional verification is required (only applicable for positive blockNumber values):
+//   - "Unconfirmed" or empty string: no additional verification
+//   - "Finalized": returns error if specified blockNumber is not finalized
+//   - "Safe": returns error if specified blockNumber is not safe
+
 message BalanceAtRequest {
   bytes account = 1; // in evm address [20]byte fix-sized array format
+  //   - nil or -2: latest block
+  //   - -3: finalized block
+  //   - -4: safe block
+  //   - positive value: specific block at that height
   values.v1.BigInt block_number = 2;
+  // opts.confidence - determines if additional verification is required (only applicable for positive blockNumber values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if specified blockNumber is not finalized
+  //   - "Safe": returns error if specified blockNumber is not safe
+  loop.chain.common.Confidence confidence_level = 3;
 }
 
 message BalanceAtReply {
@@ -304,4 +347,8 @@ message GetForwarderForEOARequest {
 
 message GetForwarderForEOAReply {
   bytes addr = 1; // forwarder address in evm address [20]byte fix-sized array format.
+}
+
+message GetFiltersNamesReply {
+  repeated string items = 1;
 }

@@ -32,7 +32,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/v2/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
 )
 
 // See the README.md in standard_tests for more information.
@@ -173,14 +172,8 @@ func TestStandardModeSwitch(t *testing.T) {
 			return time.Now(), nil
 		}).Maybe()
 		mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *pb.CapabilityRequest) (*pb.CapabilityResponse, error) {
-			response := values.NewString("hi")
-			mapProto := &valuespb.Map{
-				Fields: map[string]*valuespb.Value{
-					rawsdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
-					rawsdk.ConsensusResponseMapKeyPayload:  values.Proto(response),
-				},
-			}
-			payload, err := anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
+			response := values.Proto(values.NewString("hi"))
+			payload, err := anypb.New(response)
 			require.NoError(t, err)
 			return &pb.CapabilityResponse{
 				Response: &pb.CapabilityResponse_Payload{
@@ -541,13 +534,8 @@ func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Co
 			assertProto(t, expectedInput, input)
 			cResponse := &nodeaction.NodeOutputs{OutputThing: output + 1}
 			response := wrapValue(t, cResponse)
-			mapProto := &valuespb.Map{
-				Fields: map[string]*valuespb.Value{
-					rawsdk.ConsensusResponseMapKeyMetadata: {Value: &valuespb.Value_StringValue{StringValue: "test_metadata"}},
-					rawsdk.ConsensusResponseMapKeyPayload:  response,
-				},
-			}
-			payload, err = anypb.New(&valuespb.Value{Value: &valuespb.Value_MapValue{MapValue: mapProto}})
+
+			payload, err = anypb.New(response)
 			require.NoError(t, err)
 		default:
 			err = fmt.Errorf("unexpected capability: %s", request.Id)

@@ -9,6 +9,7 @@ require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/atombender/go-jsonschema v0.16.1-0.20240916205339-a74cd4e2851c
 	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0

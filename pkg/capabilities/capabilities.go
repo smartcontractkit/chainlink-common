@@ -98,6 +98,7 @@ type RequestMetadata struct {
 	DecodedWorkflowName string
 	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
 	SpendLimits []SpendLimit
+	WorkflowTag string
 }
 
 type RegistrationMetadata struct {

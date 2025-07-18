@@ -273,7 +273,7 @@ func ConvertConfidenceToProto(confidenceLevel primitives.ConfidenceLevel) (Confi
 	switch confidenceLevel {
 	case primitives.Finalized:
 		return Confidence_Finalized, nil
-	case primitives.Unconfirmed:
+	case "", primitives.Unconfirmed:
 		return Confidence_Unconfirmed, nil
 	case primitives.Safe:
 		return Confidence_Safe, nil

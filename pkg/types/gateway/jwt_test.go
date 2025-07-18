@@ -145,7 +145,7 @@ func TestCreateRequestJWT(t *testing.T) {
 		require.True(t, ok)
 		require.NotEmpty(t, claims.Digest)
 		require.Equal(t, "issuer", claims.Issuer)
-		require.NotNil(t, "subject", claims.Subject)
+		require.Equal(t, "subject", claims.Subject)
 		require.Len(t, claims.Audience, 2)
 		require.Equal(t, "audience1", claims.Audience[0])
 		require.Equal(t, "audience2", claims.Audience[1])

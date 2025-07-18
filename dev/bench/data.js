@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752856175040,
+  "lastUpdate": 1752858569477,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21294,6 +21294,48 @@ window.BENCHMARK_DATA = {
             "value": 28124,
             "unit": "ns/op",
             "extra": "42639 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gregory.cawthorne@smartcontract.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6bd054a1c42972d7d3b51a6747f1e7309e0a6bd4",
+          "message": "In LLO Aggregation skip Stream update when Observation is absent (#1411)\n\n* In LLO Aggregation use the stream old price when Observation is absent\n\n* Ensure we have a price for this stream in the prices map in case a heartbeat is triggered\n\n* Add re-used price to log\n\n* Add tests\n\n* Skip LLO Stream updates when Stream value is missing in Aggregator",
+          "timestamp": "2025-07-18T17:08:28Z",
+          "tree_id": "a26de0b39dafd95b1bac75c8cac9d8b6a1781e57",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6bd054a1c42972d7d3b51a6747f1e7309e0a6bd4"
+        },
+        "date": 1752858568445,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 362.2,
+            "unit": "ns/op",
+            "extra": "3269468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 416.9,
+            "unit": "ns/op",
+            "extra": "2608333 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28163,
+            "unit": "ns/op",
+            "extra": "42532 times\n4 procs"
           }
         ]
       }

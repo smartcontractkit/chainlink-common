@@ -15,8 +15,8 @@ type testStatsCollector struct {
 	requestCount int
 }
 
-func (t *testStatsCollector) RequestAdded() {
-	t.requestCount++
+func (t *testStatsCollector) SetRequestCount(requestCount int) {
+	t.requestCount = requestCount
 }
 
 func TestOCR3Store_Stats(t *testing.T) {

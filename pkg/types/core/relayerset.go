@@ -34,6 +34,7 @@ type Relayer interface {
 	// TON returns TONService that provides access to TON specific functionalities
 	TON() (types.TONService, error)
 	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (PluginProvider, error)
+	NewConfigProvider(context.Context, RelayArgs) (types.ConfigProvider, error)
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
 	LatestHead(context.Context) (types.Head, error)

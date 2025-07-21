@@ -16,6 +16,7 @@ const (
 type HTTPTriggerRequest struct {
 	Workflow WorkflowSelector `json:"workflow"` // Selector for the workflow to execute.
 	Input    json.RawMessage  `json:"input"`    // Input parameters for the workflow.
+	Key      AuthorizedKey    `json:"key"`      // Signing key for the request
 }
 
 // WorkflowSelector specifies how to identify a workflow.

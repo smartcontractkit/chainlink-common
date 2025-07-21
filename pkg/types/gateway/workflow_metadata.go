@@ -1,9 +1,15 @@
 package gateway
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+)
+
 const (
-	MethodWorkflowPushAuthMetadata         = "push_auth_metadata"
-	MethodWorkflowPullAuthMetadata         = "pull_auth_metadata"
-	KeyTypeECDSA                   KeyType = "ecdsa"
+	MethodPushWorkflowMetadata         = "push_workflow_metadata"
+	MethodPullWorkflowMetadata         = "pull_workflow_metadata"
+	KeyTypeECDSA               KeyType = "ecdsa"
 )
 
 type KeyType string
@@ -14,6 +20,18 @@ type KeyType string
 type WorkflowMetadata struct {
 	WorkflowSelector WorkflowSelector
 	AuthorizedKeys   []AuthorizedKey
+}
+
+func (wm *WorkflowMetadata) Digest() (string, error) {
+	data, err := json.Marshal(wm)
+	if err != nil {
+		return "", err
+	}
+	hasher := sha256.New()
+	hasher.Write(data)
+	digestBytes := hasher.Sum(nil)
+
+	return hex.EncodeToString(digestBytes), nil
 }
 
 type AuthorizedKey struct {

@@ -22,9 +22,9 @@ type TriggerConfig struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
+func (j *TriggerConfig) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
@@ -32,7 +32,7 @@ func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
 	}
 	type Plain TriggerConfig
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = TriggerConfig(plain)
@@ -45,9 +45,9 @@ type TriggerOutputs struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TriggerOutputs) UnmarshalJSON(b []byte) error {
+func (j *TriggerOutputs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["cool_output"]; raw != nil && !ok {
@@ -55,7 +55,7 @@ func (j *TriggerOutputs) UnmarshalJSON(b []byte) error {
 	}
 	type Plain TriggerOutputs
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = TriggerOutputs(plain)
@@ -63,9 +63,9 @@ func (j *TriggerOutputs) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Trigger) UnmarshalJSON(b []byte) error {
+func (j *Trigger) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
@@ -73,7 +73,7 @@ func (j *Trigger) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Trigger
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Trigger(plain)

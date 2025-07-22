@@ -40,9 +40,9 @@ type FeedReport struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *FeedReport) UnmarshalJSON(b []byte) error {
+func (j *FeedReport) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["BuyPrice"]; raw != nil && !ok {
@@ -65,7 +65,7 @@ func (j *FeedReport) UnmarshalJSON(b []byte) error {
 	}
 	type Plain FeedReport
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = FeedReport(plain)
@@ -73,9 +73,9 @@ func (j *FeedReport) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Feed) UnmarshalJSON(b []byte) error {
+func (j *Feed) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["Metadata"]; raw != nil && !ok {
@@ -89,7 +89,7 @@ func (j *Feed) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Feed
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Feed(plain)
@@ -102,9 +102,9 @@ type SignerMetadata struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *SignerMetadata) UnmarshalJSON(b []byte) error {
+func (j *SignerMetadata) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["Signer"]; raw != nil && !ok {
@@ -112,7 +112,7 @@ func (j *SignerMetadata) UnmarshalJSON(b []byte) error {
 	}
 	type Plain SignerMetadata
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = SignerMetadata(plain)
@@ -134,9 +134,9 @@ type TriggerConfig struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
+func (j *TriggerConfig) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["maxFrequencyMs"]; raw != nil && !ok {
@@ -144,7 +144,7 @@ func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
 	}
 	type Plain TriggerConfig
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if 1 > plain.MaxFrequencyMs {
@@ -155,9 +155,9 @@ func (j *TriggerConfig) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Trigger) UnmarshalJSON(b []byte) error {
+func (j *Trigger) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
@@ -165,7 +165,7 @@ func (j *Trigger) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Trigger
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Trigger(plain)

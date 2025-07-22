@@ -77,7 +77,7 @@ func (c *simpleOutput) private() {}
 
 type ActionInput struct {
 	ConfidenceLevel sdk.CapDefinition[string]
-	Params          sdk.CapDefinition[InputParams]
+	Params          sdk.CapDefinition[map[string]interface{}]
 	StepDependency  sdk.CapDefinition[any]
 }
 

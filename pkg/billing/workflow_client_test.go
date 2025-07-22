@@ -41,9 +41,9 @@ func (s *testWorkflowServer) GetOrganizationCreditsByWorkflow(ctx context.Contex
 	return &pb.GetOrganizationCreditsByWorkflowResponse{}, nil
 }
 
-func (s *testWorkflowServer) GetRateCard(_ context.Context, _ *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error) {
-	return &pb.GetRateCardResponse{
-		Entries: []*pb.RateCardEntry{
+func (s *testWorkflowServer) GetWorkflowExecutionRates(_ context.Context, _ *pb.GetWorkflowExecutionRatesRequest) (*pb.GetWorkflowExecutionRatesResponse, error) {
+	return &pb.GetWorkflowExecutionRatesResponse{
+		RateCards: []*pb.RateCard{
 			{ResourceType: pb.ResourceType_RESOURCE_TYPE_COMPUTE, MeasurementUnit: pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, UnitsPerCredit: "0.00001"},
 		},
 	}, nil
@@ -97,7 +97,7 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	// Create mock JWT manager for testing
 	mockJWT := mocks.NewJWTGenerator(t)
 	// Since we're making a real call, expect JWT creation
-	mockJWT.EXPECT().CreateJWTForRequest(&pb.GetRateCardRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1}).Return("test.jwt.token", nil).Once()
+	mockJWT.EXPECT().CreateJWTForRequest(&pb.GetWorkflowExecutionRatesRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1}).Return("test.jwt.token", nil).Once()
 
 	lggr := logger.Test(t)
 	wc, err := NewWorkflowClient(lggr, addr,
@@ -117,12 +117,12 @@ func TestIntegration_GRPCWithCerts(t *testing.T) {
 	// Call a method to verify that the client and server communicate over TLS.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	resp, err := wc.GetRateCard(ctx, &pb.GetRateCardRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1})
+	resp, err := wc.GetWorkflowExecutionRates(ctx, &pb.GetWorkflowExecutionRatesRequest{WorkflowOwner: "test-account", WorkflowRegistryAddress: "0x..", ChainSelector: 1})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	assert.Equal(t, pb.ResourceType_RESOURCE_TYPE_COMPUTE, resp.Entries[0].ResourceType)
-	assert.Equal(t, pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, resp.Entries[0].MeasurementUnit)
-	assert.Equal(t, "0.00001", resp.Entries[0].UnitsPerCredit)
+	assert.Equal(t, pb.ResourceType_RESOURCE_TYPE_COMPUTE, resp.RateCards[0].ResourceType)
+	assert.Equal(t, pb.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS, resp.RateCards[0].MeasurementUnit)
+	assert.Equal(t, "0.00001", resp.RateCards[0].UnitsPerCredit)
 }
 
 func TestIntegration_GRPC_Insecure(t *testing.T) {
@@ -159,7 +159,7 @@ func TestIntegration_GRPC_Insecure(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, wc)
 
-	_, err = wc.GetRateCard(context.Background(), nil)
+	_, err = wc.GetWorkflowExecutionRates(context.Background(), nil)
 
 	require.Error(t, err)
 }
@@ -175,7 +175,7 @@ func TestNewWorkflowClient_InvalidAddress(t *testing.T) {
 	require.NotNil(t, wc)
 	require.NoError(t, err)
 
-	_, err = wc.GetRateCard(context.Background(), nil)
+	_, err = wc.GetWorkflowExecutionRates(context.Background(), nil)
 
 	require.Error(t, err, "Expected error when dialing an invalid address")
 }
@@ -218,7 +218,7 @@ func TestWorkflowClient_DialUnreachable(t *testing.T) {
 	require.NotNil(t, wc)
 	require.NoError(t, err)
 
-	_, err = wc.GetRateCard(context.Background(), nil)
+	_, err = wc.GetWorkflowExecutionRates(context.Background(), nil)
 
 	require.Error(t, err, "Expected dialing an unreachable address to fail")
 }

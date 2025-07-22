@@ -10,7 +10,7 @@ import (
 // Map Consumer Test Action
 type MapAction struct {
 	// Config corresponds to the JSON schema field "config".
-	Config MapActionConfig `json:"config" yaml:"config" mapstructure:"config"`
+	Config map[string]interface{} `json:"config" yaml:"config" mapstructure:"config"`
 
 	// Inputs corresponds to the JSON schema field "inputs".
 	Inputs MapActionInputs `json:"inputs" yaml:"inputs" mapstructure:"inputs"`
@@ -19,19 +19,15 @@ type MapAction struct {
 	Outputs MapActionOutputs `json:"outputs" yaml:"outputs" mapstructure:"outputs"`
 }
 
-type MapActionConfig map[string]interface{}
-
 type MapActionInputs struct {
 	// Payload corresponds to the JSON schema field "payload".
-	Payload MapActionInputsPayload `json:"payload" yaml:"payload" mapstructure:"payload"`
+	Payload map[string]interface{} `json:"payload" yaml:"payload" mapstructure:"payload"`
 }
 
-type MapActionInputsPayload map[string]interface{}
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MapActionInputs) UnmarshalJSON(b []byte) error {
+func (j *MapActionInputs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["payload"]; raw != nil && !ok {
@@ -39,7 +35,7 @@ func (j *MapActionInputs) UnmarshalJSON(b []byte) error {
 	}
 	type Plain MapActionInputs
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = MapActionInputs(plain)
@@ -48,15 +44,13 @@ func (j *MapActionInputs) UnmarshalJSON(b []byte) error {
 
 type MapActionOutputs struct {
 	// Payload corresponds to the JSON schema field "payload".
-	Payload MapActionOutputsPayload `json:"payload" yaml:"payload" mapstructure:"payload"`
+	Payload map[string]interface{} `json:"payload" yaml:"payload" mapstructure:"payload"`
 }
 
-type MapActionOutputsPayload map[string]interface{}
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MapActionOutputs) UnmarshalJSON(b []byte) error {
+func (j *MapActionOutputs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["payload"]; raw != nil && !ok {
@@ -64,7 +58,7 @@ func (j *MapActionOutputs) UnmarshalJSON(b []byte) error {
 	}
 	type Plain MapActionOutputs
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = MapActionOutputs(plain)
@@ -72,9 +66,9 @@ func (j *MapActionOutputs) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MapAction) UnmarshalJSON(b []byte) error {
+func (j *MapAction) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["config"]; raw != nil && !ok {
@@ -88,7 +82,7 @@ func (j *MapAction) UnmarshalJSON(b []byte) error {
 	}
 	type Plain MapAction
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = MapAction(plain)

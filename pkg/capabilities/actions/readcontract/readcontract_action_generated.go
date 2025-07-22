@@ -34,9 +34,9 @@ type Config struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Config) UnmarshalJSON(b []byte) error {
+func (j *Config) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["ContractAddress"]; raw != nil && !ok {
@@ -53,7 +53,7 @@ func (j *Config) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Config
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Config(plain)
@@ -65,18 +65,16 @@ type Input struct {
 	ConfidenceLevel string `json:"ConfidenceLevel" yaml:"ConfidenceLevel" mapstructure:"ConfidenceLevel"`
 
 	// Params corresponds to the JSON schema field "Params".
-	Params InputParams `json:"Params" yaml:"Params" mapstructure:"Params"`
+	Params map[string]interface{} `json:"Params" yaml:"Params" mapstructure:"Params"`
 
 	// an optional step reference that is a non-data dependency for the current step
 	StepDependency interface{} `json:"StepDependency,omitempty" yaml:"StepDependency,omitempty" mapstructure:"StepDependency,omitempty"`
 }
 
-type InputParams map[string]interface{}
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Input) UnmarshalJSON(b []byte) error {
+func (j *Input) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["ConfidenceLevel"]; raw != nil && !ok {
@@ -87,7 +85,7 @@ func (j *Input) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Input
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Input(plain)
@@ -100,9 +98,9 @@ type Output struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Output) UnmarshalJSON(b []byte) error {
+func (j *Output) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["LatestValue"]; raw != nil && !ok {
@@ -110,7 +108,7 @@ func (j *Output) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Output
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Output(plain)

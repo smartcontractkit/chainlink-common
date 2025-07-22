@@ -205,7 +205,7 @@ func TypesFromJSONSchema(schemaFilePath string, cfgInfo ConfigInfo) (outputFileP
 		return "", "", err
 	}
 
-	generatedContents := gen.Sources()
+	generatedContents, err := gen.Sources()
 	content := generatedContents[typeInfo.SchemaOutputFile]
 
 	// codegen.WriteToFiles will add the header, so remove it here.

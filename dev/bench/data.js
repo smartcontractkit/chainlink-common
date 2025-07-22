@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753215699672,
+  "lastUpdate": 1753222395677,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21420,6 +21420,48 @@ window.BENCHMARK_DATA = {
             "value": 28167,
             "unit": "ns/op",
             "extra": "42672 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d0a3494f65cf57406a9f00a0311bb9eff9b709fb",
+          "message": "pkg/services: add Engine.GoCtx (#1409)",
+          "timestamp": "2025-07-22T17:12:01-05:00",
+          "tree_id": "7654a133f08ea1cd513324329f565f909bede2bb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d0a3494f65cf57406a9f00a0311bb9eff9b709fb"
+        },
+        "date": 1753222394666,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 379.9,
+            "unit": "ns/op",
+            "extra": "3050366 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.6,
+            "unit": "ns/op",
+            "extra": "2934830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28180,
+            "unit": "ns/op",
+            "extra": "42598 times\n4 procs"
           }
         ]
       }

@@ -38,6 +38,9 @@ const (
 	// ErrLimitExceeded is returned when a message was refused due to user exceeding
 	// a limit (e.g. number of requests per second).
 	ErrLimitExceeded int64 = -32002
+
+	// ErrConflict is returned when a request conflicts with an existing request.
+	ErrConflict int64 = -32003
 )
 
 // Wrapping/unwrapping Message objects into JSON RPC ones folllowing https://www.jsonrpc.org/specification

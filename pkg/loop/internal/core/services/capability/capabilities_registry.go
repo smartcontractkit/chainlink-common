@@ -39,6 +39,7 @@ func toDON(don *pb.DON) capabilities.DON {
 		F:             uint8(don.F),
 		ConfigVersion: don.ConfigVersion,
 		Families:      don.Families,
+		Config:        don.Config,
 	}
 }
 
@@ -56,6 +57,7 @@ func toPbDON(don capabilities.DON) *pb.DON {
 		F:             uint32(don.F),
 		ConfigVersion: don.ConfigVersion,
 		Families:      don.Families,
+		Config:        don.Config,
 	}
 }
 

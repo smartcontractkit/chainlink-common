@@ -168,6 +168,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 			F:             2,
 			ConfigVersion: 1,
 			Families:      []string{"a"},
+			Config:        []byte("test-config"),
 		},
 		CapabilityDONs: []capabilities.DON{
 			{
@@ -177,6 +178,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 				F:             1,
 				ConfigVersion: 2,
 				Families:      []string{"a"},
+				Config:        []byte("test-config"),
 			},
 			{
 				ID:   33,
@@ -189,6 +191,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 				F:             3,
 				ConfigVersion: 3,
 				Families:      []string{"a"},
+				Config:        []byte("test-config"),
 			},
 		},
 	}
@@ -372,6 +375,7 @@ func TestToDON(t *testing.T) {
 		F:             2,
 		ConfigVersion: 1,
 		Families:      []string{"a"},
+		Config:        []byte("test-config"),
 	}
 
 	expected := capabilities.DON{
@@ -384,6 +388,7 @@ func TestToDON(t *testing.T) {
 		F:             2,
 		ConfigVersion: 1,
 		Families:      []string{"a"},
+		Config:        []byte("test-config"),
 	}
 
 	actual := toDON(don)
@@ -503,6 +508,7 @@ func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
 	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
 	require.Equal(t, expectedNode.WorkflowDON.Name, actualNode.WorkflowDON.Name)
 	require.Equal(t, expectedNode.WorkflowDON.Families, actualNode.WorkflowDON.Families)
+	require.Equal(t, expectedNode.WorkflowDON.Config, actualNode.WorkflowDON.Config)
 
 	// check capability DONs
 	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
@@ -514,5 +520,6 @@ func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
 		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
 		require.Equal(t, expectedNode.CapabilityDONs[i].Name, actualNode.CapabilityDONs[i].Name)
 		require.Equal(t, expectedNode.CapabilityDONs[i].Families, actualNode.CapabilityDONs[i].Families)
+		require.Equal(t, expectedNode.CapabilityDONs[i].Config, actualNode.CapabilityDONs[i].Config)
 	}
 }

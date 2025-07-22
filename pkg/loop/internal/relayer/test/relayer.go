@@ -305,6 +305,10 @@ func (s staticRelayer) NewLLOProvider(ctx context.Context, r types.RelayArgs, p 
 	return nil, errors.New("not implemented")
 }
 
+func (s staticRelayer) NewCCIPProvider(ctx context.Context, r types.RelayArgs) (types.CCIPProvider, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (s staticRelayer) LatestHead(ctx context.Context) (types.Head, error) {
 	return types.Head{}, errors.New("not implemented")
 }

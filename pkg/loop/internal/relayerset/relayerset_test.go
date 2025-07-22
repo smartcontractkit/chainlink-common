@@ -278,10 +278,21 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			name: "CallContract",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				block := big.NewInt(100)
-				mockEVM.EXPECT().CallContract(mock.Anything, &msg, block).Return([]byte("ok"), nil)
-				out, err := evm.CallContract(ctx, &msg, block)
+				conf := primitives.Finalized
+				mockEVM.EXPECT().CallContract(mock.Anything, evmtypes.CallContractRequest{
+					Msg:             &msg,
+					BlockNumber:     block,
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.CallContractReply{
+					Data: []byte("ok"),
+				}, nil)
+				reply, err := evm.CallContract(ctx, evmtypes.CallContractRequest{
+					Msg:             &msg,
+					BlockNumber:     block,
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Equal(t, []byte("ok"), out)
+				require.Equal(t, []byte("ok"), reply.Data)
 			},
 		},
 		{
@@ -293,22 +304,38 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 					ToBlock:   big.NewInt(145),
 					Topics:    [][][32]byte{{topic, topic2}, {topic3}},
 				}
-				mockEVM.EXPECT().FilterLogs(mock.Anything, filter).Return([]*evmtypes.Log{&evmLog}, nil)
+				conf := primitives.Finalized
+				mockEVM.EXPECT().FilterLogs(mock.Anything, evmtypes.FilterLogsRequest{
+					FilterQuery:     filter,
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.FilterLogsReply{Logs: []*evmtypes.Log{&evmLog}}, nil)
 
-				out, err := evm.FilterLogs(ctx, filter)
+				reply, err := evm.FilterLogs(ctx, evmtypes.FilterLogsRequest{
+					FilterQuery:     filter,
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Len(t, out, 1)
-				require.Equal(t, &evmLog, out[0])
+				require.Len(t, reply.Logs, 1)
+				require.Equal(t, &evmLog, reply.Logs[0])
 			},
 		},
 		{
 			name: "BalanceAt",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
 				addr := evmtypes.Address{0xbb}
-				mockEVM.EXPECT().BalanceAt(mock.Anything, addr, big.NewInt(200)).Return(big.NewInt(999), nil)
-				out, err := evm.BalanceAt(ctx, addr, big.NewInt(200))
+				conf := primitives.Finalized
+				mockEVM.EXPECT().BalanceAt(mock.Anything, evmtypes.BalanceAtRequest{
+					Address:         addr,
+					BlockNumber:     big.NewInt(200),
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.BalanceAtReply{Balance: big.NewInt(999)}, nil)
+				reply, err := evm.BalanceAt(ctx, evmtypes.BalanceAtRequest{
+					Address:         addr,
+					BlockNumber:     big.NewInt(200),
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Equal(t, big.NewInt(999), out)
+				require.Equal(t, big.NewInt(999), reply.Balance)
 			},
 		},
 		{
@@ -394,15 +421,21 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 			},
 		},
 		{
-			name: "LatestAndFinalizedHead",
+			name: "HeaderByNumber",
 			run: func(t *testing.T, evm types.EVMService, mockEVM *mocks2.EVMService) {
-				head1 := evmtypes.Head{Number: big.NewInt(123)}
-				head2 := evmtypes.Head{Number: big.NewInt(321)}
-				mockEVM.EXPECT().LatestAndFinalizedHead(mock.Anything).Return(head1, head2, nil)
-				latest, finalized, err := evm.LatestAndFinalizedHead(ctx)
+				head1 := evmtypes.Header{Number: big.NewInt(123)}
+				blockNumber := big.NewInt(123)
+				conf := primitives.Finalized
+				mockEVM.EXPECT().HeaderByNumber(mock.Anything, evmtypes.HeaderByNumberRequest{
+					Number:          blockNumber,
+					ConfidenceLevel: conf,
+				}).Return(&evmtypes.HeaderByNumberReply{Header: &head1}, nil)
+				reply, err := evm.HeaderByNumber(ctx, evmtypes.HeaderByNumberRequest{
+					Number:          blockNumber,
+					ConfidenceLevel: conf,
+				})
 				require.NoError(t, err)
-				require.Equal(t, head1, latest)
-				require.Equal(t, head2, finalized)
+				require.Equal(t, &head1, reply.Header)
 			},
 		},
 		{
@@ -701,72 +734,6 @@ func (t *TestContractReader) QueryKey(ctx context.Context, boundContract types.B
 func (t *TestContractReader) QueryKeys(ctx context.Context, keyQueries []types.ContractKeyFilter, limitAndSort query.LimitAndSort) (iter.Seq2[string, types.Sequence], error) {
 	return t.mockedContractReader.QueryKeys(ctx, keyQueries, limitAndSort)
 }
-
-type TestEVM struct {
-	mockedContractReader *mocks2.EVMService
-}
-
-func (t *TestEVM) CalculateTransactionFee(ctx context.Context, receipt evmtypes.ReceiptGasInfo) (*evmtypes.TransactionFee, error) {
-	return t.mockedContractReader.CalculateTransactionFee(ctx, receipt)
-}
-
-func (t *TestEVM) SubmitTransaction(ctx context.Context, txRequest evmtypes.SubmitTransactionRequest) (*evmtypes.TransactionResult, error) {
-	return t.mockedContractReader.SubmitTransaction(ctx, txRequest)
-}
-
-func (t TestEVM) CallContract(ctx context.Context, msg *evmtypes.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return t.mockedContractReader.CallContract(ctx, msg, blockNumber)
-}
-
-func (t TestEVM) FilterLogs(ctx context.Context, filterQuery evmtypes.FilterQuery) ([]*evmtypes.Log, error) {
-	return t.mockedContractReader.FilterLogs(ctx, filterQuery)
-}
-
-func (t TestEVM) BalanceAt(ctx context.Context, account evmtypes.Address, blockNumber *big.Int) (*big.Int, error) {
-	return t.mockedContractReader.BalanceAt(ctx, account, blockNumber)
-}
-
-func (t TestEVM) EstimateGas(ctx context.Context, call *evmtypes.CallMsg) (uint64, error) {
-	return t.mockedContractReader.EstimateGas(ctx, call)
-}
-
-func (t TestEVM) GetTransactionByHash(ctx context.Context, hash evmtypes.Hash) (*evmtypes.Transaction, error) {
-	return t.mockedContractReader.GetTransactionByHash(ctx, hash)
-}
-
-func (t TestEVM) GetTransactionReceipt(ctx context.Context, txHash evmtypes.Hash) (*evmtypes.Receipt, error) {
-	return t.mockedContractReader.GetTransactionReceipt(ctx, txHash)
-}
-
-func (t TestEVM) RegisterLogTracking(ctx context.Context, filter evmtypes.LPFilterQuery) error {
-	return t.mockedContractReader.RegisterLogTracking(ctx, filter)
-}
-
-func (t TestEVM) UnregisterLogTracking(ctx context.Context, filterName string) error {
-	return t.mockedContractReader.UnregisterLogTracking(ctx, filterName)
-}
-
-func (t TestEVM) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evmtypes.Log, error) {
-	return t.mockedContractReader.QueryTrackedLogs(ctx, filterQuery, limitAndSort, confidenceLevel)
-}
-
-func (t TestEVM) LatestAndFinalizedHead(ctx context.Context) (latest evmtypes.Head, finalized evmtypes.Head, err error) {
-	return t.mockedContractReader.LatestAndFinalizedHead(ctx)
-}
-
-func (t TestEVM) GetTransactionFee(ctx context.Context, transactionID types.IdempotencyKey) (*evmtypes.TransactionFee, error) {
-	return t.mockedContractReader.GetTransactionFee(ctx, transactionID)
-}
-
-func (t TestEVM) GetTransactionStatus(ctx context.Context, transactionID types.IdempotencyKey) (types.TransactionStatus, error) {
-	return t.mockedContractReader.GetTransactionStatus(ctx, transactionID)
-}
-
-func (t TestEVM) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evmtypes.Address, pluginType string) (forwarder evmtypes.Address, err error) {
-	return t.mockedContractReader.GetForwarderForEOA(ctx, eoa, ocr2AggregatorID, pluginType)
-}
-
-var _ types.EVMService = (*TestEVM)(nil)
 
 type TestTON struct {
 	mockedTONService *mocks2.TONService

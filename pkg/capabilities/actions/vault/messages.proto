@@ -161,6 +161,18 @@ message Outcomes {
   repeated Outcome outcomes = 1;
 }
 
+enum ReportFormat {
+  REPORT_FORMAT_UNKNOWN = 0;
+  REPORT_FORMAT_JSON = 1;
+  REPORT_FORMAT_PROTOBUF = 2;
+}
+
+message ReportInfo {
+  string id = 1;
+  RequestType request_type = 2;
+  ReportFormat format = 3;
+}
+
 // IMPORTANT: this record is persisted so any changes must be
 // backwards compatible
 message StoredSecret {
@@ -170,5 +182,5 @@ message StoredSecret {
 // IMPORTANT: this record is persisted so any changes must be
 // backwards compatible
 message StoredMetadata {
-  repeated string keys = 2;
+  repeated SecretIdentifier secret_identifiers = 2;
 }

@@ -64,8 +64,11 @@ func convertTopicsToProto(topics [][]evmtypes.Hash) []*Topics {
 	return protoTopics
 }
 
-func ConvertHeadToProto(h evmtypes.Head) *Head {
-	return &Head{
+func ConvertHeaderToProto(h *evmtypes.Header) *Header {
+	if h == nil {
+		return nil
+	}
+	return &Header{
 		Timestamp:   h.Timestamp,
 		BlockNumber: valuespb.NewBigIntFromInt(h.Number),
 		Hash:        h.Hash[:],
@@ -75,15 +78,24 @@ func ConvertHeadToProto(h evmtypes.Head) *Head {
 
 var errEmptyHead = errors.New("head is nil")
 
-func ConvertHeadFromProto(head *Head) (evmtypes.Head, error) {
-	if head == nil {
-		return evmtypes.Head{}, errEmptyHead
+func ConvertHeaderFromProto(header *Header) (*evmtypes.Header, error) {
+	if header == nil {
+		return nil, errEmptyHead
 	}
-	return evmtypes.Head{
-		Timestamp:  head.GetTimestamp(),
-		Hash:       evmtypes.Hash(head.GetHash()),
-		ParentHash: evmtypes.Hash(head.GetParentHash()),
-		Number:     valuespb.NewIntFromBigInt(head.GetBlockNumber()),
+	hash, err := ConvertHashFromProto(header.GetHash())
+	if err != nil {
+		return nil, fmt.Errorf("err to convert hash: %w", err)
+	}
+
+	parentHash, err := ConvertHashFromProto(header.GetParentHash())
+	if err != nil {
+		return nil, fmt.Errorf("err to convert parent hash: %w", err)
+	}
+	return &evmtypes.Header{
+		Timestamp:  header.GetTimestamp(),
+		Hash:       hash,
+		ParentHash: parentHash,
+		Number:     valuespb.NewIntFromBigInt(header.GetBlockNumber()),
 	}, nil
 }
 
@@ -540,4 +552,20 @@ func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionReques
 		Data:      evmtypes.ABIPayload(txRequest.Data),
 		GasConfig: ConvertGasConfigFromProto(txRequest.GasConfig),
 	}
+}
+
+func ConvertAddressFromProto(b []byte) (evmtypes.Address, error) {
+	if len(b) != evmtypes.AddressLength {
+		return evmtypes.Address{}, fmt.Errorf("invalid address length: expected %d, got %d", evmtypes.AddressLength, len(b))
+	}
+
+	return evmtypes.Address(b), nil
+}
+
+func ConvertHashFromProto(b []byte) (evmtypes.Hash, error) {
+	if len(b) != evmtypes.HashLength {
+		return evmtypes.Hash{}, fmt.Errorf("invalid hash length: expected %d, got %d", evmtypes.HashLength, len(b))
+	}
+
+	return evmtypes.Hash(b), nil
 }

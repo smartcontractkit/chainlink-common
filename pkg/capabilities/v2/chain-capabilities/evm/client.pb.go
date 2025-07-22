@@ -1330,28 +1330,27 @@ func (x *Receipt) GetContractAddress() []byte {
 }
 
 // ----- Request/Reply Wrappers -----
-type LatestAndFinalizedHeadReply struct {
+type HeaderByNumberRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Latest        *Head                  `protobuf:"bytes,1,opt,name=latest,proto3" json:"latest,omitempty"`
-	Finalized     *Head                  `protobuf:"bytes,2,opt,name=finalized,proto3" json:"finalized,omitempty"`
+	BlockNumber   *pb.BigInt             `protobuf:"bytes,1,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LatestAndFinalizedHeadReply) Reset() {
-	*x = LatestAndFinalizedHeadReply{}
+func (x *HeaderByNumberRequest) Reset() {
+	*x = HeaderByNumberRequest{}
 	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LatestAndFinalizedHeadReply) String() string {
+func (x *HeaderByNumberRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LatestAndFinalizedHeadReply) ProtoMessage() {}
+func (*HeaderByNumberRequest) ProtoMessage() {}
 
-func (x *LatestAndFinalizedHeadReply) ProtoReflect() protoreflect.Message {
+func (x *HeaderByNumberRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1363,26 +1362,63 @@ func (x *LatestAndFinalizedHeadReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LatestAndFinalizedHeadReply.ProtoReflect.Descriptor instead.
-func (*LatestAndFinalizedHeadReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use HeaderByNumberRequest.ProtoReflect.Descriptor instead.
+func (*HeaderByNumberRequest) Descriptor() ([]byte, []int) {
 	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *LatestAndFinalizedHeadReply) GetLatest() *Head {
+func (x *HeaderByNumberRequest) GetBlockNumber() *pb.BigInt {
 	if x != nil {
-		return x.Latest
+		return x.BlockNumber
 	}
 	return nil
 }
 
-func (x *LatestAndFinalizedHeadReply) GetFinalized() *Head {
+type HeaderByNumberReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Header        *Header                `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeaderByNumberReply) Reset() {
+	*x = HeaderByNumberReply{}
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeaderByNumberReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeaderByNumberReply) ProtoMessage() {}
+
+func (x *HeaderByNumberReply) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[21]
 	if x != nil {
-		return x.Finalized
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeaderByNumberReply.ProtoReflect.Descriptor instead.
+func (*HeaderByNumberReply) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *HeaderByNumberReply) GetHeader() *Header {
+	if x != nil {
+		return x.Header
 	}
 	return nil
 }
 
-type Head struct {
+type Header struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp     uint64                 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // unix timestamp
 	BlockNumber   *pb.BigInt             `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
@@ -1392,21 +1428,21 @@ type Head struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Head) Reset() {
-	*x = Head{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[21]
+func (x *Header) Reset() {
+	*x = Header{}
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Head) String() string {
+func (x *Header) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Head) ProtoMessage() {}
+func (*Header) ProtoMessage() {}
 
-func (x *Head) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[21]
+func (x *Header) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1417,33 +1453,33 @@ func (x *Head) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Head.ProtoReflect.Descriptor instead.
-func (*Head) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{21}
+// Deprecated: Use Header.ProtoReflect.Descriptor instead.
+func (*Header) Descriptor() ([]byte, []int) {
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *Head) GetTimestamp() uint64 {
+func (x *Header) GetTimestamp() uint64 {
 	if x != nil {
 		return x.Timestamp
 	}
 	return 0
 }
 
-func (x *Head) GetBlockNumber() *pb.BigInt {
+func (x *Header) GetBlockNumber() *pb.BigInt {
 	if x != nil {
 		return x.BlockNumber
 	}
 	return nil
 }
 
-func (x *Head) GetHash() []byte {
+func (x *Header) GetHash() []byte {
 	if x != nil {
 		return x.Hash
 	}
 	return nil
 }
 
-func (x *Head) GetParentHash() []byte {
+func (x *Header) GetParentHash() []byte {
 	if x != nil {
 		return x.ParentHash
 	}
@@ -1459,7 +1495,7 @@ type RegisterLogTrackingRequest struct {
 
 func (x *RegisterLogTrackingRequest) Reset() {
 	*x = RegisterLogTrackingRequest{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[22]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1471,7 +1507,7 @@ func (x *RegisterLogTrackingRequest) String() string {
 func (*RegisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[22]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1484,7 +1520,7 @@ func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{22}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *RegisterLogTrackingRequest) GetFilter() *LPFilter {
@@ -1511,7 +1547,7 @@ type LPFilter struct {
 
 func (x *LPFilter) Reset() {
 	*x = LPFilter{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[23]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1523,7 +1559,7 @@ func (x *LPFilter) String() string {
 func (*LPFilter) ProtoMessage() {}
 
 func (x *LPFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[23]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1536,7 +1572,7 @@ func (x *LPFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LPFilter.ProtoReflect.Descriptor instead.
 func (*LPFilter) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{23}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *LPFilter) GetMaxLogsKept() uint64 {
@@ -1611,7 +1647,7 @@ type UnregisterLogTrackingRequest struct {
 
 func (x *UnregisterLogTrackingRequest) Reset() {
 	*x = UnregisterLogTrackingRequest{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[24]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1623,7 +1659,7 @@ func (x *UnregisterLogTrackingRequest) String() string {
 func (*UnregisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[24]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1636,7 +1672,7 @@ func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{24}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UnregisterLogTrackingRequest) GetFilterName() string {
@@ -1658,7 +1694,7 @@ type SignedReport struct {
 
 func (x *SignedReport) Reset() {
 	*x = SignedReport{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[25]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1670,7 +1706,7 @@ func (x *SignedReport) String() string {
 func (*SignedReport) ProtoMessage() {}
 
 func (x *SignedReport) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[25]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1683,7 +1719,7 @@ func (x *SignedReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignedReport.ProtoReflect.Descriptor instead.
 func (*SignedReport) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{25}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *SignedReport) GetRawReport() []byte {
@@ -1725,7 +1761,7 @@ type WriteReportRequest struct {
 
 func (x *WriteReportRequest) Reset() {
 	*x = WriteReportRequest{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[26]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1737,7 +1773,7 @@ func (x *WriteReportRequest) String() string {
 func (*WriteReportRequest) ProtoMessage() {}
 
 func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[26]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1750,7 +1786,7 @@ func (x *WriteReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportRequest.ProtoReflect.Descriptor instead.
 func (*WriteReportRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{26}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *WriteReportRequest) GetReceiver() []byte {
@@ -1783,7 +1819,7 @@ type GasConfig struct {
 
 func (x *GasConfig) Reset() {
 	*x = GasConfig{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[27]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1795,7 +1831,7 @@ func (x *GasConfig) String() string {
 func (*GasConfig) ProtoMessage() {}
 
 func (x *GasConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[27]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1808,7 +1844,7 @@ func (x *GasConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GasConfig.ProtoReflect.Descriptor instead.
 func (*GasConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{27}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GasConfig) GetGasLimit() uint64 {
@@ -1831,7 +1867,7 @@ type WriteReportReply struct {
 
 func (x *WriteReportReply) Reset() {
 	*x = WriteReportReply{}
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[28]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1843,7 +1879,7 @@ func (x *WriteReportReply) String() string {
 func (*WriteReportReply) ProtoMessage() {}
 
 func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[28]
+	mi := &file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1856,7 +1892,7 @@ func (x *WriteReportReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteReportReply.ProtoReflect.Descriptor instead.
 func (*WriteReportReply) Descriptor() ([]byte, []int) {
-	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{28}
+	return file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *WriteReportReply) GetTxStatus() TxStatus {
@@ -1979,11 +2015,12 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x13effective_gas_price\x18\b \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\x124\n" +
 	"\fblock_number\x18\t \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12)\n" +
 	"\x10contract_address\x18\n" +
-	" \x01(\fR\x0fcontractAddress\"\xa9\x01\n" +
-	"\x1bLatestAndFinalizedHeadReply\x12A\n" +
-	"\x06latest\x18\x01 \x01(\v2).capabilities.blockchain.evm.v1alpha.HeadR\x06latest\x12G\n" +
-	"\tfinalized\x18\x02 \x01(\v2).capabilities.blockchain.evm.v1alpha.HeadR\tfinalized\"\x8f\x01\n" +
-	"\x04Head\x12\x1c\n" +
+	" \x01(\fR\x0fcontractAddress\"M\n" +
+	"\x15HeaderByNumberRequest\x124\n" +
+	"\fblock_number\x18\x01 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\"Z\n" +
+	"\x13HeaderByNumberReply\x12C\n" +
+	"\x06header\x18\x01 \x01(\v2+.capabilities.blockchain.evm.v1alpha.HeaderR\x06header\"\x91\x01\n" +
+	"\x06Header\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x04R\ttimestamp\x124\n" +
 	"\fblock_number\x18\x02 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12\x12\n" +
 	"\x04hash\x18\x03 \x01(\fR\x04hash\x12\x1f\n" +
@@ -2042,7 +2079,7 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x16\n" +
 	"\x12TX_STATUS_REVERTED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\x9a\v\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x022\xd7\x0f\n" +
 	"\x06Client\x12\x80\x01\n" +
 	"\fCallContract\x128.capabilities.blockchain.evm.v1alpha.CallContractRequest\x1a6.capabilities.blockchain.evm.v1alpha.CallContractReply\x12z\n" +
 	"\n" +
@@ -2050,13 +2087,40 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\tBalanceAt\x125.capabilities.blockchain.evm.v1alpha.BalanceAtRequest\x1a3.capabilities.blockchain.evm.v1alpha.BalanceAtReply\x12}\n" +
 	"\vEstimateGas\x127.capabilities.blockchain.evm.v1alpha.EstimateGasRequest\x1a5.capabilities.blockchain.evm.v1alpha.EstimateGasReply\x12\x98\x01\n" +
 	"\x14GetTransactionByHash\x12@.capabilities.blockchain.evm.v1alpha.GetTransactionByHashRequest\x1a>.capabilities.blockchain.evm.v1alpha.GetTransactionByHashReply\x12\x9b\x01\n" +
-	"\x15GetTransactionReceipt\x12A.capabilities.blockchain.evm.v1alpha.GetTransactionReceiptRequest\x1a?.capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply\x12r\n" +
-	"\x16LatestAndFinalizedHead\x12\x16.google.protobuf.Empty\x1a@.capabilities.blockchain.evm.v1alpha.LatestAndFinalizedHeadReply\x12n\n" +
+	"\x15GetTransactionReceipt\x12A.capabilities.blockchain.evm.v1alpha.GetTransactionReceiptRequest\x1a?.capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply\x12\x86\x01\n" +
+	"\x0eHeaderByNumber\x12:.capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest\x1a8.capabilities.blockchain.evm.v1alpha.HeaderByNumberReply\x12n\n" +
 	"\x13RegisterLogTracking\x12?.capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12r\n" +
 	"\x15UnregisterLogTracking\x12A.capabilities.blockchain.evm.v1alpha.UnregisterLogTrackingRequest\x1a\x16.google.protobuf.Empty\x12v\n" +
 	"\n" +
 	"LogTrigger\x12<.capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest\x1a(.capabilities.blockchain.evm.v1alpha.Log0\x01\x12}\n" +
-	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\x11\x82\xb5\x18\r\b\x01\x12\tevm@1.0.0b\x06proto3"
+	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xb8\x04\x82\xb5\x18\xb3\x04\b\x01\x12\tevm@1.0.0\x1a\xa3\x04\n" +
+	"\rChainSelector\x12\x91\x04\x12\x8e\x04\n" +
+	"\x1d\n" +
+	"\x11avalanche-mainnet\x10\xd5\xe7\x8a\xc0\xe1\u0558\xa4Y\n" +
+	"#\n" +
+	"\x16avalanche-testnet-fuji\x10\x9b\xf9\xfc\x90\xa2\xe3\xa8\xf8\xcc\x01\n" +
+	"/\n" +
+	"#binance_smart_chain-mainnet-opbnb-1\x10\x89\xad\x8f\xef\x93\xc6\u05fb\x06\n" +
+	"0\n" +
+	"#binance_smart_chain-testnet-opbnb-1\x10\x8e\xf5\x85\x91\xc1\x83\x8f\x9c\xb8\x01\n" +
+	"\x1c\n" +
+	"\x10ethereum-mainnet\x10\x95\xf6\xf1\xe4ϲ\xa6\xc2E\n" +
+	"'\n" +
+	"\x1bethereum-mainnet-arbitrum-1\x10\xc4\xe8\x8d͎\x9b\xa1\xd7D\n" +
+	"'\n" +
+	"\x1bethereum-mainnet-optimism-1\x10\xb8\x95\x8f\xc3\xf7\xfe\xd0\xe93\n" +
+	"%\n" +
+	"\x18ethereum-testnet-sepolia\x10ٵ\xe4\xce\xfc\xc9\xee\xa0\xde\x01\n" +
+	"/\n" +
+	"#ethereum-testnet-sepolia-arbitrum-1\x10\xea\xce\xee\xff궄\xa30\n" +
+	",\n" +
+	"\x1fethereum-testnet-sepolia-base-1\x10\xb8ʹ\xef\xf6\x90\xaeȏ\x01\n" +
+	"/\n" +
+	"#ethereum-testnet-sepolia-optimism-1\x10\x9f\x86š\xbe\xd8\xc3\xc0H\n" +
+	"\x1b\n" +
+	"\x0fpolygon-mainnet\x10\xb1\xab\xe4\U0001a486\x9d8\n" +
+	"!\n" +
+	"\x14polygon-testnet-amoy\x10͏\xd6\xdf\xf1ǐ\xfa\xe1\x01b\x06proto3"
 
 var (
 	file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescOnce sync.Once
@@ -2071,7 +2135,7 @@ func file_capabilities_blockchain_evm_v1alpha_client_proto_rawDescGZIP() []byte 
 }
 
 var file_capabilities_blockchain_evm_v1alpha_client_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_capabilities_blockchain_evm_v1alpha_client_proto_goTypes = []any{
 	(ConfidenceLevel)(0),                 // 0: capabilities.blockchain.evm.v1alpha.ConfidenceLevel
 	(ReceiverContractExecutionStatus)(0), // 1: capabilities.blockchain.evm.v1alpha.ReceiverContractExecutionStatus
@@ -2096,70 +2160,71 @@ var file_capabilities_blockchain_evm_v1alpha_client_proto_goTypes = []any{
 	(*GetTransactionReceiptRequest)(nil), // 20: capabilities.blockchain.evm.v1alpha.GetTransactionReceiptRequest
 	(*GetTransactionReceiptReply)(nil),   // 21: capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply
 	(*Receipt)(nil),                      // 22: capabilities.blockchain.evm.v1alpha.Receipt
-	(*LatestAndFinalizedHeadReply)(nil),  // 23: capabilities.blockchain.evm.v1alpha.LatestAndFinalizedHeadReply
-	(*Head)(nil),                         // 24: capabilities.blockchain.evm.v1alpha.Head
-	(*RegisterLogTrackingRequest)(nil),   // 25: capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest
-	(*LPFilter)(nil),                     // 26: capabilities.blockchain.evm.v1alpha.LPFilter
-	(*UnregisterLogTrackingRequest)(nil), // 27: capabilities.blockchain.evm.v1alpha.UnregisterLogTrackingRequest
-	(*SignedReport)(nil),                 // 28: capabilities.blockchain.evm.v1alpha.SignedReport
-	(*WriteReportRequest)(nil),           // 29: capabilities.blockchain.evm.v1alpha.WriteReportRequest
-	(*GasConfig)(nil),                    // 30: capabilities.blockchain.evm.v1alpha.GasConfig
-	(*WriteReportReply)(nil),             // 31: capabilities.blockchain.evm.v1alpha.WriteReportReply
-	(*pb.BigInt)(nil),                    // 32: values.v1.BigInt
-	(*emptypb.Empty)(nil),                // 33: google.protobuf.Empty
+	(*HeaderByNumberRequest)(nil),        // 23: capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest
+	(*HeaderByNumberReply)(nil),          // 24: capabilities.blockchain.evm.v1alpha.HeaderByNumberReply
+	(*Header)(nil),                       // 25: capabilities.blockchain.evm.v1alpha.Header
+	(*RegisterLogTrackingRequest)(nil),   // 26: capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest
+	(*LPFilter)(nil),                     // 27: capabilities.blockchain.evm.v1alpha.LPFilter
+	(*UnregisterLogTrackingRequest)(nil), // 28: capabilities.blockchain.evm.v1alpha.UnregisterLogTrackingRequest
+	(*SignedReport)(nil),                 // 29: capabilities.blockchain.evm.v1alpha.SignedReport
+	(*WriteReportRequest)(nil),           // 30: capabilities.blockchain.evm.v1alpha.WriteReportRequest
+	(*GasConfig)(nil),                    // 31: capabilities.blockchain.evm.v1alpha.GasConfig
+	(*WriteReportReply)(nil),             // 32: capabilities.blockchain.evm.v1alpha.WriteReportReply
+	(*pb.BigInt)(nil),                    // 33: values.v1.BigInt
+	(*emptypb.Empty)(nil),                // 34: google.protobuf.Empty
 }
 var file_capabilities_blockchain_evm_v1alpha_client_proto_depIdxs = []int32{
 	3,  // 0: capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest.topics:type_name -> capabilities.blockchain.evm.v1alpha.TopicValues
 	0,  // 1: capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest.confidence:type_name -> capabilities.blockchain.evm.v1alpha.ConfidenceLevel
 	10, // 2: capabilities.blockchain.evm.v1alpha.CallContractRequest.call:type_name -> capabilities.blockchain.evm.v1alpha.CallMsg
-	32, // 3: capabilities.blockchain.evm.v1alpha.CallContractRequest.block_number:type_name -> values.v1.BigInt
+	33, // 3: capabilities.blockchain.evm.v1alpha.CallContractRequest.block_number:type_name -> values.v1.BigInt
 	11, // 4: capabilities.blockchain.evm.v1alpha.FilterLogsRequest.filter_query:type_name -> capabilities.blockchain.evm.v1alpha.FilterQuery
 	9,  // 5: capabilities.blockchain.evm.v1alpha.FilterLogsReply.logs:type_name -> capabilities.blockchain.evm.v1alpha.Log
-	32, // 6: capabilities.blockchain.evm.v1alpha.Log.block_number:type_name -> values.v1.BigInt
-	32, // 7: capabilities.blockchain.evm.v1alpha.FilterQuery.from_block:type_name -> values.v1.BigInt
-	32, // 8: capabilities.blockchain.evm.v1alpha.FilterQuery.to_block:type_name -> values.v1.BigInt
+	33, // 6: capabilities.blockchain.evm.v1alpha.Log.block_number:type_name -> values.v1.BigInt
+	33, // 7: capabilities.blockchain.evm.v1alpha.FilterQuery.from_block:type_name -> values.v1.BigInt
+	33, // 8: capabilities.blockchain.evm.v1alpha.FilterQuery.to_block:type_name -> values.v1.BigInt
 	12, // 9: capabilities.blockchain.evm.v1alpha.FilterQuery.topics:type_name -> capabilities.blockchain.evm.v1alpha.Topics
-	32, // 10: capabilities.blockchain.evm.v1alpha.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
-	32, // 11: capabilities.blockchain.evm.v1alpha.BalanceAtReply.balance:type_name -> values.v1.BigInt
+	33, // 10: capabilities.blockchain.evm.v1alpha.BalanceAtRequest.block_number:type_name -> values.v1.BigInt
+	33, // 11: capabilities.blockchain.evm.v1alpha.BalanceAtReply.balance:type_name -> values.v1.BigInt
 	10, // 12: capabilities.blockchain.evm.v1alpha.EstimateGasRequest.msg:type_name -> capabilities.blockchain.evm.v1alpha.CallMsg
 	19, // 13: capabilities.blockchain.evm.v1alpha.GetTransactionByHashReply.transaction:type_name -> capabilities.blockchain.evm.v1alpha.Transaction
-	32, // 14: capabilities.blockchain.evm.v1alpha.Transaction.value:type_name -> values.v1.BigInt
-	32, // 15: capabilities.blockchain.evm.v1alpha.Transaction.gas_price:type_name -> values.v1.BigInt
+	33, // 14: capabilities.blockchain.evm.v1alpha.Transaction.value:type_name -> values.v1.BigInt
+	33, // 15: capabilities.blockchain.evm.v1alpha.Transaction.gas_price:type_name -> values.v1.BigInt
 	22, // 16: capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply.receipt:type_name -> capabilities.blockchain.evm.v1alpha.Receipt
 	9,  // 17: capabilities.blockchain.evm.v1alpha.Receipt.logs:type_name -> capabilities.blockchain.evm.v1alpha.Log
-	32, // 18: capabilities.blockchain.evm.v1alpha.Receipt.effective_gas_price:type_name -> values.v1.BigInt
-	32, // 19: capabilities.blockchain.evm.v1alpha.Receipt.block_number:type_name -> values.v1.BigInt
-	24, // 20: capabilities.blockchain.evm.v1alpha.LatestAndFinalizedHeadReply.latest:type_name -> capabilities.blockchain.evm.v1alpha.Head
-	24, // 21: capabilities.blockchain.evm.v1alpha.LatestAndFinalizedHeadReply.finalized:type_name -> capabilities.blockchain.evm.v1alpha.Head
-	32, // 22: capabilities.blockchain.evm.v1alpha.Head.block_number:type_name -> values.v1.BigInt
-	26, // 23: capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest.filter:type_name -> capabilities.blockchain.evm.v1alpha.LPFilter
-	28, // 24: capabilities.blockchain.evm.v1alpha.WriteReportRequest.report:type_name -> capabilities.blockchain.evm.v1alpha.SignedReport
-	30, // 25: capabilities.blockchain.evm.v1alpha.WriteReportRequest.gas_config:type_name -> capabilities.blockchain.evm.v1alpha.GasConfig
+	33, // 18: capabilities.blockchain.evm.v1alpha.Receipt.effective_gas_price:type_name -> values.v1.BigInt
+	33, // 19: capabilities.blockchain.evm.v1alpha.Receipt.block_number:type_name -> values.v1.BigInt
+	33, // 20: capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest.block_number:type_name -> values.v1.BigInt
+	25, // 21: capabilities.blockchain.evm.v1alpha.HeaderByNumberReply.header:type_name -> capabilities.blockchain.evm.v1alpha.Header
+	33, // 22: capabilities.blockchain.evm.v1alpha.Header.block_number:type_name -> values.v1.BigInt
+	27, // 23: capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest.filter:type_name -> capabilities.blockchain.evm.v1alpha.LPFilter
+	29, // 24: capabilities.blockchain.evm.v1alpha.WriteReportRequest.report:type_name -> capabilities.blockchain.evm.v1alpha.SignedReport
+	31, // 25: capabilities.blockchain.evm.v1alpha.WriteReportRequest.gas_config:type_name -> capabilities.blockchain.evm.v1alpha.GasConfig
 	2,  // 26: capabilities.blockchain.evm.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.evm.v1alpha.TxStatus
 	1,  // 27: capabilities.blockchain.evm.v1alpha.WriteReportReply.receiver_contract_execution_status:type_name -> capabilities.blockchain.evm.v1alpha.ReceiverContractExecutionStatus
-	32, // 28: capabilities.blockchain.evm.v1alpha.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
+	33, // 28: capabilities.blockchain.evm.v1alpha.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
 	5,  // 29: capabilities.blockchain.evm.v1alpha.Client.CallContract:input_type -> capabilities.blockchain.evm.v1alpha.CallContractRequest
 	7,  // 30: capabilities.blockchain.evm.v1alpha.Client.FilterLogs:input_type -> capabilities.blockchain.evm.v1alpha.FilterLogsRequest
 	13, // 31: capabilities.blockchain.evm.v1alpha.Client.BalanceAt:input_type -> capabilities.blockchain.evm.v1alpha.BalanceAtRequest
 	15, // 32: capabilities.blockchain.evm.v1alpha.Client.EstimateGas:input_type -> capabilities.blockchain.evm.v1alpha.EstimateGasRequest
 	17, // 33: capabilities.blockchain.evm.v1alpha.Client.GetTransactionByHash:input_type -> capabilities.blockchain.evm.v1alpha.GetTransactionByHashRequest
 	20, // 34: capabilities.blockchain.evm.v1alpha.Client.GetTransactionReceipt:input_type -> capabilities.blockchain.evm.v1alpha.GetTransactionReceiptRequest
-	33, // 35: capabilities.blockchain.evm.v1alpha.Client.LatestAndFinalizedHead:input_type -> google.protobuf.Empty
-	25, // 36: capabilities.blockchain.evm.v1alpha.Client.RegisterLogTracking:input_type -> capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest
-	27, // 37: capabilities.blockchain.evm.v1alpha.Client.UnregisterLogTracking:input_type -> capabilities.blockchain.evm.v1alpha.UnregisterLogTrackingRequest
+	23, // 35: capabilities.blockchain.evm.v1alpha.Client.HeaderByNumber:input_type -> capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest
+	26, // 36: capabilities.blockchain.evm.v1alpha.Client.RegisterLogTracking:input_type -> capabilities.blockchain.evm.v1alpha.RegisterLogTrackingRequest
+	28, // 37: capabilities.blockchain.evm.v1alpha.Client.UnregisterLogTracking:input_type -> capabilities.blockchain.evm.v1alpha.UnregisterLogTrackingRequest
 	4,  // 38: capabilities.blockchain.evm.v1alpha.Client.LogTrigger:input_type -> capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest
-	29, // 39: capabilities.blockchain.evm.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.evm.v1alpha.WriteReportRequest
+	30, // 39: capabilities.blockchain.evm.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.evm.v1alpha.WriteReportRequest
 	6,  // 40: capabilities.blockchain.evm.v1alpha.Client.CallContract:output_type -> capabilities.blockchain.evm.v1alpha.CallContractReply
 	8,  // 41: capabilities.blockchain.evm.v1alpha.Client.FilterLogs:output_type -> capabilities.blockchain.evm.v1alpha.FilterLogsReply
 	14, // 42: capabilities.blockchain.evm.v1alpha.Client.BalanceAt:output_type -> capabilities.blockchain.evm.v1alpha.BalanceAtReply
 	16, // 43: capabilities.blockchain.evm.v1alpha.Client.EstimateGas:output_type -> capabilities.blockchain.evm.v1alpha.EstimateGasReply
 	18, // 44: capabilities.blockchain.evm.v1alpha.Client.GetTransactionByHash:output_type -> capabilities.blockchain.evm.v1alpha.GetTransactionByHashReply
 	21, // 45: capabilities.blockchain.evm.v1alpha.Client.GetTransactionReceipt:output_type -> capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply
-	23, // 46: capabilities.blockchain.evm.v1alpha.Client.LatestAndFinalizedHead:output_type -> capabilities.blockchain.evm.v1alpha.LatestAndFinalizedHeadReply
-	33, // 47: capabilities.blockchain.evm.v1alpha.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
-	33, // 48: capabilities.blockchain.evm.v1alpha.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
+	24, // 46: capabilities.blockchain.evm.v1alpha.Client.HeaderByNumber:output_type -> capabilities.blockchain.evm.v1alpha.HeaderByNumberReply
+	34, // 47: capabilities.blockchain.evm.v1alpha.Client.RegisterLogTracking:output_type -> google.protobuf.Empty
+	34, // 48: capabilities.blockchain.evm.v1alpha.Client.UnregisterLogTracking:output_type -> google.protobuf.Empty
 	9,  // 49: capabilities.blockchain.evm.v1alpha.Client.LogTrigger:output_type -> capabilities.blockchain.evm.v1alpha.Log
-	31, // 50: capabilities.blockchain.evm.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.evm.v1alpha.WriteReportReply
+	32, // 50: capabilities.blockchain.evm.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.evm.v1alpha.WriteReportReply
 	40, // [40:51] is the sub-list for method output_type
 	29, // [29:40] is the sub-list for method input_type
 	29, // [29:29] is the sub-list for extension type_name
@@ -2172,15 +2237,15 @@ func file_capabilities_blockchain_evm_v1alpha_client_proto_init() {
 	if File_capabilities_blockchain_evm_v1alpha_client_proto != nil {
 		return
 	}
-	file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[26].OneofWrappers = []any{}
-	file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[28].OneofWrappers = []any{}
+	file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[27].OneofWrappers = []any{}
+	file_capabilities_blockchain_evm_v1alpha_client_proto_msgTypes[29].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc), len(file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   29,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

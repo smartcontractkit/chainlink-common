@@ -2,16 +2,18 @@ package relayerset
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 )
 
 // evmClient wraps the EVMRelayerSetClient by attaching a RelayerID to EVMClient requests.
@@ -59,12 +61,17 @@ func (e evmClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTrans
 	return e.client.GetTransactionReceipt(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
-func (e evmClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.LatestAndFinalizedHeadReply, error) {
-	return e.client.LatestAndFinalizedHead(appendRelayID(ctx, e.relayID), in, opts...)
+func (e evmClient) HeaderByNumber(ctx context.Context, in *evmpb.HeaderByNumberRequest, opts ...grpc.CallOption) (*evmpb.HeaderByNumberReply, error) {
+	return e.client.HeaderByNumber(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmpb.QueryTrackedLogsReply, error) {
 	return e.client.QueryTrackedLogs(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	return e.client.GetFiltersNames(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
 func (e evmClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -108,13 +115,25 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 		return nil, err
 	}
 
-	reply, err := evmService.CallContract(ctx, callMsg, valuespb.NewIntFromBigInt(request.BlockNumber))
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
 
+	reply, err := evmService.CallContract(ctx, evm.CallContractRequest{
+		Msg:             callMsg,
+		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
+		ConfidenceLevel: conf,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
+
 	return &evmpb.CallContractReply{
-		Data: reply,
+		Data: reply.Data,
 	}, nil
 }
 
@@ -129,12 +148,23 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 		return nil, err
 	}
 
-	reply, err := evmService.FilterLogs(ctx, expression)
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply)}, nil
+	reply, err := evmService.FilterLogs(ctx, evm.FilterLogsRequest{
+		FilterQuery:     expression,
+		ConfidenceLevel: conf,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
+
+	return &evmpb.FilterLogsReply{Logs: evmpb.ConvertLogsToProto(reply.Logs)}, nil
 }
 
 func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
@@ -143,12 +173,25 @@ func (s *Server) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest)
 		return nil, err
 	}
 
-	balance, err := evmService.BalanceAt(ctx, evm.Address(request.GetAccount()), valuespb.NewIntFromBigInt(request.BlockNumber))
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(balance)}, nil
+	reply, err := evmService.BalanceAt(ctx, evm.BalanceAtRequest{
+		Address:         evm.Address(request.GetAccount()),
+		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
+		ConfidenceLevel: conf,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
+
+	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(reply.Balance)}, nil
 }
 
 func (s *Server) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
@@ -212,20 +255,31 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTr
 	}, nil
 }
 
-func (s *Server) LatestAndFinalizedHead(ctx context.Context, _ *emptypb.Empty) (*evmpb.LatestAndFinalizedHeadReply, error) {
+func (s *Server) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumberRequest) (*evmpb.HeaderByNumberReply, error) {
 	evmService, err := s.getEVMService(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	latest, finalized, err := evmService.LatestAndFinalizedHead(ctx)
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
 	if err != nil {
 		return nil, err
 	}
 
-	return &evmpb.LatestAndFinalizedHeadReply{
-		Latest:    evmpb.ConvertHeadToProto(latest),
-		Finalized: evmpb.ConvertHeadToProto(finalized),
+	reply, err := evmService.HeaderByNumber(ctx, evm.HeaderByNumberRequest{
+		Number:          valuespb.NewIntFromBigInt(request.GetBlockNumber()),
+		ConfidenceLevel: conf,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if reply == nil {
+		return nil, fmt.Errorf("reply is nil")
+	}
+
+	return &evmpb.HeaderByNumberReply{
+		Header: evmpb.ConvertHeaderToProto(reply.Header),
 	}, nil
 }
 
@@ -256,6 +310,21 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrack
 	}
 
 	return &evmpb.QueryTrackedLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
+}
+
+func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	evmService, err := s.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	names, err := evmService.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &evmpb.GetFiltersNamesReply{Items: names}, nil
 }
 
 func (s *Server) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {

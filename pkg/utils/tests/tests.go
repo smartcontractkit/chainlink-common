@@ -82,7 +82,11 @@ func SkipShort(tb testing.TB, why string) {
 const envVarRunFlakey = "CL_RUN_FLAKEY"
 
 var runFlakey = sync.OnceValues(func() (bool, error) {
-	return strconv.ParseBool(os.Getenv(envVarRunFlakey))
+	s := os.Getenv(envVarRunFlakey)
+	if s == "" {
+		return false, nil
+	}
+	return strconv.ParseBool(s)
 })
 
 func SkipFlakey(t *testing.T, ticketURL string) {

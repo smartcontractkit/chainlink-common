@@ -98,6 +98,7 @@ type RequestMetadata struct {
 	DecodedWorkflowName string
 	// SpendLimits is expected to be an array of tuples of spend type and limit. i.e. CONSENSUS -> 100_000
 	SpendLimits []SpendLimit
+	WorkflowTag string
 }
 
 type RegistrationMetadata struct {
@@ -289,7 +290,9 @@ type ExecutableAndTriggerCapability interface {
 // For an example of an empty DON check, see the following link:
 // https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31
 type DON struct {
+	Name             string
 	ID               uint32
+	Families         []string
 	ConfigVersion    uint32
 	Members          []p2ptypes.PeerID
 	F                uint8

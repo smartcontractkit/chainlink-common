@@ -287,6 +287,10 @@ func (r *relayerClient) NewLLOProvider(ctx context.Context, rargs types.RelayArg
 	return nil, fmt.Errorf("llo provider not supported: %w", errors.ErrUnsupported)
 }
 
+func (r *relayerClient) NewCCIPProvider(ctx context.Context, rargs types.RelayArgs) (types.CCIPProvider, error) {
+	return nil, fmt.Errorf("ccip provider not supported: %w", errors.ErrUnsupported)
+}
+
 func (r *relayerClient) LatestHead(ctx context.Context) (types.Head, error) {
 	reply, err := r.relayer.LatestHead(ctx, &pb.LatestHeadRequest{})
 	if err != nil {

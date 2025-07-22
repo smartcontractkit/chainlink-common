@@ -31,9 +31,16 @@ const (
 	// ErrInternal is not currently returned but defined for completeness.
 	ErrInternal int64 = -32603
 
-	//ErrServerOverloaded is returned when a message was refused due to a
-	//server being temporarily unable to accept any new messages.
+	// ErrServerOverloaded is returned when a message was refused due to a
+	// server being temporarily unable to accept any new messages.
 	ErrServerOverloaded int64 = -32000
+
+	// ErrLimitExceeded is returned when a message was refused due to user exceeding
+	// a limit (e.g. number of requests per second).
+	ErrLimitExceeded int64 = -32002
+
+	// ErrConflict is returned when a request conflicts with an existing request.
+	ErrConflict int64 = -32003
 )
 
 // Wrapping/unwrapping Message objects into JSON RPC ones folllowing https://www.jsonrpc.org/specification

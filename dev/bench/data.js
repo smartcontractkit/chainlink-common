@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753106534748,
+  "lastUpdate": 1753215699672,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21378,6 +21378,48 @@ window.BENCHMARK_DATA = {
             "value": 28245,
             "unit": "ns/op",
             "extra": "41781 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63481b302dd8a75ed47d327f1dc3521f7a46f031",
+          "message": "bumping billing protos (#1426)",
+          "timestamp": "2025-07-22T15:19:18-05:00",
+          "tree_id": "2b2805279a638cb6007df8c8b5b2e32886e36e83",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/63481b302dd8a75ed47d327f1dc3521f7a46f031"
+        },
+        "date": 1753215698689,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.9,
+            "unit": "ns/op",
+            "extra": "3331042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.9,
+            "unit": "ns/op",
+            "extra": "2979382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28167,
+            "unit": "ns/op",
+            "extra": "42672 times\n4 procs"
           }
         ]
       }

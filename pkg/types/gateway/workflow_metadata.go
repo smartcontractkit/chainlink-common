@@ -35,6 +35,6 @@ func (wm *WorkflowMetadata) Digest() (string, error) {
 }
 
 type AuthorizedKey struct {
-	KeyType   KeyType
-	PublicKey string
+	KeyType   KeyType `json:"keyType"`
+	PublicKey string  `json:"publicKey"`
 }

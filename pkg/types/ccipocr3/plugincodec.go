@@ -1,7 +1,5 @@
 package ccipocr3
 
-import cciptypes "github.com/smartcontractkit/chainlink-ccip/pkg/types/ccipocr3"
-
 // ChainSpecificAddressCodec is an interface that defines the methods for encoding and decoding addresses for a specific chain
 type ChainSpecificAddressCodec interface {
 	// AddressBytesToString converts an address from bytes to string
@@ -18,9 +16,9 @@ type ChainSpecificAddressCodec interface {
 // For chain A to chain B message, this interface will be the chain A specific codec
 type SourceChainExtraDataCodec interface {
 	// DecodeExtraArgsToMap reformat bytes into a chain agnostic map[string]any representation for extra args
-	DecodeExtraArgsToMap(extraArgs cciptypes.Bytes) (map[string]any, error)
+	DecodeExtraArgsToMap(extraArgs Bytes) (map[string]any, error)
 	// DecodeDestExecDataToMap reformat bytes into a chain agnostic map[string]interface{} representation for dest exec data
-	DecodeDestExecDataToMap(destExecData cciptypes.Bytes) (map[string]any, error)
+	DecodeDestExecDataToMap(destExecData Bytes) (map[string]any, error)
 }
 
 // Codec is an interface that defines the methods for chain family specific encoding and decoding various types of data used in CCIP OCR3

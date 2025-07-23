@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	chainsel "github.com/smartcontractkit/chain-selectors"
-	cciptypes "github.com/smartcontractkit/chainlink-ccip/pkg/types/ccipocr3"
 )
 
 // Codec is an interface that defines the methods for chain family specific encoding and decoding various types of data used in CCIP OCR3
@@ -41,7 +40,7 @@ type SourceChainExtraDataCodec interface {
 type ExtraDataCodec map[string]SourceChainExtraDataCodec
 
 // DecodeExtraArgs reformats bytes into a chain agnostic map[string]any representation for extra args
-func (c ExtraDataCodec) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector cciptypes.ChainSelector) (map[string]any, error) {
+func (c ExtraDataCodec) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector ChainSelector) (map[string]any, error) {
 	if len(extraArgs) == 0 {
 		// return empty map if extraArgs is empty
 		return nil, nil
@@ -61,7 +60,7 @@ func (c ExtraDataCodec) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector cci
 }
 
 // DecodeTokenAmountDestExecData reformats bytes to chain-agnostic map[string]any for tokenAmount DestExecData field
-func (c ExtraDataCodec) DecodeTokenAmountDestExecData(destExecData Bytes, sourceChainSelector cciptypes.ChainSelector) (map[string]any, error) {
+func (c ExtraDataCodec) DecodeTokenAmountDestExecData(destExecData Bytes, sourceChainSelector ChainSelector) (map[string]any, error) {
 	if len(destExecData) == 0 {
 		// return empty map if destExecData is empty
 		return nil, nil

@@ -24,10 +24,10 @@ type SourceChainExtraDataCodec interface {
 }
 
 // Codec is an interface that defines the methods for chain family specific encoding and decoding various types of data used in CCIP OCR3
-type Codec interface {
-	AddressCodec() ChainSpecificAddressCodec
-	CommitPluginCodec() CommitPluginCodec
-	ExecutePluginCodec() ExecutePluginCodec
-	TokenDataEncoder() TokenDataEncoder
-	ExtraDataCodec() SourceChainExtraDataCodec
+type Codec struct {
+	ChainSpecificAddressCodec
+	CommitPluginCodec
+	ExecutePluginCodec
+	TokenDataEncoder
+	SourceChainExtraDataCodec
 }

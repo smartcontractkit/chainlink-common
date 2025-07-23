@@ -1,5 +1,21 @@
 package ccipocr3
 
+import (
+	"fmt"
+
+	chainsel "github.com/smartcontractkit/chain-selectors"
+	cciptypes "github.com/smartcontractkit/chainlink-ccip/pkg/types/ccipocr3"
+)
+
+// Codec is an interface that defines the methods for chain family specific encoding and decoding various types of data used in CCIP OCR3
+type Codec struct {
+	ChainSpecificAddressCodec
+	CommitPluginCodec
+	ExecutePluginCodec
+	TokenDataEncoder
+	SourceChainExtraDataCodec
+}
+
 // ChainSpecificAddressCodec is an interface that defines the methods for encoding and decoding addresses for a specific chain
 type ChainSpecificAddressCodec interface {
 	// AddressBytesToString converts an address from bytes to string
@@ -21,11 +37,45 @@ type SourceChainExtraDataCodec interface {
 	DecodeDestExecDataToMap(destExecData Bytes) (map[string]any, error)
 }
 
-// Codec is an interface that defines the methods for chain family specific encoding and decoding various types of data used in CCIP OCR3
-type Codec struct {
-	ChainSpecificAddressCodec
-	CommitPluginCodec
-	ExecutePluginCodec
-	TokenDataEncoder
-	SourceChainExtraDataCodec
+// ExtraDataCodec is a map of chain family to SourceChainExtraDataCodec
+type ExtraDataCodec map[string]SourceChainExtraDataCodec
+
+// DecodeExtraArgs reformats bytes into a chain agnostic map[string]any representation for extra args
+func (c ExtraDataCodec) DecodeExtraArgs(extraArgs Bytes, sourceChainSelector cciptypes.ChainSelector) (map[string]any, error) {
+	if len(extraArgs) == 0 {
+		// return empty map if extraArgs is empty
+		return nil, nil
+	}
+
+	family, err := chainsel.GetSelectorFamily(uint64(sourceChainSelector))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain family for selector %d: %w", sourceChainSelector, err)
+	}
+
+	codec, exist := c[family]
+	if !exist {
+		return nil, fmt.Errorf("unsupported family for extra args type %s", family)
+	}
+
+	return codec.DecodeExtraArgsToMap(extraArgs)
+}
+
+// DecodeTokenAmountDestExecData reformats bytes to chain-agnostic map[string]any for tokenAmount DestExecData field
+func (c ExtraDataCodec) DecodeTokenAmountDestExecData(destExecData Bytes, sourceChainSelector cciptypes.ChainSelector) (map[string]any, error) {
+	if len(destExecData) == 0 {
+		// return empty map if destExecData is empty
+		return nil, nil
+	}
+
+	family, err := chainsel.GetSelectorFamily(uint64(sourceChainSelector))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain family for selector %d: %w", sourceChainSelector, err)
+	}
+
+	codec, exist := c[family]
+	if !exist {
+		return nil, fmt.Errorf("unsupported family for extra args type %s", family)
+	}
+
+	return codec.DecodeDestExecDataToMap(destExecData)
 }

@@ -7,7 +7,6 @@
 package chaincommonpb
 
 import (
-	codec "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -543,8 +542,9 @@ func (x *Or) GetExpr() []*Expression {
 
 type ValueComparator struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         *codec.VersionedBytes  `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	Operator      ComparisonOperator     `protobuf:"varint,2,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
+	Value         []byte                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	ValueTypeHint string                 `protobuf:"bytes,2,opt,name=value_type_hint,json=valueTypeHint,proto3" json:"value_type_hint,omitempty"`
+	Operator      ComparisonOperator     `protobuf:"varint,3,opt,name=operator,proto3,enum=loop.chain.common.ComparisonOperator" json:"operator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -579,11 +579,18 @@ func (*ValueComparator) Descriptor() ([]byte, []int) {
 	return file_loop_chain_common_query_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ValueComparator) GetValue() *codec.VersionedBytes {
+func (x *ValueComparator) GetValue() []byte {
 	if x != nil {
 		return x.Value
 	}
 	return nil
+}
+
+func (x *ValueComparator) GetValueTypeHint() string {
+	if x != nil {
+		return x.ValueTypeHint
+	}
+	return ""
 }
 
 func (x *ValueComparator) GetOperator() ComparisonOperator {
@@ -1094,7 +1101,7 @@ var File_loop_chain_common_query_proto protoreflect.FileDescriptor
 
 const file_loop_chain_common_query_proto_rawDesc = "" +
 	"\n" +
-	"\x1dloop/chain-common/query.proto\x12\x11loop.chain.common\x1a\x1ainternal/codec/codec.proto\"\xae\x01\n" +
+	"\x1dloop/chain-common/query.proto\x12\x11loop.chain.common\"\xae\x01\n" +
 	"\n" +
 	"Expression\x12<\n" +
 	"\tprimitive\x18\x01 \x01(\v2\x1c.loop.chain.common.PrimitiveH\x00R\tprimitive\x12U\n" +
@@ -1108,10 +1115,11 @@ const file_loop_chain_common_query_proto_rawDesc = "" +
 	"\x03And\x121\n" +
 	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"7\n" +
 	"\x02Or\x121\n" +
-	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"\x81\x01\n" +
-	"\x0fValueComparator\x12+\n" +
-	"\x05value\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x05value\x12A\n" +
-	"\boperator\x18\x02 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"q\n" +
+	"\x04expr\x18\x01 \x03(\v2\x1d.loop.chain.common.ExpressionR\x04expr\"\x92\x01\n" +
+	"\x0fValueComparator\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\fR\x05value\x12&\n" +
+	"\x0fvalue_type_hint\x18\x02 \x01(\tR\rvalueTypeHint\x12A\n" +
+	"\boperator\x18\x03 \x01(\x0e2%.loop.chain.common.ComparisonOperatorR\boperator\"q\n" +
 	"\n" +
 	"Comparator\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12O\n" +
@@ -1189,26 +1197,25 @@ func file_loop_chain_common_query_proto_rawDescGZIP() []byte {
 var file_loop_chain_common_query_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_loop_chain_common_query_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_loop_chain_common_query_proto_goTypes = []any{
-	(ComparisonOperator)(0),      // 0: loop.chain.common.ComparisonOperator
-	(BooleanOperator)(0),         // 1: loop.chain.common.BooleanOperator
-	(Confidence)(0),              // 2: loop.chain.common.Confidence
-	(CursorDirection)(0),         // 3: loop.chain.common.CursorDirection
-	(SortDirection)(0),           // 4: loop.chain.common.SortDirection
-	(SortType)(0),                // 5: loop.chain.common.SortType
-	(*Expression)(nil),           // 6: loop.chain.common.Expression
-	(*BooleanExpression)(nil),    // 7: loop.chain.common.BooleanExpression
-	(*And)(nil),                  // 8: loop.chain.common.And
-	(*Or)(nil),                   // 9: loop.chain.common.Or
-	(*ValueComparator)(nil),      // 10: loop.chain.common.ValueComparator
-	(*Comparator)(nil),           // 11: loop.chain.common.Comparator
-	(*Block)(nil),                // 12: loop.chain.common.Block
-	(*Timestamp)(nil),            // 13: loop.chain.common.Timestamp
-	(*TxHash)(nil),               // 14: loop.chain.common.TxHash
-	(*Primitive)(nil),            // 15: loop.chain.common.Primitive
-	(*Limit)(nil),                // 16: loop.chain.common.Limit
-	(*SortBy)(nil),               // 17: loop.chain.common.SortBy
-	(*LimitAndSort)(nil),         // 18: loop.chain.common.LimitAndSort
-	(*codec.VersionedBytes)(nil), // 19: codec.VersionedBytes
+	(ComparisonOperator)(0),   // 0: loop.chain.common.ComparisonOperator
+	(BooleanOperator)(0),      // 1: loop.chain.common.BooleanOperator
+	(Confidence)(0),           // 2: loop.chain.common.Confidence
+	(CursorDirection)(0),      // 3: loop.chain.common.CursorDirection
+	(SortDirection)(0),        // 4: loop.chain.common.SortDirection
+	(SortType)(0),             // 5: loop.chain.common.SortType
+	(*Expression)(nil),        // 6: loop.chain.common.Expression
+	(*BooleanExpression)(nil), // 7: loop.chain.common.BooleanExpression
+	(*And)(nil),               // 8: loop.chain.common.And
+	(*Or)(nil),                // 9: loop.chain.common.Or
+	(*ValueComparator)(nil),   // 10: loop.chain.common.ValueComparator
+	(*Comparator)(nil),        // 11: loop.chain.common.Comparator
+	(*Block)(nil),             // 12: loop.chain.common.Block
+	(*Timestamp)(nil),         // 13: loop.chain.common.Timestamp
+	(*TxHash)(nil),            // 14: loop.chain.common.TxHash
+	(*Primitive)(nil),         // 15: loop.chain.common.Primitive
+	(*Limit)(nil),             // 16: loop.chain.common.Limit
+	(*SortBy)(nil),            // 17: loop.chain.common.SortBy
+	(*LimitAndSort)(nil),      // 18: loop.chain.common.LimitAndSort
 }
 var file_loop_chain_common_query_proto_depIdxs = []int32{
 	15, // 0: loop.chain.common.Expression.primitive:type_name -> loop.chain.common.Primitive
@@ -1217,26 +1224,25 @@ var file_loop_chain_common_query_proto_depIdxs = []int32{
 	6,  // 3: loop.chain.common.BooleanExpression.expression:type_name -> loop.chain.common.Expression
 	6,  // 4: loop.chain.common.And.expr:type_name -> loop.chain.common.Expression
 	6,  // 5: loop.chain.common.Or.expr:type_name -> loop.chain.common.Expression
-	19, // 6: loop.chain.common.ValueComparator.value:type_name -> codec.VersionedBytes
-	0,  // 7: loop.chain.common.ValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
-	10, // 8: loop.chain.common.Comparator.value_comparators:type_name -> loop.chain.common.ValueComparator
-	0,  // 9: loop.chain.common.Block.operator:type_name -> loop.chain.common.ComparisonOperator
-	0,  // 10: loop.chain.common.Timestamp.operator:type_name -> loop.chain.common.ComparisonOperator
-	11, // 11: loop.chain.common.Primitive.comparator:type_name -> loop.chain.common.Comparator
-	12, // 12: loop.chain.common.Primitive.block:type_name -> loop.chain.common.Block
-	2,  // 13: loop.chain.common.Primitive.confidence:type_name -> loop.chain.common.Confidence
-	13, // 14: loop.chain.common.Primitive.timestamp:type_name -> loop.chain.common.Timestamp
-	14, // 15: loop.chain.common.Primitive.tx_hash:type_name -> loop.chain.common.TxHash
-	3,  // 16: loop.chain.common.Limit.direction:type_name -> loop.chain.common.CursorDirection
-	5,  // 17: loop.chain.common.SortBy.sort_type:type_name -> loop.chain.common.SortType
-	4,  // 18: loop.chain.common.SortBy.direction:type_name -> loop.chain.common.SortDirection
-	17, // 19: loop.chain.common.LimitAndSort.sort_by:type_name -> loop.chain.common.SortBy
-	16, // 20: loop.chain.common.LimitAndSort.limit:type_name -> loop.chain.common.Limit
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	0,  // 6: loop.chain.common.ValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	10, // 7: loop.chain.common.Comparator.value_comparators:type_name -> loop.chain.common.ValueComparator
+	0,  // 8: loop.chain.common.Block.operator:type_name -> loop.chain.common.ComparisonOperator
+	0,  // 9: loop.chain.common.Timestamp.operator:type_name -> loop.chain.common.ComparisonOperator
+	11, // 10: loop.chain.common.Primitive.comparator:type_name -> loop.chain.common.Comparator
+	12, // 11: loop.chain.common.Primitive.block:type_name -> loop.chain.common.Block
+	2,  // 12: loop.chain.common.Primitive.confidence:type_name -> loop.chain.common.Confidence
+	13, // 13: loop.chain.common.Primitive.timestamp:type_name -> loop.chain.common.Timestamp
+	14, // 14: loop.chain.common.Primitive.tx_hash:type_name -> loop.chain.common.TxHash
+	3,  // 15: loop.chain.common.Limit.direction:type_name -> loop.chain.common.CursorDirection
+	5,  // 16: loop.chain.common.SortBy.sort_type:type_name -> loop.chain.common.SortType
+	4,  // 17: loop.chain.common.SortBy.direction:type_name -> loop.chain.common.SortDirection
+	17, // 18: loop.chain.common.LimitAndSort.sort_by:type_name -> loop.chain.common.SortBy
+	16, // 19: loop.chain.common.LimitAndSort.limit:type_name -> loop.chain.common.Limit
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_loop_chain_common_query_proto_init() }

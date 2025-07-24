@@ -17,10 +17,6 @@ packages:
       OffRampReader:
         config:
           filename: offramp_reader_mock.go
-  github.com/smartcontractkit/chainlink-common/pkg/types/ccipocr3:
-    interfaces:
-      SourceChainExtraDataCodec:
-      ChainSpecificAddressCodec:
   github.com/smartcontractkit/chainlink-common/pkg/types:
     interfaces:
       ContractReader:

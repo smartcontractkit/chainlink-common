@@ -24,6 +24,7 @@ type TemplateGenerator struct {
 	StringLblValue     func(name string, label *pb.Label) (string, error)
 	PbLabelTLangLabels func(labels map[string]*pb.Label) ([]Label, error)
 	ExtraFns           template.FuncMap
+	importToPkg        map[protogen.GoImportPath]protogen.GoPackageName
 }
 
 func (t *TemplateGenerator) GenerateFile(
@@ -34,7 +35,9 @@ func (t *TemplateGenerator) GenerateFile(
 	localPrefix string) error {
 
 	seen := map[string]int{}
-	importToPkg := map[protogen.GoImportPath]protogen.GoPackageName{}
+	if t.importToPkg == nil {
+		t.importToPkg = map[protogen.GoImportPath]protogen.GoPackageName{}
+	}
 	for _, f := range plugin.Files {
 		base := string(f.GoPackageName)
 		alias := base
@@ -45,10 +48,10 @@ func (t *TemplateGenerator) GenerateFile(
 		} else {
 			seen[base] = 0
 		}
-		importToPkg[f.GoImportPath] = protogen.GoPackageName(alias)
+		t.importToPkg[f.GoImportPath] = protogen.GoPackageName(alias)
 	}
 
-	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, importToPkg, toolName, localPrefix)
+	fileName, content, err := t.Generate(path.Base(file.GeneratedFilenamePrefix), args, t.importToPkg, toolName, localPrefix)
 	if err != nil {
 		return err
 	}
@@ -162,21 +165,7 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			copy(allImports, orderedImports)
 			return allImports
 		},
-		"name": func(ident protogen.GoIdent, ignore string) string {
-			importPath := ident.GoImportPath.String()
-			if ignore == importPath {
-				return ident.GoName
-			}
-
-			packageName := path.Base(strings.Trim(importPath, `"`))
-
-			// use package name alias if package is mismatched with the package name
-			if !isDirNamePackageName(ident.GoImportPath, importToPkg) {
-				packageName = string(importToPkg[ident.GoImportPath])
-			}
-
-			return fmt.Sprintf("%s.%s", packageName, ident.GoName)
-		},
+		"name": t.TypeName,
 		"CapabilityId": func(s *protogen.Service) (string, error) {
 			md, err := getCapabilityMetadata(s)
 			if err != nil {
@@ -324,4 +313,28 @@ func getCapabilityMethodMetadata(m *protogen.Method) (*pb.CapabilityMethodMetada
 type namedLabel struct {
 	name  string
 	label *pb.Label
+}
+
+func (t *TemplateGenerator) TypeName(ident protogen.GoIdent, ignore string) string {
+	importPath := ident.GoImportPath.String()
+	if ignore == importPath {
+		return ident.GoName
+	}
+
+	packageName := path.Base(strings.Trim(importPath, `"`))
+
+	// use package name alias if package is mismatched with the package name
+	if !isDirNamePackageName(ident.GoImportPath, t.importToPkg) {
+		packageName = string(t.importToPkg[ident.GoImportPath])
+	}
+
+	return fmt.Sprintf("%s.%s", packageName, ident.GoName)
+}
+
+func (t *TemplateGenerator) AddImport(name protogen.GoImportPath, importPath protogen.GoPackageName) {
+	if t.importToPkg == nil {
+		t.importToPkg = map[protogen.GoImportPath]protogen.GoPackageName{}
+	}
+
+	t.importToPkg[name] = importPath
 }

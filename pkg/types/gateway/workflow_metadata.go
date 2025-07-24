@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"sort"
 )
 
 const (
@@ -23,7 +24,18 @@ type WorkflowMetadata struct {
 }
 
 func (wm *WorkflowMetadata) Digest() (string, error) {
-	data, err := json.Marshal(wm)
+	wmCopy := *wm
+	sortedKeys := make([]AuthorizedKey, len(wm.AuthorizedKeys))
+	copy(sortedKeys, wm.AuthorizedKeys)
+	sort.Slice(sortedKeys, func(i, j int) bool {
+		if sortedKeys[i].KeyType != sortedKeys[j].KeyType {
+			return string(sortedKeys[i].KeyType) < string(sortedKeys[j].KeyType)
+		}
+		return sortedKeys[i].PublicKey < sortedKeys[j].PublicKey
+	})
+	wmCopy.AuthorizedKeys = sortedKeys
+
+	data, err := json.Marshal(wmCopy)
 	if err != nil {
 		return "", err
 	}

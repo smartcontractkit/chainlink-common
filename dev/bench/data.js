@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753222395677,
+  "lastUpdate": 1753378844304,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21462,6 +21462,48 @@ window.BENCHMARK_DATA = {
             "value": 28180,
             "unit": "ns/op",
             "extra": "42598 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "juan.lautarofernandez@smartcontract.com",
+            "name": "Juan Lautaro Fernandez",
+            "username": "fernandezlautaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a78e01aa7d37811bd875806a5573b9ffad8ef669",
+          "message": "PRODCRE-557: adding evm cap to local env, missing passing through of config values for the oracle (#1429)",
+          "timestamp": "2025-07-24T20:39:16+03:00",
+          "tree_id": "24d2699879a1483289d4098679ae96a7863ac870",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a78e01aa7d37811bd875806a5573b9ffad8ef669"
+        },
+        "date": 1753378843223,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.4,
+            "unit": "ns/op",
+            "extra": "3306332 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 433.1,
+            "unit": "ns/op",
+            "extra": "2862662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28183,
+            "unit": "ns/op",
+            "extra": "42657 times\n4 procs"
           }
         ]
       }

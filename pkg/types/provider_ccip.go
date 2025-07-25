@@ -51,4 +51,5 @@ type CCIPProvider interface {
 	services.Service
 	ChainAccessor() ccipocr3.ChainAccessor
 	ContractTransmitter() ocr3types.ContractTransmitter[[]byte]
+	Codec() ccipocr3.Codec
 }

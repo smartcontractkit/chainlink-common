@@ -32,6 +32,8 @@ type LocalConfig struct {
 	DatabaseTimeout                    *durationpb.Duration   `protobuf:"bytes,6,opt,name=database_timeout,json=databaseTimeout,proto3" json:"database_timeout,omitempty"`
 	MinOcr2MaxDurationQuery            *durationpb.Duration   `protobuf:"bytes,7,opt,name=min_ocr2_max_duration_query,json=minOcr2MaxDurationQuery,proto3" json:"min_ocr2_max_duration_query,omitempty"`
 	DevelopmentMode                    string                 `protobuf:"bytes,8,opt,name=development_mode,json=developmentMode,proto3" json:"development_mode,omitempty"`
+	ContractConfigLoadTimeout          *durationpb.Duration   `protobuf:"bytes,9,opt,name=contract_config_load_timeout,json=contractConfigLoadTimeout,proto3" json:"contract_config_load_timeout,omitempty"`
+	DefaultMaxDurationInitialization   *durationpb.Duration   `protobuf:"bytes,10,opt,name=default_max_duration_initialization,json=defaultMaxDurationInitialization,proto3" json:"default_max_duration_initialization,omitempty"`
 	unknownFields                      protoimpl.UnknownFields
 	sizeCache                          protoimpl.SizeCache
 }
@@ -120,6 +122,20 @@ func (x *LocalConfig) GetDevelopmentMode() string {
 		return x.DevelopmentMode
 	}
 	return ""
+}
+
+func (x *LocalConfig) GetContractConfigLoadTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.ContractConfigLoadTimeout
+	}
+	return nil
+}
+
+func (x *LocalConfig) GetDefaultMaxDurationInitialization() *durationpb.Duration {
+	if x != nil {
+		return x.DefaultMaxDurationInitialization
+	}
+	return nil
 }
 
 type NewOracleRequest struct {
@@ -246,7 +262,7 @@ var File_oraclefactory_proto protoreflect.FileDescriptor
 
 const file_oraclefactory_proto_rawDesc = "" +
 	"\n" +
-	"\x13oraclefactory.proto\x12\x04loop\x1a\x1egoogle/protobuf/duration.proto\"\x8d\x05\n" +
+	"\x13oraclefactory.proto\x12\x04loop\x1a\x1egoogle/protobuf/duration.proto\"\xd3\x06\n" +
 	"\vLocalConfig\x12H\n" +
 	"\x12blockchain_timeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x11blockchainTimeout\x12B\n" +
 	"\x1dcontract_config_confirmations\x18\x02 \x01(\rR\x1bcontractConfigConfirmations\x12K\n" +
@@ -255,7 +271,10 @@ const file_oraclefactory_proto_rawDesc = "" +
 	"%contract_transmitter_transmit_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\"contractTransmitterTransmitTimeout\x12D\n" +
 	"\x10database_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x0fdatabaseTimeout\x12W\n" +
 	"\x1bmin_ocr2_max_duration_query\x18\a \x01(\v2\x19.google.protobuf.DurationR\x17minOcr2MaxDurationQuery\x12)\n" +
-	"\x10development_mode\x18\b \x01(\tR\x0fdevelopmentMode\"\xca\x02\n" +
+	"\x10development_mode\x18\b \x01(\tR\x0fdevelopmentMode\x12Z\n" +
+	"\x1ccontract_config_load_timeout\x18\t \x01(\v2\x19.google.protobuf.DurationR\x19contractConfigLoadTimeout\x12h\n" +
+	"#default_max_duration_initialization\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR defaultMaxDurationInitialization\"\xca\x02\n" +
 	"\x10NewOracleRequest\x124\n" +
 	"\flocal_config\x18\x01 \x01(\v2\x11.loop.LocalConfigR\vlocalConfig\x12L\n" +
 	"#reporting_plugin_factory_service_id\x18\x02 \x01(\rR\x1freportingPluginFactoryServiceId\x12;\n" +
@@ -292,14 +311,16 @@ var file_oraclefactory_proto_depIdxs = []int32{
 	3, // 2: loop.LocalConfig.contract_transmitter_transmit_timeout:type_name -> google.protobuf.Duration
 	3, // 3: loop.LocalConfig.database_timeout:type_name -> google.protobuf.Duration
 	3, // 4: loop.LocalConfig.min_ocr2_max_duration_query:type_name -> google.protobuf.Duration
-	0, // 5: loop.NewOracleRequest.local_config:type_name -> loop.LocalConfig
-	1, // 6: loop.OracleFactory.NewOracle:input_type -> loop.NewOracleRequest
-	2, // 7: loop.OracleFactory.NewOracle:output_type -> loop.NewOracleReply
-	7, // [7:8] is the sub-list for method output_type
-	6, // [6:7] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	3, // 5: loop.LocalConfig.contract_config_load_timeout:type_name -> google.protobuf.Duration
+	3, // 6: loop.LocalConfig.default_max_duration_initialization:type_name -> google.protobuf.Duration
+	0, // 7: loop.NewOracleRequest.local_config:type_name -> loop.LocalConfig
+	1, // 8: loop.OracleFactory.NewOracle:input_type -> loop.NewOracleRequest
+	2, // 9: loop.OracleFactory.NewOracle:output_type -> loop.NewOracleReply
+	9, // [9:10] is the sub-list for method output_type
+	8, // [8:9] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_oraclefactory_proto_init() }

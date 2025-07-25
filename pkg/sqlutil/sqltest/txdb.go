@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 
@@ -38,11 +39,9 @@ func RegisterTxDB(dbURL string) error {
 	defer registerMutex.Unlock()
 	drivers := sql.Drivers()
 
-	for _, driver := range drivers {
-		if driver == pg.DriverTxWrappedPostgres {
-			// TxDB driver already registered
-			return nil
-		}
+	if slices.Contains(drivers, pg.DriverTxWrappedPostgres) {
+		// TxDB driver already registered
+		return nil
 	}
 
 	if dbURL != pg.DriverInMemoryPostgres {

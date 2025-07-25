@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"sort"
 	"strconv"
 	"time"
@@ -534,12 +535,7 @@ func formatReport(report map[string]any, format string) (any, error) {
 }
 
 func isOneOf(toCheck string, options []string) bool {
-	for _, option := range options {
-		if toCheck == option {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(options, toCheck)
 }
 
 func NewReduceAggregator(config values.Map) (types.Aggregator, error) {

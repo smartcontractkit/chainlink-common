@@ -1,0 +1,198 @@
+name: Setup Go
+description: Setup Golang with efficient caching
+inputs:
+  go-version-file:
+    description: Set where the go version file is located at
+    default: "go.mod"
+  go-module-file:
+    description: Set where the go module file is located at
+    default: "go.sum"
+  only-modules:
+    description: Set to 'true' to only cache modules
+    default: "false"
+  cache-version:
+    description: Set this to cache bust
+    default: "1"
+  build-cache-version:
+    description: For scoping build caches to certain matrix jobs, takes precedence over cache-version
+    default: "1"
+  restore-module-cache-only:
+    description: |
+      Only restore the module cache, don't automatically update it.
+      Leave the updating to go-mod-cache.yml.
+    default: "true"
+  restore-build-cache-only:
+    description: |
+      Only restore the build cache, don't automatically update it.
+      Leave the updating to go-mod-cache.yml.
+    default: "true"
+
+outputs:
+  primary-cache-hit-modules:
+    description: |
+      Set to 'true' if the primary cache for modules was hit.
+      This is useful for debugging cache misses.
+    value: ${{ steps.cache-modules.outputs.cache-hit == 'true' || steps.cache-modules-restore.outputs.cache-hit == 'true' }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get Go Version
+      shell: bash
+      id: go-version
+      run: |
+        version=$(sed -ne '/^toolchain /s/^toolchain go//p' ${{ inputs.go-version-file }})
+        if [ -z "$version" ]; then
+          version=$(sed -ne '/^go /s/^go //p' ${{ inputs.go-version-file }})
+          echo "Toolchain version not found in ${{ inputs.go-version-file }}, using go directive instead."
+        fi
+        echo "Go Version: $version"
+        echo "version=$version" | tee -a "$GITHUB_OUTPUT"
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ steps.go-version.outputs.version }}
+        cache: false
+        check-latest: true
+
+    # MODULE CACHE LOGIC
+    # ---
+
+    # 1. Set the go cache directories and mod path
+    # ---
+    # This technically also sets the directory of the build cache, leaving here for consistency.
+    - name: Set go cache dirs
+      shell: bash
+      id: go-cache-dir
+      env:
+        GO_MODULE_FILE: ${{ inputs.go-module-file }}
+      run: |
+        echo "gomodcache=$(go env GOMODCACHE)" | tee -a "$GITHUB_OUTPUT"
+        echo "gobuildcache=$(go env GOCACHE)" | tee -a "$GITHUB_OUTPUT"
+        echo "mod-path=./${GO_MODULE_FILE}" | tee -a "$GITHUB_OUTPUT"
+
+    # 2. Build the module cache keys
+    # ---
+    # - The primary key includes the hash of the go module file.
+    # - The secondary key is a prefix of the primary key, which allows for cache lookups.
+    # ---
+    # We build the cache keys here so that we can guarantee that the cache keys are the same
+    # across the conditional steps below.
+    # ---
+    - name: Module Cache Keys
+      id: module-cache-keys
+      shell: bash
+      env:
+        CACHE_VERSION: ${{ inputs.cache-version }}
+        RUNNER_OS: ${{ runner.os }}
+        MOD_HASH: ${{  hashFiles(steps.go-cache-dir.outputs.mod-path) }}
+      run: |
+        KEY_PREFIX="${RUNNER_OS}-gomod-${CACHE_VERSION}"
+
+        PRIMARY_KEY="${KEY_PREFIX}-${MOD_HASH}"
+        echo "primary-key=${PRIMARY_KEY}" | tee -a "$GITHUB_OUTPUT"
+
+        SECONDARY_KEY="${KEY_PREFIX}-"
+        echo "secondary-key=${SECONDARY_KEY}" | tee -a "$GITHUB_OUTPUT"
+
+    # By default, restore the cache only.
+    # Let the `go-mod-cache.yml` workflow handle the creation of new module caches.
+    - uses: actions/cache/restore@v4
+      if: ${{ inputs.restore-module-cache-only == 'true' }}
+      name: Cache Go Modules (Restore)
+      id: cache-modules-restore
+      with:
+        path: |
+          ${{ steps.go-cache-dir.outputs.gomodcache }}
+        key: ${{ steps.module-cache-keys.outputs.primary-key }}
+        restore-keys: |
+          ${{ steps.module-cache-keys.outputs.secondary-key }}
+
+    # If this is called, then it will create the cache entry upon a cache miss.
+    # The cache is created after a cache miss, and after job completes successfully.
+    - uses: actions/cache@v4
+      if: ${{ inputs.restore-module-cache-only != 'true' }}
+      id: cache-modules
+      name: Cache Go Modules
+      with:
+        path: |
+          ${{ steps.go-cache-dir.outputs.gomodcache }}
+        key: ${{ steps.module-cache-keys.outputs.primary-key }}
+
+    # BUILD CACHE LOGIC
+    # ---
+
+    # 1. Get the branch names as they are used in the cache keys
+    # ---
+    - name: Get branch name
+      if: ${{ inputs.only-modules == 'false' }}
+      id: branch-name
+      uses: smartcontractkit/.github/actions/branch-names@branch-names/1.0.0
+
+    # 2. Build the cache keys
+    # ---
+    # - The primary key is the OS + gobuild + cache version + trunk branch name + SHA
+    # - The secondary key is the above primary key without the SHA
+    # ---
+    # We build the cache keys here so that we can guarantee that the cache keys are the same
+    # across the conditional steps below.
+    # ---
+    # Why do we only create a build cache for trunk branches?
+    #   Because of the limited cache space offered by GitHub Actions, we don't want to create a build cache for every branch.
+    #   The build cache built from trunk will be created from scratch, and will act as the cache for all branches.
+    #   The PR branches will restore from the most recent trunk build cache, which will be the most up-to-date.
+    - name: Build Cache Setup
+      if: ${{ inputs.only-modules == 'false' }}
+      id: build-cache-setup
+      shell: bash
+      env:
+        CURRENT_BRANCH: ${{ steps.branch-name.outputs.current_branch }}
+        DEFAULT_BRANCH: ${{ steps.branch-name.outputs.default_branch }}
+        RUNNER_OS: ${{ runner.os }}
+        SHOULD_CREATE_BUILD_CACHE: >-
+          ${{
+            steps.branch-name.outputs.default_branch == steps.branch-name.outputs.current_branch &&
+            inputs.restore-build-cache-only == 'false'
+          }}
+        KEY_PREFIX: "${{ runner.os }}-gobuild-${{ inputs.build-cache-version || inputs.cache-version }}"
+      run: |
+        SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+
+        TRUNK_PRIMARY_KEY="${KEY_PREFIX}-${DEFAULT_BRANCH}-${SHORT_SHA}"
+        TRUNK_RESTORE_KEY="${KEY_PREFIX}-${DEFAULT_BRANCH}-"
+
+        echo "trunk-primary-key=${TRUNK_PRIMARY_KEY}" | tee -a "$GITHUB_OUTPUT"
+        echo "trunk-restore-key=${TRUNK_RESTORE_KEY}" | tee -a "$GITHUB_OUTPUT"
+
+        echo "create-build-cache=${SHOULD_CREATE_BUILD_CACHE}" | tee -a "$GITHUB_OUTPUT"
+
+    # 3. Restore the build cache
+    # ---
+    # We restore the build cache if it exists, but we do not create a new cache entry.
+    # The restore key matches the prefix of a the primary key for the build cache from trunk.
+    - uses: actions/cache/restore@v4
+      name: Cache Go Build Outputs (restore)
+      id: build-cache-restore
+      if: ${{ inputs.only-modules == 'false' && steps.build-cache-setup.outputs.create-build-cache != 'true' }}
+      with:
+        path: |
+          ${{ steps.go-cache-dir.outputs.gobuildcache }}
+        key: ${{ steps.build-cache-setup.outputs.trunk-primary-key }}
+        restore-keys: |
+          ${{ steps.build-cache-setup.outputs.trunk-restore-key }}
+
+    # 4. Create the build cache
+    # ---
+    # - This will restore the cache if it exists, then it will NOT create a new cache entry
+    #   as we're only supplying the primary key.
+    # - If the cache does not exist, then nothing will be restored and it will create a new cache entry once
+    #   the job completes successfully.
+    - uses: actions/cache@v4
+      if: ${{ inputs.only-modules == 'false' && steps.build-cache-setup.outputs.create-build-cache == 'true'}}
+      id: build-cache
+      name: Cache Go Build Outputs
+      with:
+        path: |
+          ${{ steps.go-cache-dir.outputs.gobuildcache }}
+        key: ${{ steps.build-cache-setup.outputs.trunk-primary-key }}

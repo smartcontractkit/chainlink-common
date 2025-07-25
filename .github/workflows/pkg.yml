@@ -1,6 +1,10 @@
 name: PKG Build and Test
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build-test:
@@ -8,6 +12,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+
 
       - name: Set up Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -30,7 +35,7 @@ jobs:
           fi
 
       - name: Fuzz Tests
-        # the amount of --seconds here is subject to change based on how long the CI job takes in the future
+        # the amount of --seconds here is subject to `change based on how long the CI job takes in the future
         # as we add more fuzz tests, we should take into consideration increasing this timelapse, so we can have enough coverage.
         # We are timing out after ~10mins in case the tests hang. (Current CI duration is ~7m, modify if needed)
         # See https://github.com/golang/go/issues/52569 there's a bug that causes fuzz tests to fail if they run too long.
@@ -72,3 +77,18 @@ jobs:
           make generate
           git add --all
           git diff --stat --cached --exit-code
+
+  gorelease:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - name: Set up Go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: "go.mod"
+      - if: ${{ github.event.pull_request != '' }}
+        run: echo "GORELEASE_BASE=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+      - if: ${{ github.event.pull_request == '' }}
+        run: echo "GORELEASE_BASE=none" >> $GITHUB_ENV
+      - run: make gorelease

@@ -73,7 +73,7 @@ func (c ExtraDataCodec) DecodeTokenAmountDestExecData(destExecData Bytes, source
 
 	codec, exist := c[family]
 	if !exist {
-		return nil, fmt.Errorf("unsupported family for extra args type %s", family)
+		return nil, fmt.Errorf("unsupported family for dest exec data type %s", family)
 	}
 
 	return codec.DecodeDestExecDataToMap(destExecData)

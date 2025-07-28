@@ -32,7 +32,7 @@ func NewOtelLogger(name string) otellog.Logger {
 }
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
-func NewOtelZapCore(logger otellog.Logger, opts ...Option) zapcore.Core {
+func NewCore(logger otellog.Logger, opts ...Option) zapcore.Core {
 
 	c := &OtelZapCore{
 		logger:       logger,

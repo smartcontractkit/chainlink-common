@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -48,15 +47,15 @@ type CronServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := cs.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *CronServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := c.CronCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	cs.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = capabilityRegistry
 
 	if err := capabilityRegistry.Add(ctx, &cronCapability{
-		CronCapability: cs.CronCapability,
+		CronCapability: c.CronCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -64,25 +63,25 @@ func (cs *CronServer) Initialise(ctx context.Context, config string, telemetrySe
 	return nil
 }
 
-func (cs *CronServer) Close() error {
+func (c *CronServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
+	if c.capabilityRegistry != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "cron-trigger@1.0.0"); err != nil {
 			return err
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if c.stopCh != nil {
+		close(c.stopCh)
 	}
 
-	return cs.cronCapability.Close()
+	return c.cronCapability.Close()
 }
 
-func (cs *CronServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.cronCapability.Info(ctx)
+func (c *CronServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := c.cronCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}

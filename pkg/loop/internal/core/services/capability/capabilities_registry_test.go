@@ -159,23 +159,30 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	expectedNode := capabilities.Node{
 		PeerID: &pid,
 		WorkflowDON: capabilities.DON{
-			ID: 11,
+			ID:   11,
+			Name: "test-workflow-don",
 			Members: []p2ptypes.PeerID{
 				[32]byte{0: 2},
 				[32]byte{0: 3},
 			},
 			F:             2,
 			ConfigVersion: 1,
+			Families:      []string{"a"},
+			Config:        []byte("test-config"),
 		},
 		CapabilityDONs: []capabilities.DON{
 			{
 				ID:            22,
+				Name:          "test-capability-don-1",
 				Members:       []p2ptypes.PeerID{},
 				F:             1,
 				ConfigVersion: 2,
+				Families:      []string{"a"},
+				Config:        []byte("test-config"),
 			},
 			{
-				ID: 33,
+				ID:   33,
+				Name: "test-capability-don-2",
 				Members: []p2ptypes.PeerID{
 					[32]byte{0: 4},
 					[32]byte{0: 5},
@@ -183,6 +190,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 				},
 				F:             3,
 				ConfigVersion: 3,
+				Families:      []string{"a"},
+				Config:        []byte("test-config"),
 			},
 		},
 	}
@@ -357,23 +366,29 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 }
 func TestToDON(t *testing.T) {
 	don := &pb.DON{
-		Id: 0,
+		Id:   0,
+		Name: "test-don",
 		Members: [][]byte{
 			{0: 4, 31: 0},
 			{0: 5, 31: 0},
 		},
 		F:             2,
 		ConfigVersion: 1,
+		Families:      []string{"a"},
+		Config:        []byte("test-config"),
 	}
 
 	expected := capabilities.DON{
-		ID: 0,
+		ID:   0,
+		Name: "test-don",
 		Members: []p2ptypes.PeerID{
 			[32]byte{0: 4},
 			[32]byte{0: 5},
 		},
 		F:             2,
 		ConfigVersion: 1,
+		Families:      []string{"a"},
+		Config:        []byte("test-config"),
 	}
 
 	actual := toDON(don)
@@ -491,6 +506,9 @@ func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
 	require.Equal(t, expectedNode.WorkflowDON.ID, actualNode.WorkflowDON.ID)
 	require.Equal(t, expectedNode.WorkflowDON.F, actualNode.WorkflowDON.F)
 	require.Equal(t, expectedNode.WorkflowDON.ConfigVersion, actualNode.WorkflowDON.ConfigVersion)
+	require.Equal(t, expectedNode.WorkflowDON.Name, actualNode.WorkflowDON.Name)
+	require.Equal(t, expectedNode.WorkflowDON.Families, actualNode.WorkflowDON.Families)
+	require.Equal(t, expectedNode.WorkflowDON.Config, actualNode.WorkflowDON.Config)
 
 	// check capability DONs
 	require.Len(t, expectedNode.CapabilityDONs, len(actualNode.CapabilityDONs))
@@ -500,5 +518,8 @@ func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
 		require.ElementsMatch(t, expectedNode.CapabilityDONs[i].Members, actualNode.CapabilityDONs[i].Members)
 		require.Equal(t, expectedNode.CapabilityDONs[i].F, actualNode.CapabilityDONs[i].F)
 		require.Equal(t, expectedNode.CapabilityDONs[i].ConfigVersion, actualNode.CapabilityDONs[i].ConfigVersion)
+		require.Equal(t, expectedNode.CapabilityDONs[i].Name, actualNode.CapabilityDONs[i].Name)
+		require.Equal(t, expectedNode.CapabilityDONs[i].Families, actualNode.CapabilityDONs[i].Families)
+		require.Equal(t, expectedNode.CapabilityDONs[i].Config, actualNode.CapabilityDONs[i].Config)
 	}
 }

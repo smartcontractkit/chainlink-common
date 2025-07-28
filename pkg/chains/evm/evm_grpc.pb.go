@@ -27,8 +27,9 @@ const (
 	EVM_EstimateGas_FullMethodName             = "/loop.evm.EVM/EstimateGas"
 	EVM_GetTransactionByHash_FullMethodName    = "/loop.evm.EVM/GetTransactionByHash"
 	EVM_GetTransactionReceipt_FullMethodName   = "/loop.evm.EVM/GetTransactionReceipt"
-	EVM_LatestAndFinalizedHead_FullMethodName  = "/loop.evm.EVM/LatestAndFinalizedHead"
+	EVM_HeaderByNumber_FullMethodName          = "/loop.evm.EVM/HeaderByNumber"
 	EVM_QueryTrackedLogs_FullMethodName        = "/loop.evm.EVM/QueryTrackedLogs"
+	EVM_GetFiltersNames_FullMethodName         = "/loop.evm.EVM/GetFiltersNames"
 	EVM_RegisterLogTracking_FullMethodName     = "/loop.evm.EVM/RegisterLogTracking"
 	EVM_UnregisterLogTracking_FullMethodName   = "/loop.evm.EVM/UnregisterLogTracking"
 	EVM_GetTransactionStatus_FullMethodName    = "/loop.evm.EVM/GetTransactionStatus"
@@ -48,8 +49,9 @@ type EVMClient interface {
 	EstimateGas(ctx context.Context, in *EstimateGasRequest, opts ...grpc.CallOption) (*EstimateGasReply, error)
 	GetTransactionByHash(ctx context.Context, in *GetTransactionByHashRequest, opts ...grpc.CallOption) (*GetTransactionByHashReply, error)
 	GetTransactionReceipt(ctx context.Context, in *GetTransactionReceiptRequest, opts ...grpc.CallOption) (*GetTransactionReceiptReply, error)
-	LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error)
+	HeaderByNumber(ctx context.Context, in *HeaderByNumberRequest, opts ...grpc.CallOption) (*HeaderByNumberReply, error)
 	QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRequest, opts ...grpc.CallOption) (*QueryTrackedLogsReply, error)
+	GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFiltersNamesReply, error)
 	RegisterLogTracking(ctx context.Context, in *RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnregisterLogTracking(ctx context.Context, in *UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetTransactionStatus(ctx context.Context, in *GetTransactionStatusRequest, opts ...grpc.CallOption) (*GetTransactionStatusReply, error)
@@ -136,10 +138,10 @@ func (c *eVMClient) GetTransactionReceipt(ctx context.Context, in *GetTransactio
 	return out, nil
 }
 
-func (c *eVMClient) LatestAndFinalizedHead(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LatestAndFinalizedHeadReply, error) {
+func (c *eVMClient) HeaderByNumber(ctx context.Context, in *HeaderByNumberRequest, opts ...grpc.CallOption) (*HeaderByNumberReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LatestAndFinalizedHeadReply)
-	err := c.cc.Invoke(ctx, EVM_LatestAndFinalizedHead_FullMethodName, in, out, cOpts...)
+	out := new(HeaderByNumberReply)
+	err := c.cc.Invoke(ctx, EVM_HeaderByNumber_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +152,16 @@ func (c *eVMClient) QueryTrackedLogs(ctx context.Context, in *QueryTrackedLogsRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryTrackedLogsReply)
 	err := c.cc.Invoke(ctx, EVM_QueryTrackedLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eVMClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetFiltersNamesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFiltersNamesReply)
+	err := c.cc.Invoke(ctx, EVM_GetFiltersNames_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +239,9 @@ type EVMServer interface {
 	EstimateGas(context.Context, *EstimateGasRequest) (*EstimateGasReply, error)
 	GetTransactionByHash(context.Context, *GetTransactionByHashRequest) (*GetTransactionByHashReply, error)
 	GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*GetTransactionReceiptReply, error)
-	LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error)
+	HeaderByNumber(context.Context, *HeaderByNumberRequest) (*HeaderByNumberReply, error)
 	QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error)
+	GetFiltersNames(context.Context, *emptypb.Empty) (*GetFiltersNamesReply, error)
 	RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error)
 	UnregisterLogTracking(context.Context, *UnregisterLogTrackingRequest) (*emptypb.Empty, error)
 	GetTransactionStatus(context.Context, *GetTransactionStatusRequest) (*GetTransactionStatusReply, error)
@@ -266,11 +279,14 @@ func (UnimplementedEVMServer) GetTransactionByHash(context.Context, *GetTransact
 func (UnimplementedEVMServer) GetTransactionReceipt(context.Context, *GetTransactionReceiptRequest) (*GetTransactionReceiptReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
 }
-func (UnimplementedEVMServer) LatestAndFinalizedHead(context.Context, *emptypb.Empty) (*LatestAndFinalizedHeadReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LatestAndFinalizedHead not implemented")
+func (UnimplementedEVMServer) HeaderByNumber(context.Context, *HeaderByNumberRequest) (*HeaderByNumberReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HeaderByNumber not implemented")
 }
 func (UnimplementedEVMServer) QueryTrackedLogs(context.Context, *QueryTrackedLogsRequest) (*QueryTrackedLogsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
+}
+func (UnimplementedEVMServer) GetFiltersNames(context.Context, *emptypb.Empty) (*GetFiltersNamesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
 func (UnimplementedEVMServer) RegisterLogTracking(context.Context, *RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
@@ -437,20 +453,20 @@ func _EVM_GetTransactionReceipt_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EVM_LatestAndFinalizedHead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+func _EVM_HeaderByNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeaderByNumberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EVMServer).LatestAndFinalizedHead(ctx, in)
+		return srv.(EVMServer).HeaderByNumber(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EVM_LatestAndFinalizedHead_FullMethodName,
+		FullMethod: EVM_HeaderByNumber_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EVMServer).LatestAndFinalizedHead(ctx, req.(*emptypb.Empty))
+		return srv.(EVMServer).HeaderByNumber(ctx, req.(*HeaderByNumberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -469,6 +485,24 @@ func _EVM_QueryTrackedLogs_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(EVMServer).QueryTrackedLogs(ctx, req.(*QueryTrackedLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EVM_GetFiltersNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EVMServer).GetFiltersNames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EVM_GetFiltersNames_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EVMServer).GetFiltersNames(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -617,12 +651,16 @@ var EVM_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EVM_GetTransactionReceipt_Handler,
 		},
 		{
-			MethodName: "LatestAndFinalizedHead",
-			Handler:    _EVM_LatestAndFinalizedHead_Handler,
+			MethodName: "HeaderByNumber",
+			Handler:    _EVM_HeaderByNumber_Handler,
 		},
 		{
 			MethodName: "QueryTrackedLogs",
 			Handler:    _EVM_QueryTrackedLogs_Handler,
+		},
+		{
+			MethodName: "GetFiltersNames",
+			Handler:    _EVM_GetFiltersNames_Handler,
 		},
 		{
 			MethodName: "RegisterLogTracking",

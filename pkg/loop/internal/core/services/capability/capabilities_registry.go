@@ -34,9 +34,12 @@ func toDON(don *pb.DON) capabilities.DON {
 
 	return capabilities.DON{
 		ID:            don.Id,
+		Name:          don.Name,
 		Members:       members,
 		F:             uint8(don.F),
 		ConfigVersion: don.ConfigVersion,
+		Families:      don.Families,
+		Config:        don.Config,
 	}
 }
 
@@ -49,9 +52,12 @@ func toPbDON(don capabilities.DON) *pb.DON {
 
 	return &pb.DON{
 		Id:            don.ID,
+		Name:          don.Name,
 		Members:       membersBytes,
 		F:             uint32(don.F),
 		ConfigVersion: don.ConfigVersion,
+		Families:      don.Families,
+		Config:        don.Config,
 	}
 }
 

@@ -34,28 +34,28 @@ type Logger interface {
 	// Name returns the fully qualified name of the logger.
 	Name() string
 
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Panic(args ...interface{})
+	Debug(args ...any)
+	Info(args ...any)
+	Warn(args ...any)
+	Error(args ...any)
+	Panic(args ...any)
 	// Fatal logs and then calls os.Exit(1)
 	// Be careful about using this since it does NOT unwind the stack and may exit uncleanly
-	Fatal(args ...interface{})
+	Fatal(args ...any)
 
-	Debugf(format string, values ...interface{})
-	Infof(format string, values ...interface{})
-	Warnf(format string, values ...interface{})
-	Errorf(format string, values ...interface{})
-	Panicf(format string, values ...interface{})
-	Fatalf(format string, values ...interface{})
+	Debugf(format string, values ...any)
+	Infof(format string, values ...any)
+	Warnf(format string, values ...any)
+	Errorf(format string, values ...any)
+	Panicf(format string, values ...any)
+	Fatalf(format string, values ...any)
 
-	Debugw(msg string, keysAndValues ...interface{})
-	Infow(msg string, keysAndValues ...interface{})
-	Warnw(msg string, keysAndValues ...interface{})
-	Errorw(msg string, keysAndValues ...interface{})
-	Panicw(msg string, keysAndValues ...interface{})
-	Fatalw(msg string, keysAndValues ...interface{})
+	Debugw(msg string, keysAndValues ...any)
+	Infow(msg string, keysAndValues ...any)
+	Warnw(msg string, keysAndValues ...any)
+	Errorw(msg string, keysAndValues ...any)
+	Panicw(msg string, keysAndValues ...any)
+	Fatalw(msg string, keysAndValues ...any)
 
 	// Sync flushes any buffered log entries.
 	// Some insignificant errors are suppressed.
@@ -75,7 +75,7 @@ func New() (Logger, error) { return defaultConfig.New() }
 func (c *Config) New() (Logger, error) {
 	return NewWith(func(cfg *zap.Config) {
 		cfg.Level.SetLevel(c.Level)
-		cfg.InitialFields = map[string]interface{}{
+		cfg.InitialFields = map[string]any{
 			"version": buildVersion(),
 		}
 	})
@@ -156,7 +156,7 @@ type logger struct {
 	*zap.SugaredLogger
 }
 
-func (l *logger) with(args ...interface{}) Logger {
+func (l *logger) with(args ...any) Logger {
 	return &logger{l.SugaredLogger.With(args...)}
 }
 
@@ -178,8 +178,8 @@ func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
 	return l.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))
 }
 
-// With returns a Logger with keyvals, if 'l' has a method `With(...interface{}) L`, where L implements Logger, otherwise it returns l.
-func With(l Logger, keyvals ...interface{}) Logger {
+// With returns a Logger with keyvals, if 'l' has a method `With(...any) L`, where L implements Logger, otherwise it returns l.
+func With(l Logger, keyvals ...any) Logger {
 	switch t := l.(type) {
 	case *logger:
 		return t.with(keyvals...)
@@ -249,7 +249,7 @@ func Helper(l Logger, skip int) Logger {
 // Deprecated: instead use [SugaredLogger.Critical]:
 //
 //	Sugared(l).Critical(args...)
-func Critical(l Logger, args ...interface{}) {
+func Critical(l Logger, args ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Critical(args...)
 }
@@ -257,7 +257,7 @@ func Critical(l Logger, args ...interface{}) {
 // Deprecated: instead use [SugaredLogger.Criticalf]:
 //
 //	Sugared(l).Criticalf(args...)
-func Criticalf(l Logger, format string, values ...interface{}) {
+func Criticalf(l Logger, format string, values ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalf(format, values...)
 }
@@ -265,7 +265,7 @@ func Criticalf(l Logger, format string, values ...interface{}) {
 // Deprecated: instead use [SugaredLogger.Criticalw]:
 //
 //	Sugared(l).Criticalw(args...)
-func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
+func Criticalw(l Logger, msg string, keysAndValues ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalw(msg, keysAndValues...)
 }

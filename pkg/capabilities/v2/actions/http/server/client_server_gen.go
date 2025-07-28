@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/http"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -44,15 +43,15 @@ type ClientServer struct {
 	stopCh             chan struct{}
 }
 
-func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
-	if err := cs.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
+func (c *ClientServer) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore, capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog, pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory, gatewayConnector core.GatewayConnector, p2pKeystore core.Keystore) error {
+	if err := c.ClientCapability.Initialise(ctx, config, telemetryService, store, errorLog, pipelineRunner, relayerSet, oracleFactory, gatewayConnector, p2pKeystore); err != nil {
 		return fmt.Errorf("error when initializing capability: %w", err)
 	}
 
-	cs.capabilityRegistry = capabilityRegistry
+	c.capabilityRegistry = capabilityRegistry
 
 	if err := capabilityRegistry.Add(ctx, &clientCapability{
-		ClientCapability: cs.ClientCapability,
+		ClientCapability: c.ClientCapability,
 	}); err != nil {
 		return fmt.Errorf("error when adding kv store action to the registry: %w", err)
 	}
@@ -60,25 +59,25 @@ func (cs *ClientServer) Initialise(ctx context.Context, config string, telemetry
 	return nil
 }
 
-func (cs *ClientServer) Close() error {
+func (c *ClientServer) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if cs.capabilityRegistry != nil {
-		if err := cs.capabilityRegistry.Remove(ctx, "http-actions@1.0.0-alpha"); err != nil {
+	if c.capabilityRegistry != nil {
+		if err := c.capabilityRegistry.Remove(ctx, "http-actions@1.0.0-alpha"); err != nil {
 			return err
 		}
 	}
 
-	if cs.stopCh != nil {
-		close(cs.stopCh)
+	if c.stopCh != nil {
+		close(c.stopCh)
 	}
 
-	return cs.clientCapability.Close()
+	return c.clientCapability.Close()
 }
 
-func (cs *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
-	info, err := cs.clientCapability.Info(ctx)
+func (c *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error) {
+	info, err := c.clientCapability.Info(ctx)
 	if err != nil {
 		return nil, err
 	}

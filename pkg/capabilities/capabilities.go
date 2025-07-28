@@ -289,12 +289,15 @@ type ExecutableAndTriggerCapability interface {
 // For an example of an empty DON check, see the following link:
 // https://github.com/smartcontractkit/chainlink/blob/develop/core/capabilities/transmission/local_target_capability.go#L31
 type DON struct {
+	Name             string
 	ID               uint32
+	Families         []string
 	ConfigVersion    uint32
 	Members          []p2ptypes.PeerID
 	F                uint8
 	IsPublic         bool
 	AcceptsWorkflows bool
+	Config           []byte
 }
 
 // Node contains the node's peer ID and the DONs it is part of.
@@ -358,7 +361,7 @@ func (c CapabilityInfo) Info(ctx context.Context) (CapabilityInfo, error) {
 //
 // The difference between the regex within the link above and this one is that we do not use double backslashes, since
 // we only needed those for JSON schema regex validation.
-var idRegex = regexp.MustCompile(`^[a-z0-9_\-:]+@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
+var idRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-:]+@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
 
 const (
 	// TODO: this length was largely picked arbitrarily.

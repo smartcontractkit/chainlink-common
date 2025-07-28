@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753382293448,
+  "lastUpdate": 1753728510948,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21546,6 +21546,48 @@ window.BENCHMARK_DATA = {
             "value": 28239,
             "unit": "ns/op",
             "extra": "42658 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7331df7294cc45c6f7fc99ef5f335fd5c0eaf971",
+          "message": "INFOPLAT-1035: logger implement otelzap (#1359)\n\n* wip\n\n* Add Write function implementation\n\n* Implement Write() function\n\n* Add tests\n\n* Update pkg/logger/zap_otel.go\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>\n\n* Add WithScopeName and default to beholder\n\n* Allow applying options to NewOtelZapCore\n\n* Enable writing to both Otel and Zap\n\n* Use global provider\n\n* Move OtelZapCore to separate package \"otellogger\"\n\n* Create NewWithCores function that accepts variadic zap cores and combines them using zapcore.NewTee\n\n* Change the package name to otelzap\n\n* Update pkg/logger/logger.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Update pkg/logger/otelzap/otelzap.go\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Remove NewOtelLogger function\n\n---------\n\nCo-authored-by: engnke <nkeng.atabong@smartcontract.com>\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-07-28T13:47:04-05:00",
+          "tree_id": "add272a454dee5a00f013738bfb8f1ae19ff4f3b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7331df7294cc45c6f7fc99ef5f335fd5c0eaf971"
+        },
+        "date": 1753728509607,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.7,
+            "unit": "ns/op",
+            "extra": "3360637 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.2,
+            "unit": "ns/op",
+            "extra": "2919364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28152,
+            "unit": "ns/op",
+            "extra": "42634 times\n4 procs"
           }
         ]
       }

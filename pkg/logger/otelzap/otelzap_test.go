@@ -150,7 +150,7 @@ func TestOtelZapCore_Write(t *testing.T) {
 	)
 
 	logger := provider.Logger("test")
-	core := NewOtelZapCore(logger).(*OtelZapCore)
+	core := NewCore(logger).(*OtelZapCore)
 
 	tests := []struct {
 		name        string

@@ -8,7 +8,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
-	otelglobal "go.opentelemetry.io/otel/log/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
@@ -24,12 +23,6 @@ type OtelZapCore struct {
 }
 
 type Option func(c *OtelZapCore)
-
-// NOTE: [beholder.SetGlobalOtelProviders](https://github.com/smartcontractkit/chainlink-common/blob/27faefc9ce454c8aa2b1b7484e377ea3e8996bba/pkg/beholder/global.go#L50)
-// must be called before using `NewOtelLogger` otherwise otelglobal.GetLoggerProvider() returns noop provider
-func NewOtelLogger(name string) otellog.Logger {
-	return otelglobal.GetLoggerProvider().Logger(name)
-}
 
 // NewOtelCore initializes an OpenTelemetry Core for exporting logs in OTLP format
 func NewCore(logger otellog.Logger, opts ...Option) zapcore.Core {

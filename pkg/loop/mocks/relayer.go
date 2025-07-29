@@ -460,6 +460,65 @@ func (_c *Relayer_Name_Call) RunAndReturn(run func() string) *Relayer_Name_Call 
 	return _c
 }
 
+// NewCCIPProvider provides a mock function with given fields: _a0, _a1
+func (_m *Relayer) NewCCIPProvider(_a0 context.Context, _a1 types.RelayArgs) (types.CCIPProvider, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewCCIPProvider")
+	}
+
+	var r0 types.CCIPProvider
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, types.RelayArgs) (types.CCIPProvider, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, types.RelayArgs) types.CCIPProvider); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.CCIPProvider)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, types.RelayArgs) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Relayer_NewCCIPProvider_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewCCIPProvider'
+type Relayer_NewCCIPProvider_Call struct {
+	*mock.Call
+}
+
+// NewCCIPProvider is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 types.RelayArgs
+func (_e *Relayer_Expecter) NewCCIPProvider(_a0 interface{}, _a1 interface{}) *Relayer_NewCCIPProvider_Call {
+	return &Relayer_NewCCIPProvider_Call{Call: _e.mock.On("NewCCIPProvider", _a0, _a1)}
+}
+
+func (_c *Relayer_NewCCIPProvider_Call) Run(run func(_a0 context.Context, _a1 types.RelayArgs)) *Relayer_NewCCIPProvider_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(types.RelayArgs))
+	})
+	return _c
+}
+
+func (_c *Relayer_NewCCIPProvider_Call) Return(_a0 types.CCIPProvider, _a1 error) *Relayer_NewCCIPProvider_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Relayer_NewCCIPProvider_Call) RunAndReturn(run func(context.Context, types.RelayArgs) (types.CCIPProvider, error)) *Relayer_NewCCIPProvider_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewConfigProvider provides a mock function with given fields: _a0, _a1
 func (_m *Relayer) NewConfigProvider(_a0 context.Context, _a1 types.RelayArgs) (types.ConfigProvider, error) {
 	ret := _m.Called(_a0, _a1)

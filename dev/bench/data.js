@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753728510948,
+  "lastUpdate": 1753827492076,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21588,6 +21588,48 @@ window.BENCHMARK_DATA = {
             "value": 28152,
             "unit": "ns/op",
             "extra": "42634 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f971f74a1243496ef5d7660e9b843871faa8d43",
+          "message": "(feat): Add flags to loopinstall plugin definitions (#1435)",
+          "timestamp": "2025-07-29T15:16:50-07:00",
+          "tree_id": "2d4004517657eee4dd2754846d2fc5aaecd2bdb2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0f971f74a1243496ef5d7660e9b843871faa8d43"
+        },
+        "date": 1753827490577,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359,
+            "unit": "ns/op",
+            "extra": "3301443 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.1,
+            "unit": "ns/op",
+            "extra": "2897422 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28158,
+            "unit": "ns/op",
+            "extra": "42424 times\n4 procs"
           }
         ]
       }

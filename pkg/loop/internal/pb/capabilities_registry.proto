@@ -35,6 +35,7 @@ message DON {
   uint32 configVersion  = 4;
   string name = 5;
   repeated string families = 6; // [n]string where n is the number of DON families
+  bytes config = 7; 
 }
 
 message NodeRequest {

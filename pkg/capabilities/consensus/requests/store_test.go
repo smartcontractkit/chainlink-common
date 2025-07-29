@@ -41,13 +41,13 @@ func TestOCR3Store(t *testing.T) {
 		assert.True(t, wasPresent)
 		reqs, err := s.FirstN(10)
 		require.NoError(t, err)
-		assert.Len(t, reqs, 0)
+		assert.Empty(t, reqs)
 	})
 
 	t.Run("firstN", func(t *testing.T) {
 		r, err := s.FirstN(1)
 		assert.NoError(t, err)
-		assert.Len(t, r, 0)
+		assert.Empty(t, r)
 	})
 
 	t.Run("firstN, zero batch size", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestOCR3Store(t *testing.T) {
 		}
 		items, err := s.RangeN(5, 100)
 		require.NoError(t, err)
-		assert.True(t, len(items) >= 5)
+		assert.GreaterOrEqual(t, len(items), 5)
 	})
 
 	t.Run("getByIDs", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestOCR3Store(t *testing.T) {
 		err := s.Add(req)
 		require.NoError(t, err)
 		reqs := s.GetByIDs([]string{rid, rid2})
-		require.Equal(t, 1, len(reqs))
+		require.Len(t, reqs, 1)
 	})
 }
 
@@ -117,7 +117,7 @@ func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
 	assert.True(t, ok)
 	reqs, err = s.FirstN(10)
 	require.NoError(t, err)
-	assert.Len(t, reqs, 0)
+	assert.Empty(t, reqs)
 
 	err = s.Add(req)
 	require.NoError(t, err)

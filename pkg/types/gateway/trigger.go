@@ -61,14 +61,12 @@ func (ws WorkflowSelector) MarshalJSON() ([]byte, error) {
 // with sorted keys at all levels for map[string]interface{}, including nested objects in the Input field.
 func (r HTTPTriggerRequest) MarshalJSON() ([]byte, error) {
 	result := make(map[string]interface{})
-	var inputData interface{}
 	if len(r.Input) > 0 {
+		var inputData interface{}
 		if err := json.Unmarshal(r.Input, &inputData); err != nil {
 			return nil, err
 		}
 		result["input"] = inputData
-	} else {
-		result["input"] = nil
 	}
 	result["key"] = r.Key
 	result["workflow"] = r.Workflow

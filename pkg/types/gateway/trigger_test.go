@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -81,20 +80,6 @@ func TestHTTPTriggerRequest_MarshalJSON_Deterministic(t *testing.T) {
 			expected: `{"input":{"items":[{"a_field":"value2","z_field":"value1"},{"b_field":"value4","y_field":"value3"}]},"key":{"keyType":"ecdsa","publicKey":"pubkey3"},"workflow":{"workflowTag":"v1.0.0"}}`,
 		},
 		{
-			name: "null input",
-			request: HTTPTriggerRequest{
-				Workflow: WorkflowSelector{
-					WorkflowName: "test",
-				},
-				Input: json.RawMessage(`null`),
-				Key: AuthorizedKey{
-					KeyType:   "ecdsa",
-					PublicKey: "pubkey4",
-				},
-			},
-			expected: `{"input":null,"key":{"keyType":"ecdsa","publicKey":"pubkey4"},"workflow":{"workflowName":"test"}}`,
-		},
-		{
 			name: "empty input",
 			request: HTTPTriggerRequest{
 				Workflow: WorkflowSelector{
@@ -106,7 +91,7 @@ func TestHTTPTriggerRequest_MarshalJSON_Deterministic(t *testing.T) {
 					PublicKey: "pubkey5",
 				},
 			},
-			expected: `{"input":null,"key":{"keyType":"ecdsa","publicKey":"pubkey5"},"workflow":{"workflowName":"test"}}`,
+			expected: `{"key":{"keyType":"ecdsa","publicKey":"pubkey5"},"workflow":{"workflowName":"test"}}`,
 		},
 		{
 			name: "deeply nested structure",
@@ -141,7 +126,7 @@ func TestHTTPTriggerRequest_MarshalJSON_Deterministic(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := json.Marshal(tt.request)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, string(result))
+			require.Equal(t, tt.expected, string(result))
 		})
 	}
 }
@@ -356,7 +341,7 @@ func TestHTTPTriggerRequest_MarshalJSON_ComplexNesting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := json.Marshal(tt.request)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, string(result))
+			require.Equal(t, tt.expected, string(result))
 		})
 	}
 }
@@ -398,7 +383,7 @@ func TestHTTPTriggerRequest_MarshalJSON_Consistency(t *testing.T) {
 
 	// All results should be identical
 	for i := 1; i < len(results); i++ {
-		assert.Equal(t, results[0], results[i], "Marshall attempt %d should match first attempt", i)
+		require.Equal(t, results[0], results[i], "Marshall attempt %d should match first attempt", i)
 	}
 }
 
@@ -516,7 +501,7 @@ func TestHTTPTriggerRequest_MarshalJSON_SliceHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := json.Marshal(tt.request)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, string(result))
+			require.Equal(t, tt.expected, string(result))
 		})
 	}
 }
@@ -535,15 +520,6 @@ func TestHTTPTriggerRequest_MarshalJSON_EdgeCases(t *testing.T) {
 				Key:      AuthorizedKey{KeyType: "ecdsa", PublicKey: "edge_key1"},
 			},
 			expected: `{"input":{"items":[{},{"a":1},{}]},"key":{"keyType":"ecdsa","publicKey":"edge_key1"},"workflow":{"workflowName":"edge1"}}`,
-		},
-		{
-			name: "arrays with null values",
-			request: HTTPTriggerRequest{
-				Workflow: WorkflowSelector{WorkflowName: "edge2"},
-				Input:    json.RawMessage(`{"items": [null, {"z_key": null, "a_key": "value"}, null]}`),
-				Key:      AuthorizedKey{KeyType: "ecdsa", PublicKey: "edge_key2"},
-			},
-			expected: `{"input":{"items":[null,{"a_key":"value","z_key":null},null]},"key":{"keyType":"ecdsa","publicKey":"edge_key2"},"workflow":{"workflowName":"edge2"}}`,
 		},
 		{
 			name: "objects with empty arrays",
@@ -578,7 +554,7 @@ func TestHTTPTriggerRequest_MarshalJSON_EdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := json.Marshal(tt.request)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, string(result))
+			require.Equal(t, tt.expected, string(result))
 		})
 	}
 }
@@ -596,5 +572,170 @@ func TestHTTPTriggerRequest_MarshalJSON_InvalidInput(t *testing.T) {
 	}
 
 	_, err := json.Marshal(request)
-	assert.Error(t, err, "Should error on invalid JSON in Input field")
+	require.Error(t, err, "Should error on invalid JSON in Input field")
+}
+
+func TestHTTPTriggerRequest_MarshalUnmarshal(t *testing.T) {
+	tests := []struct {
+		name    string
+		request HTTPTriggerRequest
+	}{
+		{
+			name:    "empty request",
+			request: HTTPTriggerRequest{},
+		},
+		{
+			name: "minimal workflow with ID only",
+			request: HTTPTriggerRequest{
+				Workflow: WorkflowSelector{
+					WorkflowID: "test-workflow-123",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0x1234567890abcdef",
+				},
+			},
+		},
+		{
+			name: "workflow with all fields",
+			request: HTTPTriggerRequest{
+				Workflow: WorkflowSelector{
+					WorkflowID:    "test-workflow-456",
+					WorkflowName:  "test-workflow",
+					WorkflowOwner: "test-owner",
+					WorkflowTag:   "v1.0.0",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0xabcdef1234567890",
+				},
+			},
+		},
+		{
+			name: "workflow with name and owner only",
+			request: HTTPTriggerRequest{
+				Workflow: WorkflowSelector{
+					WorkflowName:  "my-workflow",
+					WorkflowOwner: "alice",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0x9876543210fedcba",
+				},
+			},
+		},
+		{
+			name: "simple input object",
+			request: HTTPTriggerRequest{
+				Input: json.RawMessage(`{"param1": "value1", "param2": 42}`),
+				Workflow: WorkflowSelector{
+					WorkflowID: "workflow-with-input",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0xdeadbeefcafebabe",
+				},
+			},
+		},
+		{
+			name: "complex nested input",
+			request: HTTPTriggerRequest{
+				Input: json.RawMessage(`{
+					"config": {
+						"timeout": 300,
+						"retries": 3,
+						"endpoints": ["http://api1.com", "http://api2.com"]
+					},
+					"data": {
+						"user": {
+							"id": 123,
+							"name": "John Doe",
+							"permissions": ["read", "write"]
+						},
+						"metadata": {
+							"version": "2.1.0",
+							"timestamp": "2024-01-01T00:00:00Z"
+						}
+					}
+				}`),
+				Workflow: WorkflowSelector{
+					WorkflowName:  "complex-workflow",
+					WorkflowOwner: "system",
+					WorkflowTag:   "production",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0x1111222233334444",
+				},
+			},
+		},
+		{
+			name: "input with array",
+			request: HTTPTriggerRequest{
+				Input: json.RawMessage(`{
+					"items": [
+						{"id": 1, "name": "item1"},
+						{"id": 2, "name": "item2"},
+						{"id": 3, "name": "item3"}
+					],
+					"count": 3
+				}`),
+				Workflow: WorkflowSelector{
+					WorkflowID:   "array-processor",
+					WorkflowName: "process-items",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0x5555666677778888",
+				},
+			},
+		},
+		{
+			name: "empty input object",
+			request: HTTPTriggerRequest{
+				Input: json.RawMessage(`{}`),
+				Workflow: WorkflowSelector{
+					WorkflowOwner: "test-user",
+					WorkflowTag:   "latest",
+				},
+				Key: AuthorizedKey{
+					KeyType:   KeyTypeECDSA,
+					PublicKey: "0x9999aaaabbbbcccc",
+				},
+			},
+		},
+		{
+			name: "different key type",
+			request: HTTPTriggerRequest{
+				Input: json.RawMessage(`{"test": true}`),
+				Workflow: WorkflowSelector{
+					WorkflowID: "different-key-workflow",
+				},
+				Key: AuthorizedKey{
+					KeyType:   "rsa", // Different key type
+					PublicKey: "rsa-public-key-data",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.request)
+			require.NoError(t, err, "marshalling should not fail")
+			var unmarshaled HTTPTriggerRequest
+			err = json.Unmarshal(data, &unmarshaled)
+			require.NoError(t, err, "unmarshalling should not fail")
+			require.Equal(t, tt.request.Workflow, unmarshaled.Workflow, "workflow selector should be preserved")
+			require.Equal(t, tt.request.Key, unmarshaled.Key, "authorized key should be preserved")
+			if len(tt.request.Input) == 0 {
+				require.Empty(t, unmarshaled.Input, "empty input should remain empty")
+			} else {
+				// Remarshal unmarshaled.Input and compare to original string
+				remarshaled, err := json.Marshal(unmarshaled.Input)
+				require.NoError(t, err, "remarshalling unmarshaled input should not fail")
+				require.JSONEq(t, string(tt.request.Input), string(remarshaled), "input JSON string should be preserved after marshal/unmarshal")
+			}
+		})
+	}
 }

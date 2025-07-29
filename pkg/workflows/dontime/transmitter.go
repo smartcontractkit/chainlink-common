@@ -10,7 +10,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 )
 
-var _ ocr3types.ContractTransmitter[struct{}] = (*Transmitter)(nil)
+var _ ocr3types.ContractTransmitter[[]byte] = (*Transmitter)(nil)
 
 // Transmitter is a custom transmitter for the OCR3 capability.
 // When called it will transmit DonTime requests back to the caller
@@ -24,7 +24,7 @@ func NewTransmitter(lggr logger.Logger, store *Store) *Transmitter {
 	return &Transmitter{lggr: lggr, store: store}
 }
 
-func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[struct{}], _ []types.AttributedOnchainSignature) error {
+func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[[]byte], _ []types.AttributedOnchainSignature) error {
 	outcome := &pb.Outcome{}
 	if err := proto.Unmarshal(r.Report, outcome); err != nil {
 		return err

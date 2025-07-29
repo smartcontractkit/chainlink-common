@@ -1,4 +1,4 @@
-package v2_test
+package logger_test
 
 import (
 	"log/slog"
@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
 
-	v2 "github.com/smartcontractkit/chainlink-common/pkg/logger/v2"
+	logger "github.com/smartcontractkit/chainlink-common/pkg/logger/v2"
 )
 
 func TestZapHandler(t *testing.T) {
@@ -67,13 +67,13 @@ func TestZapHandler(t *testing.T) {
 	//
 	// ex: logger.go:146: 2025-07-28T12:01:06.516-0500 INFO    ZapLogger.Test        v2/logger_test.go:29    direct zap log  {"group":{"key": "value", "other_key": "other_value"}}
 	// to retain key grouping, we need a way to add `ZapLogger.Test` as a name to the logger
-	logger := v2.Config{
+	lggr := logger.Config{
 		Name:   "ZapHandler",
 		Level:  slog.LevelDebug,
 		Logger: zapLogger,
 	}.New()
 
-	v2.Named("Test", logger).
+	logger.Named("Test", lggr).
 		WithGroup("actual_group").
 		With(slog.String("key", "value")).
 		InfoContext(t.Context(), "ZapHandler log here")

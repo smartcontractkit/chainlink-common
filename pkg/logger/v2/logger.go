@@ -1,4 +1,4 @@
-package v2
+package logger
 
 import (
 	"context"
@@ -19,6 +19,8 @@ type Config struct {
 
 	// (optional) Logger helps convert existing zap.Logger to slog.Logger.
 	Logger *zap.Logger
+	// TODO: maybe this should be a zapcore.Core? will test it out in core to understand ergonomics.
+	Core *zapcore.Core
 }
 
 func (c Config) New() *slog.Logger {
@@ -47,14 +49,14 @@ func Named(name string, logger *slog.Logger) *slog.Logger {
 	}
 
 	handler := logger.Handler()
-	if hndlr, ok := handler.(ZapHandler); ok {
+	if hndlr, ok := handler.(namedHandler); ok {
 		return slog.New(hndlr.WithName(name))
 	}
 
 	return logger
 }
 
-type ZapHandler interface {
+type namedHandler interface {
 	WithName(string) slog.Handler
 }
 

@@ -776,6 +776,81 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 	}
 }
 
+func TestFlags(t *testing.T) {
+	t.Run("plugin specific flags are appended to flags for all plugins", func(t *testing.T) {
+		// Save the original execCommand to restore it after the test
+		originalExecCommand := execCommand
+		defer func() { execCommand = originalExecCommand }()
+
+		// Create a temporary directory for test files
+		tempDir, err := os.MkdirTemp("", "plugin-flags-test")
+		if err != nil {
+			t.Fatalf("Failed to create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		mockDownload := func(cmd *exec.Cmd) error {
+			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+				parts := strings.Split("github.com/example/rootinstall", "/")
+				moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+				stdout.WriteString(fmt.Sprintf(`{"Dir":"%s"}`, moduleDir))
+			}
+			return nil
+		}
+		mockInstall := func(cmd *exec.Cmd) error {
+			if len(cmd.Args) != 6 {
+				return fmt.Errorf("install command has too few arguments: %v", cmd.Args)
+			}
+			if cmd.Args[2] != "-ldflags=-s" {
+				return fmt.Errorf("expected -ldflags=-s, got %s", cmd.Args[2])
+			}
+			if cmd.Args[3] != "-tags" {
+				return fmt.Errorf("expected -tags, got %s", cmd.Args[3])
+			}
+			if cmd.Args[4] != "timetzdata" {
+				return fmt.Errorf("expected timetzdata, got %s", cmd.Args[4])
+			}
+			packageArg := cmd.Args[len(cmd.Args)-1]
+			expectedPackage := "." // Expected when InstallPath is the same as ModuleURI
+			if packageArg != expectedPackage {
+				return fmt.Errorf("expected install package %q, got %q", expectedPackage, packageArg)
+			}
+			return nil
+		}
+
+		// Mock the command execution
+		execCommand = func(cmd *exec.Cmd) error {
+			cmdLine := strings.Join(cmd.Args, " ")
+			if strings.Contains(cmdLine, "go mod download") {
+				return mockDownload(cmd)
+
+			} else if strings.Contains(cmdLine, "go install") {
+				return mockInstall(cmd)
+			}
+			return nil
+		}
+
+		defaults := DefaultsConfig{
+			GoFlags: "-ldflags=-s",
+		}
+
+		plugin := PluginDef{
+			ModuleURI:   "github.com/example/rootinstall",
+			GitRef:      "v1.0.0",
+			InstallPath: "github.com/example/rootinstall", // Same as ModuleURI
+			Flags:       "-tags timetzdata",
+		}
+
+		// Call the function
+		err = downloadAndInstallPlugin("test", 0, plugin, defaults)
+
+		// Check results
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+}
+
 // TestSetupOutputFile tests the setupOutputFile function
 func TestSetupOutputFile(t *testing.T) {
 	// Test with relative path

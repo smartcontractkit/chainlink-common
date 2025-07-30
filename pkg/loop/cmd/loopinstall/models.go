@@ -18,6 +18,7 @@ type PluginDef struct {
 	GitRef      string   `yaml:"gitRef"`
 	InstallPath string   `yaml:"installPath"`
 	Libs        []string `yaml:"libs"`
+	Flags       string   `yaml:"flags,omitempty"`
 }
 
 // ModDownloadResult represents the JSON directory (dir) output from 'go mod download -json'

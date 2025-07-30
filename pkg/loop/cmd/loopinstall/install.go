@@ -108,6 +108,14 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		goflags = envGoFlags
 	}
 
+	// If goflags from plugindef is set, append it
+	if plugin.Flags != "" {
+		if goflags != "" {
+			goflags += " "
+		}
+		goflags += plugin.Flags
+	}
+
 	// Validate goflags
 	if goflags != "" {
 		if err := validateGoFlags(goflags); err != nil {
@@ -130,7 +138,7 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 			// Case 2: installPath is a sub-package of moduleURI (e.g., "moduleURI/cmd/plugin").
 			// Extract the relative path and prefix with "./".
 			relativePath := strings.TrimPrefix(installPath, moduleURI+"/")
-			cleanedRelativePath := strings.TrimLeft(relativePath, "/") // Handles "moduleURI///subpath"
+			cleanedRelativePath := strings.TrimLeft(relativePath, "/")   // Handles "moduleURI///subpath"
 			if cleanedRelativePath == "" || cleanedRelativePath == "." { // Handles "moduleURI/" or "moduleURI/."
 				installArg = "."
 			} else {

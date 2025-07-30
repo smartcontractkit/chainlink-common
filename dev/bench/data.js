@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753827492076,
+  "lastUpdate": 1753836612704,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21630,6 +21630,48 @@ window.BENCHMARK_DATA = {
             "value": 28158,
             "unit": "ns/op",
             "extra": "42424 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "joe.huang@smartcontract.com",
+            "name": "Joe Huang",
+            "username": "huangzhen1997"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "27955557aca6a9d0c741bfaf697b2158d884b5c0",
+          "message": "Migrate core plugin codec types to common (#1428)\n\n* add codec struct\n\n* make it struct\n\n* rm circular dep\n\n* add map\n\n* fix type\n\n* add codec\n\n* add mock\n\n* mod tidy\n\n* rm mock\n\n* add mock back and fix version\n\n* fix test\n\n* cover codec not exist unit test\n\n* rm mock\n\n---------\n\nCo-authored-by: Blaž Hrastnik <blaz@mxxn.io>",
+          "timestamp": "2025-07-29T17:48:00-07:00",
+          "tree_id": "26cca5a74289890bd2d750d83bd165637f87a2ca",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/27955557aca6a9d0c741bfaf697b2158d884b5c0"
+        },
+        "date": 1753836611664,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360,
+            "unit": "ns/op",
+            "extra": "3322389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.5,
+            "unit": "ns/op",
+            "extra": "2846097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28568,
+            "unit": "ns/op",
+            "extra": "42133 times\n4 procs"
           }
         ]
       }

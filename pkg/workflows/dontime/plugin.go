@@ -50,7 +50,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		store:           store,
 		config:          config,
 		offChainConfig:  offchainCfg,
-		lggr:            logger.Named(lggr, "WorkflowLibraryPlugin"),
+		lggr:            logger.Named(lggr, "DONTimePlugin"),
 		batchSize:       int(offchainCfg.MaxBatchSize),
 		minTimeIncrease: offchainCfg.MinTimeIncrease,
 	}, nil

@@ -36,7 +36,6 @@ const (
 	CapabilityTypeTrigger   CapabilityType = "trigger"
 	CapabilityTypeAction    CapabilityType = "action"
 	CapabilityTypeConsensus CapabilityType = "consensus"
-	CapabilityTypeDonTime   CapabilityType = "dontime"
 	CapabilityTypeTarget    CapabilityType = "target"
 
 	// CapabilityTypeCombined allows capabilities to offer both trigger and executable types.

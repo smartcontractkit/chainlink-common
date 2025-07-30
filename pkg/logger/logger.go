@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"reflect"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	v2 "github.com/smartcontractkit/chainlink-common/pkg/logger/v2"
 )
 
 // Logger is a basic logging interface implemented by smartcontractkit/chainlink/core/logger.Logger and go.uber.org/zap.SugaredLogger
@@ -170,6 +172,33 @@ func (l *logger) helper(skip int) Logger {
 
 func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
 	return l.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))
+}
+
+func AsSlog(lggr Logger) *slog.Logger {
+	asV1, err := toZapLogger(lggr)
+	if err != nil {
+		panic(err)
+	}
+
+	return v2.Config{
+		Name:   asV1.Name(),
+		Level:  v2.AsSLogLevel(asV1.Level()),
+		Logger: asV1,
+	}.New()
+}
+
+func toZapLogger(lggr Logger) (*zap.Logger, error) {
+	asSuggared, ok := lggr.(*sugared)
+	if ok {
+		lggr = asSuggared.Logger
+	}
+
+	asV1, ok := lggr.(*logger)
+	if !ok {
+		return nil, fmt.Errorf("toZapLogger can only convert from *logger or *sugared to *zap.Logger, got %T", lggr)
+	}
+
+	return asV1.Desugar(), nil
 }
 
 // With returns a Logger with keyvals, if 'l' has a method `With(...any) L`, where L implements Logger, otherwise it returns l.

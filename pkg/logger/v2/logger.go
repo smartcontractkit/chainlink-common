@@ -6,9 +6,12 @@ import (
 	"log/slog"
 	"runtime"
 	"strings"
+	"testing"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
+	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 )
@@ -17,10 +20,8 @@ type Config struct {
 	Name  string
 	Level slog.Leveler
 
-	// (optional) Logger helps convert existing zap.Logger to slog.Logger.
+	// (optional) Logger helps convert existing zap.Logger to slog.Logger. Defaults to global zap logger.
 	Logger *zap.Logger
-	// TODO: maybe this should be a zapcore.Core? will test it out in core to understand ergonomics.
-	Core *zapcore.Core
 }
 
 func (c Config) New() *slog.Logger {
@@ -54,6 +55,22 @@ func Named(name string, logger *slog.Logger) *slog.Logger {
 	}
 
 	return logger
+}
+
+func Nop() *slog.Logger {
+	return slog.New(slog.DiscardHandler)
+}
+
+func TestObserved(tb testing.TB, lvl slog.Level) (*slog.Logger, *observer.ObservedLogs) {
+	oCore, logs := observer.New(asZapLevel(lvl))
+	observe := zap.WrapCore(func(c zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(c, oCore)
+	})
+
+	return Config{
+		Level:  lvl,
+		Logger: zaptest.NewLogger(tb, zaptest.WrapOptions(observe, zap.AddCaller())),
+	}.New(), logs
 }
 
 type namedHandler interface {
@@ -168,4 +185,21 @@ func asZapLevel(slevel slog.Level) zapcore.Level {
 	}
 
 	return zlevel
+}
+
+func AsSLogLevel(zlevel zapcore.Level) slog.Level {
+	switch zlevel {
+	case zap.DebugLevel:
+		return slog.LevelDebug
+	case zap.InfoLevel:
+		return slog.LevelInfo
+	case zap.WarnLevel:
+		return slog.LevelWarn
+	case zap.ErrorLevel:
+		return slog.LevelError
+	case zap.DPanicLevel, zap.PanicLevel, zap.FatalLevel:
+		return slog.LevelError // DPanic, Panic, Fatal are all treated as errors in slog
+	default:
+		return slog.LevelDebug // Default to Debug for any other level
+	}
 }

@@ -260,7 +260,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	config := newTestPluginConfig(t)
 	ctx := t.Context()
 
-	transmitter := NewTransmitter(lggr, store)
+	transmitter := NewTransmitter(lggr, store, "")
 	plugin, err := NewPlugin(store, config, lggr)
 	require.NoError(t, err)
 
@@ -320,9 +320,8 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-123")
 	})
 
-	// TODO: Transmit should just delete expired requests
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
-		r := ocr3types.ReportWithInfo[struct{}]{}
+		r := ocr3types.ReportWithInfo[[]byte]{}
 		r.Report, err = proto.Marshal(outcomeProto)
 		require.NoError(t, err)
 		err = transmitter.Transmit(ctx, types.ConfigDigest{}, 0, r, []types.AttributedOnchainSignature{})

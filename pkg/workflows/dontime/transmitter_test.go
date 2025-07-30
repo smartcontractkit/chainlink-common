@@ -18,7 +18,7 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 	store := NewStore(DefaultRequestTimeout)
 	ctx := t.Context()
 
-	transmitter := NewTransmitter(lggr, store)
+	transmitter := NewTransmitter(lggr, store, "")
 
 	// Create request for second donTime in sequence
 	executionID := "workflow-123"
@@ -32,7 +32,7 @@ func TestTransmitter_TransmitDonTimeRequest(t *testing.T) {
 		},
 	}
 
-	r := ocr3types.ReportWithInfo[struct{}]{}
+	r := ocr3types.ReportWithInfo[[]byte]{}
 	var err error
 	r.Report, err = proto.Marshal(outcome)
 	require.NoError(t, err)

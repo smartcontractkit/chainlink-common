@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753836612704,
+  "lastUpdate": 1753895868823,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21672,6 +21672,48 @@ window.BENCHMARK_DATA = {
             "value": 28568,
             "unit": "ns/op",
             "extra": "42133 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bd8e6f0545895a8bb669cf6001a0355d8aeda0bf",
+          "message": "Update DON Time Plugin (#1405)\n\n* Make DonTime Capability\n\n* Update provider.go\n\n* Use array of byte\n\n* Update plugin.go\n\n* Add fromAccount\n\n* Remarshal config changes\n\n* Update capabilities.go",
+          "timestamp": "2025-07-30T13:16:47-04:00",
+          "tree_id": "7fca16235ec48130e7ee571bd16121a0fd370851",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bd8e6f0545895a8bb669cf6001a0355d8aeda0bf"
+        },
+        "date": 1753895867610,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.6,
+            "unit": "ns/op",
+            "extra": "3259891 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 429.1,
+            "unit": "ns/op",
+            "extra": "2957912 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28587,
+            "unit": "ns/op",
+            "extra": "42226 times\n4 procs"
           }
         ]
       }

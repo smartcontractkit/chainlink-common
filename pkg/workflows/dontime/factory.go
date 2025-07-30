@@ -2,6 +2,7 @@ package dontime
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -72,9 +73,15 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)
 	}
 
+	updatedOffchainConfig, err := proto.Marshal(&configProto)
+	if err != nil {
+		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("failed to re-marshal updated configProto: %w", err)
+	}
+	config.OffchainConfig = updatedOffchainConfig
+
 	plugin, err := NewPlugin(o.store, config, o.lggr)
 	pluginInfo := ocr3types.ReportingPluginInfo{
-		Name: "OCR3 Capability Plugin",
+		Name: "DON Time Plugin",
 		Limits: ocr3types.ReportingPluginLimits{
 			MaxQueryLength:       int(configProto.MaxQueryLengthBytes),
 			MaxObservationLength: int(configProto.MaxObservationLengthBytes),
@@ -87,13 +94,13 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 }
 
 func (o *Factory) Start(ctx context.Context) error {
-	return o.StartOnce("OCR3DonTimePlugin", func() error {
+	return o.StartOnce("DonTimePlugin", func() error {
 		return nil
 	})
 }
 
 func (o *Factory) Close() error {
-	return o.StopOnce("OCR3DonTimePlugin", func() error {
+	return o.StopOnce("DonTimePlugin", func() error {
 		return nil
 	})
 }

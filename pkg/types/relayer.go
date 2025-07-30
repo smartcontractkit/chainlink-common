@@ -190,6 +190,10 @@ type EVMService interface {
 	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
 		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
 
+	// GetFiltersNames returns all registered filters' names for later pruning
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	GetFiltersNames(ctx context.Context) ([]string, error)
+
 	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
 	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
 
@@ -250,6 +254,8 @@ type Relayer interface {
 	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
+
+	NewCCIPProvider(ctx context.Context, rargs RelayArgs) (CCIPProvider, error)
 }
 
 var _ Relayer = &UnimplementedRelayer{}
@@ -358,4 +364,8 @@ func (u *UnimplementedRelayer) NewPluginProvider(ctx context.Context, rargs Rela
 
 func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewOCR3CapabilityProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPProvider(ctx context.Context, rargs RelayArgs) (CCIPProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPProvider not implemented")
 }

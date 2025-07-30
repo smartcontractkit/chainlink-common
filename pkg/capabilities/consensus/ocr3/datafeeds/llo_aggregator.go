@@ -193,33 +193,40 @@ func (a *LLOAggregator) Aggregate(lggr logger.Logger, previousOutcome *types.Agg
 			lggr.Errorw("failed to unmarshal previous price", "streamID", streamID, "err", uerr)
 			continue
 		}
-		newPrice := prices[streamID]
-		priceDeviation := deviationDecimal(*oldPrice, newPrice)
-		timeDiffNs := observationTimestamp.UnixNano() - previousStreamInfo.Timestamp
-		lggr.Debugw("checking deviation and heartbeat",
-			"streamID", streamID,
-			"observationNs", observationTimestamp,
-			"perviousNs", previousStreamInfo.Timestamp,
-			"currStalenessNs", timeDiffNs,
-			"heartbeatSec", config.Heartbeat,
-			"oldPrice", oldPrice,
-			"newPrice", newPrice,
-			"currDeviation", priceDeviation,
-			"deviation", config.DeviationAsDecimal().InexactFloat64(),
-		)
-		if timeDiffNs > config.HeartbeatNanos() ||
-			priceDeviation > config.DeviationAsDecimal().InexactFloat64() {
-			// this stream needs an update
-			previousStreamInfo.Timestamp = observationTimestamp.UnixNano()
-			var err2 error
-			previousStreamInfo.Price, err2 = prices[streamID].MarshalBinary()
-			if err2 != nil {
-				lggr.Errorw("failed to marshal price", "streamID", streamID, "err", err2)
-				continue
+
+		// If we don't have a price for this stream, we don't include it in the report.
+		// This is to prevent zeroing out onchain values due to a bad LLO Stream Job/observation.
+		newPrice, ok := prices[streamID]
+		if !ok {
+			lggr.Debugw("skipping over hb and deviation checks due to missing price update", "streamID", streamID)
+		} else {
+			priceDeviation := deviationDecimal(*oldPrice, newPrice)
+			timeDiffNs := observationTimestamp.UnixNano() - previousStreamInfo.Timestamp
+			lggr.Debugw("checking deviation and heartbeat",
+				"streamID", streamID,
+				"observationNs", observationTimestamp,
+				"perviousNs", previousStreamInfo.Timestamp,
+				"currStalenessNs", timeDiffNs,
+				"heartbeatSec", config.Heartbeat,
+				"oldPrice", oldPrice,
+				"newPrice", newPrice,
+				"currDeviation", priceDeviation,
+				"deviation", config.DeviationAsDecimal().InexactFloat64(),
+			)
+			if timeDiffNs > config.HeartbeatNanos() ||
+				priceDeviation > config.DeviationAsDecimal().InexactFloat64() {
+				// this stream needs an update
+				previousStreamInfo.Timestamp = observationTimestamp.UnixNano()
+				var err2 error
+				previousStreamInfo.Price, err2 = prices[streamID].MarshalBinary()
+				if err2 != nil {
+					lggr.Errorw("failed to marshal price", "streamID", streamID, "err", err2)
+					continue
+				}
+				mustUpdateIDs = append(mustUpdateIDs, streamID)
+			} else if float64(timeDiffNs) > float64(config.HeartbeatNanos())*(1.0-a.config.allowedPartialStaleness) {
+				maybeUpdateIDs = append(maybeUpdateIDs, streamID)
 			}
-			mustUpdateIDs = append(mustUpdateIDs, streamID)
-		} else if float64(timeDiffNs) > float64(config.HeartbeatNanos())*(1.0-a.config.allowedPartialStaleness) {
-			maybeUpdateIDs = append(maybeUpdateIDs, streamID)
 		}
 	}
 

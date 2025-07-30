@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -16,11 +17,13 @@ import (
 )
 
 type TemplateGenerator struct {
-	Name             string
-	Template         string
-	FileNameTemplate string
-	Partials         map[string]string
-	ExtraFns         template.FuncMap
+	Name               string
+	Template           string
+	FileNameTemplate   string
+	Partials           map[string]string
+	StringLblValue     func(name string, label *pb.Label) (string, error)
+	PbLabelTLangLabels func(labels map[string]*pb.Label) ([]Label, error)
+	ExtraFns           template.FuncMap
 }
 
 func (t *TemplateGenerator) GenerateFile(
@@ -175,12 +178,58 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 			return fmt.Sprintf("%s.%s", packageName, ident.GoName)
 		},
 		"CapabilityId": func(s *protogen.Service) (string, error) {
-			// TODO: https://smartcontract-it.atlassian.net/browse/CAPPL-797 ID should be allowed to require a parameter.
 			md, err := getCapabilityMetadata(s)
 			if err != nil {
 				return "", err
 			}
 			return md.CapabilityId, nil
+		},
+		"FullCapabilityId": func(s *protogen.Service) (string, error) {
+			md, err := getCapabilityMetadata(s)
+			if err != nil {
+				return "", err
+			}
+
+			if len(md.Labels) == 0 {
+				return fmt.Sprintf(`"%s"`, md.CapabilityId), nil
+			}
+
+			// The format for labels is: "capabilityName + ':labelName:' + labelValue" for each label.
+			// An example evm:ChainSelector:5009297550715157269@1.0.0 would be the EVM for Ethereum mainnet.
+
+			orderedLabels := make([]*namedLabel, 0, len(md.Labels))
+			for lblName, label := range md.Labels {
+				orderedLabels = append(orderedLabels, &namedLabel{name: lblName, label: label})
+			}
+			slices.SortFunc(orderedLabels, func(a, b *namedLabel) int {
+				return strings.Compare(a.name, b.name)
+			})
+			idParts := strings.Split(md.CapabilityId, "@")
+			if len(idParts) != 2 {
+				return "", fmt.Errorf("invalid capability ID format: %s", md.CapabilityId)
+			}
+			var fullName = fmt.Sprintf(`"%s"`, idParts[0])
+			for _, lbl := range orderedLabels {
+				lblValStr, err := t.StringLblValue(lbl.name, lbl.label)
+				if err != nil {
+					return "", fmt.Errorf("failed to stringify receving label %s: %w", lbl.name, err)
+				}
+				fullName = fmt.Sprintf(`%s + ":%s:" + %s`, fullName, lbl.name, lblValStr)
+			}
+
+			return fmt.Sprintf(`%s+"@%s"`, fullName, idParts[1]), nil
+		},
+		"Labels": func(s *protogen.Service) ([]Label, error) {
+			md, err := getCapabilityMetadata(s)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(md.Labels) == 0 {
+				return nil, nil
+			}
+
+			return t.PbLabelTLangLabels(md.Labels)
 		},
 		"Mode": func(s *protogen.Service) (string, error) {
 			md, err := getCapabilityMetadata(s)
@@ -197,6 +246,7 @@ func (t *TemplateGenerator) runTemplate(name, tmplText string, args any, partial
 				return "", fmt.Errorf("unsupported mode: %s", md.Mode)
 			}
 		},
+
 		"ConfigType": func(s *protogen.Service) (string, error) {
 			md, err := getCapabilityMetadata(s)
 			if err != nil {
@@ -269,4 +319,9 @@ func getCapabilityMethodMetadata(m *protogen.Method) (*pb.CapabilityMethodMetada
 		return nil, fmt.Errorf("invalid type for CapabilityMethodMetadata")
 	}
 	return nil, nil
+}
+
+type namedLabel struct {
+	name  string
+	label *pb.Label
 }

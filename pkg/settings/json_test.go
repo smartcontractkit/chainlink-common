@@ -38,7 +38,7 @@ func Test_jsonSettings_GetScoped(t *testing.T) {
 
 	ctx := contexts.WithCRE(t.Context(), contexts.CRE{
 		Org:      "123",
-		Owner:    "0x8bd112d3f8f92e41c861939545ad387307af9703",
+		Owner:    "8bd112d3f8f92e41c861939545ad387307af9703",
 		Workflow: "15c631d295ef5e32deb99a10ee6804bc4af1385568f9b3363f6552ac6dbb2cef",
 	})
 	gotValue, err := r.GetScoped(ctx, ScopeGlobal, `Foo`)

@@ -20,7 +20,7 @@ import (
 // WorkflowClient is a specialized interface for the Workflow node use-case.
 type WorkflowClient interface {
 	GetOrganizationCreditsByWorkflow(ctx context.Context, req *pb.GetOrganizationCreditsByWorkflowRequest) (*pb.GetOrganizationCreditsByWorkflowResponse, error)
-	GetRateCard(ctx context.Context, req *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error)
+	GetWorkflowExecutionRates(ctx context.Context, req *pb.GetWorkflowExecutionRatesRequest) (*pb.GetWorkflowExecutionRatesResponse, error)
 	ReserveCredits(ctx context.Context, req *pb.ReserveCreditsRequest) (*pb.ReserveCreditsResponse, error)
 	SubmitWorkflowReceipt(ctx context.Context, req *pb.SubmitWorkflowReceiptRequest) (*emptypb.Empty, error)
 
@@ -156,15 +156,15 @@ func (wc *workflowClient) GetOrganizationCreditsByWorkflow(ctx context.Context, 
 	return resp, nil
 }
 
-func (wc *workflowClient) GetRateCard(ctx context.Context, req *pb.GetRateCardRequest) (*pb.GetRateCardResponse, error) {
+func (wc *workflowClient) GetWorkflowExecutionRates(ctx context.Context, req *pb.GetWorkflowExecutionRatesRequest) (*pb.GetWorkflowExecutionRatesResponse, error) {
 	ctx, err := wc.addJWTAuth(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("Failed to add custom auth header to GetRateCard request", "error", err)
+		wc.logger.Errorw("Failed to add custom auth header to GetWorkflowExecutionRates request", "error", err)
 		return nil, err
 	}
-	resp, err := wc.client.GetRateCard(ctx, req)
+	resp, err := wc.client.GetWorkflowExecutionRates(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("GetRateCard failed", "error", err)
+		wc.logger.Errorw("GetWorkflowExecutionRates failed", "error", err)
 		return nil, err
 	}
 	return resp, nil

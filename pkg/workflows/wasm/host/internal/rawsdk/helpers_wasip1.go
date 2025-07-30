@@ -96,9 +96,7 @@ func DoRequestAsync(capabilityId, method string, mode pb.Mode, input proto.Messa
 }
 
 func DoConsensusRequest(capabilityId string, input *pb.SimpleConsensusInputs, output *valuespb.Value) {
-	protoValue := &valuespb.Value{}
-	Await(DoRequestAsync(capabilityId, "Simple", pb.Mode_MODE_DON, input), protoValue)
-	output.Value = protoValue.GetMapValue().Fields[ConsensusResponseMapKeyPayload].Value
+	Await(DoRequestAsync(capabilityId, "Simple", pb.Mode_MODE_DON, input), output)
 }
 
 func DoRequest[I, O proto.Message](capabilityId, method string, mode pb.Mode, input I, output O) {

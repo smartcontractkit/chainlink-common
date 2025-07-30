@@ -28,7 +28,7 @@ type Plugin struct {
 	minTimeIncrease int64
 }
 
-var _ ocr3types.ReportingPlugin[struct{}] = (*Plugin)(nil)
+var _ ocr3types.ReportingPlugin[[]byte] = (*Plugin)(nil)
 
 func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger.Logger) (*Plugin, error) {
 	offchainCfg := &pb.Config{}
@@ -50,7 +50,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, lggr logger
 		store:           store,
 		config:          config,
 		offChainConfig:  offchainCfg,
-		lggr:            logger.Named(lggr, "WorkflowLibraryPlugin"),
+		lggr:            logger.Named(lggr, "DONTimePlugin"),
 		batchSize:       int(offchainCfg.MaxBatchSize),
 		minTimeIncrease: offchainCfg.MinTimeIncrease,
 	}, nil
@@ -206,23 +206,23 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 	return proto.Marshal(outcome)
 }
 
-func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[struct{}], error) {
-	return []ocr3types.ReportPlus[struct{}]{
+func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
+	return []ocr3types.ReportPlus[[]byte]{
 		{
-			ReportWithInfo: ocr3types.ReportWithInfo[struct{}]{
+			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
 				Report: types.Report(outcome),
-				Info:   struct{}{},
+				Info:   []byte{},
 			},
 			TransmissionScheduleOverride: nil,
 		},
 	}, nil
 }
 
-func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
+func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 
-func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[struct{}]) (bool, error) {
+func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
 	return true, nil
 }
 

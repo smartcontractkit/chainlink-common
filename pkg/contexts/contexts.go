@@ -2,6 +2,7 @@ package contexts
 
 import (
 	"context"
+	"strings"
 )
 
 // Value gets a value from the context and casts it to T.
@@ -15,17 +16,15 @@ func Value[T any](ctx context.Context, key any) T {
 }
 
 // WithCRE returns a derived context with a cre key/val.
+// The values will be normalized via CRE.Normalized.
 func WithCRE(ctx context.Context, cre CRE) context.Context {
-	return context.WithValue(ctx, creCtxKey, &cre)
+	return context.WithValue(ctx, creCtxKey, cre.Normalized())
 }
 
 // CREValue returns the [CRE] key/val, which may be empty.
+// If it is not empty, the values will be normalized.
 func CREValue(ctx context.Context) CRE {
-	v := Value[*CRE](ctx, creCtxKey)
-	if v == nil {
-		return CRE{}
-	}
-	return *v // copy
+	return Value[CRE](ctx, creCtxKey)
 }
 
 // CRE holds contextual Chainlink Runtime Environment metadata.
@@ -35,6 +34,13 @@ func CREValue(ctx context.Context) CRE {
 type CRE struct {
 	Org             string // may be missing even if others are present.
 	Owner, Workflow string
+}
+
+// Normalized returns a possibly modified CRE with normalized values.
+func (c CRE) Normalized() CRE {
+	c.Owner = strings.TrimPrefix(c.Owner, "0x")
+	c.Owner = strings.ToLower(c.Owner)
+	return c
 }
 
 func (c CRE) LoggerKVs() []any {

@@ -47,6 +47,7 @@ message RequestMetadata {
   string reference_id = 8;
   string decoded_workflow_name = 9;
   repeated SpendLimit spend_limits = 10;
+  string workflow_tag = 11;
 }
 
 message CapabilityRequest {

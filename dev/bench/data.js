@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753895868823,
+  "lastUpdate": 1753969420895,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21714,6 +21714,48 @@ window.BENCHMARK_DATA = {
             "value": 28587,
             "unit": "ns/op",
             "extra": "42226 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "33a411de4ba0fea48fc5e3bc72de010ec682db96",
+          "message": "add workflowTag to capability request structs (#1393)\n\n* add request metadata tag to capability request structs\n\n* update test",
+          "timestamp": "2025-07-31T06:40:59-07:00",
+          "tree_id": "b10639d71c3b4fd7806ebf7777e625c206d76fce",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/33a411de4ba0fea48fc5e3bc72de010ec682db96"
+        },
+        "date": 1753969419851,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.1,
+            "unit": "ns/op",
+            "extra": "3368526 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.3,
+            "unit": "ns/op",
+            "extra": "2879502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28527,
+            "unit": "ns/op",
+            "extra": "42633 times\n4 procs"
           }
         ]
       }

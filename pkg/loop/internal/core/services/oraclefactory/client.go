@@ -77,6 +77,8 @@ func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (cor
 			ContractTransmitterTransmitTimeout: durationpb.New(oracleArgs.LocalConfig.ContractTransmitterTransmitTimeout),
 			DatabaseTimeout:                    durationpb.New(oracleArgs.LocalConfig.DatabaseTimeout),
 			MinOcr2MaxDurationQuery:            durationpb.New(oracleArgs.LocalConfig.MinOCR2MaxDurationQuery),
+			ContractConfigLoadTimeout:          durationpb.New(oracleArgs.LocalConfig.ContractConfigLoadTimeout),
+			DefaultMaxDurationInitialization:   durationpb.New(oracleArgs.LocalConfig.DefaultMaxDurationInitialization),
 			DevelopmentMode:                    oracleArgs.LocalConfig.DevelopmentMode,
 		},
 		ReportingPluginFactoryServiceId: reportingPluginFactoryServerID,

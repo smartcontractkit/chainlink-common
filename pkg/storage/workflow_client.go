@@ -14,8 +14,8 @@ import (
 	pb "github.com/smartcontractkit/chainlink-protos/storage-service/go"
 )
 
-// WorlflowClient is a gRPC client for the node service to be used by workflow node.
-type WorlflowClient interface {
+// WorkflowClient is a gRPC client for the node service to be used by workflow node.
+type WorkflowClient interface {
 	// DownloadArtifact downloads an artifact from the storage service
 	DownloadArtifact(ctx context.Context, req *pb.DownloadArtifactRequest) (pb.NodeService_DownloadArtifactClient, error)
 
@@ -26,7 +26,7 @@ type WorlflowClient interface {
 	Close() error
 }
 
-// workflowClient is a concrete implementation of WorlflowClient
+// workflowClient is a concrete implementation of WorkflowClient
 type workflowClient struct {
 	client       pb.NodeServiceClient
 	conn         *grpc.ClientConn
@@ -85,14 +85,14 @@ func (n workflowClient) DownloadArtifactStream(ctx context.Context, req *pb.Down
 func (n workflowClient) Close() error {
 	err := n.conn.Close()
 	if err != nil {
-		n.log.Errorw("Failed to close WorlflowClient connection", "error", err)
+		n.log.Errorw("Failed to close WorkflowClient connection", "error", err)
 		return err
 	}
-	n.log.Infow("Closed WorlflowClient connection")
+	n.log.Infow("Closed WorkflowClient connection")
 	return nil
 }
 
-// NodeClientOpt is a functional option type for configuring the WorlflowClient
+// NodeClientOpt is a functional option type for configuring the WorkflowClient
 type NodeClientOpt func(*nodeConfig)
 
 type nodeConfig struct {
@@ -101,7 +101,7 @@ type nodeConfig struct {
 	jwtGenerator         *nodeauth.NodeJWTGenerator // Optional JWT manager for authentication
 }
 
-// defaultNodeConfig returns a default configuration for the WorlflowClient
+// defaultNodeConfig returns a default configuration for the WorkflowClient
 func defaultNodeConfig() nodeConfig {
 	loggerInst, _ := logger.New()
 	return nodeConfig{
@@ -111,14 +111,14 @@ func defaultNodeConfig() nodeConfig {
 	}
 }
 
-// WithLogger sets the logger for the WorlflowClient
+// WithLogger sets the logger for the WorkflowClient
 func WithLogger(log logger.Logger) NodeClientOpt {
 	return func(cfg *nodeConfig) {
 		cfg.log = log
 	}
 }
 
-// WithTransportCredentials sets the transport credentials for the WorlflowClient
+// WithTransportCredentials sets the transport credentials for the WorkflowClient
 func WithTransportCredentials(creds credentials.TransportCredentials) NodeClientOpt {
 	return func(cfg *nodeConfig) {
 		cfg.transportCredentials = creds
@@ -131,9 +131,9 @@ func WithJWTGenerator(jwtGenerator *nodeauth.NodeJWTGenerator) NodeClientOpt {
 	}
 }
 
-// NewNodeClient creates a new WorlflowClient with the specified address and options
-// It returns a WorlflowClient which can DownloadArtifacts
-func NewNodeClient(ctx context.Context, address string, opts ...NodeClientOpt) (WorlflowClient, error) {
+// NewNodeClient creates a new WorkflowClient with the specified address and options
+// It returns a WorkflowClient which can DownloadArtifacts
+func NewNodeClient(ctx context.Context, address string, opts ...NodeClientOpt) (WorkflowClient, error) {
 	cfg := defaultNodeConfig()
 
 	for _, opt := range opts {
@@ -149,7 +149,7 @@ func NewNodeClient(ctx context.Context, address string, opts ...NodeClientOpt) (
 		return nil, err
 	}
 
-	cfg.log.Infow("connected to storage service (WorlflowClient)", "address", address)
+	cfg.log.Infow("connected to storage service (WorkflowClient)", "address", address)
 
 	client := pb.NewNodeServiceClient(conn)
 

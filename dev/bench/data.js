@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753969420895,
+  "lastUpdate": 1754062842809,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21756,6 +21756,48 @@ window.BENCHMARK_DATA = {
             "value": 28527,
             "unit": "ns/op",
             "extra": "42633 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b66cad5de8a85910b64062a3de1b4dbebf96dc7",
+          "message": "Make Vault Mock capability local, for testing (#1439)",
+          "timestamp": "2025-08-01T08:39:37-07:00",
+          "tree_id": "9e63d6acd28da2ee243b9fc39356e3ac17919d97",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2b66cad5de8a85910b64062a3de1b4dbebf96dc7"
+        },
+        "date": 1754062841780,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.5,
+            "unit": "ns/op",
+            "extra": "3218331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.5,
+            "unit": "ns/op",
+            "extra": "2952692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28287,
+            "unit": "ns/op",
+            "extra": "42512 times\n4 procs"
           }
         ]
       }

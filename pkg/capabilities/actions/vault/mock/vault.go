@@ -18,6 +18,7 @@ func (m Vault) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	return capabilities.CapabilityInfo{
 		ID:             vault.CapabilityID,
 		CapabilityType: capabilities.CapabilityTypeAction,
+		IsLocal:        true,
 	}, nil
 }
 

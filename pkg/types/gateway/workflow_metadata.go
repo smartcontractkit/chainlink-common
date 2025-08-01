@@ -42,7 +42,7 @@ type AuthorizedKey struct {
 // MarshalJSON implements custom JSON marshalling to ensure alphabetical order of keys for AuthorizedKey,
 // and only includes non-empty fields.
 func (r AuthorizedKey) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	if r.KeyType != "" {
 		m["keyType"] = r.KeyType
 	}

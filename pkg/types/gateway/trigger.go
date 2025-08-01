@@ -41,7 +41,7 @@ type HTTPTriggerResponse struct {
 // MarshalJSON implements custom JSON marshalling to ensure alphabetical order of keys for WorkflowSelector,
 // and only includes non-empty fields.
 func (ws WorkflowSelector) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	if ws.WorkflowID != "" {
 		m["workflowID"] = ws.WorkflowID
 	}
@@ -58,11 +58,11 @@ func (ws WorkflowSelector) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalJSON implements custom JSON marshalling to ensure deterministic output
-// with sorted keys at all levels for map[string]interface{}, including nested objects in the Input field.
+// with sorted keys at all levels for map[string]any, including nested objects in the Input field.
 func (r HTTPTriggerRequest) MarshalJSON() ([]byte, error) {
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	if len(r.Input) > 0 {
-		var inputData interface{}
+		var inputData any
 		if err := json.Unmarshal(r.Input, &inputData); err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func (r HTTPTriggerRequest) MarshalJSON() ([]byte, error) {
 	return marshalWithSortedKeys(result)
 }
 
-func marshalWithSortedKeys(data map[string]interface{}) ([]byte, error) {
+func marshalWithSortedKeys(data map[string]any) ([]byte, error) {
 	keys := make([]string, 0, len(data))
 	for k := range data {
 		keys = append(keys, k)
@@ -109,11 +109,11 @@ func marshalWithSortedKeys(data map[string]interface{}) ([]byte, error) {
 }
 
 // marshalJSONValue marshals a JSON value, handling maps and arrays with sorted keys
-func marshalJSONValue(value interface{}) ([]byte, error) {
+func marshalJSONValue(value any) ([]byte, error) {
 	switch v := value.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		return marshalWithSortedKeys(v)
-	case []interface{}:
+	case []any:
 		return marshalArrayWithSortedKeys(v)
 	default:
 		return json.Marshal(v)
@@ -121,7 +121,7 @@ func marshalJSONValue(value interface{}) ([]byte, error) {
 }
 
 // marshalArrayWithSortedKeys marshals an array, ensuring any nested maps have sorted keys
-func marshalArrayWithSortedKeys(data []interface{}) ([]byte, error) {
+func marshalArrayWithSortedKeys(data []any) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteByte('[')
 

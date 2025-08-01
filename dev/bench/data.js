@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754062842809,
+  "lastUpdate": 1754069252826,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21798,6 +21798,48 @@ window.BENCHMARK_DATA = {
             "value": 28287,
             "unit": "ns/op",
             "extra": "42512 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jin.bang@smartcontract.com",
+            "name": "jinhoonbang",
+            "username": "jinhoonbang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "657b217a5459b89a5cfbd0f3d34109775bf78578",
+          "message": "rename auth metadata to workflow metadata. add custom serialization w… (#1432)\n\n* rename auth metadata to workflow metadata. add custom serialization with sorted keys\n\n* add test cases for marshal then unmarshal\n\n* change interface{} to any",
+          "timestamp": "2025-08-01T17:26:21Z",
+          "tree_id": "4eacdeaa152bd9302e9080574b177fb03e42da16",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/657b217a5459b89a5cfbd0f3d34109775bf78578"
+        },
+        "date": 1754069251523,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.3,
+            "unit": "ns/op",
+            "extra": "3390973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409,
+            "unit": "ns/op",
+            "extra": "2912761 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28136,
+            "unit": "ns/op",
+            "extra": "42492 times\n4 procs"
           }
         ]
       }

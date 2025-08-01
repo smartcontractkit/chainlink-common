@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754069252826,
+  "lastUpdate": 1754071566230,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21840,6 +21840,48 @@ window.BENCHMARK_DATA = {
             "value": 28136,
             "unit": "ns/op",
             "extra": "42492 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "erikburt@users.noreply.github.com",
+            "name": "Erik Burton",
+            "username": "erikburt"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eca435efb3a065f8b0ea9df81c8d0979a6810b83",
+          "message": "feat(ci): build cache (#1412)\n\n* chore: remove refs to push-gha-metrics-action\n\n* chore: pin actions/checkout to v4\n\n* chore: workflow formatting\n\n* chore: bump ci-sonarqube-go action\n\n* feat: migrate to setup-go action\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2025-08-01T13:04:56-05:00",
+          "tree_id": "e46c9cbd2fb50486a659aa592dea9a813040e7d2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eca435efb3a065f8b0ea9df81c8d0979a6810b83"
+        },
+        "date": 1754071565171,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.3,
+            "unit": "ns/op",
+            "extra": "3310766 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 412.4,
+            "unit": "ns/op",
+            "extra": "2905894 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28339,
+            "unit": "ns/op",
+            "extra": "42429 times\n4 procs"
           }
         ]
       }

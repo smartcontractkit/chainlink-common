@@ -2,6 +2,7 @@ package dontime
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 )
@@ -20,6 +22,8 @@ const (
 	defaultExecutionRemovalTime = 20 * time.Minute // 2x CRE workflow time limit
 	defaultMinTimeIncrease      = time.Millisecond
 )
+
+var _ core.OCR3ReportingPluginFactory = &Factory{}
 
 type Factory struct {
 	store                   *Store
@@ -37,7 +41,7 @@ func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
 	}, nil
 }
 
-func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[struct{}], ocr3types.ReportingPluginInfo, error) {
+func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
 	var configProto pb.Config
 	err := proto.Unmarshal(config.OffchainConfig, &configProto)
 	if err != nil {
@@ -69,9 +73,15 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 		configProto.MinTimeIncrease = int64(defaultMinTimeIncrease)
 	}
 
+	updatedOffchainConfig, err := proto.Marshal(&configProto)
+	if err != nil {
+		return nil, ocr3types.ReportingPluginInfo{}, fmt.Errorf("failed to re-marshal updated configProto: %w", err)
+	}
+	config.OffchainConfig = updatedOffchainConfig
+
 	plugin, err := NewPlugin(o.store, config, o.lggr)
 	pluginInfo := ocr3types.ReportingPluginInfo{
-		Name: "OCR3 Capability Plugin",
+		Name: "DON Time Plugin",
 		Limits: ocr3types.ReportingPluginLimits{
 			MaxQueryLength:       int(configProto.MaxQueryLengthBytes),
 			MaxObservationLength: int(configProto.MaxObservationLengthBytes),
@@ -84,13 +94,13 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 }
 
 func (o *Factory) Start(ctx context.Context) error {
-	return o.StartOnce("OCR3DonTimePlugin", func() error {
+	return o.StartOnce("DonTimePlugin", func() error {
 		return nil
 	})
 }
 
 func (o *Factory) Close() error {
-	return o.StopOnce("OCR3DonTimePlugin", func() error {
+	return o.StopOnce("DonTimePlugin", func() error {
 		return nil
 	})
 }

@@ -102,6 +102,12 @@ func NewWithSync(w io.Writer) Logger {
 	return &logger{zap.New(core).Sugar()}
 }
 
+// NewWithCores returns a new Logger with one or more zapcore.Core.
+// If multiple cores are provided, they are combined using zapcore.NewTee.
+func NewWithCores(cores ...zapcore.Core) Logger {
+	return &logger{zap.New(zapcore.NewTee(cores...)).Sugar()}
+}
+
 // Test returns a new test Logger for tb.
 func Test(tb testing.TB) Logger {
 	cfg := zap.NewDevelopmentEncoderConfig()

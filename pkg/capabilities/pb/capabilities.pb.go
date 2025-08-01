@@ -230,6 +230,7 @@ type RequestMetadata struct {
 	ReferenceId              string                 `protobuf:"bytes,8,opt,name=reference_id,json=referenceId,proto3" json:"reference_id,omitempty"`
 	DecodedWorkflowName      string                 `protobuf:"bytes,9,opt,name=decoded_workflow_name,json=decodedWorkflowName,proto3" json:"decoded_workflow_name,omitempty"`
 	SpendLimits              []*SpendLimit          `protobuf:"bytes,10,rep,name=spend_limits,json=spendLimits,proto3" json:"spend_limits,omitempty"`
+	WorkflowTag              string                 `protobuf:"bytes,11,opt,name=workflow_tag,json=workflowTag,proto3" json:"workflow_tag,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -325,6 +326,13 @@ func (x *RequestMetadata) GetSpendLimits() []*SpendLimit {
 		return x.SpendLimits
 	}
 	return nil
+}
+
+func (x *RequestMetadata) GetWorkflowTag() string {
+	if x != nil {
+		return x.WorkflowTag
+	}
+	return ""
 }
 
 type CapabilityRequest struct {
@@ -1171,7 +1179,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"SpendLimit\x12\x1d\n" +
 	"\n" +
 	"spend_type\x18\x01 \x01(\tR\tspendType\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xb3\x03\n" +
+	"\x05limit\x18\x02 \x01(\tR\x05limit\"\xd6\x03\n" +
 	"\x0fRequestMetadata\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x122\n" +
@@ -1183,7 +1191,8 @@ const file_capabilities_proto_rawDesc = "" +
 	"\freference_id\x18\b \x01(\tR\vreferenceId\x122\n" +
 	"\x15decoded_workflow_name\x18\t \x01(\tR\x13decodedWorkflowName\x12;\n" +
 	"\fspend_limits\x18\n" +
-	" \x03(\v2\x18.capabilities.SpendLimitR\vspendLimitsJ\x04\b\x05\x10\x06\"\xc6\x02\n" +
+	" \x03(\v2\x18.capabilities.SpendLimitR\vspendLimits\x12!\n" +
+	"\fworkflow_tag\x18\v \x01(\tR\vworkflowTagJ\x04\b\x05\x10\x06\"\xc6\x02\n" +
 	"\x11CapabilityRequest\x129\n" +
 	"\bmetadata\x18\x01 \x01(\v2\x1d.capabilities.RequestMetadataR\bmetadata\x12&\n" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\x12&\n" +

@@ -38,7 +38,6 @@ type LoopTesterOpt func(*contractReaderLoopTester)
 func WrapContractReaderTesterForLoop(wrapped ChainComponentsInterfaceTester[*testing.T], opts ...LoopTesterOpt) ChainComponentsInterfaceTester[*testing.T] {
 	tester := &contractReaderLoopTester{
 		ChainComponentsInterfaceTester: wrapped,
-		encodeWith:                     codecpb.DefaultEncodingVersion,
 	}
 
 	for _, opt := range opts {
@@ -48,17 +47,10 @@ func WrapContractReaderTesterForLoop(wrapped ChainComponentsInterfaceTester[*tes
 	return tester
 }
 
-func WithContractReaderLoopEncoding(version codecpb.EncodingVersion) LoopTesterOpt {
-	return func(tester *contractReaderLoopTester) {
-		tester.encodeWith = version
-	}
-}
-
 type contractReaderLoopTester struct {
 	ChainComponentsInterfaceTester[*testing.T]
-	lst        loopServerTester
-	conn       *grpc.ClientConn
-	encodeWith codecpb.EncodingVersion
+	lst  loopServerTester
+	conn *grpc.ClientConn
 }
 
 func (c *contractReaderLoopTester) Setup(t *testing.T) {
@@ -67,7 +59,7 @@ func (c *contractReaderLoopTester) Setup(t *testing.T) {
 
 	c.lst.registerHook = func(server *grpc.Server) {
 		if contractReader != nil {
-			impl := contractreader.NewServer(contractReader, contractreader.WithServerEncoding(c.encodeWith))
+			impl := contractreader.NewServer(contractReader)
 			pb.RegisterContractReaderServer(server, impl)
 		}
 	}
@@ -77,7 +69,7 @@ func (c *contractReaderLoopTester) Setup(t *testing.T) {
 }
 
 func (c *contractReaderLoopTester) GetContractReader(t *testing.T) types.ContractReader {
-	return contractreader.NewClient(nil, pb.NewContractReaderClient(c.conn), contractreader.WithClientEncoding(c.encodeWith))
+	return contractreader.NewClient(nil, pb.NewContractReaderClient(c.conn))
 }
 
 func (c *contractReaderLoopTester) Name() string {

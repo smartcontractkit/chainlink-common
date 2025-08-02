@@ -4,9 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/chain
 
 package loop.chain.common;
 
-import "internal/codec/codec.proto";
-
-// Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions. 
+// Expression encapsulates a single unit of filtering logic, which can be a common blockchain primitive or a composite of boolean expressions.
 // This allows for both simple and more complex nested expressions.
 message Expression {
   oneof evaluator {
@@ -43,8 +41,9 @@ message Or {
 }
 
 message ValueComparator  {
-  codec.VersionedBytes value = 1;
-  ComparisonOperator operator = 2;
+  bytes value = 1;
+  string value_type_hint = 2;
+  ComparisonOperator operator = 3;
 }
 
 message Comparator  {

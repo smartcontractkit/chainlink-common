@@ -7,7 +7,6 @@
 package pb
 
 import (
-	codec "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chain_common "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -29,8 +28,8 @@ type GetLatestValueRequest struct {
 	state          protoimpl.MessageState  `protogen:"open.v1"`
 	ReadIdentifier string                  `protobuf:"bytes,1,opt,name=read_identifier,json=readIdentifier,proto3" json:"read_identifier,omitempty"`
 	Confidence     chain_common.Confidence `protobuf:"varint,2,opt,name=confidence,proto3,enum=loop.chain.common.Confidence" json:"confidence,omitempty"`
-	Params         *codec.VersionedBytes   `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
-	AsValueType    bool                    `protobuf:"varint,4,opt,name=as_value_type,json=asValueType,proto3" json:"as_value_type,omitempty"`
+	Params         []byte                  `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
+	ParamsTypeHint string                  `protobuf:"bytes,4,opt,name=params_type_hint,json=paramsTypeHint,proto3" json:"params_type_hint,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -79,18 +78,18 @@ func (x *GetLatestValueRequest) GetConfidence() chain_common.Confidence {
 	return chain_common.Confidence(0)
 }
 
-func (x *GetLatestValueRequest) GetParams() *codec.VersionedBytes {
+func (x *GetLatestValueRequest) GetParams() []byte {
 	if x != nil {
 		return x.Params
 	}
 	return nil
 }
 
-func (x *GetLatestValueRequest) GetAsValueType() bool {
+func (x *GetLatestValueRequest) GetParamsTypeHint() string {
 	if x != nil {
-		return x.AsValueType
+		return x.ParamsTypeHint
 	}
-	return false
+	return ""
 }
 
 // BatchGetLatestValuesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -144,7 +143,6 @@ type QueryKeyRequest struct {
 	Contract      *BoundContract             `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
 	Filter        *QueryKeyFilter            `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"`
 	LimitAndSort  *chain_common.LimitAndSort `protobuf:"bytes,3,opt,name=limit_and_sort,json=limitAndSort,proto3" json:"limit_and_sort,omitempty"`
-	AsValueType   bool                       `protobuf:"varint,4,opt,name=as_value_type,json=asValueType,proto3" json:"as_value_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -198,13 +196,6 @@ func (x *QueryKeyRequest) GetLimitAndSort() *chain_common.LimitAndSort {
 		return x.LimitAndSort
 	}
 	return nil
-}
-
-func (x *QueryKeyRequest) GetAsValueType() bool {
-	if x != nil {
-		return x.AsValueType
-	}
-	return false
 }
 
 // QueryKeysRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.QueryKeys].
@@ -264,7 +255,6 @@ type ContractKeyFilter struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Contract      *BoundContract         `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
 	Filter        *QueryKeyFilter        `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"`
-	AsValueType   bool                   `protobuf:"varint,4,opt,name=as_value_type,json=asValueType,proto3" json:"as_value_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,13 +301,6 @@ func (x *ContractKeyFilter) GetFilter() *QueryKeyFilter {
 		return x.Filter
 	}
 	return nil
-}
-
-func (x *ContractKeyFilter) GetAsValueType() bool {
-	if x != nil {
-		return x.AsValueType
-	}
-	return false
 }
 
 // BindRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.Bind].
@@ -412,10 +395,12 @@ func (x *UnbindRequest) GetBindings() []*BoundContract {
 
 // GetLatestValueReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValue].
 type GetLatestValueReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RetVal        *codec.VersionedBytes  `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	RetVal []byte                 `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
+	// used for decoding values.Value
+	RetValTypeHint string `protobuf:"bytes,2,opt,name=ret_val_type_hint,json=retValTypeHint,proto3" json:"ret_val_type_hint,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetLatestValueReply) Reset() {
@@ -448,20 +433,29 @@ func (*GetLatestValueReply) Descriptor() ([]byte, []int) {
 	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetLatestValueReply) GetRetVal() *codec.VersionedBytes {
+func (x *GetLatestValueReply) GetRetVal() []byte {
 	if x != nil {
 		return x.RetVal
 	}
 	return nil
 }
 
+func (x *GetLatestValueReply) GetRetValTypeHint() string {
+	if x != nil {
+		return x.RetValTypeHint
+	}
+	return ""
+}
+
 // GetLatestValueWithHeadDataReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.GetLatestValueWithHeadData].
 type GetLatestValueWithHeadDataReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RetVal        *codec.VersionedBytes  `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
-	HeadData      *Head                  `protobuf:"bytes,2,opt,name=head_data,json=headData,proto3" json:"head_data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	RetVal []byte                 `protobuf:"bytes,1,opt,name=ret_val,json=retVal,proto3" json:"ret_val,omitempty"`
+	// used for decoding values.Value
+	RetValTypeHint string `protobuf:"bytes,2,opt,name=ret_val_type_hint,json=retValTypeHint,proto3" json:"ret_val_type_hint,omitempty"`
+	HeadData       *Head  `protobuf:"bytes,3,opt,name=head_data,json=headData,proto3" json:"head_data,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetLatestValueWithHeadDataReply) Reset() {
@@ -494,11 +488,18 @@ func (*GetLatestValueWithHeadDataReply) Descriptor() ([]byte, []int) {
 	return file_loop_internal_pb_contract_reader_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetLatestValueWithHeadDataReply) GetRetVal() *codec.VersionedBytes {
+func (x *GetLatestValueWithHeadDataReply) GetRetVal() []byte {
 	if x != nil {
 		return x.RetVal
 	}
 	return nil
+}
+
+func (x *GetLatestValueWithHeadDataReply) GetRetValTypeHint() string {
+	if x != nil {
+		return x.RetValTypeHint
+	}
+	return ""
 }
 
 func (x *GetLatestValueWithHeadDataReply) GetHeadData() *Head {
@@ -698,12 +699,12 @@ func (x *ContractBatch) GetReads() []*BatchRead {
 
 // BatchCall is gRPC adapter for the GetLatestValueRequest struct [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchCall].
 type BatchRead struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReadName      string                 `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
-	Params        *codec.VersionedBytes  `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
-	ReturnVal     *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ReadName       string                 `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
+	Params         []byte                 `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	ParamsTypeHint string                 `protobuf:"bytes,3,opt,name=params_type_hint,json=paramsTypeHint,proto3" json:"params_type_hint,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *BatchRead) Reset() {
@@ -743,18 +744,18 @@ func (x *BatchRead) GetReadName() string {
 	return ""
 }
 
-func (x *BatchRead) GetParams() *codec.VersionedBytes {
+func (x *BatchRead) GetParams() []byte {
 	if x != nil {
 		return x.Params
 	}
 	return nil
 }
 
-func (x *BatchRead) GetReturnVal() *codec.VersionedBytes {
+func (x *BatchRead) GetParamsTypeHint() string {
 	if x != nil {
-		return x.ReturnVal
+		return x.ParamsTypeHint
 	}
-	return nil
+	return ""
 }
 
 // ContractBatchResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
@@ -812,12 +813,14 @@ func (x *ContractBatchResult) GetResults() []*BatchReadResult {
 
 // BatchCallResult is part of return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.ContractReader.BatchGetLatestValues].
 type BatchReadResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReadName      string                 `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
-	ReturnVal     *codec.VersionedBytes  `protobuf:"bytes,2,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
-	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ReadName  string                 `protobuf:"bytes,1,opt,name=read_name,json=readName,proto3" json:"read_name,omitempty"`
+	ReturnVal []byte                 `protobuf:"bytes,2,opt,name=return_val,json=returnVal,proto3" json:"return_val,omitempty"`
+	// used for decoding values.Value
+	ReturnValTypeHint string `protobuf:"bytes,3,opt,name=return_val_type_hint,json=returnValTypeHint,proto3" json:"return_val_type_hint,omitempty"`
+	Error             string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *BatchReadResult) Reset() {
@@ -857,11 +860,18 @@ func (x *BatchReadResult) GetReadName() string {
 	return ""
 }
 
-func (x *BatchReadResult) GetReturnVal() *codec.VersionedBytes {
+func (x *BatchReadResult) GetReturnVal() []byte {
 	if x != nil {
 		return x.ReturnVal
 	}
 	return nil
+}
+
+func (x *BatchReadResult) GetReturnValTypeHint() string {
+	if x != nil {
+		return x.ReturnValTypeHint
+	}
+	return ""
 }
 
 func (x *BatchReadResult) GetError() string {
@@ -937,10 +947,12 @@ type Sequence struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SequenceCursor string                 `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
 	Head           *Head                  `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
-	Data           *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	TxHash         []byte                 `protobuf:"bytes,4,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	Data           []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	// used for decoding values.Value
+	DataTypeHint  string `protobuf:"bytes,4,opt,name=data_type_hint,json=dataTypeHint,proto3" json:"data_type_hint,omitempty"`
+	TxHash        []byte `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Sequence) Reset() {
@@ -987,11 +999,18 @@ func (x *Sequence) GetHead() *Head {
 	return nil
 }
 
-func (x *Sequence) GetData() *codec.VersionedBytes {
+func (x *Sequence) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *Sequence) GetDataTypeHint() string {
+	if x != nil {
+		return x.DataTypeHint
+	}
+	return ""
 }
 
 func (x *Sequence) GetTxHash() []byte {
@@ -1005,11 +1024,13 @@ type SequenceWithKey struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SequenceCursor string                 `protobuf:"bytes,1,opt,name=sequence_cursor,json=sequenceCursor,proto3" json:"sequence_cursor,omitempty"`
 	Head           *Head                  `protobuf:"bytes,2,opt,name=head,proto3" json:"head,omitempty"`
-	Data           *codec.VersionedBytes  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	Key            string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
-	TxHash         []byte                 `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	Data           []byte                 `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	// used for decoding values.Value
+	DataTypeHint  string `protobuf:"bytes,4,opt,name=data_type_hint,json=dataTypeHint,proto3" json:"data_type_hint,omitempty"`
+	Key           string `protobuf:"bytes,5,opt,name=key,proto3" json:"key,omitempty"`
+	TxHash        []byte `protobuf:"bytes,6,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SequenceWithKey) Reset() {
@@ -1056,11 +1077,18 @@ func (x *SequenceWithKey) GetHead() *Head {
 	return nil
 }
 
-func (x *SequenceWithKey) GetData() *codec.VersionedBytes {
+func (x *SequenceWithKey) GetData() []byte {
 	if x != nil {
 		return x.Data
 	}
 	return nil
+}
+
+func (x *SequenceWithKey) GetDataTypeHint() string {
+	if x != nil {
+		return x.DataTypeHint
+	}
+	return ""
 }
 
 func (x *SequenceWithKey) GetKey() string {
@@ -1187,37 +1215,37 @@ var File_loop_internal_pb_contract_reader_proto protoreflect.FileDescriptor
 
 const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\n" +
-	"&loop/internal/pb/contract_reader.proto\x12\x04loop\x1a\x1ainternal/codec/codec.proto\x1a\x1dloop/chain-common/query.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd2\x01\n" +
+	"&loop/internal/pb/contract_reader.proto\x12\x04loop\x1a\x1dloop/chain-common/query.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc1\x01\n" +
 	"\x15GetLatestValueRequest\x12'\n" +
 	"\x0fread_identifier\x18\x01 \x01(\tR\x0ereadIdentifier\x12=\n" +
 	"\n" +
 	"confidence\x18\x02 \x01(\x0e2\x1d.loop.chain.common.ConfidenceR\n" +
-	"confidence\x12-\n" +
-	"\x06params\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x06params\x12\"\n" +
-	"\ras_value_type\x18\x04 \x01(\bR\vasValueType\"N\n" +
+	"confidence\x12\x16\n" +
+	"\x06params\x18\x03 \x01(\fR\x06params\x12(\n" +
+	"\x10params_type_hint\x18\x04 \x01(\tR\x0eparamsTypeHint\"N\n" +
 	"\x1bBatchGetLatestValuesRequest\x12/\n" +
-	"\brequests\x18\x01 \x03(\v2\x13.loop.ContractBatchR\brequests\"\xdb\x01\n" +
+	"\brequests\x18\x01 \x03(\v2\x13.loop.ContractBatchR\brequests\"\xb7\x01\n" +
 	"\x0fQueryKeyRequest\x12/\n" +
 	"\bcontract\x18\x01 \x01(\v2\x13.loop.BoundContractR\bcontract\x12,\n" +
 	"\x06filter\x18\x02 \x01(\v2\x14.loop.QueryKeyFilterR\x06filter\x12E\n" +
-	"\x0elimit_and_sort\x18\x03 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\x12\"\n" +
-	"\ras_value_type\x18\x04 \x01(\bR\vasValueType\"\x8c\x01\n" +
+	"\x0elimit_and_sort\x18\x03 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\"\x8c\x01\n" +
 	"\x10QueryKeysRequest\x121\n" +
 	"\afilters\x18\x01 \x03(\v2\x17.loop.ContractKeyFilterR\afilters\x12E\n" +
-	"\x0elimit_and_sort\x18\x02 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\"\x96\x01\n" +
+	"\x0elimit_and_sort\x18\x02 \x01(\v2\x1f.loop.chain.common.LimitAndSortR\flimitAndSort\"r\n" +
 	"\x11ContractKeyFilter\x12/\n" +
 	"\bcontract\x18\x01 \x01(\v2\x13.loop.BoundContractR\bcontract\x12,\n" +
-	"\x06filter\x18\x02 \x01(\v2\x14.loop.QueryKeyFilterR\x06filter\x12\"\n" +
-	"\ras_value_type\x18\x04 \x01(\bR\vasValueType\">\n" +
+	"\x06filter\x18\x02 \x01(\v2\x14.loop.QueryKeyFilterR\x06filter\">\n" +
 	"\vBindRequest\x12/\n" +
 	"\bbindings\x18\x01 \x03(\v2\x13.loop.BoundContractR\bbindings\"@\n" +
 	"\rUnbindRequest\x12/\n" +
-	"\bbindings\x18\x01 \x03(\v2\x13.loop.BoundContractR\bbindings\"E\n" +
-	"\x13GetLatestValueReply\x12.\n" +
-	"\aret_val\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x06retVal\"z\n" +
-	"\x1fGetLatestValueWithHeadDataReply\x12.\n" +
-	"\aret_val\x18\x01 \x01(\v2\x15.codec.VersionedBytesR\x06retVal\x12'\n" +
-	"\thead_data\x18\x02 \x01(\v2\n" +
+	"\bbindings\x18\x01 \x03(\v2\x13.loop.BoundContractR\bbindings\"Y\n" +
+	"\x13GetLatestValueReply\x12\x17\n" +
+	"\aret_val\x18\x01 \x01(\fR\x06retVal\x12)\n" +
+	"\x11ret_val_type_hint\x18\x02 \x01(\tR\x0eretValTypeHint\"\x8e\x01\n" +
+	"\x1fGetLatestValueWithHeadDataReply\x12\x17\n" +
+	"\aret_val\x18\x01 \x01(\fR\x06retVal\x12)\n" +
+	"\x11ret_val_type_hint\x18\x02 \x01(\tR\x0eretValTypeHint\x12'\n" +
+	"\thead_data\x18\x03 \x01(\v2\n" +
 	".loop.HeadR\bheadData\"P\n" +
 	"\x19BatchGetLatestValuesReply\x123\n" +
 	"\aresults\x18\x01 \x03(\v2\x19.loop.ContractBatchResultR\aresults\"=\n" +
@@ -1227,37 +1255,39 @@ const file_loop_internal_pb_contract_reader_proto_rawDesc = "" +
 	"\tsequences\x18\x01 \x03(\v2\x15.loop.SequenceWithKeyR\tsequences\"g\n" +
 	"\rContractBatch\x12/\n" +
 	"\bcontract\x18\x01 \x01(\v2\x13.loop.BoundContractR\bcontract\x12%\n" +
-	"\x05reads\x18\x02 \x03(\v2\x0f.loop.BatchReadR\x05reads\"\x8d\x01\n" +
+	"\x05reads\x18\x02 \x03(\v2\x0f.loop.BatchReadR\x05reads\"j\n" +
 	"\tBatchRead\x12\x1b\n" +
-	"\tread_name\x18\x01 \x01(\tR\breadName\x12-\n" +
-	"\x06params\x18\x02 \x01(\v2\x15.codec.VersionedBytesR\x06params\x124\n" +
-	"\n" +
-	"return_val\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\treturnVal\"w\n" +
+	"\tread_name\x18\x01 \x01(\tR\breadName\x12\x16\n" +
+	"\x06params\x18\x02 \x01(\fR\x06params\x12(\n" +
+	"\x10params_type_hint\x18\x03 \x01(\tR\x0eparamsTypeHint\"w\n" +
 	"\x13ContractBatchResult\x12/\n" +
 	"\bcontract\x18\x01 \x01(\v2\x13.loop.BoundContractR\bcontract\x12/\n" +
-	"\aresults\x18\x02 \x03(\v2\x15.loop.BatchReadResultR\aresults\"z\n" +
+	"\aresults\x18\x02 \x03(\v2\x15.loop.BatchReadResultR\aresults\"\x94\x01\n" +
 	"\x0fBatchReadResult\x12\x1b\n" +
-	"\tread_name\x18\x01 \x01(\tR\breadName\x124\n" +
+	"\tread_name\x18\x01 \x01(\tR\breadName\x12\x1d\n" +
 	"\n" +
-	"return_val\x18\x02 \x01(\v2\x15.codec.VersionedBytesR\treturnVal\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"P\n" +
+	"return_val\x18\x02 \x01(\fR\treturnVal\x12/\n" +
+	"\x14return_val_type_hint\x18\x03 \x01(\tR\x11returnValTypeHint\x12\x14\n" +
+	"\x05error\x18\x04 \x01(\tR\x05error\"P\n" +
 	"\x04Head\x12\x16\n" +
 	"\x06height\x18\x01 \x01(\tR\x06height\x12\x12\n" +
 	"\x04hash\x18\x02 \x01(\fR\x04hash\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x04R\ttimestamp\"\x97\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\x04R\ttimestamp\"\xa6\x01\n" +
 	"\bSequence\x12'\n" +
 	"\x0fsequence_cursor\x18\x01 \x01(\tR\x0esequenceCursor\x12\x1e\n" +
 	"\x04head\x18\x02 \x01(\v2\n" +
-	".loop.HeadR\x04head\x12)\n" +
-	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\x12\x17\n" +
-	"\atx_hash\x18\x04 \x01(\fR\x06txHash\"\xb0\x01\n" +
+	".loop.HeadR\x04head\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x12$\n" +
+	"\x0edata_type_hint\x18\x04 \x01(\tR\fdataTypeHint\x12\x17\n" +
+	"\atx_hash\x18\x05 \x01(\fR\x06txHash\"\xbf\x01\n" +
 	"\x0fSequenceWithKey\x12'\n" +
 	"\x0fsequence_cursor\x18\x01 \x01(\tR\x0esequenceCursor\x12\x1e\n" +
 	"\x04head\x18\x02 \x01(\v2\n" +
-	".loop.HeadR\x04head\x12)\n" +
-	"\x04data\x18\x03 \x01(\v2\x15.codec.VersionedBytesR\x04data\x12\x10\n" +
-	"\x03key\x18\x04 \x01(\tR\x03key\x12\x17\n" +
-	"\atx_hash\x18\x05 \x01(\fR\x06txHash\"=\n" +
+	".loop.HeadR\x04head\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\x12$\n" +
+	"\x0edata_type_hint\x18\x04 \x01(\tR\fdataTypeHint\x12\x10\n" +
+	"\x03key\x18\x05 \x01(\tR\x03key\x12\x17\n" +
+	"\atx_hash\x18\x06 \x01(\fR\x06txHash\"=\n" +
 	"\rBoundContract\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"a\n" +
@@ -1311,61 +1341,52 @@ var file_loop_internal_pb_contract_reader_proto_goTypes = []any{
 	(*BoundContract)(nil),                   // 19: loop.BoundContract
 	(*QueryKeyFilter)(nil),                  // 20: loop.QueryKeyFilter
 	(chain_common.Confidence)(0),            // 21: loop.chain.common.Confidence
-	(*codec.VersionedBytes)(nil),            // 22: codec.VersionedBytes
-	(*chain_common.LimitAndSort)(nil),       // 23: loop.chain.common.LimitAndSort
-	(*chain_common.Expression)(nil),         // 24: loop.chain.common.Expression
-	(*emptypb.Empty)(nil),                   // 25: google.protobuf.Empty
+	(*chain_common.LimitAndSort)(nil),       // 22: loop.chain.common.LimitAndSort
+	(*chain_common.Expression)(nil),         // 23: loop.chain.common.Expression
+	(*emptypb.Empty)(nil),                   // 24: google.protobuf.Empty
 }
 var file_loop_internal_pb_contract_reader_proto_depIdxs = []int32{
 	21, // 0: loop.GetLatestValueRequest.confidence:type_name -> loop.chain.common.Confidence
-	22, // 1: loop.GetLatestValueRequest.params:type_name -> codec.VersionedBytes
-	12, // 2: loop.BatchGetLatestValuesRequest.requests:type_name -> loop.ContractBatch
-	19, // 3: loop.QueryKeyRequest.contract:type_name -> loop.BoundContract
-	20, // 4: loop.QueryKeyRequest.filter:type_name -> loop.QueryKeyFilter
-	23, // 5: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	4,  // 6: loop.QueryKeysRequest.filters:type_name -> loop.ContractKeyFilter
-	23, // 7: loop.QueryKeysRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	19, // 8: loop.ContractKeyFilter.contract:type_name -> loop.BoundContract
-	20, // 9: loop.ContractKeyFilter.filter:type_name -> loop.QueryKeyFilter
-	19, // 10: loop.BindRequest.bindings:type_name -> loop.BoundContract
-	19, // 11: loop.UnbindRequest.bindings:type_name -> loop.BoundContract
-	22, // 12: loop.GetLatestValueReply.ret_val:type_name -> codec.VersionedBytes
-	22, // 13: loop.GetLatestValueWithHeadDataReply.ret_val:type_name -> codec.VersionedBytes
-	16, // 14: loop.GetLatestValueWithHeadDataReply.head_data:type_name -> loop.Head
-	14, // 15: loop.BatchGetLatestValuesReply.results:type_name -> loop.ContractBatchResult
-	17, // 16: loop.QueryKeyReply.sequences:type_name -> loop.Sequence
-	18, // 17: loop.QueryKeysReply.sequences:type_name -> loop.SequenceWithKey
-	19, // 18: loop.ContractBatch.contract:type_name -> loop.BoundContract
-	13, // 19: loop.ContractBatch.reads:type_name -> loop.BatchRead
-	22, // 20: loop.BatchRead.params:type_name -> codec.VersionedBytes
-	22, // 21: loop.BatchRead.return_val:type_name -> codec.VersionedBytes
-	19, // 22: loop.ContractBatchResult.contract:type_name -> loop.BoundContract
-	15, // 23: loop.ContractBatchResult.results:type_name -> loop.BatchReadResult
-	22, // 24: loop.BatchReadResult.return_val:type_name -> codec.VersionedBytes
-	16, // 25: loop.Sequence.head:type_name -> loop.Head
-	22, // 26: loop.Sequence.data:type_name -> codec.VersionedBytes
-	16, // 27: loop.SequenceWithKey.head:type_name -> loop.Head
-	22, // 28: loop.SequenceWithKey.data:type_name -> codec.VersionedBytes
-	24, // 29: loop.QueryKeyFilter.expression:type_name -> loop.chain.common.Expression
-	0,  // 30: loop.ContractReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
-	0,  // 31: loop.ContractReader.GetLatestValueWithHeadData:input_type -> loop.GetLatestValueRequest
-	1,  // 32: loop.ContractReader.BatchGetLatestValues:input_type -> loop.BatchGetLatestValuesRequest
-	2,  // 33: loop.ContractReader.QueryKey:input_type -> loop.QueryKeyRequest
-	3,  // 34: loop.ContractReader.QueryKeys:input_type -> loop.QueryKeysRequest
-	5,  // 35: loop.ContractReader.Bind:input_type -> loop.BindRequest
-	6,  // 36: loop.ContractReader.Unbind:input_type -> loop.UnbindRequest
-	7,  // 37: loop.ContractReader.GetLatestValue:output_type -> loop.GetLatestValueReply
-	8,  // 38: loop.ContractReader.GetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
-	9,  // 39: loop.ContractReader.BatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
-	10, // 40: loop.ContractReader.QueryKey:output_type -> loop.QueryKeyReply
-	11, // 41: loop.ContractReader.QueryKeys:output_type -> loop.QueryKeysReply
-	25, // 42: loop.ContractReader.Bind:output_type -> google.protobuf.Empty
-	25, // 43: loop.ContractReader.Unbind:output_type -> google.protobuf.Empty
-	37, // [37:44] is the sub-list for method output_type
-	30, // [30:37] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	12, // 1: loop.BatchGetLatestValuesRequest.requests:type_name -> loop.ContractBatch
+	19, // 2: loop.QueryKeyRequest.contract:type_name -> loop.BoundContract
+	20, // 3: loop.QueryKeyRequest.filter:type_name -> loop.QueryKeyFilter
+	22, // 4: loop.QueryKeyRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	4,  // 5: loop.QueryKeysRequest.filters:type_name -> loop.ContractKeyFilter
+	22, // 6: loop.QueryKeysRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	19, // 7: loop.ContractKeyFilter.contract:type_name -> loop.BoundContract
+	20, // 8: loop.ContractKeyFilter.filter:type_name -> loop.QueryKeyFilter
+	19, // 9: loop.BindRequest.bindings:type_name -> loop.BoundContract
+	19, // 10: loop.UnbindRequest.bindings:type_name -> loop.BoundContract
+	16, // 11: loop.GetLatestValueWithHeadDataReply.head_data:type_name -> loop.Head
+	14, // 12: loop.BatchGetLatestValuesReply.results:type_name -> loop.ContractBatchResult
+	17, // 13: loop.QueryKeyReply.sequences:type_name -> loop.Sequence
+	18, // 14: loop.QueryKeysReply.sequences:type_name -> loop.SequenceWithKey
+	19, // 15: loop.ContractBatch.contract:type_name -> loop.BoundContract
+	13, // 16: loop.ContractBatch.reads:type_name -> loop.BatchRead
+	19, // 17: loop.ContractBatchResult.contract:type_name -> loop.BoundContract
+	15, // 18: loop.ContractBatchResult.results:type_name -> loop.BatchReadResult
+	16, // 19: loop.Sequence.head:type_name -> loop.Head
+	16, // 20: loop.SequenceWithKey.head:type_name -> loop.Head
+	23, // 21: loop.QueryKeyFilter.expression:type_name -> loop.chain.common.Expression
+	0,  // 22: loop.ContractReader.GetLatestValue:input_type -> loop.GetLatestValueRequest
+	0,  // 23: loop.ContractReader.GetLatestValueWithHeadData:input_type -> loop.GetLatestValueRequest
+	1,  // 24: loop.ContractReader.BatchGetLatestValues:input_type -> loop.BatchGetLatestValuesRequest
+	2,  // 25: loop.ContractReader.QueryKey:input_type -> loop.QueryKeyRequest
+	3,  // 26: loop.ContractReader.QueryKeys:input_type -> loop.QueryKeysRequest
+	5,  // 27: loop.ContractReader.Bind:input_type -> loop.BindRequest
+	6,  // 28: loop.ContractReader.Unbind:input_type -> loop.UnbindRequest
+	7,  // 29: loop.ContractReader.GetLatestValue:output_type -> loop.GetLatestValueReply
+	8,  // 30: loop.ContractReader.GetLatestValueWithHeadData:output_type -> loop.GetLatestValueWithHeadDataReply
+	9,  // 31: loop.ContractReader.BatchGetLatestValues:output_type -> loop.BatchGetLatestValuesReply
+	10, // 32: loop.ContractReader.QueryKey:output_type -> loop.QueryKeyReply
+	11, // 33: loop.ContractReader.QueryKeys:output_type -> loop.QueryKeysReply
+	24, // 34: loop.ContractReader.Bind:output_type -> google.protobuf.Empty
+	24, // 35: loop.ContractReader.Unbind:output_type -> google.protobuf.Empty
+	29, // [29:36] is the sub-list for method output_type
+	22, // [22:29] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_loop_internal_pb_contract_reader_proto_init() }

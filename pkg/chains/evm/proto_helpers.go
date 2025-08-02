@@ -10,7 +10,6 @@ import (
 
 	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 
-	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
 	evmtypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
@@ -420,9 +419,7 @@ func convertExpressionToProto(expression query.Expression) (*Expression, error) 
 
 			putEVMPrimitive(pbExpression, ep)
 		default:
-			generalPrimitive, err := chaincommonpb.ConvertPrimitiveToProto(primitive, func(value any) (*codecpb.VersionedBytes, error) {
-				return nil, fmt.Errorf("unsupported primitive type: %T", value)
-			})
+			generalPrimitive, err := chaincommonpb.ConvertPrimitiveToProto(primitive)
 			if err != nil {
 				return nil, err
 			}
@@ -469,9 +466,7 @@ func convertExpressionFromProto(protoExpression *Expression) (query.Expression, 
 	case *Expression_Primitive:
 		switch primitive := protoEvaluatedExpr.Primitive.GetPrimitive().(type) {
 		case *Primitive_GeneralPrimitive:
-			return chaincommonpb.ConvertPrimitiveFromProto(primitive.GeneralPrimitive, func(_ string, _ bool) (any, error) {
-				return nil, fmt.Errorf("unsupported primitive type: %T", primitive)
-			})
+			return chaincommonpb.ConvertPrimitiveFromProto(primitive.GeneralPrimitive)
 		default:
 			return convertEVMExpressionToProto(protoEvaluatedExpr.Primitive)
 		}

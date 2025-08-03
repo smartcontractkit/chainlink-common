@@ -46,12 +46,17 @@ func (d *DualSourceEmitter) Emit(ctx context.Context, body []byte, attrKVs ...an
 		return err
 	}
 
+	d.log.Infow("EMITEMIT enqueue", "msg", attrKVs)
+
 	// Emit via chip ingress async
 	go func() {
 		if err := d.chipIngressEmitter.Emit(ctx, body, attrKVs...); err != nil {
 			// If the chip ingress emitter fails, we ONLY log the error
 			// because we still want to send the data to the OTLP collector and not cause disruption
 			d.log.Infof("failed to emit to chip ingress: %v", err)
+			d.log.Infow("EMITEMIT dropped", "msg", attrKVs)
+		} else {
+			d.log.Infow("EMITEMIT sent", "msg", attrKVs)
 		}
 	}()
 

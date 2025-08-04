@@ -3,6 +3,7 @@ package contractwriter
 import (
 	"context"
 	"math/big"
+	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -48,7 +49,10 @@ func WithClientEncoding(version codecpb.EncodingVersion) ClientOpt {
 }
 
 func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int) error {
-	lgr, _ := logger.New()
+	lgr := logger.NewWithSync(os.Stdout)
+	defer lgr.Sync() // flush any buffered entries
+
+	lgr.Infow("HITT")
 
 	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
@@ -66,14 +70,14 @@ func (c *Client) SubmitTransaction(ctx context.Context, contractName, method str
 	}
 
 	reqJson, _ := protojson.Marshal(&req)
-	lgr.Debugw(
+	lgr.Infow(
 		"SubmitTransaction RPC Request",
 		"requestJson", string(reqJson),
 	)
 
 	_, err = c.grpc.SubmitTransaction(ctx, &req)
 	if err != nil {
-		lgr.Debugw(
+		lgr.Infow(
 			"SubmitTransaction RPC failed",
 			"requestJson", string(reqJson),
 			"error", err,

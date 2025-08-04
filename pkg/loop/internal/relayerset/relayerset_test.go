@@ -360,8 +360,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 					Value:    big.NewInt(300),
 				}
 
-				mockEVM.EXPECT().GetTransactionByHash(mock.Anything, txHash).Return(&tx, nil)
-				out, err := evm.GetTransactionByHash(ctx, txHash)
+				mockEVM.EXPECT().GetTransactionByHash(mock.Anything, evmtypes.GetTransactionByHashRequest{Hash: txHash}).Return(&tx, nil)
+				out, err := evm.GetTransactionByHash(ctx, evmtypes.GetTransactionByHashRequest{Hash: txHash})
 				require.NoError(t, err)
 				require.Equal(t, tx, *out)
 			},
@@ -380,8 +380,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 					TransactionIndex:  uint64(10),
 					EffectiveGasPrice: big.NewInt(12344),
 				}
-				mockEVM.EXPECT().GetTransactionReceipt(mock.Anything, txHash).Return(&receipt, nil)
-				out, err := evm.GetTransactionReceipt(ctx, txHash)
+				mockEVM.EXPECT().GetTransactionReceipt(mock.Anything, evmtypes.GeTransactionReceiptRequest{Hash: txHash}).Return(&receipt, nil)
+				out, err := evm.GetTransactionReceipt(ctx, evmtypes.GeTransactionReceiptRequest{Hash: txHash})
 				require.NoError(t, err)
 				require.Equal(t, receipt.TxHash, out.TxHash)
 				require.Equal(t, receipt.Status, out.Status)

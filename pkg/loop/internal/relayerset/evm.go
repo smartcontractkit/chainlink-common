@@ -124,6 +124,7 @@ func (s *Server) CallContract(ctx context.Context, request *evmpb.CallContractRe
 		Msg:             callMsg,
 		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
 		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, err
@@ -156,6 +157,7 @@ func (s *Server) FilterLogs(ctx context.Context, request *evmpb.FilterLogsReques
 	reply, err := evmService.FilterLogs(ctx, evm.FilterLogsRequest{
 		FilterQuery:     expression,
 		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
 	})
 	if err != nil {
 		return nil, err
@@ -219,7 +221,10 @@ func (s *Server) GetTransactionByHash(ctx context.Context, request *evmpb.GetTra
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionByHash(ctx, evm.Hash(request.GetHash()))
+	reply, err := evmService.GetTransactionByHash(ctx, evm.GetTransactionByHashRequest{
+		Hash:       evm.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +245,10 @@ func (s *Server) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTr
 		return nil, err
 	}
 
-	reply, err := evmService.GetTransactionReceipt(ctx, evm.Hash(request.GetHash()))
+	reply, err := evmService.GetTransactionReceipt(ctx, evm.GeTransactionReceiptRequest{
+		Hash:       evm.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -81,6 +81,8 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 			ContractConfigTrackerPollInterval:  req.LocalConfig.ContractConfigTrackerPollInterval.AsDuration(),
 			ContractTransmitterTransmitTimeout: req.LocalConfig.ContractTransmitterTransmitTimeout.AsDuration(),
 			DatabaseTimeout:                    req.LocalConfig.DatabaseTimeout.AsDuration(),
+			ContractConfigLoadTimeout:          req.LocalConfig.ContractConfigLoadTimeout.AsDuration(),
+			DefaultMaxDurationInitialization:   req.LocalConfig.DefaultMaxDurationInitialization.AsDuration(),
 			MinOCR2MaxDurationQuery:            req.LocalConfig.MinOcr2MaxDurationQuery.AsDuration(),
 			DevelopmentMode:                    req.LocalConfig.DevelopmentMode,
 		},

@@ -320,6 +320,21 @@ func (s *Server) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrack
 	return &evmpb.QueryTrackedLogsReply{Logs: evmpb.ConvertLogsToProto(logs)}, nil
 }
 
+func (s *Server) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	evmService, err := s.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	names, err := evmService.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &evmpb.GetFiltersNamesReply{Items: names}, nil
+}
+
 func (s *Server) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
 	evmService, err := s.getEVMService(ctx)
 	if err != nil {

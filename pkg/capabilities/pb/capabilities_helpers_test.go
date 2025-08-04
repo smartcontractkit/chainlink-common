@@ -97,6 +97,7 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 				{SpendType: "COMPUTE", Limit: "1000"},
 				{SpendType: "GAS_12345", Limit: "1000000"},
 			},
+			WorkflowTag: "test-workflow-tag",
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},

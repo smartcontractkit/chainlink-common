@@ -6,6 +6,14 @@ import (
 	"sync"
 )
 
+type statsCollector interface {
+	SetRequestCount(requestCount int)
+}
+
+type noopStatsCollector struct{}
+
+func (n *noopStatsCollector) SetRequestCount(requestCount int) {}
+
 type StoredRequest[T any] interface {
 	ID() string
 	Copy() T
@@ -18,12 +26,23 @@ type Store[T StoredRequest[T]] struct {
 	requests   map[string]T
 
 	mu sync.RWMutex
+
+	statsCollector statsCollector
 }
 
 func NewStore[T StoredRequest[T]]() *Store[T] {
 	return &Store[T]{
-		requestIDs: []string{},
-		requests:   map[string]T{},
+		requestIDs:     []string{},
+		requests:       map[string]T{},
+		statsCollector: &noopStatsCollector{},
+	}
+}
+
+func NewStoreWithStatsCollector[T StoredRequest[T]](statsCollector statsCollector) *Store[T] {
+	return &Store[T]{
+		requestIDs:     []string{},
+		requests:       map[string]T{},
+		statsCollector: statsCollector,
 	}
 }
 
@@ -79,10 +98,10 @@ func (s *Store[T]) RangeN(start, batchSize int) ([]T, error) {
 	defer s.mu.RUnlock()
 
 	if start < 0 {
-		return nil, fmt.Errorf("start must be non-negative")
+		return nil, errors.New("start must be non-negative")
 	}
 	if batchSize <= 0 {
-		return nil, fmt.Errorf("batchSize must be greater than 0")
+		return nil, errors.New("batchSize must be greater than 0")
 	}
 	if start >= len(s.requestIDs) {
 		return nil, fmt.Errorf("start index out of bounds: start=%d, len=%d", start, len(s.requestIDs))
@@ -120,6 +139,7 @@ func (s *Store[T]) Add(req T) error {
 	}
 	s.requestIDs = append(s.requestIDs, req.ID())
 	s.requests[req.ID()] = req
+	s.statsCollector.SetRequestCount(len(s.requests))
 	return nil
 }
 
@@ -147,6 +167,7 @@ func (s *Store[T]) Evict(requestID string) (T, bool) {
 	if ok {
 		found = true
 		delete(s.requests, requestID)
+		s.statsCollector.SetRequestCount(len(s.requests))
 	}
 
 	newRequestIDs := make([]string, 0, len(s.requestIDs))

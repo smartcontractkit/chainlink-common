@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754071566230,
+  "lastUpdate": 1754323970548,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21882,6 +21882,48 @@ window.BENCHMARK_DATA = {
             "value": 28339,
             "unit": "ns/op",
             "extra": "42429 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "82612124e6eff19f5141f2cf4b625d31b2a3af74",
+          "message": "[Beholder] Use context.WithoutCancel in DualSourceEmitter (#1442)",
+          "timestamp": "2025-08-04T09:11:33-07:00",
+          "tree_id": "df367378b1d1eb8a0bbd55daeb49a55d2894f51d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/82612124e6eff19f5141f2cf4b625d31b2a3af74"
+        },
+        "date": 1754323969229,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3387589 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407,
+            "unit": "ns/op",
+            "extra": "2950306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28148,
+            "unit": "ns/op",
+            "extra": "42646 times\n4 procs"
           }
         ]
       }

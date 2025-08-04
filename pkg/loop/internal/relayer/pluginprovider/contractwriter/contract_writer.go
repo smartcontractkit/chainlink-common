@@ -5,10 +5,12 @@ import (
 	"math/big"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -46,6 +48,8 @@ func WithClientEncoding(version codecpb.EncodingVersion) ClientOpt {
 }
 
 func (c *Client) SubmitTransaction(ctx context.Context, contractName, method string, params any, transactionID, toAddress string, meta *types.TxMeta, value *big.Int) error {
+	lgr, _ := logger.New()
+
 	versionedParams, err := codecpb.EncodeVersionedBytes(params, c.encodeWith)
 	if err != nil {
 		return err
@@ -61,8 +65,20 @@ func (c *Client) SubmitTransaction(ctx context.Context, contractName, method str
 		Value:         pb.NewBigIntFromInt(value),
 	}
 
+	reqJson, _ := protojson.Marshal(&req)
+	lgr.Debugw(
+		"SubmitTransaction RPC Request",
+		"requestJson", string(reqJson),
+	)
+
 	_, err = c.grpc.SubmitTransaction(ctx, &req)
 	if err != nil {
+		lgr.Debugw(
+			"SubmitTransaction RPC failed",
+			"requestJson", string(reqJson),
+			"error", err,
+		)
+
 		return net.WrapRPCErr(err)
 	}
 

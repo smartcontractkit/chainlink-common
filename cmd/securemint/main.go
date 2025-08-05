@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -55,12 +54,26 @@ func (s *SecureMintPluginServer) Name() string {
 }
 
 func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provider types.SecureMintProvider, config types.SecureMintConfig) (types.SecureMintFactoryGenerator, error) {
-	// TODO: Implement external plugin integration
-	// This will need to:
-	// 1. Create external adapter implementation using Relayer
-	// 2. Create contract reader implementation using Relayer
-	// 3. Create report marshaler implementation
-	// 4. Create the external plugin factory using the imported por package
-	// 5. Wrap the external factory in our LOOPP interface
-	return nil, fmt.Errorf("not implemented yet")
+	// Create external adapter implementation using Relayer
+	_ = NewRelayerExternalAdapter(provider, s.Logger)
+	
+	// Create contract reader implementation using Relayer
+	_ = NewRelayerContractReader(provider, s.Logger)
+	
+	// Create report marshaler implementation
+	_ = NewChainlinkReportMarshaler(s.Logger)
+	
+	// Create the external plugin factory using the imported por package
+	// TODO: Import and use the external por package when available
+	// porFactory := &por.PorReportingPluginFactory{
+	//     Logger:          s.Logger,
+	//     ExternalAdapter: externalAdapter,
+	//     ContractReader:  contractReader,
+	//     ReportMarshaler: reportMarshaler,
+	// }
+	
+	// Wrap the external factory in our LOOPP interface
+	factory := NewSecureMintFactory(config, s.Logger)
+	
+	return factory, nil
 } 

@@ -8,12 +8,14 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
+	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/quorumhelper"
-	"google.golang.org/protobuf/proto"
 )
 
 type Plugin struct {
@@ -209,14 +211,24 @@ func (p *Plugin) Outcome(_ context.Context, outctx ocr3types.OutcomeContext, _ t
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {
+	// All nodes should transmit after each round with no delay
+	transmitters := make([]commontypes.OracleID, p.config.N)
+	transmissionDelays := make([]time.Duration, p.config.N)
+	for i := 0; i < p.config.N; i++ {
+		transmitters[i] = commontypes.OracleID(i)
+		transmissionDelays[i] = 0
+	}
+
 	return []ocr3types.ReportPlus[[]byte]{
 		{
 			ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{
 				Report: types.Report(outcome),
 				Info:   []byte{},
 			},
-			// TODO: Override Transmission Schedule; OracleIDs are 0-N? And have 0 for delays
-			TransmissionScheduleOverride: nil,
+			TransmissionScheduleOverride: &ocr3types.TransmissionSchedule{
+				Transmitters:       transmitters,
+				TransmissionDelays: transmissionDelays,
+			},
 		},
 	}, nil
 }

@@ -12,6 +12,36 @@ This document outlines the plan to convert the Secure Mint plugin from an in-pro
 - **Functionality**: Processes Secure Mint reports, validates chain selectors and sequence numbers, packs data for DF Cache contract
 - **Registration**: Already registered as `SecureMint` in `pkg/types/plugin.go`
 
+### External Secure Mint Plugin Analysis
+- **Location**: `/Users/ggerritsen/dev/cll/por_mock_ocr3plugin/por/`
+- **Type**: OCR3 Reporting Plugin (production-ready)
+- **Key Files**:
+  - `porplugin_simple.go`: Main plugin implementation
+  - `types.go`: Core data structures and types
+  - `external_adapter_interface.go`: External adapter interface
+  - `contract_reader_interface.go`: Contract reading interface
+  - `report_marshaller_interface.go`: Report serialization interface
+
+### External Plugin Architecture
+- **Core Types**:
+  - `ChainSelector uint64`: Chain identifier (matches chain-selectors package)
+  - `PorReportingPluginFactory`: Main factory implementing `ocr3types.ReportingPluginFactory[ChainSelector]`
+  - `porReportingPlugin`: Main plugin implementing `ocr3types.ReportingPlugin[ChainSelector]`
+  - `PorReport`: Report structure with ConfigDigest, SeqNr, Block, Mintable
+  - `ExternalAdapterPayload`: Contains Mintables, ReserveInfo, LatestBlocks
+
+- **Key Interfaces**:
+  - `ExternalAdapter`: Provides mintable amounts and latest blocks per chain
+  - `ContractReader`: Reads latest transmitted report details from contracts
+  - `ReportMarshaler`: Serializes reports for transmission
+
+- **Core Functionality**:
+  - Processes observations containing mintable amounts and latest blocks
+  - Validates observations and calculates honest blocks
+  - Generates reports with mintable amounts for specific chains
+  - Handles multi-chain support with configurable max chains
+  - Uses external adapter for PoR (Proof of Reserve) calculations
+
 ### Current Architecture
 - Uses `SecureMintAggregator` struct implementing `types.Aggregator` interface
 - Processes OCR trigger events containing Secure Mint reports
@@ -50,8 +80,69 @@ import (
 type SecureMintProvider interface {
     PluginProvider
     
-    // Add SecureMint-specific methods here
-    // These will be determined based on the external plugin's requirements
+    // ExternalAdapter provides mintable amounts and latest blocks per chain
+    ExternalAdapter() ExternalAdapter
+    
+    // ContractReader reads latest transmitted report details from contracts
+    ContractReader() ContractReader
+    
+    // ReportMarshaler serializes reports for transmission
+    ReportMarshaler() ReportMarshaler
+}
+
+// ExternalAdapter interface for PoR calculations
+type ExternalAdapter interface {
+    // GetPayload returns mintable amounts and latest blocks for queried blocks
+    GetPayload(ctx context.Context, blocks map[uint64]uint64) (ExternalAdapterPayload, error)
+}
+
+// ExternalAdapterPayload contains mintable amounts, reserve info, and latest blocks
+type ExternalAdapterPayload struct {
+    Mintables   map[uint64]BlockMintablePair // ChainSelector -> BlockMintablePair
+    ReserveInfo ReserveInfo
+    LatestBlocks map[uint64]uint64 // ChainSelector -> BlockNumber
+}
+
+// BlockMintablePair contains block number and mintable amount
+type BlockMintablePair struct {
+    Block    uint64
+    Mintable *big.Int
+}
+
+// ReserveInfo contains reserve amount and timestamp
+type ReserveInfo struct {
+    ReserveAmount *big.Int
+    Timestamp     time.Time
+}
+
+// ContractReader interface for reading contract state
+type ContractReader interface {
+    // GetLatestTransmittedReportDetails retrieves latest transmission details
+    GetLatestTransmittedReportDetails(ctx context.Context, chain uint64) (TransmittedReportDetails, error)
+}
+
+// TransmittedReportDetails contains transmission information
+type TransmittedReportDetails struct {
+    ConfigDigest    ocr2types.ConfigDigest
+    SeqNr           uint64
+    LatestTimestamp time.Time
+}
+
+// ReportMarshaler interface for report serialization
+type ReportMarshaler interface {
+    // Serialize serializes a report for a specific chain
+    Serialize(ctx context.Context, chain uint64, report PorReport) ([]byte, error)
+    
+    // MaxReportSize returns maximum serialized report size
+    MaxReportSize(ctx context.Context) int
+}
+
+// PorReport represents a Secure Mint report
+type PorReport struct {
+    ConfigDigest ocr2types.ConfigDigest
+    SeqNr        uint64
+    Block        uint64
+    Mintable     *big.Int
 }
 
 // PluginSecureMint interface for the LOOPP plugin
@@ -68,8 +159,7 @@ type SecureMintPluginFactory interface {
 
 // SecureMintConfig holds configuration for the SecureMint plugin
 type SecureMintConfig struct {
-    TargetChainSelector int64 `json:"targetChainSelector"`
-    // Add other configuration fields as needed
+    MaxChains uint32 `json:"maxChains"` // Maximum number of chains to track
 }
 ```
 
@@ -301,6 +391,7 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/loop"
     "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/securemint"
     "github.com/smartcontractkit/chainlink-common/pkg/types"
+    por "github.com/smartcontractkit/por_mock_ocr3plugin/por"
 )
 
 func main() {
@@ -328,23 +419,102 @@ type SecureMintPluginServer struct {
 }
 
 func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provider types.SecureMintProvider, config types.SecureMintConfig) (types.SecureMintPluginFactory, error) {
-    // Implement the factory creation logic
-    // This will integrate with the external Secure Mint plugin
-    return &SecureMintFactory{
+    // Create external adapter implementation using Relayer
+    externalAdapter := &RelayerExternalAdapter{
         provider: provider,
-        config:   config,
         logger:   s.Logger,
+    }
+    
+    // Create contract reader implementation using Relayer
+    contractReader := &RelayerContractReader{
+        provider: provider,
+        logger:   s.Logger,
+    }
+    
+    // Create report marshaler implementation
+    reportMarshaler := &ChainlinkReportMarshaler{
+        logger: s.Logger,
+    }
+    
+    // Create the external plugin factory
+    porFactory := &por.PorReportingPluginFactory{
+        Logger:          s.Logger,
+        ExternalAdapter: externalAdapter,
+        ContractReader:  contractReader,
+        ReportMarshaler: reportMarshaler,
+    }
+    
+    // Wrap the external factory in our LOOPP interface
+    return &SecureMintFactory{
+        porFactory: porFactory,
+        config:     config,
+        logger:     s.Logger,
     }, nil
+}
+
+// RelayerExternalAdapter implements por.ExternalAdapter using Relayer
+type RelayerExternalAdapter struct {
+    provider types.SecureMintProvider
+    logger   logger.Logger
+}
+
+func (r *RelayerExternalAdapter) GetPayload(ctx context.Context, blocks por.Blocks) (por.ExternalAdapterPayload, error) {
+    // Convert por.Blocks to our format and use Relayer
+    // Implementation will use provider.ExternalAdapter() and Relayer contract reading
+    return por.ExternalAdapterPayload{}, nil
+}
+
+// RelayerContractReader implements por.ContractReader using Relayer
+type RelayerContractReader struct {
+    provider types.SecureMintProvider
+    logger   logger.Logger
+}
+
+func (r *RelayerContractReader) GetLatestTransmittedReportDetails(ctx context.Context, chain por.ChainSelector) (por.TransmittedReportDetails, error) {
+    // Use Relayer to read contract state
+    // Implementation will use provider.ContractReader() and Relayer
+    return por.TransmittedReportDetails{}, nil
+}
+
+// ChainlinkReportMarshaler implements por.ReportMarshaler
+type ChainlinkReportMarshaler struct {
+    logger logger.Logger
+}
+
+func (c *ChainlinkReportMarshaler) Serialize(ctx context.Context, chain por.ChainSelector, report por.PorReport) ([]byte, error) {
+    // Serialize report using chainlink-common utilities
+    return nil, nil
+}
+
+func (c *ChainlinkReportMarshaler) MaxReportSize(ctx context.Context) int {
+    // Return maximum report size
+    return 1024
 }
 ```
 
 #### 5.2 Integrate External Plugin Logic
 The external plugin integration will need to:
 
-1. **Import the external plugin**: Reference the `por_mock_ocr3plugin` repository
-2. **Adapt the interface**: Convert the external plugin's interface to match our LOOPP interface
-3. **Handle chain interactions**: Ensure all blockchain interactions go through the Relayer interface
-4. **Maintain functionality**: Preserve the existing Secure Mint logic (chain selector validation, sequence number checking, data packing)
+1. **Import the external plugin**: Reference the `/por` folder from `por_mock_ocr3plugin` repository
+2. **Adapt the interface**: Convert the external plugin's interface to match our LOOPP interface:
+   - Map `ChainSelector` to `uint64` for consistency with chain-selectors package
+   - Adapt `ExternalAdapter`, `ContractReader`, and `ReportMarshaler` interfaces
+   - Convert `PorReportingPluginFactory` to our `SecureMintPluginFactory`
+3. **Handle chain interactions**: Ensure all blockchain interactions go through the Relayer interface:
+   - Use Relayer for contract reading operations
+   - Implement ExternalAdapter using Relayer's contract reading capabilities
+   - Ensure all chain-specific operations use the Relayer interface
+4. **Maintain functionality**: Preserve the existing Secure Mint logic:
+   - Multi-chain support with configurable max chains
+   - Observation validation and honest block calculation
+   - Report generation with mintable amounts
+   - PoR (Proof of Reserve) calculations through external adapter
+5. **Key Integration Points**:
+   - `PorReportingPluginFactory` → `SecureMintPluginFactory`
+   - `porReportingPlugin` → LOOPP plugin implementation
+   - `ExternalAdapter` → Relayer-based implementation
+   - `ContractReader` → Relayer contract reading
+   - `ReportMarshaler` → Chainlink-common serialization
 
 ### Phase 6: Testing Infrastructure
 
@@ -379,20 +549,29 @@ The external plugin integration will need to:
 3. **Maintainability**: Clear separation of concerns and interfaces
 4. **Reliability**: Process isolation prevents plugin crashes from affecting the main node
 
+### External Plugin Integration Strategy
+- **Direct Import**: Import the `/por` package directly from the external repository
+- **Interface Adaptation**: Create adapter layers to bridge external plugin interfaces with LOOPP interfaces
+- **Relayer Integration**: All blockchain operations go through the Relayer interface via adapter implementations
+- **Preserve Logic**: Maintain the core Secure Mint logic while adapting the interfaces
+
 ### Relayer Interface Integration
 - **Chain Interactions**: All blockchain operations must go through the Relayer interface
 - **Provider Pattern**: Uses the established provider pattern for chain-specific operations
 - **Consistency**: Maintains consistency with other LOOPP implementations
+- **Adapter Pattern**: Create `RelayerExternalAdapter` and `RelayerContractReader` to bridge external plugin with Relayer
 
 ### Configuration Management
 - **Type Safety**: Strongly typed configuration structures
 - **Validation**: Built-in configuration validation
 - **Flexibility**: Support for plugin-specific configuration options
+- **Multi-Chain Support**: Configurable max chains parameter from external plugin
 
 ### Error Handling
 - **Graceful Degradation**: Plugin failures don't crash the main node
 - **Health Reporting**: Comprehensive health reporting for monitoring
 - **Logging**: Structured logging for debugging and monitoring
+- **External Plugin Errors**: Proper error propagation from external plugin to LOOPP layer
 
 ## Migration Strategy
 
@@ -442,10 +621,12 @@ The external plugin integration will need to:
 
 ## Dependencies
 
-1. **External Plugin**: Access to `por_mock_ocr3plugin` repository
-2. **Protocol Buffers**: Generated protobuf files
+1. **External Plugin**: Access to `/por` package from `por_mock_ocr3plugin` repository
+2. **Protocol Buffers**: Generated protobuf files for GRPC communication
 3. **Testing Infrastructure**: Test utilities and mock implementations
 4. **Documentation**: Existing LOOPP documentation for reference
+5. **Chain-Selectors**: Integration with chain-selectors package for ChainSelector type
+6. **Relayer Implementation**: EVM Relayer implementation for blockchain interactions
 
 ## Next Steps
 

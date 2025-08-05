@@ -64,7 +64,7 @@ func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provi
 	_ = NewChainlinkReportMarshaler(s.Logger)
 
 	// Create the external plugin factory using the imported por package
-	// TODO: Import and use the external por package when available
+	// TODO(gg): Import and use the external por package when available
 	// porFactory := &por.PorReportingPluginFactory{
 	//     Logger:          s.Logger,
 	//     ExternalAdapter: externalAdapter,

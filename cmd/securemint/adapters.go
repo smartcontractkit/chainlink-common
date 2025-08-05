@@ -26,7 +26,7 @@ func NewRelayerExternalAdapter(provider types.SecureMintProvider, logger logger.
 // GetPayload returns mintable amounts and latest blocks for queried blocks
 // This is a placeholder implementation that would need to be adapted to the external plugin's interface
 func (r *RelayerExternalAdapter) GetPayload(ctx context.Context, blocks map[uint64]uint64) (types.ExternalAdapterPayload, error) {
-	// TODO: Implement using provider.ExternalAdapter() and Relayer contract reading
+	// TODO(gg): Implement using provider.ExternalAdapter() and Relayer contract reading
 	// This would typically:
 	// 1. Use the provider's ExternalAdapter to get mintable amounts
 	// 2. Use the Relayer to read contract state for each chain
@@ -58,7 +58,7 @@ func NewRelayerContractReader(provider types.SecureMintProvider, logger logger.L
 // GetLatestTransmittedReportDetails retrieves latest transmission details
 // This is a placeholder implementation that would need to be adapted to the external plugin's interface
 func (r *RelayerContractReader) GetLatestTransmittedReportDetails(ctx context.Context, chain uint64) (types.TransmittedReportDetails, error) {
-	// TODO: Implement using Relayer to read contract state
+	// TODO(gg): Implement using Relayer to read contract state
 	// This would typically:
 	// 1. Use the provider's ContractReader to get latest transmission details
 	// 2. Use the Relayer to read the specific contract state
@@ -87,7 +87,7 @@ func NewChainlinkReportMarshaler(logger logger.Logger) *ChainlinkReportMarshaler
 
 // Serialize serializes a report for a specific chain
 func (c *ChainlinkReportMarshaler) Serialize(ctx context.Context, chain uint64, report types.PorReport) ([]byte, error) {
-	// TODO: Implement report serialization using chainlink-common utilities
+	// TODO(gg): Implement report serialization using chainlink-common utilities
 	// This would typically:
 	// 1. Use chainlink-common serialization utilities
 	// 2. Format the report according to the expected protocol
@@ -101,13 +101,13 @@ func (c *ChainlinkReportMarshaler) Serialize(ctx context.Context, chain uint64, 
 
 // MaxReportSize returns maximum serialized report size
 func (c *ChainlinkReportMarshaler) MaxReportSize(ctx context.Context) int {
-	// TODO: Return appropriate maximum report size based on protocol requirements
+	// TODO(gg): Return appropriate maximum report size based on protocol requirements
 	return 1024
 }
 
 // SecureMintFactory wraps the external plugin factory in our LOOPP interface
 type SecureMintFactory struct {
-	// TODO: Add external plugin factory field when external plugin is imported
+	// TODO(gg): Add external plugin factory field when external plugin is imported
 	// porFactory *por.PorReportingPluginFactory
 	config types.SecureMintConfig
 	logger logger.Logger
@@ -122,7 +122,7 @@ func NewSecureMintFactory(config types.SecureMintConfig, logger logger.Logger) *
 
 // NewSecureMintFactory creates a new reporting plugin factory
 func (f *SecureMintFactory) NewSecureMintFactory(ctx context.Context, provider types.SecureMintProvider, config types.SecureMintConfig) (types.ReportingPluginFactory, error) {
-	// TODO: Implement when external plugin is integrated
+	// TODO(gg): Implement when external plugin is integrated
 	// This would typically:
 	// 1. Create the external plugin factory using the imported por package
 	// 2. Configure it with the provided provider and config

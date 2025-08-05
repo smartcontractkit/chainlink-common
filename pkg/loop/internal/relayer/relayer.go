@@ -722,7 +722,7 @@ func (r *relayerServer) newSecureMintProvider(ctx context.Context, relayArgs typ
 	providerRes := net.Resource{Name: name, Closer: provider}
 
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
-		// TODO: Register SecureMint provider services when provider implementation is created
+					// TODO(gg): Register SecureMint provider services when provider implementation is created
 		// securemintprovider.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {

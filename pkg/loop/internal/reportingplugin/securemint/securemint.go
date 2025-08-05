@@ -55,7 +55,7 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(ctx context.Context, provi
 			// loop client runs in the core node. if the provider is not a grpc client conn, then we are in legacy mode
 			// and need to serve all the required services locally.
 			providerID, providerResource, err = c.ServeNew("SecureMintProvider", func(s *grpc.Server) {
-				// TODO: Register SecureMint provider services when provider implementation is created
+				// TODO(gg): Register SecureMint provider services when provider implementation is created
 				// securemintprovider.RegisterProviderServices(s, provider, c.BrokerExt)
 			})
 		}
@@ -140,7 +140,7 @@ func newPluginSecureMintServer(impl types.PluginSecureMint, b *net.BrokerExt) *P
 }
 
 func (s *PluginSecureMintServer) NewSecureMintFactory(ctx context.Context, request *securemintpb.NewSecureMintFactoryRequest) (*securemintpb.NewSecureMintFactoryResponse, error) {
-	// TODO: Implement when provider services are created
+	// TODO(gg): Implement when provider services are created
 	// This will need to:
 	// 1. Get the provider from the request.ProviderServiceId
 	// 2. Convert the config from protobuf to types.SecureMintConfig

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754323970548,
+  "lastUpdate": 1754431380472,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -21924,6 +21924,48 @@ window.BENCHMARK_DATA = {
             "value": 28148,
             "unit": "ns/op",
             "extra": "42646 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "11e6d5b3cd961fcb9f46437c9fbe8e59b5f91427",
+          "message": "switching metering units over to billing proto (#1446)\n\n* switching metering units over to billing proto\n\n* fixing test+minor refactor",
+          "timestamp": "2025-08-05T15:01:54-07:00",
+          "tree_id": "305554c7429f760556e19b59ca8b2d19879a3c52",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/11e6d5b3cd961fcb9f46437c9fbe8e59b5f91427"
+        },
+        "date": 1754431379470,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.1,
+            "unit": "ns/op",
+            "extra": "3373890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.2,
+            "unit": "ns/op",
+            "extra": "2940686 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29210,
+            "unit": "ns/op",
+            "extra": "41066 times\n4 procs"
           }
         ]
       }

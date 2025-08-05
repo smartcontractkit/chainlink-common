@@ -56,13 +56,13 @@ func (s *SecureMintPluginServer) Name() string {
 func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provider types.SecureMintProvider, config types.SecureMintConfig) (types.SecureMintFactoryGenerator, error) {
 	// Create external adapter implementation using Relayer
 	_ = NewRelayerExternalAdapter(provider, s.Logger)
-	
+
 	// Create contract reader implementation using Relayer
 	_ = NewRelayerContractReader(provider, s.Logger)
-	
+
 	// Create report marshaler implementation
 	_ = NewChainlinkReportMarshaler(s.Logger)
-	
+
 	// Create the external plugin factory using the imported por package
 	// TODO: Import and use the external por package when available
 	// porFactory := &por.PorReportingPluginFactory{
@@ -71,9 +71,9 @@ func (s *SecureMintPluginServer) NewSecureMintFactory(ctx context.Context, provi
 	//     ContractReader:  contractReader,
 	//     ReportMarshaler: reportMarshaler,
 	// }
-	
+
 	// Wrap the external factory in our LOOPP interface
 	factory := NewSecureMintFactory(config, s.Logger)
-	
+
 	return factory, nil
-} 
+}

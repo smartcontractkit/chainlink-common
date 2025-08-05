@@ -31,8 +31,8 @@ type ExternalAdapter interface {
 
 // ExternalAdapterPayload contains mintable amounts, reserve info, and latest blocks
 type ExternalAdapterPayload struct {
-	Mintables   map[uint64]BlockMintablePair // ChainSelector -> BlockMintablePair
-	ReserveInfo ReserveInfo
+	Mintables    map[uint64]BlockMintablePair // ChainSelector -> BlockMintablePair
+	ReserveInfo  ReserveInfo
 	LatestBlocks map[uint64]uint64 // ChainSelector -> BlockNumber
 }
 
@@ -102,4 +102,4 @@ func (c SecureMintConfig) Validate() error {
 		return fmt.Errorf("maxChains must be greater than 0")
 	}
 	return nil
-} 
+}

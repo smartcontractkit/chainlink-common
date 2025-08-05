@@ -57,4 +57,4 @@ func (s *SecureMintService) NewReportingPlugin(ctx context.Context, config ocrty
 		return nil, ocrtypes.ReportingPluginInfo{}, err
 	}
 	return s.Service.NewReportingPlugin(ctx, config)
-} 
+}

@@ -31,13 +31,13 @@ func (r *RelayerExternalAdapter) GetPayload(ctx context.Context, blocks map[uint
 	// 1. Use the provider's ExternalAdapter to get mintable amounts
 	// 2. Use the Relayer to read contract state for each chain
 	// 3. Return the payload in the format expected by the external plugin
-	
+
 	r.logger.Debugw("RelayerExternalAdapter.GetPayload called", "blocks", blocks)
-	
+
 	// Placeholder implementation
 	return types.ExternalAdapterPayload{
-		Mintables:   make(map[uint64]types.BlockMintablePair),
-		ReserveInfo: types.ReserveInfo{},
+		Mintables:    make(map[uint64]types.BlockMintablePair),
+		ReserveInfo:  types.ReserveInfo{},
 		LatestBlocks: blocks,
 	}, nil
 }
@@ -63,9 +63,9 @@ func (r *RelayerContractReader) GetLatestTransmittedReportDetails(ctx context.Co
 	// 1. Use the provider's ContractReader to get latest transmission details
 	// 2. Use the Relayer to read the specific contract state
 	// 3. Return the details in the format expected by the external plugin
-	
+
 	r.logger.Debugw("RelayerContractReader.GetLatestTransmittedReportDetails called", "chain", chain)
-	
+
 	// Placeholder implementation
 	return types.TransmittedReportDetails{
 		ConfigDigest:    libocrtypes.ConfigDigest{},
@@ -92,9 +92,9 @@ func (c *ChainlinkReportMarshaler) Serialize(ctx context.Context, chain uint64, 
 	// 1. Use chainlink-common serialization utilities
 	// 2. Format the report according to the expected protocol
 	// 3. Return the serialized bytes
-	
+
 	c.logger.Debugw("ChainlinkReportMarshaler.Serialize called", "chain", chain, "report", report)
-	
+
 	// Placeholder implementation
 	return []byte{}, nil
 }
@@ -127,9 +127,9 @@ func (f *SecureMintFactory) NewSecureMintFactory(ctx context.Context, provider t
 	// 1. Create the external plugin factory using the imported por package
 	// 2. Configure it with the provided provider and config
 	// 3. Return a wrapper that implements types.ReportingPluginFactory
-	
+
 	f.logger.Debugw("SecureMintFactory.NewSecureMintFactory called", "config", config)
-	
+
 	return nil, fmt.Errorf("not implemented yet")
 }
 
@@ -152,4 +152,4 @@ func (f *SecureMintFactory) HealthReport() map[string]error {
 
 func (f *SecureMintFactory) Name() string {
 	return "SecureMintFactory"
-} 
+}

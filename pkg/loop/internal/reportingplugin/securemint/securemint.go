@@ -80,12 +80,12 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(ctx context.Context, provi
 	}
 	cc := c.NewClientConn("SecureMintFactory", newSecureMintClientFn)
 	factoryClient := ocr2.NewReportingPluginFactoryClient(c.BrokerExt, cc)
-	
+
 	// Create a wrapper that implements SecureMintFactoryGenerator
 	return &secureMintFactoryGeneratorWrapper{
-		factory: factoryClient,
+		factory:  factoryClient,
 		provider: provider,
-		config: config,
+		config:   config,
 	}, nil
 }
 
@@ -147,4 +147,4 @@ func (s *PluginSecureMintServer) NewSecureMintFactory(ctx context.Context, reque
 	// 3. Call impl.NewSecureMintFactory(ctx, provider, config)
 	// 4. Return the factory service ID
 	return nil, fmt.Errorf("not implemented yet")
-} 
+}

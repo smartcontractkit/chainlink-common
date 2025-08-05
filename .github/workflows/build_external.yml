@@ -38,7 +38,6 @@ jobs:
         with:
           path: chainlink-common
 
-
       - name: Checkout chainlink repo
         uses: actions/checkout@v4
         with:
@@ -47,9 +46,10 @@ jobs:
           ref: ${{ steps.get-core-ref.outputs.core-ref }}
 
       - name: Setup Go
-        uses: actions/setup-go@v5 # TODO: replace with local version
+        uses: ./chainlink-common/.github/actions/setup-go
         with:
           go-version-file: "chainlink/go.mod"
+          only-modules: "true"
 
       - name: Build /chainlink
         shell: bash

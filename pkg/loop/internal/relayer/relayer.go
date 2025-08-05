@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -403,10 +404,19 @@ func newChainRelayerServer(impl looptypes.Relayer, b *net.BrokerExt) *relayerSer
 }
 
 func (r *relayerServer) NewContractWriter(ctx context.Context, request *pb.NewContractWriterRequest) (*pb.NewContractWriterReply, error) {
+	lgr := logger.NewWithSync(os.Stdout)
+	defer lgr.Sync() //
 	cw, err := r.impl.NewContractWriter(ctx, request.GetContractWriterConfig())
 	if err != nil {
 		return nil, err
 	}
+
+	lgr.Infow(
+		"Registered new contractWriter",
+		"config", request.GetContractWriterConfig(),
+		"cw", cw.Name(),
+		"type", fmt.Sprintf("%T", cw),
+	)
 
 	if err = cw.Start(ctx); err != nil {
 		return nil, err

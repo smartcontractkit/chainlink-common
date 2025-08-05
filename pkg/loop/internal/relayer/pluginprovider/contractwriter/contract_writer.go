@@ -168,6 +168,11 @@ func WithServerEncoding(version codecpb.EncodingVersion) ServerOpt {
 }
 
 func (s *Server) SubmitTransaction(ctx context.Context, req *pb.SubmitTransactionRequest) (*emptypb.Empty, error) {
+	lgr := logger.NewWithSync(os.Stdout)
+	defer lgr.Sync() // flush any buffered entries
+
+	lgr.Infow("HITT SERVER SUBMITTX")
+
 	params := map[string]any{}
 	if err := codecpb.DecodeVersionedBytes(&params, req.Params); err != nil {
 		return nil, err

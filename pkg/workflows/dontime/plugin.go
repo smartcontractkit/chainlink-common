@@ -216,7 +216,7 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 	transmissionDelays := make([]time.Duration, p.config.N)
 	for i := 0; i < p.config.N; i++ {
 		transmitters[i] = commontypes.OracleID(i)
-		transmissionDelays[i] = 0
+		transmissionDelays[i] = time.Millisecond
 	}
 
 	p.lggr.Infow("Don Time Reports", "ConfigN", p.config.N, "transmitters",

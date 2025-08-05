@@ -534,6 +534,12 @@ func (r *relayerServer) NewPluginProvider(ctx context.Context, request *pb.NewPl
 			return nil, err
 		}
 		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
+	case string(types.SecureMint):
+		id, err := r.newSecureMintProvider(ctx, relayArgs, pluginArgs)
+		if err != nil {
+			return nil, err
+		}
+		return &pb.NewPluginProviderReply{PluginProviderID: id}, nil
 	}
 	return nil, fmt.Errorf("provider type not supported: %s", relayArgs.ProviderType)
 }
@@ -690,6 +696,34 @@ func (r *relayerServer) newCommitProvider(ctx context.Context, relayArgs types.R
 	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
 		ocr2.RegisterPluginProviderServices(s, provider)
 		ccip.RegisterCommitProviderServices(s, provider, r.BrokerExt)
+	}, providerRes)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
+}
+
+func (r *relayerServer) newSecureMintProvider(ctx context.Context, relayArgs types.RelayArgs, pluginArgs types.PluginArgs) (uint32, error) {
+	i, ok := r.impl.(looptypes.SecureMintProvider)
+	if !ok {
+		return 0, status.Error(codes.Unimplemented, "securemint not supported")
+	}
+
+	provider, err := i.NewSecureMintProvider(ctx, relayArgs, pluginArgs)
+	if err != nil {
+		return 0, err
+	}
+	err = provider.Start(ctx)
+	if err != nil {
+		return 0, err
+	}
+	const name = "SecureMintProvider"
+	providerRes := net.Resource{Name: name, Closer: provider}
+
+	id, _, err := r.ServeNew(name, func(s *grpc.Server) {
+		// TODO: Register SecureMint provider services when provider implementation is created
+		// securemintprovider.RegisterProviderServices(s, provider)
 	}, providerRes)
 	if err != nil {
 		return 0, err

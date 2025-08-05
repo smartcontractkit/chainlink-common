@@ -16,6 +16,7 @@ import (
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	ocr3max "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 
@@ -61,6 +62,7 @@ func NewReportingPlugin(s *requests.Store[*ReportRequest], r CapabilityIface, ba
 
 func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeContext) (types.Query, error) {
 	batch, err := r.s.FirstN(r.batchSize)
+
 	if err != nil {
 		r.lggr.Errorw("could not retrieve batch", "error", err)
 		return nil, err
@@ -68,8 +70,11 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 
 	ids := []*pbtypes.Id{}
 	allExecutionIDs := []string{}
+	seenIds := make(map[idKey]bool)
+
 	for _, rq := range batch {
-		ids = append(ids, &pbtypes.Id{
+		key := getIDKey(rq)
+		newId := &pbtypes.Id{
 			WorkflowExecutionId:      rq.WorkflowExecutionID,
 			WorkflowId:               rq.WorkflowID,
 			WorkflowOwner:            rq.WorkflowOwner,
@@ -78,8 +83,19 @@ func (r *reportingPlugin) Query(ctx context.Context, outctx ocr3types.OutcomeCon
 			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
 			ReportId:                 rq.ReportID,
 			KeyId:                    rq.KeyID,
-		})
-		allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+		}
+
+		// If the new id would exceed the max query size, stop adding more ids
+		if enoughQuery(ids, newId, ocr3max.MaxMaxQueryLength) {
+			break
+		}
+
+		// Simple duplicate elimination using a map
+		if !seenIds[key] {
+			seenIds[key] = true
+			ids = append(ids, newId)
+			allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+		}
 	}
 
 	r.lggr.Debugw("Query complete", "len", len(ids), "allExecutionIDs", allExecutionIDs)
@@ -151,6 +167,10 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 			},
 			OverriddenEncoderName:   rq.OverriddenEncoderName,
 			OverriddenEncoderConfig: cfgProto,
+		}
+
+		if enoughObservations(obs, newOb, ocr3max.MaxMaxObservationLength) {
+			break
 		}
 
 		obs.Observations = append(obs.Observations, newOb)

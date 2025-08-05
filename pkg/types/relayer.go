@@ -251,6 +251,8 @@ type Relayer interface {
 	NewCCIPCommitProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
 	NewCCIPExecProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error)
 
+	NewSecureMintProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (SecureMintProvider, error)
+
 	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
@@ -356,6 +358,10 @@ func (u *UnimplementedRelayer) NewCCIPCommitProvider(ctx context.Context, rargs 
 
 func (u *UnimplementedRelayer) NewCCIPExecProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPExecProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewSecureMintProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (SecureMintProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewSecureMintProvider not implemented")
 }
 
 func (u *UnimplementedRelayer) NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error) {

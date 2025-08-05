@@ -4,13 +4,17 @@ import (
 	"fmt"
 
 	chainselectors "github.com/smartcontractkit/chain-selectors"
+	billing "github.com/smartcontractkit/chainlink-protos/billing/go"
 )
 
 var (
-	PayloadUnit = unit{Name: "payload", Unit: "bytes"}
+	PayloadUnit = unit{
+		Name: billing.ResourceType_RESOURCE_TYPE_NETWORK.String(),
+		Unit: billing.MeasurementUnit_MEASUREMENT_UNIT_BYTES.String()}
 
-	// ComputeUnit is an example.
-	ComputeUnit = unit{Name: "compute", Unit: "ms"}
+	ComputeUnit = unit{
+		Name: billing.ResourceType_RESOURCE_TYPE_COMPUTE.String(),
+		Unit: billing.MeasurementUnit_MEASUREMENT_UNIT_MILLISECONDS.String()}
 )
 
 // unit provides exported Name and unit fields for
@@ -25,11 +29,11 @@ type unit struct {
 }
 
 func GasUnitForChain(chainID uint64) (string, error) {
-	  // Getting ChainId based on ChainSelector
-	  selector, err := chainselectors.SelectorFromChainId(chainID)
-	  if err != nil {
+	// Getting ChainId based on ChainSelector
+	selector, err := chainselectors.SelectorFromChainId(chainID)
+	if err != nil {
 		return "", err
-	  }
+	}
 
-	  return fmt.Sprintf("GAS.%d",selector), nil
+	return fmt.Sprintf("GAS.%d", selector), nil
 }

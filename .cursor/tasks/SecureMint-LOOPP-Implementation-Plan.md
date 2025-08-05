@@ -6,21 +6,11 @@ This document outlines the plan to convert the Secure Mint plugin from an in-pro
 
 ## Current State Analysis
 
-### Existing Secure Mint Implementation
-- **Location**: `pkg/capabilities/consensus/ocr3/datafeeds/securemint_aggregator.go`
-- **Type**: OCR3 Aggregator (in-process)
-- **Functionality**: Processes Secure Mint reports, validates chain selectors and sequence numbers, packs data for DF Cache contract
-- **Registration**: Already registered as `SecureMint` in `pkg/types/plugin.go`
-
-### External Secure Mint Plugin Analysis
+### Secure Mint Plugin (Target for LOOPP Conversion)
 - **Location**: `/Users/ggerritsen/dev/cll/por_mock_ocr3plugin/por/`
-- **Type**: OCR3 Reporting Plugin (production-ready)
-- **Key Files**:
-  - `porplugin_simple.go`: Main plugin implementation
-  - `types.go`: Core data structures and types
-  - `external_adapter_interface.go`: External adapter interface
-  - `contract_reader_interface.go`: Contract reading interface
-  - `report_marshaller_interface.go`: Report serialization interface
+- **Type**: OCR3 Reporting Plugin (production-ready, standalone)
+- **Current State**: External plugin that needs to be converted to LOOPP
+- **Registration**: Already registered as `SecureMint` in `pkg/types/plugin.go`
 
 ### External Plugin Architecture
 - **Core Types**:
@@ -29,6 +19,13 @@ This document outlines the plan to convert the Secure Mint plugin from an in-pro
   - `porReportingPlugin`: Main plugin implementing `ocr3types.ReportingPlugin[ChainSelector]`
   - `PorReport`: Report structure with ConfigDigest, SeqNr, Block, Mintable
   - `ExternalAdapterPayload`: Contains Mintables, ReserveInfo, LatestBlocks
+
+- **Key Files**:
+  - `porplugin_simple.go`: Main plugin implementation
+  - `types.go`: Core data structures and types
+  - `external_adapter_interface.go`: External adapter interface
+  - `contract_reader_interface.go`: Contract reading interface
+  - `report_marshaller_interface.go`: Report serialization interface
 
 - **Key Interfaces**:
   - `ExternalAdapter`: Provides mintable amounts and latest blocks per chain
@@ -42,23 +39,28 @@ This document outlines the plan to convert the Secure Mint plugin from an in-pro
   - Handles multi-chain support with configurable max chains
   - Uses external adapter for PoR (Proof of Reserve) calculations
 
-### Current Architecture
-- Uses `SecureMintAggregator` struct implementing `types.Aggregator` interface
-- Processes OCR trigger events containing Secure Mint reports
-- Validates chain selectors and sequence numbers
-- Packs mintable amounts and block numbers into uint224 for EVM compatibility
-- Returns aggregation outcomes for the DF Cache contract
+### Downstream Components (Not in Scope)
+- **Location**: `pkg/capabilities/consensus/ocr3/datafeeds/securemint_aggregator.go`
+- **Type**: OCR3 Aggregator (in-process)
+- **Functionality**: Processes Secure Mint reports, validates chain selectors and sequence numbers, packs data for DF Cache contract
+- **Note**: This is a downstream aggregator that processes the output of the Secure Mint plugin, not the plugin itself
 
 ## Target Architecture
 
 ### LOOPP Structure
-Following the established patterns from other plugins (Median, Mercury, CCIP), the Secure Mint plugin will be converted to:
+Following the established patterns from other plugins (Median, Mercury, CCIP), the external Secure Mint plugin will be converted to:
 
 1. **Plugin Interface**: `types.PluginSecureMint`
 2. **Plugin Factory**: `types.SecureMintPluginFactory`
 3. **Service Wrapper**: `loop.SecureMintService`
 4. **GRPC Plugin**: `loop.GRPCPluginSecureMint`
 5. **Provider Interface**: `types.SecureMintProvider`
+
+### Conversion Strategy
+- **External Plugin Integration**: Import and adapt the existing `/por` package
+- **Interface Mapping**: Convert external plugin interfaces to LOOPP interfaces
+- **Relayer Integration**: Ensure all blockchain operations go through the Relayer interface
+- **Preserve Logic**: Maintain the core Secure Mint functionality while adapting to LOOPP architecture
 
 ## Implementation Plan
 
@@ -576,17 +578,17 @@ The external plugin integration will need to:
 ## Migration Strategy
 
 ### Phase 1: Parallel Implementation
-1. Implement LOOPP version alongside existing aggregator
-2. Add feature flag to switch between implementations
+1. Implement LOOPP version of the external Secure Mint plugin
+2. Add feature flag to switch between external plugin and LOOPP version
 3. Test both implementations in parallel
 
 ### Phase 2: Gradual Migration
 1. Deploy LOOPP version to test environments
 2. Monitor performance and stability
-3. Gradually migrate production environments
+3. Gradually migrate production environments from external plugin to LOOPP
 
 ### Phase 3: Cleanup
-1. Remove old aggregator implementation
+1. Remove external plugin dependency
 2. Clean up unused code and interfaces
 3. Update documentation
 
@@ -604,11 +606,12 @@ The external plugin integration will need to:
 
 ## Success Criteria
 
-1. **Functional Parity**: LOOPP version provides same functionality as aggregator
-2. **Performance**: Acceptable performance compared to in-process version
+1. **Functional Parity**: LOOPP version provides same functionality as external Secure Mint plugin
+2. **Performance**: Acceptable performance compared to external plugin version
 3. **Stability**: Improved stability through process isolation
 4. **Maintainability**: Clear, well-documented code following established patterns
 5. **Integration**: Seamless integration with existing Chainlink infrastructure
+6. **Relayer Integration**: All blockchain operations go through the Relayer interface
 
 ## Timeline Estimate
 

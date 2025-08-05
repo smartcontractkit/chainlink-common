@@ -247,10 +247,12 @@ func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome)
 }
 
 func (p *Plugin) ShouldAcceptAttestedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+	p.lggr.Infow("ShouldAcceptAttestedReport CALLED")
 	return true, nil
 }
 
 func (p *Plugin) ShouldTransmitAcceptedReport(ctx context.Context, seqNr uint64, reportWithInfo ocr3types.ReportWithInfo[[]byte]) (bool, error) {
+	p.lggr.Infow("ShouldTransmitAttestedReport CALLED")
 	return true, nil
 }
 

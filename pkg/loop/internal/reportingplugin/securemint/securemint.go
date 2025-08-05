@@ -55,7 +55,8 @@ func (c *PluginSecureMintClient) NewSecureMintFactory(ctx context.Context, provi
 			// loop client runs in the core node. if the provider is not a grpc client conn, then we are in legacy mode
 			// and need to serve all the required services locally.
 			providerID, providerResource, err = c.ServeNew("SecureMintProvider", func(s *grpc.Server) {
-				RegisterProviderServices(s, provider, c.BrokerExt)
+				// TODO(gg): Register SecureMint provider services when provider implementation is created
+				// securemintprovider.RegisterProviderServices(s, provider, c.BrokerExt)
 			})
 		}
 		if err != nil {
@@ -139,33 +140,11 @@ func newPluginSecureMintServer(impl types.PluginSecureMint, b *net.BrokerExt) *P
 }
 
 func (s *PluginSecureMintServer) NewSecureMintFactory(ctx context.Context, request *securemintpb.NewSecureMintFactoryRequest) (*securemintpb.NewSecureMintFactoryResponse, error) {
-	// 1. Get the provider connection from the request.ProviderServiceId
-	_, err := s.Dial(request.ProviderServiceId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial provider service: %w", err)
-	}
-	
-	// TODO(gg): Create a provider client from the connection when external plugin is integrated
-	// For now, we'll use a placeholder approach
-	// secureMintProvider := securemintprovider.NewProviderClient(providerConn)
-	
+	// TODO(gg): Implement when provider services are created
+	// This will need to:
+	// 1. Get the provider from the request.ProviderServiceId
 	// 2. Convert the config from protobuf to types.SecureMintConfig
-	_ = types.SecureMintConfig{
-		MaxChains: request.Config.MaxChains,
-	}
-	
 	// 3. Call impl.NewSecureMintFactory(ctx, provider, config)
-	// TODO(gg): Use actual provider when external plugin is integrated
-	// factoryGenerator, err := s.impl.NewSecureMintFactory(ctx, secureMintProvider, config)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to create factory: %w", err)
-	// }
-	
 	// 4. Return the factory service ID
-	// For now, return a placeholder service ID
-	factoryID := s.Broker.NextId()
-	
-	return &securemintpb.NewSecureMintFactoryResponse{
-		SecuremintFactoryServiceId: factoryID,
-	}, nil
+	return nil, fmt.Errorf("not implemented yet")
 }
